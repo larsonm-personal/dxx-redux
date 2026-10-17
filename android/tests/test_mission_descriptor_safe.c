@@ -54,12 +54,23 @@ int main(void)
 	expect(mission_descriptor_parse_secret("secret.rdl, 3\r\n", 3, output, sizeof(output), &value) &&
 	           !strcmp(output, "secret.rdl") && value == 3,
 	       "bounded secret entry parses");
+	expect(mission_descriptor_parse_secret("secret.rdl, 2, 3 ; comment", 3, output, sizeof(output), &value) &&
+	           !strcmp(output, "secret.rdl") && value == 2,
+	       "multiple valid secret origins preserve the first origin");
 	expect(!mission_descriptor_parse_secret(NULL, 3, output, sizeof(output), &value),
 	       "truncated secret list is rejected");
 	expect(!mission_descriptor_parse_secret("secret.rdl", 3, output, sizeof(output), &value),
 	       "secret without origin is rejected");
 	expect(!mission_descriptor_parse_secret("secret.rdl, 4", 3, output, sizeof(output), &value),
 	       "secret origin beyond the level list is rejected");
+	expect(!mission_descriptor_parse_secret("secret.rdl, 2, 4", 3, output, sizeof(output), &value),
+	       "out-of-range trailing secret origin is rejected");
+	expect(!mission_descriptor_parse_secret("secret.rdl, 2, bad", 3, output, sizeof(output), &value),
+	       "malformed trailing secret origin is rejected");
+	expect(!mission_descriptor_parse_secret("secret.rdl, 2, ,3", 3, output, sizeof(output), &value),
+	       "empty middle secret origin is rejected");
+	expect(!mission_descriptor_parse_secret("secret.rdl, 2,", 3, output, sizeof(output), &value),
+	       "empty trailing secret origin is rejected");
 
 	puts("PASS: bounded mission descriptor tokens");
 	return 0;

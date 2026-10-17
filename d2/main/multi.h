@@ -373,6 +373,8 @@ void multi_leave_game(void);
 void multi_process_data(const ubyte *dat, int len);
 void multi_process_bigdata(const ubyte *buf, unsigned len);
 void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender);
+int multi_validate_bigdata(const ubyte *buf, unsigned len);
+int multi_validate_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender);
 #ifdef __ANDROID__
 void multi_process_stamped_bigdata(const ubyte *buf, unsigned len, int authenticated_sender);
 #ifdef INTROSPECT_ON

@@ -957,10 +957,14 @@ multi_do_robot_fire(const ubyte *buf)
 	fire.y = (fix)INTEL_INT((int)fire.y);
 	fire.z = (fix)INTEL_INT((int)fire.z);
 
-	if ((botnum < 0) || (botnum > Highest_object_index) || (Objects[botnum].type != OBJ_ROBOT) || (Objects[botnum].flags & OF_EXPLODING))
+	if ((botnum < 0) || (botnum > Highest_object_index) || (Objects[botnum].type != OBJ_ROBOT) ||
+	    (Objects[botnum].flags & OF_EXPLODING) || Objects[botnum].id >= N_robot_types)
 	{
 		return;
 	}
+	if (gun_num != -1 && gun_num != -2 && gun_num != MULTI_ROBOT_FIRE_FLARE &&
+	    (gun_num < 0 || gun_num >= Robot_info[Objects[botnum].id].n_guns))
+		return;
 	// Do the firing
 	
 	if (gun_num == -1 || gun_num==-2)
@@ -1122,7 +1126,8 @@ multi_do_create_robot(const ubyte *buf)
 
 	objnum = GET_INTEL_SHORT(buf + 3);
 
-	if ((pnum < 0) || (objnum < 0) || (fuelcen_num < 0) || (fuelcen_num >= Num_fuelcenters) || (pnum >= N_players))
+	if ((pnum < 0) || (objnum < 0) || (objnum >= MAX_OBJECTS) || (fuelcen_num < 0) ||
+	    (fuelcen_num >= Num_fuelcenters) || (pnum >= N_players) || type < 0 || type >= N_robot_types)
 	{
 		Int3(); // Bogus data
 		return;
@@ -1297,7 +1302,13 @@ void multi_do_respawn_robot(const ubyte *buf) {
 	short robjnum = GET_INTEL_SHORT(buf + loc);    loc += 2; 
 	behavior      = buf[loc];                      loc += 1; 
 
+	if (id >= N_robot_types || segnum < 0 || segnum > Highest_segment_index ||
+	    rplr >= MAX_PLAYERS || robjnum < 0 || robjnum >= MAX_OBJECTS)
+		return;
+
 	short objnum = respawn_robot(id, segnum, pos, orient, size, behavior); 
+	if (objnum < 0)
+		return;
 
 	map_objnum_local_to_remote(objnum, robjnum, rplr); 
 }
@@ -1379,7 +1390,9 @@ multi_do_boss_actions(const ubyte *buf)
 
 	boss_obj = &Objects[boss_objnum];
 
-	if ((boss_obj->type != OBJ_ROBOT) || !(Robot_info[boss_obj->id].boss_flag))
+	if (pnum < 0 || pnum >= N_players || Players[pnum].objnum < 0 ||
+	    Players[pnum].objnum > Highest_object_index || boss_obj->type != OBJ_ROBOT ||
+	    boss_obj->id >= N_robot_types || !Robot_info[boss_obj->id].boss_flag)
 	{
 		Int3(); // Got boss actions for a robot who's not a boss?
 		return;
@@ -1392,7 +1405,7 @@ multi_do_boss_actions(const ubyte *buf)
 				int teleport_segnum;
 				vms_vector boss_dir;
 
-				if ((secondary < 0) || (secondary > Num_boss_teleport_segs))
+				if ((secondary < 0) || (secondary >= Num_boss_teleport_segs))
 				{
 					Int3(); // Bad segnum for boss teleport, ROB!!
 					return;
@@ -1436,7 +1449,8 @@ multi_do_boss_actions(const ubyte *buf)
 		case 3: // Gate in robots!
 			{
 				// Do some validity checking
-				if ( (remote_objnum >= MAX_OBJECTS) || (remote_objnum < 0) || (segnum < 0) || (segnum > Highest_segment_index) )
+				if (secondary < 0 || secondary >= N_robot_types || (remote_objnum >= MAX_OBJECTS) ||
+				    (remote_objnum < 0) || (segnum < 0) || (segnum > Highest_segment_index))
 				{
 					Int3(); // See Rob, bad data in boss gate action message
 					return;

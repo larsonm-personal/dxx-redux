@@ -16,4 +16,4 @@ $dataFiles = foreach ($game in @('d1', 'd2')) {
     $source = Resolve-StandardGameDataDirectory -Candidates @(Get-StandardGameDataCandidates -RepoRoot $repoRoot -Game $game) -Dependencies $dependencies -Label $game
     foreach ($name in $names) { Join-Path $source.Path $name }
 }
-& (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture secret_origins -ExpectedCases 12 -DataFiles $dataFiles @PSBoundParameters
+& (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture secret_origins -ExpectedCases 13 -DataFiles $dataFiles @PSBoundParameters

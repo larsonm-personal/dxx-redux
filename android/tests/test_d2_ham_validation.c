@@ -67,6 +67,30 @@ int main(void)
 	expect(d2_ham_validate_extra(extra_ham, position, 2, &validation_limits,
 	                             62, 66, 1145, 166, 422, 502),
 	       "bounded empty extra HAM is accepted");
+	put32(extra_ham, position - 4, 2);
+	extra_ham[position++] = 0;
+	extra_ham[position++] = 0;
+	extra_ham[position++] = 1;
+	extra_ham[position++] = 0;
+	expect(d2_ham_validate_extra(extra_ham, position, 2, &validation_limits,
+	                             62, 66, 1145, 166, 422, 502),
+	       "bounded extra HAM pointer table is accepted");
+	extra_ham[position++] = 0;
+	extra_ham[position++] = 0;
+	extra_ham[position++] = 1;
+	extra_ham[position++] = 0;
+	expect(d2_ham_validate_extra(extra_ham, position, 2, &validation_limits,
+	                             62, 66, 1145, 166, 422, 502),
+	       "legacy duplicate extra HAM pointer table is accepted");
+	expect(!d2_ham_validate_extra(extra_ham, position - 1, 2, &validation_limits,
+	                              62, 66, 1145, 166, 422, 502),
+	       "truncated legacy extra HAM pointer table is rejected");
+	extra_ham[position - 2] = 0xff;
+	extra_ham[position - 1] = 0xff;
+	expect(!d2_ham_validate_extra(extra_ham, position, 2, &validation_limits,
+	                              62, 66, 1145, 166, 422, 502),
+	       "out-of-range legacy extra HAM pointer is rejected");
+	position = 32;
 	put32(extra_ham, 8, -1);
 	expect(!d2_ham_validate_extra(extra_ham, position, 2, &validation_limits,
 	                              62, 66, 1145, 166, 422, 502),
@@ -78,6 +102,17 @@ int main(void)
 	for (i = 0; i < 5; ++i) append32(hxm, &position, 0);
 	expect(d2_ham_validate_hxm(hxm, position, &validation_limits, 66, 1145, 166),
 	       "bounded empty HXM is accepted");
+	append32(hxm, &position, 0);
+	expect(d2_ham_validate_hxm(hxm, position, &validation_limits, 66, 1145, 166),
+	       "legacy trailing HXM zero word is accepted");
+	append32(hxm, &position, 0);
+	expect(!d2_ham_validate_hxm(hxm, position, &validation_limits, 66, 1145, 166),
+	       "multiple trailing HXM words are rejected");
+	position -= 4;
+	put32(hxm, position - 4, 1);
+	expect(!d2_ham_validate_hxm(hxm, position, &validation_limits, 66, 1145, 166),
+	       "nonzero trailing HXM word is rejected");
+	put32(hxm, position - 4, 0);
 	put32(hxm, 8, INT_MAX);
 	expect(!d2_ham_validate_hxm(hxm, position, &validation_limits, 66, 1145, 166),
 	       "oversized HXM count is rejected");

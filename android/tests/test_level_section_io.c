@@ -57,6 +57,11 @@ int main(int argc, char **argv)
 	CHECK(level_index_range_is_valid(5, 0, 5));
 	CHECK(!level_index_range_is_valid(-1, 1, 5));
 	CHECK(!level_index_range_is_valid(4, 2, 5));
+	CHECK(level_normalize_legacy_signed_byte_count(-125) == 0);
+	CHECK(level_normalize_legacy_signed_byte_count(127) == 127);
+	CHECK(level_index_range_is_valid(1465,
+	                                 level_normalize_legacy_signed_byte_count(-125),
+	                                 2463));
 	CHECK(level_segment_references_are_valid(valid_children, 6, valid_vertices, 8, 2, 8));
 	CHECK(!level_segment_references_are_valid(invalid_children, 6, valid_vertices, 8, 2, 8));
 	CHECK(!level_segment_references_are_valid(valid_children, 6, invalid_vertices, 8, 2, 8));

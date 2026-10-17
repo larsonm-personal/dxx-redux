@@ -336,7 +336,12 @@ int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
 		return 0;
 	for (i = 0; i < pointer_count; ++i)
 		if (d2_ham_u16(pointers + (size_t) i * 2) >= limits->max_object_bitmaps) return 0;
-	return cursor.position == cursor.end;
+	if (cursor.position == cursor.end) return 1;
+	/* The legacy type-2 writer appended a second pointer table that the loader ignored */
+	return type == 2 &&
+	       d2_ham_validate_bitmap_table(&cursor, pointer_count,
+	                                    limits->max_object_bitmaps, NULL) &&
+	       cursor.position == cursor.end;
 }
 
 int d2_ham_validate_hxm(const uint8_t *data, size_t size,
@@ -394,5 +399,7 @@ int d2_ham_validate_hxm(const uint8_t *data, size_t size,
 		if (!d2_ham_read_i32(&cursor, &index) || index < 0 || index >= limits->max_object_bitmaps ||
 		    !d2_ham_take(&cursor, 2, &record) || d2_ham_u16(record) >= limits->max_object_bitmaps)
 			return 0;
-	return cursor.position == cursor.end;
+	if (cursor.position == cursor.end) return 1;
+	// Some legacy HXM writers append one unused zero word that the original loader ignored
+	return cursor.end - cursor.position == 4 && d2_ham_i32(cursor.data + cursor.position) == 0;
 }

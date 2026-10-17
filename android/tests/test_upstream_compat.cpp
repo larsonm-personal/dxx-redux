@@ -74,6 +74,8 @@ void cockpit_decode_alpha(grs_bitmap *bm);
 #include "morph.h"
 #include "menu.h"
 #include "multi.h"
+#include "net_udp.h"
+int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr);
 #include "newdemo.h"
 #include "newmenu.h"
 #include "object.h"
@@ -11880,6 +11882,105 @@ static void verify_headless_audio_closed()
 	std::puts("Headless audio is closed at process teardown");
 }
 
+static void test_udp_security_validation()
+{
+	const int saved_players = N_players;
+	const int saved_master = Multi_master_playernum;
+	ubyte quit[] = { MULTI_QUIT, 1 };
+	ubyte batch[] = { MULTI_QUIT, 1, MULTI_QUIT, 1 };
+	ubyte unknown[] = { 255 };
+	ubyte robot_claim[] = { MULTI_ROBOT_CLAIM, 1, 0, 0, 1 };
+	ubyte kill_host[] = { MULTI_KILL_HOST, 1, 0, 0, 0, 0, 0 };
+	ubyte message[37];
+	ubyte observer_message[47] = {};
+	ubyte observer_update[4 + 8 * MAX_OBSERVERS];
+	ubyte outer[UPID_MAX_SIZE] = {};
+	struct _sockaddr sender = {};
+
+	N_players = 2;
+	Multi_master_playernum = 0;
+	require(multi_validate_bigdata_from_player(quit, sizeof(quit), 1),
+	        "accept authenticated command identity");
+	require(!multi_validate_bigdata_from_player(quit, sizeof(quit), 0),
+	        "reject spoofed command identity");
+	require(multi_validate_bigdata_from_player(batch, sizeof(batch), 1),
+	        "accept complete multi-command batch");
+	require(!multi_validate_bigdata_from_player(batch, sizeof(batch) - 1, 1),
+	        "reject truncated multi-command batch");
+	require(!multi_validate_bigdata_from_player(unknown, sizeof(unknown), 1),
+	        "reject unknown multiplayer opcode");
+	require(!multi_validate_bigdata_from_player(robot_claim, sizeof(robot_claim), 0),
+	        "reject spoofed robot owner command");
+	require(multi_validate_bigdata_from_player(kill_host, sizeof(kill_host), 0),
+	        "accept host-authored kill result");
+	require(!multi_validate_bigdata_from_player(kill_host, sizeof(kill_host), 1),
+	        "reject peer-forged host kill result");
+
+	std::memset(message, 'A', sizeof(message));
+	message[0] = MULTI_MESSAGE;
+	message[1] = 1;
+	require(!multi_validate_bigdata_from_player(message, sizeof(message), 1),
+	        "reject unterminated multiplayer chat");
+	message[sizeof(message) - 1] = '\0';
+	require(multi_validate_bigdata_from_player(message, sizeof(message), 1),
+	        "accept terminated multiplayer chat");
+	require(!multi_validate_bigdata_from_player(quit, sizeof(quit), OBSERVER_PLAYER_ID),
+	        "reject observer gameplay command");
+	observer_message[0] = MULTI_OBS_MESSAGE;
+	observer_message[1] = OBSERVER_PLAYER_ID;
+	require(multi_validate_bigdata_from_player(observer_message, sizeof(observer_message), OBSERVER_PLAYER_ID),
+	        "accept authenticated observer chat");
+
+	std::memset(observer_update, 0, sizeof(observer_update));
+	observer_update[0] = MULTI_OBS_UPDATE;
+	observer_update[3] = MAX_OBSERVERS + 1;
+	require(!multi_validate_bigdata_from_player(observer_update, sizeof(observer_update), 0),
+	        "reject oversized observer count");
+	observer_update[3] = MAX_OBSERVERS;
+	require(multi_validate_bigdata_from_player(observer_update, sizeof(observer_update), 0),
+	        "accept bounded host observer update");
+	require(!multi_validate_bigdata_from_player(observer_update, sizeof(observer_update), 1),
+	        "reject non-host observer update");
+
+	outer[0] = 255;
+	require(!valid_size(outer, 1, sender), "reject unknown outer packet type");
+	outer[0] = UPID_PONG;
+	require(!valid_size(outer, UPID_PONG_SIZE - 1, sender), "reject truncated PONG");
+	require(valid_size(outer, UPID_PONG_SIZE, sender), "accept exact PONG framing");
+	outer[0] = UPID_PROXY;
+	require(!valid_size(outer, UPID_PROXY_HEADER_SIZE, sender), "reject empty proxy envelope");
+	require(valid_size(outer, UPID_PROXY_HEADER_SIZE + 1, sender), "accept nonempty proxy framing");
+	outer[0] = UPID_MDATA_ACK;
+	require(!valid_size(outer, UPID_MDATA_ACK_SIZE - 1, sender), "reject truncated MDATA ACK");
+	require(valid_size(outer, UPID_MDATA_ACK_SIZE, sender), "accept exact MDATA ACK framing");
+	outer[0] = UPID_ADDPLAYER;
+	require(!valid_size(outer, UPID_SEQUENCE_SIZE - 1, sender), "reject truncated ADDPLAYER");
+	require(valid_size(outer, UPID_SEQUENCE_SIZE, sender), "accept exact ADDPLAYER framing");
+	outer[0] = UPID_OBJECT_DATA;
+	require(!valid_size(outer, UPID_OBJECT_HEADER_SIZE - 1, sender), "reject truncated object data");
+	require(valid_size(outer, UPID_OBJECT_HEADER_SIZE, sender), "accept object header framing");
+
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		ubyte marker[55] = {};
+		marker[0] = MULTI_MARKER;
+		marker[1] = 1;
+		marker[2] = 2;
+		require(!multi_validate_bigdata_from_player(marker, sizeof(marker), 1),
+		        "reject invalid marker slot");
+		marker[2] = 1;
+		marker[15] = 'x';
+		marker[16] = '\0';
+		require(multi_validate_bigdata_from_player(marker, sizeof(marker), 1),
+		        "accept bounded marker payload");
+	}
+#endif
+
+	N_players = saved_players;
+	Multi_master_playernum = saved_master;
+	std::puts("PASS: UDP multiplayer command validation");
+}
+
 int main(int argc, char **argv)
 {
 	if (argc == 2 && std::strcmp(argv[1], "--capture-build-revision") == 0) {
@@ -11892,6 +11993,10 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 2 && std::strcmp(argv[1], "--udp-security-validation") == 0) {
+		test_udp_security_validation();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--missile-camera-ownership") == 0) {
 		test_missile_camera_ownership();
 		return 0;

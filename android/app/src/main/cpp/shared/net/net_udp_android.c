@@ -241,8 +241,16 @@ const char *android_net_udp_game_info_preflight(
 	const int player_bytes = CALLSIGN_LEN + 1 + 4 + 37 +
 	                         ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE + 1 +
 	                         (is_sync && Netgame.RetroProtocol ? sizeof(struct _sockaddr) : 0);
-	const int level_offset = 7 + (MAX_PLAYERS + 4) * player_bytes +
-	                         NETGAME_NAME_LEN + 1 + MISSION_NAME_LEN + 1 + 9;
+	const int players_offset = 7;
+	const int game_name_offset = players_offset + (MAX_PLAYERS + 4) * player_bytes;
+	const int mission_title_offset = game_name_offset + NETGAME_NAME_LEN + 1;
+	const int mission_name_offset = mission_title_offset + MISSION_NAME_LEN + 1;
+	const int level_offset = mission_name_offset + 9;
+	const int team_name_offset = level_offset + 4 + 9 + 4 + 10;
+	const int locations_offset = team_name_offset + 2 * (CALLSIGN_LEN + 1);
+	/* Keep this expanded form visibly tied to the serialized layout. */
+	const int expected_level_offset = 7 + (MAX_PLAYERS + 4) * player_bytes +
+	                                  NETGAME_NAME_LEN + 1 + MISSION_NAME_LEN + 1 + 9;
 	const int settings_offset = level_offset + 4 + 9 + 4 + 10 +
 	                            2 * (CALLSIGN_LEN + 1) +
 	                            MAX_PLAYERS * (4 + MAX_PLAYERS * 2 + 2 + 2 + 4 + 1) +
@@ -264,9 +272,44 @@ const char *android_net_udp_game_info_preflight(
 	android_net_udp_reconnect_identity identity = android_net_udp_local_identity;
 	uint32_t received_session;
 	uint64_t received_visit;
+	int i;
 
 	if (!data || size != visit_offset + 8 + asset_bytes)
 		return "full game info size incorrect";
+	if (level_offset != expected_level_offset)
+		return "full game info internal layout incorrect";
+	for (i = 0; i < MAX_PLAYERS + 4; ++i) {
+		const unsigned char *player = data + players_offset + i * player_bytes;
+#ifdef DXX_BUILD_DESCENT_II
+		const unsigned max_connected = CONNECT_KMATRIX_WAITING;
+#else
+		const unsigned max_connected = CONNECT_END_MENU;
+#endif
+		if (!memchr(player, '\0', CALLSIGN_LEN + 1) ||
+		    player[CALLSIGN_LEN + 1] > max_connected ||
+		    player[CALLSIGN_LEN + 2] > 9 || player[CALLSIGN_LEN + 3] > 7 ||
+		    player[CALLSIGN_LEN + 4] > 7 ||
+		    !memchr(player + CALLSIGN_LEN + 5, '\0', 37))
+			return "full game info player record incorrect";
+	}
+	if (!memchr(data + game_name_offset, '\0', NETGAME_NAME_LEN + 1) ||
+	    !memchr(data + mission_title_offset, '\0', MISSION_NAME_LEN + 1) ||
+	    !memchr(data + mission_name_offset, '\0', 9) ||
+	    !memchr(data + team_name_offset, '\0', CALLSIGN_LEN + 1) ||
+	    !memchr(data + team_name_offset + CALLSIGN_LEN + 1, '\0', CALLSIGN_LEN + 1))
+		return "full game info string unterminated";
+	if (data[level_offset + 4] > NETGAME_BOUNTY || data[level_offset + 5] > 1 ||
+	    data[level_offset + 6] >= NDL || data[level_offset + 7] > NETSTAT_ENDLEVEL)
+		return "full game info mode or state incorrect";
+	for (i = 0; i < MAX_PLAYERS; ++i) {
+		const int location = GET_INTEL_INT(data + locations_offset + i * 4);
+		if (location < 0 || location >= MAX_PLAYERS)
+			return "full game info start location incorrect";
+	}
+	if (GET_INTEL_SHORT(data + settings_offset) < 1 ||
+	    data[settings_offset + 2] > 1 || data[settings_offset + 3] > 1 ||
+	    data[settings_offset + 4] > 1 || data[settings_offset + 5] > 1)
+		return "full game info transport settings incorrect";
 	/* D2 settings index 29 is GuidebotRouting: Original=0, Enhanced=1,
 	 * synchronized with guidebot_routing.h and net_udp_send_game_info */
 	if (settings_bytes == 36 && data[settings_offset + 29] > 1)

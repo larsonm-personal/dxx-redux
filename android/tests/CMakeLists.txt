@@ -28,6 +28,8 @@ if(TARGET test_upstream_compat)
                                              config-policy.json)
     add_test(NAME test_coop_pickup_rewards COMMAND test_upstream_compat --coop-pickup-rewards
                                                    coop-pickup-rewards.json)
+    add_test(NAME test_udp_security_validation COMMAND test_upstream_compat
+                                                       --udp-security-validation)
     if(DXX_TEST_GAME STREQUAL "d2")
         add_test(NAME test_fcd_audio_cache COMMAND test_upstream_compat --fcd-audio-cache)
         set_tests_properties(test_fcd_audio_cache PROPERTIES TIMEOUT 30)
@@ -587,8 +589,8 @@ if(DXX_TEST_GAME STREQUAL "d2")
         test_thief_network_policy)
 endif()
 
-# These fixtures use standard assert; retain their checks in release packaging builds
-# Keep production targets and the remaining test sources' explicit policies unchanged
+# These fixtures use standard assert; retain their checks in release packaging builds Keep
+# production targets and the remaining test sources' explicit policies unchanged
 foreach(test_target IN ITEMS test_android_gpu_policy test_android_axis_mailbox
                              test_net_udp_initial_sync_retry test_game_automate_input)
     if(MSVC)

@@ -1105,8 +1105,10 @@ int load_game_data(PHYSFS_file *LoadFile)
 	for (i = 0; i < Num_static_lights; i++) {
 		if (game_top_fileinfo_version < 29) {
 			Int3();	//shouldn't be here!!!
-		} else
+		} else {
 			dl_index_read(&Dl_indices[i], LoadFile);
+			Dl_indices[i].count = (sbyte) level_normalize_legacy_signed_byte_count(Dl_indices[i].count);
+		}
 	}
 
 	//	Indicate that no light has been subtracted from any vertices.

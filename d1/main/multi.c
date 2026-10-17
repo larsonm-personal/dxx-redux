@@ -56,6 +56,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "physics.h"
 #include "config.h"
+#include "ai.h"
 #include "hudmsg.h"
 #include "ctype.h"  // for isalpha
 #include "vers_id.h"
@@ -726,7 +727,7 @@ int objnum_remote_to_local(int remote_objnum, int owner)
 
 	if ((owner >= N_players) || (owner < -1)) {
 		Int3(); // Illegal!
-		return(remote_objnum);
+		return(-1);
 	}
 
 	if (owner == -1)
@@ -2735,7 +2736,7 @@ multi_do_remobj(const ubyte *buf, int authenticated_sender)
 
 	local_objnum = objnum_remote_to_local(objnum, obj_owner); // translate to local objnum
 
-	if (local_objnum < 0)
+	if (local_objnum < 0 || local_objnum > Highest_object_index)
 	{
 		return;
 	}
@@ -3156,7 +3157,7 @@ void multi_do_hostage_door_status(const ubyte *buf)
 	wallnum = GET_INTEL_SHORT(buf + count);     count += 2;
 	hps = GET_INTEL_INT(buf + count);           count += 4;
 
-	if ((wallnum < 0) || (wallnum > Num_walls) || (hps < 0) || (Walls[wallnum].type != WALL_BLASTABLE))
+	if ((wallnum < 0) || (wallnum >= Num_walls) || (hps < 0) || (Walls[wallnum].type != WALL_BLASTABLE))
 	{
 		Int3(); // Non-terminal, see Rob
 		return;
@@ -3334,6 +3335,269 @@ void
 multi_process_bigdata(const ubyte *buf, unsigned len)
 {
 	multi_process_bigdata_from_player(buf, len, -1);
+}
+
+static int multi_validate_command_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+{
+	const unsigned type = buf[0];
+	unsigned pnum;
+	int objnum;
+
+	(void) len;
+	if (authenticated_sender == OBSERVER_PLAYER_ID && type != MULTI_OBS_MESSAGE)
+		return 0;
+	switch (type) {
+		case MULTI_POSITION:
+		case MULTI_FIRE:
+		case MULTI_REAPPEAR:
+		case MULTI_PLAYER_EXPLODE:
+		case MULTI_PLAYER_DROP:
+		case MULTI_MESSAGE:
+		case MULTI_QUIT:
+		case MULTI_PLAY_SOUND:
+		case MULTI_CLOAK:
+		case MULTI_DECLOAK:
+		case MULTI_INVULN:
+		case MULTI_DEINVULN:
+		case MULTI_ENDLEVEL_START:
+		case MULTI_CREATE_EXPLOSION:
+		case MULTI_CREATE_POWERUP:
+		case MULTI_SCORE:
+		case MULTI_TRIGGER:
+		case MULTI_TYPING_STATE:
+		case MULTI_RANK:
+		case MULTI_DAMAGE:
+		case MULTI_REPAIR:
+		case MULTI_SHIP_STATUS:
+		case MULTI_KILL_CLIENT:
+		case MULTI_ROBOT_CLAIM:
+		case MULTI_ROBOT_POSITION:
+		case MULTI_ROBOT_EXPLODE:
+		case MULTI_ROBOT_RELEASE:
+		case MULTI_ROBOT_FIRE:
+		case MULTI_CREATE_ROBOT:
+		case MULTI_BOSS_ACTIONS:
+		case MULTI_CREATE_ROBOT_POWERUPS:
+			pnum = buf[1];
+			if (pnum >= (unsigned) N_players ||
+			    (authenticated_sender >= 0 && pnum != (unsigned) authenticated_sender))
+				return 0;
+			break;
+
+		case MULTI_OBS_MESSAGE:
+			if (buf[1] != OBSERVER_PLAYER_ID ||
+			    (authenticated_sender >= 0 && authenticated_sender != OBSERVER_PLAYER_ID))
+				return 0;
+			break;
+
+		case MULTI_SAVE_GAME:
+		case MULTI_RESTORE_GAME:
+		case MULTI_HEARTBEAT:
+		case MULTI_KILLGOALS:
+		case MULTI_POWCAP_UPDATE:
+		case MULTI_DO_BOUNTY:
+		case MULTI_GMODE_UPDATE:
+		case MULTI_RESPAWN_ROBOT:
+		case MULTI_OBS_UPDATE:
+		case MULTI_DIFFICULTY:
+		case MULTI_KILL_HOST:
+			if (authenticated_sender >= 0 && authenticated_sender != multi_who_is_master())
+				return 0;
+			break;
+	}
+
+	switch (type) {
+		case MULTI_MESSAGE:
+		case MULTI_OBS_MESSAGE:
+			if (!memchr(buf + 2, '\0', len - 2))
+				return 0;
+			break;
+
+		case MULTI_POSITION:
+		case MULTI_FIRE:
+		case MULTI_PLAY_SOUND:
+		case MULTI_CREATE_EXPLOSION:
+			objnum = Players[buf[1]].objnum;
+			if (objnum < 0 || objnum > Highest_object_index)
+				return 0;
+			break;
+
+		case MULTI_PLAYER_EXPLODE:
+		case MULTI_PLAYER_DROP:
+			objnum = Players[buf[1]].objnum;
+			if (objnum < 0 || objnum > Highest_object_index ||
+			    (Objects[objnum].type != OBJ_PLAYER && Objects[objnum].type != OBJ_GHOST) ||
+			    buf[16] > MAX_NET_CREATE_OBJECTS)
+				return 0;
+			for (int i = 0; i < buf[16]; ++i) {
+				const int remote_objnum = GET_INTEL_SHORT(buf + 17 + 2 * i);
+				if (remote_objnum < -1 || remote_objnum >= MAX_OBJECTS)
+					return 0;
+			}
+			break;
+
+		case MULTI_REAPPEAR:
+			objnum = GET_INTEL_SHORT(buf + 2);
+			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].id != buf[1])
+				return 0;
+			break;
+
+		case MULTI_REMOVE_OBJECT: {
+			const int remote_objnum = GET_INTEL_SHORT(buf + 1);
+			const int owner = (sbyte) buf[3];
+			if (remote_objnum < 1 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+				return 0;
+			objnum = objnum_remote_to_local(remote_objnum, owner);
+			if (objnum < 0 || objnum > Highest_object_index ||
+			    (Objects[objnum].type != OBJ_POWERUP && Objects[objnum].type != OBJ_HOSTAGE))
+				return 0;
+			break;
+		}
+
+		case MULTI_ROBOT_CLAIM:
+		case MULTI_ROBOT_POSITION:
+		case MULTI_ROBOT_RELEASE:
+		case MULTI_ROBOT_FIRE: {
+			const int remote_objnum = GET_INTEL_SHORT(buf + 2);
+			const int owner = (sbyte) buf[4];
+			if (remote_objnum < 0 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+				return 0;
+			objnum = objnum_remote_to_local(remote_objnum, owner);
+			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_ROBOT ||
+			    Objects[objnum].id >= N_robot_types)
+				return 0;
+			break;
+		}
+
+		case MULTI_ROBOT_EXPLODE: {
+			const int killer = GET_INTEL_SHORT(buf + 2);
+			const int killer_owner = (sbyte) buf[4];
+			const int remote_objnum = GET_INTEL_SHORT(buf + 5);
+			const int owner = (sbyte) buf[7];
+			if (killer < -1 || killer >= MAX_OBJECTS || killer_owner < -1 || killer_owner >= N_players ||
+			    remote_objnum < 0 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+				return 0;
+			objnum = objnum_remote_to_local(remote_objnum, owner);
+			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_ROBOT ||
+			    Objects[objnum].id >= N_robot_types)
+				return 0;
+			break;
+		}
+
+		case MULTI_KILL_CLIENT:
+		case MULTI_KILL_HOST: {
+			const int killer = GET_INTEL_SHORT(buf + 2);
+			const int owner = (sbyte) buf[4];
+			if (killer < -1 || killer >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+				return 0;
+			if (killer > 0) {
+				objnum = objnum_remote_to_local(killer, owner);
+				if (objnum < -1 || objnum > Highest_object_index)
+					return 0;
+			}
+			break;
+		}
+
+		case MULTI_CONTROLCEN:
+			objnum = GET_INTEL_SHORT(buf + 1);
+			if (objnum < -1 || objnum > Highest_object_index)
+				return 0;
+			break;
+
+		case MULTI_CONTROLCEN_FIRE:
+			objnum = GET_INTEL_SHORT(buf + 14);
+			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_CNTRLCEN)
+				return 0;
+			break;
+
+		case MULTI_DOOR_OPEN:
+			objnum = GET_INTEL_SHORT(buf + 1);
+			if (objnum < 0 || objnum > Highest_segment_index || buf[3] > 5)
+				return 0;
+			break;
+
+		case MULTI_CREATE_POWERUP:
+			objnum = GET_INTEL_SHORT(buf + 3);
+			if (buf[2] >= MAX_POWERUP_TYPES || objnum < 0 || objnum > Highest_segment_index)
+				return 0;
+			break;
+
+		case MULTI_TRIGGER:
+			if (buf[2] >= Num_triggers)
+				return 0;
+			break;
+
+		case MULTI_HOSTAGE_DOOR:
+			objnum = GET_INTEL_SHORT(buf + 1);
+			if (objnum < 0 || objnum >= Num_walls)
+				return 0;
+			break;
+
+		case MULTI_OBS_UPDATE:
+			if (buf[1] > 1 || buf[3] > MAX_OBSERVERS || (buf[1] && buf[2] >= buf[3]))
+				return 0;
+			break;
+
+		case MULTI_DIFFICULTY:
+			if (buf[2] >= NDL)
+				return 0;
+			break;
+
+		case MULTI_CREATE_ROBOT:
+			if (buf[2] >= Num_fuelcenters || GET_INTEL_SHORT(buf + 3) < 0 ||
+			    GET_INTEL_SHORT(buf + 3) >= MAX_OBJECTS || buf[5] >= N_robot_types)
+				return 0;
+			break;
+
+		case MULTI_BOSS_ACTIONS: {
+			const int boss_objnum = GET_INTEL_SHORT(buf + 2);
+			const unsigned action = buf[4];
+			const unsigned secondary = buf[5];
+			const int remote_objnum = GET_INTEL_SHORT(buf + 6);
+			const int segnum = GET_INTEL_SHORT(buf + 8);
+
+			if (boss_objnum < 0 || boss_objnum > Highest_object_index ||
+			    Objects[boss_objnum].type != OBJ_ROBOT || Objects[boss_objnum].id >= N_robot_types ||
+			    !Robot_info[Objects[boss_objnum].id].boss_flag ||
+			    (action != BOSS_ACTION_HUD_SHOT && (action < 1 || action > 5)) ||
+			    (action == 1 && secondary >= (unsigned) Num_boss_teleport_segs) ||
+			    (action == 3 && (secondary >= N_robot_types || remote_objnum < 0 ||
+			                     remote_objnum >= MAX_OBJECTS || segnum < 0 || segnum > Highest_segment_index)))
+				return 0;
+			break;
+		}
+	}
+
+	return 1;
+}
+
+int multi_validate_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+{
+	unsigned bytes_processed = 0;
+
+	if (!buf || !len)
+		return 0;
+
+	while (bytes_processed < len) {
+		const unsigned type = buf[bytes_processed];
+		unsigned sub_len;
+
+		if (type >= sizeof(message_length) / sizeof(message_length[0]))
+			return 0;
+		sub_len = message_length[type];
+		if (!sub_len || sub_len > len - bytes_processed)
+			return 0;
+		if (!multi_validate_command_from_player(buf + bytes_processed, sub_len, authenticated_sender))
+			return 0;
+		bytes_processed += sub_len;
+	}
+
+	return bytes_processed == len;
+}
+
+int multi_validate_bigdata(const ubyte *buf, unsigned len)
+{
+	return multi_validate_bigdata_from_player(buf, len, -1);
 }
 
 #ifdef __ANDROID__
@@ -5293,12 +5557,11 @@ void multi_send_obs_update(ubyte event, ubyte event_data) {
 	multibuf[1] = event;
 	multibuf[2] = event_data;
 	multibuf[3] = Netgame.numobservers;
+	memset(&multibuf[4], 0, 8 * MAX_OBSERVERS);
 
-	for(int i = 0; i < Netgame.max_numobservers; i++) {
+	for(int i = 0; i < Netgame.max_numobservers && i < MAX_OBSERVERS; i++) {
 		if (Netgame.observers[i].connected == 1) {
 			memcpy(&multibuf[4 + i*8], &Netgame.observers[i].callsign, 8);
-		} else {
-			memset(&multibuf[4 + i*8], 0, 8);
 		}
 	}
 
@@ -5310,15 +5573,21 @@ void multi_send_obs_update(ubyte event, ubyte event_data) {
 	}
 }
 
-void multi_do_obs_update(const ubyte *buf) {
-	if(multi_i_am_master()) { return; }
+void multi_do_obs_update(const ubyte *buf, int authenticated_sender) {
+	int observer_count = buf[3];
 
-	Netgame.numobservers = buf[3];
+	if(multi_i_am_master()) { return; }
+	if ((authenticated_sender >= 0 && authenticated_sender != multi_who_is_master()) ||
+	    observer_count > MAX_OBSERVERS || buf[1] > 1 ||
+	    (buf[1] == 0 && buf[2] >= observer_count)) return;
+
+	Netgame.numobservers = observer_count;
 	if(Netgame.max_numobservers < Netgame.numobservers) {
 		Netgame.max_numobservers = Netgame.numobservers;
 	}
-	for(int i = 0; i < Netgame.max_numobservers; i++) {
-		memcpy(&Netgame.observers[i].callsign, &buf[4+i*8], 8); 
+	for(int i = 0; i < Netgame.max_numobservers && i < MAX_OBSERVERS; i++) {
+		memcpy(&Netgame.observers[i].callsign, &buf[4+i*8], 8);
+		Netgame.observers[i].callsign[CALLSIGN_LEN] = 0;
 	}
 
 	// Someone joined
@@ -5917,7 +6186,7 @@ static void multi_process_data_scoped(const ubyte *buf, int len, int authenticat
 		case MULTI_KILL_CLIENT:
 			multi_do_kill(buf); break;
 		case MULTI_OBS_UPDATE:
-			multi_do_obs_update(buf); break;
+			multi_do_obs_update(buf, authenticated_sender); break;
 		case MULTI_DAMAGE:
 			multi_do_damage(buf); break;
 		case MULTI_REPAIR:

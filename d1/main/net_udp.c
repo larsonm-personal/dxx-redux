@@ -1241,14 +1241,30 @@ int generate_token() {
 }
 
 void drop_rx_packet(ubyte  *data, const char* reason) {
+	static fix64 window_start;
+	static unsigned logged;
+	static unsigned suppressed;
+	fix64 now = timer_query();
+	char comment[200];
+
+	if (!window_start || now < window_start || now - window_start >= F1_0) {
+		if (suppressed)
+			con_printf(CON_URGENT, "Suppressed %u repeated UDP rejection logs.\n", suppressed);
+		window_start = now;
+		logged = suppressed = 0;
+	}
+	if (logged >= 8) {
+		++suppressed;
+		return;
+	}
+	++logged;
 #ifdef __ANDROID__
 	if (data[0] == UPID_OBJECT_DATA || data[0] == UPID_SYNC)
 		REJOIN_LOG("security_reject type=%d reason=%s local=%d master=%d status=%d", data[0], reason, Player_num, multi_who_is_master(), Network_status);
 #endif
-	char comment[200];
 	snprintf(comment, 199, "Dropped %s: %s\n", msg_name(data[0]), reason); 
 	net_log_comment(comment);
-	con_printf(CON_URGENT, comment); 
+	con_printf(CON_URGENT, "%s", comment);
 }
 
 int is_same_addr(struct _sockaddr *addr1, struct _sockaddr *addr2) {
@@ -1368,17 +1384,34 @@ int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 	switch(pid) {
 		case UPID_VERSION_DENY:  		if(data_len != UPID_VERSION_DENY_SIZE      )  { rv = 0; }  break;
 		case UPID_GAME_INFO_REQ: 		if(data_len != UPID_GAME_INFO_REQ_SIZE     ) { rv = 0; }  break;
-		//case UPID_GAME_INFO_LITE_REQ: 	if(data_len != UPID_GAME_INFO_LITE_REQ_SIZE)  { rv = 0; }  break;
+		case UPID_GAME_INFO_LITE_REQ: 	if(data_len != UPID_GAME_INFO_LITE_REQ_SIZE)  { rv = 0; }  break;
 		case UPID_GAME_INFO_LITE:    	if(data_len != UPID_GAME_INFO_LITE_SIZE    )  { rv = 0; }  break;
 		case UPID_DUMP:   			 	if(data_len != UPID_DUMP_SIZE              )  { rv = 0; }  break;
 		case UPID_QUIT_JOINING: 
 		case UPID_REQUEST:   		 	if(data_len != UPID_SEQUENCE_SIZE          )  { rv = 0; }  break;
-		case UPID_OBJECT_DATA:   	 	if(data_len > UPID_MAX_SIZE         	   )  { rv = 0; }  break;
+		case UPID_OBJECT_DATA:   	 	if(data_len < UPID_OBJECT_HEADER_SIZE || data_len > UPID_MAX_SIZE) { rv = 0; } break;
 		case UPID_PING:   	 			if(data_len != UPID_PING_SIZE         	   )  { rv = 0; }  break;
 		case UPID_PONG:   	 			if(data_len != UPID_PONG_SIZE        	   )  { rv = 0; }  break;
 		case UPID_P2P_PING: 			if(data_len != UPID_P2P_PING_SIZE          )  { rv = 0; }  break;
 		case UPID_P2P_PONG: 			if(data_len != UPID_P2P_PONG_SIZE          )  { rv = 0; }  break;
+		case UPID_PROXY:                 if(data_len <= UPID_PROXY_HEADER_SIZE || data_len > UPID_MAX_SIZE) { rv = 0; } break;
 		case UPID_REATTEMPT_DIRECT: 	if(data_len != UPID_REATTEMPT_DIRECT_SIZE  )  { rv = 0; }  break;
+		case UPID_OBSQUIT:               if(data_len != UPID_OBSQUIT_SIZE) { rv = 0; } break;
+		case UPID_MDATA_ACK:             if(data_len != UPID_MDATA_ACK_SIZE) { rv = 0; } break;
+#ifndef __ANDROID__
+		case UPID_PDATA:
+			rv = data_len == (Netgame.RetroProtocol ? UPID_PDATA_U_SIZE : Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE);
+			break;
+		case UPID_ENDLEVEL_H: rv = data_len == UPID_ENDLEVEL_H_SIZE; break;
+		case UPID_ENDLEVEL_C: rv = data_len == UPID_ENDLEVEL_C_SIZE; break;
+		case UPID_MDATA_PNORM:
+		case UPID_OBSDATA:
+			rv = data_len > 6 && data_len <= 6 + UPID_MDATA_WIRE_BODY_SIZE;
+			break;
+		case UPID_MDATA_PNEEDACK:
+			rv = data_len > 10 && data_len <= UPID_MDATA_MAX_SIZE;
+			break;
+#endif
 #ifdef __ANDROID__
 		case UPID_PDATA:
 			rv = data_len == (Netgame.RetroProtocol ? UPID_PDATA_U_SIZE : Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE);
@@ -1403,9 +1436,16 @@ int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		// Special cases
 		case UPID_GAME_INFO:     		rv = 1; break; // Don't check, it varies
 		case UPID_SYNC: 	    		rv = 1; break; 
-		case UPID_ADDPLAYER:   			rv = 1; break;
+		case UPID_ADDPLAYER:   			rv = data_len == UPID_SEQUENCE_SIZE; break;
 
-		default: rv = 1; 
+#ifdef USE_TRACKER
+		case UPID_TRACKER_VERIFY:
+		case UPID_TRACKER_INCGAME:
+			rv = 1;
+			break;
+#endif
+
+		default: rv = 0;
 	}
 
 	if(! rv ) {
@@ -2139,9 +2179,18 @@ void net_udp_send_sequence_packet(UDP_sequence_packet seq, struct _sockaddr recv
 	dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&recv_addr, sizeof(struct _sockaddr));
 }
 
-void net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, struct _sockaddr sender_addr)
+int net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, struct _sockaddr sender_addr)
 {
 	int len = 0;
+	const unsigned callsign_offset = 5;
+	const unsigned connected_offset = callsign_offset + CALLSIGN_LEN + 1;
+
+	if (!data || !seq || !data[callsign_offset] ||
+	    !memchr(data + callsign_offset, '\0', CALLSIGN_LEN + 1) ||
+	    data[connected_offset + 1] > 9 || data[connected_offset + 2] > 7 ||
+	    data[connected_offset + 3] > 7 || data[connected_offset + 4] > 1 ||
+	    (data[0] == UPID_ADDPLAYER && data[connected_offset] >= MAX_PLAYERS))
+		return 0;
 	
 	seq->type = data[0];						len++;
 	seq->token = GET_INTEL_INT(data + len); len += 4;  
@@ -2174,6 +2223,7 @@ void net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, stru
 		memcpy(&seq->player.protocol.udp.addr, (struct _sockaddr *)&sender_addr, sizeof(struct _sockaddr));
 	}
 
+	return 1;
 }
 
 void net_udp_init()
@@ -2393,8 +2443,9 @@ net_udp_new_player(UDP_sequence_packet *their)
 
 	pnum = their->player.connected;
 
-	Assert(pnum >= 0);
-	Assert(pnum < Netgame.max_numplayers);
+	if (pnum < 0 || pnum >= MAX_PLAYERS || pnum >= Netgame.max_numplayers ||
+	    !memchr(their->player.callsign, '\0', sizeof(their->player.callsign)))
+		return;
 	
 	if (Newdemo_state == ND_STATE_RECORDING) {
 		int new_player;
@@ -3113,10 +3164,57 @@ int net_udp_verify_objects(int remote, int local)
 	return(1);
 }
 
+static int net_udp_validate_sync_object(const object_rw *wire)
+{
+	object_rw decoded;
+
+	memcpy(&decoded, wire, sizeof(decoded));
+
+#ifdef WORDS_BIGENDIAN
+	object_rw_swap(&decoded, 1);
+#endif
+	if (decoded.type >= MAX_OBJECT_TYPES || decoded.type == OBJ_NONE ||
+	    decoded.segnum < -1 || decoded.segnum > Highest_segment_index ||
+	    decoded.attached_obj < -1 || decoded.attached_obj >= MAX_OBJECTS)
+		return 0;
+	if (decoded.movement_type != MT_NONE && decoded.movement_type != MT_PHYSICS &&
+	    decoded.movement_type != MT_SPINNING)
+		return 0;
+	if (decoded.control_type > CT_CNTRLCEN || decoded.render_type > RT_WEAPON_VCLIP)
+		return 0;
+
+	switch (decoded.type) {
+		case OBJ_PLAYER:
+		case OBJ_GHOST:
+		case OBJ_COOP:
+			if (decoded.id >= MAX_PLAYERS)
+				return 0;
+			break;
+		case OBJ_ROBOT:
+			if (decoded.id >= N_robot_types)
+				return 0;
+			break;
+		case OBJ_WEAPON:
+			if (decoded.id >= N_weapon_types)
+				return 0;
+			break;
+		case OBJ_POWERUP:
+			if (decoded.id >= N_powerup_types)
+				return 0;
+			break;
+	}
+	if ((decoded.render_type == RT_POLYOBJ || decoded.render_type == RT_MORPH) &&
+	    (decoded.rtype.pobj_info.model_num < 0 || decoded.rtype.pobj_info.model_num >= N_polygon_models))
+		return 0;
+	if ((decoded.render_type == RT_FIREBALL || decoded.render_type == RT_HOSTAGE ||
+	     decoded.render_type == RT_POWERUP || decoded.render_type == RT_WEAPON_VCLIP) &&
+	    (decoded.rtype.vclip_info.vclip_num < 0 || decoded.rtype.vclip_info.vclip_num >= Num_vclips))
+		return 0;
+	return 1;
+}
+
 void net_udp_read_object_packet( ubyte *data, int data_len )
 {
-	multi_received_objects = 1; 
-
 	// Object from another net player we need to sync with
 	object *obj;
 	sbyte obj_owner;
@@ -3132,6 +3230,36 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 	crash_breadcrumb_v("read_obj_pkt: nobj=%d len=%d", nobj, data_len);
 	mpdiag_pkt_dump("RX", data, data_len);
 #endif
+	/* Preflight the complete datagram before clear markers or object writes. */
+	if (nobj < 1 || nobj > (data_len - loc) / 9)
+		return;
+	for (i = 0; i < nobj; ++i) {
+		if (data_len - loc < 9)
+			return;
+		objnum = GET_INTEL_INT(data + loc);
+		obj_owner = data[loc + 4];
+		remote_objnum = GET_INTEL_INT(data + loc + 5);
+		loc += 9;
+		if (obj_owner < -1 || obj_owner >= MAX_PLAYERS)
+			return;
+		if (objnum == -1) {
+			if (obj_owner < 0)
+				return;
+		} else if (objnum == -2) {
+			if (remote_objnum < 0 || remote_objnum > MAX_OBJECTS)
+				return;
+		} else {
+			if (objnum < 0 || objnum >= MAX_OBJECTS || remote_objnum < 0 || remote_objnum >= MAX_OBJECTS ||
+			    data_len - loc < (int) sizeof(object_rw) ||
+			    !net_udp_validate_sync_object((const object_rw *)(data + loc)))
+				return;
+			loc += sizeof(object_rw);
+		}
+	}
+	if (loc != data_len)
+		return;
+	loc = 9;
+	multi_received_objects = 1;
 
 	for (i = 0; i < nobj; i++)
 	{
@@ -3784,6 +3912,73 @@ int net_udp_check_game_info_request(ubyte *data, int lite)
 	return 1;
 }
 
+typedef struct udp_info_reply_rate_entry {
+	struct _sockaddr address;
+	fix64 window_start;
+	unsigned full_count;
+	unsigned lite_count;
+	unsigned used;
+} udp_info_reply_rate_entry;
+
+static int net_udp_same_source_ip(const struct _sockaddr *a, const struct _sockaddr *b)
+{
+#ifdef IPv6
+	return !memcmp(&a->sin6_addr, &b->sin6_addr, sizeof(a->sin6_addr));
+#else
+	return a->sin_addr.s_addr == b->sin_addr.s_addr;
+#endif
+}
+
+static int net_udp_info_reply_allowed(const struct _sockaddr *address, int lite)
+{
+	static udp_info_reply_rate_entry entries[32];
+	static fix64 global_window_start;
+	static unsigned global_full_count;
+	static unsigned global_lite_count;
+	fix64 now = timer_query();
+	int slot = -1;
+	int oldest = 0;
+	int i;
+
+	if (!global_window_start || now < global_window_start || now - global_window_start >= F1_0) {
+		global_window_start = now;
+		global_full_count = global_lite_count = 0;
+	}
+	if ((lite && global_lite_count >= 32) || (!lite && global_full_count >= 20))
+		return 0;
+	for (i = 0; i < (int) (sizeof(entries) / sizeof(entries[0])); ++i) {
+		if (entries[i].used && net_udp_same_source_ip(address, &entries[i].address)) {
+			slot = i;
+			break;
+		}
+		if (!entries[i].used) {
+			slot = i;
+			break;
+		}
+		if (entries[i].window_start < entries[oldest].window_start)
+			oldest = i;
+	}
+	if (slot < 0)
+		slot = oldest;
+	if (!entries[slot].used || !net_udp_same_source_ip(address, &entries[slot].address) ||
+	    now < entries[slot].window_start || now - entries[slot].window_start >= F1_0) {
+		entries[slot].address = *address;
+		entries[slot].window_start = now;
+		entries[slot].full_count = entries[slot].lite_count = 0;
+		entries[slot].used = 1;
+	}
+	if ((lite && entries[slot].lite_count >= 8) || (!lite && entries[slot].full_count >= 5))
+		return 0;
+	if (lite) {
+		++entries[slot].lite_count;
+		++global_lite_count;
+	} else {
+		++entries[slot].full_count;
+		++global_full_count;
+	}
+	return 1;
+}
+
 extern fix ThisLevelTime;
 
 void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte send_to_observers, uint player_token)
@@ -4107,6 +4302,21 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		        multi_who_is_master(), is_observer(), coop_world_visit_current());
 		if (reason) {
 			drop_rx_packet(data, reason);
+			return 0;
+		}
+	} else {
+		const int game_name_offset = 11;
+		const int mission_title_offset = game_name_offset + NETGAME_NAME_LEN + 1;
+		const int mission_name_offset = mission_title_offset + MISSION_NAME_LEN + 1;
+		const int level_offset = mission_name_offset + 9;
+		if (!memchr(data + game_name_offset, '\0', NETGAME_NAME_LEN + 1) ||
+		    !memchr(data + mission_title_offset, '\0', MISSION_NAME_LEN + 1) ||
+		    !memchr(data + mission_name_offset, '\0', 9) ||
+		    data[level_offset + 4] > NETGAME_BOUNTY || data[level_offset + 5] > 1 ||
+		    data[level_offset + 6] >= NDL || data[level_offset + 7] > NETSTAT_ENDLEVEL ||
+		    data[level_offset + 8] > MAX_PLAYERS || !data[level_offset + 9] ||
+		    data[level_offset + 9] > MAX_PLAYERS) {
+			drop_rx_packet(data, "invalid lite game info");
 			return 0;
 		}
 	}
@@ -4512,6 +4722,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 {
 	UDP_sequence_packet their;
 	memset(&their, 0, sizeof(UDP_sequence_packet));
+	if (!data || length < 1) return;
 
 #ifdef __ANDROID__
 	rejoin_diag_packet("dispatch", data, length, is_proxy);
@@ -4568,33 +4779,8 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		}
 	}
 
-    if (multi_i_am_master()) {
-        switch (data[0])
-        {
-            case UPID_PDATA:
-#ifdef __ANDROID__
-				if (!net_udp_pdata_world_allowed(data, length)) break;
-#endif
-            case UPID_MDATA_PNORM:
-                forward_to_observers(data, length, 0); 
-                break; 
-
-            case UPID_OBSDATA:
-                forward_to_observers_nodelay(data, length, 0); 
-                break; 
-
-            case UPID_OBSQUIT:
-                net_udp_process_obs_quit(data, length, sender_addr);
-                break;
-
-            case UPID_MDATA_PNEEDACK:
-                forward_to_observers(data, length, 1); 
-                break; 
-
-            default: 
-                break;			
-        }
-    }
+	if (multi_i_am_master() && data[0] == UPID_OBSQUIT)
+		net_udp_process_obs_quit(data, length, sender_addr);
 
 	int result;
 #ifdef __ANDROID__
@@ -4611,7 +4797,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			result = net_udp_check_game_info_request(data, 0);
 			if (result == -1)
 				net_udp_send_version_deny(sender_addr);
-			else if (result == 1) {
+			else if (result == 1 && net_udp_info_reply_allowed(&sender_addr, 0)) {
 				net_udp_send_game_info(sender_addr, UPID_GAME_INFO, 0, 0);
 			} else
 				MPDIAG("GAME_INFO_REQ check returned %d (bad request ID?)", result);
@@ -4625,7 +4811,8 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		}
 
 		case UPID_GAME_INFO_LITE_REQ:		
-			if (net_udp_check_game_info_request(data, 1) == 1)
+			if (net_udp_check_game_info_request(data, 1) == 1 &&
+			    net_udp_info_reply_allowed(&sender_addr, 1))
 				net_udp_send_game_info(sender_addr, UPID_GAME_INFO_LITE, 0, 0);
 			break;
 		
@@ -4638,12 +4825,12 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			break;
 
 		case UPID_ADDPLAYER:
-			net_udp_receive_sequence_packet(data, &their, sender_addr);
+			if (!net_udp_receive_sequence_packet(data, &their, sender_addr)) break;
 			net_udp_new_player(&their);
 			break;
 		
 		case UPID_REQUEST:
-			net_udp_receive_sequence_packet(data, &their, sender_addr);
+			if (!net_udp_receive_sequence_packet(data, &their, sender_addr)) break;
 #ifdef __ANDROID__
 			authenticated_player_num =
 			    android_net_udp_auth_validate_request(
@@ -4798,7 +4985,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 #endif
 
 		case UPID_QUIT_JOINING:
-			net_udp_receive_sequence_packet(data, &their, sender_addr);
+			if (!net_udp_receive_sequence_packet(data, &their, sender_addr)) break;
 			if (Network_status == NETSTAT_STARTING)
 				net_udp_remove_player( &their );
 			else if ((Network_send_objects)
@@ -6312,6 +6499,15 @@ int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sende
 
 	team_kills[0] = Netgame.team_kills[0];
 	team_kills[1] = Netgame.team_kills[1];
+
+	if (!Network_rejoined && !is_observer()) {
+		if (NumNetPlayerPositions < 1 || NumNetPlayerPositions > MAX_PLAYERS)
+			return 0;
+		for (i = 0; i < NumNetPlayerPositions; ++i)
+			if (Netgame.locations[i] < 0 || Netgame.locations[i] >= NumNetPlayerPositions ||
+			    Players[i].objnum < 0 || Players[i].objnum > Highest_object_index)
+				return 0;
+	}
 	
 	if(!is_observer()) {
 		Players[Player_num].connected = CONNECT_PLAYING;
@@ -7314,6 +7510,11 @@ static void net_udp_profile_process_packet(ubyte *packet, struct _sockaddr sende
 void net_udp_listen()
 {
 	int size;
+	int processed_packets = 0;
+	unsigned processed_bytes = 0;
+	const int max_packets_per_frame = 128;
+	const int max_packets_per_socket = 64;
+	const unsigned max_bytes_per_frame = 256 * 1024;
 	#ifdef __ANDROID__
 	ubyte packet[UPID_MAX_SIZE + UPID_JOIN_DATA_HEADER];
 #else
@@ -7329,10 +7530,17 @@ void net_udp_listen()
 	static fix64 last_rx_heartbeat = 0;
 #endif
 
-	if (UDP_Socket[0] != -1)
+	if (UDP_Socket[0] != -1 && processed_packets < max_packets_per_frame &&
+	    processed_bytes < max_bytes_per_frame)
 	{
+		int socket_packets = 0;
 		size = udp_receive_packet( 0, packet, sizeof(packet), &sender_addr );
-		while ( size > 0 )	{
+		while (size > 0 && processed_packets < max_packets_per_frame &&
+		       socket_packets < max_packets_per_socket &&
+		       processed_bytes + (unsigned) size <= max_bytes_per_frame) {
+			++processed_packets;
+			++socket_packets;
+			processed_bytes += (unsigned) size;
 #ifdef __ANDROID__
 			android_profile_network_packet(size);
 			switch (packet[0]) {
@@ -7346,14 +7554,24 @@ void net_udp_listen()
 #else
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 #endif
+			if (processed_packets >= max_packets_per_frame || socket_packets >= max_packets_per_socket ||
+			    processed_bytes >= max_bytes_per_frame)
+				break;
 			size = udp_receive_packet( 0, packet, sizeof(packet), &sender_addr );
 		}
 	}
 
-	if (UDP_Socket[1] != -1)
+	if (UDP_Socket[1] != -1 && processed_packets < max_packets_per_frame &&
+	    processed_bytes < max_bytes_per_frame)
 	{
+		int socket_packets = 0;
 		size = udp_receive_packet( 1, packet, sizeof(packet), &sender_addr );
-		while ( size > 0 )	{
+		while (size > 0 && processed_packets < max_packets_per_frame &&
+		       socket_packets < max_packets_per_socket &&
+		       processed_bytes + (unsigned) size <= max_bytes_per_frame) {
+			++processed_packets;
+			++socket_packets;
+			processed_bytes += (unsigned) size;
 #ifdef __ANDROID__
 			android_profile_network_packet(size);
 			switch (packet[0]) {
@@ -7367,14 +7585,24 @@ void net_udp_listen()
 #else
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 #endif
+			if (processed_packets >= max_packets_per_frame || socket_packets >= max_packets_per_socket ||
+			    processed_bytes >= max_bytes_per_frame)
+				break;
 			size = udp_receive_packet( 1, packet, sizeof(packet), &sender_addr );
 		}
 	}
 #ifdef USE_TRACKER
-	if( UDP_Socket[2] != -1 )
+	if (UDP_Socket[2] != -1 && processed_packets < max_packets_per_frame &&
+	    processed_bytes < max_bytes_per_frame)
 	{
+		int socket_packets = 0;
 		size = udp_receive_packet( 2, packet, sizeof(packet), &sender_addr );
-		while ( size > 0 )	{
+		while (size > 0 && processed_packets < max_packets_per_frame &&
+		       socket_packets < max_packets_per_socket &&
+		       processed_bytes + (unsigned) size <= max_bytes_per_frame) {
+			++processed_packets;
+			++socket_packets;
+			processed_bytes += (unsigned) size;
 #ifdef __ANDROID__
 			android_profile_network_packet(size);
 #endif
@@ -7383,6 +7611,9 @@ void net_udp_listen()
 #else
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 #endif
+			if (processed_packets >= max_packets_per_frame || socket_packets >= max_packets_per_socket ||
+			    processed_bytes >= max_bytes_per_frame)
+				break;
 			size = udp_receive_packet( 2, packet, sizeof(packet), &sender_addr );
 		}
 	}
@@ -7818,20 +8049,22 @@ void net_udp_noloss_got_ack(ubyte *data, int data_len, struct _sockaddr sender_a
 	uint32_t pkt_num = 0;
 	ubyte sender_pnum = 0, dest_pnum = 0;
 
-	if (data_len != 7)
+	if (data_len != UPID_MDATA_ACK_SIZE)
 		return;
 
 																				len++;
 	sender_pnum = data[len];													len++;
 	dest_pnum = data[len];														len++;
 	pkt_num = GET_INTEL_INT(&data[len]);										len += 4;
+	if (dest_pnum >= MAX_PLAYERS)
+		return;
 	if (Netgame.max_numobservers > 0 && sender_pnum == OBSERVER_PLAYER_ID) {
 		for (i = 0; i < UDP_MDATA_STOR_QUEUE_SIZE; i++)
 		{
-			if ((pkt_num == UDP_mdata_obs_queue[i].pkt_num) && (dest_pnum == UDP_mdata_obs_queue[i].Player_num))
+			if (UDP_mdata_obs_queue[i].used && (pkt_num == UDP_mdata_obs_queue[i].pkt_num) && (dest_pnum == UDP_mdata_obs_queue[i].Player_num))
 			{
 				int obsnum = -1;
-				for(int j = 0; j < Netgame.max_numobservers; j++) {
+				for(int j = 0; j < Netgame.max_numobservers && j < MAX_OBSERVERS; j++) {
 					if(! memcmp(&Netgame.observers[j].protocol.udp.addr, &sender_addr, sizeof(struct _sockaddr))) {
 						obsnum = j;
 						break;
@@ -7847,9 +8080,11 @@ void net_udp_noloss_got_ack(ubyte *data, int data_len, struct _sockaddr sender_a
 			}
 		}
 	} else {
+		if (sender_pnum >= MAX_PLAYERS || !is_player_ip(sender_addr, sender_pnum))
+			return;
 		for (i = 0; i < UDP_MDATA_STOR_QUEUE_SIZE; i++)
 		{
-			if ((pkt_num == UDP_mdata_queue[i].pkt_num) && (dest_pnum == UDP_mdata_queue[i].Player_num))
+			if (UDP_mdata_queue[i].used && (pkt_num == UDP_mdata_queue[i].pkt_num) && (dest_pnum == UDP_mdata_queue[i].Player_num))
 			{
 				con_printf(CON_VERBOSE, "P#%i: Got MData ACK for pkt_num %i from pnum %i for pnum %i\n",Player_num, pkt_num, sender_pnum, dest_pnum);
 				UDP_mdata_queue[i].player_ack[sender_pnum] = 1;
@@ -8257,49 +8492,44 @@ void net_udp_send_mdata(int needack, fix64 time)
 void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_addr, int needack)
 {
 	int pnum = data[5], dataoffset = (needack?10:6);
-	int authenticated_sender = player_num_for_address(sender_addr);
+	int authenticated_sender = -1;
+	unsigned command_len;
 
 	// Check if packet might be bogus
-	if ((pnum < 0) || (data_len > UPID_MDATA_MAX_SIZE))
+	if (pnum >= MAX_PLAYERS || data_len > UPID_MDATA_MAX_SIZE)
 		return;
 
-	// Check if it came from valid IP
-	if (Netgame.RetroProtocol) {
-		// For Retro Protocol, all we care about is that the sender's IP is from any player.
-		if (!is_any_player_ip(sender_addr)) {
-			if (!multi_i_am_master() || Netgame.max_numobservers == 0 || pnum != OBSERVER_PLAYER_ID || !is_observer_ip(sender_addr)) {
-				drop_rx_packet(data, "not received from any player ip"); 
-				return;
-			}
+	/* Resolve the logical origin before reliability state or command parsing */
+	if (multi_i_am_master()) {
+		if (pnum == OBSERVER_PLAYER_ID && Netgame.max_numobservers > 0 && is_observer_ip(sender_addr))
+			authenticated_sender = OBSERVER_PLAYER_ID;
+		else if (is_player_ip(sender_addr, pnum))
+			authenticated_sender = pnum;
+		else {
+			drop_rx_packet(data, "claimed player does not match sender ip");
+			return;
 		}
 	} else {
-		if (multi_i_am_master())
-		{
-			if (! is_player_ip(sender_addr, pnum))
-			{
-				if (Netgame.max_numobservers == 0 || pnum != OBSERVER_PLAYER_ID || ! is_observer_ip(sender_addr))
-				{
-					drop_rx_packet(data, "not received from player ip"); 
-					return;
-				}
-			}
+		if (!is_master_ip(sender_addr)) {
+			drop_rx_packet(data, "not received from master ip");
+			return;
 		}
-		else
-		{
-			if (! is_master_ip(sender_addr))
-			{
-				drop_rx_packet(data, "not received from master ip"); 
-				return;
-			}
-		}
+		authenticated_sender = pnum;
 	}
 
 #ifdef __ANDROID__
 	coop_gameplay_stamp stamp;
 	if (data_len <= dataoffset + COOP_GAMEPLAY_STAMP_BYTES ||
 	    !coop_gameplay_stamp_read(&stamp, data + data_len - COOP_GAMEPLAY_STAMP_BYTES, COOP_GAMEPLAY_STAMP_BYTES)) return;
+	command_len = data_len - dataoffset - COOP_GAMEPLAY_STAMP_BYTES;
+#else
+	command_len = data_len - dataoffset;
 #endif
-
+	/* A host must never amplify a malformed command batch to its peers. */
+	if (!multi_validate_bigdata_from_player(data + dataoffset, command_len, authenticated_sender)) {
+		drop_rx_packet(data, "invalid multiplayer command framing");
+		return;
+	}
 	// Add needack packet and check for possible redundancy
 	if (needack)
 	{
@@ -8307,6 +8537,8 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 		if (!net_udp_noloss_validate_mdata(GET_INTEL_INT(&data[6]), pnum, sender_addr))
 			return;
 	}
+	if (multi_i_am_master())
+		forward_to_observers(data, data_len, needack);
 
 	if(Netgame.RetroProtocol && ! needack) {
 	} else {
@@ -8365,6 +8597,8 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 
 void net_udp_process_obs_data (ubyte *data, int data_len, struct _sockaddr sender_addr)
 {
+	unsigned command_len;
+
 	if (!Netgame.RetroProtocol) {
         return;
     }
@@ -8372,8 +8606,29 @@ void net_udp_process_obs_data (ubyte *data, int data_len, struct _sockaddr sende
 	int pnum = data[5], dataoffset = 6;
 
 	// Check if packet might be bogus
-	if ((pnum < 0) || (data_len > UPID_MDATA_MAX_SIZE))
+	if (pnum != OBSERVER_PLAYER_ID || data_len > UPID_MDATA_MAX_SIZE)
 		return;
+
+#ifdef __ANDROID__
+	if (data_len <= dataoffset + COOP_GAMEPLAY_STAMP_BYTES)
+		return;
+	command_len = data_len - dataoffset - COOP_GAMEPLAY_STAMP_BYTES;
+#else
+	command_len = data_len - dataoffset;
+#endif
+	if (!multi_validate_bigdata_from_player(data + dataoffset, command_len, OBSERVER_PLAYER_ID)) {
+		drop_rx_packet(data, "invalid observer command framing");
+		return;
+	}
+
+	if (multi_i_am_master()) {
+		if (!is_observer_ip(sender_addr)) {
+			drop_rx_packet(data, "observer data source is not an observer");
+			return;
+		}
+		forward_to_observers_nodelay(data, data_len, 0);
+		return;
+	}
 
     // If we are a non-master player, this is a bad packet
     if (!is_observer()) {
@@ -8382,8 +8637,8 @@ void net_udp_process_obs_data (ubyte *data, int data_len, struct _sockaddr sende
     }
 
 	// Check if it came from valid IP
-    if (!is_player_ip(sender_addr, multi_who_is_master()) && !is_observer_ip(sender_addr)) {
-        drop_rx_packet(data, "not received from master or observer ip"); 
+    if (!is_master_ip(sender_addr)) {
+		drop_rx_packet(data, "not received from master ip");
         return;
     }
 
@@ -8845,6 +9100,14 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 		return; 
 	}
 
+	if (multi_i_am_master()) {
+		if (!is_player_ip(sender_addr, pd.Player_num)) {
+			drop_rx_packet(data, "claimed player does not match sender ip");
+			return;
+		}
+		forward_to_observers(data, data_len, 0);
+	}
+
 	// Can't do this check -- proxies
 	//if(! is_player_ip(sender_addr, pd.Player_num)) {
 	//
@@ -9168,6 +9431,8 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 		net_log_comment(log_comment);
 		return;
 	}
+	if (!is_player_ip(sender_addr, from_player))
+		return;
 	Netgame.players[from_player].rx_loss = rx_loss;
 
 	// Prevent clients from timing out the host during level sync or other
@@ -9228,15 +9493,11 @@ void net_udp_ping_frame(fix64 time)
 void net_udp_process_pong(ubyte *data, int data_len, struct _sockaddr sender_addr)
 {
 	fix64 client_pong_time = 0;
-	int i = 0;
-
-	if (memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[data[1]].protocol.udp.addr, sizeof(struct _sockaddr)))
-		return;
 
 	if (data[1] >= MAX_PLAYERS || data[1] == Player_num)
 		return;
 
-	if (i == MAX_PLAYERS)
+	if (!is_player_ip(sender_addr, data[1]))
 		return;
 
 	memcpy(&client_pong_time, &data[2], 8);

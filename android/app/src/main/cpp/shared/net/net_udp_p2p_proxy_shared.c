@@ -16,8 +16,8 @@
 #endif
 #include "net_udp_p2p_proxy_shared.h"
 
-extern void drop_rx_packet(ubyte *data, char *reason);
-extern int is_any_player_ip(struct _sockaddr addr);
+extern void drop_rx_packet(ubyte *data, const char *reason);
+extern int is_player_ip(struct _sockaddr addr, int pnum);
 extern void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int length,
                                    int is_proxy);
 extern ushort port_from_sockaddr(struct _sockaddr addr);
@@ -91,6 +91,8 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 
 	if (from_player >= MAX_PLAYERS || from_player == Player_num)
 		return;
+	if (!is_player_ip(sender_addr, from_player))
+		return;
 
 	Netgame.players[from_player].ping = f2i(fixmul(timer_query() - sent_time, i2f(1000)));
 
@@ -151,6 +153,8 @@ void reattemptDirect(int pnum)
 
 void net_udp_send_to_player(ubyte *data, int len, int to_player)
 {
+	if (to_player < 0 || to_player >= MAX_PLAYERS)
+		return;
 	if (connection_statuses[to_player].type == CONNT_DIRECT)
 		net_udp_send_to_player_direct(data, len, to_player);
 	else if (connection_statuses[to_player].type == CONNT_PROXY)
@@ -162,6 +166,8 @@ void net_udp_send_to_player(ubyte *data, int len, int to_player)
 
 void net_udp_send_to_player_direct(ubyte *data, int len, int to_player)
 {
+	if (to_player < 0 || to_player >= MAX_PLAYERS)
+		return;
 	net_udp_android_send_raw(data, len, &Netgame.players[to_player].protocol.udp.addr);
 }
 
@@ -170,10 +176,15 @@ void net_udp_send_to_player_proxy(ubyte *data, int data_len, int to_player, int 
 	ubyte *buf;
 	int len = 0;
 
-	if (connection_statuses[through_player].type != CONNT_DIRECT)
+	if (!data || data_len <= 0 || data_len > UPID_MAX_SIZE ||
+	    to_player < 0 || to_player >= MAX_PLAYERS ||
+	    through_player < 0 || through_player >= MAX_PLAYERS ||
+	    connection_statuses[through_player].type != CONNT_DIRECT)
 		return;
 
 	buf = malloc(data_len + UPID_PROXY_HEADER_SIZE);
+	if (!buf)
+		return;
 
 	buf[len] = UPID_PROXY;
 	len++;
@@ -192,29 +203,75 @@ void net_udp_send_to_player_proxy(ubyte *data, int data_len, int to_player, int 
 
 void net_udp_process_proxy(ubyte *data, struct _sockaddr sender_addr, int data_len)
 {
-	int from_player = data[6];
+	int from_player;
+	int relay_player = -1;
 	int to_player;
 
-	if (from_player < 0 || from_player > MAX_PLAYERS - 1) {
-		drop_rx_packet(data, "from invalid player");
-		return;
-	}
-
-	if (!is_any_player_ip(sender_addr)) {
-		drop_rx_packet(data, "from non-player ip");
+	if (!data || data_len <= UPID_PROXY_HEADER_SIZE) {
+		if (data)
+			drop_rx_packet(data, "proxy payload missing");
 		return;
 	}
 
 	to_player = data[5];
+	from_player = data[6];
+	if (from_player >= MAX_PLAYERS || to_player >= MAX_PLAYERS ||
+	    from_player == to_player || from_player == Player_num ||
+	    Players[from_player].connected == CONNECT_DISCONNECTED) {
+		drop_rx_packet(data, "from invalid player");
+		return;
+	}
+
+	for (int i = 0; i < MAX_PLAYERS; ++i) {
+		if (is_player_ip(sender_addr, i)) {
+			relay_player = i;
+			break;
+		}
+	}
+	if (relay_player < 0) {
+		drop_rx_packet(data, "from non-player ip");
+		return;
+	}
 
 	if (to_player == Player_num) {
 		ubyte *contents = data + UPID_PROXY_HEADER_SIZE;
+		int master = multi_who_is_master();
+		struct _sockaddr logical_sender;
 
-		net_udp_process_packet(contents, sender_addr,
+		if (relay_player != from_player && relay_player != master &&
+		    connection_statuses[from_player].proxy_through != relay_player) {
+			drop_rx_packet(data, "proxy relay does not match claimed player");
+			return;
+		}
+		if (contents[0] == UPID_PROXY) {
+			drop_rx_packet(data, "nested proxy packet");
+			return;
+		}
+		if (!multi_i_am_master() && relay_player != master) {
+			drop_rx_packet(data, "client proxy packet not relayed by host");
+			return;
+		}
+		if ((contents[0] == UPID_MDATA_PNORM ||
+		     contents[0] == UPID_MDATA_PNEEDACK ||
+		     contents[0] == UPID_OBSDATA ||
+		     contents[0] == UPID_P2P_PING ||
+		     contents[0] == UPID_P2P_PONG) &&
+		    (data_len - UPID_PROXY_HEADER_SIZE <= 5 || contents[5] != from_player)) {
+			drop_rx_packet(data, "proxy inner origin mismatch");
+			return;
+		}
+
+		/* The host validates the origin route; clients validate the authorized host relay */
+		logical_sender = multi_i_am_master() ? Netgame.players[from_player].protocol.udp.addr : sender_addr;
+		net_udp_process_packet(contents, logical_sender,
 		                       data_len - UPID_PROXY_HEADER_SIZE, 1);
 	} else {
 		fix64 last_attempt;
 
+		if (relay_player != from_player) {
+			drop_rx_packet(data, "proxy forwarder does not match claimed player");
+			return;
+		}
 		if (connection_statuses[to_player].type != CONNT_DIRECT) {
 			drop_rx_packet(data, "proxy to non-direct player");
 			return;

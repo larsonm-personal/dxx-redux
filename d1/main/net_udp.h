@@ -97,6 +97,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #endif
 #define UPID_SYNC				 10 // Packet from host containing full netgame info to sync players up.
 #define UPID_OBJECT_DATA			 11 // Packet from host containing object buffer.
+#define UPID_OBJECT_HEADER_SIZE                  9
 #define UPID_PING				 12 // Packet from host containing his GameTime and the Ping list. Client returns this time to host as UPID_PONG and adapts the ping list.
 #define UPID_PING_SIZE				 37
 #define UPID_PONG				 13 // Packet answer from client to UPID_PING. Contains the time the initial ping packet was sent.
@@ -124,6 +125,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_MDATA_PNORM			 17 // Packet containing multi buffer from a player. Priority 0,1 - no ACK needed.
 #define UPID_MDATA_PNEEDACK			 18 // Packet containing multi buffer from a player. Priority 2 - ACK needed. Also contains pkt_num
 #define UPID_MDATA_ACK				 19 // ACK packet for UPID_MDATA_P1.
+#define UPID_MDATA_ACK_SIZE                       7
 #define UPID_MAX_SIZE			       4096 // Max size for a packet; must fit Android reconnect-auth game info
 #if UPID_GAME_INFO_SIZE > UPID_MAX_SIZE
 #error UPID_MAX_SIZE must fit UPID_GAME_INFO_SIZE
