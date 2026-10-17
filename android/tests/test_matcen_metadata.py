@@ -14,29 +14,27 @@ spec.loader.exec_module(m)
 def fixture():
     record = {"ordinal": 0, "segment": -1, "station": 9, "robot_flags": [5, 0], "hit_points": 12, "interval": 34}
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "capture_status": "complete",
         "admission": "loaded",
-        "generated_count": 1,
-        "disk_count": 1,
         "declared_disk_count": 1,
-        "authored_segments": [{"segment": 3, "generated_ordinal": 0, "serialized_matcen": 7, "serialized_station": 9}],
         "disk_records": [record],
+        "robot_models": [
+            {"type": 0, "model": 1, "status": "valid_model"},
+            {"type": 2, "model": 3, "status": "valid_model"},
+        ],
         "triggers": [{"index": 2, "links": [{"segment": 3}, {"segment": 3}, {"segment": 5}]}],
-        "runtime_bindings": [
+        "bindings": [
             {
                 "segment": 3,
                 "generated_ordinal": 0,
+                "serialized_matcen": 7,
+                "serialized_station": 9,
                 "effective_ordinal": 0,
                 "segment_station": 2,
                 "binding_status": "disk_bound",
                 "station_status": "matching_station",
-                "station": {"index": 2, "segment": 3, "type": 4},
-                "eligible_robots": [
-                    {"type": 0, "model": 1, "status": "valid_model"},
-                    {"type": 2, "model": 3, "status": "valid_model"},
-                ],
-                "effective_record": {**record, "station": 2},
+                "record_overrides": {"station": 2},
             }
         ],
     }
@@ -45,7 +43,7 @@ def fixture():
 class MatcenMetadataTests(unittest.TestCase):
     def test_same_capture_and_redundant_backlink_normalization(self):
         a, b = fixture(), fixture()
-        b["runtime_bindings"][0]["effective_record"]["segment"] = 3
+        b["bindings"][0]["record_overrides"]["segment"] = 3
         self.assertTrue(m.compare_capture(a, b)["defined_bindings_match"])
 
     def test_changed_defined_identities_and_robot_data_rejected(self):
@@ -55,22 +53,39 @@ class MatcenMetadataTests(unittest.TestCase):
             ("segment", 4),
             ("generated_ordinal", 1),
             ("binding_status", "logical_disk_unbound"),
-            ("eligible_robots", []),
         ):
             with self.subTest(field=field):
                 b = fixture()
-                b["runtime_bindings"][0][field] = value
+                b["bindings"][0][field] = value
                 with self.assertRaises(m.MatcenMismatch):
                     m.compare_capture(fixture(), b)
         for field, value in (("robot_flags", [6, 0]), ("hit_points", 0), ("interval", 0)):
             b = fixture()
-            b["runtime_bindings"][0]["effective_record"][field] = value
+            b["bindings"][0]["record_overrides"][field] = value
             with self.assertRaises(m.MatcenMismatch):
                 m.compare_capture(fixture(), b)
         b = fixture()
-        b["runtime_bindings"][0]["station"]["segment"] = 9
+        b["bindings"][0]["station_overrides"] = {"segment": 9}
         with self.assertRaises(m.MatcenMismatch):
             m.compare_capture(fixture(), b)
+
+    def test_shared_model_table_order_is_not_binding_order(self):
+        a, b = fixture(), fixture()
+        b["robot_models"].reverse()
+        self.assertTrue(m.compare_capture(a, b)["defined_bindings_match"])
+
+    def test_changed_or_missing_shared_robot_model_rejected(self):
+        for models in ([], [{"type": 0, "model": 99, "status": "valid_model"}]):
+            b = fixture()
+            b["robot_models"] = models
+            with self.assertRaises(m.MatcenMismatch):
+                m.compare_capture(fixture(), b)
+
+    def test_v1_metadata_is_not_accepted(self):
+        b = fixture()
+        b["schema_version"] = 1
+        with self.assertRaises(m.MatcenMismatch):
+            m.compare_capture(b, b)
 
     def test_ordered_trigger_target_and_duplicate_loss_rejected(self):
         for mutate in (
@@ -87,7 +102,7 @@ class MatcenMetadataTests(unittest.TestCase):
         for mutate in (
             lambda b: b.update(admission="rejected_or_missing"),
             lambda b: b.update(capture_status="incomplete"),
-            lambda b: b.update(runtime_bindings=[]),
+            lambda b: b.update(bindings=[]),
             lambda b: b.update(disk_records=[]),
             lambda b: b.update(schema_version=True),
         ):
@@ -99,20 +114,31 @@ class MatcenMetadataTests(unittest.TestCase):
     def test_unbound_globals_are_not_golden_robot_masks(self):
         a, b = fixture(), fixture()
         for value in (a, b):
-            value["runtime_bindings"][0]["binding_status"] = "logical_disk_unbound"
-        b["runtime_bindings"][0]["effective_record"]["robot_flags"] = [123, 0]
+            value["bindings"][0]["binding_status"] = "logical_disk_unbound"
+        b["bindings"][0]["record_overrides"]["robot_flags"] = [123, 0]
         result = m.compare_capture(a, b)
         self.assertEqual(len(result["unbound_requires_review"]), 1)
 
+    def test_unsafe_station_remains_review_required(self):
+        a, b = fixture(), fixture()
+        for value in (a, b):
+            value["bindings"][0]["station_status"] = "wrong_station_type"
+            value["bindings"][0]["station_overrides"] = {"type": 1}
+        b["robot_models"][0]["model"] = 99
+        self.assertEqual(1, len(m.compare_capture(a, b)["unbound_requires_review"]))
+
+    def test_unrelated_shared_models_do_not_change_defined_binding(self):
+        a, b = fixture(), fixture()
+        b["robot_models"].append({"type": 9, "model": 99, "status": "valid_model"})
+        self.assertTrue(m.compare_capture(a, b)["defined_bindings_match"])
+
     def test_contradictory_join_and_duplicate_identity_rejected(self):
         b = fixture()
-        b["runtime_bindings"][0]["effective_record"]["station"] = 9
+        b["bindings"][0]["station_overrides"] = {"index": 9}
         with self.assertRaises(m.MatcenMismatch):
             m.compare_capture(fixture(), b)
         b = fixture()
-        b["generated_count"] = 2
-        b["runtime_bindings"] *= 2
-        b["authored_segments"] *= 2
+        b["bindings"] *= 2
         with self.assertRaises(m.MatcenMismatch):
             m.compare_capture(b, b)
 

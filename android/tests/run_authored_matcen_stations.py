@@ -2,7 +2,7 @@
 """Compare one explicit native authored station probe with a frozen historical trace.
 
 No mission discovery, baseline generation, baseline updates, or full-gameplay claim.
-Metadata can be a raw complete capture or an existing mission metadata document.
+Metadata is a compact v2 capture or an existing mission metadata document.
 It proves captured robotmaker joins/model status, not safety of arbitrary level data.
 Exit 0: all cases executed and matched; 2: matched but needs skip/cap/empty review;
 1: invalid evidence, startup blocked, native failure, or trace mismatch.
@@ -18,7 +18,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "helpers"))
-from compare_matcen_metadata import compare_capture, MatcenMismatch
+from compare_matcen_metadata import compare_capture, MatcenMismatch, resolve_binding, validate_capture
 
 
 class EvidenceError(ValueError):
@@ -36,8 +36,73 @@ def mask_types(words):
     return [i * 32 + bit for i, word in enumerate(words) for bit in range(32) if word & (1 << bit)]
 
 
+def is_matcen_trigger(trigger, game):
+    if "source_flags" in trigger:
+        return bool(trigger["source_flags"] & 64)
+    return bool(trigger["flags"] & 64) if game == "d1" else trigger["type"] == 2
+
+
+def compact_capture(raw, game):
+    """One-way projection of an internal native load snapshot, never a metadata reader."""
+    require(raw["schema_version"] == 1, "unexpected native capture schema")
+    result = {
+        key: raw[key]
+        for key in (
+            "admission",
+            "capture_status",
+            "declared_disk_count",
+            "engine_limits",
+            "runtime_counts",
+            "disk_records",
+        )
+    }
+    result.update(schema_version=2, bindings=[], robot_models=[])
+    models = {}
+    for authored, runtime in zip(raw["authored_segments"], raw["runtime_bindings"]):
+        binding = {
+            **authored,
+            **{
+                key: value
+                for key, value in runtime.items()
+                if key not in ("effective_record", "station", "eligible_robots")
+            },
+        }
+        if "effective_record" in runtime:
+            ordinal = runtime["effective_ordinal"]
+            disk = raw["disk_records"]
+            base = disk[ordinal] if 0 <= ordinal < len(disk) else {}
+            overrides = {key: value for key, value in runtime["effective_record"].items() if base.get(key) != value}
+            if overrides:
+                binding["record_overrides"] = overrides
+            if "station" in runtime:
+                station = {"index": runtime["effective_record"]["station"], "segment": runtime["segment"], "type": 4}
+                overrides = {key: value for key, value in runtime["station"].items() if station.get(key) != value}
+                if overrides:
+                    binding["station_overrides"] = overrides
+        for robot in runtime.get("eligible_robots", []):
+            require(robot["type"] not in models or models[robot["type"]] == robot, "inconsistent robot model evidence")
+            models[robot["type"]] = robot
+        result["bindings"].append(binding)
+    result["robot_models"] = [models[key] for key in sorted(models)]
+    result["triggers"] = [t for t in raw["triggers"] if is_matcen_trigger(t, game)]
+    return result
+
+
 def preflight(metadata, game):
     """Fail closed on missing evidence before invoking a StartNewGame process."""
+    compact = metadata.get("schema_version") == 2
+    if compact:
+        validate_capture(metadata)
+        metadata = {
+            **metadata,
+            "schema_version": 1,
+            "scope": "fresh_level_load",
+            "trigger_representation": "decoded_disk_before_runtime_linking",
+            "generated_count": len(metadata["bindings"]),
+            "disk_count": len(metadata["disk_records"]),
+            "authored_segments": metadata["bindings"],
+            "runtime_bindings": [resolve_binding(metadata, row) for row in metadata["bindings"]],
+        }
     require(metadata["schema_version"] == 1 and metadata["capture_status"] == "complete", "incomplete metadata")
     require(
         metadata["admission"] == "loaded" and metadata["scope"] == "fresh_level_load", "metadata was not a loaded level"
@@ -89,19 +154,24 @@ def preflight(metadata, game):
             ),
             "unsafe robot model",
         )
+    ids = [t["index"] for t in metadata["triggers"]]
     require(
-        [t["index"] for t in metadata["triggers"]] == list(range(len(metadata["triggers"]))),
+        all(type(index) is int and index >= 0 for index in ids)
+        and (ids == sorted(set(ids)) if compact else ids == list(range(len(ids)))),
         "trigger identity coverage",
     )
     return {b["segment"]: b for b in bindings}
 
 
 def validate_report(report, metadata, game, mission, level, dispatch=True):
+    validate_capture(metadata)
     preflight(metadata, game)
     actual = report["baseline"]
     bindings = preflight(actual, game)
     try:
-        comparison = compare_capture(metadata, actual)
+        comparison = compare_capture(
+            metadata, compact_capture(actual, game) if actual["schema_version"] == 1 else actual
+        )
     except MatcenMismatch as exc:
         raise EvidenceError("load snapshot differs from frozen metadata") from exc
     for key, expected in dict(
@@ -118,7 +188,7 @@ def validate_report(report, metadata, game, mission, level, dispatch=True):
         passed=True,
     ).items():
         require(report[key] == expected, "incorrect report " + key)
-    triggers = [t for t in actual["triggers"] if (t["flags"] & 64 if game == "d1" else t["type"] == 2)]
+    triggers = [t for t in actual["triggers"] if is_matcen_trigger(t, game)]
     cases = report["cases"]
     require([c["trigger"] for c in cases] == [t["index"] for t in triggers], "missing/reordered trigger cases")
     review = not cases or bool(comparison["unbound_requires_review"])
@@ -363,6 +433,7 @@ def run(args):
     expected = json.loads(args.expected.read_text())
     inputs = json.loads(args.inputs.read_text())
     # Complete both checks before any native process can reach StartNewGame.
+    validate_capture(metadata)
     preflight(metadata, args.game)
     validate_report(expand_expected(expected, metadata), metadata, args.game, args.mission, args.level)
     output = args.output_dir.resolve()

@@ -59,6 +59,7 @@ extern "C" {
 #include "mission_intent_classification.hpp"
 
 #include "matcen_regression.hpp"
+#include "metadata_json.hpp"
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
 #include "level_metadata_replacements.hpp"
@@ -194,7 +195,7 @@ nlohmann::ordered_json serialize_benchmark_timing(
 
 static std::string dump_metadata_json(const nlohmann::ordered_json &value)
 {
-	return value.dump(2, ' ', false, nlohmann::ordered_json::error_handler_t::replace);
+	return metadata_json_dump(value);
 }
 
 static void trace_dump_init(const char *stage)
@@ -1072,7 +1073,8 @@ static nlohmann::ordered_json serialize_current_level(
 	result["energy_center_group_distance"] = metadata ? metadata->energy_center_group_distance : 0;
 	result["energy_center_nearest_raw_distance"] = metadata ? metadata->energy_center_nearest_raw_distance : 0;
 	result["matcen_count"] = metadata ? metadata->matcen_count : 0;
-	result["matcen_regression"] = matcen_regression_serialize<nlohmann::ordered_json>();
+	if (auto matcen = matcen_regression_metadata<nlohmann::ordered_json>(); !matcen.is_null())
+		result["matcen_regression"] = std::move(matcen);
 	result["matcen_raw_count"] = metadata ? metadata->matcen_raw_count : 0;
 	result["matcen_segment_count"] = metadata ? metadata->matcen_segment_count : 0;
 	result["mine_volume"] = metadata ? metadata->mine_volume : 0.0;
@@ -1144,7 +1146,8 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["energy_center_group_distance"] = 0;
 	result["energy_center_nearest_raw_distance"] = 0;
 	result["matcen_count"] = 0;
-	result["matcen_regression"] = matcen_regression_serialize<nlohmann::ordered_json>(false);
+	if (auto matcen = matcen_regression_metadata<nlohmann::ordered_json>(false); !matcen.is_null())
+		result["matcen_regression"] = std::move(matcen);
 	result["matcen_raw_count"] = 0;
 	result["matcen_segment_count"] = 0;
 	result["mine_volume"] = 0.0;

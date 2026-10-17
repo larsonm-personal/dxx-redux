@@ -2548,7 +2548,9 @@ open class LevelMetadataAnalysisService : Service() {
         val trimmed = text.trim()
         val formatted =
             try {
-                if (trimmed.startsWith("[")) JSONArray(trimmed).toString(2) else JSONObject(trimmed).toString(2)
+                MissionMetadataProjection.formatMatcenRows(
+                    if (trimmed.startsWith("[")) JSONArray(trimmed).toString(2) else JSONObject(trimmed).toString(2),
+                )
             } catch (e: Throwable) {
                 trimmed
             }

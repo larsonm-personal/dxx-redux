@@ -113,7 +113,15 @@ object MissionMetadataProjection {
                     "route_status",
                 )
             names.forEach { name -> level[name]?.let { put(name, it) } }
-            level["matcen_regression"]?.let { put("matcen_regression", validateMatcenRegression(it)) }
+            level["matcen_regression"]?.let {
+                val block = validateMatcenRegression(it)
+                if (block.string("admission") != "loaded" || block.string("capture_status") != "complete" ||
+                    block.int("declared_disk_count") != 0 ||
+                    listOf("bindings", "disk_records", "triggers", "robot_models").any { name -> block.array(name).isNotEmpty() }
+                ) {
+                    put("matcen_regression", block)
+                }
+            }
             put("route_required_key_mask", level.requiredInt("route_required_key_mask"))
             put("route_completing_key_mask_set", level.requiredInt("route_completing_key_mask_set"))
             put("route_steps", level["route_steps"] ?: JsonArray(emptyList()))
@@ -131,7 +139,7 @@ object MissionMetadataProjection {
             if (status != "ok") put("status", status)
         }
 
-    // Versioned regression data is additive; older metadata may omit it.
+    // The block is optional, but captured data must use the current native schema.
     private fun validateMatcenRegression(value: JsonElement): JsonObject {
         val block = requireNotNull(value as? JsonObject) { "matcen_regression must be an object" }
 
@@ -141,20 +149,70 @@ object MissionMetadataProjection {
                 "matcen_regression.$name must be an integer"
             }
         }
-        require(requiredInteger("schema_version") == 1) { "Unsupported matcen_regression.schema_version" }
+        require(requiredInteger("schema_version") == 2) { "Unsupported matcen_regression.schema_version" }
         val status = block["capture_status"] as? JsonPrimitive
         require(status?.isString == true && status.content in setOf("complete", "incomplete")) {
             "matcen_regression.capture_status must be complete or incomplete"
         }
-        for (name in listOf("generated_count", "disk_count")) {
-            require(requiredInteger(name) >= 0) { "matcen_regression.$name must be nonnegative" }
+        val admission = block["admission"] as? JsonPrimitive
+        require(admission?.isString == true && admission.content in setOf("loaded", "rejected_or_missing")) {
+            "matcen_regression.admission must be loaded or rejected_or_missing"
         }
-        for (name in listOf("authored_segments", "disk_records", "triggers", "runtime_bindings")) {
+        requiredInteger("declared_disk_count")
+        for (name in listOf("engine_limits", "runtime_counts")) {
+            require(block[name] is JsonObject) { "matcen_regression.$name must be an object" }
+        }
+        for (name in listOf("bindings", "disk_records", "triggers", "robot_models")) {
             val entries = requireNotNull(block[name] as? JsonArray) { "matcen_regression.$name must be an array" }
             require(entries.all { it is JsonObject }) { "matcen_regression.$name entries must be objects" }
         }
         return block
     }
+
+    // Keep the caller's existing pretty printing outside this block byte-for-byte.
+    // Each collection entry is a semantic row; nested masks, links and overrides stay inline.
+    fun formatMatcenRows(prettyText: String): String {
+        val startPattern = Regex("""(?m)^([ ]*)"matcen_regression": \{""")
+        val output = StringBuilder()
+        var offset = 0
+        for (match in startPattern.findAll(prettyText)) {
+            val indent = match.groupValues[1]
+            val start = match.range.last
+            val end = prettyText.indexOf("\n$indent}", start)
+            require(end >= 0) { "Unclosed pretty-printed matcen_regression block" }
+            val close = end + indent.length + 2
+            val block = Json.parseToJsonElement(prettyText.substring(start, close)).jsonObject
+            output.append(prettyText, offset, start).append("{\n")
+            block.entries.forEachIndexed { index, (name, value) ->
+                output.append(indent).append("  ").append(JsonPrimitive(name)).append(": ")
+                if (value is JsonArray && value.isNotEmpty()) {
+                    output.append("[\n")
+                    value.forEachIndexed { rowIndex, row ->
+                        output.append(indent).append("    ").append(inlineJson(row))
+                        if (rowIndex < value.lastIndex) output.append(',')
+                        output.append('\n')
+                    }
+                    output.append(indent).append("  ]")
+                } else {
+                    output.append(inlineJson(value))
+                }
+                if (index < block.size - 1) output.append(',')
+                output.append('\n')
+            }
+            output.append(indent).append('}')
+            offset = close
+        }
+        return output.append(prettyText, offset, prettyText.length).toString()
+    }
+
+    private fun inlineJson(value: JsonElement): String =
+        when (value) {
+            is JsonObject -> value.entries.joinToString(", ", "{", "}") { (name, child) ->
+                "${JsonPrimitive(name)}: ${inlineJson(child)}"
+            }
+            is JsonArray -> value.joinToString(", ", "[", "]", transform = ::inlineJson)
+            else -> value.toString()
+        }
 
     private fun JsonObject.string(
         name: String,
