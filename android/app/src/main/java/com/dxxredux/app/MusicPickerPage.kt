@@ -1897,7 +1897,13 @@ internal suspend fun importAudioFiles(
                     } else if (isAudioFile(fileName)) {
                         if (copyToStorage) {
                             val dest = File(importDir, fileName)
-                            LauncherFileCopy.copyUriToFile(ctx, uri, dest, fileName) { progress ->
+                            LauncherFileCopy.copyUriToFile(
+                                ctx,
+                                uri,
+                                dest,
+                                fileName,
+                                maxBytes = ExtractionLimits.MAX_ENTRY_BYTES,
+                            ) { progress ->
                                 onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                             }
                         } else {
@@ -2077,6 +2083,7 @@ private fun extractZipAudio(
                                 out,
                                 entry.size.takeIf { it > 0L } ?: 0L,
                                 safeName,
+                                maxBytes = ExtractionLimits.MAX_ENTRY_BYTES,
                             ) { progress ->
                                 onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                             }
@@ -2103,7 +2110,13 @@ private fun extract7zAudio(
     // SevenZFile requires a seekable file; copy content URI to temp
     val tmpFile = File(destDir, ".tmp_7z_import")
     try {
-        LauncherFileCopy.copyUriToFile(ctx, uri, tmpFile, "Copying archive") { progress ->
+        LauncherFileCopy.copyUriToFile(
+            ctx,
+            uri,
+            tmpFile,
+            "Copying archive",
+            maxBytes = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
+        ) { progress ->
             onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
         }
         SevenZFile.builder().setFile(tmpFile).get().use { szf ->

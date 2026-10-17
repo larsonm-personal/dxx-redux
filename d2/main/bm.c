@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "rle.h"
 #include "xmodel.h"
 #include "dxa_metadata_patch.h"
+#include "d2_ham_validation.h"
 
 ubyte Sounds[MAX_SOUNDS];
 ubyte AltSounds[MAX_SOUNDS];
@@ -268,6 +269,83 @@ void bm_read_all(PHYSFS_file * fp)
 extern int Num_bitmap_files;
 int extra_bitmap_num = 0;
 
+static d2_ham_validation_limits bm_validation_limits(void)
+{
+	d2_ham_validation_limits limits = {
+		MAX_TEXTURES, MAX_SOUNDS, VCLIP_MAXNUM, MAX_EFFECTS, MAX_WALL_ANIMS,
+		MAX_ROBOT_TYPES, MAX_ROBOT_JOINTS, MAX_WEAPON_TYPES, MAX_POWERUP_TYPES,
+		MAX_POLYGON_MODELS, MAX_GAUGE_BMS, MAX_OBJ_BITMAPS, N_COCKPIT_BITMAPS,
+		MAX_REACTORS, MAX_BITMAP_FILES, MAX_SUBMODELS
+	};
+	return limits;
+}
+
+static int bm_read_validation_bytes(PHYSFS_file *fp, ubyte **data, size_t *size)
+{
+	PHYSFS_sint64 length, position;
+	ubyte *bytes;
+	if (!fp || !data || !size) return 0;
+	*data = NULL;
+	*size = 0;
+	length = PHYSFS_fileLength(fp);
+	position = PHYSFS_tell(fp);
+	if (length <= 0 || length > 64 * 1024 * 1024 || position < 0 ||
+	    !PHYSFS_seek(fp, 0))
+		return 0;
+	bytes = d_malloc((size_t)length);
+	if (!bytes) {
+		PHYSFS_seek(fp, position);
+		return 0;
+	}
+	if (PHYSFS_readBytes(fp, bytes, length) != length || !PHYSFS_seek(fp, position)) {
+		d_free(bytes);
+		return 0;
+	}
+	*data = bytes;
+	*size = (size_t)length;
+	return 1;
+}
+
+int bm_validate_main_ham(PHYSFS_file *fp)
+{
+	d2_ham_validation_limits limits = bm_validation_limits();
+	ubyte *data;
+	size_t size;
+	int valid;
+	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
+	valid = d2_ham_validate_main(data, size, &limits);
+	d_free(data);
+	return valid;
+}
+
+static int bm_validate_extra_ham(PHYSFS_file *fp, int type)
+{
+	d2_ham_validation_limits limits = bm_validation_limits();
+	ubyte *data;
+	size_t size;
+	int valid;
+	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
+	valid = d2_ham_validate_extra(data, size, type, &limits,
+	                              N_D2_WEAPON_TYPES, N_D2_ROBOT_TYPES,
+	                              N_D2_ROBOT_JOINTS, N_D2_POLYGON_MODELS,
+	                              N_D2_OBJBITMAPS, N_D2_OBJBITMAPPTRS);
+	d_free(data);
+	return valid;
+}
+
+static int bm_validate_hxm(PHYSFS_file *fp)
+{
+	d2_ham_validation_limits limits = bm_validation_limits();
+	ubyte *data;
+	size_t size;
+	int valid;
+	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
+	valid = d2_ham_validate_hxm(data, size, &limits,
+	                            N_robot_types, N_robot_joints, N_polygon_models);
+	d_free(data);
+	return valid;
+}
+
 void bm_free_extra_objbitmaps()
 {
 	int i;
@@ -300,7 +378,12 @@ void bm_read_extra_robots(const char *fname,int type)
 	fp = PHYSFSX_openReadBuffered(fname);
 	if (!fp)
 	{
-		Error("Failed to open HAM file \"%s\"", fname);
+		con_printf(CON_URGENT, "Failed to open HAM file \"%s\"\n", fname);
+		return;
+	}
+	if (!bm_validate_extra_ham(fp, type)) {
+		con_printf(CON_URGENT, "Rejected malformed extra HAM file \"%s\"\n", fname);
+		PHYSFS_close(fp);
 		return;
 	}
 
@@ -313,8 +396,10 @@ void bm_read_extra_robots(const char *fname,int type)
 		int sig;
 
 		sig = PHYSFSX_readInt(fp);
-		if (sig != MAKE_SIG('X','H','A','M'))
+		if (sig != MAKE_SIG('X','H','A','M')) {
+			PHYSFS_close(fp);
 			return;
+		}
 		version = PHYSFSX_readInt(fp);
 	}
 	else
@@ -328,7 +413,7 @@ void bm_read_extra_robots(const char *fname,int type)
 
 	t = PHYSFSX_readInt(fp);
 	N_weapon_types = N_D2_WEAPON_TYPES+t;
-	if (N_weapon_types >= MAX_WEAPON_TYPES)
+	if (N_weapon_types > MAX_WEAPON_TYPES)
 		Error("Too many weapons (%d) in <%s>.  Max is %d.",t,fname,MAX_WEAPON_TYPES-N_D2_WEAPON_TYPES);
 	weapon_info_read_n(&Weapon_info[N_D2_WEAPON_TYPES], t, fp, 3);
 
@@ -336,19 +421,19 @@ void bm_read_extra_robots(const char *fname,int type)
 
 	t = PHYSFSX_readInt(fp);
 	N_robot_types = N_D2_ROBOT_TYPES+t;
-	if (N_robot_types >= MAX_ROBOT_TYPES)
+	if (N_robot_types > MAX_ROBOT_TYPES)
 		Error("Too many robots (%d) in <%s>.  Max is %d.",t,fname,MAX_ROBOT_TYPES-N_D2_ROBOT_TYPES);
 	robot_info_read_n(&Robot_info[N_D2_ROBOT_TYPES], t, fp);
 
 	t = PHYSFSX_readInt(fp);
 	N_robot_joints = N_D2_ROBOT_JOINTS+t;
-	if (N_robot_joints >= MAX_ROBOT_JOINTS)
+	if (N_robot_joints > MAX_ROBOT_JOINTS)
 		Error("Too many robot joints (%d) in <%s>.  Max is %d.",t,fname,MAX_ROBOT_JOINTS-N_D2_ROBOT_JOINTS);
 	jointpos_read_n(&Robot_joints[N_D2_ROBOT_JOINTS], t, fp);
 
 	t = PHYSFSX_readInt(fp);
 	N_polygon_models = N_D2_POLYGON_MODELS+t;
-	if (N_polygon_models >= MAX_POLYGON_MODELS)
+	if (N_polygon_models > MAX_POLYGON_MODELS)
 		Error("Too many polygon models (%d) in <%s>.  Max is %d.",t,fname,MAX_POLYGON_MODELS-N_D2_POLYGON_MODELS);
 	polymodel_read_n(&Polygon_models[N_D2_POLYGON_MODELS], t, fp);
 
@@ -361,12 +446,12 @@ void bm_read_extra_robots(const char *fname,int type)
 		Dead_modelnums[i] = PHYSFSX_readInt(fp);
 
 	t = PHYSFSX_readInt(fp);
-	if (N_D2_OBJBITMAPS+t >= MAX_OBJ_BITMAPS)
+	if (N_D2_OBJBITMAPS+t > MAX_OBJ_BITMAPS)
 		Error("Too many object bitmaps (%d) in <%s>.  Max is %d.",t,fname,MAX_OBJ_BITMAPS-N_D2_OBJBITMAPS);
 	bitmap_index_read_n(&ObjBitmaps[N_D2_OBJBITMAPS], t, fp);
 
 	t = PHYSFSX_readInt(fp);
-	if (N_D2_OBJBITMAPPTRS+t >= MAX_OBJ_BITMAPS)
+	if (N_D2_OBJBITMAPPTRS+t > MAX_OBJ_BITMAPS)
 		Error("Too many object bitmap pointers (%d) in <%s>.  Max is %d.",t,fname,MAX_OBJ_BITMAPS-N_D2_OBJBITMAPPTRS);
 	for (i = N_D2_OBJBITMAPPTRS; i < (N_D2_OBJBITMAPPTRS + t); i++)
 		ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
@@ -389,31 +474,44 @@ void load_robot_replacements(char *level_name)
 
 	if (!fp)		//no robot replacement file
 		return;
+	if (!bm_validate_hxm(fp)) {
+		con_printf(CON_URGENT, "Rejected malformed robot replacement file \"%s\"\n", ifile_name);
+		PHYSFS_close(fp);
+		return;
+	}
 
 #ifdef __ANDROID__
 	android_sound_trace_asset_open("hxm", ifile_name);
 #endif
 	t = PHYSFSX_readInt(fp);			//read id "HXM!"
-	if (t!= 0x21584d48)
-		Error("ID of HXM! file incorrect");
+	if (t!= 0x21584d48) {
+		PHYSFS_close(fp);
+		return;
+	}
 
 	t = PHYSFSX_readInt(fp);			//read version
-	if (t<1)
-		Error("HXM! version too old (%d)",t);
+	if (t != 1) {
+		PHYSFS_close(fp);
+		return;
+	}
 
 	t = PHYSFSX_readInt(fp);			//read number of robots
 	for (j=0;j<t;j++) {
 		i = PHYSFSX_readInt(fp);		//read robot number
-		if (i<0 || i>=N_robot_types)
-			Error("Robots number (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_robot_types-1);
+		if (i<0 || i>=N_robot_types) {
+			PHYSFS_close(fp);
+			return;
+		}
 		robot_info_read_n(&Robot_info[i], 1, fp);
 	}
 
 	t = PHYSFSX_readInt(fp);			//read number of joints
 	for (j=0;j<t;j++) {
 		i = PHYSFSX_readInt(fp);		//read joint number
-		if (i<0 || i>=N_robot_joints)
-			Error("Robots joint (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_robot_joints-1);
+		if (i<0 || i>=N_robot_joints) {
+			PHYSFS_close(fp);
+			return;
+		}
 		jointpos_read_n(&Robot_joints[i], 1, fp);
 	}
 
@@ -421,8 +519,10 @@ void load_robot_replacements(char *level_name)
 	for (j=0;j<t;j++)
 	{
 		i = PHYSFSX_readInt(fp);		//read model number
-		if (i<0 || i>=N_polygon_models)
-			Error("Polygon model (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_polygon_models-1);
+		if (i<0 || i>=N_polygon_models) {
+			PHYSFS_close(fp);
+			return;
+		}
 
 		free_model(&Polygon_models[i]);
 		polymodel_read(&Polygon_models[i], fp);
@@ -435,16 +535,20 @@ void load_robot_replacements(char *level_name)
 	t = PHYSFSX_readInt(fp);			//read number of objbitmaps
 	for (j=0;j<t;j++) {
 		i = PHYSFSX_readInt(fp);		//read objbitmap number
-		if (i<0 || i>=MAX_OBJ_BITMAPS)
-			Error("Object bitmap number (%d) out of range in (%s).  Range = [0..%d].",i,level_name,MAX_OBJ_BITMAPS-1);
+		if (i<0 || i>=MAX_OBJ_BITMAPS) {
+			PHYSFS_close(fp);
+			return;
+		}
 		bitmap_index_read(&ObjBitmaps[i], fp);
 	}
 
 	t = PHYSFSX_readInt(fp);			//read number of objbitmapptrs
 	for (j=0;j<t;j++) {
 		i = PHYSFSX_readInt(fp);		//read objbitmapptr number
-		if (i<0 || i>=MAX_OBJ_BITMAPS)
-			Error("Object bitmap pointer (%d) out of range in (%s).  Range = [0..%d].",i,level_name,MAX_OBJ_BITMAPS-1);
+		if (i<0 || i>=MAX_OBJ_BITMAPS) {
+			PHYSFS_close(fp);
+			return;
+		}
 		ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
 	}
 

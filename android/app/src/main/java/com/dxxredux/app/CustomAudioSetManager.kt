@@ -191,6 +191,7 @@ class CustomAudioSetManager(
                             android.net.Uri.parse(uri),
                             staged,
                             filename,
+                            maxBytes = ExtractionLimits.MAX_ENTRY_BYTES,
                         ) { progress ->
                             onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                         }

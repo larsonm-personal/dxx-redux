@@ -22,11 +22,90 @@ class DxaTextureScannerTest {
         assertNotNull(DxaTextureScanner.validateStructure(sequenceOf(depth65)))
         assertNotNull(DxaTextureScanner.validateStructure(sequenceOf("safe/../texture.png")))
         assertNotNull(
-            DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(65_537).map { "f$it.txt" }),
+            DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(4_097).map { "f$it.txt" }),
         )
         assertNotNull(
-            DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(49_153).map { "f$it.png" }),
+            DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(4_097).map { "f$it.png" }),
         )
+        assertNotNull(
+            DxaTextureScanner.validateStructure(
+                (0 until 300).asSequence().map { index -> "f${index}_${"a".repeat(3_600)}.txt" },
+            ),
+        )
+    }
+
+    @Test
+    fun admissionBoundsSourceEntryTotalAndExpansionRatio() {
+        fun entry(
+            name: String,
+            expandedSize: Long,
+            compressedSize: Long,
+        ) = DxaTextureScanner.EntryMetadata(name, false, expandedSize, compressedSize)
+
+        assertNull(
+            DxaTextureScanner.validateAdmission(
+                sourceBytes = 1,
+                entries = sequenceOf(entry("exact-ratio.png", 1_000, 1)),
+            ),
+        )
+        assertNotNull(
+            DxaTextureScanner.validateAdmission(
+                sourceBytes = ExtractionLimits.MAX_DXA_SOURCE_BYTES + 1,
+                entries = emptySequence(),
+            ),
+        )
+        assertNotNull(
+            DxaTextureScanner.validateAdmission(
+                sourceBytes = ExtractionLimits.MAX_DXA_SOURCE_BYTES,
+                entries =
+                    sequenceOf(
+                        entry(
+                            "too-large.png",
+                            ExtractionLimits.MAX_ENTRY_BYTES + 1,
+                            ExtractionLimits.MAX_ENTRY_BYTES + 1,
+                        ),
+                    ),
+            ),
+        )
+        assertNotNull(
+            DxaTextureScanner.validateAdmission(
+                sourceBytes = ExtractionLimits.MAX_DXA_SOURCE_BYTES,
+                entries =
+                    (0 until 5).asSequence().map { index ->
+                        entry("large-$index.png", ExtractionLimits.MAX_ENTRY_BYTES, ExtractionLimits.MAX_ENTRY_BYTES)
+                    },
+            ),
+        )
+        assertNotNull(
+            DxaTextureScanner.validateAdmission(
+                sourceBytes = 1,
+                entries = sequenceOf(entry("bomb.png", 1_001, 1)),
+            ),
+        )
+        assertNotNull(
+            DxaTextureScanner.validateAdmission(
+                sourceBytes = 1,
+                entries = sequenceOf(entry("unknown.png", -1, -1)),
+            ),
+        )
+    }
+
+    @Test
+    fun scanRejectsHighExpansionRatioBeforeTextureInspection() {
+        val zipFile = File.createTempFile("dxa-scan-ratio", ".dxa")
+        zipFile.deleteOnExit()
+
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("bomb.png"))
+            zip.write(ByteArray(2 * 1024 * 1024))
+            zip.closeEntry()
+        }
+
+        val result = DxaTextureScanner.scan(zipFile)
+
+        assertNotNull(result)
+        assertFalse(result!!.canEnable)
+        assertTrue(result.rejectedReason!!.contains("expansion ratio"))
     }
 
     @Test

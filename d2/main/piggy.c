@@ -970,6 +970,11 @@ int read_hamfile()
 		Must_write_hamfile = 1;
 		return 0;
 	}
+	if (!bm_validate_main_ham(ham_fp)) {
+		con_printf(CON_URGENT, "Rejected malformed HAM definitions\n");
+		PHYSFS_close(ham_fp);
+		return 0;
+	}
 
 #ifdef __ANDROID__
 	android_sound_trace_asset_open("ham", shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED);
@@ -978,8 +983,10 @@ int read_hamfile()
 	//make sure ham is valid type file & is up-to-date
 	ham_id = PHYSFSX_readInt(ham_fp);
 	Piggy_hamfile_version = PHYSFSX_readInt(ham_fp);
-	if (ham_id != HAMFILE_ID)
-		Error("Cannot open ham file %s or %s\n", DEFAULT_HAMFILE_REGISTERED, DEFAULT_HAMFILE_SHAREWARE);
+	if (ham_id != HAMFILE_ID) {
+		PHYSFS_close(ham_fp);
+		return 0;
+	}
 #if 0
 	if (ham_id != HAMFILE_ID || Piggy_hamfile_version != HAMFILE_VERSION) {
 		Must_write_hamfile = 1;

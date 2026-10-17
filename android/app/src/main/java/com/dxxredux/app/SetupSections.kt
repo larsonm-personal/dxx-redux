@@ -811,7 +811,21 @@ internal fun ModDetailsDialog(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                         modifier = Modifier.height(32.dp),
                     ) {
-                        Text(if (documents.size == 1) "View readme" else "View docs", fontSize = 12.sp)
+                        val label =
+                            when {
+                                details.documentsTruncated -> {
+                                    "View docs (${documents.size} of ${details.documentCount})"
+                                }
+
+                                documents.size == 1 -> {
+                                    "View readme"
+                                }
+
+                                else -> {
+                                    "View docs"
+                                }
+                            }
+                        Text(label, fontSize = 12.sp)
                     }
                 }
             }

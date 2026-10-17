@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "d1_shareware_model.h"
 #include "d1_in_d2/d1_pig_validation.h"
 
 #define CHECK(condition)                                                            \
@@ -18,6 +19,33 @@ static void put_word(uint8_t *data, size_t offset, uint16_t value)
 	data[offset + 1] = (uint8_t) (value >> 8);
 }
 
+static int test_pof_admission_composition(void)
+{
+	uint8_t pof[112] = { 0 };
+	d1_pof_source source;
+
+	memcpy(pof, "PSPO", 4);
+	pof[4] = 6;
+	memcpy(pof + 6, "OHDR", 4);
+	put_word(pof, 10, 32);
+	put_word(pof, 14, 1);
+	memcpy(pof + 46, "SOBJ", 4);
+	put_word(pof, 50, 48);
+	pof[56] = pof[57] = 0xff;
+	memcpy(pof + 102, "IDTA", 4);
+	put_word(pof, 106, 2);
+	CHECK(d1_pof_read(pof, sizeof(pof), &source) == NULL);
+	CHECK(d1_pig_validate_model_stream(source.instructions, source.instruction_size,
+	                                   (size_t) source.offsets[0]));
+	pof[110] = 99;
+	CHECK(d1_pof_read(pof, sizeof(pof), &source) == NULL);
+	CHECK(!d1_pig_validate_model_stream(source.instructions, source.instruction_size,
+	                                    (size_t) source.offsets[0]));
+	put_word(pof, 106, 3);
+	CHECK(d1_pof_read(pof, sizeof(pof), &source) != NULL);
+	return 0;
+}
+
 int main(void)
 {
 	uint8_t model[64];
@@ -25,6 +53,7 @@ int main(void)
 	uint8_t colormap[256];
 	uint8_t sound_map[] = { 0, 4, 255 };
 	size_t remapped_size;
+	CHECK(test_pof_admission_composition() == 0);
 
 	CHECK(d1_pig_validate_span(100, 20, 80));
 	CHECK(!d1_pig_validate_span(100, 20, 81));

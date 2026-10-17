@@ -343,7 +343,7 @@ class ModManagerMissionZipTest {
     }
 
     @Test
-    fun missionRarImportsReetusAndStagesAtMissions() {
+    fun missionRarUsesStructuredNativeBackendOrFailsClosed() {
         val configuredFixture = System.getProperty("dxx.reetusRarFixture")?.takeIf { it.isNotBlank() }
         val repositoryRoot = File(requireNotNull(System.getProperty("dxx.repositoryRoot"))).absoluteFile
         val source = resolveReetusFixture(repositoryRoot, configuredFixture)
@@ -352,7 +352,14 @@ class ModManagerMissionZipTest {
         filesDir.deleteRecursively()
         filesDir.mkdirs()
 
-        val imported = ModManager(filesDir).importMissionZipFile(source, "reetus.rar")
+        val imported =
+            try {
+                ModManager(filesDir).importMissionZipFile(source, "reetus.rar")
+            } catch (error: RarNativeBackendUnavailableException) {
+                assertTrue(error.message.orEmpty().contains("native RAR backend is unavailable"))
+                assertFalse(File(filesDir, "mods/reetus.rar").exists())
+                return
+            }
 
         assertNotNull(imported)
         assertTrue(requireNotNull(MissionZip.inspect(source)).constituents.all { it.compressedSizeBytes == null })
@@ -611,6 +618,32 @@ class ModManagerMissionZipTest {
 
         assertNull(imported)
         assertFalse(File(filesDir, "mods/ewithin-xl.zip").exists())
+    }
+
+    @Test
+    fun invalidNestedMissionDoesNotReplacePriorArchive() {
+        val filesDir = File("build/test-mod-manager-invalid-nested-publication").absoluteFile
+        filesDir.deleteRecursively()
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val prior = File(modsDir, "ewithin-rebirth.zip").apply { writeText("prior archive") }
+        val parent = File.createTempFile("missionzip-manager-invalid-child", ".zip")
+        ZipOutputStream(parent.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("ewithin-rebirth.zip"))
+            zip.write(
+                createZipBytes { child ->
+                    child.putNextEntry(ZipEntry("readme.txt"))
+                    child.write("not a mission archive".toByteArray())
+                    child.closeEntry()
+                },
+            )
+            zip.closeEntry()
+        }
+
+        val imported = ModManager(filesDir).importMissionZipFile(parent, "ewithin-versions.zip")
+
+        assertNull(imported)
+        assertEquals("prior archive", prior.readText())
+        assertTrue(modsDir.listFiles().orEmpty().none { it.name.contains("nested-import") })
     }
 
     @Test

@@ -198,6 +198,8 @@ void free_bitmap_replacements(void);
 void free_d1_tmap_nums(void);
 extern int Robot_replacements_loaded;
 extern int Gamesave_num_players;
+void bm_read_extra_robots(const char *filename, int type);
+void load_robot_replacements(char *level_name);
 void maybe_delete_object(object *del_obj);
 void verify_object(object *obj);
 void blast_nearby_glass(object *obj, fix damage);
@@ -291,6 +293,18 @@ static void write_fixture(const char *name, const bytes &data)
 	require(file != nullptr, "create fixture");
 	require(PHYSFS_writeBytes(file, data.data(), data.size()) == static_cast<PHYSFS_sint64>(data.size()), "write fixture");
 	require(PHYSFS_close(file) != 0, "close fixture");
+}
+
+static bytes read_fixture(const char *name)
+{
+	PHYSFS_file *file = PHYSFS_openRead(name);
+	require(file != nullptr, "open fixture");
+	const PHYSFS_sint64 length = PHYSFS_fileLength(file);
+	require(length >= 0, "measure fixture");
+	bytes data(static_cast<size_t>(length));
+	require(PHYSFS_readBytes(file, data.data(), length) == length, "read fixture");
+	require(PHYSFS_close(file) != 0, "close fixture after read");
+	return data;
 }
 
 static bytes hxm_header()
@@ -390,6 +404,112 @@ static void test_pcx_short_header()
 		char name[] = "short.pcx";
 		require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, palette) == PCX_ERROR_NO_HEADER && !bitmap.bm_data,
 		        "truncated PCX header returns an error without terminating or allocating pixels");
+	}
+}
+
+static bytes pcx_fixture(int width, int height, int bytes_per_line, const bytes &pixels)
+{
+	bytes data(128);
+	data[0] = 10;
+	data[1] = 5;
+	data[2] = 1;
+	data[3] = 8;
+	set_short(data, 8, width - 1);
+	set_short(data, 10, height - 1);
+	data[65] = 1;
+	set_short(data, 66, bytes_per_line);
+	append(data, pixels);
+	return data;
+}
+
+#ifndef DXX_BUILD_DESCENT_II
+static bytes bald_guy_fixture(const bytes &decoded)
+{
+	bytes encoded(decoded.size() + 1);
+	const unsigned char sentinel = 200;
+	for (size_t i = 0; i < decoded.size(); ++i)
+		encoded[decoded.size() - i - 1] = decoded[i] ^ static_cast<unsigned char>(sentinel - 1 - i);
+	encoded.back() = sentinel;
+	return encoded;
+}
+#endif
+
+static void test_pcx_bounds()
+{
+	char name[] = "bounded.pcx";
+	grs_bitmap bitmap = {};
+
+	write_fixture(name, pcx_fixture(2, 1, 4, { 1, 2, 3, 4 }));
+	require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_NONE,
+	        "PCX accepts scanline padding");
+	require(bitmap.bm_w == 2 && bitmap.bm_h == 1 && bitmap.bm_data[0] == 1 && bitmap.bm_data[1] == 2,
+	        "PCX copies only visible scanline bytes");
+	gr_free_bitmap_data(&bitmap);
+
+	for (const bytes &run : { bytes{ 0xc3, 7 }, bytes{ 0xc0, 7 } }) {
+		bitmap = {};
+		write_fixture(name, pcx_fixture(2, 1, 2, run));
+		require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_READING && !bitmap.bm_data,
+		        "PCX rejects a zero or overlong RLE run without publishing pixels");
+	}
+
+	for (bytes invalid : { pcx_fixture(2, 1, 1, {}), pcx_fixture(8193, 1, 8193, {}) }) {
+		bitmap = {};
+		write_fixture(name, invalid);
+		require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_WRONG_VERSION && !bitmap.bm_data,
+		        "PCX rejects invalid dimensions or encoded row sizes before allocation");
+	}
+
+	bytes reversed = pcx_fixture(1, 1, 1, {});
+	set_short(reversed, 4, 2);
+	set_short(reversed, 8, 1);
+	write_fixture(name, reversed);
+	require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_WRONG_VERSION && !bitmap.bm_data,
+	        "PCX rejects reversed coordinates before allocation");
+
+	ubyte existing_pixel = 42;
+	gr_init_bitmap(&bitmap, BM_LINEAR, 0, 0, 1, 1, 1, &existing_pixel);
+	write_fixture(name, pcx_fixture(2, 1, 2, { 1, 2 }));
+	require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_READING && existing_pixel == 42,
+	        "PCX does not overrun a caller-owned bitmap");
+
+#ifndef DXX_BUILD_DESCENT_II
+	bitmap = {};
+	write_fixture("btexture.xxx", bald_guy_fixture(pcx_fixture(2, 1, 2, { 7, 8 })));
+	require(bald_guy_load("btexture.xxx", &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_NONE &&
+	            bitmap.bm_w == 2 && bitmap.bm_h == 1 && bitmap.bm_data[0] == 7 && bitmap.bm_data[1] == 8,
+	        "obfuscated PCX path decodes a bounded valid image");
+	gr_free_bitmap_data(&bitmap);
+	bitmap = {};
+	write_fixture("btexture.xxx", bald_guy_fixture(pcx_fixture(2, 1, 2, { 0xc3, 7 })));
+	require(bald_guy_load("btexture.xxx", &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_READING && !bitmap.bm_data,
+	        "obfuscated PCX path rejects an overlong run without publishing pixels");
+#endif
+}
+
+static void test_iff_roundtrip()
+{
+	ubyte palette[768] = {};
+	char name[] = "bounded.bbm";
+	for (int width : { 3, 65 }) {
+		std::vector<ubyte> pixels(static_cast<size_t>(width) * 2);
+		for (size_t i = 0; i < pixels.size(); ++i)
+			pixels[i] = static_cast<ubyte>((i * 17) & 0xff);
+		grs_bitmap source = {}, decoded = {};
+		gr_init_bitmap(&source, BM_LINEAR, 0, 0, width, 2, width, pixels.data());
+		require(iff_write_bitmap(name, &source, palette) == IFF_NO_ERROR, "write bounded IFF roundtrip fixture");
+		require(iff_read_bitmap(name, &decoded, BM_LINEAR, palette) == IFF_NO_ERROR,
+		        "bounded IFF decoder accepts writer output");
+		require(decoded.bm_w == width && decoded.bm_h == 2 &&
+		            std::memcmp(decoded.bm_data, pixels.data(), pixels.size()) == 0,
+		        "bounded IFF decoder preserves raw and compressed pixels");
+		gr_free_bitmap_data(&decoded);
+
+		ubyte guard = 91;
+		gr_init_bitmap(&decoded, BM_LINEAR, 0, 0, 1, 1, 1, &guard);
+		require(iff_read_into_bitmap(name, &decoded, reinterpret_cast<sbyte *>(palette)) == IFF_BM_MISMATCH &&
+		            guard == 91,
+		        "bounded IFF decoder does not overrun a caller-owned bitmap");
 	}
 }
 
@@ -7442,6 +7562,9 @@ static void make_robot_fixtures()
 static void test_robot_reload()
 {
 	make_robot_fixtures();
+	const bytes main_ham = read_fixture("descent2.ham");
+	const bytes extra_ham = read_fixture("testv.ham");
+	const bytes replacement_hxm = read_fixture("custom.HXM");
 	Mission mission = {};
 	mission.filename = const_cast<char *>("testv");
 	mission.enhanced = 2;
@@ -7475,6 +7598,57 @@ static void test_robot_reload()
 		require(Objects[2].mtype.phys_info.mass == 2 * F1_0, "base robot mass restored");
 		load_level_robots_file("custom.rl2");
 		require(Objects[2].size == 4 * F1_0 && Objects[2].mtype.phys_info.mass == 7 * F1_0 && Objects[2].mtype.phys_info.drag == F1_0 / 4, "HXM changes applied to existing objects");
+		if (!pass) {
+			const auto active_model = Polygon_models[166].model_data;
+			const robot_info active_robot = Robot_info[66];
+			const int active_models = N_polygon_models, active_robots = N_robot_types;
+			const auto require_active = [&]() {
+				require(N_polygon_models == active_models && N_robot_types == active_robots &&
+				            Polygon_models[166].model_data == active_model &&
+				            std::memcmp(&Robot_info[66], &active_robot, sizeof(active_robot)) == 0 &&
+				            Robot_replacements_loaded,
+				        "malformed D2 HAM/HXM data cannot alter active robot definitions");
+			};
+			std::vector<bytes> bad_hxm;
+			bad_hxm.emplace_back(replacement_hxm.begin(), replacement_hxm.begin() + 7);
+			for (auto mutation : { std::pair<size_t, int>{ 0, 0 }, { 8, -1 }, { 12, MAX_ROBOT_TYPES }, { 512, INT_MAX } }) {
+				bad_hxm.push_back(replacement_hxm);
+				set_int(bad_hxm.back(), mutation.first, mutation.second);
+			}
+			bad_hxm.push_back(replacement_hxm);
+			set_short(bad_hxm.back(), 1242, 99);
+			for (const bytes &damaged : bad_hxm) {
+				write_fixture("custom.HXM", damaged);
+				char custom_level[] = "custom.rl2";
+				load_robot_replacements(custom_level);
+				require_active();
+			}
+			write_fixture("custom.HXM", replacement_hxm);
+			std::vector<bytes> bad_extra;
+			bad_extra.emplace_back(extra_ham.begin(), extra_ham.begin() + 7);
+			for (auto mutation : { std::pair<size_t, int>{ 8, -1 }, { 508, INT_MAX } }) {
+				bad_extra.push_back(extra_ham);
+				set_int(bad_extra.back(), mutation.first, mutation.second);
+			}
+			bad_extra.push_back(extra_ham);
+			set_short(bad_extra.back(), 1238, 99);
+			for (const bytes &damaged : bad_extra) {
+				write_fixture("testv.ham", damaged);
+				bm_read_extra_robots("testv.ham", 2);
+				require_active();
+			}
+			write_fixture("testv.ham", extra_ham);
+			std::vector<bytes> bad_main;
+			bad_main.emplace_back(main_ham.begin(), main_ham.begin() + 7);
+			bad_main.push_back(main_ham);
+			set_int(bad_main.back(), 8, INT_MAX);
+			for (const bytes &damaged : bad_main) {
+				write_fixture("descent2.ham", damaged);
+				require(!read_hamfile(), "reject malformed main HAM recoverably");
+				require_active();
+			}
+			write_fixture("descent2.ham", main_ham);
+		}
 		load_level_robots_file("plain.rl2");
 		require(Objects[2].size == 2 * F1_0, "next level removes previous HXM");
 		require(load_exit_models() == 1, "load actual exit assets");
@@ -7498,6 +7672,7 @@ static void test_robot_reload()
 #else
 static void test_hx1()
 {
+	const bytes definitions = d1_custom_definition_fixture();
 	bytes data = hxm_header();
 	append_int(data, 0); // robots
 	append_int(data, 0); // joints
@@ -7515,7 +7690,7 @@ static void test_hx1()
 	load_hxm(name);
 	require(Polygon_models[0].rad == 7 * F1_0 && Polygon_models[0].model_data_size == 2, "HX1 disk model decoded independent of host ABI");
 	require(Dying_modelnums[0] == 12 && Dead_modelnums[0] == 13 && ObjBitmaps[0].index == 17, "HX1 trailing records aligned");
-	write_fixture("custom.hx1", d1_custom_definition_fixture());
+	write_fixture("custom.hx1", definitions);
 	load_hxm(name);
 	require(Robot_info[0].mass == 7 * F1_0 && Robot_info[0].drag == F1_0 / 4 && Robot_info[0].weapon_type == 0 && Robot_info[0].n_guns == 1 &&
 	            Robot_info[0].anim_states[0][0].n_joints == 1 && Robot_joints[0].angles.p == 100 && Robot_joints[0].angles.b == 200 && Robot_joints[0].angles.h == 300,
@@ -7536,13 +7711,72 @@ static void test_hx1()
 	GameBitmapOffset[1] = 0;
 	GameSounds[0].data = samples;
 	GameSounds[0].length = 4;
-	write_fixture("custom.pg1", d1_custom_dpog_fixture());
-	write_fixture("custom.dtx", d1_custom_dtx_fixture());
+	const bytes pg1 = d1_custom_dpog_fixture(), dtx = d1_custom_dtx_fixture();
+	write_fixture("custom.pg1", pg1);
+	write_fixture("custom.dtx", dtx);
 	char level[] = "custom.rdl";
 	load_custom_data(level);
 	require(GameBitmaps[1].bm_data[0] == 21 && GameBitmaps[1].bm_data[3] == 24 && GameSounds[0].length == 3 &&
 	            GameSounds[0].data[0] == 31 && GameSounds[0].data[2] == 33,
 	        "native D1 agrees on DTX-over-PG1 precedence, original pixels and source samples");
+	const auto active_pixels = GameBitmaps[1].bm_data;
+	const auto active_samples = GameSounds[0].data;
+	const auto active_model = Polygon_models[0].model_data;
+	const robot_info active_robot = Robot_info[0];
+	const jointpos active_joint = Robot_joints[0];
+	const bitmap_index active_object_bitmap = ObjBitmaps[0];
+	const auto require_active = [&]() {
+		require(GameBitmaps[1].bm_data == active_pixels && GameSounds[0].data == active_samples &&
+		            Polygon_models[0].model_data == active_model &&
+		            std::memcmp(&Robot_info[0], &active_robot, sizeof(active_robot)) == 0 &&
+		            std::memcmp(&Robot_joints[0], &active_joint, sizeof(active_joint)) == 0 &&
+		            ObjBitmaps[0].index == active_object_bitmap.index,
+		        "malformed native D1 custom data cannot alter active replacements");
+	};
+	std::vector<bytes> bad_hx1;
+	for (size_t end : { 7u, 15u, 499u, 1259u })
+		bad_hx1.emplace_back(definitions.begin(), definitions.begin() + end);
+	for (auto mutation : { std::pair<size_t, int>{ 4, 2 }, { 8, INT_MAX }, { 12, MAX_ROBOT_TYPES }, { 524, INT_MAX }, { 1268, MAX_OBJ_BITMAPS } }) {
+		bad_hx1.push_back(definitions);
+		set_int(bad_hx1.back(), mutation.first, mutation.second);
+	}
+	bad_hx1.push_back(definitions);
+	set_short(bad_hx1.back(), 1254, 99);
+	bad_hx1.push_back(definitions);
+	bad_hx1.back().push_back(0);
+	for (const bytes &damaged : bad_hx1) {
+		write_fixture("custom.hx1", damaged);
+		load_custom_data(level);
+		require_active();
+	}
+	write_fixture("custom.hx1", definitions);
+	for (const char *file : { "custom.pg1", "custom.dtx" }) {
+		const bytes &source = std::strcmp(file, "custom.pg1") == 0 ? pg1 : dtx;
+		std::vector<bytes> damaged_files;
+		damaged_files.emplace_back(source.begin(), source.begin() + 7);
+		damaged_files.emplace_back(source.begin(), source.end() - 1);
+		damaged_files.push_back(source);
+		if (source == pg1) {
+			set_int(damaged_files.back(), 8, INT_MAX);
+			damaged_files.push_back(source);
+			set_short(damaged_files.back(), 12, MAX_BITMAP_FILES);
+			damaged_files.push_back(source);
+			set_int(damaged_files.back(), 28, -1);
+			damaged_files.push_back(source);
+			damaged_files.back()[26] = BM_FLAG_RLE;
+			set_int(damaged_files.back(), 32, 4);
+		} else {
+			set_int(damaged_files.back(), 33, INT_MAX);
+			damaged_files.push_back(source);
+			set_int(damaged_files.back(), 21, -1);
+		}
+		for (const bytes &damaged : damaged_files) {
+			write_fixture(file, damaged);
+			load_custom_data(level);
+			require_active();
+		}
+		write_fixture(file, source);
+	}
 	custom_remove();
 	require(GameBitmaps[1].bm_data == pixels && GameSounds[0].data == samples, "native custom cleanup restores original resources");
 	GameBitmaps[1] = previous_bitmap;
@@ -7552,7 +7786,8 @@ static void test_hx1()
 	hashtable_free(&AllDigiSndNames);
 	AllBitmapsNames = previous_bitmaps;
 	AllDigiSndNames = previous_sounds;
-	require(PHYSFS_delete("custom.pg1") && PHYSFS_delete("custom.dtx"), "remove native custom pixel/sample fixtures");
+	require(PHYSFS_delete("custom.pg1") && PHYSFS_delete("custom.dtx") && PHYSFS_delete("custom.hx1"),
+	        "remove native custom fixtures");
 	N_polygon_models = 1;
 	free_polygon_models();
 }
@@ -11940,6 +12175,8 @@ int main(int argc, char **argv)
 	std::fprintf(stderr, "Testing model texture seek\n");
 	test_seek();
 	test_pcx_short_header();
+	test_pcx_bounds();
+	test_iff_roundtrip();
 #ifdef HAVE_LIBPNG
 	std::fprintf(stderr, "Testing indexed PNG replacement decoding\n");
 	test_png_decode();

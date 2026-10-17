@@ -63,11 +63,23 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #include "makesig.h"
 #include "level_section_io.h"
+#include "physfsx_checked_read.h"
 #include "secretarea.h"
 #ifdef __ANDROID__
 #include "android_level_preview.h"
 #include "android_d1_mod_patches.h"
 #endif
+
+static PHYSFSX_read_status Level_game_read_status;
+
+#define PHYSFSX_readAngleVec(angles, file) PHYSFSX_readAngleVecChecked(&Level_game_read_status, (angles), (file))
+#define PHYSFSX_readByte(file) PHYSFSX_readByteChecked(&Level_game_read_status, (file))
+#define PHYSFSX_readFix(file) PHYSFSX_readFixChecked(&Level_game_read_status, (file))
+#define PHYSFSX_readFixAng(file) PHYSFSX_readFixAngChecked(&Level_game_read_status, (file))
+#define PHYSFSX_readInt(file) PHYSFSX_readIntChecked(&Level_game_read_status, (file))
+#define PHYSFSX_readMatrix(matrix, file) PHYSFSX_readMatrixChecked(&Level_game_read_status, (matrix), (file))
+#define PHYSFSX_readShort(file) PHYSFSX_readShortChecked(&Level_game_read_status, (file))
+#define PHYSFSX_readVector(vector, file) PHYSFSX_readVectorChecked(&Level_game_read_status, (vector), (file))
 
 char Gamesave_current_filename[PATH_MAX];
 
@@ -224,7 +236,7 @@ void verify_robot_object(object *obj)
 	}
 }
 
-void verify_object( object * obj )	{
+int verify_object( object * obj )	{
 
 	obj->lifeleft = IMMORTAL_TIME;		//all loaded object are immortal, for now
 
@@ -235,9 +247,14 @@ void verify_object( object * obj )	{
 	}
 	else {		//Robots taken care of above
 
-		if ( obj->render_type == RT_POLYOBJ ) {
+		if (obj->render_type == RT_POLYOBJ && obj->type != OBJ_CNTRLCEN && obj->type != OBJ_PLAYER) {
 			int i;
-			char *name = Save_pof_names[obj->rtype.pobj_info.model_num];
+			char *name;
+			if (!level_index_is_valid(obj->rtype.pobj_info.model_num, MAX_POLYGON_MODELS)) {
+				Warning("Invalid saved object model index %d", obj->rtype.pobj_info.model_num);
+				return 0;
+			}
+			name = Save_pof_names[obj->rtype.pobj_info.model_num];
 
 			for (i=0;i<N_polygon_models;i++)
 				if (!d_stricmp(Pof_names[i],name)) {		//found it!	
@@ -343,6 +360,13 @@ void verify_object( object * obj )	{
 		obj->render_type = RT_HOSTAGE;
 		obj->control_type = CT_POWERUP;
 	}
+
+	if ((obj->render_type == RT_POLYOBJ || obj->render_type == RT_MORPH) &&
+	    !level_index_is_valid(obj->rtype.pobj_info.model_num, N_polygon_models)) {
+		Warning("Invalid object model index %d count=%d", obj->rtype.pobj_info.model_num, N_polygon_models);
+		return 0;
+	}
+	return 1;
 
 }
 
@@ -731,6 +755,66 @@ void write_object(object *obj, short version, PHYSFS_file *f)
 
 extern int remove_trigger_num(int trigger_num);
 
+static int validate_loaded_level_graph(int game_version, int object_count, int delta_light_count)
+{
+	int i;
+	int j;
+
+	for (i = 0; i < object_count; ++i)
+		if (Objects[i].type != OBJ_NONE && !level_index_is_valid(Objects[i].segnum, Num_segments)) {
+			Warning("Invalid level object segment object=%d segment=%d count=%d", i, Objects[i].segnum, Num_segments);
+			return 0;
+		}
+	for (i = 0; i < Num_walls; ++i) {
+		if (game_version >= 17 &&
+		    (!level_index_is_valid(Walls[i].segnum, Num_segments) ||
+		     !level_index_is_valid(Walls[i].sidenum, MAX_SIDES_PER_SEGMENT))) {
+			Warning("Invalid level wall location wall=%d segment=%d side=%d", i, Walls[i].segnum, Walls[i].sidenum);
+			return 0;
+		}
+		if (!level_optional_index_is_valid(Walls[i].linked_wall, Num_walls) ||
+		    !level_optional_index_is_valid(Walls[i].trigger, Num_triggers)) {
+			Warning("Invalid level wall links wall=%d linked=%d trigger=%d", i, Walls[i].linked_wall, Walls[i].trigger);
+			return 0;
+		}
+	}
+	for (i = 0; i < Num_robot_centers; ++i)
+		if (!level_index_is_valid(RobotCenters[i].segnum, Num_segments)) {
+			Warning("Invalid level matcen segment matcen=%d segment=%d", i, RobotCenters[i].segnum);
+			return 0;
+		}
+	for (i = 0; i < Num_segments; ++i) {
+		if (Segment2s[i].special == SEGMENT_IS_ROBOTMAKER &&
+		    !level_index_is_valid(Segment2s[i].matcen_num, Num_robot_centers)) {
+			Warning("Invalid level segment matcen segment=%d matcen=%d", i, Segment2s[i].matcen_num);
+			return 0;
+		}
+		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
+			if (!level_optional_index_is_valid(Segments[i].sides[j].wall_num, Num_walls)) {
+				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d",
+				        i, j, Segments[i].sides[j].wall_num, Num_walls);
+				return 0;
+			}
+	}
+	for (i = 0; i < Num_static_lights; ++i)
+		if (!level_index_is_valid(Dl_indices[i].segnum, Num_segments) ||
+		    !level_index_is_valid(Dl_indices[i].sidenum, MAX_SIDES_PER_SEGMENT) ||
+		    !level_index_range_is_valid(Dl_indices[i].index, Dl_indices[i].count, delta_light_count)) {
+			Warning("Invalid level light index light=%d segment=%d side=%d index=%d count=%d total=%d",
+			        i, Dl_indices[i].segnum, Dl_indices[i].sidenum,
+			        Dl_indices[i].index, Dl_indices[i].count, delta_light_count);
+			return 0;
+		}
+	for (i = 0; i < delta_light_count; ++i)
+		if (!level_index_is_valid(Delta_lights[i].segnum, Num_segments) ||
+		    !level_index_is_valid(Delta_lights[i].sidenum, MAX_SIDES_PER_SEGMENT)) {
+			Warning("Invalid level delta light light=%d segment=%d side=%d",
+			        i, Delta_lights[i].segnum, Delta_lights[i].sidenum);
+			return 0;
+		}
+	return 1;
+}
+
 // --------------------------------------------------------------------
 // Load game 
 // Loads all the relevant data for a level.
@@ -749,6 +833,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 	int gs_num_objects;
 	int num_delta_lights;
 	int trig_size;
+
+	PHYSFSX_readStatusReset(&Level_game_read_status);
 
 	//===================== READ FILE INFO ========================
 
@@ -827,12 +913,16 @@ int load_game_data(PHYSFS_file *LoadFile)
 	if (game_top_fileinfo_version >= 19) {	//load pof names
 		N_save_pof_names = PHYSFSX_readShort(LoadFile);
 		if (N_save_pof_names != 0x614d && N_save_pof_names != 0x5547 && N_save_pof_names != 0x5053) { // "Ma"de w/DMB beta/"GU"ILE/"SP"IKE
-			if (N_save_pof_names >= 0 && N_save_pof_names < MAX_POLYGON_MODELS)
-				PHYSFS_read(LoadFile,Save_pof_names,FILENAME_LEN,N_save_pof_names);
+			if (N_save_pof_names >= 0 && N_save_pof_names < MAX_POLYGON_MODELS) {
+				if (PHYSFS_read(LoadFile, Save_pof_names, FILENAME_LEN, N_save_pof_names) != N_save_pof_names)
+					return -1;
+			}
 			else
 				con_printf(CON_NORMAL, "Invalid number of pof names %x\n", N_save_pof_names);
 		}
 	}
+	if (PHYSFSX_readStatusFailed(&Level_game_read_status))
+		return -1;
 
 	//===================== READ PLAYER INFO ==========================
 
@@ -842,23 +932,30 @@ int load_game_data(PHYSFS_file *LoadFile)
 	Gamesave_num_org_robots = 0;
 	Gamesave_num_players = 0;
 
-	if (!level_section_seek(LoadFile, object_offset, gs_num_objects, MAX_OBJECTS, "objects"))
+	if (!level_section_seek(LoadFile, object_offset, gs_num_objects, MAX_OBJECTS,
+	                        LEVEL_OBJECT_MINIMUM_SERIALIZED_SIZE, "objects"))
 		return -1;
-	if (gs_num_objects) {
+	if (object_offset > -1) {
 		object_clear_level_objects();
 		for (i = 0; i < gs_num_objects; i++) {
 
 			read_object(&Objects[i], LoadFile, game_top_fileinfo_version);
+			if (PHYSFSX_readStatusFailed(&Level_game_read_status))
+				return -1;
 
 			Objects[i].signature = obj_get_signature();
-			verify_object( &Objects[i] );
+			if (!verify_object(&Objects[i]))
+				return -1;
 		}
 
 	}
 
 	//===================== READ WALL INFO ============================
 	// Editors may leave padding between sections; object decoding does not locate the wall table
-	if (!level_section_seek(LoadFile, walls_offset, Num_walls, MAX_WALLS, "walls"))
+	if (!level_section_seek(LoadFile, walls_offset, Num_walls, MAX_WALLS,
+	                        game_top_fileinfo_version >= 20 ? LEVEL_WALL_SERIALIZED_SIZE :
+	                        game_top_fileinfo_version >= 17 ? LEVEL_WALL_V19_SERIALIZED_SIZE : LEVEL_WALL_V16_SERIALIZED_SIZE,
+	                        "walls"))
 		return -1;
 	REWIND_PHYSFS_FILE(load_rewind_file, LoadFile);
 
@@ -927,7 +1024,9 @@ int load_game_data(PHYSFS_file *LoadFile)
 #endif // 0
 
 	//==================== READ TRIGGER INFO ==========================
-	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, MAX_TRIGGERS, "triggers"))
+	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, MAX_TRIGGERS,
+	                        game_top_fileinfo_version < 30 ? LEVEL_TRIGGER_V29_SERIALIZED_SIZE : LEVEL_TRIGGER_SERIALIZED_SIZE,
+	                        "triggers"))
 		return -1;
 
 	for (i = 0; i < Num_triggers; i++)
@@ -961,16 +1060,21 @@ int load_game_data(PHYSFS_file *LoadFile)
 			Warning("Invalid level trigger links trigger=%d count=%d", i, Triggers[i].num_links);
 			return -1;
 		}
+	if (PHYSFSX_readStatusFailed(&Level_game_read_status))
+		return -1;
 
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
-	if (!level_section_seek(LoadFile, control_offset, 1, 1, "reactor triggers"))
+	if (!level_section_seek(LoadFile, control_offset, 1, 1,
+	                        LEVEL_REACTOR_TRIGGER_SERIALIZED_SIZE, "reactor triggers"))
 		return -1;
 
 	if (!control_center_triggers_read_n(&ControlCenterTriggers, 1, load_rewind_file))
 		return -1;
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
-	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, MAX_ROBOT_CENTERS, "matcens"))
+	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, MAX_ROBOT_CENTERS,
+	                        game_top_fileinfo_version < 27 ? LEVEL_MATCEN_V25_SERIALIZED_SIZE : LEVEL_MATCEN_SERIALIZED_SIZE,
+	                        "matcens"))
 		return -1;
 
 	for (i = 0; i < Num_robot_centers; i++) {
@@ -994,7 +1098,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 
 	//================ READ DL_INDICES INFO ===============
-	if (!level_section_seek(LoadFile, light_indices_offset, Num_static_lights, MAX_DL_INDICES, "light indices"))
+	if (!level_section_seek(LoadFile, light_indices_offset, Num_static_lights, MAX_DL_INDICES,
+	                        LEVEL_DL_INDEX_SERIALIZED_SIZE, "light indices"))
 		return -1;
 
 	for (i = 0; i < Num_static_lights; i++) {
@@ -1008,7 +1113,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 	clear_light_subtracted();
 
 	//================ READ DELTA LIGHT INFO ===============
-	if (!level_section_seek(LoadFile, delta_lights_offset, num_delta_lights, MAX_DELTA_LIGHTS, "delta lights"))
+	if (!level_section_seek(LoadFile, delta_lights_offset, num_delta_lights, MAX_DELTA_LIGHTS,
+	                        LEVEL_DELTA_LIGHT_SERIALIZED_SIZE, "delta lights"))
 		return -1;
 
 	for (i = 0; i < num_delta_lights; i++) {
@@ -1017,6 +1123,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 		} else
 			delta_light_read(&Delta_lights[i], LoadFile);
 	}
+	if (!validate_loaded_level_graph(game_top_fileinfo_version, gs_num_objects, num_delta_lights))
+		return -1;
 
 	//========================= UPDATE VARIABLES ======================
 
@@ -1274,14 +1382,20 @@ int load_level(const char * filename_passed)
 	}
 
 	strcpy( Gamesave_current_filename, filename );
+	PHYSFSX_readStatusReset(&Level_game_read_status);
 
 	sig                      = PHYSFSX_readInt(LoadFile);
 	Gamesave_current_version = PHYSFSX_readInt(LoadFile);
 	minedata_offset          = PHYSFSX_readInt(LoadFile);
 	gamedata_offset          = PHYSFSX_readInt(LoadFile);
 
-	Assert(sig == MAKE_SIG('P','L','V','L'));
-	(void)sig;
+	if (PHYSFSX_readStatusFailed(&Level_game_read_status) ||
+	    !level_envelope_is_valid(LoadFile, sig, MAKE_SIG('P','L','V','L'),
+	                             Gamesave_current_version, 1, LEVEL_FILE_VERSION,
+	                             minedata_offset, gamedata_offset)) {
+		PHYSFS_close(LoadFile);
+		return 2;
+	}
 
 	if (Gamesave_current_version >= 8) {    //read dummy data
 		PHYSFSX_readInt(LoadFile);
@@ -1313,7 +1427,14 @@ int load_level(const char * filename_passed)
 		int i;
 
 		Num_flickering_lights = PHYSFSX_readInt(LoadFile);
-		Assert((Num_flickering_lights >= 0) && (Num_flickering_lights < MAX_FLICKERING_LIGHTS));
+		if (PHYSFSX_readStatusFailed(&Level_game_read_status) ||
+		    !level_count_is_valid(Num_flickering_lights, 0, MAX_FLICKERING_LIGHTS) ||
+		    !level_minimum_span_is_valid(LoadFile, Num_flickering_lights,
+		                                 LEVEL_FLICKERING_LIGHT_SERIALIZED_SIZE,
+		                                 0, 0, "flickering lights")) {
+			PHYSFS_close(LoadFile);
+			return 2;
+		}
 		for (i = 0; i < Num_flickering_lights; i++)
 			flickering_light_read(&Flickering_lights[i], LoadFile);
 	}
@@ -1343,8 +1464,15 @@ int load_level(const char * filename_passed)
 		Secret_return_orient.uvec.y = PHYSFSX_readInt(LoadFile);
 		Secret_return_orient.uvec.z = PHYSFSX_readInt(LoadFile);
 	}
+	if (PHYSFSX_readStatusFailed(&Level_game_read_status)) {
+		PHYSFS_close(LoadFile);
+		return 2;
+	}
 
-	PHYSFSX_fseek(LoadFile,minedata_offset,SEEK_SET);
+	if (PHYSFSX_fseek(LoadFile, minedata_offset, SEEK_SET)) {
+		PHYSFS_close(LoadFile);
+		return 2;
+	}
 	#ifdef EDITOR
 	if (!use_compiled_level) {
 		mine_err = load_mine_data(LoadFile);
@@ -1397,7 +1525,10 @@ int load_level(const char * filename_passed)
 		return 2;
 	}
 
-	PHYSFSX_fseek(LoadFile,gamedata_offset,SEEK_SET);
+	if (PHYSFSX_fseek(LoadFile, gamedata_offset, SEEK_SET)) {
+		PHYSFS_close(LoadFile);
+		return 3;
+	}
 	game_err = load_game_data(LoadFile);
 
 	if (game_err == -1) {   //error!!

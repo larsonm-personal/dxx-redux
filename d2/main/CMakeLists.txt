@@ -4,6 +4,7 @@ set(D2X_MAIN_SOURCES
     aipath.c
     automap.c
     bm.c
+    d2_ham_validation.c
     cntrlcen.c
     collide.c
     config.c

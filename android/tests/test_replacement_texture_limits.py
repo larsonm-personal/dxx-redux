@@ -13,6 +13,7 @@ def read(relative: str) -> str:
 
 def main() -> None:
     loader = read("android/app/src/main/cpp/shared/pngfile.c")
+    dxa_limits = read("android/app/src/main/cpp/shared/dxa_admission_limits.h")
     png = loader.split("int read_png", 1)[1].split("int write_png", 1)[0]
     assert "#define STBI_MAX_DIMENSIONS 16384" in loader
     assert png.index("stbi_info_from_memory") < png.index("stbi_load_from_memory")
@@ -31,6 +32,11 @@ def main() -> None:
         "TEXTURE_LOOKUP_MAX_INDEXED_PATH_BYTES",
     ):
         assert limit in loader
+    assert "#define DXX_DXA_MAX_ARCHIVE_ENTRIES      4096u" in dxa_limits
+    assert "#define DXX_DXA_MAX_TEXTURE_ENTRIES      4096u" in dxa_limits
+    assert "#define DXX_DXA_MAX_TOTAL_PATH_BYTES     (1024u * 1024u)" in dxa_limits
+    assert "DXX_DXA_MAX_ENTRY_BYTES" in loader
+    assert "DXX_DXA_MAX_TOTAL_EXPANDED_BYTES" in loader
 
     ktx = loader.split("int read_ktx2_file", 1)[1]
     assert "base->baseWidth > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION" in ktx
@@ -51,9 +57,14 @@ def main() -> None:
     assert "MAX_PATH_DEPTH" in scanner
     assert "MAX_ARCHIVE_ENTRIES" in scanner
     assert "MAX_TEXTURE_ENTRIES" in scanner
+    assert "private const val MAX_ARCHIVE_ENTRIES = ExtractionLimits.MAX_ENTRIES" in scanner
+    assert "private const val MAX_TOTAL_PATH_BYTES = 1024 * 1024" in scanner
+    assert "ExtractionLimits.MAX_DXA_SOURCE_BYTES" in scanner
+    assert "ExtractionBudget()" in scanner
     manager = read("android/app/src/main/java/com/dxxredux/app/ModManager.kt")
     assert "Refusing to enable unsafe or unreadable mod" in manager
-    assert manager.count("?.canEnable == true") == 2
+    assert manager.count("?.canEnable == true") == 1
+    assert "enabled = scan.canEnable" in manager
     assert "scan?.canEnable != true" in manager
 
     generator = read("game_data/mods/d2x-xl/convert_d2xxl_textures.ps1")

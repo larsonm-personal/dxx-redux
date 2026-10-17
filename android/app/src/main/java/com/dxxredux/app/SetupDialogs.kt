@@ -282,6 +282,7 @@ internal suspend fun setupDownloadFile(
                     dest = destFile,
                     expectedBytes = totalBytes,
                     label = "download $filename",
+                    maxBytes = ExtractionLimits.MAX_TOTAL_BYTES,
                     onProgress = { progress ->
                         if (progress.bytesTotal > 0L) {
                             val pct =

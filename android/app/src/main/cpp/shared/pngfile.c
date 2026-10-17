@@ -20,6 +20,7 @@
 #include "pstypes.h"
 #include "android_log.h"
 #include "android_texture_usage.h"
+#include "dxa_admission_limits.h"
 
 #define KHRONOS_STATIC
 #include <ktx.h>
@@ -35,6 +36,8 @@
 
 #define ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION 16384u
 #define ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES \
+	(64u * 1024u * 1024u)
+#define ANDROID_REPLACEMENT_TEXTURE_MAX_SOURCE_BYTES \
 	(64u * 1024u * 1024u)
 
 /* The ordinary upload path uses a bounded CPU scratch buffer, unlike ETC2 */
@@ -123,15 +126,15 @@ static unsigned char *texture_fit_pixels(unsigned char *pixels, int *width, int 
 
 #define TEXTURE_LOOKUP_MISS_CACHE_SIZE      16384u
 #define TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT ((TEXTURE_LOOKUP_MISS_CACHE_SIZE * 3u) / 4u)
-#define TEXTURE_LOOKUP_FILE_INDEX_SIZE      65536u
-#define TEXTURE_LOOKUP_FILE_INDEX_MAX_COUNT ((TEXTURE_LOOKUP_FILE_INDEX_SIZE * 3u) / 4u)
+#define TEXTURE_LOOKUP_FILE_INDEX_SIZE      8192u
+#define TEXTURE_LOOKUP_FILE_INDEX_MAX_COUNT DXX_DXA_MAX_TEXTURE_ENTRIES
 /* Traversal limits must match DxaTextureScanner.kt launcher preflight. */
-#define TEXTURE_LOOKUP_MAX_DEPTH               64u
-#define TEXTURE_LOOKUP_MAX_ENTRIES             65536u
-#define TEXTURE_LOOKUP_MAX_DIRECTORIES         16384u
-#define TEXTURE_LOOKUP_MAX_PATH_BYTES          4096u
-#define TEXTURE_LOOKUP_MAX_RETAINED_PATH_BYTES (8u * 1024u * 1024u)
-#define TEXTURE_LOOKUP_MAX_INDEXED_PATH_BYTES  (16u * 1024u * 1024u)
+#define TEXTURE_LOOKUP_MAX_DEPTH               DXX_DXA_MAX_PATH_DEPTH
+#define TEXTURE_LOOKUP_MAX_ENTRIES             DXX_DXA_MAX_ARCHIVE_ENTRIES
+#define TEXTURE_LOOKUP_MAX_DIRECTORIES         DXX_DXA_MAX_DIRECTORIES
+#define TEXTURE_LOOKUP_MAX_PATH_BYTES          DXX_DXA_MAX_PATH_BYTES
+#define TEXTURE_LOOKUP_MAX_RETAINED_PATH_BYTES DXX_DXA_MAX_TOTAL_PATH_BYTES
+#define TEXTURE_LOOKUP_MAX_INDEXED_PATH_BYTES  DXX_DXA_MAX_TOTAL_PATH_BYTES
 
 static char *g_texture_lookup_miss_cache[TEXTURE_LOOKUP_MISS_CACHE_SIZE];
 static unsigned int g_texture_lookup_miss_cache_count = 0;
@@ -153,6 +156,7 @@ typedef struct texture_lookup_walk {
 	unsigned int visited_entries;
 	unsigned int discovered_directories;
 	unsigned int current_depth;
+	uint64_t indexed_file_bytes;
 	int failed;
 	char failure_path[256];
 } texture_lookup_walk;
@@ -343,8 +347,17 @@ static PHYSFS_EnumerateCallbackResult texture_lookup_walk_entry(void *data,
 		}
 	} else {
 		if (statbuf.filetype == PHYSFS_FILETYPE_REGULAR &&
-		    !texture_lookup_file_index_add(child_path))
-			texture_lookup_walk_fail(walk, child_path);
+		    texture_lookup_is_indexed_extension(child_path)) {
+			if (statbuf.filesize < 0 ||
+			    (uint64_t) statbuf.filesize > DXX_DXA_MAX_ENTRY_BYTES ||
+			    (uint64_t) statbuf.filesize >
+			        DXX_DXA_MAX_TOTAL_EXPANDED_BYTES - walk->indexed_file_bytes ||
+			    !texture_lookup_file_index_add(child_path)) {
+				texture_lookup_walk_fail(walk, child_path);
+			} else {
+				walk->indexed_file_bytes += (uint64_t) statbuf.filesize;
+			}
+		}
 		free(child_path);
 	}
 	return walk->failed ? PHYSFS_ENUM_STOP : PHYSFS_ENUM_OK;
@@ -553,7 +566,9 @@ int read_png(const char *filename, png_data *pdata)
 	}
 
 	fsize = PHYSFS_fileLength(fp);
-	if (fsize <= 0 || fsize > 256 * 1024 * 1024) { /* sanity: 256 MB max */
+	/* Keep the compressed source allocation within the same 64 MiB budget as
+	 * decoded replacement pixels.  The source remains live during stb decode. */
+	if (fsize <= 0 || (PHYSFS_uint64) fsize > ANDROID_REPLACEMENT_TEXTURE_MAX_SOURCE_BYTES) {
 		PHYSFS_close(fp);
 		return 0;
 	}

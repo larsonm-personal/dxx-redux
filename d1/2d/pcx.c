@@ -50,6 +50,9 @@ typedef struct {
 } __pack__ PCXHeader;
 
 #define PCXHEADER_SIZE 128
+#define PCX_MAX_DIMENSION 8192
+#define PCX_MAX_DECODED_BYTES (64u * 1024u * 1024u)
+#define PCX_MAX_ENCODED_BYTES (2u * PCX_MAX_DECODED_BYTES + PCXHEADER_SIZE + 769u)
 
 /*
  * reads n PCXHeader structs from a PHYSFS_file
@@ -80,40 +83,106 @@ int PCXHeader_read_n(PCXHeader *ph, int n, PHYSFS_file *fp)
 	return i;
 }
 
+static int pcx_validate_dimensions(const PCXHeader *header, int *width, int *height)
+{
+	const int xsize = (int)header->Xmax - (int)header->Xmin + 1;
+	const int ysize = (int)header->Ymax - (int)header->Ymin + 1;
+	const int bytes_per_line = header->BytesPerLine;
+	if (xsize <= 0 || ysize <= 0 || xsize > PCX_MAX_DIMENSION || ysize > PCX_MAX_DIMENSION ||
+	    bytes_per_line < xsize || bytes_per_line > PCX_MAX_DIMENSION ||
+	    (unsigned)bytes_per_line * (unsigned)ysize > PCX_MAX_DECODED_BYTES)
+		return 0;
+	*width = xsize;
+	*height = ysize;
+	return 1;
+}
+
+static int pcx_read_rle_row(PHYSFS_file *file, ubyte *row, int row_size)
+{
+	int offset = 0;
+	while (offset < row_size) {
+		ubyte data;
+		int count = 1;
+		if (PHYSFS_read(file, &data, 1, 1) != 1)
+			return 0;
+		if ((data & 0xc0) == 0xc0) {
+			count = data & 0x3f;
+			if (!count || count > row_size - offset || PHYSFS_read(file, &data, 1, 1) != 1)
+				return 0;
+		}
+		memset(row + offset, data, count);
+		offset += count;
+	}
+	return 1;
+}
+
+static int pcx_read_rle_row_memory(const ubyte **cursor, const ubyte *end, ubyte *row, int row_size)
+{
+	int offset = 0;
+	while (offset < row_size) {
+		ubyte data;
+		int count = 1;
+		if (*cursor == end)
+			return 0;
+		data = *(*cursor)++;
+		if ((data & 0xc0) == 0xc0) {
+			count = data & 0x3f;
+			if (!count || count > row_size - offset || *cursor == end)
+				return 0;
+			data = *(*cursor)++;
+		}
+		memset(row + offset, data, count);
+		offset += count;
+	}
+	return 1;
+}
+
 int bald_guy_load( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * palette )
 {
 	PCXHeader header;
 	PHYSFS_file * PCXfile;
-	int i, count, fsize;
-	ubyte data, c, xor_value, *pixdata;
-	ubyte *bguy_data, *bguy_data1, *p;
-	unsigned int row, xsize;
-	unsigned int col, ysize;
+	PHYSFS_sint64 file_size;
+	int allocated = 0;
+	int i, row, col, xsize, ysize;
+	size_t payload_size;
+	ubyte xor_value, *bguy_data, *row_data = NULL;
+	const ubyte *p, *end;
 	
 	PCXfile = PHYSFSX_openReadBuffered( filename );
 	if ( !PCXfile )
 		return PCX_ERROR_OPENING;
-	
-	PHYSFSX_fseek(PCXfile, -1, SEEK_END);
-	fsize = PHYSFS_tell(PCXfile);
-	PHYSFS_read(PCXfile, &xor_value, 1, 1);
-	xor_value--;
-	PHYSFSX_fseek(PCXfile, 0, SEEK_SET);
-	
-	bguy_data = (ubyte *)d_malloc(fsize);
-	bguy_data1 = (ubyte *)d_malloc(fsize);
-	
-	PHYSFS_read(PCXfile, bguy_data1, 1, fsize);
-	
-	for (i = 0; i < fsize; i++) {
-		c = bguy_data1[fsize - i - 1] ^ xor_value;
-		bguy_data[i] = c;
-		xor_value--;
+	file_size = PHYSFS_fileLength(PCXfile);
+	if (file_size <= PCXHEADER_SIZE || file_size > PCX_MAX_ENCODED_BYTES + 1u) {
+		PHYSFS_close(PCXfile);
+		return PCX_ERROR_READING;
+	}
+	bguy_data = d_malloc((size_t)file_size);
+	if (!bguy_data) {
+		PHYSFS_close(PCXfile);
+		return PCX_ERROR_MEMORY;
+	}
+	if (PHYSFS_read(PCXfile, bguy_data, 1, (PHYSFS_uint32)file_size) != file_size) {
+		PHYSFS_close(PCXfile);
+		d_free(bguy_data);
+		return PCX_ERROR_READING;
 	}
 	PHYSFS_close(PCXfile);
-	d_free(bguy_data1);
-	
+	payload_size = (size_t)file_size - 1;
+	xor_value = bguy_data[payload_size] - 1;
+	for (i = 0; (size_t)i < payload_size / 2; ++i) {
+		const size_t opposite = payload_size - (size_t)i - 1;
+		const ubyte low = bguy_data[i];
+		const ubyte high = bguy_data[opposite];
+		bguy_data[i] = high ^ (ubyte)(xor_value - i);
+		bguy_data[opposite] = low ^ (ubyte)(xor_value - opposite);
+	}
+	if (payload_size & 1u) {
+		const size_t middle = payload_size / 2;
+		bguy_data[middle] ^= (ubyte)(xor_value - middle);
+	}
+
 	p = bguy_data;
+	end = bguy_data + payload_size;
 	memcpy( &header, p, sizeof(PCXHeader) );
 	p += sizeof(PCXHeader);
 	
@@ -126,61 +195,56 @@ int bald_guy_load( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * pa
 	header.Xmax = INTEL_SHORT(header.Xmax);
 	header.Ymin = INTEL_SHORT(header.Ymin);
 	header.Ymax = INTEL_SHORT(header.Ymax);
-	
-	// Find the size of the image
-	xsize = header.Xmax - header.Xmin + 1;
-	ysize = header.Ymax - header.Ymin + 1;
-	
+	header.BytesPerLine = INTEL_SHORT(header.BytesPerLine);
+	if (!pcx_validate_dimensions(&header, &xsize, &ysize)) {
+		d_free(bguy_data);
+		return PCX_ERROR_WRONG_VERSION;
+	}
+
 	if ( bmp->bm_data == NULL )	{
-		memset( bmp, 0, sizeof( grs_bitmap ) );
-		bmp->bm_data = d_malloc( xsize * ysize );
-		if ( bmp->bm_data == NULL )	{
-			d_free(bguy_data);
-			return PCX_ERROR_MEMORY;
-		}
-		bmp->bm_w = bmp->bm_rowsize = xsize;
-		bmp->bm_h = ysize;
-		bmp->bm_type = bitmap_type;
+		gr_init_bitmap_alloc(bmp, bitmap_type, 0, 0, xsize, ysize, xsize);
+		allocated = 1;
 	}
-	
-	for (row=0; row< ysize ; row++)      {
-		for (row=0; row< ysize ; row++)      {
-			pixdata = &bmp->bm_data[bmp->bm_rowsize*row];
-			for (col=0; col< xsize ; )      {
-				data = *p;
-				p++;
-				if ((data & 0xC0) == 0xC0)     {
-					count =  data & 0x3F;
-					data = *p;
-					p++;
-					memset( pixdata, data, count );
-					pixdata += count;
-					col += count;
-				} else {
-					*pixdata++ = data;
-					col++;
-				}
-			}
-		}
+	if (!bmp->bm_data || bmp->bm_w < xsize || bmp->bm_h < ysize ||
+	    (bmp->bm_type == BM_LINEAR && bmp->bm_rowsize < xsize))
+		goto bald_reading_error;
+	row_data = d_malloc(header.BytesPerLine);
+	if (!row_data)
+		goto bald_memory_error;
+	for (row = 0; row < ysize; ++row) {
+		if (!pcx_read_rle_row_memory(&p, end, row_data, header.BytesPerLine))
+			goto bald_reading_error;
+		if (bmp->bm_type == BM_LINEAR)
+			memcpy(&bmp->bm_data[bmp->bm_rowsize * row], row_data, xsize);
+		else
+			for (col = 0; col < xsize; ++col)
+				gr_bm_pixel(bmp, col, row, row_data[col]);
 	}
-	
-	
-	// Read the extended palette at the end of PCX file
-	// Read in a character which should be 12 to be extended palette file
-	
-	p++;
+	d_free(row_data);
+	row_data = NULL;
 	if (palette != NULL) {
+		if (p == end || *p++ != 12 || (size_t)(end - p) < 768)
+			goto bald_reading_error;
 		for (i = 0; i < 768; i++) {
-			palette[i] = *p;
-			palette[i] >>= 2;
-			p++;
+			palette[i] = *p++ >> 2;
 		}
 	}
-	
-	
 	d_free(bguy_data);
-	
 	return PCX_ERROR_NONE;
+
+bald_memory_error:
+	d_free(row_data);
+	d_free(bguy_data);
+	if (allocated)
+		gr_free_bitmap_data(bmp);
+	return PCX_ERROR_MEMORY;
+
+bald_reading_error:
+	d_free(row_data);
+	d_free(bguy_data);
+	if (allocated)
+		gr_free_bitmap_data(bmp);
+	return PCX_ERROR_READING;
 }
 
 #ifdef __ANDROID__
@@ -191,8 +255,9 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 {
 	PCXHeader header;
 	PHYSFS_file * PCXfile;
-	int i, row, col, count, xsize, ysize;
-	ubyte data, *pixdata;
+	int allocated = 0;
+	int i, row, col, xsize, ysize;
+	ubyte data, *row_data = NULL;
 
 	PCXfile = PHYSFSX_openReadBuffered( filename );
 	if ( !PCXfile )
@@ -210,62 +275,35 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 		return PCX_ERROR_WRONG_VERSION;
 	}
 
-	// Find the size of the image
-	xsize = header.Xmax - header.Xmin + 1;
-	ysize = header.Ymax - header.Ymin + 1;
+	if (!pcx_validate_dimensions(&header, &xsize, &ysize)) {
+		PHYSFS_close(PCXfile);
+		return PCX_ERROR_WRONG_VERSION;
+	}
 
 	if ( bitmap_type == BM_LINEAR )	{
 		if ( bmp->bm_data == NULL )	{
 			gr_init_bitmap_alloc (bmp, bitmap_type, 0, 0, xsize, ysize, xsize);
+			allocated = 1;
 		}
 	}
+	if (!bmp->bm_data || bmp->bm_w < xsize || bmp->bm_h < ysize ||
+	    (bmp->bm_type == BM_LINEAR && bmp->bm_rowsize < xsize))
+		goto reading_error;
+	row_data = d_malloc(header.BytesPerLine);
+	if (!row_data)
+		goto memory_error;
 
-	if ( bmp->bm_type == BM_LINEAR )	{
-		for (row=0; row< ysize ; row++)      {
-			pixdata = &bmp->bm_data[bmp->bm_rowsize*row];
-			for (col=0; col< xsize ; )      {
-				if (PHYSFS_read( PCXfile, &data, 1, 1 )!=1 )	{
-					PHYSFS_close( PCXfile );
-					return PCX_ERROR_READING;
-				}
-				if ((data & 0xC0) == 0xC0)     {
-					count =  data & 0x3F;
-					if (PHYSFS_read( PCXfile, &data, 1, 1 )!=1 )	{
-						PHYSFS_close( PCXfile );
-						return PCX_ERROR_READING;
-					}
-					memset( pixdata, data, count );
-					pixdata += count;
-					col += count;
-				} else {
-					*pixdata++ = data;
-					col++;
-				}
-			}
-		}
-	} else {
-		for (row=0; row< ysize ; row++)      {
-			for (col=0; col< xsize ; )      {
-				if (PHYSFS_read( PCXfile, &data, 1, 1 )!=1 )	{
-					PHYSFS_close( PCXfile );
-					return PCX_ERROR_READING;
-				}
-				if ((data & 0xC0) == 0xC0)     {
-					count =  data & 0x3F;
-					if (PHYSFS_read( PCXfile, &data, 1, 1 )!=1 )	{
-						PHYSFS_close( PCXfile );
-						return PCX_ERROR_READING;
-					}
-					for (i=0;i<count;i++)
-						gr_bm_pixel( bmp, col+i, row, data );
-					col += count;
-				} else {
-					gr_bm_pixel( bmp, col, row, data );
-					col++;
-				}
-			}
-		}
+	for (row = 0; row < ysize; ++row) {
+		if (!pcx_read_rle_row(PCXfile, row_data, header.BytesPerLine))
+			goto reading_error;
+		if (bmp->bm_type == BM_LINEAR)
+			memcpy(&bmp->bm_data[bmp->bm_rowsize * row], row_data, xsize);
+		else
+			for (col = 0; col < xsize; ++col)
+				gr_bm_pixel(bmp, col, row, row_data[col]);
 	}
+	d_free(row_data);
+	row_data = NULL;
 
 	// Read the extended palette at the end of PCX file
 	if ( palette != NULL )	{
@@ -273,14 +311,15 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 		if (PHYSFS_read( PCXfile, &data, 1, 1 )==1)	{
 			if ( data == 12 )	{
 				if (PHYSFS_read(PCXfile, palette,768, 1)!=1)	{
-					PHYSFS_close( PCXfile );
-					return PCX_ERROR_READING;
+					goto reading_error;
 				}
 				for (i=0; i<768; i++ )
 					palette[i] >>= 2;
 			}
 		} else {
-			PHYSFS_close( PCXfile );
+			if (allocated)
+				gr_free_bitmap_data(bmp);
+			PHYSFS_close(PCXfile);
 			return PCX_ERROR_NO_PALETTE;
 		}
 	}
@@ -289,6 +328,19 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 	android_mod_asset_loaded("image", filename, bmp->bm_w, bmp->bm_h);
 #endif
 	return PCX_ERROR_NONE;
+
+memory_error:
+	if (allocated)
+		gr_free_bitmap_data(bmp);
+	PHYSFS_close(PCXfile);
+	return PCX_ERROR_MEMORY;
+
+reading_error:
+	d_free(row_data);
+	if (allocated)
+		gr_free_bitmap_data(bmp);
+	PHYSFS_close(PCXfile);
+	return PCX_ERROR_READING;
 }
 
 int pcx_write_bitmap( char * filename, grs_bitmap * bmp, ubyte * palette )

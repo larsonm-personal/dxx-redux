@@ -192,6 +192,67 @@ class ModManagerDetailsTest {
     }
 
     @Test
+    fun detailsStreamCategoriesAndCapRetainedDocuments() {
+        val filesDir = createTempDirectory("mod-detail-document-cap").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val dxaFile = File(modsDir, "many-documents.dxa")
+        ZipOutputStream(dxaFile.outputStream()).use { zip ->
+            repeat(80) { index -> zip.writeEntry("docs/document-${index.toString().padStart(2, '0')}.txt", "x") }
+            zip.writeEntry("textures/rock001.png", "texture")
+        }
+        val manager = ModManager(filesDir)
+        val mod =
+            ModManager.ModInfo(
+                filename = dxaFile.name,
+                displayName = "Many Documents",
+                enabled = false,
+                addedAt = 0,
+                sizeBytes = dxaFile.length(),
+                game = "d2",
+                order = 0,
+            )
+
+        val details = manager.getModDetails(mod, setDir)
+        val categories = details.categories.associateBy { it.label }
+
+        assertEquals(81, details.fileCount)
+        assertEquals(80, details.documentCount)
+        assertEquals(64, details.documents.size)
+        assertTrue(details.documentsTruncated)
+        assertEquals(80, categories.getValue("Documentation").count)
+        assertEquals(1, categories.getValue("Texture replacements").count)
+        assertTrue(details.problems.any { it.contains("limited to 64 of 80 documents") })
+    }
+
+    @Test
+    fun detailsRejectArchivePastAdmissionEntryLimit() {
+        val filesDir = createTempDirectory("mod-detail-entry-cap").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val dxaFile = File(modsDir, "too-many-entries.dxa")
+        ZipOutputStream(dxaFile.outputStream()).use { zip ->
+            repeat(ExtractionLimits.MAX_ENTRIES + 1) { index -> zip.writeEntry("files/$index.bin", "x") }
+        }
+        val manager = ModManager(filesDir)
+        val mod =
+            ModManager.ModInfo(
+                filename = dxaFile.name,
+                displayName = "Too Many Entries",
+                enabled = false,
+                addedAt = 0,
+                sizeBytes = dxaFile.length(),
+                game = "d2",
+                order = 0,
+            )
+
+        val details = manager.getModDetails(mod, setDir)
+
+        assertEquals(0, details.fileCount)
+        assertTrue(details.problems.single().contains("more than ${ExtractionLimits.MAX_ENTRIES} entries"))
+    }
+
+    @Test
     fun detailsPatchProblemDoesNotNameEmptyOtherMods() {
         val filesDir = createTempDirectory("mod-detail-patch-problem").toFile()
         val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
@@ -384,6 +445,58 @@ class ModManagerDetailsTest {
             assertEquals(88, row.getInt("OpenSound"))
             assertEquals(147, row.getInt("CloseSound"))
         }
+    }
+
+    @Test
+    fun compatibilityRejectsExcessivePatchOperationCount() {
+        val filesDir = createTempDirectory("mod-patch-operation-limit").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val baseSha256 = sha256(File(setDir, "descent2.ham").apply { writeText("base-ham") })
+        val patch = JSONArray()
+        repeat(4097) { patch.put(JSONObject()) }
+        writePatchDxa(File(modsDir, "too_many.dxa"), "too-many", baseSha256, patch.toString())
+        writeModManifest(filesDir, "too_many.dxa" to "Too Many Operations")
+
+        val report = ModManager(filesDir).checkEnabledModCompatibility("d2", setDir)
+
+        assertFalse(report.ok)
+        assertTrue(report.toUserMessage().contains("exceeds 4096 patch operations"))
+    }
+
+    @Test
+    fun conflictDiagnosticsAreCapped() {
+        val filesDir = createTempDirectory("mod-patch-conflict-cap").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val d1PatchPath = "patches/d1/level_surface_patch.rfc6902.json"
+
+        fun writePatch(
+            filename: String,
+            value: Int,
+        ) {
+            val operations = JSONArray()
+            repeat(70) { segment ->
+                operations.put(
+                    JSONObject()
+                        .put("op", "replace")
+                        .put("path", "/levels/level03.rdl/surfaces/$segment:0")
+                        .put("value", JSONObject().put("tmap1", value)),
+                )
+            }
+            ZipOutputStream(File(modsDir, filename).outputStream()).use { zip ->
+                zip.writeEntry(d1PatchPath, operations.toString())
+            }
+        }
+
+        writePatch("first.dxa", 1)
+        writePatch("second.dxa", 2)
+        writeModManifest(filesDir, "first.dxa" to "First", "second.dxa" to "Second", game = "d1")
+
+        val conflict = ModManager(filesDir).checkEnabledModCompatibility("d1", setDir).patchConflicts.single()
+
+        assertEquals(65, conflict.details.size)
+        assertEquals("Additional conflict details omitted", conflict.details.last())
     }
 
     private fun ZipOutputStream.writeEntry(

@@ -46,6 +46,7 @@ class LauncherFileCopyTest {
                 output,
                 inputBytes.size.toLong(),
                 "test.bin",
+                maxBytes = inputBytes.size.toLong(),
             ) { progress.add(it) }
 
         assertEquals(inputBytes.size.toLong(), copied)
@@ -65,7 +66,7 @@ class LauncherFileCopyTest {
         val destination = File(dir, "game.hog").apply { writeText("prior") }
 
         assertThrows(IOException::class.java) {
-            LauncherFileCopy.copyInputToFile(destination, 8L) {
+            LauncherFileCopy.copyInputToFile(destination, 8L, maxBytes = 8L) {
                 ByteArrayInputStream("short".toByteArray())
             }
         }
@@ -82,7 +83,7 @@ class LauncherFileCopyTest {
         val destination = File(dir, "game.hog").apply { writeText("prior") }
         val replacement = "complete".toByteArray()
 
-        LauncherFileCopy.copyInputToFile(destination, replacement.size.toLong()) {
+        LauncherFileCopy.copyInputToFile(destination, replacement.size.toLong(), maxBytes = replacement.size.toLong()) {
             ByteArrayInputStream(replacement)
         }
 
@@ -113,7 +114,7 @@ class LauncherFileCopyTest {
             }
         val output = ByteArrayOutputStream()
 
-        LauncherFileCopy.copyStream(input, output, bytes.size.toLong(), "transient.bin")
+        LauncherFileCopy.copyStream(input, output, bytes.size.toLong(), "transient.bin", maxBytes = bytes.size.toLong())
 
         assertArrayEquals(bytes, output.toByteArray())
     }
@@ -126,7 +127,7 @@ class LauncherFileCopyTest {
         val destination = File(dir, "game.hog").apply { writeText("prior") }
 
         assertThrows(IOException::class.java) {
-            LauncherFileCopy.copyInputToFile(destination, 4L) {
+            LauncherFileCopy.copyInputToFile(destination, 4L, maxBytes = 4L) {
                 ByteArrayInputStream("longer".toByteArray())
             }
         }
@@ -155,6 +156,13 @@ class LauncherFileCopyTest {
 
         assertEquals("prior", destination.readText())
         assertTrue(dir.listFiles().orEmpty().none { it.name != destination.name })
+    }
+
+    @Test
+    fun unknownSourceSizeReservesTheHardLimit() {
+        assertEquals(4096L, LauncherFileCopy.reservationBytes(0L, 4096L))
+        assertEquals(4096L, LauncherFileCopy.reservationBytes(-1L, 4096L))
+        assertEquals(12L, LauncherFileCopy.reservationBytes(12L, 4096L))
     }
 
     @Test

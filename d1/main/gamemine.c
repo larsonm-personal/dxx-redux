@@ -42,6 +42,15 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "key.h"
 #include "piggy.h"
 #include "level_section_io.h"
+#include "physfsx_checked_read.h"
+
+static PHYSFSX_read_status Level_mine_read_status;
+
+#define PHYSFSX_readByte(file) PHYSFSX_readByteChecked(&Level_mine_read_status, (file))
+#define PHYSFSX_readFix(file) PHYSFSX_readFixChecked(&Level_mine_read_status, (file))
+#define PHYSFSX_readInt(file) PHYSFSX_readIntChecked(&Level_mine_read_status, (file))
+#define PHYSFSX_readShort(file) PHYSFSX_readShortChecked(&Level_mine_read_status, (file))
+#define PHYSFSX_readVector(vector, file) PHYSFSX_readVectorChecked(&Level_mine_read_status, (vector), (file))
 
 #define REMOVE_EXT(s)  (*(strchr( (s), '.' ))='\0')
 
@@ -490,7 +499,7 @@ void segment2_read(segment *s2, PHYSFS_file *fp)
 
 int load_mine_data_compiled(PHYSFS_file *LoadFile)
 {
-	int     i, segnum, sidenum;
+	int     i, segnum, sidenum, num_vertices, num_segments;
 	ubyte   compiled_version;
 	short   temp_short;
 	ushort  temp_ushort = 0;
@@ -511,29 +520,41 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 		tmap_xlate_table[i] = i;
 #endif
 //	memset( Segments, 0, sizeof(segment)*MAX_SEGMENTS );
-	fuelcen_reset();
+
+	PHYSFSX_readStatusReset(&Level_mine_read_status);
 
 	//=============================== Reading part ==============================
 	compiled_version = PHYSFSX_readByte(LoadFile);
 	(void)compiled_version;
 
 	if (New_file_format_load)
-		Num_vertices = PHYSFSX_readShort(LoadFile);
+		num_vertices = PHYSFSX_readShort(LoadFile);
 	else
-		Num_vertices = PHYSFSX_readInt(LoadFile);
+		num_vertices = PHYSFSX_readInt(LoadFile);
 	
 	if (New_file_format_load)
-		Num_segments = PHYSFSX_readShort(LoadFile);
+		num_segments = PHYSFSX_readShort(LoadFile);
 	else
-		Num_segments = PHYSFSX_readInt(LoadFile);
-	if (!level_count_is_valid(Num_vertices, 1, MAX_VERTICES) ||
-	    !level_count_is_valid(Num_segments, 1, MAX_SEGMENTS)) {
-		Warning("Invalid compiled mine counts vertices=%d segments=%d", Num_vertices, Num_segments);
+		num_segments = PHYSFSX_readInt(LoadFile);
+	if (PHYSFSX_readStatusFailed(&Level_mine_read_status) ||
+	    !level_count_is_valid(num_vertices, 1, MAX_VERTICES) ||
+	    !level_count_is_valid(num_segments, 1, MAX_SEGMENTS)) {
+		Warning("Invalid compiled mine counts vertices=%d segments=%d", num_vertices, num_segments);
 		return -1;
 	}
+	if (!level_minimum_span_is_valid(LoadFile,
+	                                 num_vertices, LEVEL_COMPILED_VERTEX_SERIALIZED_SIZE,
+	                                 num_segments, level_compiled_mine_minimum_segment_size(New_file_format_load, Gamesave_current_version),
+	                                 "compiled mine"))
+		return -1;
+	Num_vertices = num_vertices;
+	Num_segments = num_segments;
+	fuelcen_reset();
 	
 	for (i = 0; i < Num_vertices; i++)
 		PHYSFSX_readVector( &(Vertices[i]), LoadFile);
+	if (PHYSFSX_readStatusFailed(&Level_mine_read_status))
+		return -1;
 	
 	for (segnum=0; segnum<Num_segments; segnum++ )	{
 
@@ -628,6 +649,8 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 				}
 			}
 		}
+		if (PHYSFSX_readStatusFailed(&Level_mine_read_status))
+			return -1;
 	}
 
 	for (segnum = 0; segnum < Num_segments; ++segnum)
@@ -646,6 +669,8 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 	for (i=0; i<Num_segments; i++) {
 		if (Gamesave_current_version > 5)
 			segment2_read(&Segments[i], LoadFile);
+		if (PHYSFSX_readStatusFailed(&Level_mine_read_status))
+			return -1;
 		fuelcen_activate( &Segments[i], Segments[i].special );
 	}
 	

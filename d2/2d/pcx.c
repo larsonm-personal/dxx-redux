@@ -52,6 +52,8 @@ typedef struct {
 } __pack__ PCXHeader;
 
 #define PCXHEADER_SIZE 128
+#define PCX_MAX_DIMENSION 8192
+#define PCX_MAX_DECODED_BYTES (64u * 1024u * 1024u)
 
 /*
  * reads n PCXHeader structs from a PHYSFS_file
@@ -80,6 +82,20 @@ int PCXHeader_read_n(PCXHeader *ph, int n, PHYSFS_file *fp)
 		PHYSFS_read(fp, &ph->filler, 60, 1);
 	}
 	return i;
+}
+
+static int pcx_validate_dimensions(const PCXHeader *header, int *width, int *height)
+{
+	const int xsize = (int)header->Xmax - (int)header->Xmin + 1;
+	const int ysize = (int)header->Ymax - (int)header->Ymin + 1;
+	const int bytes_per_line = header->BytesPerLine;
+	if (xsize <= 0 || ysize <= 0 || xsize > PCX_MAX_DIMENSION || ysize > PCX_MAX_DIMENSION ||
+	    bytes_per_line < xsize || bytes_per_line > PCX_MAX_DIMENSION ||
+	    (unsigned)bytes_per_line * (unsigned)ysize > PCX_MAX_DECODED_BYTES)
+		return 0;
+	*width = xsize;
+	*height = ysize;
+	return 1;
 }
 
 struct PCX_PHYSFS_file
@@ -113,11 +129,31 @@ static int PCX_PHYSFS_read(struct PCX_PHYSFS_file *pcxphysfs, ubyte *data, unsig
 	return PHYSFS_read(pcxphysfs->PCXfile, data, size, sizeof(*data));
 }
 
+static int pcx_read_rle_row(struct PCX_PHYSFS_file *pcxphysfs, ubyte *row, int row_size)
+{
+	int offset = 0;
+	while (offset < row_size) {
+		ubyte data;
+		int count = 1;
+		if (PCX_PHYSFS_read(pcxphysfs, &data, 1) != 1)
+			return 0;
+		if ((data & 0xc0) == 0xc0) {
+			count = data & 0x3f;
+			if (!count || count > row_size - offset || PCX_PHYSFS_read(pcxphysfs, &data, 1) != 1)
+				return 0;
+		}
+		memset(row + offset, data, count);
+		offset += count;
+	}
+	return 1;
+}
+
 static int pcx_read_bitmap_file(struct PCX_PHYSFS_file *const pcxphysfs, grs_bitmap * bmp,int bitmap_type ,ubyte * palette)
 {
 	PCXHeader header;
-	int i, row, col, count, xsize, ysize;
-	ubyte data, *pixdata;
+	int allocated = 0;
+	int i, row, col, xsize, ysize;
+	ubyte data, *row_data = NULL;
 
 	// read 128 char PCX header
 	if (PCXHeader_read_n( &header, 1, pcxphysfs->PCXfile )!=1) {
@@ -129,58 +165,33 @@ static int pcx_read_bitmap_file(struct PCX_PHYSFS_file *const pcxphysfs, grs_bit
 		return PCX_ERROR_WRONG_VERSION;
 	}
 
-	// Find the size of the image
-	xsize = header.Xmax - header.Xmin + 1;
-	ysize = header.Ymax - header.Ymin + 1;
+	if (!pcx_validate_dimensions(&header, &xsize, &ysize))
+		return PCX_ERROR_WRONG_VERSION;
 
 	if ( bitmap_type == BM_LINEAR )	{
 		if ( bmp->bm_data == NULL )	{
 			gr_init_bitmap_alloc (bmp, bitmap_type, 0, 0, xsize, ysize, xsize);
+			allocated = 1;
 		}
 	}
+	if (!bmp->bm_data || bmp->bm_w < xsize || bmp->bm_h < ysize ||
+	    (bmp->bm_type == BM_LINEAR && bmp->bm_rowsize < xsize))
+		goto reading_error;
+	row_data = d_malloc(header.BytesPerLine);
+	if (!row_data)
+		goto memory_error;
 
-	if ( bmp->bm_type == BM_LINEAR )	{
-		for (row=0; row< ysize ; row++)      {
-			pixdata = &bmp->bm_data[bmp->bm_rowsize*row];
-			for (col=0; col< xsize ; )      {
-				if (PCX_PHYSFS_read(pcxphysfs, &data, 1) != 1)	{
-					return PCX_ERROR_READING;
-				}
-				if ((data & 0xC0) == 0xC0)     {
-					count =  data & 0x3F;
-					if (PCX_PHYSFS_read(pcxphysfs, &data, 1) != 1)	{
-						return PCX_ERROR_READING;
-					}
-					memset( pixdata, data, count );
-					pixdata += count;
-					col += count;
-				} else {
-					*pixdata++ = data;
-					col++;
-				}
-			}
-		}
-	} else {
-		for (row=0; row< ysize ; row++)      {
-			for (col=0; col< xsize ; )      {
-				if (PCX_PHYSFS_read(pcxphysfs, &data, 1) != 1)	{
-					return PCX_ERROR_READING;
-				}
-				if ((data & 0xC0) == 0xC0)     {
-					count =  data & 0x3F;
-					if (PCX_PHYSFS_read(pcxphysfs, &data, 1) != 1)	{
-						return PCX_ERROR_READING;
-					}
-					for (i=0;i<count;i++)
-						gr_bm_pixel( bmp, col+i, row, data );
-					col += count;
-				} else {
-					gr_bm_pixel( bmp, col, row, data );
-					col++;
-				}
-			}
-		}
+	for (row = 0; row < ysize; ++row) {
+		if (!pcx_read_rle_row(pcxphysfs, row_data, header.BytesPerLine))
+			goto reading_error;
+		if (bmp->bm_type == BM_LINEAR)
+			memcpy(&bmp->bm_data[bmp->bm_rowsize * row], row_data, xsize);
+		else
+			for (col = 0; col < xsize; ++col)
+				gr_bm_pixel(bmp, col, row, row_data[col]);
 	}
+	d_free(row_data);
+	row_data = NULL;
 
 	// Read the extended palette at the end of PCX file
 	if ( palette != NULL )	{
@@ -188,16 +199,29 @@ static int pcx_read_bitmap_file(struct PCX_PHYSFS_file *const pcxphysfs, grs_bit
 		if (PCX_PHYSFS_read(pcxphysfs, &data, 1) == 1)	{
 			if ( data == 12 )	{
 				if (PCX_PHYSFS_read(pcxphysfs, palette, 768) != 1)	{
-					return PCX_ERROR_READING;
+					goto reading_error;
 				}
 				for (i=0; i<768; i++ )
 					palette[i] >>= 2;
 			}
 		} else {
+			if (allocated)
+				gr_free_bitmap_data(bmp);
 			return PCX_ERROR_NO_PALETTE;
 		}
 	}
 	return PCX_ERROR_NONE;
+
+memory_error:
+	if (allocated)
+		gr_free_bitmap_data(bmp);
+	return PCX_ERROR_MEMORY;
+
+reading_error:
+	d_free(row_data);
+	if (allocated)
+		gr_free_bitmap_data(bmp);
+	return PCX_ERROR_READING;
 }
 
 int pcx_write_bitmap( char * filename, grs_bitmap * bmp, ubyte * palette )

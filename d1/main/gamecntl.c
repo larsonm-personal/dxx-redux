@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newdemo.h"
 #include "weapon.h"
 #include "weapon_cheat_shared.h"
+#include "game_cheat.h"
 #include "sounds.h"
 #include "args.h"
 #include "gameseq.h"
@@ -1203,46 +1204,24 @@ int game_apply_demo_cheat(int cheat, int validate_only)
 	return 1;
 }
 
-int FinalCheats(int key)
+static int execute_cheat(int gotcha)
 {
-	static char cheat_buffer[CHEAT_MAX_LEN] = "AAAAAAAAAAAAAAA";
-	int i = 0, gotcha = 0;
-
-	if (Game_mode & GM_MULTI)
+	if (cheat_codes[gotcha].stateptr == &cheats.enabled) {
+		weapon_cheat_execute_live(0);
 		return 0;
-
-	for (i = 1; i < CHEAT_MAX_LEN; i++)
-		cheat_buffer[i-1] = cheat_buffer[i];
-	cheat_buffer[CHEAT_MAX_LEN-1] = key_ascii();
-	for (i = 0; i < NUM_CHEATS; i++)
-	{
-		int cheatlen = strlen(cheat_codes[i].string);
-		Assert(cheatlen <= CHEAT_MAX_LEN);
-		if (d_strnicmp(cheat_codes[i].string, cheat_buffer+CHEAT_MAX_LEN-cheatlen, cheatlen)==0)
-		{
-			if (!cheats.enabled && *cheat_codes[i].stateptr != cheats.enabled)
-				break;
-			if (cheat_codes[i].stateptr == &cheats.enabled) {
-				weapon_cheat_execute_live(0);
-				return 0;
-			}
-			if (cheat_codes[i].stateptr == &cheats.wowie || cheat_codes[i].stateptr == &cheats.wowie2) {
-				weapon_cheat_execute_live(cheat_codes[i].stateptr == &cheats.wowie ?
-				    INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE : INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED);
-				return 1;
-			}
-			weapon_cheat_cancel_capture("unsupported native cheat");
-			if (!cheats.enabled)
-				HUD_init_message(HM_DEFAULT, TXT_CHEATS_ENABLED);
-			*cheat_codes[i].stateptr = !*cheat_codes[i].stateptr;
-			cheats.enabled = 1;
-			digi_play_sample( SOUND_CHEATER, F1_0);
-			Players[Player_num].score = 0;
-			gotcha = i;
-			break;
-		}
 	}
-
+	if (cheat_codes[gotcha].stateptr == &cheats.wowie || cheat_codes[gotcha].stateptr == &cheats.wowie2) {
+		weapon_cheat_execute_live(cheat_codes[gotcha].stateptr == &cheats.wowie ?
+		    INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE : INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED);
+		return 1;
+	}
+	weapon_cheat_cancel_capture("unsupported native cheat");
+	if (!cheats.enabled)
+		HUD_init_message(HM_DEFAULT, TXT_CHEATS_ENABLED);
+	*cheat_codes[gotcha].stateptr = !*cheat_codes[gotcha].stateptr;
+	cheats.enabled = 1;
+	digi_play_sample( SOUND_CHEATER, F1_0);
+	Players[Player_num].score = 0;
 	if (!gotcha)
 		return 0;
 
@@ -1344,6 +1323,50 @@ int FinalCheats(int key)
 	}
 
 	return 1;
+}
+
+int FinalCheats(int key)
+{
+	static char cheat_buffer[CHEAT_MAX_LEN] = "AAAAAAAAAAAAAAA";
+	int i = 0;
+
+	if (Game_mode & GM_MULTI)
+		return 0;
+
+	for (i = 1; i < CHEAT_MAX_LEN; i++)
+		cheat_buffer[i-1] = cheat_buffer[i];
+	cheat_buffer[CHEAT_MAX_LEN-1] = key_ascii();
+	for (i = 0; i < NUM_CHEATS; i++)
+	{
+		int cheatlen = strlen(cheat_codes[i].string);
+		Assert(cheatlen <= CHEAT_MAX_LEN);
+		if (d_strnicmp(cheat_codes[i].string, cheat_buffer+CHEAT_MAX_LEN-cheatlen, cheatlen)==0)
+		{
+			if (!cheats.enabled && *cheat_codes[i].stateptr != cheats.enabled)
+				break;
+			return execute_cheat(i);
+		}
+	}
+	return 0;
+}
+
+/* Complete menu commands bypass keyboard state and control bindings */
+int game_execute_cheat(const char *code)
+{
+	int i;
+	if (!code || (Game_mode & GM_MULTI) || Player_is_dead || Endlevel_sequence ||
+	    Newdemo_state == ND_STATE_PLAYBACK || input_demo_replay_is_loaded() || !Game_wind || Screen_mode != SCREEN_GAME ||
+	    Player_num < 0 || Player_num >= MAX_PLAYERS)
+		return 0;
+	for (i = 0; i < NUM_CHEATS; ++i) {
+		if (d_stricmp(code, cheat_codes[i].string))
+			continue;
+		if (!cheats.enabled && cheat_codes[i].stateptr != &cheats.enabled)
+			weapon_cheat_execute_live(0);
+		execute_cheat(i);
+		return 1;
+	}
+	return 0;
 }
 
 // Internal Cheat Menu

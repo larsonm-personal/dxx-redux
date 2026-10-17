@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.util.Log
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.util.zip.ZipFile
 
@@ -14,13 +15,13 @@ import java.util.zip.ZipFile
 object DxaTextureScanner {
     private const val TAG = "DXX-DxaScan"
 
-    // Traversal limits must match pngfile.c native texture indexing.
-    private const val MAX_ARCHIVE_ENTRIES = 65_536
-    private const val MAX_DIRECTORIES = 16_384
-    private const val MAX_TEXTURE_ENTRIES = 49_152
+    // DXA admission contract: keep synchronized with dxa_admission_limits.h.
+    private const val MAX_ARCHIVE_ENTRIES = ExtractionLimits.MAX_ENTRIES
+    private const val MAX_DIRECTORIES = ExtractionLimits.MAX_ENTRIES
+    private const val MAX_TEXTURE_ENTRIES = ExtractionLimits.MAX_ENTRIES
     private const val MAX_PATH_DEPTH = 64
     private const val MAX_PATH_BYTES = 4_096
-    private const val MAX_TOTAL_PATH_BYTES = 16 * 1024 * 1024
+    private const val MAX_TOTAL_PATH_BYTES = 1024 * 1024
     private val KTX2_IDENTIFIER =
         byteArrayOf(
             0xAB.toByte(),
@@ -60,13 +61,42 @@ object DxaTextureScanner {
             get() = rejectedReason == null
     }
 
-    internal fun validateStructure(entryNames: Sequence<String>): String? {
+    internal data class EntryMetadata(
+        val name: String,
+        val isDirectory: Boolean,
+        val expandedSize: Long,
+        val compressedSize: Long,
+    )
+
+    internal fun validateStructure(entryNames: Sequence<String>): String? =
+        validateAdmission(
+            sourceBytes = 0,
+            entries =
+                entryNames.map { name ->
+                    EntryMetadata(
+                        name = name,
+                        isDirectory = name.endsWith('/'),
+                        expandedSize = 0,
+                        compressedSize = 0,
+                    )
+                },
+        )
+
+    internal fun validateAdmission(
+        sourceBytes: Long,
+        entries: Sequence<EntryMetadata>,
+    ): String? {
+        if (sourceBytes < 0 || sourceBytes > ExtractionLimits.MAX_DXA_SOURCE_BYTES) {
+            return "archive source exceeds ${ExtractionLimits.MAX_DXA_SOURCE_BYTES} bytes"
+        }
         var entryCount = 0
         var textureCount = 0
         var totalPathBytes = 0L
         val directories = HashSet<String>()
+        val extractionBudget = ExtractionBudget()
 
-        for (name in entryNames) {
+        for (entry in entries) {
+            val name = entry.name
             entryCount++
             if (entryCount > MAX_ARCHIVE_ENTRIES) return "archive has more than $MAX_ARCHIVE_ENTRIES entries"
             val pathBytes = name.toByteArray(Charsets.UTF_8).size
@@ -97,11 +127,20 @@ object DxaTextureScanner {
                 if (directories.size > MAX_DIRECTORIES) return "archive has more than $MAX_DIRECTORIES directories"
             } else if (GameFileFormats.isTextureReplacement(trimmed)) {
                 textureCount++
-                if (textureCount >
-                    MAX_TEXTURE_ENTRIES
-                ) {
+                if (textureCount > MAX_TEXTURE_ENTRIES) {
                     return "archive has more than $MAX_TEXTURE_ENTRIES texture entries"
                 }
+            }
+
+            val expandedSize = if (entry.isDirectory) 0 else entry.expandedSize
+            val compressedSize = if (entry.isDirectory) 0 else entry.compressedSize
+            if (expandedSize < 0) return "$name has no usable uncompressed size"
+            if (compressedSize < 0) return "$name has no usable compressed size"
+            if (expandedSize > 0 && compressedSize == 0L) return "$name has no usable compressed size"
+            try {
+                extractionBudget.registerEntry(expandedSize, compressedSize, name)
+            } catch (error: IOException) {
+                return error.message ?: "archive exceeds DXA admission limits"
             }
         }
         return null
@@ -110,6 +149,17 @@ object DxaTextureScanner {
     /** Scan a DXA file and return the max texture dimensions found. */
     fun scan(dxaFile: File): ScanResult? {
         if (!dxaFile.exists()) return null
+        val sourceBytes = dxaFile.length()
+        if (sourceBytes > ExtractionLimits.MAX_DXA_SOURCE_BYTES) {
+            return ScanResult(
+                maxWidth = 0,
+                maxHeight = 0,
+                textureCount = 0,
+                oversizedCount = 0,
+                oversizedEntries = emptyList(),
+                rejectedReason = "archive source exceeds ${ExtractionLimits.MAX_DXA_SOURCE_BYTES} bytes",
+            )
+        }
         return try {
             ZipFile(dxaFile).use { zip ->
                 var maxW = 0
@@ -117,7 +167,19 @@ object DxaTextureScanner {
                 var count = 0
                 var oversized = 0
                 val oversizedEntries = mutableListOf<OversizedTexture>()
-                val rejectedReason = validateStructure(zip.entries().asSequence().map { it.name })
+                val rejectedReason =
+                    validateAdmission(
+                        sourceBytes = sourceBytes,
+                        entries =
+                            zip.entries().asSequence().map { entry ->
+                                EntryMetadata(
+                                    name = entry.name,
+                                    isDirectory = entry.isDirectory,
+                                    expandedSize = entry.size,
+                                    compressedSize = entry.compressedSize,
+                                )
+                            },
+                    )
                 if (rejectedReason != null) {
                     return@use ScanResult(0, 0, 0, 0, emptyList(), rejectedReason)
                 }

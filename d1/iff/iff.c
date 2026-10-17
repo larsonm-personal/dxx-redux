@@ -30,6 +30,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "iff.h"
 #include "dxxerror.h"
 #include "physfsx.h"
+#include "iff_safe_decode.h"
+#include "iff_safe_engine_adapter.h"
 
 //Internal constants and structures for this library
 
@@ -571,41 +573,14 @@ done:
 //returns error codes - see IFF.H.  see GR.H for bitmap_type
 int iff_read_bitmap(char *ifilename,grs_bitmap *bm,int bitmap_type,ubyte *palette)
 {
-	int ret;			//return code
-	PHYSFS_file *ifile;
-
-	ifile = PHYSFSX_openReadBuffered(ifilename);
-	if (ifile == NULL)
-		return IFF_NO_FILE;
-
-	bm->bm_data = NULL;
-	ret = iff_parse_bitmap(ifile,bm,bitmap_type,(signed char *) palette,NULL);
-
-	PHYSFS_close(ifile);
-
-	return ret;
-
-
+	return iff_safe_engine_read_bitmap(ifilename, bm, bitmap_type, palette);
 }
 
 //like iff_read_bitmap(), but reads into a bitmap that already exists,
 //without allocating memory for the bitmap.
 int iff_read_into_bitmap(char *ifilename, grs_bitmap *bm, sbyte *palette)
 {
-	int ret;			//return code
-	PHYSFS_file *ifile;
-
-	ifile = PHYSFSX_openReadBuffered(ifilename);
-	if (ifile == NULL)
-		return IFF_NO_FILE;
-
-	ret = iff_parse_bitmap(ifile,bm,bm->bm_type,palette,NULL);
-
-	PHYSFS_close(ifile);
-
-	return ret;
-
-
+	return iff_safe_engine_read_into_bitmap(ifilename, bm, palette);
 }
 
 #define BMHD_SIZE 20
@@ -921,6 +896,8 @@ int iff_write_bitmap(char *ofilename,grs_bitmap *bm,ubyte *palette)
 //returns iff error codes
 int iff_read_animbrush(char *ifilename,grs_bitmap **bm_list,int max_bitmaps,int *n_bitmaps,ubyte *palette)
 {
+	return iff_safe_engine_read_anim(ifilename, bm_list, max_bitmaps, n_bitmaps, palette);
+#if 0
 	int ret = IFF_NO_ERROR;			//return code
 	PHYSFS_file *ifile;
 	int sig,form_len;
@@ -977,7 +954,7 @@ done:
 	PHYSFS_close(ifile);
 
 	return ret;
-
+#endif
 }
 
 //text for error messges

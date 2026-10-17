@@ -1,6 +1,5 @@
 package com.dxxredux.app
 
-import android.os.Build
 import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.ISequentialOutStream
 import net.sf.sevenzipjbinding.PropID
@@ -17,7 +16,6 @@ import java.io.InputStream
 import java.io.RandomAccessFile
 import java.text.Normalizer
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -312,7 +310,6 @@ internal fun extractRarArchiveToDirectory(
     archive: File,
     targetRoot: File,
     nativeExtractor: (File, File) -> Unit = ::extractRarWithSevenZipBinding,
-    capabilityFallback: (File, File) -> Unit = ::extractRarWithHostTar,
 ) {
     targetRoot.mkdirs()
     try {
@@ -320,15 +317,7 @@ internal fun extractRarArchiveToDirectory(
     } catch (nativeError: Throwable) {
         val capabilityError = nativeRarCapabilityFailure(nativeError) ?: throw nativeError
         targetRoot.deleteRecursively()
-        targetRoot.mkdirs()
-        try {
-            capabilityFallback(archive, targetRoot)
-        } catch (fallbackError: Exception) {
-            throw IllegalArgumentException(
-                "RAR extraction failed: ${capabilityError.message}; ${fallbackError.message}",
-                fallbackError,
-            )
-        }
+        throw capabilityError
     }
 }
 
@@ -436,128 +425,4 @@ private fun extractRarWithSevenZipBinding(
             input.close()
         }
     }
-}
-
-// JVM tests use the host tar path with SDK_INT=0; Android needs the API-26 process APIs
-@Suppress("NewApi")
-private fun extractRarWithHostTar(
-    archive: File,
-    targetRoot: File,
-) {
-    if (Build.VERSION.SDK_INT in 1..25) {
-        throw IOException("Native RAR backend is unavailable; host tar fallback requires Android 8.0 or newer")
-    }
-    validateHostTarArchiveOutputs(archive, targetRoot)
-    val diagnosticFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.log")
-    diagnosticFile.delete()
-    val process =
-        ProcessBuilder("tar", "-xf", archive.absolutePath, "-C", targetRoot.absolutePath)
-            .redirectErrorStream(true)
-            .redirectOutput(diagnosticFile)
-            .start()
-    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300)
-    try {
-        while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
-            if (System.nanoTime() >= deadline) throw IOException("host tar exceeded 300 seconds")
-            if (diagnosticFile.length() > ExtractionLimits.MAX_DESCRIPTOR_BYTES) {
-                throw IOException("host tar diagnostics exceed ${ExtractionLimits.MAX_DESCRIPTOR_BYTES} bytes")
-            }
-            validateExtractedTree(targetRoot)
-        }
-    } catch (error: Exception) {
-        process.destroyForcibly()
-        process.waitFor(5, TimeUnit.SECONDS)
-        diagnosticFile.delete()
-        throw error
-    }
-    validateExtractedTree(targetRoot)
-    val output =
-        try {
-            diagnosticFile.inputStream().use {
-                it
-                    .readBytesBounded(
-                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                        "host tar diagnostics",
-                        expectedSizeBytes = diagnosticFile.length(),
-                    ).toString(Charsets.UTF_8)
-            }
-        } finally {
-            diagnosticFile.delete()
-        }
-    val exitCode = process.exitValue()
-    if (exitCode != 0) {
-        throw IllegalArgumentException("host tar failed with exit code $exitCode: $output")
-    }
-}
-
-@android.annotation.TargetApi(26)
-private fun validateHostTarArchiveOutputs(
-    archive: File,
-    targetRoot: File,
-) {
-    val listingFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.list")
-    val errorFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.list.log")
-    listingFile.delete()
-    errorFile.delete()
-    val process =
-        ProcessBuilder("tar", "-tf", archive.absolutePath)
-            .redirectOutput(listingFile)
-            .redirectError(errorFile)
-            .start()
-    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300)
-    try {
-        while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
-            if (System.nanoTime() >= deadline) throw IOException("host tar listing exceeded 300 seconds")
-            if (listingFile.length() + errorFile.length() > ExtractionLimits.MAX_DESCRIPTOR_BYTES) {
-                throw IOException("host tar listing exceeds ${ExtractionLimits.MAX_DESCRIPTOR_BYTES} bytes")
-            }
-        }
-        val diagnostics =
-            errorFile.inputStream().use {
-                it
-                    .readBytesBounded(
-                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                        "host tar listing diagnostics",
-                        expectedSizeBytes = errorFile.length(),
-                    ).toString(Charsets.UTF_8)
-            }
-        if (process.exitValue() != 0) {
-            throw IllegalArgumentException(
-                "host tar listing failed with exit code ${process.exitValue()}: $diagnostics",
-            )
-        }
-        val listing =
-            listingFile.inputStream().use {
-                it
-                    .readBytesBounded(
-                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
-                        "host tar listing",
-                        expectedSizeBytes = listingFile.length(),
-                    ).toString(Charsets.UTF_8)
-            }
-        validateArchiveOutputProjections(
-            listing
-                .lineSequence()
-                .filter { it.isNotBlank() }
-                .map { path -> ArchiveOutputProjection(path, path.trimEnd('/'), path.endsWith('/')) }
-                .toList(),
-            "RAR archive",
-        )
-    } catch (error: Exception) {
-        process.destroyForcibly()
-        process.waitFor(5, TimeUnit.SECONDS)
-        throw error
-    } finally {
-        listingFile.delete()
-        errorFile.delete()
-    }
-}
-
-private fun validateExtractedTree(targetRoot: File) {
-    val budget = ExtractionBudget()
-    targetRoot.walkTopDown().drop(1).forEach { child ->
-        val relative = targetRoot.toPath().relativize(child.toPath()).toString()
-        budget.registerEntry(if (child.isFile) child.length() else 0, 0, relative)
-    }
-    ImportStorageGuard.requireFreeSpace(targetRoot, 0, "extract ${targetRoot.name}")
 }

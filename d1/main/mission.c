@@ -37,6 +37,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "u_mem.h"
 #include "ignorecase.h"
+#include "mission_descriptor_safe.h"
 #ifdef __ANDROID__
 #include "physfsx_android_shared.h"
 #include "android_mission_assets.h"
@@ -212,7 +213,7 @@ int istok(char *buf,char *tok)
 //adds a terminating 0 after a string at the first white space
 void add_term(char *s)
 {
-	while (*s && !isspace(*s)) s++;
+	while (*s && !isspace((unsigned char)*s)) s++;
 
 	*s = 0;		//terminate!
 }
@@ -221,18 +222,19 @@ void add_term(char *s)
 //adds 0 after parm at first white space
 char *get_value(char *buf)
 {
-	char *t;
+	return mission_descriptor_value(buf);
+}
 
-	t = strchr(buf,'=')+1;
-
-	if (t) {
-		while (*t && isspace(*t)) t++;
-
-		if (*t)
-			return t;
+static void set_mission_text_filename(const char *value, char *destination)
+{
+	char candidate[FILENAME_LEN];
+	if (!mission_descriptor_make_text_filename(value, ".tex", candidate, sizeof(candidate))) return;
+	if (!PHYSFSX_exists(candidate, 1)) {
+		if (!mission_descriptor_make_text_filename(value, ".txb", candidate, sizeof(candidate)) ||
+		    !PHYSFSX_exists(candidate, 1))
+			return;
 	}
-
-	return NULL;		//error!
+	snprintf(destination, FILENAME_LEN, "%s", candidate);
 }
 
 //reads a line, returns ptr to value of passed parm.  returns NULL if none
@@ -547,6 +549,7 @@ int load_mission(mle *mission)
 {
 	PHYSFS_file *mfile;
 	char buf[PATH_MAX], *v;
+	int parse_error = 0;
 #ifdef __ANDROID__
 	mle selected = *mission;
 	char requested[PATH_MAX], resolved[PATH_MAX];
@@ -643,128 +646,81 @@ int load_mission(mle *mission)
 		if (istok(buf,"type"))
 			continue;						//already have name, go to next line
 		else if (istok(buf,"briefing")) {
-			if ((v = get_value(buf)) != NULL) {
-				add_term(v);
-				if (strlen(v) < FILENAME_LEN && strlen(v) > 0)
-				{
-					char *tmp, *ptr;
-					MALLOC(tmp, char, FILENAME_LEN);
-					snprintf(tmp, FILENAME_LEN, "%s", v);
-					if ((ptr = strrchr(tmp, '.'))) // if there's a filename extension, kill it. No one knows it's the right one.
-						*ptr = '\0';
-					strncat(tmp, ".tex", sizeof(char)*FILENAME_LEN); // apply tex-extenstion
-					if (PHYSFSX_exists(tmp,1)) // check if this file exists ...
-						snprintf(Briefing_text_filename, FILENAME_LEN, "%s", tmp); // ... and apply ...
-					else // ... otherwise ...
-					{
-						if ((ptr = strrchr(tmp, '.')))
-							*ptr = '\0';
-						strncat(tmp, ".txb", sizeof(char)*FILENAME_LEN); // apply txb extension
-						if (PHYSFSX_exists(tmp,1)) // check if this file exists ...
-							snprintf(Briefing_text_filename, FILENAME_LEN, "%s", tmp); // ... and apply ...
-					}
-					d_free(tmp);
-				}
-			}
+			if ((v = get_value(buf)) != NULL) set_mission_text_filename(v, Briefing_text_filename);
 		}
 		else if (istok(buf,"ending")) {
-			if ((v = get_value(buf)) != NULL) {
-				add_term(v);
-				if (strlen(v) < FILENAME_LEN && strlen(v) > 0)
-				{
-					char *tmp, *ptr;
-					MALLOC(tmp, char, FILENAME_LEN);
-					snprintf(tmp, FILENAME_LEN, "%s", v);
-					if ((ptr = strrchr(tmp, '.'))) // if there's a filename extension, kill it. No one knows it's the right one.
-						*ptr = '\0';
-					strncat(tmp, ".tex", sizeof(char)*FILENAME_LEN); // apply tex-extenstion
-					if (PHYSFSX_exists(tmp,1)) // check if this file exists ...
-						snprintf(Ending_text_filename, FILENAME_LEN, "%s", tmp); // ... and apply ...
-					else // ... otherwise ...
-					{
-						if ((ptr = strrchr(tmp, '.')))
-							*ptr = '\0';
-						strncat(tmp, ".txb", sizeof(char)*FILENAME_LEN); // apply txb extension
-						if (PHYSFSX_exists(tmp,1)) // check if this file exists ...
-							snprintf(Ending_text_filename, FILENAME_LEN, "%s", tmp); // ... and apply ...
-					}
-					d_free(tmp);
-				}
-			}
+			if ((v = get_value(buf)) != NULL) set_mission_text_filename(v, Ending_text_filename);
 		}
 		else if (istok(buf,"num_levels")) {
-
 			if ((v=get_value(buf))!=NULL) {
 				int n_levels,i;
-
-				n_levels = atoi(v);
-				
-				Assert(n_levels <= MAX_LEVELS_PER_MISSION);
-				n_levels = min(n_levels, MAX_LEVELS_PER_MISSION);
-				
+				if (Level_names || !mission_descriptor_parse_count(v, 1, MAX_LEVELS_PER_MISSION, &n_levels)) {
+					parse_error = 1;
+					break;
+				}
 				MALLOC(Level_names, d_fname, n_levels);
 				if (!Level_names)
 				{
+					PHYSFS_close(mfile);
 					free_mission();
 					return 0;
 				}
 
 				for (i=0;i<n_levels;i++) {
-					PHYSFSX_fgets(buf,sizeof(buf),mfile);
-					add_term(buf);
-					if (strlen(buf) <= 12) {
-						strcpy(Level_names[i],buf);
-						Last_level++;
-					}
-					else
+					if (!PHYSFSX_fgets(buf,sizeof(buf),mfile) ||
+					    !mission_descriptor_copy_level_name(buf, Level_names[i], sizeof(Level_names[i]))) {
+						parse_error = 1;
 						break;
+					}
+					Last_level++;
 				}
-
+				if (parse_error) break;
+			}
+			else {
+				parse_error = 1;
+				break;
 			}
 		}
 		else if (istok(buf,"num_secrets")) {
 			if ((v=get_value(buf))!=NULL) {
-				int i;
-
-				N_secret_levels = atoi(v);
-
-				Assert(N_secret_levels <= MAX_SECRET_LEVELS_PER_MISSION);
-				N_secret_levels = min(N_secret_levels, MAX_SECRET_LEVELS_PER_MISSION);
-
-				MALLOC(Secret_level_names, d_fname, N_secret_levels);
+				int i, n_secret_levels;
+				if (Secret_level_names || Secret_level_table ||
+				    !mission_descriptor_parse_count(v, 0, MAX_SECRET_LEVELS_PER_MISSION, &n_secret_levels)) {
+					parse_error = 1;
+					break;
+				}
+				N_secret_levels = n_secret_levels;
+				if (!n_secret_levels) continue;
+				MALLOC(Secret_level_names, d_fname, n_secret_levels);
 				if (!Secret_level_names)
 				{
+					PHYSFS_close(mfile);
 					free_mission();
 					return 0;
 				}
-				
-				MALLOC(Secret_level_table, ubyte, N_secret_levels);
+				MALLOC(Secret_level_table, ubyte, n_secret_levels);
 				if (!Secret_level_table)
 				{
+					PHYSFS_close(mfile);
 					free_mission();
 					return 0;
 				}
-				
-				for (i=0;i<N_secret_levels;i++) {
-					char *t;
-
-					PHYSFSX_fgets(buf,sizeof(buf),mfile);
-					if ((t=strchr(buf,','))!=NULL) *t++=0;
-					else
+				for (i=0;i<n_secret_levels;i++) {
+					int origin;
+					if (!PHYSFSX_fgets(buf,sizeof(buf),mfile) ||
+					    !mission_descriptor_parse_secret(buf, Last_level, Secret_level_names[i],
+					                                     sizeof(Secret_level_names[i]), &origin)) {
+						parse_error = 1;
 						break;
-
-					add_term(buf);
-					if (strlen(buf) <= 12) {
-						strcpy(Secret_level_names[i],buf);
-						Secret_level_table[i] = atoi(t);
-						if (Secret_level_table[i]<1 || Secret_level_table[i]>Last_level)
-							break;
-						Last_secret_level--;
 					}
-					else
-						break;
+					Secret_level_table[i] = (ubyte)origin;
+					Last_secret_level--;
 				}
-
+				if (parse_error) break;
+			}
+			else {
+				parse_error = 1;
+				break;
 			}
 		}
 
@@ -772,7 +728,7 @@ int load_mission(mle *mission)
 
 	PHYSFS_close(mfile);
 
-	if (Last_level <= 0) {
+	if (parse_error || Last_level <= 0) {
 		free_mission();		//no valid mission loaded
 		return 0;
 	}

@@ -6,10 +6,10 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
-    add_test(NAME test_headless_audio_lifecycle
-        COMMAND ${CMAKE_COMMAND}
-            -DHEADLESS_TEST_EXECUTABLE=$<TARGET_FILE:test_upstream_compat>
-            -P ${CMAKE_CURRENT_LIST_DIR}/test_headless_audio_lifecycle.cmake)
+    add_test(
+        NAME test_headless_audio_lifecycle
+        COMMAND ${CMAKE_COMMAND} -DHEADLESS_TEST_EXECUTABLE=$<TARGET_FILE:test_upstream_compat> -P
+                ${CMAKE_CURRENT_LIST_DIR}/test_headless_audio_lifecycle.cmake)
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/mission-movies")
     add_test(NAME test_mission_movies COMMAND test_upstream_compat --mission-movies)
     set_tests_properties(test_mission_movies
@@ -83,8 +83,20 @@ add_test(NAME test_checkpoint_file COMMAND test_checkpoint_file)
 
 add_executable(test_level_section_io test_level_section_io.c)
 target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
-                                                         ${PHYSFS_INCLUDE_DIR})
+                                                         ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
 target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
+
+add_executable(test_iff_safe_decode test_iff_safe_decode.c)
+target_include_directories(test_iff_safe_decode PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(test_mission_descriptor_safe test_mission_descriptor_safe.c)
+target_include_directories(test_mission_descriptor_safe PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(
+    test_d1_custom_validation
+    test_d1_custom_validation.c "${DXX_TEST_SHARED_SOURCE_DIR}/d1_custom_validation.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/bounded_rle.c")
+target_include_directories(test_d1_custom_validation PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
 add_executable(test_d1_shareware_table test_d1_shareware_table.c)
@@ -149,7 +161,15 @@ if(DXX_TEST_GAME STREQUAL "d2")
     add_executable(
         test_d1_pig_validation test_d1_pig_validation.c
                                "${DXX_TEST_GAME_SOURCE_DIR}/main/d1_in_d2/d1_pig_validation.c")
-    target_include_directories(test_d1_pig_validation PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main")
+    target_include_directories(test_d1_pig_validation PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main"
+                                                              "${DXX_TEST_SHARED_SOURCE_DIR}")
+    add_executable(
+        test_d2_ham_validation
+        test_d2_ham_validation.c "${DXX_TEST_GAME_SOURCE_DIR}/main/d2_ham_validation.c"
+        "${DXX_TEST_GAME_SOURCE_DIR}/main/d1_in_d2/d1_pig_validation.c"
+        "${DXX_TEST_SHARED_SOURCE_DIR}/bounded_rle.c")
+    target_include_directories(test_d2_ham_validation PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main"
+                                                              "${DXX_TEST_SHARED_SOURCE_DIR}")
 endif()
 
 add_executable(test_coop_indicator_lines_math test_coop_indicator_lines_math.c)
@@ -537,6 +557,9 @@ set(DXX_HOST_TEST_TARGETS
     test_level_statistics
     test_level_metadata_scan
     test_level_section_io
+    test_iff_safe_decode
+    test_mission_descriptor_safe
+    test_d1_custom_validation
     test_route_snapshot
     test_route_analysis_cache
     test_guidebot_route_decision
@@ -555,6 +578,7 @@ if(DXX_TEST_GAME STREQUAL "d2")
         APPEND
         DXX_HOST_TEST_TARGETS
         test_d1_pig_validation
+        test_d2_ham_validation
         test_classic_demo_json
         test_bounded_rle
         test_escort_owner_policy

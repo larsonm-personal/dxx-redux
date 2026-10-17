@@ -13,6 +13,10 @@ internal object ExtractionLimits {
     // Entire disk-staged ZIP source, including any self-extractor preamble
     // Enemy Within's Rebirth/XL wrapper is 936 MB; this is not an in-memory allocation
     const val MAX_ZIP_SOURCE_BYTES = 2L * 1024L * 1024L * 1024L
+
+    // DXAs may contain full replacement soundtracks, but no imported mod source may grow without bound.
+    // DXA values used by native code are mirrored in dxa_admission_limits.h.
+    const val MAX_DXA_SOURCE_BYTES = 2L * 1024L * 1024L * 1024L
     const val MAX_ZIP_PREAMBLE_BYTES = 16L * 1024L * 1024L
 
     // Keep synchronized with DXX_EXTRACT_MAX_MEMORY_BYTES in extract_limits.h

@@ -12,6 +12,8 @@ set(D1X_MAIN_SOURCES
     controls.c
     credits.c
     custom.c
+    ../../android/app/src/main/cpp/shared/bounded_rle.c
+    ../../android/app/src/main/cpp/shared/d1_custom_validation.c
     digiobj.c
     dumpmine.c
     effects.c

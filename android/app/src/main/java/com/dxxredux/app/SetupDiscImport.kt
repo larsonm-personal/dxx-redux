@@ -668,7 +668,13 @@ internal suspend fun stageMergedSafDiscAudioSource(
                 onStatus("Copying CD audio file ${index + 1}/${binUris.size}: $name")
                 val totalBytes = binSizes.getOrElse(index) { 0L }
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    LauncherFileCopy.copyStream(input, output, totalBytes, name)
+                    LauncherFileCopy.copyStream(
+                        input,
+                        output,
+                        totalBytes,
+                        name,
+                        maxBytes = ExtractionLimits.MAX_TOTAL_BYTES,
+                    )
                 } ?: throw java.io.IOException("Could not open selected file: $name")
             }
             output.flush()

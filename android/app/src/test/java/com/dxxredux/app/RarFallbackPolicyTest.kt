@@ -11,18 +11,18 @@ import java.nio.file.Files
 
 class RarFallbackPolicyTest {
     @Test
-    fun unavailableNativeBackendAllowsCapabilityFallback() {
-        assertCapabilityFallback(RarNativeBackendUnavailableException("unavailable"))
+    fun unavailableNativeBackendFailsClosed() {
+        assertCapabilityRejected(RarNativeBackendUnavailableException("unavailable"))
     }
 
     @Test
-    fun unsupportedNativeFormatAllowsCapabilityFallback() {
-        assertCapabilityFallback(RarNativeFormatUnsupportedException("unsupported"))
+    fun unsupportedNativeFormatFailsClosed() {
+        assertCapabilityRejected(RarNativeFormatUnsupportedException("unsupported"))
     }
 
     @Test
-    fun missingNativeLibraryAllowsCapabilityFallback() {
-        assertCapabilityFallback(UnsatisfiedLinkError("missing native library"))
+    fun missingNativeLibraryFailsClosed() {
+        assertCapabilityRejected(UnsatisfiedLinkError("missing native library"))
     }
 
     @Test
@@ -72,26 +72,23 @@ class RarFallbackPolicyTest {
         assertTerminal(IllegalStateException("unexpected native state"))
     }
 
-    private fun assertCapabilityFallback(nativeFailure: Throwable) {
+    private fun assertCapabilityRejected(nativeFailure: Throwable) {
         withTempDirectory { root ->
             val archive = File(root, "input.rar").apply { writeBytes(byteArrayOf(1)) }
             val target = File(root, "output")
-            var fallbackCalled = false
-            extractRarArchiveToDirectory(
-                archive,
-                target,
-                nativeExtractor = { _, output ->
-                    File(output, "partial.bin").writeBytes(byteArrayOf(2))
-                    throw nativeFailure
-                },
-                capabilityFallback = { _, output ->
-                    fallbackCalled = true
-                    assertFalse(File(output, "partial.bin").exists())
-                    File(output, "safe.bin").writeBytes(byteArrayOf(3))
-                },
-            )
-            assertTrue(fallbackCalled)
-            assertTrue(File(target, "safe.bin").isFile)
+            val thrown =
+                runCatching {
+                    extractRarArchiveToDirectory(
+                        archive,
+                        target,
+                        nativeExtractor = { _, output ->
+                            File(output, "partial.bin").writeBytes(byteArrayOf(2))
+                            throw nativeFailure
+                        },
+                    )
+                }.exceptionOrNull()
+            assertTrue(thrown is RarNativeCapabilityException)
+            assertFalse(target.exists())
         }
     }
 
@@ -99,18 +96,15 @@ class RarFallbackPolicyTest {
         withTempDirectory { root ->
             val archive = File(root, "input.rar").apply { writeBytes(byteArrayOf(1)) }
             val target = File(root, "output")
-            var fallbackCalled = false
             val thrown =
                 runCatching {
                     extractRarArchiveToDirectory(
                         archive,
                         target,
                         nativeExtractor = { _, _ -> throw nativeFailure },
-                        capabilityFallback = { _, _ -> fallbackCalled = true },
                     )
                 }.exceptionOrNull()
             assertSame(nativeFailure, thrown)
-            assertFalse(fallbackCalled)
         }
     }
 

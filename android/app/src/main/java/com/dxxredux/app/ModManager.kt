@@ -9,7 +9,6 @@ import org.json.JSONObject
 import org.json.JSONTokener
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.Locale
@@ -17,6 +16,32 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 internal const val ACTIVE_MOD_PATH_LIMIT = 64
+private const val MOD_MANIFEST_TEXT_LIMIT_BYTES = 256 * 1024
+private const val PATCH_TEXT_LIMIT_BYTES = 4 * 1024 * 1024
+private const val SONG_LIST_TEXT_LIMIT_BYTES = 256 * 1024
+private const val PATCH_OPERATION_LIMIT = 4096
+private const val PATCH_WRITE_LIMIT = 8192
+private const val PATCH_DOCUMENT_LIMIT = 64
+private const val PATCH_SET_DOCUMENT_LIMIT = 128
+private const val PATCH_CONFLICT_DETAIL_LIMIT = 64
+private const val MOD_DETAILS_DOCUMENT_LIMIT = 64
+
+private val MOD_MANIFEST_JSON_LIMITS =
+    JsonComplexityLimits(
+        nodes = 8192,
+        keys = 4096,
+        depth = 32,
+        stringBytes =
+            256 * 1024,
+    )
+private val PATCH_JSON_LIMITS =
+    JsonComplexityLimits(
+        nodes = 65536,
+        keys = 32768,
+        depth = 64,
+        stringBytes =
+            2 * 1024 * 1024,
+    )
 
 internal class ActiveModPathCapacityException(
     count: Int,
@@ -208,6 +233,8 @@ class ModManager(
         val baseRequirements: List<ModBaseRequirement>,
         val problems: List<String>,
         val documents: List<PackageDocument> = emptyList(),
+        val documentCount: Int = documents.size,
+        val documentsTruncated: Boolean = false,
         val missionZip: MissionZip.ScanResult? = null,
         val missionZipMusic: MissionZipMusicCatalog? = null,
         val missionZipExtraction: MissionZipExtractionInfo? = null,
@@ -251,9 +278,6 @@ class ModManager(
     ) {
         val displayPath: String
             get() = if (this.field == null) rowPath else "$rowPath/${this.field}"
-
-        fun overlaps(other: PatchScope): Boolean =
-            rowPath == other.rowPath && (field == null || other.field == null || field == other.field)
     }
 
     private data class PatchWrite(
@@ -262,6 +286,22 @@ class ModManager(
         val valueText: String,
     )
 
+    private class PatchValueIndex(
+        writes: List<PatchWrite>,
+    ) {
+        private val total = writes.size
+        private val byFilename = writes.groupingBy { it.owner.modFilename }.eachCount()
+        private val byValue = writes.groupingBy { it.valueText }.eachCount()
+        private val byFilenameAndValue = writes.groupingBy { it.owner.modFilename to it.valueText }.eachCount()
+
+        fun conflictsWith(write: PatchWrite): Boolean =
+            total -
+                byFilename.getOrDefault(write.owner.modFilename, 0) -
+                byValue.getOrDefault(write.valueText, 0) +
+                byFilenameAndValue.getOrDefault(write.owner.modFilename to write.valueText, 0) >
+                0
+    }
+
     private data class ModPatchDocument(
         val owner: PatchOwner,
         val operations: JSONArray?,
@@ -269,16 +309,38 @@ class ModManager(
         val problem: String? = null,
     )
 
-    private data class PatchConflictBuilder(
+    private class PatchConflictBuilder(
         val names: MutableSet<String> = linkedSetOf(),
         val details: MutableSet<String> = linkedSetOf(),
-    )
+    ) {
+        var detailsTruncated = false
+
+        fun addDetail(detail: String) {
+            if (details.size < PATCH_CONFLICT_DETAIL_LIMIT) {
+                details += detail
+            } else {
+                detailsTruncated = true
+            }
+        }
+
+        fun finalDetails(): List<String> =
+            details.toList() + if (detailsTruncated) listOf("Additional conflict details omitted") else emptyList()
+    }
 
     private data class CategoryBucket(
         val label: String,
         var count: Int = 0,
         var sizeBytes: Long = 0,
         val examples: MutableList<String> = mutableListOf(),
+    )
+
+    private data class ModArchiveSummary(
+        val fileCount: Int,
+        val categories: List<ModFileCategorySummary>,
+        val documents: List<PackageDocument>,
+        val documentCount: Int,
+        val patchEntries: List<java.util.zip.ZipEntry>,
+        val patchCount: Int,
     )
 
     private val modsDir
@@ -427,43 +489,34 @@ class ModManager(
     ): ModInfo? {
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
+        val temporary = AtomicFilePublication.uniqueSibling(dest, "mod-import.${dest.extension.ifBlank { "dxa" }}")
+        val scan: DxaTextureScanner.ScanResult
         try {
-            ImportStorageGuard.requireFreeSpace(
-                modsDir,
-                ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L,
-                "import mod $displayName",
-            )
-            contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(dest).use { output ->
-                    LauncherFileCopy.copyStream(
-                        input,
-                        output,
-                        ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L,
-                        displayName,
-                        onProgress = onProgress,
-                    )
-                }
-            } ?: run {
-                Log.e(TAG, "Failed to open input stream for $displayName (URI: $uri)")
-                return null
+            val total = ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L
+            LauncherFileCopy.copyInputToFile(
+                dest = temporary,
+                expectedBytes = total,
+                label = displayName,
+                maxBytes = ExtractionLimits.MAX_DXA_SOURCE_BYTES,
+                onProgress = onProgress,
+            ) {
+                contentResolver.openInputStream(uri) ?: throw java.io.IOException("Could not open selected mod")
             }
+            scan =
+                DxaTextureScanner.scan(temporary)
+                    ?: throw java.io.IOException("Selected mod is not a valid DXA archive")
+            if (!scan.canEnable) throw java.io.IOException(scan.rejectedReason ?: "Selected mod is not safe to enable")
+            AtomicFilePublication.publishFile(temporary, dest)
         } catch (e: InsufficientStorageException) {
             Log.e(TAG, "Not enough space to import $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "DXA import failed for $displayName", e)
-            dest.delete()
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to copy $displayName to ${dest.absolutePath}: ${e.message}", e)
             ImportStorageGuard.recordFailure(filesDir, "DXA import failed for $displayName", e)
-            dest.delete()
             return null
-        }
-
-        val fileSize = dest.length()
-        if (fileSize == 0L) {
-            Log.e(TAG, "Import produced 0-byte file for $displayName (dest: ${dest.absolutePath})")
-            dest.delete()
-            return null
+        } finally {
+            temporary.delete()
         }
 
         // Remove existing entry with same filename
@@ -474,7 +527,7 @@ class ModManager(
             ModInfo(
                 filename = safeName,
                 displayName = generateDisplayName(safeName),
-                enabled = DxaTextureScanner.scan(dest)?.canEnable == true,
+                enabled = scan.canEnable,
                 addedAt = System.currentTimeMillis(),
                 sizeBytes = dest.length(),
                 game = detectGame(safeName),
@@ -526,18 +579,15 @@ class ModManager(
         val temp = File.createTempFile("mission_zip_import_", suffix, modsDir)
         try {
             val total = ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L
-            ImportStorageGuard.requireFreeSpace(modsDir, total, "import mission zip $displayName")
-            contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(temp).use { output ->
-                    LauncherFileCopy.copyStream(
-                        input,
-                        output,
-                        total,
-                        "Copying level pack: $displayName",
-                        onProgress = onProgress,
-                    )
-                }
-            } ?: return null
+            LauncherFileCopy.copyInputToFile(
+                dest = temp,
+                expectedBytes = total,
+                label = "Copying level pack: $displayName",
+                maxBytes = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
+                onProgress = onProgress,
+            ) {
+                contentResolver.openInputStream(uri) ?: throw java.io.IOException("Could not open selected level pack")
+            }
             onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
             nestedPreferredChildSize(temp)?.let { childSize ->
                 ImportStorageGuard.requireFreeSpace(modsDir, childSize, "extract mission zip $displayName")
@@ -585,6 +635,11 @@ class ModManager(
         onProgress: (LauncherCopyProgress) -> Unit = {},
         acceptedIdentity: MissionContentIdentity? = null,
     ): ModInfo? {
+        if (source.length() > ExtractionLimits.MAX_ZIP_SOURCE_BYTES) {
+            throw java.io.IOException(
+                "$displayName exceeds the ${ExtractionLimits.MAX_ZIP_SOURCE_BYTES} byte source limit",
+            )
+        }
         onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
         val scan = MissionZip.inspect(source)
         if (scan == null) {
@@ -595,22 +650,26 @@ class ModManager(
         val dest = File(modsDir, safeName)
         val extractionStore = MissionZipExtractionStore(supportDir)
         extractionStore.removeOwner(safeName)
-        var copiedSource = false
-        if (source.absoluteFile != dest.absoluteFile) {
-            val moved = moveDirectSource && source.renameTo(dest)
-            if (!moved) {
-                ImportStorageGuard.requireFreeSpace(modsDir, source.length(), "import mission zip $displayName")
-                source.copyTo(dest, overwrite = true)
-                copiedSource = true
+        val copiedSource = source.absoluteFile != dest.absoluteFile
+        val staged =
+            dest.takeIf { copiedSource }?.let {
+                AtomicFilePublication.uniqueSibling(it, "mission-import.${dest.extension.ifBlank { "zip" }}")
             }
-        }
-        val identity: MissionContentIdentity
+        val workingFile = staged ?: dest
         try {
-            identity = resolveImportedMissionIdentity(dest, acceptedIdentity, copiedSource)
+            if (staged != null) {
+                LauncherFileCopy.copyFileToFile(
+                    source,
+                    staged,
+                    label = "import mission zip $displayName",
+                    maxBytes = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
+                )
+            }
+            val identity = resolveImportedMissionIdentity(workingFile, acceptedIdentity, copiedSource)
             if (scan.importMode == "extracted_bundle") {
                 val extractLabel = "Extracting level pack cache for faster launches: $displayName"
                 onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
-                extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                extractionStore.ensureExtracted(safeName, workingFile, scan) { done, total, path ->
                     onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
                 }
                 onProgress(LauncherCopyProgress("Cached level pack for faster launches: $displayName", 1L, 1L))
@@ -618,12 +677,15 @@ class ModManager(
             if (scan.importMode != "extracted_bundle") {
                 onProgress(LauncherCopyProgress("Finalizing level pack: $displayName", 0L, 0L))
             }
+            if (staged != null) AtomicFilePublication.publishFile(staged, dest)
+            if (moveDirectSource && copiedSource) source.delete()
+            return registerMissionZip(safeName, identity, scan)
         } catch (e: Exception) {
-            dest.delete()
             extractionStore.removeOwner(safeName)
             throw e
+        } finally {
+            staged?.delete()
         }
-        return registerMissionZip(safeName, identity, scan)
     }
 
     internal fun resolveImportedMissionIdentity(
@@ -650,45 +712,40 @@ class ModManager(
                 val child = selectNestedPreferredMissionZip(zip) ?: return null
                 val safeName = launcherLeafNameOf(child.name).replace(Regex("[^a-zA-Z0-9._-]"), "_")
                 val dest = File(modsDir, safeName)
-                ImportStorageGuard.requireFreeSpace(
-                    modsDir,
-                    child.size.coerceAtLeast(0),
-                    "extract mission zip $safeName",
-                )
-                zip.getInputStream(child).use { input ->
-                    FileOutputStream(dest).use { output ->
-                        LauncherFileCopy.copyStream(
-                            input,
-                            output,
-                            child.size.coerceAtLeast(0),
-                            "Extracting preferred level pack from archive: $safeName",
-                            onProgress = onProgress,
-                        )
+                val temporary =
+                    AtomicFilePublication.uniqueSibling(dest, "nested-import.${dest.extension.ifBlank { "zip" }}")
+                try {
+                    LauncherFileCopy.copyInputToFile(
+                        dest = temporary,
+                        expectedBytes = child.size.coerceAtLeast(0),
+                        label = "Extracting preferred level pack from archive: $safeName",
+                        maxBytes = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
+                        onProgress = onProgress,
+                    ) {
+                        zip.getInputStream(child)
                     }
-                }
-                onProgress(LauncherCopyProgress("Inspecting level pack: $safeName", 0L, 0L))
-                val scan =
-                    MissionZip.inspect(dest)
-                        ?: run {
-                            dest.delete()
-                            return null
+                    onProgress(LauncherCopyProgress("Inspecting level pack: $safeName", 0L, 0L))
+                    val scan = MissionZip.inspect(temporary) ?: return null
+                    AtomicFilePublication.publishFile(temporary, dest)
+                    val extractionStore = MissionZipExtractionStore(supportDir)
+                    extractionStore.removeOwner(safeName)
+                    val identity = MissionContentIdentity.compute(dest)
+                    if (scan.importMode == "extracted_bundle") {
+                        val extractLabel = "Extracting level pack cache for faster launches: $safeName"
+                        onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                        extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                            onProgress(
+                                LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total),
+                            )
                         }
-                val extractionStore = MissionZipExtractionStore(supportDir)
-                extractionStore.removeOwner(safeName)
-                val identity = MissionContentIdentity.compute(dest)
-                if (scan.importMode == "extracted_bundle") {
-                    val extractLabel = "Extracting level pack cache for faster launches: $safeName"
-                    onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
-                    extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
                         onProgress(
-                            LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total),
+                            LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L),
                         )
                     }
-                    onProgress(
-                        LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L),
-                    )
+                    registerMissionZip(safeName, identity, scan)
+                } finally {
+                    temporary.delete()
                 }
-                registerMissionZip(safeName, identity, scan)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to import preferred nested mission ZIP from ${source.absolutePath}", e)
@@ -961,13 +1018,12 @@ class ModManager(
     ): ModCompatibilityReport {
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         val failures = mutableListOf<ModCompatibilityFailure>()
-        val patchDocuments = mutableListOf<ModPatchDocument>()
         for (mod in enabled) {
             val modFile = File(modsDir, mod.filename)
             if (!modFile.isFile) continue
             failures += checkModCompatibility(mod, modFile, game, setDir, assetEntries)
-            patchDocuments += collectModPatchDocuments(mod, modFile, game)
         }
+        val patchDocuments = collectModSetPatchDocuments(enabled, game)
         val patchConflicts = collectPatchConflicts(patchDocuments)
         return ModCompatibilityReport(failures, patchConflicts)
     }
@@ -1092,12 +1148,21 @@ class ModManager(
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         return try {
             ZipFile(modFile).use { zip ->
-                val entries =
-                    zip
-                        .entries()
-                        .asSequence()
-                        .filterNot { it.isDirectory }
-                        .toList()
+                val admissionProblem =
+                    DxaTextureScanner.validateAdmission(
+                        sourceBytes = modFile.length(),
+                        entries =
+                            zip.entries().asSequence().map { entry ->
+                                DxaTextureScanner.EntryMetadata(
+                                    name = entry.name,
+                                    isDirectory = entry.isDirectory,
+                                    expandedSize = entry.size,
+                                    compressedSize = entry.compressedSize,
+                                )
+                            },
+                    )
+                if (admissionProblem != null) throw java.io.IOException("DXA admission rejected: $admissionProblem")
+                val entrySummary = summarizeModEntries(zip, modFile.nameWithoutExtension)
                 val manifest = readModManifest(zip)
                 val rawRequirements = readBaseRequirements(manifest, game = null)
                 val baseRequirements = attachBaseRequirementStatus(rawRequirements, setDir, assetEntries)
@@ -1112,19 +1177,27 @@ class ModManager(
                 for (conflict in conflicts) {
                     problems += describePatchConflictProblem(mod, conflict)
                 }
+                if (entrySummary.documentCount > entrySummary.documents.size) {
+                    problems +=
+                        "Documentation list is limited to ${entrySummary.documents.size} of " +
+                        "${entrySummary.documentCount} documents"
+                }
+                if (entrySummary.patchCount > entrySummary.patchEntries.size) {
+                    problems +=
+                        "Patch detail list is limited to ${entrySummary.patchEntries.size} of " +
+                        "${entrySummary.patchCount} patch documents"
+                }
                 ModDetails(
                     archivePath = modFile.absolutePath,
-                    fileCount = entries.size,
+                    fileCount = entrySummary.fileCount,
                     archiveSizeBytes = modFile.length(),
                     manifestSchema = manifest?.optString("schema")?.takeIf { it.isNotBlank() },
                     notes = readStringArray(manifest?.optJSONArray("notes")),
-                    documents =
-                        PackageDocuments.order(
-                            entries.map { PackageDocument(it.name, it.size) },
-                            modFile.nameWithoutExtension,
-                        ),
-                    categories = categorizeModEntries(entries),
-                    patches = readPatchDetails(zip, entries, rawRequirements),
+                    documents = PackageDocuments.order(entrySummary.documents, modFile.nameWithoutExtension),
+                    documentCount = entrySummary.documentCount,
+                    documentsTruncated = entrySummary.documentCount > entrySummary.documents.size,
+                    categories = entrySummary.categories,
+                    patches = readPatchDetails(zip, entrySummary.patchEntries, rawRequirements),
                     baseRequirements = baseRequirements,
                     problems = problems,
                 )
@@ -1287,6 +1360,9 @@ class ModManager(
                     val manifestGame = manifest.optString("game", "both")
                     if (game == null || manifestGame == "both" || manifestGame == game) {
                         addManifestPatchPaths(manifest, game, patchPaths)
+                        if (patchPaths.size > PATCH_DOCUMENT_LIMIT) {
+                            throw IllegalArgumentException("mod exceeds $PATCH_DOCUMENT_LIMIT patch documents")
+                        }
                     }
                 }
                 val entries = zip.entries()
@@ -1296,6 +1372,9 @@ class ModManager(
                         val patchPath = normalizeDxaPath(zipEntry.name)
                         patchPaths += patchPath
                         entriesByPath[patchPath] = zipEntry
+                        if (patchPaths.size > PATCH_DOCUMENT_LIMIT) {
+                            throw IllegalArgumentException("mod exceeds $PATCH_DOCUMENT_LIMIT patch documents")
+                        }
                     }
                 }
                 return patchPaths.map { patchPath ->
@@ -1315,8 +1394,39 @@ class ModManager(
             }
         } catch (e: Exception) {
             logWarning("Failed to read DXA patch metadata from ${modFile.name}: ${e.message}")
-            return emptyList()
+            return listOf(
+                ModPatchDocument(
+                    owner = PatchOwner("metadata/manifest.json", mod.displayName, mod.filename),
+                    operations = null,
+                    writes = emptyList(),
+                    problem = "could not read bounded patch metadata: ${e.message ?: e.javaClass.simpleName}",
+                ),
+            )
         }
+    }
+
+    private fun collectModSetPatchDocuments(
+        mods: List<ModInfo>,
+        game: String?,
+    ): List<ModPatchDocument> {
+        val documents = mutableListOf<ModPatchDocument>()
+        for (mod in mods) {
+            val modFile = File(modsDir, mod.filename)
+            if (!modFile.isFile) continue
+            val added = collectModPatchDocuments(mod, modFile, game)
+            if (documents.size + added.size > PATCH_SET_DOCUMENT_LIMIT) {
+                documents +=
+                    ModPatchDocument(
+                        owner = PatchOwner("patch metadata", mod.displayName, mod.filename),
+                        operations = null,
+                        writes = emptyList(),
+                        problem = "enabled mods exceed $PATCH_SET_DOCUMENT_LIMIT patch documents",
+                    )
+                break
+            }
+            documents += added
+        }
+        return documents
     }
 
     private fun readPatchDocument(
@@ -1325,8 +1435,13 @@ class ModManager(
         owner: PatchOwner,
     ): ModPatchDocument =
         try {
-            val text = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+            val text = zip.readUtf8TextBounded(entry, PATCH_TEXT_LIMIT_BYTES, owner.patchPath)
+            preflightJsonComplexity(text, PATCH_JSON_LIMITS, owner.patchPath)
             val operations = JSONArray(text)
+            validateJsonComplexity(operations, PATCH_JSON_LIMITS, owner.patchPath)
+            if (operations.length() > PATCH_OPERATION_LIMIT) {
+                throw IllegalArgumentException("${owner.patchPath} exceeds $PATCH_OPERATION_LIMIT patch operations")
+            }
             ModPatchDocument(owner, operations, collectPatchWrites(owner, operations))
         } catch (e: Exception) {
             ModPatchDocument(
@@ -1363,10 +1478,20 @@ class ModManager(
             if (operationName == "replace" && scope.field == null && value is JSONObject && testedValue is JSONObject) {
                 addChangedObjectFieldWrites(owner, scope, testedValue, value, writes)
             } else {
-                writes += PatchWrite(owner, scope, canonicalJson(value))
+                addPatchWrite(writes, PatchWrite(owner, scope, canonicalJson(value)))
             }
         }
         return writes
+    }
+
+    private fun addPatchWrite(
+        writes: MutableList<PatchWrite>,
+        write: PatchWrite,
+    ) {
+        if (writes.size >= PATCH_WRITE_LIMIT) {
+            throw IllegalArgumentException("${write.owner.patchPath} exceeds $PATCH_WRITE_LIMIT patch writes")
+        }
+        writes += write
     }
 
     private fun addChangedObjectFieldWrites(
@@ -1385,7 +1510,7 @@ class ModManager(
             val baseField = baseValue.opt(key)
             val patchField = patchValue.opt(key)
             if (canonicalJson(baseField) != canonicalJson(patchField)) {
-                writes += PatchWrite(owner, rowScope.copy(field = key), canonicalJson(patchField))
+                addPatchWrite(writes, PatchWrite(owner, rowScope.copy(field = key), canonicalJson(patchField)))
             }
         }
     }
@@ -1396,22 +1521,37 @@ class ModManager(
             val problem = document.problem ?: continue
             val builder = builders.getOrPut(document.owner.patchPath) { PatchConflictBuilder() }
             builder.names += document.owner.modDisplayName
-            builder.details += "${document.owner.modDisplayName}: $problem"
+            builder.addDetail("${document.owner.modDisplayName}: $problem")
         }
         val documentsByPath = documents.filter { it.problem == null }.groupBy { it.owner.patchPath }
         for ((patchPath, patchDocuments) in documentsByPath) {
             val writes = patchDocuments.flatMap { it.writes }
-            for (leftIndex in writes.indices) {
-                val left = writes[leftIndex]
-                for (rightIndex in leftIndex + 1 until writes.size) {
-                    val right = writes[rightIndex]
-                    if (left.owner.modFilename == right.owner.modFilename) continue
-                    if (!left.scope.overlaps(right.scope) || left.valueText == right.valueText) continue
-                    val builder = builders.getOrPut(patchPath) { PatchConflictBuilder() }
-                    builder.names += left.owner.modDisplayName
-                    builder.names += right.owner.modDisplayName
-                    builder.details +=
-                        "${left.scope.displayPath}: ${left.owner.modDisplayName} and ${right.owner.modDisplayName} write different values"
+            val writesByRow = writes.groupBy { it.scope.rowPath }
+            for ((_, rowWrites) in writesByRow) {
+                val wholeRowWrites = mutableListOf<PatchWrite>()
+                val fieldWritesByField = linkedMapOf<String, MutableList<PatchWrite>>()
+                for (write in rowWrites) {
+                    val field = write.scope.field
+                    if (field == null) {
+                        wholeRowWrites += write
+                    } else {
+                        fieldWritesByField.getOrPut(field) { mutableListOf() } += write
+                    }
+                }
+                addScopeConflict(patchPath, wholeRowWrites.firstOrNull()?.scope?.displayPath, wholeRowWrites, builders)
+                val wholeRowIndex = wholeRowWrites.takeIf { it.isNotEmpty() }?.let(::PatchValueIndex)
+                for ((field, fieldWrites) in fieldWritesByField) {
+                    addScopeConflict(patchPath, fieldWrites.first().scope.displayPath, fieldWrites, builders)
+                    if (wholeRowIndex != null) {
+                        addOverlappingScopeConflict(
+                            patchPath,
+                            field,
+                            wholeRowWrites,
+                            wholeRowIndex,
+                            fieldWrites,
+                            builders,
+                        )
+                    }
                 }
             }
         }
@@ -1419,9 +1559,56 @@ class ModManager(
             ModPatchConflict(
                 patchPath = patchPath,
                 modDisplayNames = builder.names.toList(),
-                details = builder.details.toList(),
+                details = builder.finalDetails(),
             )
         }
+    }
+
+    private fun addScopeConflict(
+        patchPath: String,
+        displayPath: String?,
+        writes: List<PatchWrite>,
+        builders: MutableMap<String, PatchConflictBuilder>,
+    ) {
+        if (writes.size < 2) return
+        val index = PatchValueIndex(writes)
+        val owners = writes.filter(index::conflictsWith).map { it.owner }.distinctBy { it.modFilename }
+        if (owners.isEmpty()) return
+        val builder = builders.getOrPut(patchPath) { PatchConflictBuilder() }
+        builder.names += owners.map { it.modDisplayName }
+        builder.addDetail("$displayPath: ${owners.joinToString(", ") { it.modDisplayName }} write different values")
+    }
+
+    private fun addOverlappingScopeConflict(
+        patchPath: String,
+        field: String,
+        wholeRowWrites: List<PatchWrite>,
+        wholeRowIndex: PatchValueIndex,
+        fieldWrites: List<PatchWrite>,
+        builders: MutableMap<String, PatchConflictBuilder>,
+    ) {
+        val fieldIndex = PatchValueIndex(fieldWrites)
+        val wholeOwners =
+            wholeRowWrites
+                .filter(
+                    fieldIndex::conflictsWith,
+                ).map { it.owner }
+                .distinctBy { it.modFilename }
+        val fieldOwners =
+            fieldWrites
+                .filter(
+                    wholeRowIndex::conflictsWith,
+                ).map { it.owner }
+                .distinctBy { it.modFilename }
+        if (wholeOwners.isEmpty() || fieldOwners.isEmpty()) return
+        val owners = (wholeOwners + fieldOwners).distinctBy { it.modFilename }
+        val builder = builders.getOrPut(patchPath) { PatchConflictBuilder() }
+        builder.names += owners.map { it.modDisplayName }
+        builder.addDetail(
+            "${fieldWrites.first().scope.rowPath}/$field: ${owners.joinToString(
+                ", ",
+            ) { it.modDisplayName }} write overlapping values",
+        )
     }
 
     private fun generatedPatchDir(game: String): File {
@@ -1442,7 +1629,12 @@ class ModManager(
                     when (launcherExtensionOf(entry.path)) {
                         "sng" -> {
                             outer.openInputStream(entry).use { input ->
-                                if (songListReferencesMissionSoundtrack(input.readBytes().toString(Charsets.UTF_8))) {
+                                val text =
+                                    input.readUtf8TextBounded(
+                                        SONG_LIST_TEXT_LIMIT_BYTES,
+                                        "song list ${entry.path}",
+                                    )
+                                if (songListReferencesMissionSoundtrack(text)) {
                                     return@runCatching true
                                 }
                             }
@@ -1476,7 +1668,12 @@ class ModManager(
                 if (!file.isFile) continue
                 when (launcherExtensionOf(entry.relativePath)) {
                     "sng" -> {
-                        if (songListReferencesMissionSoundtrack(file.readText(Charsets.UTF_8))) return@runCatching true
+                        val text =
+                            file.readUtf8TextBounded(
+                                SONG_LIST_TEXT_LIMIT_BYTES,
+                                "song list ${entry.relativePath}",
+                            )
+                        if (songListReferencesMissionSoundtrack(text)) return@runCatching true
                     }
 
                     "dxa" -> {
@@ -1506,7 +1703,8 @@ class ModManager(
                 if (!entry.isDirectory) {
                     val leaf = launcherLeafNameOf(entry.name).lowercase(Locale.US)
                     if (leaf in MISSION_SONG_LIST_FILES) {
-                        if (songListReferencesMissionSoundtrack(it.readBytes().toString(Charsets.UTF_8))) return true
+                        val text = it.readUtf8TextBounded(SONG_LIST_TEXT_LIMIT_BYTES, "song list ${entry.name}")
+                        if (songListReferencesMissionSoundtrack(text)) return true
                     } else if (launcherExtensionOf(leaf) in MISSION_SOUNDTRACK_EXTENSIONS) {
                         return true
                     }
@@ -1583,11 +1781,7 @@ class ModManager(
         enabled: List<ModInfo>,
         root: File = generatedPatchDir(game),
     ): File? {
-        val documents = mutableListOf<ModPatchDocument>()
-        for (mod in enabled) {
-            val modFile = File(modsDir, mod.filename)
-            if (modFile.isFile) documents += collectModPatchDocuments(mod, modFile, game)
-        }
+        val documents = collectModSetPatchDocuments(enabled, game)
         if (collectPatchConflicts(documents).isNotEmpty()) return null
         var wrotePatch = false
         for ((patchPath, patchDocuments) in documents.filter { it.operations != null }.groupBy { it.owner.patchPath }) {
@@ -1727,8 +1921,7 @@ class ModManager(
         try {
             ZipFile(modFile).use { zip ->
                 val entry = zip.getEntry("metadata/manifest.json") ?: return emptyList()
-                val manifestText = zip.getInputStream(entry).bufferedReader().use { it.readText() }
-                val manifest = JSONObject(manifestText)
+                val manifest = readModManifest(zip) ?: return emptyList()
                 val manifestGame = manifest.optString("game", "both")
                 if (manifestGame != "both" && manifestGame != game) return emptyList()
                 val compatibility = manifest.optJSONObject("compatibility") ?: return emptyList()
@@ -1768,8 +1961,16 @@ class ModManager(
 
     private fun readModManifest(zip: ZipFile): JSONObject? {
         val entry = zip.getEntry("metadata/manifest.json") ?: return null
-        val manifestText = zip.getInputStream(entry).bufferedReader().use { it.readText() }
-        return JSONObject(manifestText)
+        val manifestText =
+            zip.readUtf8TextBounded(
+                entry,
+                MOD_MANIFEST_TEXT_LIMIT_BYTES,
+                "metadata/manifest.json",
+            )
+        preflightJsonComplexity(manifestText, MOD_MANIFEST_JSON_LIMITS, "metadata/manifest.json")
+        val manifest = JSONObject(manifestText)
+        validateJsonComplexity(manifest, MOD_MANIFEST_JSON_LIMITS, "metadata/manifest.json")
+        return manifest
     }
 
     private fun readBaseRequirements(
@@ -1832,25 +2033,80 @@ class ModManager(
         return result
     }
 
-    private fun categorizeModEntries(entries: List<java.util.zip.ZipEntry>): List<ModFileCategorySummary> {
+    private fun summarizeModEntries(
+        zip: ZipFile,
+        packageStem: String,
+    ): ModArchiveSummary {
         val buckets = linkedMapOf<String, CategoryBucket>()
-        for (entry in entries) {
+        val documents = mutableListOf<PackageDocument>()
+        val patchEntries = mutableListOf<java.util.zip.ZipEntry>()
+        var archiveEntryCount = 0
+        var fileCount = 0
+        var documentCount = 0
+        var patchCount = 0
+        val entries = zip.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            archiveEntryCount++
+            if (archiveEntryCount > ExtractionLimits.MAX_ENTRIES) {
+                throw java.io.IOException("Archive exceeds ${ExtractionLimits.MAX_ENTRIES} entries")
+            }
+            if (entry.isDirectory) continue
+            fileCount++
             val (label, example) = classifyModEntry(entry.name)
             val bucket = buckets.getOrPut(label) { CategoryBucket(label) }
             bucket.count++
             if (entry.size > 0) bucket.sizeBytes += entry.size
             if (bucket.examples.size < 3 && example !in bucket.examples) bucket.examples += example
+
+            if (PackageDocuments.isReadmeCandidate(entry.name)) {
+                documentCount++
+                retainDocumentCandidate(documents, PackageDocument(entry.name, entry.size), packageStem)
+            }
+            if (isPatchEntry(entry.name, game = null)) {
+                patchCount++
+                if (patchEntries.size < PATCH_DOCUMENT_LIMIT) patchEntries += entry
+            }
         }
-        return buckets.values.map { bucket ->
-            ModFileCategorySummary(
-                label = bucket.label,
-                count = bucket.count,
-                sizeBytes = bucket.sizeBytes,
-                examples = bucket.examples,
-                examplesTruncated = bucket.count > bucket.examples.size,
-            )
-        }
+        return ModArchiveSummary(
+            fileCount = fileCount,
+            categories =
+                buckets.values.map { bucket ->
+                    ModFileCategorySummary(
+                        label = bucket.label,
+                        count = bucket.count,
+                        sizeBytes = bucket.sizeBytes,
+                        examples = bucket.examples,
+                        examplesTruncated = bucket.count > bucket.examples.size,
+                    )
+                },
+            documents = documents,
+            documentCount = documentCount,
+            patchEntries = patchEntries,
+            patchCount = patchCount,
+        )
     }
+
+    private fun retainDocumentCandidate(
+        retained: MutableList<PackageDocument>,
+        candidate: PackageDocument,
+        packageStem: String,
+    ) {
+        retained += candidate
+        retained.sortWith(documentRetentionComparator(packageStem))
+        if (retained.size > MOD_DETAILS_DOCUMENT_LIMIT) retained.removeAt(retained.lastIndex)
+    }
+
+    private fun documentRetentionComparator(packageStem: String): Comparator<PackageDocument> =
+        compareBy<PackageDocument> { document ->
+            val name = document.name
+            val group = PackageDocuments.sortGroup(document.path)
+            when {
+                name.substringBeforeLast('.').equals("README", true) -> group * 3
+                packageStem.isNotBlank() && name.startsWith(packageStem, true) -> group * 3 + 1
+                else -> group * 3 + 2
+            }
+        }.thenByDescending { it.sizeBytes }.thenBy { it.path.lowercase(Locale.US) }
 
     private fun missionZipCategories(entries: List<MissionZip.Constituent>): List<ModFileCategorySummary> {
         val buckets = linkedMapOf<String, CategoryBucket>()
@@ -1956,19 +2212,19 @@ class ModManager(
         entry: java.util.zip.ZipEntry,
     ): Int? =
         try {
-            val text = zip.getInputStream(entry).bufferedReader().use { it.readText() }
-            JSONArray(text).length()
+            val path = normalizeDxaPath(entry.name)
+            val text = zip.readUtf8TextBounded(entry, PATCH_TEXT_LIMIT_BYTES, path)
+            preflightJsonComplexity(text, PATCH_JSON_LIMITS, path)
+            val operations = JSONArray(text)
+            validateJsonComplexity(operations, PATCH_JSON_LIMITS, path)
+            operations.length().takeIf { it <= PATCH_OPERATION_LIMIT }
         } catch (_: Exception) {
             null
         }
 
     private fun collectPatchConflictsForMod(mod: ModInfo): List<ModPatchConflict> {
-        val documents = mutableListOf<ModPatchDocument>()
-        for (candidate in mods.filter { it.enabled || it.filename == mod.filename }) {
-            val candidateFile = File(modsDir, candidate.filename)
-            if (!candidateFile.isFile) continue
-            documents += collectModPatchDocuments(candidate, candidateFile, game = null)
-        }
+        val documents =
+            collectModSetPatchDocuments(mods.filter { it.enabled || it.filename == mod.filename }, game = null)
         return collectPatchConflicts(documents).filter { conflict -> mod.displayName in conflict.modDisplayNames }
     }
 

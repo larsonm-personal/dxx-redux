@@ -48,6 +48,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_visual_policy.h"
 #endif
 #include "xmodel.h"
+#include "d1_shareware_model.h"
+#include "d1_in_d2/d1_pig_validation.h"
+#ifndef DRIVE
+#include "d1_shareware_joints.h"
+#endif
 
 polymodel Polygon_models[MAX_POLYGON_MODELS];	// = {&bot11,&bot17,&robot_s2,&robot_b2,&bot11,&bot17,&robot_s2,&robot_b2};
 
@@ -55,128 +60,11 @@ int N_polygon_models = 0;
 
 g3s_point robot_points[MAX_POLYGON_VECS];
 
-#define PM_COMPATIBLE_VERSION 6
-#define PM_OBJFILE_VERSION 8
-
-int	Pof_file_end;
-int	Pof_addr;
-
 #define	MODEL_BUF_SIZE	32768
-
-void _pof_cfseek(int len,int type)
-{
-	switch (type) {
-		case SEEK_SET:	Pof_addr = len;	break;
-		case SEEK_CUR:	Pof_addr += len;	break;
-		case SEEK_END:
-			Assert(len <= 0);	//	seeking from end, better be moving back.
-			Pof_addr = Pof_file_end + len;
-			break;
-	}
-
-	if (Pof_addr > MODEL_BUF_SIZE)
-		Int3();
-}
-
-#define pof_cfseek(_buf,_len,_type) _pof_cfseek((_len),(_type))
-
-int pof_read_int(ubyte *bufp)
-{
-	int i;
-
-	i = *((int *) &bufp[Pof_addr]);
-	Pof_addr += 4;
-	return INTEL_INT(i);
-
-//	if (PHYSFS_read(f,&i,sizeof(i),1) != 1)
-//		Error("Unexpected end-of-file while reading object");
-//
-//	return i;
-}
-
-size_t pof_cfread(void *dst, size_t elsize, size_t nelem, ubyte *bufp)
-{
-	if (Pof_addr + nelem*elsize > Pof_file_end)
-		return 0;
-
-	memcpy(dst, &bufp[Pof_addr], elsize*nelem);
-
-	Pof_addr += elsize*nelem;
-
-	if (Pof_addr > MODEL_BUF_SIZE)
-		Int3();
-
-	return nelem;
-}
-
-// #define new_read_int(i,f) PHYSFS_read((f),&(i),sizeof(i),1)
-#define new_pof_read_int(i,f) pof_cfread(&(i),sizeof(i),1,(f))
-
-short pof_read_short(ubyte *bufp)
-{
-	short s;
-
-	s = *((short *) &bufp[Pof_addr]);
-	Pof_addr += 2;
-	return INTEL_SHORT(s);
-//	if (PHYSFS_read(f,&s,sizeof(s),1) != 1)
-//		Error("Unexpected end-of-file while reading object");
-//
-//	return s;
-}
-
-void pof_read_string(char *buf,int max_char, ubyte *bufp)
-{
-	int	i;
-
-	for (i=0; i<max_char; i++) {
-		if ((*buf++ = bufp[Pof_addr++]) == 0)
-			break;
-	}
-
-//	while (max_char-- && (*buf=PHYSFSX_fgetc(f)) != 0) buf++;
-
-}
-
-void pof_read_vecs(vms_vector *vecs,int n,ubyte *bufp)
-{
-//	PHYSFS_read(f,vecs,sizeof(vms_vector),n);
-	for (int i = 0; i < n; i++)
-	{
-		vecs[i].x = pof_read_int(bufp);
-		vecs[i].y = pof_read_int(bufp);
-		vecs[i].z = pof_read_int(bufp);
-	}
-
-	if (Pof_addr > MODEL_BUF_SIZE)
-		Int3();
-}
-
-void pof_read_angs(vms_angvec *angs,int n,ubyte *bufp)
-{
-	for (int i = 0; i < n; i++)
-	{
-		angs[i].p = pof_read_short(bufp);
-		angs[i].b = pof_read_short(bufp);
-		angs[i].h = pof_read_short(bufp);
-	}
-
-	if (Pof_addr > MODEL_BUF_SIZE)
-		Int3();
-}
-
-#define ID_OHDR 0x5244484f // 'RDHO'  //Object header
-#define ID_SOBJ 0x4a424f53 // 'JBOS'  //Subobject header
-#define ID_GUNS 0x534e5547 // 'SNUG'  //List of guns on this object
-#define ID_ANIM 0x4d494e41 // 'MINA'  //Animation data
-#define ID_IDTA 0x41544449 // 'ATDI'  //Interpreter data
-#define ID_TXTR 0x52545854 // 'RTXT'  //Texture filename list
 
 #ifdef DRIVE
 #define robot_info void
 #else
-vms_angvec anim_angs[N_ANIM_STATES][MAX_SUBMODELS];
-
 //set the animation angles for this robot.  Gun fields of robot info must
 //be filled in.
 void robot_set_angles(robot_info *r,polymodel *pm,vms_angvec angs[N_ANIM_STATES][MAX_SUBMODELS]);
@@ -265,171 +153,99 @@ void align_polygon_model_data(polymodel *pm)
 }
 #endif //def WORDS_NEED_ALIGNMENT
 
+/* Source decoding does not touch engine tables; validate the complete POF before publication */
+static void read_pof_source(const char *filename, ubyte *buffer, size_t capacity, d1_pof_source *source)
+{
+	PHYSFS_file *file = PHYSFSX_openReadBuffered(filename);
+	PHYSFS_sint64 size;
+	const char *error;
+	if (!file)
+		Error("Can't open file <%s>", filename);
+	size = PHYSFS_fileLength(file);
+	if (size < 0 || size > (PHYSFS_sint64)capacity || PHYSFS_read(file, buffer, 1, (PHYSFS_uint32)size) != size) {
+		PHYSFS_close(file);
+		Error("Invalid POF file size or read in <%s>", filename);
+	}
+	PHYSFS_close(file);
+	error = d1_pof_read(buffer, (size_t)size, source);
+	if (error)
+		Error("%s in <%s>", error, filename);
+}
+
+static vms_vector pof_engine_vector(d1_pof_vector source)
+{
+	vms_vector result;
+	result.x = source.x;
+	result.y = source.y;
+	result.z = source.z;
+	return result;
+}
+
+static void validate_pof_instructions(const char *filename, const d1_pof_source *source)
+{
+	int i;
+	for (i = 0; i < source->model_count; ++i)
+		if (!d1_pig_validate_model_stream(source->instructions, source->instruction_size,
+		                                  (size_t)source->offsets[i]))
+			Error("Invalid POF model instructions in <%s>", filename);
+}
+
 //reads a binary file containing a 3d model
 polymodel *read_model_file(polymodel *pm,char *filename,robot_info *r)
 {
-	PHYSFS_file *ifile;
-	short version;
-	int id,len, next_chunk;
-	int anim_flag = 0;
-	ubyte	model_buf[MODEL_BUF_SIZE];
+	ubyte model_buf[MODEL_BUF_SIZE];
+	d1_pof_source source;
+	d1_pof_bounds bounds;
+	const char *bounds_error;
+	int i;
 
-	if ((ifile=PHYSFSX_openReadBuffered(filename))==NULL)
-		Error("Can't open file <%s>",filename);
+	read_pof_source(filename, model_buf, sizeof(model_buf), &source);
+	validate_pof_instructions(filename, &source);
+	bounds_error = d1_pof_find_bounds(&source, &bounds);
+	if (bounds_error)
+		Error("%s in <%s>", bounds_error, filename);
 
-	Assert(PHYSFS_fileLength(ifile) <= MODEL_BUF_SIZE);
-
-	Pof_addr = 0;
-	Pof_file_end = PHYSFS_read(ifile, model_buf, 1, PHYSFS_fileLength(ifile));
-	PHYSFS_close(ifile);
-
-	id = pof_read_int(model_buf);
-
-	if (id!=0x4f505350) /* 'OPSP' */
-		Error("Bad ID in model file <%s>",filename);
-
-	version = pof_read_short(model_buf);
-	
-	if (version < PM_COMPATIBLE_VERSION || version > PM_OBJFILE_VERSION)
-		Error("Bad version (%d) in model file <%s>",version,filename);
-
-	while (new_pof_read_int(id,model_buf) == 1) {
-		id = INTEL_INT(id);
-		//id  = pof_read_int(model_buf);
-		len = pof_read_int(model_buf);
-		next_chunk = Pof_addr + len;
-
-		switch (id) {
-
-			case ID_OHDR: {		//Object header
-				vms_vector pmmin,pmmax;
-
-				pm->n_models = pof_read_int(model_buf);
-				pm->rad = pof_read_int(model_buf);
-
-				Assert(pm->n_models <= MAX_SUBMODELS);
-
-				pof_read_vecs(&pmmin,1,model_buf);
-				pof_read_vecs(&pmmax,1,model_buf);
-
-				break;
-			}
-			
-			case ID_SOBJ: {		//Subobject header
-				int n;
-
-				anim_flag++;
-
-				n = pof_read_short(model_buf);
-
-				Assert(n < MAX_SUBMODELS);
-
-				pm->submodel_parents[n] = pof_read_short(model_buf);
-
-				pof_read_vecs(&pm->submodel_norms[n],1,model_buf);
-				pof_read_vecs(&pm->submodel_pnts[n],1,model_buf);
-				pof_read_vecs(&pm->submodel_offsets[n],1,model_buf);
-
-				pm->submodel_rads[n] = pof_read_int(model_buf);		//radius
-
-				pm->submodel_ptrs[n] = pof_read_int(model_buf);	//offset
-
-				break;
-
-			}
-			
-			#ifndef DRIVE
-			case ID_GUNS: {		//List of guns on this object
-
-				if (r) {
-					int i;
-					vms_vector gun_dir;
-					ubyte gun_used[MAX_GUNS];
-
-					r->n_guns = pof_read_int(model_buf);
-
-					if ( r->n_guns )
-						anim_flag++;
-
-					Assert(r->n_guns <= MAX_GUNS);
-
-					for (i=0;i<r->n_guns;i++)
-						gun_used[i] = 0;
-
-					for (i=0;i<r->n_guns;i++) {
-						int id;
-
-						id = pof_read_short(model_buf);
-						Assert(id < r->n_guns);
-						Assert(gun_used[id] == 0);
-						(void)gun_used[id];
-						r->gun_submodels[id] = pof_read_short(model_buf);
-						Assert(r->gun_submodels[id] != 0xff);
-						pof_read_vecs(&r->gun_points[id],1,model_buf);
-
-						if (version >= 7)
-							pof_read_vecs(&gun_dir,1,model_buf);
-					}
-				}
-				else
-					pof_cfseek(model_buf,len,SEEK_CUR);
-
-				break;
-			}
-			
-			case ID_ANIM:		//Animation data
-				anim_flag++;
-
-				if (r) {
-					int n_frames,f,m;
-
-					n_frames = pof_read_short(model_buf);
-
-					Assert(n_frames == N_ANIM_STATES);
-
-					for (m=0;m<pm->n_models;m++)
-						for (f=0;f<n_frames;f++)
-							pof_read_angs(&anim_angs[f][m], 1, model_buf);
-
-
-					robot_set_angles(r,pm,anim_angs);
-				
-				}
-				else
-					pof_cfseek(model_buf,len,SEEK_CUR);
-
-				break;
-			#endif
-			
-			case ID_TXTR: {		//Texture filename list
-				int n;
-				char name_buf[128];
-
-				n = pof_read_short(model_buf);
-				while (n--) {
-					pof_read_string(name_buf,128,model_buf);
-				}
-
-				break;
-			}
-			
-			case ID_IDTA:		//Interpreter data
-				pm->model_data = d_malloc(len);
-				pm->model_data_size = len;
-
-				pof_cfread(pm->model_data,1,len,model_buf);
-
-				break;
-
-			default:
-				pof_cfseek(model_buf,len,SEEK_CUR);
-				break;
-
-		}
-		if ( version >= 8 )		// Version 8 needs 4-byte alignment!!!
-			pof_cfseek(model_buf,next_chunk,SEEK_SET);
+	memset(pm, 0, sizeof(*pm));
+	pm->mins = pof_engine_vector(bounds.mins);
+	pm->maxs = pof_engine_vector(bounds.maxs);
+	pm->n_models = source.model_count;
+	pm->rad = source.radius;
+	for (i = 0; i < source.model_count; ++i) {
+		pm->submodel_parents[i] = source.parents[i];
+		pm->submodel_norms[i] = pof_engine_vector(source.normals[i]);
+		pm->submodel_pnts[i] = pof_engine_vector(source.points[i]);
+		pm->submodel_offsets[i] = pof_engine_vector(source.translations[i]);
+		pm->submodel_rads[i] = source.radii[i];
+		pm->submodel_ptrs[i] = source.offsets[i];
+		pm->submodel_mins[i] = pof_engine_vector(bounds.submodel_mins[i]);
+		pm->submodel_maxs[i] = pof_engine_vector(bounds.submodel_maxs[i]);
 	}
-
+	pm->model_data_size = (int)source.instruction_size;
+	pm->model_data = d_malloc(source.instruction_size);
+	if (!pm->model_data)
+		Error("Out of memory loading POF file <%s>", filename);
+	memcpy(pm->model_data, source.instructions, source.instruction_size);
+#ifndef DRIVE
+	if (r) {
+		vms_angvec angles[N_ANIM_STATES][MAX_SUBMODELS] = { 0 };
+		int frame;
+		r->n_guns = source.gun_count;
+		for (i = 0; i < MAX_GUNS; ++i) {
+			r->gun_submodels[i] = source.gun_models[i];
+			r->gun_points[i] = pof_engine_vector(source.gun_points[i]);
+		}
+		if (source.has_animation) {
+			for (frame = 0; frame < N_ANIM_STATES; ++frame)
+				for (i = 0; i < source.model_count; ++i) {
+					angles[frame][i].p = source.animation[frame][i].p;
+					angles[frame][i].b = source.animation[frame][i].b;
+					angles[frame][i].h = source.animation[frame][i].h;
+				}
+			if (!d1_shareware_build_joints(r, pm, angles, Robot_joints, &N_robot_joints, MAX_ROBOT_JOINTS))
+				Error("Invalid POF robot animation in <%s>", filename);
+		}
+	}
+#endif
 #ifdef WORDS_NEED_ALIGNMENT
 	align_polygon_model_data(pm);
 #endif
@@ -443,65 +259,22 @@ polymodel *read_model_file(polymodel *pm,char *filename,robot_info *r)
 //fills in arrays gun_points & gun_dirs, returns the number of guns read
 int read_model_guns(char *filename,vms_vector *gun_points, vms_vector *gun_dirs, int *gun_submodels)
 {
-	PHYSFS_file *ifile;
-	short version;
-	int id,len;
-	int n_guns=0;
-	ubyte	model_buf[MODEL_BUF_SIZE];
+	ubyte model_buf[MODEL_BUF_SIZE];
+	d1_pof_source source;
+	int i;
 
-	if ((ifile=PHYSFSX_openReadBuffered(filename))==NULL)
-		Error("Can't open file <%s>",filename);
-
-	Assert(PHYSFS_fileLength(ifile) <= MODEL_BUF_SIZE);
-
-	Pof_addr = 0;
-	Pof_file_end = PHYSFS_read(ifile, model_buf, 1, PHYSFS_fileLength(ifile));
-	PHYSFS_close(ifile);
-
-	id = pof_read_int(model_buf);
-
-	if (id!=0x4f505350) /* 'OPSP' */
-		Error("Bad ID in model file <%s>",filename);
-
-	version = pof_read_short(model_buf);
-
-	Assert(version >= 7);		//must be 7 or higher for this data
-
-	if (version < PM_COMPATIBLE_VERSION || version > PM_OBJFILE_VERSION)
-		Error("Bad version (%d) in model file <%s>",version,filename);
-
-	while (new_pof_read_int(id,model_buf) == 1) {
-		id = INTEL_INT(id);
-		//id  = pof_read_int(model_buf);
-		len = pof_read_int(model_buf);
-
-		if (id == ID_GUNS) {		//List of guns on this object
-
-			int i;
-
-			n_guns = pof_read_int(model_buf);
-
-			for (i=0;i<n_guns;i++) {
-				int id,sm;
-
-				id = pof_read_short(model_buf);
-				sm = pof_read_short(model_buf);
-				if (gun_submodels)
-					gun_submodels[id] = sm;
-				else if (sm!=0)
-					Error("Invalid gun submodel in file <%s>",filename);
-				pof_read_vecs(&gun_points[id],1,model_buf);
-
-				pof_read_vecs(&gun_dirs[id],1,model_buf);
-			}
-
-		}
-		else
-			pof_cfseek(model_buf,len,SEEK_CUR);
-
+	read_pof_source(filename, model_buf, sizeof(model_buf), &source);
+	if (source.version < 7)
+		Error("Missing gun directions in file <%s>", filename);
+	for (i = 0; i < MAX_GUNS; ++i) {
+		if (gun_submodels)
+			gun_submodels[i] = source.gun_models[i];
+		else if (source.gun_models[i] != 0)
+			Error("Invalid gun submodel in file <%s>", filename);
+		gun_points[i] = pof_engine_vector(source.gun_points[i]);
+		gun_dirs[i] = pof_engine_vector(source.gun_directions[i]);
 	}
-
-	return n_guns;
+	return source.gun_count;
 }
 
 //free up a model, getting rid of all its memory
@@ -706,19 +479,22 @@ int load_polygon_model(char *filename,int n_textures,int first_texture,robot_inf
 int load_polygon_model(char *filename,int n_textures,grs_bitmap ***textures)
 #endif
 {
+	int i;
 	#ifdef DRIVE
 	#define r NULL
 	#endif
 
-	Assert(N_polygon_models < MAX_POLYGON_MODELS);
-	Assert(n_textures < MAX_POLYOBJ_TEXTURES);
-
-	Assert(strlen(filename) <= 12);
+	if (N_polygon_models < 0 || N_polygon_models >= MAX_POLYGON_MODELS ||
+	    n_textures < 0 || n_textures >= MAX_POLYOBJ_TEXTURES || strlen(filename) > 12)
+		Error("Invalid polygon model metadata for <%s>", filename);
 	strcpy(Pof_names[N_polygon_models],filename);
 
 	read_model_file(&Polygon_models[N_polygon_models],filename,r);
-
-	polyobj_find_min_max(&Polygon_models[N_polygon_models]);
+	for (i = 0; i < Polygon_models[N_polygon_models].n_models; ++i)
+		if (!d1_pig_validate_model_textures(Polygon_models[N_polygon_models].model_data,
+		                                    Polygon_models[N_polygon_models].model_data_size,
+		                                    Polygon_models[N_polygon_models].submodel_ptrs[i], n_textures))
+			Error("Invalid POF model texture reference in <%s>", filename);
 
 	g3_init_polygon_model(Polygon_models[N_polygon_models].model_data);
 

@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <limits.h>
+#include <stdint.h>
 #include "gr.h"
 #include "pstypes.h"
 #include "piggy.h"
@@ -14,6 +15,7 @@
 #include "hash.h"
 #include "u_mem.h"
 #include "custom.h"
+#include "d1_custom_validation.h"
 #ifdef __ANDROID__
 #include "args.h"
 #ifdef USE_SDLMIXER
@@ -93,6 +95,75 @@ int piggy_bitmap_is_custom(grs_bitmap *bitmap)
 #endif
 struct snd_info SoundOriginal[MAX_SOUND_FILES];
 
+static d1_custom_validation_limits custom_validation_limits(void)
+{
+	d1_custom_validation_limits limits = {
+		MAX_BITMAP_FILES, MAX_SOUND_FILES, MAX_ROBOT_TYPES, MAX_ROBOT_JOINTS,
+		MAX_POLYGON_MODELS, MAX_OBJ_BITMAPS, MAX_SUBMODELS, BM_FLAG_RLE, BM_FLAG_RLE_BIG
+	};
+	return limits;
+}
+
+static int custom_bitmap_lookup(const char *name, void *context)
+{
+	(void)context;
+	return hashtable_search(&AllBitmapsNames, (char *)name);
+}
+
+static int custom_sound_lookup(const char *name, void *context)
+{
+	(void)context;
+	return hashtable_search(&AllDigiSndNames, (char *)name);
+}
+
+static int custom_read_file(const char *filename, ubyte **data, size_t *size, int *exists)
+{
+	PHYSFS_file *file;
+	PHYSFS_sint64 length;
+	ubyte *bytes;
+	if (!filename || !data || !size || !exists) return 0;
+	*data = NULL;
+	*size = 0;
+	*exists = 0;
+	file = PHYSFSX_openReadBuffered(filename);
+	if (!file) return !PHYSFSX_exists(filename, 1);
+	*exists = 1;
+	length = PHYSFS_fileLength(file);
+	if (length <= 0 || length > 64 * 1024 * 1024) {
+		PHYSFS_close(file);
+		return 0;
+	}
+	bytes = d_malloc((size_t)length);
+	if (!bytes) {
+		PHYSFS_close(file);
+		return 0;
+	}
+	if (PHYSFS_readBytes(file, bytes, length) != length) {
+		d_free(bytes);
+		PHYSFS_close(file);
+		return 0;
+	}
+	PHYSFS_close(file);
+	*data = bytes;
+	*size = (size_t)length;
+	return 1;
+}
+
+static int custom_validate_file(const char *filename, int hx1, int *exists)
+{
+	d1_custom_validation_limits limits = custom_validation_limits();
+	ubyte *data;
+	size_t size;
+	int valid;
+	if (!custom_read_file(filename, &data, &size, exists)) return 0;
+	if (!*exists) return 1;
+	valid = hx1 ? d1_custom_validate_hx1(data, size, &limits)
+	            : d1_custom_validate_pigpog(data, size, &limits,
+	                                        custom_bitmap_lookup, custom_sound_lookup, NULL);
+	d_free(data);
+	return valid;
+}
+
 static void change_ext(char *filename, const char *newext, int filename_size)
 {
 	char *p;
@@ -113,7 +184,7 @@ static void change_ext(char *filename, const char *newext, int filename_size)
 	}
 }
 
-int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, struct custom_info **ci)
+static int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, struct custom_info **ci)
 {
 	PHYSFS_sint64 data_ofs;
 	int i;
@@ -142,6 +213,10 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 	if ((unsigned int)num_bitmaps >= MAX_BITMAP_FILES || (unsigned int)num_sounds >= MAX_SOUND_FILES)
 		return -1; // invalid pig file
 
+	if (!num_bitmaps && !num_sounds) {
+		*ci = NULL;
+		return 0;
+	}
 	if (!(*ci = cip = d_malloc((num_bitmaps + num_sounds) * sizeof(struct custom_info))))
 		return -1; // out of memory
 
@@ -169,7 +244,7 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 		}
 		cip->offset = (int) (bmh.offset + data_ofs);
 		cip->repl_idx = hashtable_search(&AllBitmapsNames, name);
-		cip->flags = bmh.flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE);
+		cip->flags = bmh.flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE | BM_FLAG_RLE_BIG);
 		cip->width = bmh.width + ((bmh.dflags & DBM_FLAG_LARGE) ? 256 : 0);
 		cip->height = bmh.height;
 		cip++;
@@ -203,7 +278,7 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 	return 0;
 }
 
-int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct custom_info **ci)
+static int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct custom_info **ci)
 {
 	PHYSFS_sint64 data_ofs;
 	int num_bitmaps;
@@ -235,6 +310,12 @@ int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct c
 
 	num_bitmaps = PHYSFSX_readInt(f);
 
+	if (num_bitmaps < 0 || num_bitmaps >= MAX_BITMAP_FILES)
+		return -1;
+	if (!num_bitmaps) {
+		*ci = NULL;
+		return 0;
+	}
 	if (!(*ci = cip = d_malloc(num_bitmaps * sizeof(struct custom_info))))
 		return -1; // out of memory
 
@@ -244,8 +325,14 @@ int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct c
 	{
 		i = num_bitmaps;
 
-		while (i--)
-			(cip++)->repl_idx = PHYSFSX_readShort(f);
+		while (i--) {
+			int index = (ushort)PHYSFSX_readShort(f);
+			if (index <= 0 || index >= MAX_BITMAP_FILES) {
+				d_free(*ci);
+				return -1;
+			}
+			(cip++)->repl_idx = index;
+		}
 
 		cip = *ci;
 		data_ofs += num_bitmaps * 2;
@@ -271,6 +358,7 @@ int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct c
 
 	while (i--)
 	{
+		char name[15];
 		if (PHYSFS_read(f, &bmh, sizeof(DiskBitmapHeader2), 1) < 1)
 		{
 			d_free(*ci);
@@ -283,9 +371,16 @@ int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct c
 			return -1;
 		}
 		cip->offset = (int) (bmh.offset + data_ofs);
-		cip->flags = bmh.flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE);
+		cip->flags = bmh.flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE | BM_FLAG_RLE_BIG);
 		cip->width = bmh.width + ((bmh.hi_wh & 15) << 8);
 		cip->height = bmh.height + ((bmh.hi_wh >> 4) << 8);
+		if (no_repl) {
+			memcpy(name, bmh.name, 8);
+			name[8] = 0;
+			if (bmh.dflags & DBM_FLAG_ABM)
+				sprintf(strchr(name, 0), "#%d", bmh.dflags & 63);
+			cip->repl_idx = hashtable_search(&AllBitmapsNames, name);
+		}
 		cip++;
 	}
 
@@ -307,15 +402,16 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 	for (extension = 0; extension < 2; ++extension) {
 		PHYSFS_file *file;
 		struct custom_info *info = NULL;
-		int count = 0, signature, version, result;
+		int count = 0, exists, signature, version, result;
 		strcpy(name, level_name);
 		change_ext(name, extensions[extension], sizeof(name));
-		file = PHYSFSX_openReadBuffered(name);
-		if (!file) {
-			if (PHYSFSX_exists(name, 1))
-				return 0;
+		if (!custom_validate_file(name, 0, &exists))
+			return 0;
+		if (!exists)
 			continue;
-		}
+		file = PHYSFSX_openReadBuffered(name);
+		if (!file)
+			return 0;
 		if (PHYSFS_fileLength(file) < 8) {
 			PHYSFS_close(file);
 			return 0;
@@ -361,8 +457,9 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 
 // load custom textures/sounds from pog/pig file
 // returns 0 if ok, <0 on error
-int load_pigpog(char *pogname)
+static int load_pigpog(char *pogname)
 {
+	PHYSFS_sint64 file_length;
 	int num_custom;
 	grs_bitmap *bmp;
 	digi_sound *snd;
@@ -372,8 +469,12 @@ int load_pigpog(char *pogname)
 	int i, j, rc = -1;
 	unsigned int x = 0;
 
+	int exists;
+	if (!custom_validate_file(pogname, 0, &exists) || !exists)
+		return -1;
 	if (!(f = PHYSFSX_openReadBuffered((char *)pogname)))
 		return -1; // pog file doesn't exist
+	file_length = PHYSFS_fileLength(f);
 
 	i = PHYSFSX_readInt(f);
 	x = PHYSFSX_readInt(f);
@@ -394,19 +495,31 @@ int load_pigpog(char *pogname)
 		x = cip->repl_idx;
 		if (cip->repl_idx >= 0)
 		{
-			PHYSFSX_fseek( f, cip->offset, SEEK_SET );
+			if (x >= MAX_BITMAP_FILES || cip->offset < 0 || cip->offset >= file_length ||
+			    !PHYSFS_seek(f, cip->offset))
+				goto done;
 
 			if ( cip->flags & BM_FLAG_RLE )
-				j = PHYSFSX_readInt(f);
-			else
+			{
+				if (file_length - cip->offset < 4 || (j = PHYSFSX_readInt(f)) < 4 ||
+				    j > 64 * 1024 * 1024 || j > file_length - cip->offset ||
+				    !PHYSFS_seek(f, cip->offset))
+					goto done;
+			}
+			else if (cip->width <= 0 || cip->height <= 0 ||
+			         cip->width > INT_MAX / cip->height)
+				goto done;
+			else {
 				j = cip->width * cip->height;
+				if (j > file_length - cip->offset)
+					goto done;
+			}
 
 			if (!(p = d_malloc(j)))
-			{
-				if (num_custom)
-					d_free(custom_info);
-				PHYSFS_close(f);
-				return rc;
+				goto done;
+			if (PHYSFS_readBytes(f, p, j) != j) {
+				d_free(p);
+				goto done;
 			}
 
 			bmp = &GameBitmaps[x];
@@ -431,48 +544,34 @@ int load_pigpog(char *pogname)
 			gr_set_bitmap_flags(bmp, cip->flags & 255);
 			bmp->avg_color = cip->flags >> 8;
 
-			if ( cip->flags & BM_FLAG_RLE )
-			{
-				int *ip = (int *)p;
-				*ip = j;
-				p += 4;
-				j -= 4;
-			}
-
-			if (PHYSFS_read(f, p, 1, j) < 1)
-			{
-				if (num_custom)
-					d_free(custom_info);
-				PHYSFS_close(f);
-				return rc;
-			}
-
 		}
 		else if ((cip->repl_idx + 1) < 0)
 		{
-			PHYSFSX_fseek( f, cip->offset, SEEK_SET );
-			snd = &GameSounds[x & 0x7fffffff];
-
+			unsigned int sound_index = x & 0x7fffffff;
+			if (sound_index >= MAX_SOUND_FILES || cip->width <= 0 || cip->offset < 0 ||
+			    cip->offset >= file_length || cip->width > file_length - cip->offset ||
+			    !PHYSFS_seek(f, cip->offset))
+				goto done;
+			snd = &GameSounds[sound_index];
 			if (!(p = d_malloc(j = cip->width)))
-			{
-				if (num_custom)
-					d_free(custom_info);
-				PHYSFS_close(f);
-				return rc;
+				goto done;
+			if (PHYSFS_readBytes(f, p, j) != j) {
+				d_free(p);
+				goto done;
 			}
 
-			if (SoundOriginal[x & 0x7fffffff].length & 0x80000000)  // already customized?
+			if (SoundOriginal[sound_index].length & 0x80000000)  // already customized?
 				d_free(snd->data);
 			else
 			{
 #ifdef ALLEGRO
-				SoundOriginal[x & 0x7fffffff].length = snd->len | 0x80000000;
+				SoundOriginal[sound_index].length = snd->len | 0x80000000;
 #else
-				SoundOriginal[x & 0x7fffffff].length = snd->length | 0x80000000;
+				SoundOriginal[sound_index].length = snd->length | 0x80000000;
 #endif
-				SoundOriginal[x & 0x7fffffff].data = snd->data;
+				SoundOriginal[sound_index].data = snd->data;
 #ifdef __ANDROID__
-				SoundOriginal[x & 0x7fffffff].freq = snd->freq;
+				SoundOriginal[sound_index].freq = snd->freq;
 #endif
 			}
 
@@ -486,18 +585,12 @@ int load_pigpog(char *pogname)
 			snd->freq = 11025;
 #endif
 
-			if (PHYSFS_read(f, p, j, 1) < 1)
-			{
-				if (num_custom)
-					d_free(custom_info);
-				PHYSFS_close(f);
-				return rc;
-			}
 		}
 		cip++;
 	}
 	rc = 0;
 
+done:
 	if (num_custom)
 		d_free(custom_info);
 
@@ -595,7 +688,7 @@ int read_d2_robot_info(PHYSFS_file *fp, robot_info *ri)
 	return 1;
 }
 
-void load_hxm(char *hxmname)
+static int load_hxm_unchecked(char *hxmname)
 {
 	unsigned int repl_num;
 	int i;
@@ -603,18 +696,18 @@ void load_hxm(char *hxmname)
 	int n_items;
 
 	if (!(f = PHYSFSX_openReadBuffered((char *)hxmname)))
-		return; // hxm file doesn't exist
+		return -1;
 
 	if (PHYSFSX_readInt(f) != 0x21584d48) /* HMX! */
 	{
 		PHYSFS_close(f); // invalid hxm file
-		return;
+		return -1;
 	}
 
 	if (PHYSFSX_readInt(f) != 1)
 	{
 		PHYSFS_close(f); // unknown version
-		return;
+		return -1;
 	}
 
 	// read robot info
@@ -634,14 +727,14 @@ void load_hxm(char *hxmname)
 					RobotOriginal[repl_num] = d_malloc(sizeof(*RobotOriginal[repl_num]));
 					if (!RobotOriginal[repl_num]) {
 						PHYSFS_close(f);
-						return;
+						return -1;
 					}
 					*RobotOriginal[repl_num] = Robot_info[repl_num];
 				}
 				if (!(read_d2_robot_info(f, &Robot_info[repl_num])))
 				{
 					PHYSFS_close(f);
-					return;
+					return -1;
 				}
 			}
 		}
@@ -662,14 +755,14 @@ void load_hxm(char *hxmname)
 					JointOriginal[repl_num] = d_malloc(sizeof(*JointOriginal[repl_num]));
 					if (!JointOriginal[repl_num]) {
 						PHYSFS_close(f);
-						return;
+						return -1;
 					}
 					*JointOriginal[repl_num] = Robot_joints[repl_num];
 				}
 				if (PHYSFS_read(f, &Robot_joints[repl_num], sizeof(jointpos), 1) < 1)
 				{
 					PHYSFS_close(f);
-					return;
+					return -1;
 				}
 			}
 		}
@@ -695,7 +788,7 @@ void load_hxm(char *hxmname)
 					ModelOriginal[repl_num] = d_malloc(sizeof(*ModelOriginal[repl_num]));
 					if (!ModelOriginal[repl_num]) {
 						PHYSFS_close(f);
-						return;
+						return -1;
 					}
 					/* Transfer ownership; do not free the retained stock model bytes */
 					ModelOriginal[repl_num]->model = *pm;
@@ -710,14 +803,14 @@ void load_hxm(char *hxmname)
 				if (!(pm->model_data = d_malloc(pm->model_data_size)))
 				{
 					PHYSFS_close(f);
-					return;
+					return -1;
 				}
 
 				if (PHYSFS_read(f, pm->model_data, pm->model_data_size, 1) < 1)
 				{
 					d_free(pm->model_data);
 					PHYSFS_close(f);
-					return;
+					return -1;
 				}
 
 				Dying_modelnums[repl_num] = PHYSFSX_readInt(f);
@@ -739,7 +832,7 @@ void load_hxm(char *hxmname)
 					ObjectBitmapOriginal[repl_num] = d_malloc(sizeof(*ObjectBitmapOriginal[repl_num]));
 					if (!ObjectBitmapOriginal[repl_num]) {
 						PHYSFS_close(f);
-						return;
+						return -1;
 					}
 					*ObjectBitmapOriginal[repl_num] = ObjBitmaps[repl_num];
 				}
@@ -749,6 +842,15 @@ void load_hxm(char *hxmname)
 	}
 
 	PHYSFS_close(f);
+	return 0;
+}
+
+void load_hxm(char *hxmname)
+{
+	int exists;
+	if (!custom_validate_file(hxmname, 1, &exists) || !exists)
+		return;
+	(void)load_hxm_unchecked(hxmname);
 }
 
 /* Restore HX1 definitions without changing bitmap or sound ownership */
@@ -759,11 +861,13 @@ void custom_restore_definitions(void)
 		if (RobotOriginal[i]) {
 			Robot_info[i] = *RobotOriginal[i];
 			d_free(RobotOriginal[i]);
+			RobotOriginal[i] = NULL;
 		}
 	for (i = 0; i < MAX_ROBOT_JOINTS; ++i)
 		if (JointOriginal[i]) {
 			Robot_joints[i] = *JointOriginal[i];
 			d_free(JointOriginal[i]);
+			JointOriginal[i] = NULL;
 		}
 	for (i = 0; i < MAX_POLYGON_MODELS; ++i)
 		if (ModelOriginal[i]) {
@@ -773,11 +877,13 @@ void custom_restore_definitions(void)
 			Dying_modelnums[i] = ModelOriginal[i]->dying;
 			Dead_modelnums[i] = ModelOriginal[i]->dead;
 			d_free(ModelOriginal[i]);
+			ModelOriginal[i] = NULL;
 		}
 	for (i = 0; i < MAX_OBJ_BITMAPS; ++i)
 		if (ObjectBitmapOriginal[i]) {
 			ObjBitmaps[i] = *ObjectBitmapOriginal[i];
 			d_free(ObjectBitmapOriginal[i]);
+			ObjectBitmapOriginal[i] = NULL;
 		}
 
 }
@@ -828,7 +934,23 @@ void custom_remove()
 
 void load_custom_data(char *level_name)
 {
-	char custom_file[64];
+	char pg1_file[64], dtx_file[64], hx1_file[64];
+	int pg1_exists, dtx_exists, hx1_exists;
+
+	if (!level_name || strlen(level_name) >= sizeof(pg1_file))
+		return;
+	strcpy(pg1_file, level_name);
+	strcpy(dtx_file, level_name);
+	strcpy(hx1_file, level_name);
+	change_ext(pg1_file, "pg1", sizeof(pg1_file));
+	change_ext(dtx_file, "dtx", sizeof(dtx_file));
+	change_ext(hx1_file, "hx1", sizeof(hx1_file));
+
+	/* Reject the complete replacement set before changing any live definitions */
+	if (!custom_validate_file(pg1_file, 0, &pg1_exists) ||
+	    !custom_validate_file(dtx_file, 0, &dtx_exists) ||
+	    !custom_validate_file(hx1_file, 1, &hx1_exists))
+		return;
 
 #ifdef __ANDROID__
 	/* Android PCM overlays and level overrides share the mixer cache */
@@ -838,14 +960,10 @@ void load_custom_data(char *level_name)
 #endif
 #endif
 	custom_remove();
-	strncpy(custom_file, level_name, 63);
-	custom_file[63] = 0;
-	change_ext(custom_file, "pg1", sizeof(custom_file));
-	load_pigpog(custom_file);
-	change_ext(custom_file, "dtx", sizeof(custom_file));
-	load_pigpog(custom_file);
-	change_ext(custom_file, "hx1", sizeof(custom_file));
-	load_hxm(custom_file);
+	if ((pg1_exists && load_pigpog(pg1_file)) ||
+	    (dtx_exists && load_pigpog(dtx_file)) ||
+	    (hx1_exists && load_hxm_unchecked(hx1_file)))
+		custom_remove();
 }
 
 void custom_close()
