@@ -113,7 +113,11 @@ static int d2_ham_read_robot_meta(const uint8_t *record, d2_ham_robot_meta *meta
 	for (joint = 0; joint < 45; ++joint) {
 		meta->joint_count[joint] = d2_ham_i16(record + 296 + joint * 4);
 		meta->joint_offset[joint] = d2_ham_i16(record + 298 + joint * 4);
-		if (meta->joint_count[joint] < 0 || meta->joint_offset[joint] < 0)
+		if (meta->joint_count[joint] < 0) return 0;
+		/* Legacy writers left unused offsets negative; an empty list has no addressable range */
+		if (!meta->joint_count[joint])
+			meta->joint_offset[joint] = 0;
+		else if (meta->joint_offset[joint] < 0)
 			return 0;
 	}
 	for (joint = 0; joint < meta->guns; ++joint)

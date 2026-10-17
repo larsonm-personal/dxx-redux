@@ -133,12 +133,18 @@ void calc_gun_point(vms_vector *gun_point,object *obj,int gun_num)
 //takes the robot type (object id), gun number, and desired state
 int robot_get_anim_state(const jointpos **jp_list_ptr,int robot_type,int gun_num,int state)
 {
+	const jointlist *anim_state;
 
 	Assert(gun_num <= Robot_info[robot_type].n_guns);
 
-	*jp_list_ptr = &Robot_joints[Robot_info[robot_type].anim_states[gun_num][state].offset];
+	anim_state = &Robot_info[robot_type].anim_states[gun_num][state];
+	if (anim_state->n_joints <= 0) {
+		*jp_list_ptr = NULL;
+		return 0;
+	}
+	*jp_list_ptr = &Robot_joints[anim_state->offset];
 
-	return Robot_info[robot_type].anim_states[gun_num][state].n_joints;
+	return anim_state->n_joints;
 
 }
 
@@ -223,6 +229,8 @@ static int jointlist_read_n(jointlist *jl, int n, PHYSFS_file *fp)
 	for (i = 0; i < n; i++) {
 		jl[i].n_joints = PHYSFSX_readShort(fp);
 		jl[i].offset = PHYSFSX_readShort(fp);
+		if (!jl[i].n_joints)
+			jl[i].offset = 0;
 	}
 	return i;
 }

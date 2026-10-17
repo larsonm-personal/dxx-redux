@@ -13,6 +13,12 @@ static void put32(unsigned char *data, size_t offset, int value)
 	data[offset + 3] = (unsigned char) ((unsigned) value >> 24);
 }
 
+static void put16(unsigned char *data, size_t offset, int value)
+{
+	data[offset] = (unsigned char) value;
+	data[offset + 1] = (unsigned char) ((unsigned) value >> 8);
+}
+
 static void append32(unsigned char *data, size_t *position, int value)
 {
 	put32(data, *position, value);
@@ -42,6 +48,7 @@ int main(void)
 	unsigned char main_ham[256] = { 0 };
 	unsigned char extra_ham[64] = { 0 };
 	unsigned char hxm[64] = { 0 };
+	unsigned char joint_hxm[512] = { 0 };
 	size_t position = 0, count_offset;
 	int i;
 
@@ -120,6 +127,23 @@ int main(void)
 	put32(hxm, 4, 0);
 	expect(!d2_ham_validate_hxm(hxm, position, &validation_limits, 66, 1145, 166),
 	       "obsolete HXM version is rejected recoverably");
+
+	position = 0;
+	append32(joint_hxm, &position, 0x21584d48);
+	append32(joint_hxm, &position, 1);
+	append32(joint_hxm, &position, 1);
+	append32(joint_hxm, &position, 0);
+	position += 480;
+	for (i = 0; i < 4; ++i) append32(joint_hxm, &position, 0);
+	put16(joint_hxm, 16 + 298, -1);
+	expect(d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166),
+	       "negative offset on an empty robot joint list is ignored");
+	put16(joint_hxm, 16 + 296, 1);
+	expect(!d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166),
+	       "negative offset on a nonempty robot joint list is rejected");
+	put16(joint_hxm, 16 + 298, 1145);
+	expect(!d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166),
+	       "out-of-range nonempty robot joint list is rejected");
 
 	puts("PASS: bounded D2 HAM/HXM validation");
 	return 0;

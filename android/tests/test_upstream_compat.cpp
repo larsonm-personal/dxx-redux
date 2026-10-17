@@ -7537,7 +7537,8 @@ static void make_robot_fixtures()
 	append_int(hxm, 1);
 	append_int(hxm, 66);
 	append(hxm, robot_record(166, 7 * F1_0, F1_0 / 4));
-	append_int(hxm, 0); // joints
+	set_short(hxm, 16 + 298, -1); // unused joint-list offset from legacy editors
+	append_int(hxm, 0);           // joints
 	append_int(hxm, 1);
 	append_int(hxm, 166);
 	append(hxm, model_record(4 * F1_0));
@@ -7600,6 +7601,11 @@ static void test_robot_reload()
 		require(Objects[2].mtype.phys_info.mass == 2 * F1_0, "base robot mass restored");
 		load_level_robots_file("custom.rl2");
 		require(Objects[2].size == 4 * F1_0 && Objects[2].mtype.phys_info.mass == 7 * F1_0 && Objects[2].mtype.phys_info.drag == F1_0 / 4, "HXM changes applied to existing objects");
+		const jointpos *joint_list = &Robot_joints[0];
+		require(Robot_info[66].anim_states[0][0].n_joints == 0 &&
+		            Robot_info[66].anim_states[0][0].offset == 0 &&
+		            robot_get_anim_state(&joint_list, 66, 0, 0) == 0 && joint_list == nullptr,
+		        "empty HXM joint lists normalize unused offsets before runtime pointer formation");
 		if (!pass) {
 			const auto active_model = Polygon_models[166].model_data;
 			const robot_info active_robot = Robot_info[66];
@@ -7619,6 +7625,8 @@ static void test_robot_reload()
 			}
 			bad_hxm.push_back(replacement_hxm);
 			set_short(bad_hxm.back(), 1242, 99);
+			bad_hxm.push_back(replacement_hxm);
+			set_short(bad_hxm.back(), 16 + 296, 1);
 			for (const bytes &damaged : bad_hxm) {
 				write_fixture("custom.HXM", damaged);
 				char custom_level[] = "custom.rl2";
