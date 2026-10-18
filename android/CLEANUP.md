@@ -7,7 +7,27 @@ Run from the repository root. Cleanup is unattended: eligible artifacts are remo
 .\android\clean-workspace.ps1
 # Fast emergency cleanup: all temporary workspace files, without build scans
 .\android\clean-workspace.ps1 -TemporaryOnly
+# Preserve a current run and stop when the repository volume has enough space
+.\android\clean-workspace.ps1 -TemporaryOnly -ExcludePaths temp/full_validation/run_20261016 -TargetFreeSpaceGB 100
 ```
+
+`-ExcludePaths` accepts repository-relative or absolute paths below this checkout.
+It preserves the complete named subtree, including ignored files, and still
+allows cleanup of its siblings. Exclusions are checked again before deletion.
+`-TargetFreeSpaceGB` checks actual free space on the repository volume, stops
+deleting when the target is met, and fails if eligible cleanup cannot reach it.
+An already satisfied target does no scanning or deletion. Preview never deletes
+or promises that logical candidate sizes equal physical disk recovery. Existing
+active-process, lock, Git, link and asset protections remain in force.
+
+For temporary cleanup while Android emulators remain open, add
+`-PreserveEmulatorWorkspaces`. This mode requires `-TemporaryOnly` or `-BuildsOnly`, preserves
+whole directories containing AVD configuration or virtual userdata disks, and
+allows recognized Android emulator processes using default AVD paths to remain
+running. Unreadable or unrecognized emulator commands, custom image/path
+overrides, and active build/test processes still block
+cleanup. Active builds and tests still block deletion in either mode. Use
+`-ExcludePaths` as well for a current run's reports and scripts.
 
 The default removes every ignored file type inside scratch directories, including fresh files. This includes custom-named runs, copied engines, extracted assets, partial/failed runs, reports, JSON, logs, scripts, source backups and hidden files. Scratch roots are discovered at arbitrary repository depths: `temp`, `temp_*`, `temp-*`, `tmp`, `tmp_*`, `tmp-*`, `.tmp`, `.temp`, `test-results`, `test-reports`, `regression-results` and `regression-output`. There is no timestamp naming requirement or fixed runner allowlist. Ignored loose `.tmp`, `.temp` and `.log` files outside these roots are also eligible
 
@@ -47,6 +67,15 @@ Validate safely against a synthetic Git repository:
 ```powershell
 .\android\tests\test_clean_workspace.ps1
 ```
+
+For explicit space recovery, `-BuildsOnly -KeepBuildGenerations 0` removes recognized
+generated builds without retaining a replacement. This explicit mode also
+recognizes Gradle `build` directories beside `build.gradle`/`build.gradle.kts`
+and Cargo `target` directories beside `Cargo.toml`; arbitrary ignored directories
+are not build outputs. Combine it with
+`-BuildGraceHours` to keep recent builds and `-ExcludePaths` to preserve a current
+validation run. This also removes the last generation of a configuration; the
+next build must recreate it.
 
 ## Producer startup retention
 

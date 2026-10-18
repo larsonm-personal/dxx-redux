@@ -58,7 +58,10 @@ def main():
         steps = [
             {"_info": {"games": ["d2"]}},
             {"action": "enter_launcher"},
-            {"action": "tap_button", "text": "Game Preferences"},
+            {"action": "setup_command", "command": "music_renderer_select", "args": {"renderer": "ymfm"}},
+            {"action": "setup_command", "command": "music_soundfont_select"},
+            {"action": "tap_button", "text": "Settings"},
+            {"action": "tap_button", "text": "MIDI"},
             {"action": "tap_button", "text": "Download soundfonts"},
             {"action": "tap_button", "text": args.name},
             {"action": "assert_button", "text": args.website, "enabled": True},

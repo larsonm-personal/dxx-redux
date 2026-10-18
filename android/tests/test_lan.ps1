@@ -2484,6 +2484,10 @@ function Invoke-GhostInventoryScenario {
 
 function Invoke-SavedLateJoinScenario {
     Write-Status "--- Cancelled lobby join, solo restore, and one approved mid-level join ---" "White"
+    # Keep unrelated combat from killing the host during saved-session returns
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_host_migration_prepare_world.jsonc" `
+                -SecondarySerial $EMU2 -SecondaryScript "test_coop_host_migration_prepare_world.jsonc" `
+                -Description "Remove unrelated combat before saved-session returns")) { return $false }
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_late_join_seed.jsonc")) { return $false }
     $geared = Wait-ForCondition -Description "host receives client inventory before save" -TimeoutSec 20 -PollMs 500 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU1

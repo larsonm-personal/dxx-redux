@@ -345,6 +345,143 @@
       "retry_exit_code": 0,
       "retry_summary": "windows_current_native_retry/summary.json",
       "reason": "Initial scratch wrapper refused the architecture check before tests; corrected guard positively verifies X86/4-byte compiler metadata. Actual full current native builds and CTest then pass D1 79/79 and D2 90/90. Original refusal retained."
+    },
+    {
+      "name": "test_launch_to_automap/current_d2",
+      "retry_exit_code": 0,
+      "retry_log": "coop_refresh/keeper_retry2_resume_launch_to_automap_d2.log",
+      "scope": "Fresh7CD96AC8 APK on exclusive5580; seven-second background stimulus retains the native actual parked-duration>=4s assertion. Actual full ownerPASS; original failure retained."
+    },
+    {
+      "name": "test_graphics_first_run/Rearm_three_modes",
+      "retry_exit_code": 0,
+      "scope": "Actual tracked fixture53-step Rearm plus other-engine handled checks in D1,D2,importedD1. Establish the pause-menu precondition explicitly; no assertion deleted or weakened. Original D1 failure and the abandoned earlier deletion remain preserved.",
+      "retry_logs": [
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\graphics_precondition_tracked_d1.log",
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\graphics_precondition_tracked_d2.log",
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\graphics_precondition_tracked_imported.log"
+      ],
+      "source_sha256": "e8e43957b4e9971d640dc91dd2ff6d9f384e25cc381796d18f2b81dc52146476",
+      "quality_log": "code_quality_final_graphics_21.log",
+      "artifact_scope": "coop_refresh/graphics_precondition_fix_scope.json"
+    },
+    {
+      "name": "test_idle_screen_saver/current_d1_d2",
+      "retry_exit_code": 0,
+      "retry_logs": [
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\keeper_retry2_resume_idle_screen_saver_d1.log",
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\keeper_retry2_resume_idle_screen_saver_d2.log"
+      ],
+      "scope": "Both unchanged D1/D2 idle-screen ownersPASS on the current-source isolated device run. Original failures remain raw; no causal attribution to a specific concurrent fix."
+    },
+    {
+      "name": "current_lan_preparation_public_migration_nsd",
+      "retry_exit_code": 0,
+      "retry_logs": [
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\keeper_retry2_resume_lan_launch_preparation_retry.log",
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\keeper_retry2_resume_lan_public_shareware_migration_retry.log",
+        "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\coop_refresh\\keeper_retry2_resume_lan_nsd_managed_pair.log"
+      ],
+      "scope": "Complete unchanged retail-preparation, publicD1 host-migration, managedD1/D2 NSD+reconnect ownersPASS with current-source APK on exclusive5580/5582. Original failed admission/migration attempts remain raw."
+    },
+    {
+      "test": "coop_saved_latejoin_d1/rejoin1",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/coop_cases/coop_saved_latejoin_d1_combat_isolated/",
+      "scope": "Full saved-session cancelled lobby, solo restore, approval, inventory recovery, bidirectional network updates and both peers controls across initial/repeated return PASS. Only paired combat-clearing setup added; host robot damage/death proven in original raw evidence. D2 variant still pending; native source and all original assertions unchanged."
+    },
+    {
+      "test": "coop_relay_d2_restore",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/coop_cases/coop_relay_d2_restore_disk_recovery/",
+      "scope": "Unchanged full three-peer owner and assertions PASS after positively owned coldboot/storage recovery. Original120s launcher ANR/system-server watchdog retained independently; no native or fixture change for this retry."
+    },
+    {
+      "test": "coop_worldrestore_d1",
+      "status": "FAIL",
+      "exit_code": 1,
+      "resolved_caller_error": true,
+      "supported_d2_status": "PASS",
+      "evidence": "coop_refresh/unsupported_world_restore_variant_resolution.json",
+      "scope": "Scratch matrix included unsupported D1 variant. Owner intentionally supports only fresh D2 world-restore probe. Keep original FAIL raw; supported D2 actual owner passed unchanged."
+    },
+    {
+      "test": "coop_saved_latejoin_d2/rejoin1",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/coop_cases/coop_saved_latejoin_d2_disk_recovery/",
+      "scope": "Full D2 saved-session initial/repeated return, inventory, networking and both peers controls PASS with existing paired clear-robots setup; together with D1 full repeat PASS verifies test-only combat isolation fix in both games. Original host robot death failure remains raw."
+    },
+    {
+      "test": "coop_d1_secret_save_native",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/coop_cases/coop_d1_secret_save_native_disk_recovery/",
+      "scope": "Complete secret entry and repeated authoritative restore with different peer historiesPASS"
+    },
+    {
+      "test": "coop_d1_secret_save_imported",
+      "status": "FAIL",
+      "exit_code": 1,
+      "evidence": "coop_refresh/coop_cases/coop_d1_secret_save_imported_disk_recovery/",
+      "scope": "D2 engine FirstStrike level10 entry: host reaches secret-1, then num_connected1; client stays level10/network_status5 and times out before secret briefing. Save/checkpoint assertions are not reached. NativeD1 same complete scenarioPASS."
+    },
+    {
+      "test": "test_soundfont_profiles/current_v4",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/audio_profiles_correct_variants_v4/test_soundfont_profiles/",
+      "scope": "Full--games--library owner: imported custom bank, both game controls with actual FlatEQ0/nativeSF2 profile, download provenance, info/cancel/delete/persistencePASS"
+    },
+    {
+      "test": "test_music_eq_device/current_v2",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/audio_profiles_fixture_v2/test_music_eq_device/",
+      "scope": "Full--game-launch owner: both source catalogs x4presets, FM bypass/profile isolation, both native game launchesPASS"
+    },
+    {
+      "test": "test_soundfont_release_download/current_v2",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/audio_profiles_fixture_v2/test_soundfont_release_download/",
+      "scope": "Full catalog download with pinnedSHA/provenance, cancel, renderer isolation and playbackPASS"
+    },
+    {
+      "test": "test_fm_profiles/current_v5",
+      "status": "FAIL",
+      "exit_code": 1,
+      "evidence": "coop_refresh/audio_fm_native_diagnostic_v5/",
+      "scope": "Full--games owner: all preview/reset/HMQ and nativeD1 checksPASS; strictD2 nativeYMFM assertion fails with captured namespaced fallback. Source hashes stable across owner."
+    },
+    {
+      "test": "test_coop_start_fanout_mapset/after_cleanup",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/fanout_mapset_after_cleanup/",
+      "scope": "Full unchanged owner after rebuilding only the declared metadata executable; eight distinct starts on all32 Plutonia levelsPASS. Original master missing-binaryFAIL retained."
+    },
+    {
+      "test": "test_lan_nsd/master_explicit_selection",
+      "status": "RESOLVED_CALLER_ERROR",
+      "evidence": "coop_refresh/master_explicit_nsd_selection_resolution.json",
+      "scope": "Our scratch master selection omitted mandatory HostSerial/ClientSerial for an explicitly classified owner; full managed D1/D2 NSD and reconnect actualPASS separately. No canonical owner/registry changes."
+    },
+    {
+      "test": "test_lan_launch_preparation/after_public_fixture",
+      "status": "PASS",
+      "exit_code": 0,
+      "evidence": "coop_refresh/retail_lan_after_public_fixture/",
+      "scope": "Pinned public-only data precondition verified both peers; tracked retail branch provisions its declared standard data. Full lobby/ready/preparation-before-host/engine ownerPASS; original functional and admission assertions retained."
+    },
+    {
+      "test": "test_store_asset_pipeline/graphics_flow_v5",
+      "status": "FAIL",
+      "exit_code": 1,
+      "evidence": "coop_refresh/store_pipeline_graphics_v5_scope.json",
+      "scope": "Capture timing/editor fix verified by full seed D1/D2 graphics, opening and full D1 fly-out/audio. Full generation then fails on missing exact private replay; full validator actualFAIL on incomplete media. No complete media qualification. All original quality/replay assertions retained."
     }
   ]
 }

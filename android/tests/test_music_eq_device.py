@@ -95,9 +95,11 @@ def main():
         command("music_renderer_select", "--es", "renderer", "sf2")
         command("music_soundfont_select")
         assert state()["soundfont"]["eq"] == "measured-sc55-balanced"
-        tap("Edit")
+        tap("Settings")
         tap("MIDI")
-        eq_button = next(b["text"] for b in buttons() if b["text"].startswith("eq "))
+        available = buttons()
+        eq_button = next((b["text"] for b in available if b["text"] == "EQ for MIDI"), None)
+        assert eq_button, available
         assert eq_button != "eq opl3"
         tap(eq_button)
         assert any(b["text"] == "Flat (no EQ)" for b in buttons())

@@ -6,7 +6,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $helper = Join-Path $repoRoot 'android/clean-workspace.ps1'
 $fixture = Join-Path $repoRoot "temp/cleanup-fixture-$([guid]::NewGuid().ToString('N'))"
 $old = [DateTime]::UtcNow.AddDays(-90)
-$state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; BusyName = 'ninja.exe'; OnAnswer = $null; OnIdle = $null; IdleChecks = 0 }
+$state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; BusyName = 'ninja.exe'; BusyCommandLine = 'synthetic active build'; OnAnswer = $null; OnIdle = $null; IdleChecks = 0 }
 $heldLock = $null
 
 ${function:Read-Host} = {
@@ -21,7 +21,7 @@ ${function:Get-DxxHostProcessInventory} = {
     $state.IdleChecks++
     if ($state.OnIdle) { & $state.OnIdle }
     if ($state.Busy) {
-        [pscustomobject]@{ ProcessId = -10; ParentProcessId = 0; Name = $state.BusyName; CommandLine = 'synthetic active build' }
+        [pscustomobject]@{ ProcessId = -10; ParentProcessId = 0; Name = $state.BusyName; CommandLine = $state.BusyCommandLine }
     }
 }.GetNewClosure()
 
@@ -76,6 +76,7 @@ try {
     & $helper -RepositoryRoot $fixture -WhatIf
     Assert-CleanupExists 'temp/old.log'
     if ($state.Prompts) { throw 'Preview prompted' }
+
 
     $state.Busy = $true
     $blocked = $false
@@ -346,6 +347,103 @@ try {
         Assert-CleanupExists $path
     }
     if ($state.Prompts -ne $beforeBuilds) { throw 'Regression payload cleanup prompted' }
+    # Explicit exclusions preserve entire evidence trees without pinning siblings
+    New-CleanupFixtureFile 'temp/excluded-evidence/deep/report.json'
+    New-CleanupFixtureFile 'temp/exclusion-sibling/delete.bin'
+    & $helper -RepositoryRoot $fixture -TemporaryOnly -ExcludePaths 'temp/excluded-evidence'
+    Assert-CleanupExists 'temp/excluded-evidence/deep/report.json'
+    Assert-CleanupExists 'temp/exclusion-sibling/delete.bin' $false
+    $badExclude = $false
+    try { & $helper -RepositoryRoot $fixture -Preview -ExcludePaths (Split-Path $fixture) } catch {
+        $badExclude = $_.Exception.Message -match 'Excluded path must be below'
+    }
+    if (-not $badExclude) { throw 'Outside-repository exclusion was accepted' }
+
+    # A satisfied free-space target is a true no-op, including while builds run
+    New-CleanupFixtureFile 'temp/free-target/keep.bin'
+    $state.Busy = $true
+    & $helper -RepositoryRoot $fixture -TemporaryOnly -TargetFreeSpaceGB 0.001
+    $state.Busy = $false
+    Assert-CleanupExists 'temp/free-target/keep.bin'
+
+    # Explicit emulator-aware temp cleanup preserves whole AVDs and other evidence
+    New-CleanupFixtureFile 'temp/active-emulator/avd/userdata-qemu.img.qcow2'
+    New-CleanupFixtureFile 'temp/active-emulator/avd/keep.log'
+    New-CleanupFixtureFile 'temp/emulator-unrelated/delete.bin'
+    $state.Busy = $true
+    $state.BusyName = 'qemu-system-x86_64.exe'
+    $state.BusyCommandLine = 'emulator -avd ActiveTest'
+    & $helper -RepositoryRoot $fixture -TemporaryOnly -PreserveEmulatorWorkspaces -ExcludePaths 'temp/excluded-evidence' -BusyWaitSeconds 0
+    Assert-CleanupExists 'temp/active-emulator/avd/userdata-qemu.img.qcow2'
+    Assert-CleanupExists 'temp/active-emulator/avd/keep.log'
+    Assert-CleanupExists 'temp/excluded-evidence/deep/report.json'
+    Assert-CleanupExists 'temp/emulator-unrelated/delete.bin' $false
+    $state.BusyCommandLine = ''
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -TemporaryOnly -PreserveEmulatorWorkspaces -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Unreadable emulator command was not blocked' }
+    $state.BusyCommandLine = 'emulator -avd ActiveTest -data custom.bin'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -TemporaryOnly -PreserveEmulatorWorkspaces -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Custom emulator image override was not blocked' }
+    $state.BusyCommandLine = 'emulator -avd ActiveTest "-data" "custom path.bin"'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -TemporaryOnly -PreserveEmulatorWorkspaces -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Quoted custom emulator image override was not blocked' }
+    $state.Busy = $false
+    $state.BusyName = 'ninja.exe'
+    $state.BusyCommandLine = 'synthetic active build'
+
+    # Explicit zero retention can retire a configuration without a replacement
+    $state.Busy = $true
+    $state.BusyName = 'qemu-system-x86_64.exe'
+    $state.BusyCommandLine = 'emulator -avd ActiveTest'
+    New-CleanupFixtureFile 'android/app/.cxx/Recovery/old00000/arm64-v8a/output.o'
+    New-CleanupFixtureFile 'android/app/.cxx/Recovery/old00000/arm64-v8a/_deps/lib/value.a'
+    foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Recovery/old00000') -Recurse -Force) {
+        $item.LastWriteTimeUtc = $old
+    }
+    (Get-Item -LiteralPath (Join-Path $fixture 'android/app/.cxx/Recovery/old00000')).LastWriteTimeUtc = $old
+    New-CleanupFixtureFile 'android/app/.cxx/Recovery/new00000/arm64-v8a/output.o'
+    New-CleanupFixtureFile 'android/app/.cxx/Recovery/keep0000/arm64-v8a/output.o'
+    New-CleanupFixtureFile 'android/app/build.gradle.kts'
+    New-CleanupFixtureFile 'android/app/build/intermediates/old.bin'
+    New-CleanupFixtureFile 'server/Cargo.toml'
+    New-CleanupFixtureFile 'server/target/debug/deps/old.bin'
+    New-CleanupFixtureFile 'server/target/debug/incremental/session/value.o'
+    foreach ($path in @('android/app/build', 'server/target')) {
+        foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture $path) -Recurse -Force) {
+            $item.LastWriteTimeUtc = $old
+        }
+        (Get-Item -LiteralPath (Join-Path $fixture $path)).LastWriteTimeUtc = $old
+    }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -BuildGraceHours 24 -PreserveEmulatorWorkspaces -BusyWaitSeconds 0 -ExcludePaths 'android/app/.cxx/Recovery/keep0000'
+    Assert-CleanupExists 'android/app/.cxx/Recovery/old00000' $false
+    Assert-CleanupExists 'android/app/build' $false
+    Assert-CleanupExists 'server/target' $false
+    Assert-CleanupExists 'android/app/build.gradle.kts'
+    Assert-CleanupExists 'server/Cargo.toml'
+    Assert-CleanupExists 'android/app/.cxx/Recovery/new00000/arm64-v8a/output.o'
+    Assert-CleanupExists 'android/app/.cxx/Recovery/keep0000/arm64-v8a/output.o'
+    Assert-CleanupExists 'temp/active-emulator/avd/userdata-qemu.img.qcow2'
+    $state.BusyName = 'ninja.exe'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -PreserveEmulatorWorkspaces -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Zero build retention ignored an active native build' }
+    $state.Busy = $false
+
     Write-Host 'PASS: unattended recursive temp cleanup, safety, build generations, and payload retention'
 } finally {
     if ($heldLock) { $heldLock.Dispose() }

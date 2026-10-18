@@ -1,5 +1,5 @@
 {
-  "scope": "Main suite and all regression generators are complete. Original failures remain unchanged; focused verification is separate. Supplemental tests are still running.",
+  "scope": "All planned automated owners and regression generators have terminal attempts. Original failures remain unchanged; focused passes and unavailable input/manual coverage are recorded separately.",
   "findings": [
     {
       "test": "test_android_mod_renderer",
@@ -23,32 +23,9 @@
       "kind": "runtime_or_async_fixture_failure",
       "observed": "D2 baseline passed 69/69 steps, but reopening launcher mapping and holding L2 for 2300 ms leaves selected_control=null at launcher step 3/12. Independent raw-input, response and hotplug owners passed",
       "evidence": "controller_rebind_failure/",
-      "pending": "Serial D1/D2 retries with launcher, automation and window-focus logs; original assertions retained"
-    },
-    {
-      "test": "test_graphics_first_run",
-      "kind": "original_d1_rearm_intermediate_resume_expectation",
-      "observed": "D1 Rearm expected an intermediate pause menu and first_run_pending=true, but the rearmed chooser was already editing with pending=false",
-      "cause": "The original fixture requires an intermediate idle native pause menu with first_run_pending=true. The fresh D1 run already presents the correct automatic editor: phaseediting,TexFilt2,accepted0,pendingfalse,candidate_readytrue,time_pausedtrue,game_window_is_fronttrue. The earlier unconditional removal of pause/resume was also invalid when that native menu remains open; source is restored and unchanged.",
-      "evidence": "graphics_first_run_failure/",
-      "pending": "Current full D2 matrix remains queued. A proper conditional resume handshake would need to handle both observed paths; no blind fixture deletion or product fix applied.",
-      "current_evidence": "coop_refresh/graphics_original_results/; coop_refresh/graphics_original_capture_index.json",
-      "current_observed": "All3 unchanged original Rearm variants completed on the fresh APK: D1 FAIL at the intermediate step43/51; D2 PASS; importedD1 PASS. D1 correct editor state is captured, but its remaining dwell/cancel/handled assertions were not reached. Do not label D1 full ownerPASS or force a single resume path."
-    },
-    {
-      "test": "test_idle_screen_saver",
-      "kind": "runtime_or_lifecycle_failure",
-      "observed": "D1 fails after background/screen lock with wake_count=0, park_entry_count=0; D2 wakes once then controller A input times out at step 33. Both retain original checks",
-      "evidence": "idle_screen_saver_failure/",
-      "pending": "Serial D1/D2 retries with bounded automation, lifecycle and window/logcat diagnostics"
-    },
-    {
-      "test": "test_launch_to_automap",
-      "kind": "timing_fixture_fix_pending_runtime_verification",
-      "observed": "D1 passed. D2 parked/woke successfully but recorded 3750 ms parked versus required 4000 ms after a five-second background hold",
-      "cause": "Fixed background hold leaves insufficient margin for the asynchronous lifecycle handoff",
-      "evidence": "launch_to_automap_failure/",
-      "pending": "Extend only the main-menu background stimulus to seven seconds, retain four-second parked assertion, retry full D2 owner with diagnostics"
+      "pending": "Serial D1/D2 retries with launcher, automation and window-focus logs; original assertions retained",
+      "current_observed": "Current-source D1 andD2 bothpass the native independent-trigger-axis baseline, then launcher fixture fails at3/12 with selected_control expectedL2 actualnull after the2.3second pressed interval. Save/Return-to-Game and native binding-reload assertions are not reached; this does not establish a native binding-reload failure.",
+      "current_evidence": "coop_refresh/keeper_retry2_resume_controller_live_rebind_d1.log; coop_refresh/keeper_retry2_resume_controller_live_rebind_d2.log; temp/controller-live-rebind-d1-baseline.log; temp/controller-live-rebind-d2-baseline.log"
     },
     {
       "test": "test_mod_fuzz/all-on-d1-in-d2-L1",
@@ -113,20 +90,6 @@
       "patch_archive": "game_data/mods/xfing/d2x_sp/uud2sp-sounds.dxa"
     },
     {
-      "test": "test_lan_host_migration_public_shareware",
-      "kind": "runtime_rejoin_state_failure",
-      "observed": "Initial nativeD1 shareware LAN sync and bidirectional PDATA pass. Slot1 takes host role and retains spew/recovery records. Former host launches and discovers migrated host, but full matching-object pair predicate times out120s. Second swap unreached. Saved states show returning peer menu says removed for failing important packets; native trace verify_objects remote74 local0, SYNCFAILED retry1/3, then PLAYING. Final synchronized/allocated/active counts74 on both peers, but returning peer in_gamefalse and host num_connected1.",
-      "evidence": "public_migration_failure/",
-      "pending": "Unchanged full publicD1 scenario replay queued on freshly provisioned managed pair; preserve earlySYNC and object-end checks and120s bound"
-    },
-    {
-      "test": "test_lan_launch_preparation",
-      "kind": "emulator_admission_probe_failure_pending_unchanged_retry",
-      "observed": "Refuses to reset emulator5554 because ro.kernel.qemu probe is not exact1; get-state passed. Probe response not captured by original owner. Subsequent public variant passes identical guard on both targets and reaches nativeD1 two-peer gameplay.",
-      "evidence": "launch_preparation_failure/",
-      "pending": "Unchanged retail owner retry queued with freshly provisioned managed pair; do not bypass positive identity guards"
-    },
-    {
       "test": "full_simulation/af_d1_beta/level7",
       "kind": "native_runtime_input_rejection",
       "observed": "All2639 work items recorded. One engine invocation exits1 because Robot30 is unavailable in the selected D1 edition. Metadata stage passed140/140 inputs. Fresh publication JSON and exact rejection log preserved.",
@@ -188,6 +151,60 @@
       "observed": "All2639 workitems recorded in4446.75seconds. One native rejection af_d1_beta level7 Robot30 unavailable in selectedD1 edition, matching regular regeneration. One producer-classified expected timeout Uneasy4 after360seconds. No nonempty asan.* report files captured.",
       "evidence": "supplemental/sanitizer_all/routes/",
       "pending": "User review of new ASan route JSON; no edition, robot-limit, timeout classification or expected baseline changed"
+    },
+    {
+      "test": "test_uud_mission_gameplay/extras/level2/both_orders",
+      "kind": "runtime_or_camera_placement_sampling_failure",
+      "observed": "Both current pack orders fail render-source check at step2/44: expected d2-hires-256-textures-ktx2.dxa, actualempty. Both packs mounted, gamefronttrue, unpaused, graphicsidle. face_view requestedsegment1/side0 but the final snapshot samplessegment0/texture925/bitmap2617; input axes/turn/throttle arezero. Standalone256/512/1024 hires and additive-sprite ownerPASS. Camera/physics/frame placement must be distinguished from pack rendering before a fix.",
+      "evidence": "coop_refresh/uud_current_failures/",
+      "pending": "No render/priority guard changed; targeted native frame/position logging would be needed to establish cause"
+    },
+    {
+      "test": "test_demo_import/public_first_play/current",
+      "kind": "correlated_extraction_barrier_not_reached",
+      "observed": "PublicBasicUse ownerPASS. Fuller PublicFirstPlay completes interruption_old20/20 then waits60seconds for a nonzero incomplete-extraction barrier; predicate never reached. No intentional interruption is claimed for the unreached stage, and later branches remain unverified.",
+      "evidence": "coop_refresh/keeper_retry2_resume_public_first_play_current.log",
+      "pending": "Inspect correlated importer progress/barrier evidence before changing fixture or product behavior"
+    },
+    {
+      "test": "coop_new_player_restore/d2/level8",
+      "kind": "fresh_checkpoint_asset_compatibility_rejection",
+      "observed": "Both peers reject a freshly created solo checkpoint with Cannot load save: Save uses extra UUD2 textures; enable UUD2 Texture Fixes. Native level8 reports910 textures and12 invalid references to910 whilecustom_tex0. Final snapshots have coop_restore.statuserror, mod_saveincompatible and leave networking; subsequent strict polling propertyexception is secondary. D1 and importedD1 level8 variantsPASS. Current28 product-source hashes stillmatch frozenAPK.",
+      "evidence": "coop_refresh/coop_cases/coop_new_player_restore_d2/",
+      "pending": "Additional unchanged defaultlevel1 D2 scenario completed PASS, including checkpoint restoration and network/control soak. Level8 failure remains separately visible; no texture/asset compatibility guard weakened and no native fix made.",
+      "default_level_control_evidence": "coop_refresh/coop_cases/coop_new_player_restore_d2_default/"
+    },
+    {
+      "test": "launcher_start/relay_d2_restore",
+      "kind": "emulator_launcher_anr_and_system_server_watchdog",
+      "observed": "Primary SetupActivity failed its120second readiness wait. Android logged input/SETUP_INTROSPECT ANR, followed by system-server watchdog restarts; captured main system-server trace blocks in Binder SurfaceComposer getCompositionPreference during DisplayManager bootstrap. Subsequent raw SDK am commands returned20. This is separate from later4GiB host reserve refusals; no cause relationship established.",
+      "evidence": "coop_refresh/coop_cases/coop_relay_d2_restore/",
+      "current_evidence": "coop_refresh/launcher_anr_raw_recovery/; coop_refresh/coop_cases/coop_relay_d2_restore_disk_recovery/",
+      "pending": "All functional relay retries and the multiplayer master have now run. Retain the real launcher/system-server ANR as an intermittent environment/runtime finding; its cause and relationship to host disk shortage remain unproven.",
+      "current_observed": "Unchanged full D2 three-peer relay restore PASS after cold boot and guarded storage recovery, including pending-pickup cancellation. No source/GPU/RAM/timeout/compatibility assertions changed. Intermittent launcher/system-server failure remains separately recorded; relation to host disk shortage still not established."
+    },
+    {
+      "test": "coop_d1_secret_save_imported",
+      "kind": "current_coop_transition_failure",
+      "observed": "D2 engine FirstStrike level10 entry: host reaches secret-1, then num_connected1; client stays level10/network_status5 and times out before secret briefing. Save/checkpoint assertions are not reached. NativeD1 same complete scenarioPASS.",
+      "evidence": "coop_refresh/coop_cases/coop_d1_secret_save_imported_disk_recovery/",
+      "pending": "Preserve strict transition/network assertions; this is not merely a stale briefing label. No speculative native or oracle change."
+    },
+    {
+      "test": "test_fm_profiles/current",
+      "kind": "native_d2_FM_fallback",
+      "observed": "All launcher FM preview/reset checks and completeD1 gameplay/nativebank/HMQ checksPASS. D2 launches with soundfont.renderer=ymfm, but native effective renderer isSF2 and MusicSynth logs d2-original/game01.hmp reason=unsupported-or-missing-FM-banks.",
+      "evidence": "coop_refresh/audio_fm_native_diagnostic_v5/",
+      "cause_hypothesis": "D2 presentation resources are now namespaced underd2-original/. Shared bank_names compares the full song to unprefixedSNG rows and reads unscopedSNG/banks; captured prefixed path plus source suggests a namespace-lookup regression. This inference has not been verified by a native patch.",
+      "pending": "Strict nativeYMFM/bank/HMQ assertions retained. No speculative audio engine or baseline change."
+    },
+    {
+      "test": "test_store_asset_pipeline/default_private_inputs",
+      "kind": "unavailable_private_recording_coverage",
+      "observed": "After capture fixture fix, full default generator built and completed native D1/D2 graphics, launcher opening and full D1 fly-out with audio; first replay fails because d1_descent_level5_20260616_202713.dximdemo is absent. Full validator fails on missing edit.json from incomplete generation.",
+      "evidence": "coop_refresh/store_assets_graphics_v5/; coop_refresh/store_generation_graphics_v5.log; coop_refresh/store_validation_graphics_v5.log",
+      "availability": "coop_refresh/store_private_input_availability.json",
+      "pending": "Restore exact private corpus to complete demo/still/featured composition. No substitution, oracle regeneration, unverified assets or partial-generation bypass. Original failure and intermediate capture failures retained."
     }
   ]
 }

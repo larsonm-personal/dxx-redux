@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
@@ -113,11 +114,9 @@ def main():
         for preset in ("ORIGINAL", "DEFAULTS"):
             command("music_preferences_reset", "--es", "preset", preset)
             reset = state()["soundfont"]
-            assert reset["renderer"] == "ymfm" and reset["selected"] == "" and reset["reverb"] and reset["chorus"], (
-                reset
-            )
+            assert reset["renderer"] == "sf2" and reset["selected"] == "" and reset["reverb"] and reset["chorus"], reset
             command("music_effects_select", "--ez", "reverb", "false", "--ez", "chorus", "false")
-        report["checks"].append("both resets restore AdLib, bundled font and wet MIDI defaults")
+        report["checks"].append("both resets restore bundled SoundFont and wet MIDI defaults")
         command("music_renderer_select", "--es", "renderer", "sf2")
         command("music_soundfont_select", "--es", "id", identity)
         command("music_effects_select", "--ez", "reverb", "true", "--ez", "chorus", "true")
@@ -142,11 +141,15 @@ def main():
         report["checks"].append("custom font can be selected and previewed again")
         command("music_midi_stop")
         if args.games:
-            # The gameplay fixture clears game preferences, including MIDI choices.
-            # Select this test's profile after reset, before preview or game launch.
+            # Override the shared fixture's bundled profile immediately before launch
             script = Path("android/game_scripts/test_music_track_controls_unified.jsonc").read_text(encoding="utf8")
-            reset = '{"action": "reset_state"},'
-            assert script.count(reset) == 1, "Expected one gameplay fixture reset"
+            # A custom bank defaults to Flat, independently of the bundled measured EQ
+            script, eq_checks = re.subn(
+                r'"audio\.tsf_equalizer"\s*:\s*2', '"audio.tsf_equalizer": 0, "audio.midi_renderer": "sf2"', script
+            )
+            assert eq_checks == 1, "Expected one shared bundled SoundFont EQ assertion"
+            launch = re.compile(r'(\{\s*"action"\s*:\s*"enter_game"\s*,)')
+            assert len(launch.findall(script)) == 1, "Expected one gameplay fixture launch"
             profile_steps = [
                 {"action": "setup_command", "command": "music_renderer_select", "args": {"renderer": "sf2"}},
                 {"action": "setup_command", "command": "music_soundfont_select", "args": {"id": identity}},
@@ -154,7 +157,9 @@ def main():
             ]
             game_script = args.output / "test_soundfont_music_controls.jsonc"
             game_script.write_text(
-                script.replace(reset, reset + "\n" + "\n".join(json.dumps(step) + "," for step in profile_steps)),
+                launch.sub(
+                    lambda match: "\n".join(json.dumps(step) + "," for step in profile_steps) + "\n" + match[0], script
+                ),
                 encoding="utf8",
             )
             environment = dict(os.environ, ANDROID_SERIAL=args.serial)
@@ -234,7 +239,8 @@ def main():
                 {"action": "assert", "expect": {"soundfont.selected": identity, "soundfont.renderer": "sf2"}},
                 {"action": "setup_command", "command": "music_midi_play", "args": {"source": 0, "track": 2}},
                 {"action": "assert", "expect": {"music_preview.midi.state": "playing"}},
-                {"action": "tap_button", "text": "Game Preferences"},
+                {"action": "tap_button", "text": "Settings"},
+                {"action": "tap_button", "text": "MIDI"},
                 {"action": "tap_button", "text": "Manage soundfonts"},
                 {"action": "tap_button", "text": "Info", "exact": True},
                 {"action": "assert_button", "text": metadata["websiteUrl"], "enabled": True, "timeout_ms": 10000},

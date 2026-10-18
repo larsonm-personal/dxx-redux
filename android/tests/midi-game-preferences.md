@@ -6,12 +6,12 @@ imported soundfont catalog stays in private `soundfonts/selection.json`; its
 selection fields from the earlier prototype are no longer read or written.
 As with other pre-release preference changes, no migration is performed.
 
-New preferences default to AdLib (OPL3) FM (`ymfm`). Both Game
-Preferences presets, Original Descent and Restore Defaults, apply AdLib and
-the bundled SF2 fallback. They retain imported SF2 files and catalog entries.
+New preferences default to the bundled SoundFont (`sf2`). Both Game
+Preferences presets, Original Descent and Restore Defaults, restore that renderer
+and bundled font. They retain imported SF2 files and catalog entries.
 These are renderer defaults, not changes to MIDI/CD/external-music source mode.
-D1 songs use their original FM banks/HMQ where supported; D2 and unsupported
-FM material still fall back to SF2.
+Explicitly selecting AdLib (OPL3) FM (`ymfm`) uses the original FM banks/HMQ where
+supported; unsupported FM material falls back to SF2.
 
 Selections save immediately from either the MIDI music page or Game Preferences.
 Config export/import includes their values; SF2 files themselves are not copied

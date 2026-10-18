@@ -1,10 +1,10 @@
-CHECKPOINT: execution is still in progress.
+Execution finished; test outcomes and coverage limits are below.
 Raw evidence paths below are relative to: C:\local\dxx-redux\temp\full_validation\run_20261016
 Canonical regenerated JSON remains under game_data in the repository.
 
 FULL VALIDATION REVIEW
-Updated UTC: 2026-10-18T03:56:18.651405+00:00
-Execution complete: False
+Updated UTC: 2026-10-18T08:47:15.843585+00:00
+Execution complete: True
 
 START HERE
 review_status.json: consolidated machine-readable index and original failures
@@ -33,7 +33,7 @@ current_windows_native_retry: exit 0; evidence: windows_current_native_retry/
 fm_quality_current_retry: exit 0; evidence: fm_quality_retry2/
 fm_shipping_current_reference: exit 0; evidence: fm_shipping_current_reference/
 available_private_d2_asan: exit 0; evidence: asan_private_d2/
-current_coop_refresh: RUNNING / QUEUED; evidence: coop_refresh/
+current_coop_refresh: exit 1; evidence: coop_refresh/
 
 FRESH REGRESSION DATA
 All four canonical regeneration stages were attempted to completion
@@ -48,7 +48,7 @@ Fingerprint publication paths and changes are indexed by json_change_index.json
 No replay oracle or semantic regression baseline was manually accepted
 
 SUPPLEMENTAL COVERAGE
-{'FAIL': 18, 'PASS': 39}
+{'FAIL': 25, 'PASS': 55}
 supplemental/plan.json: exact commands and timeouts
 supplemental/summary.json: raw outcomes; supplemental/exclusions.json: unavailable coverage
 isolated_android/results/summary.json: cases50-80 repeated/resumed on exclusive emulators after user confirmed the original devices were shared
@@ -61,95 +61,171 @@ test_android_mod_renderer: runtime_failure
   D1 passed 11 actual GLES cases. D2 failed equality between UUD-alone rendering and higher-priority UUD over KTX2 rendering after its door checks
   Evidence: renderer_failure/
   Current evidence: renderer_current_results/
+  Remaining / resolution: Current fixture reproduces priority failure with custom0 andflags3; direct custom guard hypothesis refuted. Preserve assertion, inspect lookup/ranking/cache behavior before any product fix.
 test_android_mod_sounds: runtime_failure
   D2 rejects UUD2SP HAM patch op 580: robot 33 AnimState0_0Offset expects 685 but loaded value is zero; door sound assignments remain stock
   Evidence: sound_mod_failure/
   Current evidence: sound_current_results/
+  Remaining / resolution: Reproduces same normalized empty-joint HAM patch rejection in current fresh NDK fixture; no patch guard changed.
 test_controller_live_rebind: runtime_or_async_fixture_failure
   D2 baseline passed 69/69 steps, but reopening launcher mapping and holding L2 for 2300 ms leaves selected_control=null at launcher step 3/12. Independent raw-input, response and hotplug owners passed
   Evidence: controller_rebind_failure/
-test_graphics_first_run: original_d1_rearm_intermediate_resume_expectation
-  D1 Rearm expected an intermediate pause menu and first_run_pending=true, but the rearmed chooser was already editing with pending=false
-  Evidence: graphics_first_run_failure/
-  Current: All3 unchanged original Rearm variants completed on the fresh APK: D1 FAIL at the intermediate step43/51; D2 PASS; importedD1 PASS. D1 correct editor state is captured, but its remaining dwell/cancel/handled assertions were not reached. Do not label D1 full ownerPASS or force a single resume path.
-  Current evidence: coop_refresh/graphics_original_results/; coop_refresh/graphics_original_capture_index.json
-test_idle_screen_saver: runtime_or_lifecycle_failure
-  D1 fails after background/screen lock with wake_count=0, park_entry_count=0; D2 wakes once then controller A input times out at step 33. Both retain original checks
-  Evidence: idle_screen_saver_failure/
-test_launch_to_automap: timing_fixture_fix_pending_runtime_verification
-  D1 passed. D2 parked/woke successfully but recorded 3750 ms parked versus required 4000 ms after a five-second background hold
-  Evidence: launch_to_automap_failure/
+  Current: Current-source D1 andD2 bothpass the native independent-trigger-axis baseline, then launcher fixture fails at3/12 with selected_control expectedL2 actualnull after the2.3second pressed interval. Save/Return-to-Game and native binding-reload assertions are not reached; this does not establish a native binding-reload failure.
+  Current evidence: coop_refresh/keeper_retry2_resume_controller_live_rebind_d1.log; coop_refresh/keeper_retry2_resume_controller_live_rebind_d2.log; temp/controller-live-rebind-d1-baseline.log; temp/controller-live-rebind-d2-baseline.log
+  Remaining / resolution: Serial D1/D2 retries with launcher, automation and window-focus logs; original assertions retained
 test_mod_fuzz/all-on-d1-in-d2-L1: runtime_or_reload_sampling_failure
   All-on imported D1 completes automation, but post-toggle snapshot has mounted UUD/hires/sounds/font packs and texture_packs.loaded=0, packs=[], status=none_loaded
   Evidence: mod_fuzz_failure/all_on_imported/
   Current: Exclusive emulator/frozen APK gameplay automation completes, then owner verification fails: controller: High-resolution pack was not rendered: d1-hires-256-textures-ktx2.dxa. Elapsed actual runner 87.875seconds. Original/shared retry outcomes remain separate.
   Current evidence: isolated_android/results/mod_fuzz_all_on_imported_retry/
+  Remaining / resolution: Review exact owners/texture/presentation JSON; presence of a lower-priority pack may need coverage-aware interpretation. Do not weaken ownership assertions or claim all-on replay passed. D2 missing UUD metadata retains the earlier HAM normalization evidence.
 test_mod_fuzz/all-on-d2-L1: runtime_metadata_failure
   All-on D2 and Vertigo fail enabled-UUD metadata assertions. Both logs show HAM patch op 606 robot33 AnimState0_0Offset expected685 actual0, same normalized empty-joint field as the UUD2SP sound failure
   Evidence: mod_fuzz_results/
   Current: Exclusive emulator/frozen APK gameplay automation completes, then owner verification fails: controller: Enabled UUD metadata was not applied. Elapsed actual runner 90.031seconds. Original/shared retry outcomes remain separate.
   Current evidence: isolated_android/results/mod_fuzz_all_on_d2_retry/
+  Remaining / resolution: Review exact owners/texture/presentation JSON; presence of a lower-priority pack may need coverage-aware interpretation. Do not weaken ownership assertions or claim all-on replay passed. D2 missing UUD metadata retains the earlier HAM normalization evidence.
 test_obsidian_level7_switch_guidance: isolated_android_metadata_worker_timeout
   All18 Obsidian metadata levels passed. After game launch, emulator health failed, ADB transport reset did not recover it, and adb devices had no connected target after122 seconds. No game assertion or native crash evidence captured
   Evidence: obsidian_switch_failure/
   Current: Exclusive fresh emulator5580, frozen APK: import succeeds; analyze_level_metadata_all fails before gameplay. Metadata requests report timeout at6157ms and6303ms. No concurrent package update in this attempt. Earlier shared retry was invalidated by PACKAGE UPDATED and remains separate. Native full metadata regeneration separately passes140/140 inputs.
   Current evidence: isolated_android/results/obsidian_level7_switch_retry/
+  Remaining / resolution: Review cold metadata worker startup/request timing in saved logcat and JSON. Do not bypass timeout/metadata assertions or claim the level7 switch route ran.
 test_uud_mod_combinations: runtime_texture_priority_failure
   All15 runtime states captured. Final verifier fails D2 uud-first because no UUD replacements rendered; nativeD1 allfive phases and D2 baseline/UUD-only verified before failure
   Evidence: uud_combination_results/
+  Remaining / resolution: Compare with existing D2 standalone priority failure and focused UUD/extras gameplay order probes; no assertion relaxed
 test_uud2sp: runtime_metadata_failure
   Sound-only passes; sound-first completes automation40/40 then fails no applied metadata source. HAM patch op575 robot33 AnimState0_0Offset expected685 actual0, matching mod-sound and fuzz failures. Remaining three phases not reached.
   Evidence: uud2sp_results/
-test_lan_host_migration_public_shareware: runtime_rejoin_state_failure
-  Initial nativeD1 shareware LAN sync and bidirectional PDATA pass. Slot1 takes host role and retains spew/recovery records. Former host launches and discovers migrated host, but full matching-object pair predicate times out120s. Second swap unreached. Saved states show returning peer menu says removed for failing important packets; native trace verify_objects remote74 local0, SYNCFAILED retry1/3, then PLAYING. Final synchronized/allocated/active counts74 on both peers, but returning peer in_gamefalse and host num_connected1.
-  Evidence: public_migration_failure/
-test_lan_launch_preparation: emulator_admission_probe_failure_pending_unchanged_retry
-  Refuses to reset emulator5554 because ro.kernel.qemu probe is not exact1; get-state passed. Probe response not captured by original owner. Subsequent public variant passes identical guard on both targets and reaches nativeD1 two-peer gameplay.
-  Evidence: launch_preparation_failure/
+  Remaining / resolution: Retain original JSON/logs; focused mod sound/fuzz retries will exercise same normalized joint field; do not weaken patch guards
 full_simulation/af_d1_beta/level7: native_runtime_input_rejection
   All2639 work items recorded. One engine invocation exits1 because Robot30 is unavailable in the selected D1 edition. Metadata stage passed140/140 inputs. Fresh publication JSON and exact rejection log preserved.
   Evidence: simulation_results/
   Current: Current-source full batch records all2639 selected levels in943.003seconds with140 changed publication files. Same single input/edition rejection: Robot30 unavailable in the selected D1 edition; no expected timeouts. Exact140 publications hash-verified, no edition/oracle/baseline bypass.
   Current evidence: coop_refresh/simulation_current/summary.json; coop_refresh/simulation_current/logs/af_d1_beta.json_0_7_cefispar.rdl_run_1.log; coop_refresh/publication_snapshots/simulation/scope.json
+  Remaining / resolution: User review of fresh simulation data; no edition/robot-limit bypass attempted
 test_all_weapons_runtime: clean_source_qualification_requirement
   Original owner refuses dirty source before gameplay or report creation. It requires exact clean HEAD recipes and clean recorder/build stamps. Current tree includes initial user work plus validation fixes. All four separate native assertion captures pass: D1 scourge, D1 bigred, D2 honestbob and imported D1.
   Evidence: supplemental/all_weapons.log
   Current evidence: all_weapons_capture_diagnostic/scope.json
+  Remaining / resolution: Full compact qualification remains unexecuted behind its clean-commit guard. No source was committed, no guard bypassed and no compact oracle generated; separate captures are diagnostic only.
 test_level_metadata_benchmark: metadata_digest_difference
   Policy self-test passes. First d1-first-strike-01 metadata digest expected dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83, actual 6e9d76eb8b1c0f01ff0da6592294d21a0a84b4d49800e4b2909e6fc32aba9cf7. Remaining benchmark levels were not reached. Full canonical metadata regeneration separately passes140/140 inputs.
   Evidence: metadata_benchmark_failure/
+  Remaining / resolution: User review of fresh metadata/timing JSON; no digest baseline or thresholds changed
 test_replay_window_progress/d1: replay_pause_contract_or_fast_loop_failure
   Original Pause-key owner records a pause request but no dialog and exits0, failing interaction assertion. A temporary Space-key probe retains a one-second frozen-frame requirement; it also fails pause_frame_unchanged while replay exits0. D2 imported progress owner passes. Original tracked fixture was restored exactly; no assertions weakened.
   Evidence: supplemental/replay_window_d1/
   Current evidence: replay_window_d1_retry/
+  Remaining / resolution: Retain original failure, temporary probe source/patch, result and state traces. Target native key delivery and fast-loop gating before any production or fixture fix.
 test_d1_replay_parity/public_corpus: native_to_imported_replay_differences
   All eight selected public D1 recordings completed. Comparison statuses: {"native_repeatability": {"pass": 8}, "native_to_imported": {"fail": 8}, "recording_to_native": {"incomplete": 8}}. Owner raw FAIL exit1; full qualification remains incomplete because original full observation/RNG companions are absent from compact public inputs. Scoped compact checks passed separately.
   Evidence: supplemental/d1_public_paired_parity/
+  Remaining / resolution: User review of fresh paired report JSON and per-case state/object/world/RNG captures; no comparator policy, missing companion or oracle was bypassed
 sanitizer_all/loader_bounds: expected_texture_diagnostics_missing
   Comet engine simulation completes1493 frames with no captured ASan report, but emits neither the expected texture repair log nor compact notes. Fixture null-index error occurs because notes is absent; expected invalid texture14924,two occurrences. Other3 loader-fixture assertions not reached; full all2639 ASan route workitems separately finished, with1 edition rejection and1 expected timeout.
   Evidence: supplemental/sanitizer_all/loader-bounds/
+  Remaining / resolution: Preserve engine/compact JSON and logs for review; do not weaken repair/count assertions or claim full loader-bound fixture pass
 sanitizer_all/default_recorded_corpus: default_private_recordings_unavailable
   Default android/regression_demos contains no recordings. Empty discovery became null demo and caused ReadLines/empty-path errors in both demo stages. Fixed runner to preserve an empty array; actual empty inventory and missing-recording rejection checks pass. Actual private D2 inventory elsewhere contains2 recordings; D1 corpus remains unavailable.
   Evidence: supplemental/sanitizer_all/Demos.log
   Current evidence: empty_corpus_after.json
+  Remaining / resolution: Both available private D2 recordings separately pass actual ASan replay; source recording hashes unchanged. Default D1 corpus remains unavailable; default corpus stages retain failure.
 sanitizer_all/routes: native_input_rejection_and_expected_timeout
   All2639 workitems recorded in4446.75seconds. One native rejection af_d1_beta level7 Robot30 unavailable in selectedD1 edition, matching regular regeneration. One producer-classified expected timeout Uneasy4 after360seconds. No nonempty asan.* report files captured.
   Evidence: supplemental/sanitizer_all/routes/
+  Remaining / resolution: User review of new ASan route JSON; no edition, robot-limit, timeout classification or expected baseline changed
+test_uud_mission_gameplay/extras/level2/both_orders: runtime_or_camera_placement_sampling_failure
+  Both current pack orders fail render-source check at step2/44: expected d2-hires-256-textures-ktx2.dxa, actualempty. Both packs mounted, gamefronttrue, unpaused, graphicsidle. face_view requestedsegment1/side0 but the final snapshot samplessegment0/texture925/bitmap2617; input axes/turn/throttle arezero. Standalone256/512/1024 hires and additive-sprite ownerPASS. Camera/physics/frame placement must be distinguished from pack rendering before a fix.
+  Evidence: coop_refresh/uud_current_failures/
+  Remaining / resolution: No render/priority guard changed; targeted native frame/position logging would be needed to establish cause
+test_demo_import/public_first_play/current: correlated_extraction_barrier_not_reached
+  PublicBasicUse ownerPASS. Fuller PublicFirstPlay completes interruption_old20/20 then waits60seconds for a nonzero incomplete-extraction barrier; predicate never reached. No intentional interruption is claimed for the unreached stage, and later branches remain unverified.
+  Evidence: coop_refresh/keeper_retry2_resume_public_first_play_current.log
+  Remaining / resolution: Inspect correlated importer progress/barrier evidence before changing fixture or product behavior
+coop_new_player_restore/d2/level8: fresh_checkpoint_asset_compatibility_rejection
+  Both peers reject a freshly created solo checkpoint with Cannot load save: Save uses extra UUD2 textures; enable UUD2 Texture Fixes. Native level8 reports910 textures and12 invalid references to910 whilecustom_tex0. Final snapshots have coop_restore.statuserror, mod_saveincompatible and leave networking; subsequent strict polling propertyexception is secondary. D1 and importedD1 level8 variantsPASS. Current28 product-source hashes stillmatch frozenAPK.
+  Evidence: coop_refresh/coop_cases/coop_new_player_restore_d2/
+  Remaining / resolution: Additional unchanged defaultlevel1 D2 scenario completed PASS, including checkpoint restoration and network/control soak. Level8 failure remains separately visible; no texture/asset compatibility guard weakened and no native fix made.
+launcher_start/relay_d2_restore: emulator_launcher_anr_and_system_server_watchdog
+  Primary SetupActivity failed its120second readiness wait. Android logged input/SETUP_INTROSPECT ANR, followed by system-server watchdog restarts; captured main system-server trace blocks in Binder SurfaceComposer getCompositionPreference during DisplayManager bootstrap. Subsequent raw SDK am commands returned20. This is separate from later4GiB host reserve refusals; no cause relationship established.
+  Evidence: coop_refresh/coop_cases/coop_relay_d2_restore/
+  Current: Unchanged full D2 three-peer relay restore PASS after cold boot and guarded storage recovery, including pending-pickup cancellation. No source/GPU/RAM/timeout/compatibility assertions changed. Intermittent launcher/system-server failure remains separately recorded; relation to host disk shortage still not established.
+  Current evidence: coop_refresh/launcher_anr_raw_recovery/; coop_refresh/coop_cases/coop_relay_d2_restore_disk_recovery/
+  Remaining / resolution: All functional relay retries and the multiplayer master have now run. Retain the real launcher/system-server ANR as an intermittent environment/runtime finding; its cause and relationship to host disk shortage remain unproven.
+coop_d1_secret_save_imported: current_coop_transition_failure
+  D2 engine FirstStrike level10 entry: host reaches secret-1, then num_connected1; client stays level10/network_status5 and times out before secret briefing. Save/checkpoint assertions are not reached. NativeD1 same complete scenarioPASS.
+  Evidence: coop_refresh/coop_cases/coop_d1_secret_save_imported_disk_recovery/
+  Remaining / resolution: Preserve strict transition/network assertions; this is not merely a stale briefing label. No speculative native or oracle change.
+test_fm_profiles/current: native_d2_FM_fallback
+  All launcher FM preview/reset checks and completeD1 gameplay/nativebank/HMQ checksPASS. D2 launches with soundfont.renderer=ymfm, but native effective renderer isSF2 and MusicSynth logs d2-original/game01.hmp reason=unsupported-or-missing-FM-banks.
+  Evidence: coop_refresh/audio_fm_native_diagnostic_v5/
+  Remaining / resolution: Strict nativeYMFM/bank/HMQ assertions retained. No speculative audio engine or baseline change.
+test_store_asset_pipeline/default_private_inputs: unavailable_private_recording_coverage
+  After capture fixture fix, full default generator built and completed native D1/D2 graphics, launcher opening and full D1 fly-out with audio; first replay fails because d1_descent_level5_20260616_202713.dximdemo is absent. Full validator fails on missing edit.json from incomplete generation.
+  Evidence: coop_refresh/store_assets_graphics_v5/; coop_refresh/store_generation_graphics_v5.log; coop_refresh/store_validation_graphics_v5.log
+  Remaining / resolution: Restore exact private corpus to complete demo/still/featured composition. No substitution, oracle regeneration, unverified assets or partial-generation bypass. Original failure and intermediate capture failures retained.
 
 SOURCE AND ENVIRONMENT SCOPE
 The checkout advanced during this run; concurrent_source_delta.json identifies incoming changes
 Original evidence records its execution commit; updated affected owners ran separately
-Source Fix-quality originally covered21 files; the abandoned graphics fixture edit was restored, leaving20 retained changes. Later co-owned UDP assertions are separate in co_owned_source_delta.json. Current full-scope read-only quality evidence is indexed under coop_refresh.
+The explicit graphics pause-menu fix passed all3 tracked Rearm modes. Latest scoped mixed-language Fix quality covers33 retained validation files; later audio fixture reruns are recorded separately. Co-owned UDP assertions remain separate in co_owned_source_delta.json; original source hashes are preserved.
 external_package_update.json: another APK replaced com.dxxredux.app during Obsidian retry at16:23PDT; that retry is invalidated and later device cases have a different installed APK scope
 User confirmed another session uses the shared emulator; dispatcher stopped after57 recorded cases. The first exclusive attempt was later interrupted after8 cases. coop_refresh resumes missing work with a fresh APK and the recent co-op fixes; only exclusive5580/5582/5584 are targeted. Shared emulators are left alone.
 duplicate_asan_stage_input_reclamation.json:42 large staged input duplicates removed after the ASan run finished; hash-identical raw inputs and every JSON/log/trace retained
 Initial user modifications: initial_status.txt, initial_changes.patch, initial_hashes.json
 Some original Windows host failures are environment limitations with successful Linux or normal-host retries
 A passing wrapper can contain declared skips; use detailed owner reports for actual coverage
+Approved generated-artifact cleanup: 118.89GiB free at checkpoint;100GiB user minimum restored. Current validation evidence, original assets, Git-visible work and complete emulator workspaces preserved. Latest safety/quality details: coop_refresh/cleanup_floor_status.json
 
 CURRENT CO-OP SOURCE REFRESH
-Recorded 152/207; queue sealed: False
-{'BLOCKED': 125, 'PASS': 23, 'FAIL': 4}
+Recorded 258/258; queue sealed: True
+{'BLOCKED': 127, 'PASS': 82, 'FAIL': 49}
 coop_refresh/queue.json: exact commands and dependencies; summary.json: raw outcomes
 Native/JVM/proxy-history/sanitizer/catalog checks, fresh APK and four distributions, full metadata/simulation regeneration, private recordings and device co-op scenarios
-Original fixtures and assertions are retained; no new replay oracle or semantic baseline is accepted
+Original failures remain available; retained fixture changes are listed in source_changes.json. No new replay oracle or semantic baseline is accepted
+Historical BLOCKED rows are setup dependency failures, with superseding actual attempts tracked by completion_audit.json; they are not additional test executions
+Fresh native windows d1: 79 tests; failures 0; declared skips 0
+Fresh native windows d2: 90 tests; failures 0; declared skips 0
+Fresh native linux d1: 80 tests; failures 0; declared skips 0
+Fresh native linux d2: 90 tests; failures 0; declared skips 0
+Fresh native linux extractor_light: 58 tests; failures 0; declared skips 22
+Fresh JVM: 1211 executed; 0 failures/errors; 2 declared skips
+Full extended multiplayer master: raw17PASS/3FAIL; every selected owner ran. All co-op save compatibility/pause, public migration/launch, LAN discovery, QR and extended multiplayer owners passed.
+Master follow-ups: fan-out metadata target rebuilt after cache cleanup, all32 Plutonia levels PASS; explicit NSD caller omission resolved by full managed D1/D2 NSD+reconnect PASS; retail LAN now establishes its declared data after public-only fixtures and full ordered rerun PASS. Raw master failures remain unchanged.
+Full audio owners: SoundFont --games --library, EQ --game-launch, release-download PASS. FM --games preview/reset/HMQ and nativeD1 PASS; nativeD2 FAIL with fluidsynth fallback for d2-original/descent.hmp and game01.hmp (unsupported-or-missing-FM-banks). Namespaced bank lookup is a source-supported hypothesis; no native fix or weakened renderer assertion.
+Additional secret save: nativeD1 PASS; importedD1-in-D2 host reaches secret-1 while client stays10 and disconnects. Save/checkpoint checks are not reached in that failed imported scenario.
+Store assets: full default build, seedD1/D2 graphics, launcher opening and full D1 fly-out/audio PASS after capture helper fix. Full generation FAIL at missing exact private D1 level5 replay; all3 default private inputs are absent. Full owner validator actualFAIL because edit.json was never composed. Partial media is retained, but demos/stills/featured/full video remain unqualified. No substitution or unverified-asset bypass. See coop_refresh/store_graphics_flow_fix_scope.json and store_private_input_availability.json.
+Final cleanup: PASS; actual worker exit 1 (failures retained), keeper exit 0; all owned emulators stopped, power hold released. 130.31GB free (121.36GiB), above100GiB floor. Shared devices untouched.
+Completed extra co-op scenario latest verdicts (original failures remain raw):
+  coop_doors_host: PASS; coop_refresh\keeper_retry2_coop_doors_host.log
+  coop_doors_client: PASS; coop_refresh\keeper_retry2_coop_doors_client.log
+  coop_new_player_restore_d1: PASS; coop_refresh\keeper_retry2_coop_new_player_restore_d1.log
+  coop_new_player_restore_d2: FAIL; coop_refresh\keeper_retry2_coop_new_player_restore_d2.log
+  coop_new_player_restore_d1_in_d2: PASS; coop_refresh\keeper_retry2_coop_new_player_restore_d1_in_d2.log
+  coop_pickup_race_d1: PASS; coop_refresh\keeper_retry2_coop_pickup_race_d1.log
+  coop_pickup_policy_d1_host: PASS; coop_refresh\keeper_retry2_coop_pickup_policy_d1_host.log
+  coop_pickup_policy_d1_client: PASS; coop_refresh\keeper_retry2_coop_pickup_policy_d1_client.log
+  coop_relay_d1_race: PASS; coop_refresh\keeper_retry2_coop_relay_d1_race.log
+  coop_new_player_restore_d2_default: PASS; coop_refresh\coop_new_player_restore_d2_default.log
+  coop_relay_d1_restore: PASS; coop_refresh\keeper_retry2_coop_relay_d1_restore.log
+  coop_relay_d1_travel: PASS; coop_refresh\keeper_retry2_coop_relay_d1_travel.log
+  coop_independentcheckpoints_d1: PASS; coop_refresh\keeper_retry2_coop_independentcheckpoints_d1.log
+  coop_levelrestart_d1: PASS; coop_refresh\keeper_retry2_coop_levelrestart_d1.log
+  coop_cooprewind_d1: PASS; coop_refresh\keeper_retry2_coop_cooprewind_d1.log
+  coop_worldrestore_d1: FAIL (unsupported D1 caller variant; supported D2 probe PASS); coop_refresh\keeper_retry2_coop_worldrestore_d1.log
+  coop_saved_latejoin_d1: PASS; coop_refresh\coop_saved_latejoin_d1_combat_isolated.log
+  coop_pickup_race_d2: PASS; coop_refresh\keeper_retry2_coop_pickup_race_d2.log
+  coop_pickup_policy_d2_host: PASS; coop_refresh\keeper_retry2_coop_pickup_policy_d2_host.log
+  coop_pickup_policy_d2_client: PASS; coop_refresh\keeper_retry2_coop_pickup_policy_d2_client.log
+  coop_relay_d2_race: PASS; coop_refresh\keeper_retry2_coop_relay_d2_race.log
+  coop_relay_d2_restore: PASS; coop_refresh\disk_recovery_coop_relay_d2_restore.log
+  coop_relay_d2_travel: PASS; coop_refresh\disk_recovery_coop_relay_d2_travel.log
+  coop_independentcheckpoints_d2: PASS; coop_refresh\disk_recovery_coop_independentcheckpoints_d2.log
+  coop_levelrestart_d2: PASS; coop_refresh\disk_recovery_coop_levelrestart_d2.log
+  coop_cooprewind_d2: PASS; coop_refresh\disk_recovery_coop_cooprewind_d2.log
+  coop_worldrestore_d2: PASS; coop_refresh\disk_recovery_coop_worldrestore_d2.log
+  coop_saved_latejoin_d2: PASS; coop_refresh\disk_recovery_coop_saved_latejoin_d2.log
+  coop_d1_secret_save_native: PASS; coop_refresh\disk_recovery_coop_d1_secret_save_native.log
+  coop_d1_secret_save_imported: FAIL; coop_refresh\disk_recovery_coop_d1_secret_save_imported.log

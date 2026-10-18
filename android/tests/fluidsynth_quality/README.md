@@ -2,8 +2,8 @@
 
 This standalone runner retains the shipping HMP conversion and MIDI timeline,
 then compares TinySoundFont with FluidSynth. The Android MIDI soundfont path now
-uses FluidSynth with reverb and chorus enabled by default. The default AdLib
-renderer remains unchanged. Exact SC-55 emulation is out of scope.
+uses FluidSynth with reverb and chorus enabled by default. The bundled SoundFont
+is the default renderer; AdLib remains an explicit choice. Exact SC-55 emulation is out of scope.
 
 ## Listening
 
@@ -84,7 +84,7 @@ The production adapter in `shared/music_fluid.cpp` loads bounded, validated SF2
 snapshots, including APK assets. It preserves HMI program/bank/pan and uses the
 existing worker/seek/cancellation path. It supports the library's 8-96 kHz range.
 Effects are independent game preferences, exported with settings and restored to
-on by both reset presets. Both resets still select AdLib and the bundled font.
+on by both reset presets. Both resets select the bundled SoundFont renderer.
 
 Production reset replaces DSP state and transfers the loaded bank after old
 voices are destroyed. This clears chorus phase and partially buffered audio,

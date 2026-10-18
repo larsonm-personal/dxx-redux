@@ -1,7 +1,7 @@
 {
   "scope": "Explicit tracked source/test changes made during this validation; initial user JSON changes are separately preserved",
-  "count": 20,
-  "quality_log": "code_quality_combined_21.log",
+  "count": 33,
+  "quality_log": "code_quality_store_graphics_33_v5.log",
   "quality_exit_code": 0,
   "focused_validation": "retry_results.json",
   "unresolved_or_pending": "triage.json",
@@ -105,10 +105,75 @@
       "path": "android/tests/test_private_input_demos.py",
       "change": "Verify private executable/DLL copies exclude inherited settings and do not mutate the source engine directory",
       "sha256": "913871bf370bf0c584f2f5e13ee9bf589484f2ff436c57ebbc444404ec5dc530"
+    },
+    {
+      "path": "android/tests/test_graphics_first_run.ps1",
+      "sha256": "e8e43957b4e9971d640dc91dd2ff6d9f384e25cc381796d18f2b81dc52146476",
+      "change": "Explicitly establish the native pause-menu precondition before background rearming; retain all original pending/editor/TexFilt2/dwell/cancel/handled-marker assertions. Actual tracked D1/D2/importedD1 owner reruns allPASS after the final scoped quality check."
+    },
+    {
+      "path": "android/tests/test_fm_profiles.py",
+      "sha256": "a734618d411bd71a92914371e720b2b48c2112a2c31b1ac75ffdb691d90520e6",
+      "change": "Use SF2 reset defaults with nondefaultFM precondition; override renderer at final shared launch boundary, assert nativeYMFM instead of bundled-only FluidEQ2; retain all track/gain/HMQ/bank checks"
+    },
+    {
+      "path": "android/tests/test_soundfont_profiles.py",
+      "sha256": "eb82f8d9f38c8a12bf35406871a1538c053998031d961fbbad87b6bfa1186074",
+      "change": "Use SF2/wet reset defaults and Settings/MIDI library navigation; select custom bank at final launch boundary and require its FlatEQ0/nativeSF2 profile, retaining all gameplay/import/provenance/delete checks"
+    },
+    {
+      "path": "android/tests/test_music_eq_device.py",
+      "sha256": "4eb67babfb581b014363e4061a32a8dfa18eb587d7bd6e2d0e6fe9c7c5767619",
+      "change": "Navigate actualSettings/MIDI page and exactEQ-for-MIDI label, with button-state diagnostics; retain full profiles/calibration/playback/game checks"
+    },
+    {
+      "path": "android/tests/test_soundfont_release_download.py",
+      "sha256": "c91c63885a921376a09336c6c41a53e0c886166d0fd88aa9c77695c83bff3aa1",
+      "change": "Navigate actualSettings/MIDI page with explicit renderer/bundled preconditions; retain all downloadSHA/provenance/renderer/playback assertions"
+    },
+    {
+      "path": "android/tests/midi-game-preferences.md",
+      "sha256": "045ae65c461293ca9227596af545aff26fd33f212b592ed303bbf35008a94236",
+      "change": "Document the existing bundled-SF2 fresh/reset policy and explicit FM selection consistently with the passing JVM contract"
+    },
+    {
+      "path": "android/tests/fluidsynth_quality/README.md",
+      "sha256": "0bf917e443e994b7e33d893148df0902c2d5dca7ecf11dbc7adcd3c09c27cfaf",
+      "change": "Correct the stale renderer/default-reset description without changing any audio quality threshold or reference"
+    },
+    {
+      "path": "android/tests/test_lan.ps1",
+      "sha256": "7bcc901fb40c1acdd47e0c49af73f41576bfcf3197f988b526e699a2c31ecc96",
+      "change": "Use existing paired combat-clearing setup before saved-session late-join/rejoin test; host death was proven by captured player_dead/exploded, shields -4 and failed unprocessed axis probe. Retain every admission/inventory/network/control assertion. Preserve pre-edit co-owned source and our isolated patch separately."
+    },
+    {
+      "path": "android/clean-workspace.ps1",
+      "sha256": "31880f8cc1cca165672ec3746979d86c389492e25d381761eaa504070190f9c4",
+      "change": "Add whole-subtree exclusions, actual free-space targets, opt-in preservation of active emulator workspaces, and explicit zero retention of recognized native/Gradle/Cargo build outputs with grace and unchanged default safety"
+    },
+    {
+      "path": "android/tests/test_clean_workspace.ps1",
+      "sha256": "2829cefb910ba6f9a653f801f9f35b3c6fd1661484dacb76b3a80a44d4cef571",
+      "change": "Verify exclusions/free-space no-op, active emulator and custom-image guards, zero retention with build grace and dependencies, source-declared Gradle/Cargo ownership, and active native-build refusal in an isolated Git fixture"
+    },
+    {
+      "path": "android/CLEANUP.md",
+      "sha256": "149e534e5cec2ab9e5b3ac4bde21dd02972704d6ac42952bc583fbe4d03f04cf",
+      "change": "Document targeted free-space recovery, complete emulator/evidence protection and explicit zero build-retention behavior"
+    },
+    {
+      "path": "android/tests/test_lan_launch_preparation.ps1",
+      "sha256": "2d45c4efa7570c9fc84922474dfe644c5f67fcf0d778f42de36f5c7ad2084bc6",
+      "change": "Retail branch explicitly provisions standard game data on both admitted disposable emulators, isolating it from prior public-only cases; all target/pinned-public/lobby/launch guards retained"
+    },
+    {
+      "path": "android/helpers/generate_store_assets.py",
+      "sha256": "3980042a3925fdfa72a9bf07937d550b63dce20cc1d9a7c8bc10a08dad3dfc9f",
+      "change": "Follow real graphics challenges and first-run editor through Done and confirmation before validating store capture quality"
     }
   ],
   "concurrent_source_delta": "concurrent_source_delta.json",
-  "sha256_scope": "File hashes preserve the original Fix-quality snapshot for the20 retained changes. The abandoned graphics edit was restored. Later co-owned deltas are separate; current hashes passed a stable read-only quality audit.",
+  "sha256_scope": "Earlier validation Fix hashes remain preserved, with the later co-owned UDP delta separate. Later graphics/audio entries record their own deliberate test/doc fixes. All27 current validation files passed the latest scoped mixed-language Fix; exact current hashes are in its separate scope. No regression JSON/oracle baseline was accepted.",
   "later_co_owned_delta": "co_owned_source_delta.json",
   "current_read_only_quality": {
     "log": "code_quality_current_read_only.log",
@@ -122,5 +187,17 @@
       "status": "Original restored; no retained source change",
       "reason": "Native pause-menu resume was incorrectly removed during validation; original assertions will run unchanged"
     }
-  ]
+  ],
+  "original_subset_quality_log": "code_quality_combined_21.log",
+  "final_scoped_fix_quality": {
+    "scope": "coop_refresh/audio_fix_quality_scope.json",
+    "exit_code": 0,
+    "count": 27
+  },
+  "graphics_scoped_fix_quality": {
+    "scope": "coop_refresh/final_fix_quality_scope.json",
+    "exit_code": 0,
+    "count": 21
+  },
+  "quality_scope": "coop_refresh/code_quality_store_graphics_33_v5_quality_scope.json"
 }

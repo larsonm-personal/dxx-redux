@@ -19,11 +19,14 @@ param(
     [switch]$Producer,
     [switch]$PayloadsOnly,
     [switch]$TemporaryOnly,
+    [string[]]$ExcludePaths = @(),
+    [ValidateRange(0, 1048576)][double]$TargetFreeSpaceGB = 0,
+    [switch]$PreserveEmulatorWorkspaces,
     [ValidateRange(0, 3600)][int]$BusyWaitSeconds = 60,
     [ValidateRange(0, 8760)][double]$PayloadGraceHours = 1,
     [ValidateRange(0, 3650)][int]$TempDays = 0,
     [ValidateRange(1, 3650)][int]$ArtifactDays = 30,
-    [ValidateRange(1, 100)][int]$KeepBuildGenerations = 1,
+    [ValidateRange(0, 100)][int]$KeepBuildGenerations = 1,
     [ValidateRange(0, 8760)][double]$BuildGraceHours = 0,
     [string]$RepositoryRoot = ''
 )
@@ -32,6 +35,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers/host_processes.ps1')
 if ($Producer -and (-not $BuildsOnly -or -not $BuildRoots)) { throw 'Producer cleanup requires BuildsOnly and explicit BuildRoots' }
 if (@($BuildsOnly, $PayloadsOnly, $TemporaryOnly | Where-Object { $_ }).Count -gt 1) { throw 'BuildsOnly, PayloadsOnly and TemporaryOnly are mutually exclusive' }
+if ($PreserveEmulatorWorkspaces -and -not ($TemporaryOnly -or $BuildsOnly)) { throw 'PreserveEmulatorWorkspaces requires TemporaryOnly or BuildsOnly' }
 Set-StrictMode -Version Latest
 if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path $PSScriptRoot }
 $RepositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/')
@@ -41,6 +45,14 @@ $comparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) {
 $comparer = if ($comparison -eq [StringComparison]::Ordinal) {
     [StringComparer]::Ordinal
 } else { [StringComparer]::OrdinalIgnoreCase }
+$excludedTrees = @($ExcludePaths | Where-Object { $_ } | ForEach-Object {
+        $path = if ([IO.Path]::IsPathRooted($_)) { $_ } else { Join-Path $RepositoryRoot $_ }
+        $full = [IO.Path]::GetFullPath($path).TrimEnd('\', '/')
+        if (-not $full.StartsWith($RepositoryRoot + [IO.Path]::DirectorySeparatorChar, $comparison)) {
+            throw "Excluded path must be below the repository root: $full"
+        }
+        $full
+    })
 $dryRun = $Preview -or $WhatIfPreference
 $now = [DateTime]::UtcNow
 $candidates = [Collections.Generic.List[object]]::new()
@@ -51,6 +63,27 @@ $buildContainers = [Collections.Generic.HashSet[string]]::new($comparer)
 $registeredBuilds = [Collections.Generic.HashSet[string]]::new($comparer)
 $cleanupTimer = [Diagnostics.Stopwatch]::StartNew()
 $script:lastCleanupStatus = -5.0
+
+function Test-CleanupExcluded {
+    param([string]$Path, [switch]$ContainsExcluded)
+    foreach ($excluded in $excludedTrees) {
+        if ($Path.Equals($excluded, $comparison) -or
+            $Path.StartsWith($excluded + [IO.Path]::DirectorySeparatorChar, $comparison) -or
+            ($ContainsExcluded -and $excluded.StartsWith($Path + [IO.Path]::DirectorySeparatorChar, $comparison))) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Get-CleanupFreeBytes {
+    $drive = [IO.DriveInfo]::GetDrives() | Where-Object {
+        $mount = $_.Name.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+        $RepositoryRoot.Equals($_.Name, $comparison) -or $RepositoryRoot.StartsWith($mount, $comparison)
+    } | Sort-Object { $_.Name.Length } -Descending | Select-Object -First 1
+    if (-not $drive) { throw 'Cannot identify repository output volume' }
+    return $drive.AvailableFreeSpace
+}
 
 function Write-CleanupStatus {
     param([string]$Message)
@@ -134,6 +167,9 @@ function Assert-CleanupIdle {
                 $_.ProcessId -notin $producerAncestors -and
                 # Emulators use installed APKs, not the producer's scoped native build generations
                 -not ($Producer -and $_.Name -match '^(emulator|qemu-system-.*)(?:\.exe)?$') -and
+                -not ($PreserveEmulatorWorkspaces -and $_.Name -match '^(emulator|qemu-system-.*)(?:\.exe)?$' -and
+                    $_.CommandLine -and $_.CommandLine -match '(?:^|\s)-avd(?:\s|=)' -and
+                    $_.CommandLine -notmatch '(?<![A-Za-z0-9_])-(?:data|datadir|snapstorage|cache|sdcard|kernel|ramdisk|system|initdata|sysdir)(?![A-Za-z0-9_-])') -and
                 (
                     $_.Name -match '^(cl|cc|c\+\+|gcc|g\+\+|cc1|cc1plus|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*|d[12]x-redux|emulator|qemu-system-.*)(?:\.exe)?$' -or
                     ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
@@ -175,6 +211,7 @@ function Assert-CleanupLock {
 function Get-CleanupTreeInfo {
     param([string]$Path, [switch]$AllowBuildDependencies, [switch]$IncludeCreationTime, [switch]$IgnoreRootWriteTime, [switch]$AllowEmulatorLockMarkers)
     Assert-CleanupPath $Path
+    if (Test-CleanupExcluded $Path -ContainsExcluded) { throw "Preserving explicitly excluded tree: $Path" }
     $stack = [Collections.Generic.Stack[IO.FileSystemInfo]]::new()
     $stack.Push((Get-Item -LiteralPath $Path -Force))
     $bytes = 0L
@@ -246,6 +283,14 @@ function Get-CleanupTreeInfo {
                 $stack.Push($child)
             }
         } else {
+            if ($PreserveEmulatorWorkspaces -and
+                ($item.Name -like 'userdata*.img*' -or $item.Extension -eq '.qcow2' -or
+                ($item.Name -eq 'config.ini' -and
+                (Select-String -LiteralPath $item.FullName -Pattern '^\s*image\.sysdir\.\d+\s*=' -Quiet)))) {
+                $errorRecord = [IO.IOException]::new("Preserving emulator workspace: $($item.DirectoryName)")
+                $errorRecord.Data['CleanupProtectedDirectory'] = $item.DirectoryName
+                throw $errorRecord
+            }
             if ($AllowEmulatorLockMarkers -and $item.Name -eq 'config.ini' -and
                 (Select-String -LiteralPath $item.FullName -Pattern '^\s*image\.sysdir\.\d+\s*=' -Quiet)) {
                 # AVD registrations outside scratch still reference this small configuration
@@ -262,6 +307,7 @@ function Get-CleanupTreeInfo {
 
 function Add-CleanupCandidate {
     param([IO.FileSystemInfo]$Item, [string]$Category, [int]$Depth = 0)
+    if (Test-CleanupExcluded $Item.FullName -ContainsExcluded) { return }
     if (-not $seen.Add($Item.FullName)) { return }
     if ($buildContainers.Contains($Item.FullName)) {
         # Never offer a parent that would also remove a retained build generation
@@ -299,6 +345,7 @@ function Add-CleanupCandidate {
 
 function Add-TemporaryCandidate {
     param([IO.FileSystemInfo]$Item)
+    if (Test-CleanupExcluded $Item.FullName) { return }
     if ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) { return }
     if ($Item.PSIsContainer -and @('.git', '.hg', '.svn' | Where-Object {
                 Test-Path -LiteralPath (Join-Path $Item.FullName $_)
@@ -314,7 +361,8 @@ function Add-TemporaryCandidate {
         } catch { Write-Warning $_.Exception.Message; return }
     }
     if (-not $Item.PSIsContainer -and $protectedPaths.Contains($Item.FullName)) { return }
-    $descend = $Item.PSIsContainer -and $protectedPaths.Contains($Item.FullName)
+    $descend = $Item.PSIsContainer -and ($protectedPaths.Contains($Item.FullName) -or
+        (Test-CleanupExcluded $Item.FullName -ContainsExcluded))
     if (-not $descend) {
         try {
             $info = Get-CleanupTreeInfo $Item.FullName -IncludeCreationTime -AllowBuildDependencies -AllowEmulatorLockMarkers
@@ -357,6 +405,7 @@ function Find-TemporaryFiles {
         $directory = $pending.Pop()
         Write-CleanupStatus "Discovering scratch roots in $directory"
         foreach ($item in Get-ChildItem -LiteralPath $directory -Force) {
+            if (Test-CleanupExcluded $item.FullName) { continue }
             if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
             if ($item.PSIsContainer) {
                 if ($item.Name -match '^(temp(?:[_-].*)?|tmp(?:[_-].*)?|\.tmp|\.temp|test-results|test-reports|regression-results|regression-output)$') {
@@ -379,6 +428,7 @@ function Find-TemporaryFiles {
 
 function Add-BuildGeneration {
     param([IO.FileSystemInfo]$Item, [string]$Family)
+    if (Test-CleanupExcluded $Item.FullName -ContainsExcluded) { return }
     if (-not $registeredBuilds.Add($Item.FullName)) { return }
     # Mark the tree even if unreadable/protected so it cannot fall back to parent deletion
     $path = $Item.FullName
@@ -470,6 +520,16 @@ function Find-BuildGenerations {
     }
     Assert-CleanupPath $Item.FullName
     if (Test-Path -LiteralPath (Join-Path $Item.FullName '.git')) { return }
+    # Explicit zero retention includes source-declared Gradle and Cargo outputs
+    if ($KeepBuildGenerations -eq 0 -and
+        (($Item.Name -eq 'build' -and
+            ((Test-Path -LiteralPath (Join-Path $Item.Parent.FullName 'build.gradle') -PathType Leaf) -or
+            (Test-Path -LiteralPath (Join-Path $Item.Parent.FullName 'build.gradle.kts') -PathType Leaf))) -or
+        ($Item.Name -eq 'target' -and
+        (Test-Path -LiteralPath (Join-Path $Item.Parent.FullName 'Cargo.toml') -PathType Leaf)))) {
+        Add-BuildGeneration $Item "generated|$($Item.FullName)"
+        return
+    }
     if ($Item.Name -match '^\.cxx(?:$|[-_])') {
         # AGP stores a separate configuration-hash family for each build type
         foreach ($variant in Get-ChildItem -LiteralPath $Item.FullName -Directory -Force) {
@@ -518,6 +578,10 @@ if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($Repo
 }
 Write-Host 'Reading Git protection list'
 Update-ProtectedPaths
+if ($TargetFreeSpaceGB -gt 0 -and (Get-CleanupFreeBytes) -ge $TargetFreeSpaceGB * 1GB) {
+    Write-Host "Free-space target already met: $TargetFreeSpaceGB GiB; no cleanup needed"
+    return
+}
 # Scoped producer discovery is read-only and may find nothing to delete
 # Every deletion below still requires idle processes and a fresh path check
 if (-not $dryRun -and -not $Producer) { Assert-CleanupIdle }
@@ -587,7 +651,7 @@ foreach ($family in $buildGenerations | Group-Object Family) {
         $candidates.Add([pscustomobject]@{
                 Path = $generation.Path; Category = 'superseded-build'; Automatic = $true
                 Bytes = $generation.Bytes; Count = $generation.Count; Latest = $generation.Latest
-                Days = $BuildGraceHours / 24; Retained = $ranked[0].Path
+                Days = $BuildGraceHours / 24; Retained = if ($KeepBuildGenerations -gt 0) { $ranked[0].Path } else { $null }
             })
     }
 }
@@ -595,7 +659,8 @@ foreach ($family in $buildGenerations | Group-Object Family) {
 # Keep linked binaries and dependency artifacts warm, and never touch external caches
 if (-not $TemporaryOnly -and -not $PayloadsOnly -and -not $BuildRoots) {
     $cargoTarget = Join-Path $RepositoryRoot 'server/target'
-    if (Test-Path -LiteralPath $cargoTarget -PathType Container) {
+    if ((Test-Path -LiteralPath $cargoTarget -PathType Container) -and
+        -not @($candidates | Where-Object Path -eq $cargoTarget).Count) {
         Assert-CleanupPath $cargoTarget
         foreach ($profile in @('debug', 'release')) {
             $incremental = Join-Path $cargoTarget "$profile/incremental"
@@ -641,6 +706,7 @@ $removed = 0
 $reclaimed = 0L
 $processed = 0
 foreach ($candidate in $ordered) {
+    if ($TargetFreeSpaceGB -gt 0 -and (Get-CleanupFreeBytes) -ge $TargetFreeSpaceGB * 1GB) { break }
     $processed++
     Write-CleanupStatus "Checking artifact $processed/$($ordered.Count), removed $removed ($(Format-CleanupBytes $reclaimed)): $($candidate.Path)"
     Write-Verbose "[AUTO] $(Format-CleanupBytes $candidate.Bytes) | $($candidate.Category) | $($candidate.Path)"
@@ -656,7 +722,7 @@ foreach ($candidate in $ordered) {
                 continue
             }
         }
-        $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:([bool]$candidate.Retained -or $candidate.Category -eq 'temporary') `
+        $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:($candidate.Category -in @('superseded-build', 'temporary')) `
             -IncludeCreationTime:($candidate.Category -like 'regression-payload*' -or $candidate.Category -eq 'temporary') `
             -IgnoreRootWriteTime:($candidate.Category -eq 'regression-payload-group') `
             -AllowEmulatorLockMarkers:($candidate.Category -eq 'temporary')
@@ -677,3 +743,10 @@ foreach ($candidate in $ordered) {
 Write-Progress -Activity 'Removing generated artifacts' -Completed
 if ($dryRun) { Write-Host 'Preview only: no files deleted and no prompts answered' }
 Write-Host "Removed $removed artifacts ($(Format-CleanupBytes $reclaimed)); sizes are logical bytes, not guaranteed disk savings"
+if ($TargetFreeSpaceGB -gt 0) {
+    $free = Get-CleanupFreeBytes
+    Write-Host ('Free space: {0:n2} GiB; target: {1:n2} GiB' -f ($free / 1GB), $TargetFreeSpaceGB)
+    if (-not $dryRun -and $free -lt $TargetFreeSpaceGB * 1GB) {
+        throw 'Eligible cleanup did not reach the requested free-space target'
+    }
+}

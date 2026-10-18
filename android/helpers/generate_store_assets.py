@@ -332,25 +332,54 @@ class Capture:
     def verify_graphics(self, name):
         from store_asset_media import validate_graphics
 
-        state = self.state()
-        if state["graphics_safety"]["phase"] in ("preparing", "challenge"):
-            # Accept the real safety overlay before recording any gameplay.
-            self.automate(
-                [{"action": "wait_for", "expect": {"graphics_safety.candidate_ready": "true"}, "timeout_ms": 5000}]
-                + [
-                    {"action": "controller_input", "key": key, "pressed": pressed, "post_delay_ms": 50}
-                    for key in ("DLEFT", "A")
-                    for pressed in (True, False)
-                ]
-                + [{"action": "wait_for", "expect": {"graphics_safety.phase": "idle"}, "timeout_ms": 5000}],
-                name="capture-graphics-confirm",
-            )
+        # A settings challenge can be followed by the first-run editor. Finish
+        # each real overlay before recording; controller selection differs there.
+        deadline = time.monotonic() + 45
+        attempt = 0
+        while True:
             state = self.state()
+            safety = state["graphics_safety"]
+            phase = safety["phase"]
+            if phase == "idle" and not safety["first_run_pending"]:
+                break
+            if time.monotonic() >= deadline:
+                write_json(self.output / "graphics" / (name + "-timeout.json"), state)
+                raise RuntimeError("Store graphics confirmation did not finish")
+            if phase not in ("editing", "challenge") or not safety["candidate_ready"]:
+                time.sleep(0.1)
+                continue
+            target = "ok"
+            if phase == "editing":
+                for field, control, value in (
+                    ("TexFilt", "tex_filt", 2),
+                    ("AnisoLevel", "aniso_level", 16),
+                    ("MsaaLevel", "msaa_level", 4),
+                ):
+                    if safety["current"][field] != value:
+                        target = control
+                        break
+            attempt += 1
+            write_json(self.output / "graphics" / f"{name}-overlay-{attempt}.json", state)
+            self.automate(
+                [
+                    {
+                        "action": "controller_input",
+                        "graphics_touch": [
+                            {"target": target, "action": "down"},
+                            {"target": target, "action": "up"},
+                        ],
+                        "post_delay_ms": 200,
+                    }
+                ],
+                name=f"capture-graphics-confirm-{attempt}",
+            )
         write_json(self.output / "graphics" / (name + ".json"), state)
         validate_graphics(state)
         return state
 
     def campaign(self, game, briefing=False, mark=None):
+        safety = self.state()["graphics_safety"]
+        confirm = safety["current"] != safety["accepted"]
         self.step("select", text="New game", post_delay_ms=300)
         if mark:
             mark("Campaign")
@@ -377,11 +406,35 @@ class Capture:
                     self.screenshot(f"briefing/page-{page}-later.png")
                 if page < 3:
                     self.step("key", key="space", post_delay_ms=300)
-        if game == "d1":
-            self.step("key", key="escape", post_delay_ms=300)
-        else:
-            self.step("skip_briefing", timeout_ms=15000, post_delay_ms=300)
-        self.wait(lambda s: s.get("in_game") and s.get("game_window_is_front"), timeout=20)
+        steps = (
+            [{"action": "key", "key": "escape", "post_delay_ms": 300}]
+            if game == "d1"
+            else [{"action": "skip_briefing", "timeout_ms": 15000, "post_delay_ms": 300}]
+        )
+        steps.append(
+            {"action": "wait_for", "expect": {"in_game": "true", "game_window_is_front": "true"}, "timeout_ms": 20000}
+        )
+        if confirm:
+            # Keep the five-second challenge response on-device after briefing
+            # exit; staging a separate host script can miss that deadline.
+            steps.extend(
+                [
+                    {
+                        "action": "wait_for",
+                        "expect": {"graphics_safety.phase": "challenge", "graphics_safety.candidate_ready": "true"},
+                        "timeout_ms": 5000,
+                    },
+                    {
+                        "action": "controller_input",
+                        "graphics_touch": [
+                            {"target": "ok", "action": "down"},
+                            {"target": "ok", "action": "up"},
+                        ],
+                        "post_delay_ms": 100,
+                    },
+                ]
+            )
+        self.automate(steps, name="campaign-enter-" + game)
         return self.verify_graphics("campaign-" + game)
 
     def seed(self):

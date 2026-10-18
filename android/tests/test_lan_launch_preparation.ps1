@@ -328,5 +328,11 @@ if ($PublicShareware) {
     Invoke-LanPreparationSession -HostSerial $clientSerial -ClientSerial $hostSerial -Session 2 -Engine d2 -Content d2 -SessionMission 'd2demo'
     Invoke-LanPreparationSession -HostSerial $hostSerial -ClientSerial $clientSerial -Session 3 -Engine d2 -Content d1 -SessionMission 'descent'
 } else {
+    # Earlier public cases deliberately cleared retail assets on these disposable peers
+    foreach ($serial in @($hostSerial, $clientSerial)) {
+        if (-not (Ensure-StandardGameDataOnDevice -Serial $serial)) {
+            throw "Could not provision retail LAN fixture on $serial"
+        }
+    }
     Invoke-LanPreparationSession -HostSerial $hostSerial -ClientSerial $clientSerial
 }

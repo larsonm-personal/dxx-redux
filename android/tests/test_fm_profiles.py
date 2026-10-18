@@ -7,6 +7,7 @@ runs the shared gameplay controls test with its normal pilot/settings fixtures.
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
@@ -61,8 +62,10 @@ def main():
     try:
         clear_midi_preferences(call, original_preferences, args.output)
         initial = start_setup()
-        assert initial["soundfont"]["renderer"] == "ymfm", initial["soundfont"]
-        report["checks"].append("Fresh game preferences default to AdLib")
+        assert initial["soundfont"]["renderer"] == "sf2" and initial["soundfont"]["selected"] == "", initial[
+            "soundfont"
+        ]
+        report["checks"].append("Fresh game preferences use the bundled SoundFont")
         command("music_renderer_select", "--es", "renderer", "ymfm")
         call("shell", "am", "force-stop", PACKAGE)
         current = start_setup()
@@ -98,21 +101,25 @@ def main():
         command("music_midi_stop")
         report["checks"].append("Switching renderers stops old playback; both can restart")
         for preset in ("ORIGINAL", "DEFAULTS"):
-            command("music_renderer_select", "--es", "renderer", "sf2")
+            command("music_renderer_select", "--es", "renderer", "ymfm")
             play()
+            assert state()["music_preview"]["midi"]["renderer"] == "ymfm"
             fonts = state()["soundfont"]["fonts"]
             command("music_preferences_reset", "--es", "preset", preset)
             reset = state()
-            assert reset["soundfont"]["renderer"] == "ymfm"
+            assert reset["soundfont"]["renderer"] == "sf2"
             assert reset["soundfont"]["selected"] == ""
             assert reset["soundfont"]["fonts"] == fonts
             assert reset["music_preview"]["midi"]["state"] == "stopped"
             call("shell", "am", "force-stop", PACKAGE)
-            assert start_setup()["soundfont"]["renderer"] == "ymfm"
+            assert start_setup()["soundfont"]["renderer"] == "sf2"
+            command("music_renderer_select", "--es", "renderer", "ymfm")
             play()
             assert state()["music_preview"]["midi"]["renderer"] == "ymfm"
             command("music_midi_stop")
-        report["checks"].append("Both preset resets persist AdLib, retain imported fonts and restart FM preview")
+        report["checks"].append(
+            "Both resets persist bundled SoundFont and retain imports; explicit FM selection restarts preview"
+        )
         call("logcat", "-c")
         for name in ("game08.hmp", "descent.hmp", "game01.hmp"):
             track = sources[source]["tracks"].index(name)
@@ -126,6 +133,24 @@ def main():
             assert f"sequence={name}.hmq" in logs, logs
         report["checks"].append("Level 8, title and Level 1 previews resolve HMQ and use FM")
         if args.games:
+            # Override the shared fixture's bundled profile immediately before launch
+            script = Path("android/game_scripts/test_music_track_controls_unified.jsonc").read_text(encoding="utf8")
+            # FM bypasses FluidSynth EQ; verify the native renderer for this variant
+            script, eq_checks = re.subn(r'"audio\.tsf_equalizer"\s*:\s*2', '"audio.midi_renderer": "ymfm"', script)
+            assert eq_checks == 1, "Expected one shared SoundFont EQ assertion"
+            launch = re.compile(r'(\{\s*"action"\s*:\s*"enter_game"\s*,)')
+            assert len(launch.findall(script)) == 1, "Expected one gameplay fixture launch"
+            profile_steps = [
+                {"action": "setup_command", "command": "music_renderer_select", "args": {"renderer": "ymfm"}},
+                {"action": "assert", "expect": {"soundfont.renderer": "ymfm"}},
+            ]
+            game_script = args.output / "test_fm_music_controls.jsonc"
+            game_script.write_text(
+                launch.sub(
+                    lambda match: "\n".join(json.dumps(step) + "," for step in profile_steps) + "\n" + match[0], script
+                ),
+                encoding="utf8",
+            )
             environment = dict(os.environ, ANDROID_SERIAL=args.serial)
             for game in ("d1", "d2"):
                 call("logcat", "-c")
@@ -137,7 +162,7 @@ def main():
                             "-File",
                             "android/helpers/run_test.ps1",
                             "-ScriptName",
-                            "test_music_track_controls_unified.jsonc",
+                            str(game_script.resolve()),
                             "-Game",
                             game,
                         ],
