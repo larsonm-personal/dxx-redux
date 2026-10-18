@@ -12347,6 +12347,12 @@ int main(int argc, char **argv)
 		test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 7);
 		return 0;
 	}
+	if ((argc == 8 || argc == 9) && !std::strcmp(argv[1], "--authored-matcen-lifecycle")) {
+		require(argc == 8 || !std::strcmp(argv[8], "--no-dispatch"), "recognized authored lifecycle control");
+		require(std::strlen(argv[7]) == 1 && argv[7][0] >= '0' && argv[7][0] <= '4', "authored lifecycle requires difficulty zero through four");
+		test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 8, argv[7][0] - '0');
+		return 0;
+	}
 	require(false, "capture-only binary requires an explicit matcen fixture");
 	return 1;
 #else
@@ -12513,6 +12519,12 @@ int main(int argc, char **argv)
 	if ((argc == 7 || argc == 8) && std::strcmp(argv[1], "--authored-matcen-stations") == 0) {
 		require(argc == 7 || std::strcmp(argv[7], "--no-dispatch") == 0, "recognized authored matcen control");
 		test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 7);
+		return 0;
+	}
+	if ((argc == 8 || argc == 9) && std::strcmp(argv[1], "--authored-matcen-lifecycle") == 0) {
+		require(argc == 8 || std::strcmp(argv[8], "--no-dispatch") == 0, "recognized authored lifecycle control");
+		require(std::strlen(argv[7]) == 1 && argv[7][0] >= '0' && argv[7][0] <= '4', "authored lifecycle requires difficulty zero through four");
+		test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 8, argv[7][0] - '0');
 		return 0;
 	}
 	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--public-matcen-stations") == 0) {

@@ -341,6 +341,483 @@ def normalize_trace(report):
     return trace
 
 
+def validate_lifecycle_report(report, metadata, game, mission, level, difficulty, dispatch=True):
+    """Validate the opt-in native lifecycle report without manufacturing an oracle.
+
+    Internal captures remain schema 1 here. Imported D1 source action masks are
+    absent from that capture, so their completeness cannot be certified here.
+    A structurally valid cap-only or empty-mask report still requires review.
+    """
+    preflight(metadata, game)
+    actual = report["baseline"]
+    bindings = preflight(actual, game)
+    try:
+        comparison = compare_capture(
+            compact_capture(metadata, game) if metadata["schema_version"] == 1 else metadata,
+            compact_capture(actual, game),
+        )
+    except MatcenMismatch as exc:
+        raise EvidenceError("lifecycle load differs from frozen metadata") from exc
+    require(type(difficulty) is int and 0 <= difficulty <= 4, "invalid lifecycle difficulty")
+    for key, expected in dict(
+        schema=2,
+        scope="controlled_authored_trigger_station_lifecycle",
+        game=game,
+        mission=mission,
+        level=level,
+        difficulty=difficulty,
+        rng_seed=1234,
+        frame_time=1092,
+        frames_per_attempt=2400,
+        attempts=4,
+        dispatch_requested=dispatch,
+        observed_runtime_links_preserved=True,
+        disk_original_links_verified=False,
+        comparison_performed=False,
+    ).items():
+        require(report[key] == expected, "incorrect lifecycle report " + key)
+    require(
+        game != "d2" or not any(t["flags"] & 128 for t in actual["triggers"]),
+        "imported D1 capture lacks source action masks for complete lifecycle validation",
+    )
+    triggers = [t for t in actual["triggers"] if (t["flags"] & 64 if game == "d1" else t["type"] == 2)]
+    cases = report["cases"]
+    require(
+        [c["trigger"] for c in cases] == [t["index"] for t in triggers],
+        "missing/reordered lifecycle cases",
+    )
+    executed = total_births = 0
+    review = not cases or bool(comparison["unbound_requires_review"])
+
+    def check_vector(value):
+        require(
+            isinstance(value, list) and len(value) == 3 and all(type(n) is int for n in value),
+            "missing or invalid lifecycle vector",
+        )
+
+    for case, trigger in zip(cases, triggers):
+        require(
+            case["dispatch_requested"] is dispatch and case["load_snapshot"] == actual,
+            "lifecycle case control or fresh load changed",
+        )
+        links = case["links"]
+        targets = [{k: link[k] for k in ("ordinal", "segment", "side")} for link in links]
+        require(
+            targets == trigger["links"] and len(links) == trigger["declared_link_count"],
+            "lifecycle targets changed, reordered, or omitted duplicates",
+        )
+        require(
+            case["runtime_type"] == trigger["type"] and case["runtime_flags"] == trigger["flags"],
+            "lifecycle runtime trigger changed",
+        )
+        if case["status"] == "skipped":
+            require(
+                isinstance(case.get("skip_reasons"), list) and bool(case["skip_reasons"]),
+                "lifecycle skip lacks reasons",
+            )
+            require(
+                not any(k in case for k in ("rounds", "initial", "birth_count")),
+                "skipped lifecycle claims execution",
+            )
+            review = True
+            continue
+        require(
+            case["status"] == "executed" and not case.get("skip_reasons") and bool(links),
+            "invalid lifecycle execution",
+        )
+        repeatable = not (trigger["flags"] & (32 if game == "d1" else 6))
+        if game == "d1":
+            repeatable = repeatable and not (trigger["flags"] & ~(64 | 16 | 32))
+        require(
+            repeatable,
+            "one-shot, disabled, or mixed trigger executed in repeatable lifecycle",
+        )
+        centers = {}
+        for link in links:
+            require(
+                link["status"] == "eligible" and link["segment"] in bindings,
+                "unsafe lifecycle target",
+            )
+            binding = bindings[link["segment"]]
+            require(
+                binding["binding_status"] == "disk_bound"
+                and 0 <= link["center"] < actual["runtime_counts"]["robot_centers"]
+                and 0 <= link["station"] < 128
+                and link["center"] == binding["effective_ordinal"]
+                and link["station"] == binding["station"]["index"],
+                "wrong lifecycle target mapping",
+            )
+            require(
+                link["nonempty_mask"] is bool(mask_types(binding["effective_record"]["robot_flags"])),
+                "wrong lifecycle mask claim",
+            )
+            centers.setdefault(link["center"], binding)
+        unlimited = game == "d2" and difficulty == 4
+        require(
+            case["unlimited_native_lives"] is unlimited,
+            "wrong highest-difficulty life rule",
+        )
+        initial = case["initial"]
+        expected_trigger = dict(
+            type=trigger["type"],
+            flags=trigger["flags"],
+            num_links=len(targets),
+            links=targets,
+        )
+
+        def check_snapshot(value, activations, enabled, frame, births):
+            player = value["player"]
+            require(
+                all(type(player.get(k)) is int for k in ("number", "object", "segment")),
+                "missing or invalid lifecycle player identity",
+            )
+            for key in ("position", "forward", "right", "up"):
+                check_vector(player.get(key))
+            require(
+                all(type(value.get(k)) is int for k in ("game_time", "robot_total", "robot_kills", "robot_limit")),
+                "missing or invalid lifecycle counter",
+            )
+            require(
+                value["trigger"] == expected_trigger and value["player"] == initial["player"],
+                "lifecycle trigger or player changed",
+            )
+            require(
+                value["game_time"] == frame * 1092
+                and value["robot_total"] == initial["robot_total"] + births
+                and value["robot_kills"] == initial["robot_kills"]
+                and value["robot_limit"] == initial["robot_limit"],
+                "lifecycle time, cap, or kill counters changed",
+            )
+            require(
+                all(type(value[k]) is int and value[k] >= 0 for k in ("sim_state", "sim_calls")),
+                "invalid lifecycle RNG observation",
+            )
+            require(
+                [s["ordinal"] for s in value["centers"]] == list(centers),
+                "wrong lifecycle state order",
+            )
+            for state in value["centers"]:
+                binding = centers[state["ordinal"]]
+                require(
+                    state["station"] == binding["station"]["index"] and state["segment"] == binding["segment"],
+                    "wrong lifecycle state mapping",
+                )
+                require(
+                    all(
+                        type(state[k]) is int
+                        for k in (
+                            "enabled",
+                            "lives",
+                            "capacity",
+                            "timer",
+                            "flag",
+                            "disable_time",
+                            "activation_count",
+                        )
+                    ),
+                    "invalid lifecycle station state",
+                )
+                require(
+                    state["enabled"] == enabled
+                    and state["activation_count"] == activations
+                    and state["lives"] == 3 - (0 if unlimited else activations),
+                    "wrong lifecycle native life/activation state",
+                )
+
+        require(
+            initial["sim_calls"] == 0 and initial["sim_state"] == 1234,
+            "lifecycle was not seeded once at start",
+        )
+        check_snapshot(initial, 0, 0, 0, 0)
+        rounds = case["rounds"]
+        require(
+            [r["attempt"] for r in rounds] == [1, 2, 3, 4],
+            "missing/reordered lifecycle attempts",
+        )
+        observed_births = 0
+        previous = initial
+        signatures = set()
+
+        def check_objects(rows):
+            for row in rows:
+                require(
+                    type(row["signature"]) is int and row["signature"] >= 0 and row["signature"] not in signatures,
+                    "duplicate or invalid lifecycle signature",
+                )
+                require(
+                    type(row["object"]) is int and row["object"] >= 0,
+                    "invalid lifecycle object slot",
+                )
+                signatures.add(row["signature"])
+
+        check_objects(case["cleared_authored_robots"])
+        for attempt, round_ in enumerate(rounds, 1):
+            offset = (attempt - 1) * 2400
+            activated = dispatch and (unlimited or attempt <= 3)
+            count_before = (attempt - 1 if unlimited else min(attempt - 1, 3)) if dispatch else 0
+            count_after = count_before + int(activated)
+            before, after, end = (round_[key] for key in ("before_dispatch", "after_dispatch", "after_frames"))
+            require(
+                round_["frame_offset"] == offset and before == previous,
+                "lifecycle sequence reset or gap",
+            )
+            check_snapshot(before, count_before, 0, offset, observed_births)
+            check_snapshot(after, count_after, int(activated), offset, observed_births)
+            require(
+                after["sim_calls"] == before["sim_calls"] and after["sim_state"] == before["sim_state"],
+                "lifecycle dispatch changed RNG",
+            )
+            require(
+                round_["dispatch_result"] == (0 if dispatch else -1),
+                "wrong lifecycle dispatch result",
+            )
+            if attempt == 1:
+                require(
+                    round_["after_active_retrigger"] == after
+                    and round_["active_retrigger_result"] == (0 if dispatch else -1),
+                    "active retrigger changed state",
+                )
+            lights, births = round_["activation_lights"], round_["births"]
+            require(
+                [light["segment"] for light in lights]
+                == ([b["segment"] for b in centers.values()] if activated else []),
+                "wrong lifecycle activation lights",
+            )
+            check_objects(lights)
+            check_objects(births)
+            for light in lights:
+                require(type(light.get("segment")) is int, "missing or invalid lifecycle light segment")
+                check_vector(light.get("position"))
+            require(
+                [b["spawn_ordinal"] for b in births] == list(range(observed_births, observed_births + len(births))),
+                "wrong lifecycle birth order",
+            )
+            last_frame = -1
+            for birth in births:
+                require(
+                    all(
+                        type(birth.get(k)) is int
+                        for k in (
+                            "frame",
+                            "absolute_frame",
+                            "spawn_ordinal",
+                            "ordinal",
+                            "station",
+                            "segment",
+                            "type",
+                            "shields",
+                        )
+                    ),
+                    "missing or invalid lifecycle birth fields",
+                )
+                require(
+                    activated
+                    and type(birth["frame"]) is int
+                    and 0 <= birth["frame"]
+                    and last_frame <= birth["frame"] < 2400
+                    and birth["absolute_frame"] == offset + birth["frame"],
+                    "invalid lifecycle birth frame",
+                )
+                last_frame = birth["frame"]
+                require(
+                    birth["ordinal"] in centers,
+                    "lifecycle birth from unrequested center",
+                )
+                binding = centers[birth["ordinal"]]
+                require(
+                    birth["station"] == binding["station"]["index"] and birth["segment"] == binding["segment"],
+                    "wrong lifecycle birth origin",
+                )
+                require(
+                    birth["type"] in mask_types(binding["effective_record"]["robot_flags"]),
+                    "lifecycle birth outside mapped mask",
+                )
+                check_vector(birth.get("position"))
+            observed_births += len(births)
+            check_snapshot(end, count_after, 0, offset + 2400, observed_births)
+            require(end["sim_calls"] >= after["sim_calls"], "lifecycle RNG counter reset")
+            if not activated:
+                require(
+                    end["sim_calls"] == after["sim_calls"] and end["sim_state"] == after["sim_state"],
+                    "inactive lifecycle consumed RNG",
+                )
+            cap_frame = round_["first_cap_frame"]
+            require(
+                type(cap_frame) is int and -1 <= cap_frame < 2400 and round_["global_cap_observed"] is (cap_frame >= 0),
+                "invalid lifecycle cap timing",
+            )
+            require(
+                round_["first_cap_phase"]
+                in (("before_station_update", "after_station_update") if cap_frame >= 0 else ("not_observed",)),
+                "invalid lifecycle cap phase",
+            )
+            require(
+                (end["robot_total"] - end["robot_kills"] >= end["robot_limit"]) == (cap_frame >= 0),
+                "lifecycle cap claim disagrees with native counters",
+            )
+            disabled = round_["first_all_disabled_frame"]
+            require(
+                type(disabled) is int and (0 <= disabled < 2400 if activated else disabled == -1),
+                "lifecycle did not complete naturally",
+            )
+            outcomes = round_["production_outcomes"]
+            require(
+                [o["ordinal"] for o in outcomes] == list(centers),
+                "missing lifecycle outcomes",
+            )
+            for outcome in outcomes:
+                produced = sum(b["ordinal"] == outcome["ordinal"] for b in births)
+                nonempty = bool(mask_types(centers[outcome["ordinal"]]["effective_record"]["robot_flags"]))
+                status = (
+                    "no_dispatch_control"
+                    if not dispatch
+                    else "native_lives_exhausted"
+                    if not activated
+                    else "empty_mask"
+                    if not nonempty
+                    else "produced"
+                    if produced
+                    else "inconclusive_zero_births_with_global_cap"
+                )
+                require(
+                    outcome["births"] == produced and outcome["status"] == status,
+                    "wrong lifecycle outcome",
+                )
+                require(not produced or nonempty, "empty lifecycle mask produced births")
+                require(
+                    status != "inconclusive_zero_births_with_global_cap" or cap_frame >= 0,
+                    "missing lifecycle births without cap evidence",
+                )
+                review = review or status in (
+                    "empty_mask",
+                    "inconclusive_zero_births_with_global_cap",
+                )
+            previous = end
+        require(case["birth_count"] == observed_births, "wrong lifecycle birth count")
+        executed += 1
+        total_births += observed_births
+    require(report["passed"] is bool(executed), "empty lifecycle coverage claimed a pass")
+    require(
+        report["execution_summary"]
+        == dict(
+            matcen_triggers=len(cases),
+            executed=executed,
+            skipped=len(cases) - executed,
+            births=total_births,
+            status="no_matcen_triggers"
+            if not cases
+            else "all_cases_skipped"
+            if not executed
+            else "native_invariants_checked",
+        ),
+        "wrong lifecycle execution summary",
+    )
+    return "review-required" if review or not executed or (dispatch and not total_births) else "passed"
+
+
+def normalize_lifecycle_trace(report):
+    """Semantic cross-engine comparison only; same-engine repeats stay exact.
+
+    Exclude repeated load metadata and explicitly incidental allocation identities.
+    Preserve ordered/duplicate targets, all states, masks via metadata comparison,
+    RNG, counters, positions, frames, types, birth order, and outcome classifications.
+    """
+    trace = copy.deepcopy(report)
+    trace.pop("baseline", None)
+    for case in trace["cases"]:
+        case.pop("load_snapshot", None)
+        for row in case.get("cleared_authored_robots", []):
+            row.pop("object", None)
+            row.pop("signature", None)
+        snapshots = [case["initial"]] if "initial" in case else []
+        for round_ in case.get("rounds", []):
+            snapshots.extend(
+                round_[key]
+                for key in (
+                    "before_dispatch",
+                    "after_dispatch",
+                    "after_active_retrigger",
+                    "after_frames",
+                )
+                if key in round_
+            )
+            for key in ("activation_lights", "births"):
+                for row in round_[key]:
+                    row.pop("object", None)
+                    row.pop("signature", None)
+        for snapshot in snapshots:
+            snapshot["player"].pop("object", None)
+    return trace
+
+
+def compare_lifecycle_reports(
+    historical,
+    historical_repeat,
+    current,
+    current_repeat,
+    historical_control,
+    current_control,
+    metadata,
+    game,
+    mission,
+    level,
+    difficulty,
+):
+    """Compare independent executions; never generate or update expected traces."""
+    statuses = [
+        validate_lifecycle_report(report, metadata, game, mission, level, difficulty, dispatch)
+        for report, dispatch in (
+            (historical, True),
+            (historical_repeat, True),
+            (current, True),
+            (current_repeat, True),
+            (historical_control, False),
+            (current_control, False),
+        )
+    ]
+    require(
+        historical == historical_repeat and current == current_repeat,
+        "non-deterministic lifecycle repeat",
+    )
+    require(
+        all(
+            report["execution_summary"]["executed"] > 0
+            for report in (historical, current, historical_control, current_control)
+        ),
+        "no executed lifecycle comparison",
+    )
+    require(
+        historical["execution_summary"]["births"] > 0 and current["execution_summary"]["births"] > 0,
+        "no births in active lifecycle comparison",
+    )
+    require(
+        normalize_lifecycle_trace(historical) == normalize_lifecycle_trace(current),
+        "lifecycle trace differs from historical execution",
+    )
+    require(
+        normalize_lifecycle_trace(historical_control) == normalize_lifecycle_trace(current_control),
+        "lifecycle no-dispatch traces differ",
+    )
+    for active, control in (
+        (historical, historical_control),
+        (current, current_control),
+    ):
+        fields = (
+            "trigger",
+            "status",
+            "links",
+            "skip_reasons",
+            "initial",
+            "cleared_authored_robots",
+        )
+        require(
+            [{k: c.get(k) for k in fields} for c in active["cases"]]
+            == [{k: c.get(k) for k in fields} for c in control["cases"]],
+            "lifecycle control changed setup or eligibility",
+        )
+    return "review-required" if "review-required" in statuses else "passed"
+
+
 def expand_expected(expected, metadata):
     report = copy.deepcopy(expected)
     report.setdefault("baseline", metadata)

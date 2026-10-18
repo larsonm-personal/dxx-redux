@@ -539,5 +539,407 @@ class AuthoredMatcenReportTests(unittest.TestCase):
             )
 
 
+def lifecycle_evidence(dispatch=True, game="d1", difficulty=2, duplicate=False, cap=False):
+    metadata, legacy = evidence(dispatch)
+    trigger = metadata["triggers"][0]
+    if game == "d2":
+        trigger.update(type=2, flags=0)
+        metadata["disk_records"][0]["robot_flags"] = [2, 0]
+        metadata["runtime_bindings"][0]["effective_record"]["robot_flags"] = [2, 0]
+    case = {
+        key: copy.deepcopy(legacy["cases"][0][key])
+        for key in (
+            "trigger",
+            "dispatch_requested",
+            "runtime_type",
+            "runtime_flags",
+            "status",
+            "links",
+            "cleared_authored_robots",
+        )
+    }
+    case.update(
+        runtime_type=trigger["type"],
+        runtime_flags=trigger["flags"],
+        trigger_format="native_" + game,
+    )
+    if game == "d1":
+        case["source_flags"] = trigger["flags"]
+    if duplicate:
+        trigger["links"].append(dict(trigger["links"][0], ordinal=1))
+        trigger["declared_link_count"] = 2
+        case["links"].append(dict(case["links"][0], ordinal=1))
+    case["load_snapshot"] = copy.deepcopy(metadata)
+    unlimited = game == "d2" and difficulty == 4
+    state = dict(
+        ordinal=0,
+        station=2,
+        segment=8,
+        enabled=0,
+        lives=3,
+        capacity=0,
+        timer=0,
+        flag=0,
+        disable_time=0,
+        activation_count=0,
+    )
+    initial = dict(
+        centers=[state],
+        trigger=dict(
+            type=trigger["type"],
+            flags=trigger["flags"],
+            num_links=trigger["declared_link_count"],
+            links=copy.deepcopy(trigger["links"]),
+        ),
+        game_time=0,
+        sim_state=1234,
+        sim_calls=0,
+        robot_total=10,
+        robot_kills=0,
+        robot_limit=10 if cap else 25,
+        player=dict(
+            number=0,
+            object=0,
+            segment=0,
+            position=[1, 2, 3],
+            forward=[0, 0, 65536],
+            right=[65536, 0, 0],
+            up=[0, 65536, 0],
+        ),
+    )
+    case.update(initial=copy.deepcopy(initial), unlimited_native_lives=unlimited, rounds=[])
+    previous, births = initial, 0
+    for attempt in range(1, 5):
+        activated = dispatch and (unlimited or attempt <= 3)
+        before = copy.deepcopy(previous)
+        after = copy.deepcopy(before)
+        if activated:
+            center = after["centers"][0]
+            center.update(
+                enabled=1,
+                lives=center["lives"] - int(not unlimited),
+                activation_count=center["activation_count"] + 1,
+                timer=65536000,
+                capacity=(difficulty + 3) * 65536,
+                disable_time=(30 - 2 * difficulty) * 65536,
+            )
+        lights = [dict(signature=20 + attempt * 3, object=5, segment=8, position=[4, 5, 6])] if activated else []
+        born = (
+            [
+                dict(
+                    frame=40,
+                    absolute_frame=(attempt - 1) * 2400 + 40,
+                    spawn_ordinal=births,
+                    ordinal=0,
+                    station=2,
+                    segment=8,
+                    position=[7, 8, 9],
+                    type=1,
+                    signature=21 + attempt * 3,
+                    object=6,
+                    shields=100,
+                )
+            ]
+            if activated and not cap
+            else []
+        )
+        births += len(born)
+        end = copy.deepcopy(after)
+        end.update(
+            game_time=attempt * 2400 * 1092,
+            robot_total=10 + births,
+            sim_calls=after["sim_calls"] + len(born) * 10,
+            sim_state=after["sim_state"] + len(born) * 123,
+        )
+        end["centers"][0]["enabled"] = 0
+        status = (
+            "no_dispatch_control"
+            if not dispatch
+            else "native_lives_exhausted"
+            if not activated
+            else "inconclusive_zero_births_with_global_cap"
+            if cap
+            else "produced"
+        )
+        round_ = dict(
+            attempt=attempt,
+            frame_offset=(attempt - 1) * 2400,
+            before_dispatch=before,
+            dispatch_result=0 if dispatch else -1,
+            after_dispatch=after,
+            activation_lights=lights,
+            births=born,
+            after_frames=end,
+            production_outcomes=[dict(ordinal=0, births=len(born), status=status)],
+            global_cap_observed=cap,
+            first_cap_frame=0 if cap else -1,
+            first_cap_phase="before_station_update" if cap else "not_observed",
+            first_all_disabled_frame=1700 if activated else -1,
+        )
+        if attempt == 1:
+            round_.update(
+                after_active_retrigger=copy.deepcopy(after),
+                active_retrigger_result=0 if dispatch else -1,
+            )
+        case["rounds"].append(round_)
+        previous = end
+    case["birth_count"] = births
+    report = dict(
+        schema=2,
+        scope="controlled_authored_trigger_station_lifecycle",
+        game=game,
+        mission="synthetic",
+        level=1,
+        difficulty=difficulty,
+        rng_seed=1234,
+        frame_time=1092,
+        frames_per_attempt=2400,
+        attempts=4,
+        dispatch_requested=dispatch,
+        observed_runtime_links_preserved=True,
+        disk_original_links_verified=False,
+        comparison_performed=False,
+        passed=True,
+        baseline=metadata,
+        cases=[case],
+        execution_summary=dict(
+            matcen_triggers=1,
+            executed=1,
+            skipped=0,
+            births=births,
+            status="native_invariants_checked",
+        ),
+    )
+    return metadata, report
+
+
+class AuthoredMatcenLifecycleTests(unittest.TestCase):
+    def setUp(self):
+        self.metadata, self.report = lifecycle_evidence(duplicate=True)
+        self.control = lifecycle_evidence(False, duplicate=True)[1]
+
+    def validate(self, report=None):
+        return runner.validate_lifecycle_report(report or self.report, self.metadata, "d1", "synthetic", 1, 2)
+
+    def test_compact_metadata_preserves_native_lifecycle_evidence(self):
+        original = copy.deepcopy(self.report)
+        self.metadata = runner.compact_capture(self.metadata, "d1")
+        self.assertEqual("passed", self.validate())
+        self.assertEqual(original, self.report)
+        self.metadata["disk_records"][0]["hit_points"] += 1
+        with self.assertRaisesRegex(runner.EvidenceError, "lifecycle load differs from frozen metadata"):
+            self.validate()
+
+    def compare(self, current=None, repeat=None):
+        current = current or self.report
+        return runner.compare_lifecycle_reports(
+            self.report,
+            copy.deepcopy(self.report),
+            current,
+            repeat or copy.deepcopy(current),
+            self.control,
+            copy.deepcopy(self.control),
+            self.metadata,
+            "d1",
+            "synthetic",
+            1,
+            2,
+        )
+
+    def test_every_native_difficulty_and_no_dispatch(self):
+        for game in ("d1", "d2"):
+            for difficulty in range(5):
+                for dispatch in (False, True):
+                    with self.subTest(game=game, difficulty=difficulty, dispatch=dispatch):
+                        metadata, report = lifecycle_evidence(dispatch, game, difficulty)
+                        self.assertEqual(
+                            "passed",
+                            runner.validate_lifecycle_report(
+                                report,
+                                metadata,
+                                game,
+                                "synthetic",
+                                1,
+                                difficulty,
+                                dispatch,
+                            ),
+                        )
+        self.assertEqual("passed", self.compare())
+
+    def test_semantically_changed_birth_is_not_normalized_away(self):
+        for field, value in (
+            ("position", [7, 8, 10]),
+            ("shields", 101),
+            ("type", 2),
+            ("station", 1),
+            ("ordinal", 1),
+            ("segment", 7),
+        ):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(self.report)
+                changed["cases"][0]["rounds"][0]["births"][0][field] = value
+                with self.assertRaises(runner.EvidenceError):
+                    self.compare(changed)
+        changed = copy.deepcopy(self.report)
+        birth = changed["cases"][0]["rounds"][0]["births"][0]
+        birth["frame"] += 1
+        birth["absolute_frame"] += 1
+        with self.assertRaisesRegex(runner.EvidenceError, "differs from historical"):
+            self.compare(changed)
+
+    def test_missing_birth_and_duplicate_link_rejected(self):
+        for remove in (
+            lambda c: c["rounds"][0]["births"].pop(),
+            lambda c: c["links"].pop(),
+        ):
+            changed = copy.deepcopy(self.report)
+            remove(changed["cases"][0])
+            with self.assertRaises(runner.EvidenceError):
+                self.compare(changed)
+
+    def test_negative_first_birth_frame_rejected(self):
+        changed = copy.deepcopy(self.report)
+        changed["cases"][0]["rounds"][0]["births"][0].update(frame=-1, absolute_frame=-1)
+        with self.assertRaisesRegex(runner.EvidenceError, "birth frame"):
+            self.validate(changed)
+
+    def test_metadata_mask_and_target_changes_rejected(self):
+        for change in (
+            lambda r: r["baseline"]["disk_records"][0].update(robot_flags=[4]),
+            lambda r: r["cases"][0]["links"][0].update(side=2),
+            lambda r: r["cases"][0]["links"].reverse(),
+        ):
+            changed = copy.deepcopy(self.report)
+            change(changed)
+            with self.assertRaises(runner.EvidenceError):
+                self.compare(changed)
+
+    def test_exact_repeats_keep_allocation_ids(self):
+        changed = copy.deepcopy(self.report)
+        changed["cases"][0]["rounds"][0]["births"][0]["signature"] = 999
+        self.assertEqual(
+            runner.normalize_lifecycle_trace(changed),
+            runner.normalize_lifecycle_trace(self.report),
+        )
+        self.assertEqual("passed", self.compare(changed))
+        with self.assertRaisesRegex(runner.EvidenceError, "non-deterministic lifecycle repeat"):
+            self.compare(self.report, changed)
+
+    def test_active_retrigger_counters_and_round_resets_rejected(self):
+        for change in (
+            lambda c: c["rounds"][0]["after_active_retrigger"]["centers"][0].update(lives=1),
+            lambda c: c["rounds"][1]["before_dispatch"].update(sim_calls=0),
+            lambda c: c["rounds"][1]["after_frames"].update(robot_kills=1),
+            lambda c: c["rounds"].pop(),
+        ):
+            changed = copy.deepcopy(self.report)
+            change(changed["cases"][0])
+            with self.assertRaises(runner.EvidenceError):
+                self.compare(changed)
+
+    def test_cap_only_evidence_is_inconclusive_not_a_parity_pass(self):
+        metadata, report = lifecycle_evidence(cap=True)
+        control = lifecycle_evidence(False, cap=True)[1]
+        self.assertEqual(
+            "review-required",
+            runner.validate_lifecycle_report(report, metadata, "d1", "synthetic", 1, 2),
+        )
+        with self.assertRaisesRegex(runner.EvidenceError, "no births"):
+            runner.compare_lifecycle_reports(
+                report,
+                copy.deepcopy(report),
+                copy.deepcopy(report),
+                copy.deepcopy(report),
+                control,
+                copy.deepcopy(control),
+                metadata,
+                "d1",
+                "synthetic",
+                1,
+                2,
+            )
+        report["cases"][0]["rounds"][0]["first_cap_frame"] = -1
+        with self.assertRaisesRegex(runner.EvidenceError, "cap timing"):
+            runner.validate_lifecycle_report(report, metadata, "d1", "synthetic", 1, 2)
+
+    def test_all_skipped_and_no_matcen_are_not_execution_passes(self):
+        for empty in (False, True):
+            metadata, report = lifecycle_evidence()
+            if empty:
+                metadata["triggers"] = []
+                report["cases"] = []
+            else:
+                case = report["cases"][0]
+                for key in ("initial", "rounds", "birth_count"):
+                    del case[key]
+                case.update(
+                    status="skipped",
+                    skip_reasons=["one_shot_outside_repeatable_lifecycle_scope"],
+                )
+            report["passed"] = False
+            report["execution_summary"] = dict(
+                matcen_triggers=0 if empty else 1,
+                executed=0,
+                skipped=0 if empty else 1,
+                births=0,
+                status="no_matcen_triggers" if empty else "all_cases_skipped",
+            )
+            self.assertEqual(
+                "review-required",
+                runner.validate_lifecycle_report(report, metadata, "d1", "synthetic", 1, 2),
+            )
+            report["passed"] = True
+            with self.assertRaisesRegex(runner.EvidenceError, "empty lifecycle coverage"):
+                runner.validate_lifecycle_report(report, metadata, "d1", "synthetic", 1, 2)
+
+    def test_incomplete_imported_trigger_capture_fails_closed(self):
+        metadata, report = lifecycle_evidence(game="d2")
+        metadata["triggers"][0]["flags"] |= 128
+        with self.assertRaisesRegex(runner.EvidenceError, "lacks source action masks"):
+            runner.validate_lifecycle_report(report, metadata, "d2", "synthetic", 1, 2)
+
+    def test_shared_semantic_field_omissions_fail_closed(self):
+        for missing in ("birth_shields", "light_position", "player_position", "player_forward", "player_number"):
+            with self.subTest(missing=missing):
+                active, control = copy.deepcopy(self.report), copy.deepcopy(self.control)
+                for report in (active, control):
+                    for case in report["cases"]:
+                        snapshots = [case["initial"]]
+                        for round_ in case["rounds"]:
+                            snapshots.extend(
+                                round_[key]
+                                for key in (
+                                    "before_dispatch",
+                                    "after_dispatch",
+                                    "after_active_retrigger",
+                                    "after_frames",
+                                )
+                                if key in round_
+                            )
+                            if missing == "birth_shields":
+                                for birth in round_["births"]:
+                                    del birth["shields"]
+                            if missing == "light_position":
+                                for light in round_["activation_lights"]:
+                                    del light["position"]
+                        if missing.startswith("player_"):
+                            for snapshot in snapshots:
+                                del snapshot["player"][missing.removeprefix("player_")]
+                with self.assertRaises(runner.EvidenceError):
+                    runner.compare_lifecycle_reports(
+                        active,
+                        copy.deepcopy(active),
+                        copy.deepcopy(active),
+                        copy.deepcopy(active),
+                        control,
+                        copy.deepcopy(control),
+                        self.metadata,
+                        "d1",
+                        "synthetic",
+                        1,
+                        2,
+                    )
+
+
 if __name__ == "__main__":
     unittest.main()
