@@ -87,3 +87,6 @@ It executes the real shell runner against recording tool shims in temporary
 fixture repositories, then cleans them up. It checks argument validation,
 tool discovery, routing, configuration/build/test failures, diagnostics options,
 and separation from ordinary builds without compiling games or downloading assets
+
+For interrupted coding tasks or GitHub access failures, see the
+[task recovery runbook](TASK_RECOVERY.md).
