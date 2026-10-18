@@ -5,6 +5,7 @@ TARGET="both"
 BUILD_TYPE="RelWithDebInfo"
 BUILD_TYPE_EXPLICIT=0
 RUN_TESTS=0
+GAME_ONLY=0
 CLEAN=0
 JOBS=""
 GENERATOR=""
@@ -25,6 +26,7 @@ Usage: ./run-linux-build.sh [options]
 Options:
   --target {both|d1|d2}   Select which game to build [default: both]
   --build-type TYPE       CMake configuration [default: RelWithDebInfo, Debug with --test]
+  --game-only             Build only the desktop game executable for replay prerequisites
   --test                  Build and run asset-free CTest tests in separate Debug trees
   --sanitizer {none|address}  Use a separate AddressSanitizer build tree
   --clean                 Delete the target build directory before configuring
@@ -115,6 +117,10 @@ while [[ $# -gt 0 ]]; do
         BUILD_TYPE_EXPLICIT=1
         shift 2
         ;;
+    --game-only)
+        GAME_ONLY=1
+        shift
+        ;;
     --test)
         RUN_TESTS=1
         shift
@@ -183,6 +189,10 @@ esac
 
 if [[ -n "$JOBS" && ! "$JOBS" =~ ^[1-9][0-9]*$ ]]; then
     echo "Invalid --jobs '$JOBS'. Expected a positive integer" >&2
+    exit 1
+fi
+if [[ "$RUN_TESTS" -eq 1 && "$GAME_ONLY" -eq 1 ]]; then
+    echo "--game-only cannot be combined with --test" >&2
     exit 1
 fi
 if [[ "$RUN_TESTS" -eq 1 ]]; then
@@ -332,6 +342,10 @@ build_one() {
     local build_args=(--build "$build_dir" --config "$BUILD_TYPE" --parallel)
     if [[ -n "$JOBS" ]]; then
         build_args+=("$JOBS")
+    fi
+
+    if [[ "$GAME_ONLY" -eq 1 ]]; then
+        build_args+=(--target "dxx-redux-$game")
     fi
 
     echo "Building $game"

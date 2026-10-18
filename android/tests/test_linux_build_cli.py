@@ -151,6 +151,20 @@ class LinuxBuildCliTest(unittest.TestCase):
             stamp = self.repo / "temp" / "input_demo_build_stamps" / f"{game}.stamp"
             self.assertEqual(stamp.read_text(encoding="utf-8"), REVISION)
 
+    def test_game_only_builds_selected_executable_and_preserves_replay_stamp(self):
+        self.run_cli("--target", "d2", "--game-only", "--jobs", "2")
+        self.assertEqual([c["stage"] for c in self.calls], ["configure", "build"])
+        self.assert_option(self.calls[1], "--target", "dxx-redux-d2")
+        self.assert_option(self.calls[1], "--parallel", "2")
+        stamp = self.repo / "temp/input_demo_build_stamps/d2.stamp"
+        self.assertEqual(stamp.read_text(), REVISION)
+        self.assertFalse((self.repo / "buildd1").exists())
+
+    def test_game_only_rejects_test_mode_without_running_tools(self):
+        result = self.run_cli("--game-only", "--test", success=False)
+        self.assertIn("cannot be combined", result.stderr)
+        self.assertEqual(self.calls, [])
+
     def test_test_mode_runs_both_serially_with_reports_and_preserves_stamps(self):
         stamps = self.seed_stamps()
         self.run_cli("--test")
