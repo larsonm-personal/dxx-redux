@@ -68,6 +68,7 @@ extern "C" {
 
 #include "level_statistics.hpp"
 #include "matcen_regression.hpp"
+#include "metadata_json.hpp"
 #include "flyout_metadata.hpp"
 #include "level_texture_diagnostics.h"
 #include "midi_metadata_json.hpp"
@@ -111,7 +112,7 @@ static json failed_result(const json &request, const char *problem);
 
 static std::string dump_metadata_json(const json &value)
 {
-	return value.dump(2, ' ', false, json::error_handler_t::replace);
+	return metadata_json_dump(value);
 }
 
 static const char *physfs_last_error(void)
@@ -210,7 +211,7 @@ static void write_checkpoint_progress(const json &request, const char *stage,
 	}
 	std::ofstream stream(path, std::ios::trunc);
 	if (stream)
-		stream << out.dump(2) << "\n";
+		stream << metadata_json_dump(out) << "\n";
 }
 
 static void write_checkpoint(const json &request, const char *stage,
@@ -345,7 +346,7 @@ static void write_level_task_progress(
 	out["level_total"] = context.level_total;
 	std::ofstream stream(path, std::ios::trunc);
 	if (stream)
-		stream << out.dump(2) << "\n";
+		stream << metadata_json_dump(out) << "\n";
 }
 
 static void levelmeta_progress(void *user, const char *stage,
@@ -1038,7 +1039,8 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	row["secrets"] = secret_area_total(secret_state);
 	row["secret_areas_complete"] = secret_area_liquid_metadata_complete() != 0;
 	row["matcens"] = metadata ? metadata->matcen_count : 0;
-	row["matcen_regression"] = matcen_regression_serialize<json>();
+	if (auto matcen = matcen_regression_metadata<json>(); !matcen.is_null())
+		row["matcen_regression"] = std::move(matcen);
 	row["energy_centers"] = metadata ? metadata->energy_center_count : 0;
 	row["mine_volume"] = metadata ? metadata->mine_volume : 0.0;
 	row["mine_volume_normalized"] = metadata ? metadata->mine_volume_normalized : 0.0;
@@ -1222,7 +1224,8 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["reactors"] = 0;
 	row["secrets"] = 0;
 	row["matcens"] = 0;
-	row["matcen_regression"] = matcen_regression_serialize<nlohmann::ordered_json>(false);
+	if (auto matcen = matcen_regression_metadata<nlohmann::ordered_json>(false); !matcen.is_null())
+		row["matcen_regression"] = std::move(matcen);
 	row["energy_centers"] = 0;
 	row["mine_volume"] = 0.0;
 	row["mine_volume_normalized"] = 0.0;

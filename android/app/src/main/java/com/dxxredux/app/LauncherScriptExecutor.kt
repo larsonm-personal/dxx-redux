@@ -1245,7 +1245,10 @@ class LauncherScriptExecutor(
     ) {
         val safeLabel = safeAutomationLabel(label.ifBlank { result.source.ifBlank { "metadata" } })
         val file = File(context.filesDir, "level_metadata_automation_$safeLabel.json")
-        AtomicFilePublication.writeUtf8(file, levelMetadataResultJson(result).toString(2) + "\n")
+        AtomicFilePublication.writeUtf8(
+            file,
+            MissionMetadataProjection.formatMatcenRows(levelMetadataResultJson(result).toString(2)) + "\n",
+        )
     }
 
     private fun writeLevelMetadataAutomationResults(
@@ -1267,7 +1270,7 @@ class LauncherScriptExecutor(
                     }.put("target_index", index),
             )
         }
-        AtomicFilePublication.writeUtf8(file, array.toString(2) + "\n")
+        AtomicFilePublication.writeUtf8(file, MissionMetadataProjection.formatMatcenRows(array.toString(2)) + "\n")
     }
 
     private fun levelMetadataResultJson(result: LevelMetadataResult): JSONObject {

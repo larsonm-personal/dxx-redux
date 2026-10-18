@@ -8,6 +8,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -88,12 +89,14 @@ class MissionMetadataProjectionTest {
         for (name in listOf(
             "schema_version",
             "capture_status",
-            "generated_count",
-            "disk_count",
-            "authored_segments",
+            "admission",
+            "declared_disk_count",
+            "engine_limits",
+            "runtime_counts",
+            "bindings",
             "disk_records",
             "triggers",
-            "runtime_bindings",
+            "robot_models",
         )) {
             val block = JsonObject(valid.filterKeys { it != name }).toString()
             assertThrows("missing $name", IllegalArgumentException::class.java) { projectMatcenLevel(block) }
@@ -102,12 +105,12 @@ class MissionMetadataProjectionTest {
 
     @Test
     fun rejectsInvalidMatcenRegressionScalars() {
-        for (name in listOf("schema_version", "generated_count", "disk_count")) {
-            for (value in listOf("null", "true", "\"1\"", "1.5", "[]", "{}", "2147483648", "-1")) {
+        for (name in listOf("schema_version", "declared_disk_count")) {
+            for (value in listOf("null", "true", "\"1\"", "1.5", "[]", "{}", "2147483648")) {
                 assertInvalidMatcenField(name, value)
             }
         }
-        for (value in listOf("0", "2")) assertInvalidMatcenField("schema_version", value)
+        for (value in listOf("0", "1", "-1")) assertInvalidMatcenField("schema_version", value)
         for (value in listOf("null", "true", "1", "[]", "{}", "\"unknown\"")) {
             assertInvalidMatcenField("capture_status", value)
         }
@@ -115,7 +118,7 @@ class MissionMetadataProjectionTest {
 
     @Test
     fun rejectsInvalidMatcenRegressionCollections() {
-        for (name in listOf("authored_segments", "disk_records", "triggers", "runtime_bindings")) {
+        for (name in listOf("bindings", "disk_records", "triggers", "robot_models")) {
             for (value in listOf("null", "true", "1", "\"entries\"", "{}", "[null]", "[1]", "[[]]", "[{},false]")) {
                 assertInvalidMatcenField(name, value)
             }
@@ -123,14 +126,67 @@ class MissionMetadataProjectionTest {
     }
 
     @Test
-    fun acceptsEmptyMatcenRegressionCollectionsAndZeroCounts() {
+    fun rejectsInvalidMatcenAdmissionAndCountObjects() {
+        for (value in listOf("null", "true", "1", "[]", "{}", "\"unknown\"")) {
+            assertInvalidMatcenField("admission", value)
+        }
+        for (name in listOf("engine_limits", "runtime_counts")) {
+            for (value in listOf("null", "true", "1", "[]", "\"counts\"")) {
+                assertInvalidMatcenField(name, value)
+            }
+        }
+    }
+
+    @Test
+    fun omitsOnlyCompleteLoadedEmptyMatcenBlocks() {
         val valid = Json.parseToJsonElement(validMatcenRegression).jsonObject.toMutableMap()
-        for (name in listOf("authored_segments", "disk_records", "triggers", "runtime_bindings")) {
+        for (name in listOf("bindings", "disk_records", "triggers", "robot_models")) {
             valid[name] = Json.parseToJsonElement("[]")
         }
-        for (name in listOf("generated_count", "disk_count")) valid[name] = Json.parseToJsonElement("0")
-        val block = JsonObject(valid)
-        assertEquals(block, projectMatcenLevel(block.toString())["matcen_regression"])
+        valid["declared_disk_count"] = Json.parseToJsonElement("0")
+        assertFalse(projectMatcenLevel(JsonObject(valid).toString()).containsKey("matcen_regression"))
+        for ((name, value) in listOf("capture_status" to "incomplete", "admission" to "rejected_or_missing")) {
+            val retained = JsonObject(valid + (name to kotlinx.serialization.json.JsonPrimitive(value)))
+            assertEquals(retained, projectMatcenLevel(retained.toString())["matcen_regression"])
+        }
+        for (name in listOf("bindings", "disk_records", "triggers", "robot_models")) {
+            val retained = JsonObject(valid + (name to Json.parseToJsonElement("[{}]")))
+            assertEquals(retained, projectMatcenLevel(retained.toString())["matcen_regression"])
+        }
+        for (count in listOf(-1, 1)) {
+            val retained = JsonObject(valid + ("declared_disk_count" to kotlinx.serialization.json.JsonPrimitive(count)))
+            assertEquals(retained, projectMatcenLevel(retained.toString())["matcen_regression"])
+        }
+    }
+
+    @Test
+    fun matcenRowsRoundTripAndRegenerateCanonically() {
+        val pretty = Json { prettyPrint = true }
+        val source =
+            Json.parseToJsonElement(
+                """[{"outside":{"preserved":[1,2]},"levels":[{"matcen_regression":$validMatcenRegression},
+                    {"matcen_regression":$validMatcenRegression}],"trailing":"escaped \" text\nnext"}]""",
+            )
+        val original = pretty.encodeToString(source)
+        val formatted = MissionMetadataProjection.formatMatcenRows(original)
+        assertEquals(source, Json.parseToJsonElement(formatted))
+        assertEquals(formatted, MissionMetadataProjection.formatMatcenRows(formatted))
+        assertEquals(
+            formatted,
+            MissionMetadataProjection.formatMatcenRows(pretty.encodeToString(Json.parseToJsonElement(formatted))),
+        )
+        assertTrue(formatted.contains("{\"segment\": 9, \"robot_flags\": [4294967295, 0]}"))
+        assertTrue(formatted.contains("{\"links\": [{\"segment\": 9, \"side\": 3}]}"))
+        val firstBlock = original.indexOf("\"matcen_regression\"")
+        assertEquals(original.substring(0, firstBlock), formatted.substring(0, firstBlock))
+        val tail = original.substring(original.lastIndexOf("\"trailing\""))
+        assertTrue(formatted.endsWith(tail))
+    }
+
+    @Test
+    fun leavesUnrelatedMetadataFormattingUnchanged() {
+        val text = """{"levels": [], "unrelated": {"keep": [1, 2]}}""" + "\n"
+        assertEquals(text, MissionMetadataProjection.formatMatcenRows(text))
     }
 
     private fun assertInvalidMatcenField(
@@ -160,14 +216,16 @@ class MissionMetadataProjectionTest {
 
     private val validMatcenRegression =
         """{
-            "schema_version":1,
+            "schema_version":2,
+            "admission":"loaded",
             "capture_status":"complete",
-            "generated_count":2,
-            "disk_count":1,
-            "authored_segments":[{"segment":9,"nested":{"flags":[1,2],"note":null}}],
+            "declared_disk_count":1,
+            "engine_limits":{"robot_centers":100},
+            "runtime_counts":{"robot_centers":2},
+            "bindings":[{"segment":9,"effective_ordinal":0,"record_overrides":{"station":1},"station_overrides":{"type":3}}],
             "disk_records":[{"segment":9,"robot_flags":[4294967295,0]}],
             "triggers":[{"links":[{"segment":9,"side":3}]}],
-            "runtime_bindings":[{"segment":9,"binding":-1}],
+            "robot_models":[{"type":0,"model":3,"status":"valid_model"}],
             "future_additive_field":{"preserved":true}
         }"""
 

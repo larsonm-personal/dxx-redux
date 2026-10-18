@@ -19,6 +19,25 @@ These are fresh-load observations, not a save/restore state format. Counts and a
 
 A generated ordinal outside the declared disk count but inside the allocated global array is `logical_disk_unbound`. It can retain a previous level's robot mask. Cold and warm observations must remain distinct; stale global contents are not an author-intent reference. A physical array violation is a separate classification.
 
+## Compact level records
+
+Level files use schema 2: original disk records, merged authored/effective bindings,
+unique robot models, and only matcen triggers. Bindings reference their effective disk
+ordinal; `record_overrides` stores changed runtime fields. `station_overrides` stores
+only differences from the effective record's station, binding segment and robotmaker
+type. Status fields preserve invalid or unbound joins; they are not successful bindings.
+Ordered trigger IDs, links, duplicates and source walls are retained. Converted D1
+triggers carry their original `source_flags` so mixed actions remain identifiable.
+
+Complete loaded levels omit the block only when declared count, bindings, records,
+models and matcen triggers are all empty. Rejected/incomplete observations remain.
+Native fixtures retain full internal snapshots for preflight and determinism checks;
+these diagnostic snapshots are not persisted as level regression records. Native and
+Android producers write one semantic record per line with nested values inline.
+The historical records were mechanically projected, with every retained field checked
+against the original capture. No gameplay trace was rerun or replaced. Provenance keeps
+the original capture hashes and separately records compact-projection hashes.
+
 ## Focused corpus
 
 | Family | Cases | Required invariant |

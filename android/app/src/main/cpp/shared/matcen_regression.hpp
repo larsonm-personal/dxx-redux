@@ -1,12 +1,16 @@
 #ifndef DXX_MATCEN_REGRESSION_HPP
 #define DXX_MATCEN_REGRESSION_HPP
 #include <cstdint>
+#include <algorithm>
 extern "C" {
 #include "matcen_regression_capture.h"
 #include "segment.h"
 #include "wall.h"
 #include "robot.h"
 #include "polyobj.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2_levels.h"
+#endif
 }
 
 /* Stable integer identities, never pointer values or inferred author intent.
@@ -90,11 +94,77 @@ Json matcen_regression_serialize(bool admitted = true)
 		for (int j = 0; j < Num_walls && j < MAX_WALLS; ++j)
 			if (Walls[j].trigger == i) walls.push_back({ { "wall", j }, { "segment", +Walls[j].segnum }, { "side", +Walls[j].sidenum } });
 		triggers.push_back({ { "index", i }, { "type", +t.type }, { "flags", +t.flags }, { "value", +t.value }, { "time", +t.time }, { "declared_link_count", +t.num_links }, { "links", links }, { "runtime_source_walls", walls } });
+#ifdef DXX_BUILD_DESCENT_II
+		short source_flags = 0;
+		if (d1_in_d2_trigger_source_flags(&t, &source_flags)) triggers.back()["source_flags"] = source_flags;
+#endif
 	}
 	out["authored_segments"] = authored;
 	out["disk_records"] = records;
 	out["triggers"] = triggers;
 	out["runtime_bindings"] = runtime;
+	return out;
+}
+// The full observation above is for fixture preflight; level files keep only
+// matcen evidence, with original records shared by their effective bindings
+template <class Json>
+Json matcen_regression_metadata(bool admitted = true)
+{
+	const Json capture = matcen_regression_serialize<Json>(admitted);
+	Json out = { { "schema_version", 2 } };
+	for (const auto *key : { "admission", "capture_status", "declared_disk_count", "engine_limits", "runtime_counts" })
+		out[key] = capture[key];
+	out["disk_records"] = capture["disk_records"];
+	Json bindings = Json::array(), models = Json::array(), triggers = Json::array();
+	for (std::size_t i = 0; i < capture["runtime_bindings"].size(); ++i) {
+		const auto &binding = capture["runtime_bindings"][i];
+		Json row = capture["authored_segments"][i];
+		for (auto it = binding.begin(); it != binding.end(); ++it)
+			if (it.key() != "effective_record" && it.key() != "eligible_robots" && it.key() != "station")
+				row[it.key()] = it.value();
+		if (binding.contains("effective_record")) {
+			const auto &record = binding["effective_record"];
+			const int ordinal = binding["effective_ordinal"].template get<int>();
+			const Json disk = ordinal >= 0 && ordinal < Matcen_regression_capture.disk_count ? capture["disk_records"][ordinal] : Json::object();
+			Json changes = Json::object();
+			for (auto it = record.begin(); it != record.end(); ++it)
+				if (!disk.contains(it.key()) || disk[it.key()] != it.value()) changes[it.key()] = it.value();
+			if (!changes.empty()) row["record_overrides"] = changes;
+			if (binding.contains("station")) {
+				const Json station = { { "index", record["station"] }, { "segment", binding["segment"] }, { "type", SEGMENT_IS_ROBOTMAKER } };
+				changes = Json::object();
+				for (auto it = binding["station"].begin(); it != binding["station"].end(); ++it)
+					if (station[it.key()] != it.value()) changes[it.key()] = it.value();
+				if (!changes.empty()) row["station_overrides"] = changes;
+			}
+			for (const auto &robot : binding["eligible_robots"]) {
+				bool found = false;
+				for (const auto &model : models)
+					if (model == robot) {
+						found = true;
+						break;
+					}
+				if (!found) models.push_back(robot);
+			}
+		}
+		bindings.push_back(row);
+	}
+	for (int i = 0; i < Matcen_regression_capture.trigger_count; ++i) {
+		const auto &trigger = Matcen_regression_capture.triggers[i];
+#ifdef DXX_BUILD_DESCENT_II
+		short source_flags = 0;
+		const bool matcen = d1_in_d2_trigger_source_flags(&trigger, &source_flags) ? (source_flags & TRIGGER_MATCEN) : trigger.type == TT_MATCEN;
+#else
+		const bool matcen = trigger.flags & TRIGGER_MATCEN;
+#endif
+		if (matcen) triggers.push_back(capture["triggers"][i]);
+	}
+	if (admitted && Matcen_regression_capture.complete && Matcen_regression_capture.declared_disk_count == 0 && bindings.empty() && out["disk_records"].empty() && triggers.empty() && models.empty())
+		return nullptr;
+	std::sort(models.begin(), models.end(), [](const Json &a, const Json &b) { return a["type"].template get<unsigned>() < b["type"].template get<unsigned>(); });
+	out["bindings"] = bindings;
+	out["robot_models"] = models;
+	out["triggers"] = triggers;
 	return out;
 }
 #endif
