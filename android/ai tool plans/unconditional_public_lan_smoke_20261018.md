@@ -14,3 +14,10 @@
 - Validate Linux runner argument/stamp behavior, workflow selection, actual native build and hosted CI
 - Local verification: 81 CLI/planner tests passed; selected D2 desktop target built successfully and the existing replay freshness guard accepted it without rebuilding; Actionlint, Bash syntax, shellcheck and shfmt passed
 - Automation catalog validation passed; catalog-runner integration is blocked locally because the Linux child supervisor cannot read `/proc/self/task/<pid>/children`; hosted CI remains required
+
+## Nested fixture freshness correction
+
+- Artifact 12147828938 confirms Android recording passed, then generated `android/tests/build-shareware-fixture/CMakeFiles/Makefile.cmake` invalidated the prebuilt game and triggered an all-target rebuild inside the unchanged 600-second owner budget
+- Exclude CMake-generated `CMakeFiles` contents and generated install/test scripts from source freshness scanning; keep real source timestamps and revision validation
+- Regression coverage includes the exact nested fixture path, generated compiler probes, and real C/CMake source changes
+- Verification: guard regression tests, scoped quality checks and automation catalog validation passed; real D2 game-only build passed and remained fresh after advancing the actual nested generated Makefile timestamp; catalog-runner test retains the documented local `/proc` supervisor limitation
