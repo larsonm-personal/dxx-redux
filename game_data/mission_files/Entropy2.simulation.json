@@ -88,8 +88,8 @@
       ],
       "total_frames": 2490,
       "rng_end": {
-        "state": 790436741,
-        "calls": 3324
+        "state": 3302693797,
+        "calls": 4060
       },
       "reactor_escape": {
         "countdown_seconds": 10.0,
@@ -120,14 +120,14 @@
           "s": 18
         }
       ],
-      "total_frames": 1062,
+      "total_frames": 1065,
       "rng_end": {
-        "state": 4131908619,
-        "calls": 766
+        "state": 1308870853,
+        "calls": 19900
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 4.633331,
+        "simulated_seconds": 4.683334,
         "difficulty": 2
       }
     },
@@ -170,14 +170,14 @@
           "s": 52
         }
       ],
-      "total_frames": 3144,
+      "total_frames": 3110,
       "rng_end": {
-        "state": 1811460131,
-        "calls": 2150
+        "state": 525877481,
+        "calls": 4312
       },
       "reactor_escape": {
         "countdown_seconds": 150.0,
-        "simulated_seconds": 23.983337,
+        "simulated_seconds": 23.416672,
         "difficulty": 2
       }
     },
@@ -193,15 +193,15 @@
       "objectives": [
         {
           "n": "destroy robot carrying red key",
-          "s": 17
+          "s": 18
         },
         {
           "n": "pass-through 20",
-          "s": 27
+          "s": 28
         },
         {
           "n": "switch 24",
-          "s": 28
+          "s": 29
         },
         {
           "n": "switch 25",
@@ -217,25 +217,25 @@
         },
         {
           "n": "switch 28",
-          "s": 42
+          "s": 41
         },
         {
           "n": "boss",
-          "s": 49
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 71
         }
       ],
-      "total_frames": 4337,
+      "total_frames": 4247,
       "rng_end": {
-        "state": 4151607207,
-        "calls": 3394
+        "state": 1325384573,
+        "calls": 5572
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 23.616669,
+        "simulated_seconds": 22.883331,
         "difficulty": 2
       }
     },
@@ -295,11 +295,11 @@
         },
         {
           "n": "switch 6",
-          "s": 95
+          "s": 94
         },
         {
           "n": "switch 3",
-          "s": 104
+          "s": 103
         },
         {
           "n": "switch 0",
@@ -307,17 +307,17 @@
         },
         {
           "n": "exit",
-          "s": 123
+          "s": 122
         }
       ],
-      "total_frames": 7376,
+      "total_frames": 7344,
       "rng_end": {
-        "state": 1239514698,
-        "calls": 3917
+        "state": 2819527270,
+        "calls": 4929
       },
       "reactor_escape": {
         "countdown_seconds": 50.0,
-        "simulated_seconds": 46.649994,
+        "simulated_seconds": 46.116669,
         "difficulty": 2
       }
     }

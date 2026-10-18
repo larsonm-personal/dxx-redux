@@ -40,13 +40,13 @@
         },
         {
           "n": "switch 3",
-          "s": 54
+          "s": 53
         }
       ],
-      "total_frames": 3210,
+      "total_frames": 3195,
       "rng_end": {
-        "state": 3935206081,
-        "calls": 9024
+        "state": 4225550473,
+        "calls": 9784
       },
       "problem": "guided missile objective requires equipment and flight verification"
     },
@@ -107,8 +107,8 @@
       ],
       "total_frames": 5324,
       "rng_end": {
-        "state": 1710521454,
-        "calls": 4569
+        "state": 2889310466,
+        "calls": 5749
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -158,8 +158,8 @@
       ],
       "total_frames": 2550,
       "rng_end": {
-        "state": 729003353,
-        "calls": 2536
+        "state": 1112192772,
+        "calls": 3795
       },
       "reactor_escape": {
         "countdown_seconds": 30.0,

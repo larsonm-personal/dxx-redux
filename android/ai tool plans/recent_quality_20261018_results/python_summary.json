@@ -1,0 +1,2913 @@
+{
+  "modules": 25,
+  "original_counts": {
+    "ok": 390,
+    "FAIL": 2,
+    "skipped": 21,
+    "ERROR": 1
+  },
+  "resolved_counts": {
+    "ok": 412,
+    "skipped": 2
+  },
+  "cases": [
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_callback_gate_and_enqueue_failure_are_terminal (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_callback_gate_and_enqueue_failure_are_terminal)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_generated_sdl_closes_backend_before_mixer_lock (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_generated_sdl_closes_backend_before_mixer_lock)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_music_command_refresh_waits_for_published_snapshot (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_music_command_refresh_waits_for_published_snapshot)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_music_completion_is_polled_on_paired_event_threads (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_music_completion_is_polled_on_paired_event_threads)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_music_overlay_uses_engine_published_snapshots (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_music_overlay_uses_engine_published_snapshots)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_music_source_eof_drains_the_pcm_ring (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_music_source_eof_drains_the_pcm_ring)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_open_checks_every_required_opensl_step (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_open_checks_every_required_opensl_step)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_partial_open_and_close_share_reverse_cleanup (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_partial_open_and_close_share_reverse_cleanup)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_save_music_source_overrides_pilot_and_replays_matching_source (test_android_audio_lifecycle.AndroidAudioLifecycleTest.test_save_music_source_overrides_pilot_and_replays_matching_source)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_both_activity_background_paths_follow_graphics_cancellation (test_android_audio_lifecycle.GraphicsBackgroundRecoveryTest.test_both_activity_background_paths_follow_graphics_cancellation)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_android_audio_lifecycle.log"
+    },
+    {
+      "module": "test_android_audio_lifecycle",
+      "case": "test_compiled_background_recovery_before_quiesce_and_park (test_android_audio_lifecycle.GraphicsBackgroundRecoveryTest.test_compiled_background_recovery_before_quiesce_and_park)",
+      "original": "FAIL",
+      "resolved": "ok",
+      "evidence": "audio_linux_retry.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_active_retrigger_counters_and_round_resets_rejected (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_active_retrigger_counters_and_round_resets_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_all_skipped_and_no_matcen_are_not_execution_passes (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_all_skipped_and_no_matcen_are_not_execution_passes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_cap_only_evidence_is_inconclusive_not_a_parity_pass (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_cap_only_evidence_is_inconclusive_not_a_parity_pass)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_compact_metadata_preserves_native_lifecycle_evidence (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_compact_metadata_preserves_native_lifecycle_evidence)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_every_native_difficulty_and_no_dispatch (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_every_native_difficulty_and_no_dispatch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_exact_repeats_keep_allocation_ids (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_exact_repeats_keep_allocation_ids)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_incomplete_imported_trigger_capture_fails_closed (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_incomplete_imported_trigger_capture_fails_closed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_metadata_mask_and_target_changes_rejected (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_metadata_mask_and_target_changes_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_birth_and_duplicate_link_rejected (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_missing_birth_and_duplicate_link_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_negative_first_birth_frame_rejected (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_negative_first_birth_frame_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_semantically_changed_birth_is_not_normalized_away (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_semantically_changed_birth_is_not_normalized_away)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_shared_semantic_field_omissions_fail_closed (test_authored_matcen_report.AuthoredMatcenLifecycleTests.test_shared_semantic_field_omissions_fail_closed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_actual_station_remap_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_actual_station_remap_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_changed_link_order_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_changed_link_order_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_compact_projection_keeps_only_deltas_and_shared_models (test_authored_matcen_report.AuthoredMatcenReportTests.test_compact_projection_keeps_only_deltas_and_shared_models)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_compact_projection_retains_sparse_trigger_ids_and_duplicate_links (test_authored_matcen_report.AuthoredMatcenReportTests.test_compact_projection_retains_sparse_trigger_ids_and_duplicate_links)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_converted_d1_trigger_uses_source_flags (test_authored_matcen_report.AuthoredMatcenReportTests.test_converted_d1_trigger_uses_source_flags)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_defined_mask_change_rejected_against_frozen_reference (test_authored_matcen_report.AuthoredMatcenReportTests.test_defined_mask_change_rejected_against_frozen_reference)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_documented_native_cap_requires_review (test_authored_matcen_report.AuthoredMatcenReportTests.test_documented_native_cap_requires_review)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_duplicate_signatures_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_duplicate_signatures_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_extra_disk_records_do_not_require_extra_generated_centers (test_authored_matcen_report.AuthoredMatcenReportTests.test_extra_disk_records_do_not_require_extra_generated_centers)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_generated_and_runtime_counts_are_independent_for_orphans (test_authored_matcen_report.AuthoredMatcenReportTests.test_generated_and_runtime_counts_are_independent_for_orphans)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_historical_difference_rejected_even_when_repeat_matches (test_authored_matcen_report.AuthoredMatcenReportTests.test_historical_difference_rejected_even_when_repeat_matches)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_incidental_ids_normalized_only_for_history (test_authored_matcen_report.AuthoredMatcenReportTests.test_incidental_ids_normalized_only_for_history)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_incomplete_metadata_never_starts_native (test_authored_matcen_report.AuthoredMatcenReportTests.test_incomplete_metadata_never_starts_native)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_input_bytes_are_exact (test_authored_matcen_report.AuthoredMatcenReportTests.test_input_bytes_are_exact)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_invalid_bindings_survive_projection_and_require_review (test_authored_matcen_report.AuthoredMatcenReportTests.test_invalid_bindings_survive_projection_and_require_review)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_invalid_frame_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_invalid_frame_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_logical_unbound_physically_safe_can_preflight (test_authored_matcen_report.AuthoredMatcenReportTests.test_logical_unbound_physically_safe_can_preflight)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_actual_capture_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_missing_actual_capture_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_bindings_blocks (test_authored_matcen_report.AuthoredMatcenReportTests.test_missing_bindings_blocks)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_case_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_missing_case_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_mask_model_coverage_blocks (test_authored_matcen_report.AuthoredMatcenReportTests.test_missing_mask_model_coverage_blocks)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_metadata_never_starts_native (test_authored_matcen_report.AuthoredMatcenReportTests.test_missing_metadata_never_starts_native)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_missing_physical_limits_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_missing_physical_limits_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_mission_document_selection_is_unique (test_authored_matcen_report.AuthoredMatcenReportTests.test_mission_document_selection_is_unique)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_no_dispatch_birth_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_no_dispatch_birth_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_no_spawn_cannot_be_its_own_passing_baseline (test_authored_matcen_report.AuthoredMatcenReportTests.test_no_spawn_cannot_be_its_own_passing_baseline)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_no_trigger_links_needs_review (test_authored_matcen_report.AuthoredMatcenReportTests.test_no_trigger_links_needs_review)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_physical_out_of_bounds_blocks (test_authored_matcen_report.AuthoredMatcenReportTests.test_physical_out_of_bounds_blocks)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_physical_station_safe_but_creator_encoding_unavailable (test_authored_matcen_report.AuthoredMatcenReportTests.test_physical_station_safe_but_creator_encoding_unavailable)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_positive_and_compact_historical_comparison (test_authored_matcen_report.AuthoredMatcenReportTests.test_positive_and_compact_historical_comparison)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_redundant_runtime_backlink_normalization_allowed (test_authored_matcen_report.AuthoredMatcenReportTests.test_redundant_runtime_backlink_normalization_allowed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_robot_model_runtime_bound_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_robot_model_runtime_bound_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_runner_keeps_inputs_and_uses_three_isolated_homes (test_authored_matcen_report.AuthoredMatcenReportTests.test_runner_keeps_inputs_and_uses_three_isolated_homes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_skip_requires_reason_and_review (test_authored_matcen_report.AuthoredMatcenReportTests.test_skip_requires_reason_and_review)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_skipped_execution_misclaim_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_skipped_execution_misclaim_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_symlink_and_unsafe_manifest_paths_blocked (test_authored_matcen_report.AuthoredMatcenReportTests.test_symlink_and_unsafe_manifest_paths_blocked)",
+      "original": "skipped \"host cannot create file symlinks: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\FIRSTL~1\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\tmpec5cw5op\\\\\\\\level.rdl' -> 'C:\\\\\\\\Users\\\\\\\\FIRSTL~1\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\tmpec5cw5op\\\\\\\\linked.rdl'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_wrong_edition_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_wrong_edition_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_wrong_input_identity_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_wrong_input_identity_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_wrong_mapping_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_wrong_mapping_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_wrong_robot_mask_rejected (test_authored_matcen_report.AuthoredMatcenReportTests.test_wrong_robot_mask_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_report",
+      "case": "test_wrong_station_join_blocks (test_authored_matcen_report.AuthoredMatcenReportTests.test_wrong_station_join_blocks)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_report.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_assets_rechecked_before_every_invocation (test_authored_matcen_save.AuthoredMatcenSaveTest.test_assets_rechecked_before_every_invocation)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_bounded_manifest_admission (test_authored_matcen_save.AuthoredMatcenSaveTest.test_bounded_manifest_admission)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_center_and_birth_admission (test_authored_matcen_save.AuthoredMatcenSaveTest.test_center_and_birth_admission)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_changed_extra_missing_assets_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_changed_extra_missing_assets_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_every_pinned_station_requires_positive_births (test_authored_matcen_save.AuthoredMatcenSaveTest.test_every_pinned_station_requires_positive_births)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_final_invocation_mutations_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_final_invocation_mutations_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_identity_map_timing_and_terminal_mutations_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_identity_map_timing_and_terminal_mutations_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_invalid_pinned_bindings_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_invalid_pinned_bindings_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_joint_mapping_drift_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_joint_mapping_drift_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_missing_or_empty_births_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_missing_or_empty_births_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_no_dispatch_activity_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_no_dispatch_activity_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_runner_four_cold_invocations_and_hashes (test_authored_matcen_save.AuthoredMatcenSaveTest.test_runner_four_cold_invocations_and_hashes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_timeout_fails (test_authored_matcen_save.AuthoredMatcenSaveTest.test_timeout_fails)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_unsafe_manifest_paths_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_unsafe_manifest_paths_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_unsafe_output_and_symlinks_rejected (test_authored_matcen_save.AuthoredMatcenSaveTest.test_unsafe_output_and_symlinks_rejected)",
+      "original": "skipped 'Windows account cannot create the symlink needed by this rejection check'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_valid_oracle (test_authored_matcen_save.AuthoredMatcenSaveTest.test_valid_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_authored_matcen_save",
+      "case": "test_zero_exit_without_report_fails_and_preserves_log (test_authored_matcen_save.AuthoredMatcenSaveTest.test_zero_exit_without_report_fails_and_preserves_log)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_authored_matcen_save.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_changed_defined_identities_and_robot_data_rejected (test_matcen_metadata.MatcenMetadataTests.test_changed_defined_identities_and_robot_data_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_changed_or_missing_shared_robot_model_rejected (test_matcen_metadata.MatcenMetadataTests.test_changed_or_missing_shared_robot_model_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_contradictory_join_and_duplicate_identity_rejected (test_matcen_metadata.MatcenMetadataTests.test_contradictory_join_and_duplicate_identity_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_incomplete_rejected_and_empty_capture_fail (test_matcen_metadata.MatcenMetadataTests.test_incomplete_rejected_and_empty_capture_fail)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_missing_reference_or_actual_is_not_success (test_matcen_metadata.MatcenMetadataTests.test_missing_reference_or_actual_is_not_success)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_ordered_trigger_target_and_duplicate_loss_rejected (test_matcen_metadata.MatcenMetadataTests.test_ordered_trigger_target_and_duplicate_loss_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_same_capture_and_redundant_backlink_normalization (test_matcen_metadata.MatcenMetadataTests.test_same_capture_and_redundant_backlink_normalization)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_shared_model_table_order_is_not_binding_order (test_matcen_metadata.MatcenMetadataTests.test_shared_model_table_order_is_not_binding_order)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_unbound_globals_are_not_golden_robot_masks (test_matcen_metadata.MatcenMetadataTests.test_unbound_globals_are_not_golden_robot_masks)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_unrelated_shared_models_do_not_change_defined_binding (test_matcen_metadata.MatcenMetadataTests.test_unrelated_shared_models_do_not_change_defined_binding)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_unsafe_station_remains_review_required (test_matcen_metadata.MatcenMetadataTests.test_unsafe_station_remains_review_required)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_matcen_metadata",
+      "case": "test_v1_metadata_is_not_accepted (test_matcen_metadata.MatcenMetadataTests.test_v1_metadata_is_not_accepted)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_matcen_metadata.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_exec_out_missing_file_is_not_valid_json (test_mod_fuzz_controls.CampaignControls.test_exec_out_missing_file_is_not_valid_json)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_exhausted_resume_preserves_prior_failure_and_restores_power (test_mod_fuzz_controls.CampaignControls.test_exhausted_resume_preserves_prior_failure_and_restores_power)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_failure_capture_includes_secret_companions_and_lettered_slots (test_mod_fuzz_controls.CampaignControls.test_failure_capture_includes_secret_companions_and_lettered_slots)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_failure_signature_ignores_android_service_noise_and_duplicates (test_mod_fuzz_controls.CampaignControls.test_failure_signature_ignores_android_service_noise_and_duplicates)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_native_failure_signature_keeps_distinct_relative_fault_locations (test_mod_fuzz_controls.CampaignControls.test_native_failure_signature_keeps_distinct_relative_fault_locations)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_outcomes_keep_missing_data_and_timeouts_out_of_passes (test_mod_fuzz_controls.CampaignControls.test_outcomes_keep_missing_data_and_timeouts_out_of_passes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_partial_journal_does_not_complete_interrupted_case (test_mod_fuzz_controls.CampaignControls.test_partial_journal_does_not_complete_interrupted_case)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_removing_last_mod_retains_save_restore_transitions (test_mod_fuzz_controls.CampaignControls.test_removing_last_mod_retains_save_restore_transitions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_reproducibility_and_valid_resolution_alternatives (test_mod_fuzz_controls.CampaignControls.test_reproducibility_and_valid_resolution_alternatives)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_shared_list_preserves_disabled_variants_and_game_specific_owners (test_mod_fuzz_controls.CampaignControls.test_shared_list_preserves_disabled_variants_and_game_specific_owners)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_shrinking_keeps_trigger_and_bounds_attempts (test_mod_fuzz_controls.CampaignControls.test_shrinking_keeps_trigger_and_bounds_attempts)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_mod_fuzz_controls",
+      "case": "test_successful_case_ignores_unrelated_system_timeout (test_mod_fuzz_controls.CampaignControls.test_successful_case_ignores_unrelated_system_timeout)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_mod_fuzz_controls.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_archive_traversal_rejected (test_nightly_android_fixtures.FixtureTests.test_archive_traversal_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_bad_download_not_published (test_nightly_android_fixtures.FixtureTests.test_bad_download_not_published)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_bounded_download_verified_before_publish (test_nightly_android_fixtures.FixtureTests.test_bounded_download_verified_before_publish)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_identity_and_encoded_fixed_release (test_nightly_android_fixtures.FixtureTests.test_identity_and_encoded_fixed_release)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_invalid_existing_package_preserved (test_nightly_android_fixtures.FixtureTests.test_invalid_existing_package_preserved)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_missing_requires_explicit_download (test_nightly_android_fixtures.FixtureTests.test_missing_requires_explicit_download)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_oracle_manifest_disagreement_rejected (test_nightly_android_fixtures.FixtureTests.test_oracle_manifest_disagreement_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_package_budget_rejected (test_nightly_android_fixtures.FixtureTests.test_package_budget_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_real_generated_audio_repeats_and_refuses_overwrite (test_nightly_android_fixtures.FixtureTests.test_real_generated_audio_repeats_and_refuses_overwrite)",
+      "original": "skipped 'FFmpeg tools required'",
+      "resolved": "skipped 'FFmpeg tools required'",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_unpublished_original_is_not_substituted (test_nightly_android_fixtures.FixtureTests.test_unpublished_original_is_not_substituted)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_valid_cache_never_downloads (test_nightly_android_fixtures.FixtureTests.test_valid_cache_never_downloads)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_existing_same_uid_grant_is_accepted (test_nightly_android_fixtures.KvmRefreshTests.test_existing_same_uid_grant_is_accepted)",
+      "original": "skipped 'Linux-only KVM ACL refresh helper'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_extended_original_snapshot_is_rejected_without_overwriting (test_nightly_android_fixtures.KvmRefreshTests.test_extended_original_snapshot_is_rejected_without_overwriting)",
+      "original": "skipped 'Linux-only KVM ACL refresh helper'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_original_and_disappeared_grant_can_be_refreshed (test_nightly_android_fixtures.KvmRefreshTests.test_original_and_disappeared_grant_can_be_refreshed)",
+      "original": "skipped 'Linux-only KVM ACL refresh helper'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_refresh_never_replaces_original_snapshot_or_authorized_uid (test_nightly_android_fixtures.KvmRefreshTests.test_refresh_never_replaces_original_snapshot_or_authorized_uid)",
+      "original": "skipped 'Linux-only KVM ACL refresh helper'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_unexpected_security_changes_are_rejected (test_nightly_android_fixtures.KvmRefreshTests.test_unexpected_security_changes_are_rejected)",
+      "original": "skipped 'Linux-only KVM ACL refresh helper'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_cleanup_is_unconditional_and_restores_prior_acl (test_nightly_android_fixtures.KvmWorkflowContractTests.test_cleanup_is_unconditional_and_restores_prior_acl)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_each_launch_records_actual_access_without_expanding_permissions (test_nightly_android_fixtures.KvmWorkflowContractTests.test_each_launch_records_actual_access_without_expanding_permissions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_grant_is_only_existing_runner_user_on_real_kvm (test_nightly_android_fixtures.KvmWorkflowContractTests.test_grant_is_only_existing_runner_user_on_real_kvm)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_emulator_runtime_is_provisioned_and_checked_before_build (test_nightly_android_fixtures.SdkWorkflowContractTests.test_emulator_runtime_is_provisioned_and_checked_before_build)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_managed_sdk_uses_plain_private_directory (test_nightly_android_fixtures.SdkWorkflowContractTests.test_managed_sdk_uses_plain_private_directory)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_android_fixtures.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_every_level_has_its_own_owner_including_zero_and_negative (test_nightly_regression_catalog.CorpusCatalogTests.test_every_level_has_its_own_owner_including_zero_and_negative)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_existing_baselines_create_distinct_bounded_typed_owners (test_nightly_regression_catalog.CorpusCatalogTests.test_existing_baselines_create_distinct_bounded_typed_owners)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_grouped_sample_and_public_basic_use_campaign (test_nightly_regression_catalog.CorpusCatalogTests.test_grouped_sample_and_public_basic_use_campaign)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_missing_corpus_stays_pending_and_cannot_reuse_old_asset_receipts (test_nightly_regression_catalog.CorpusCatalogTests.test_missing_corpus_stays_pending_and_cannot_reuse_old_asset_receipts)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_private_corpus_rejects_control_target_sha_mismatch (test_nightly_regression_catalog.CorpusCatalogTests.test_private_corpus_rejects_control_target_sha_mismatch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_same_revision_traverses_every_route_leaf_then_stops (test_nightly_regression_catalog.CorpusCatalogTests.test_same_revision_traverses_every_route_leaf_then_stops)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_stage_requires_exact_reviewed_checkout_and_never_overwrites (test_nightly_regression_catalog.CorpusCatalogTests.test_stage_requires_exact_reviewed_checkout_and_never_overwrites)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_catalog",
+      "case": "test_standalone_helper_import_and_dirty_blob_rejection (test_nightly_regression_catalog.CorpusCatalogTests.test_standalone_helper_import_and_dirty_blob_rejection)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_catalog.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_engine_mode_header_is_semantic (test_nightly_regression_corpus.CorpusComparisons.test_engine_mode_header_is_semantic)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_known_non_ok_outcome_compares_without_confirmed_coverage (test_nightly_regression_corpus.CorpusComparisons.test_known_non_ok_outcome_compares_without_confirmed_coverage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_metadata_exact_and_semantic_dates (test_nightly_regression_corpus.CorpusComparisons.test_metadata_exact_and_semantic_dates)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_metadata_missing_skipped_failed_and_shape (test_nightly_regression_corpus.CorpusComparisons.test_metadata_missing_skipped_failed_and_shape)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_mutated_oracle_cannot_be_its_own_expected_output (test_nightly_regression_corpus.CorpusComparisons.test_mutated_oracle_cannot_be_its_own_expected_output)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_route_exact_and_unselected_aggregate (test_nightly_regression_corpus.CorpusComparisons.test_route_exact_and_unselected_aggregate)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_route_missing_selection_or_leaf (test_nightly_regression_corpus.CorpusComparisons.test_route_missing_selection_or_leaf)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_route_non_ok_never_passes (test_nightly_regression_corpus.CorpusComparisons.test_route_non_ok_never_passes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_route_requires_full_state (test_nightly_regression_corpus.CorpusComparisons.test_route_requires_full_state)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_route_state_drift (test_nightly_regression_corpus.CorpusComparisons.test_route_state_drift)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_route_wrong_mode_publication_and_header (test_nightly_regression_corpus.CorpusComparisons.test_route_wrong_mode_publication_and_header)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_wrong_selected_level_never_passes (test_nightly_regression_corpus.CorpusComparisons.test_wrong_selected_level_never_passes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_regression_corpus",
+      "case": "test_zero_geometry_is_not_a_passing_oracle (test_nightly_regression_corpus.CorpusComparisons.test_zero_geometry_is_not_a_passing_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_regression_corpus.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_changed_data_commit_cannot_reuse_pass (test_nightly_retail.RetailBoundaryTests.test_changed_data_commit_cannot_reuse_pass)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_checkout_cli_rejects_untrusted_or_changed_configuration (test_nightly_retail.RetailBoundaryTests.test_checkout_cli_rejects_untrusted_or_changed_configuration)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_configuration_requires_immutable_commit (test_nightly_retail.RetailBoundaryTests.test_configuration_requires_immutable_commit)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_corpus_setup_stages_survive_projection_without_raw_diagnostics (test_nightly_retail.RetailBoundaryTests.test_corpus_setup_stages_survive_projection_without_raw_diagnostics)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_failed_setup_remains_pending_after_projection (test_nightly_retail.RetailBoundaryTests.test_failed_setup_remains_pending_after_projection)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_identity_binds_manifest_repository_commit_and_batch (test_nightly_retail.RetailBoundaryTests.test_identity_binds_manifest_repository_commit_and_batch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_missing_config_pending_not_excluded_or_completed (test_nightly_retail.RetailBoundaryTests.test_missing_config_pending_not_excluded_or_completed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_mission_owners_require_the_same_private_boundary (test_nightly_retail.RetailBoundaryTests.test_mission_owners_require_the_same_private_boundary)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_only_exact_trusted_cmake_entry_can_enable_assets (test_nightly_retail.RetailBoundaryTests.test_only_exact_trusted_cmake_entry_can_enable_assets)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_projection_removes_all_arbitrary_test_strings (test_nightly_retail.RetailBoundaryTests.test_projection_removes_all_arbitrary_test_strings)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_reusable_workflow_passes_only_named_retail_secret (test_nightly_retail.RetailBoundaryTests.test_reusable_workflow_passes_only_named_retail_secret)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_retail",
+      "case": "test_workflow_secret_and_artifact_boundary_is_explicit (test_nightly_retail.RetailBoundaryTests.test_workflow_secret_and_artifact_boundary_is_explicit)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_retail.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_all_done_has_no_wrap (test_nightly_tooling_sweep.SweepTests.test_all_done_has_no_wrap)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_attempt_must_match_batch_lane_and_github_run (test_nightly_tooling_sweep.SweepTests.test_attempt_must_match_batch_lane_and_github_run)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_changed_catalog_reconsiders_blockages (test_nightly_tooling_sweep.SweepTests.test_changed_catalog_reconsiders_blockages)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_conflicting_duplicates_rejected_identical_idempotent (test_nightly_tooling_sweep.SweepTests.test_conflicting_duplicates_rejected_identical_idempotent)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_conflicting_terminal_journal_cannot_be_overwritten (test_nightly_tooling_sweep.SweepTests.test_conflicting_terminal_journal_cannot_be_overwritten)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_each_of_four_lanes_has_its_own_bounded_budget (test_nightly_tooling_sweep.SweepTests.test_each_of_four_lanes_has_its_own_bounded_budget)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_failed_master_without_receipts_is_pending_with_diagnostic (test_nightly_tooling_sweep.SweepTests.test_failed_master_without_receipts_is_pending_with_diagnostic)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_failures_are_completed_but_remain_failed (test_nightly_tooling_sweep.SweepTests.test_failures_are_completed_but_remain_failed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_first_play_evidence_is_public_only_and_keeps_receipt_root (test_nightly_tooling_sweep.SweepTests.test_first_play_evidence_is_public_only_and_keeps_receipt_root)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_first_play_is_fixed_public_and_within_each_lane_budget (test_nightly_tooling_sweep.SweepTests.test_first_play_is_fixed_public_and_within_each_lane_budget)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_first_play_public_variants_provision_originals_on_both_lanes (test_nightly_tooling_sweep.SweepTests.test_first_play_public_variants_provision_originals_on_both_lanes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_first_play_rejects_missing_owner_and_retail_reclassification (test_nightly_tooling_sweep.SweepTests.test_first_play_rejects_missing_owner_and_retail_reclassification)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_graphics_campaign_discards_old_pass_and_requires_all_fresh_receipts (test_nightly_tooling_sweep.SweepTests.test_graphics_campaign_discards_old_pass_and_requires_all_fresh_receipts)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_graphics_campaign_is_exact_public_and_within_lane_budget (test_nightly_tooling_sweep.SweepTests.test_graphics_campaign_is_exact_public_and_within_lane_budget)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_graphics_campaign_is_manual_only_and_never_publishes_progress (test_nightly_tooling_sweep.SweepTests.test_graphics_campaign_is_manual_only_and_never_publishes_progress)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_graphics_campaign_rejects_missing_owner_retail_and_overbudget (test_nightly_tooling_sweep.SweepTests.test_graphics_campaign_rejects_missing_owner_retail_and_overbudget)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_graphics_failure_collector_is_exact_bounded_and_rejects_links (test_nightly_tooling_sweep.SweepTests.test_graphics_failure_collector_is_exact_bounded_and_rejects_links)",
+      "original": "ERROR",
+      "resolved": "ok",
+      "evidence": "nightly_linux_retry.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_graphics_failure_snapshot_precedes_cleanup_without_changing_oracle (test_nightly_tooling_sweep.SweepTests.test_graphics_failure_snapshot_precedes_cleanup_without_changing_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_host_installs_isolated_pinned_spectral_runtime (test_nightly_tooling_sweep.SweepTests.test_host_installs_isolated_pinned_spectral_runtime)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_host_metadata_cli_bootstraps_before_private_inputs (test_nightly_tooling_sweep.SweepTests.test_host_metadata_cli_bootstraps_before_private_inputs)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_large_leaf_tracebacks_stay_out_of_permanent_ledger (test_nightly_tooling_sweep.SweepTests.test_large_leaf_tracebacks_stay_out_of_permanent_ledger)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_malformed_ledger_never_silently_resets (test_nightly_tooling_sweep.SweepTests.test_malformed_ledger_never_silently_resets)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_manual_first_play_requires_selected_receipts_and_exact_target (test_nightly_tooling_sweep.SweepTests.test_manual_first_play_requires_selected_receipts_and_exact_target)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_mismatched_revision_catalog_and_batch_rejected (test_nightly_tooling_sweep.SweepTests.test_mismatched_revision_catalog_and_batch_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_missing_journal_remains_pending (test_nightly_tooling_sweep.SweepTests.test_missing_journal_remains_pending)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_native_replay_display_wraps_unchanged_executor_only_when_selected (test_nightly_tooling_sweep.SweepTests.test_native_replay_display_wraps_unchanged_executor_only_when_selected)",
+      "original": "skipped 'Native replay display setup runs in the Linux Android job'",
+      "resolved": "ok",
+      "evidence": "nightly_linux_retry.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_network_paths_trigger_existing_pr_sample (test_nightly_tooling_sweep.SweepTests.test_network_paths_trigger_existing_pr_sample)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_new_sha_starts_fresh (test_nightly_tooling_sweep.SweepTests.test_new_sha_starts_fresh)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_no_receipts_no_progress (test_nightly_tooling_sweep.SweepTests.test_no_receipts_no_progress)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_nonzero_master_exit_fails_lane_even_without_test_failures (test_nightly_tooling_sweep.SweepTests.test_nonzero_master_exit_fails_lane_even_without_test_failures)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_only_selected_auto_level_owners_require_native_replay_setup (test_nightly_tooling_sweep.SweepTests.test_only_selected_auto_level_owners_require_native_replay_setup)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_oversized_owner_rejected_instead_of_starving (test_nightly_tooling_sweep.SweepTests.test_oversized_owner_rejected_instead_of_starving)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_partial_interruption_advances_only_completed (test_nightly_tooling_sweep.SweepTests.test_partial_interruption_advances_only_completed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_partial_journal_retains_terminal_and_ignores_torn_append (test_nightly_tooling_sweep.SweepTests.test_partial_journal_retains_terminal_and_ignores_torn_append)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_plan_cannot_inject_commands_or_unknown_owner (test_nightly_tooling_sweep.SweepTests.test_plan_cannot_inject_commands_or_unknown_owner)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_planning_does_not_advance_and_repeats_identically (test_nightly_tooling_sweep.SweepTests.test_planning_does_not_advance_and_repeats_identically)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_prelaunch_failure_is_retryable_not_test_failure (test_nightly_tooling_sweep.SweepTests.test_prelaunch_failure_is_retryable_not_test_failure)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_previous_raw_receipts_are_cleared_before_launch (test_nightly_tooling_sweep.SweepTests.test_previous_raw_receipts_are_cleared_before_launch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_public_network_recovery_is_bounded_and_not_default_pr_work (test_nightly_tooling_sweep.SweepTests.test_public_network_recovery_is_bounded_and_not_default_pr_work)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_real_nonzero_process_cannot_certify_pass (test_nightly_tooling_sweep.SweepTests.test_real_nonzero_process_cannot_certify_pass)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_real_partial_pass_and_unknown_script_coverage_remain_valid (test_nightly_tooling_sweep.SweepTests.test_real_partial_pass_and_unknown_script_coverage_remain_valid)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_receipt_discovery_handles_single_and_multiple_artifact_layouts (test_nightly_tooling_sweep.SweepTests.test_receipt_discovery_handles_single_and_multiple_artifact_layouts)",
+      "original": "skipped 'Hosted receipt discovery runs in the Linux coordinator'",
+      "resolved": "ok",
+      "evidence": "nightly_linux_retry.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_representative_validation_covers_four_lanes_within_budgets (test_nightly_tooling_sweep.SweepTests.test_representative_validation_covers_four_lanes_within_budgets)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_required_selection_rejects_missing_blocked_and_failed_receipts (test_nightly_tooling_sweep.SweepTests.test_required_selection_rejects_missing_blocked_and_failed_receipts)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_retryable_infrastructure_does_not_starve_untried (test_nightly_tooling_sweep.SweepTests.test_retryable_infrastructure_does_not_starve_untried)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_seeded_sweep_resume_is_finite_and_never_repeats_terminal (test_nightly_tooling_sweep.SweepTests.test_seeded_sweep_resume_is_finite_and_never_repeats_terminal)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_sha_seed_changes_order_without_reusing_certification (test_nightly_tooling_sweep.SweepTests.test_sha_seed_changes_order_without_reusing_certification)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_shareware_refresh_precedes_each_owner_and_failure_stays_pending (test_nightly_tooling_sweep.SweepTests.test_shareware_refresh_precedes_each_owner_and_failure_stays_pending)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_source_hooks_do_not_use_wildcard_or_random_target (test_nightly_tooling_sweep.SweepTests.test_source_hooks_do_not_use_wildcard_or_random_target)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_stable_target_capability_is_exclusion_not_coverage (test_nightly_tooling_sweep.SweepTests.test_stable_target_capability_is_exclusion_not_coverage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_structured_contradictions_and_no_pass_stay_red (test_nightly_tooling_sweep.SweepTests.test_structured_contradictions_and_no_pass_stay_red)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_success_receipt_is_not_labelled_infrastructure (test_nightly_tooling_sweep.SweepTests.test_success_receipt_is_not_labelled_infrastructure)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_test_timeout_is_failed_attempt_not_success (test_nightly_tooling_sweep.SweepTests.test_test_timeout_is_failed_attempt_not_success)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_timeout_cleanup_is_bounded (test_nightly_tooling_sweep.SweepTests.test_timeout_cleanup_is_bounded)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_transient_blockage_retries_without_coverage (test_nightly_tooling_sweep.SweepTests.test_transient_blockage_retries_without_coverage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_unbound_journal_never_certifies (test_nightly_tooling_sweep.SweepTests.test_unbound_journal_never_certifies)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_unknown_and_wrong_lane_results_rejected (test_nightly_tooling_sweep.SweepTests.test_unknown_and_wrong_lane_results_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_unknown_catalog_suites_are_visible_exclusions (test_nightly_tooling_sweep.SweepTests.test_unknown_catalog_suites_are_visible_exclusions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_zero_host_exit_without_receipt_is_pending (test_nightly_tooling_sweep.SweepTests.test_zero_host_exit_without_receipt_is_pending)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_nightly_tooling_sweep",
+      "case": "test_zero_runner_missing_required_receipts_fails_only_pr_validation (test_nightly_tooling_sweep.SweepTests.test_zero_runner_missing_required_receipts_fails_only_pr_validation)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_nightly_tooling_sweep.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_admission_requires_exact_private_commit_and_trusted_entry (test_private_input_demos.PrivateDemoTests.test_admission_requires_exact_private_commit_and_trusted_entry)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_command_never_weakens_original_oracle (test_private_input_demos.PrivateDemoTests.test_command_never_weakens_original_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_host_profile_uses_headless_target_and_private_stage (test_private_input_demos.PrivateDemoTests.test_host_profile_uses_headless_target_and_private_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_manifest_has_only_the_two_originals (test_private_input_demos.PrivateDemoTests.test_manifest_has_only_the_two_originals)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_missing_and_changed_bytes_fail_before_parsing_or_copy (test_private_input_demos.PrivateDemoTests.test_missing_and_changed_bytes_fail_before_parsing_or_copy)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_native_failure_controls_and_both_cases_attempted (test_private_input_demos.PrivateDemoTests.test_native_failure_controls_and_both_cases_attempted)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_oracle_rejects_boolean_float_and_array_type_substitutions (test_private_input_demos.PrivateDemoTests.test_oracle_rejects_boolean_float_and_array_type_substitutions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_terminal_oracle_catches_missing_truncated_and_changed_state (test_private_input_demos.PrivateDemoTests.test_terminal_oracle_catches_missing_truncated_and_changed_state)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_private_input_demos",
+      "case": "test_windows_replay_isolates_executable_settings_and_runtime_libraries (test_private_input_demos.PrivateDemoTests.test_windows_replay_isolates_executable_settings_and_runtime_libraries)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_private_input_demos.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_consistent_but_historically_wrong_reports_fail (test_public_matcen_report.HistoricalMatcenTests.test_consistent_but_historically_wrong_reports_fail)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_incidental_allocation_ids_do_not_change_historical_signature (test_public_matcen_report.HistoricalMatcenTests.test_incidental_allocation_ids_do_not_change_historical_signature)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_official_d2_level_2_backlinks_must_not_reorder_masks (test_public_matcen_report.HistoricalMatcenTests.test_official_d2_level_2_backlinks_must_not_reorder_masks)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_pinned_historical_traces (test_public_matcen_report.HistoricalMatcenTests.test_pinned_historical_traces)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_wrong_but_mask_permitted_robot_type_fails_history (test_public_matcen_report.HistoricalMatcenTests.test_wrong_but_mask_permitted_robot_type_fails_history)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_both_real_nonempty_profiles (test_public_matcen_report.MatcenEvidenceTests.test_both_real_nonempty_profiles)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_dispatch_negative_controls (test_public_matcen_report.MatcenEvidenceTests.test_dispatch_negative_controls)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_public_matcen_report",
+      "case": "test_rejects_vacuous_or_incorrect_results (test_public_matcen_report.MatcenEvidenceTests.test_rejects_vacuous_or_incorrect_results)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_public_matcen_report.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_coop_positive_save_fixture_uses_authoritative_format (test_regression_tool_contracts.RegressionToolContractsTest.test_coop_positive_save_fixture_uses_authoritative_format)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_desktop_targets_keep_public_executable_names (test_regression_tool_contracts.RegressionToolContractsTest.test_desktop_targets_keep_public_executable_names)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_health_uses_selected_emulator (test_regression_tool_contracts.RegressionToolContractsTest.test_health_uses_selected_emulator)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_host_uses_shared_mission_variant_policy (test_regression_tool_contracts.RegressionToolContractsTest.test_host_uses_shared_mission_variant_policy)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_lan_broadcast_failure_contract (test_regression_tool_contracts.RegressionToolContractsTest.test_lan_broadcast_failure_contract)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_lan_owners_keep_configured_pair_and_report_missing_devices (test_regression_tool_contracts.RegressionToolContractsTest.test_lan_owners_keep_configured_pair_and_report_missing_devices)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_mission_archive_appendage_is_shared_across_regression_workflows (test_regression_tool_contracts.RegressionToolContractsTest.test_mission_archive_appendage_is_shared_across_regression_workflows)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_mission_batch_forwards_serial_to_shared_target_policy (test_regression_tool_contracts.RegressionToolContractsTest.test_mission_batch_forwards_serial_to_shared_target_policy)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_mission_batch_preflights_before_hash_or_inspection (test_regression_tool_contracts.RegressionToolContractsTest.test_mission_batch_preflights_before_hash_or_inspection)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_mission_metadata_json_gate (test_regression_tool_contracts.RegressionToolContractsTest.test_mission_metadata_json_gate)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_normalizer_file_failure_preserves_original (test_regression_tool_contracts.RegressionToolContractsTest.test_normalizer_file_failure_preserves_original)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_regression_tool_contracts",
+      "case": "test_normalizer_rejects_ambiguous_json (test_regression_tool_contracts.RegressionToolContractsTest.test_normalizer_rejects_ambiguous_json)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_regression_tool_contracts.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_canonical_digest_binds_paths_hashes_and_matches_trusted_baseline (test_retail_ci_assets.RetailAssetTests.test_canonical_digest_binds_paths_hashes_and_matches_trusted_baseline)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_changed_missing_duplicate_and_extra_pin_contracts_fail_closed (test_retail_ci_assets.RetailAssetTests.test_changed_missing_duplicate_and_extra_pin_contracts_fail_closed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_cli_missions_switch_keeps_reviewed_pins_and_reports_raw_mismatch (test_retail_ci_assets.RetailAssetTests.test_cli_missions_switch_keeps_reviewed_pins_and_reports_raw_mismatch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_cli_refuses_synthetic_bytes_against_real_repository_pins (test_retail_ci_assets.RetailAssetTests.test_cli_refuses_synthetic_bytes_against_real_repository_pins)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_cli_rejects_duplicate_source_map_keys_and_nonobject_json (test_retail_ci_assets.RetailAssetTests.test_cli_rejects_duplicate_source_map_keys_and_nonobject_json)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_cli_rejects_symlinked_report_paths (test_retail_ci_assets.RetailAssetTests.test_cli_rejects_symlinked_report_paths)",
+      "original": "skipped \"Symlink creation is unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-2_d_h3ne\\\\\\\\input\\\\\\\\d1\\\\\\\\descent.hog' -> 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-2_d_h3ne\\\\\\\\report.json'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_cli_report_cannot_overwrite_inputs_existing_reports_or_stage_content (test_retail_ci_assets.RetailAssetTests.test_cli_report_cannot_overwrite_inputs_existing_reports_or_stage_content)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_cli_stages_verified_synthetic_fixture_and_metadata_report (test_retail_ci_assets.RetailAssetTests.test_cli_stages_verified_synthetic_fixture_and_metadata_report)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_copy_failure_removes_partial_stage (test_retail_ci_assets.RetailAssetTests.test_copy_failure_removes_partial_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_descriptor_edits_and_unreviewed_line_endings_never_normalize (test_retail_ci_assets.RetailAssetTests.test_descriptor_edits_and_unreviewed_line_endings_never_normalize)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_descriptor_normalization_must_match_existing_destination_pin (test_retail_ci_assets.RetailAssetTests.test_descriptor_normalization_must_match_existing_destination_pin)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_each_metadata_stream_still_rejects_real_changes (test_retail_ci_assets.RetailAssetTests.test_each_metadata_stream_still_rejects_real_changes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_existing_stage_is_preserved (test_retail_ci_assets.RetailAssetTests.test_existing_stage_is_preserved)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_expanded_identity_binds_both_hashes_paths_and_transform (test_retail_ci_assets.RetailAssetTests.test_expanded_identity_binds_both_hashes_paths_and_transform)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_explicit_source_map_preserves_uploaded_paths_and_canonical_identity (test_retail_ci_assets.RetailAssetTests.test_explicit_source_map_preserves_uploaded_paths_and_canonical_identity)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_incomplete_or_malformed_expected_pins_are_rejected (test_retail_ci_assets.RetailAssetTests.test_incomplete_or_malformed_expected_pins_are_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_input_stage_overlap_is_rejected (test_retail_ci_assets.RetailAssetTests.test_input_stage_overlap_is_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_inventory_records_measured_sizes_hashes_and_no_raw_bytes (test_retail_ci_assets.RetailAssetTests.test_inventory_records_measured_sizes_hashes_and_no_raw_bytes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_manifest_paths_duplicates_missing_rows_and_unverified_rows_are_rejected (test_retail_ci_assets.RetailAssetTests.test_manifest_paths_duplicates_missing_rows_and_unverified_rows_are_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_mapped_missing_file_and_wrong_edition_never_fall_back_to_canonical (test_retail_ci_assets.RetailAssetTests.test_mapped_missing_file_and_wrong_edition_never_fall_back_to_canonical)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_mapped_source_change_is_detected_and_partial_stage_removed (test_retail_ci_assets.RetailAssetTests.test_mapped_source_change_is_detected_and_partial_stage_removed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_mapped_symlink_ancestor_and_linked_source_map_are_rejected (test_retail_ci_assets.RetailAssetTests.test_mapped_symlink_ancestor_and_linked_source_map_are_rejected)",
+      "original": "skipped \"Symlink creation is unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-m56i95vp\\\\\\\\input\\\\\\\\real' -> 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-m56i95vp\\\\\\\\input\\\\\\\\descent_1.4a_retail'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_measured_size_is_checked_during_stage (test_retail_ci_assets.RetailAssetTests.test_measured_size_is_checked_during_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_midstream_change_or_path_replacement_is_rejected_and_stage_removed (test_retail_ci_assets.RetailAssetTests.test_midstream_change_or_path_replacement_is_rejected_and_stage_removed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_mismatched_edition_is_reported_but_never_staged (test_retail_ci_assets.RetailAssetTests.test_mismatched_edition_is_reported_but_never_staged)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_missing_file_does_not_publish_a_success_report (test_retail_ci_assets.RetailAssetTests.test_missing_file_does_not_publish_a_success_report)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_missing_input_root_game_file_and_nonregular_input_are_rejected (test_retail_ci_assets.RetailAssetTests.test_missing_input_root_game_file_and_nonregular_input_are_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_missing_supplemental_files_are_not_silently_omitted (test_retail_ci_assets.RetailAssetTests.test_missing_supplemental_files_are_not_silently_omitted)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_missions_are_explicit_opt_in_with_unchanged_base_contract (test_retail_ci_assets.RetailAssetTests.test_missions_are_explicit_opt_in_with_unchanged_base_contract)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_open_descriptor_must_still_match_pathname_identity (test_retail_ci_assets.RetailAssetTests.test_open_descriptor_must_still_match_pathname_identity)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_repository_baseline_remains_exactly_eleven_source_pins (test_retail_ci_assets.RetailAssetTests.test_repository_baseline_remains_exactly_eleven_source_pins)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_source_change_after_inventory_removes_partial_stage (test_retail_ci_assets.RetailAssetTests.test_source_change_after_inventory_removes_partial_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_source_map_requires_exact_keys_and_unique_portable_relative_paths (test_retail_ci_assets.RetailAssetTests.test_source_map_requires_exact_keys_and_unique_portable_relative_paths)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_stage_copies_only_exact_verified_files (test_retail_ci_assets.RetailAssetTests.test_stage_copies_only_exact_verified_files)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_stage_revalidates_manifest_source_paths_before_copying (test_retail_ci_assets.RetailAssetTests.test_stage_revalidates_manifest_source_paths_before_copying)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_staged_bytes_are_independently_verified (test_retail_ci_assets.RetailAssetTests.test_staged_bytes_are_independently_verified)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_staged_mission_recheck_rejects_changed_destination_bytes (test_retail_ci_assets.RetailAssetTests.test_staged_mission_recheck_rejects_changed_destination_bytes)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_stat_and_fstat_timestamps_can_differ_for_unchanged_files (test_retail_ci_assets.RetailAssetTests.test_stat_and_fstat_timestamps_can_differ_for_unchanged_files)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_supplemental_hog_and_zip_mismatch_records_actual_bytes_and_refuses_stage (test_retail_ci_assets.RetailAssetTests.test_supplemental_hog_and_zip_mismatch_records_actual_bytes_and_refuses_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_supplemental_manifest_cannot_change_membership_sources_pins_or_transform (test_retail_ci_assets.RetailAssetTests.test_supplemental_manifest_cannot_change_membership_sources_pins_or_transform)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_supplemental_source_changes_after_inventory_remove_entire_stage (test_retail_ci_assets.RetailAssetTests.test_supplemental_source_changes_after_inventory_remove_entire_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_supplemental_symlink_rejected_before_reading_and_during_stage (test_retail_ci_assets.RetailAssetTests.test_supplemental_symlink_rejected_before_reading_and_during_stage)",
+      "original": "skipped \"Symlink creation is unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-n51thjsp\\\\\\\\input\\\\\\\\descent_2_vertigo\\\\\\\\real.hog' -> 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-n51thjsp\\\\\\\\input\\\\\\\\descent_2_vertigo\\\\\\\\d2x.hog'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_symlink_inserted_after_inventory_is_rejected_and_stage_removed (test_retail_ci_assets.RetailAssetTests.test_symlink_inserted_after_inventory_is_rejected_and_stage_removed)",
+      "original": "skipped \"Symlink creation is unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-8r0b6ybq\\\\\\\\input\\\\\\\\d2\\\\\\\\water.real' -> 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-8r0b6ybq\\\\\\\\input\\\\\\\\d2\\\\\\\\water.pig'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_symlinked_root_game_file_and_input_ancestor_are_rejected (test_retail_ci_assets.RetailAssetTests.test_symlinked_root_game_file_and_input_ancestor_are_rejected)",
+      "original": "skipped \"Symlink creation is unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-ma0v8n2z\\\\\\\\input' -> 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-ma0v8n2z\\\\\\\\alias'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_symlinked_stage_and_stage_ancestor_are_rejected (test_retail_ci_assets.RetailAssetTests.test_symlinked_stage_and_stage_ancestor_are_rejected)",
+      "original": "skipped \"Symlink creation is unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-h694iivg\\\\\\\\input' -> 'C:\\\\\\\\Users\\\\\\\\first last\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\retail-ci-test-h694iivg\\\\\\\\alias'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_retail_ci_assets",
+      "case": "test_windows_reparse_points_are_rejected_without_symlink_privileges (test_retail_ci_assets.RetailAssetTests.test_windows_reparse_points_are_rejected_without_symlink_privileges)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_retail_ci_assets.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_accepts_an_ordinary_nested_tree (test_run_bounded_extractor.RunBoundedExtractorTests.test_accepts_an_ordinary_nested_tree)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_accepts_bounded_output (test_run_bounded_extractor.RunBoundedExtractorTests.test_accepts_bounded_output)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_counts_allocated_bytes_against_the_total (test_run_bounded_extractor.RunBoundedExtractorTests.test_counts_allocated_bytes_against_the_total)",
+      "original": "skipped 'POSIX allocation fixture'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_descendants_are_stopped_after_cancellation (test_run_bounded_extractor.RunBoundedExtractorTests.test_descendants_are_stopped_after_cancellation)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_descendants_are_stopped_after_failure (test_run_bounded_extractor.RunBoundedExtractorTests.test_descendants_are_stopped_after_failure)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_descendants_are_stopped_after_success (test_run_bounded_extractor.RunBoundedExtractorTests.test_descendants_are_stopped_after_success)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_measurement_ignores_a_file_removed_after_enumeration (test_run_bounded_extractor.RunBoundedExtractorTests.test_measurement_ignores_a_file_removed_after_enumeration)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_measurement_ignores_a_file_removed_after_open (test_run_bounded_extractor.RunBoundedExtractorTests.test_measurement_ignores_a_file_removed_after_open)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_ownership_failure_does_not_start_the_command (test_run_bounded_extractor.RunBoundedExtractorTests.test_ownership_failure_does_not_start_the_command)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_alternate_data_stream_output (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_alternate_data_stream_output)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_device_output_when_creation_is_permitted (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_device_output_when_creation_is_permitted)",
+      "original": "skipped 'POSIX device fixture'",
+      "resolved": "skipped 'device creation is unavailable: [Errno 1] Operation not permitted'",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_fifo_and_socket_output (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_fifo_and_socket_output)",
+      "original": "skipped 'POSIX special-file fixtures'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_hard_link_output (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_hard_link_output)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_junction_escape_without_touching_sentinel (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_junction_escape_without_touching_sentinel)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_sparse_output (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_sparse_output)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_symlink_escape_without_touching_sentinel (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_symlink_escape_without_touching_sentinel)",
+      "original": "skipped \"symlinks are unavailable: [WinError 1314] A required privilege is not held by the client: 'C:\\\\\\\\Users\\\\\\\\FIRSTL~1\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\tmpds_wiaz_\\\\\\\\sentinel' -> 'C:\\\\\\\\Users\\\\\\\\FIRSTL~1\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\tmpds_wiaz_\\\\\\\\output\\\\\\\\escape'\"",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_strict_measurement_rejects_a_disappearing_file (test_run_bounded_extractor.RunBoundedExtractorTests.test_strict_measurement_rejects_a_disappearing_file)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_bounded_extractor.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_exact_carry_and_post_input_proofs_pass (test_run_compact_public_replays.EarlyAbortTests.test_exact_carry_and_post_input_proofs_pass)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_missing_reordered_forged_rng_or_wrong_endpoint_reject (test_run_compact_public_replays.EarlyAbortTests.test_missing_reordered_forged_rng_or_wrong_endpoint_reject)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_no_collect_requires_original_drop_prefix_and_live_uncollected_identity (test_run_compact_public_replays.EarlyAbortTests.test_no_collect_requires_original_drop_prefix_and_live_uncollected_identity)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_repeat_rng_evidence_must_match (test_run_compact_public_replays.EarlyAbortTests.test_repeat_rng_evidence_must_match)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_srand_preserves_call_count_and_rand_resumes_from_seed (test_run_compact_public_replays.EarlyAbortTests.test_srand_preserves_call_count_and_rand_resumes_from_seed)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_stripped_payloads_sources_and_wrong_clocks_reject (test_run_compact_public_replays.EarlyAbortTests.test_stripped_payloads_sources_and_wrong_clocks_reject)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_windowed_native_diagnostic_archive (test_run_compact_public_replays.EarlyAbortTests.test_windowed_native_diagnostic_archive)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_wrong_boundaries_process_outcomes_and_effects_reject (test_run_compact_public_replays.EarlyAbortTests.test_wrong_boundaries_process_outcomes_and_effects_reject)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_capture_manifest_preserves_every_reviewed_imported_scope (test_run_compact_public_replays.RealNegativeCorpusTests.test_capture_manifest_preserves_every_reviewed_imported_scope)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_combat_cannot_drop_its_immutable_causal_observation_oracle (test_run_compact_public_replays.RealNegativeCorpusTests.test_combat_cannot_drop_its_immutable_causal_observation_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_disposable_mutations_are_admitted_without_changing_originals (test_run_compact_public_replays.RealNegativeCorpusTests.test_disposable_mutations_are_admitted_without_changing_originals)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_door_cannot_drop_its_immutable_geometric_observation_oracle (test_run_compact_public_replays.RealNegativeCorpusTests.test_door_cannot_drop_its_immutable_geometric_observation_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_guidebot_cannot_drop_its_immutable_escort_observation_oracle (test_run_compact_public_replays.RealNegativeCorpusTests.test_guidebot_cannot_drop_its_immutable_escort_observation_oracle)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_real_imported_scope_retains_loot_diagnostics_and_required_flight (test_run_compact_public_replays.RealNegativeCorpusTests.test_real_imported_scope_retains_loot_diagnostics_and_required_flight)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_active_capture_holds_retention_lease (test_run_compact_public_replays.RuntimeGateTests.test_active_capture_holds_retention_lease)",
+      "original": "skipped 'POSIX retention uses advisory file locks'",
+      "resolved": "ok",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_backward_thrust_and_delta_controls_count_real_stopping (test_run_compact_public_replays.RuntimeGateTests.test_backward_thrust_and_delta_controls_count_real_stopping)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_both_backends_attempt_complete_inventory_and_preserve_failure (test_run_compact_public_replays.RuntimeGateTests.test_both_backends_attempt_complete_inventory_and_preserve_failure)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_combat_proves_causal_outcome_before_generic_firing_guard (test_run_compact_public_replays.RuntimeGateTests.test_combat_proves_causal_outcome_before_generic_firing_guard)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_corpus_requires_complete_unique_plain_filename_pairs (test_run_compact_public_replays.RuntimeGateTests.test_corpus_requires_complete_unique_plain_filename_pairs)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_dead_or_stationary_or_unarmed_motion_cannot_pass (test_run_compact_public_replays.RuntimeGateTests.test_dead_or_stationary_or_unarmed_motion_cannot_pass)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_door_requires_initially_closed_target_and_exact_next_entry (test_run_compact_public_replays.RuntimeGateTests.test_door_requires_initially_closed_target_and_exact_next_entry)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_explicit_native_only_graphics_reports_imported_parity_not_run (test_run_compact_public_replays.RuntimeGateTests.test_explicit_native_only_graphics_reports_imported_parity_not_run)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_imported_scope_is_explicit_and_cannot_remove_required_flight (test_run_compact_public_replays.RuntimeGateTests.test_imported_scope_is_explicit_and_cannot_remove_required_flight)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_imported_scope_uses_independent_artifacts_without_relaxing_native (test_run_compact_public_replays.RuntimeGateTests.test_imported_scope_uses_independent_artifacts_without_relaxing_native)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_imported_staging_uses_declarations_and_retains_exclusion_on_failure (test_run_compact_public_replays.RuntimeGateTests.test_imported_staging_uses_declarations_and_retains_exclusion_on_failure)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_loot_proves_collection_before_generic_firing_guard (test_run_compact_public_replays.RuntimeGateTests.test_loot_proves_collection_before_generic_firing_guard)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_only_known_compact_recording_incompleteness_is_accepted (test_run_compact_public_replays.RuntimeGateTests.test_only_known_compact_recording_incompleteness_is_accepted)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_phase_timings_include_failures_without_suppressing_them (test_run_compact_public_replays.RuntimeGateTests.test_phase_timings_include_failures_without_suppressing_them)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_pickup_identity_and_retirement_are_exact (test_run_compact_public_replays.RuntimeGateTests.test_pickup_identity_and_retirement_are_exact)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_pickup_requires_consecutive_gain_at_exact_next_entry (test_run_compact_public_replays.RuntimeGateTests.test_pickup_requires_consecutive_gain_at_exact_next_entry)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_same_output_basename_under_distinct_parents_has_distinct_sandbox (test_run_compact_public_replays.RuntimeGateTests.test_same_output_basename_under_distinct_parents_has_distinct_sandbox)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_compact_public_replays",
+      "case": "test_unqualified_comparative_failure_is_preserved_but_invalid_evidence_fails (test_run_compact_public_replays.RuntimeGateTests.test_unqualified_comparative_failure_is_preserved_but_invalid_evidence_fails)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_compact_public_replays.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_setup_timeout_and_cancellation_are_retryable_without_coverage (test_run_host_test_suites.EvidenceAndCancellationTests.test_setup_timeout_and_cancellation_are_retryable_without_coverage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_sigterm_unwinds_once (test_run_host_test_suites.EvidenceAndCancellationTests.test_sigterm_unwinds_once)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_timeout_reaps_group_even_after_parent_exits (test_run_host_test_suites.EvidenceAndCancellationTests.test_timeout_reaps_group_even_after_parent_exits)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_explicit_matcher_and_fixture_preserve_all_assertions (test_run_host_test_suites.FingerprintPortableCliTests.test_explicit_matcher_and_fixture_preserve_all_assertions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_explicit_missing_matcher_fails_before_launch (test_run_host_test_suites.FingerprintPortableCliTests.test_explicit_missing_matcher_fails_before_launch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_corpus_setup_uses_host_jvm_and_reports_static_failure_stage (test_run_host_test_suites.HostAdapterTests.test_corpus_setup_uses_host_jvm_and_reports_static_failure_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_ctest_failure_skip_and_internal_media_are_distinct (test_run_host_test_suites.HostAdapterTests.test_ctest_failure_skip_and_internal_media_are_distinct)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_empty_suite_is_blocked (test_run_host_test_suites.HostAdapterTests.test_empty_suite_is_blocked)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_extractor_soundfont_setup_is_full_only_and_failure_is_retryable (test_run_host_test_suites.HostAdapterTests.test_extractor_soundfont_setup_is_full_only_and_failure_is_retryable)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_failure_dominates_media_gap (test_run_host_test_suites.HostAdapterTests.test_failure_dominates_media_gap)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_hmp_owned_by_ctest_not_unconfigured_discovery (test_run_host_test_suites.HostAdapterTests.test_hmp_owned_by_ctest_not_unconfigured_discovery)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_missing_tool_blocks_without_launch (test_run_host_test_suites.HostAdapterTests.test_missing_tool_blocks_without_launch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_native_lazy_setup_preserves_debug_and_serial_environment (test_run_host_test_suites.HostAdapterTests.test_native_lazy_setup_preserves_debug_and_serial_environment)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_nested_corpus_metadata_and_routes_stop_before_build_or_flattening (test_run_host_test_suites.HostAdapterTests.test_nested_corpus_metadata_and_routes_stop_before_build_or_flattening)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_old_commit_light_profile_blocks_without_full_download (test_run_host_test_suites.HostAdapterTests.test_old_commit_light_profile_blocks_without_full_download)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_only_blocked_leaves_are_blocked (test_run_host_test_suites.HostAdapterTests.test_only_blocked_leaves_are_blocked)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_only_explicit_skips_is_blocked (test_run_host_test_suites.HostAdapterTests.test_only_explicit_skips_is_blocked)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_partial_media_gap_completes_owner_but_retains_exclusion (test_run_host_test_suites.HostAdapterTests.test_partial_media_gap_completes_owner_but_retains_exclusion)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_partial_structured_counts_preserve_success_and_exclusions (test_run_host_test_suites.HostAdapterTests.test_partial_structured_counts_preserve_success_and_exclusions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_registry_ids_are_unique_and_no_arbitrary_commands (test_run_host_test_suites.HostAdapterTests.test_registry_ids_are_unique_and_no_arbitrary_commands)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_script_owner_pass_does_not_claim_unknown_leaf_coverage (test_run_host_test_suites.HostAdapterTests.test_script_owner_pass_does_not_claim_unknown_leaf_coverage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_spectral_suite_blocks_missing_matplotlib_before_tests (test_run_host_test_suites.HostAdapterTests.test_spectral_suite_blocks_missing_matplotlib_before_tests)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_strict_fingerprint_owner_has_no_fabricated_leaf_count (test_run_host_test_suites.HostAdapterTests.test_strict_fingerprint_owner_has_no_fabricated_leaf_count)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_target_path_traversal_rejected (test_run_host_test_suites.HostAdapterTests.test_target_path_traversal_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_unittest_receipts_require_successful_leaves (test_run_host_test_suites.HostAdapterTests.test_unittest_receipts_require_successful_leaves)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_unsupported_windows_host_blocks_before_launch (test_run_host_test_suites.HostAdapterTests.test_unsupported_windows_host_blocks_before_launch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_verified_soundfont_helper_is_present_in_target_source (test_run_host_test_suites.HostAdapterTests.test_verified_soundfont_helper_is_present_in_target_source)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_checkpoint_negative_requires_the_expected_guard_and_no_success_artifact (test_run_host_test_suites.MissionLifecycleOwnerTests.test_checkpoint_negative_requires_the_expected_guard_and_no_success_artifact)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_descriptor_counts_and_secret_entries_are_complete (test_run_host_test_suites.MissionLifecycleOwnerTests.test_descriptor_counts_and_secret_entries_are_complete)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_expanded_estimate_matches_policy_without_changing_the_lane_budget (test_run_host_test_suites.MissionLifecycleOwnerTests.test_expanded_estimate_matches_policy_without_changing_the_lane_budget)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_extended_arguments_are_all_or_none_and_default_remains_liquid_only (test_run_host_test_suites.MissionLifecycleOwnerTests.test_extended_arguments_are_all_or_none_and_default_remains_liquid_only)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_one_worker_sequence_rejects_missing_foreign_duplicate_and_mismatched_results (test_run_host_test_suites.MissionLifecycleOwnerTests.test_one_worker_sequence_rejects_missing_foreign_duplicate_and_mismatched_results)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_route_requires_current_json_success_identity_and_native_confirmation (test_run_host_test_suites.MissionLifecycleOwnerTests.test_route_requires_current_json_success_identity_and_native_confirmation)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_route_requires_native_mission_directory_layout_before_launch (test_run_host_test_suites.MissionLifecycleOwnerTests.test_route_requires_native_mission_directory_layout_before_launch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_route_sequence_saves_restores_rejects_mismatches_and_preserves_checkpoint (test_run_host_test_suites.MissionLifecycleOwnerTests.test_route_sequence_saves_restores_rejects_mismatches_and_preserves_checkpoint)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_duplicate_case_alias_and_unsafe_paths_are_rejected (test_run_host_test_suites.ObsidianExtractionTests.test_duplicate_case_alias_and_unsafe_paths_are_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_exact_real_member_pins_are_preserved (test_run_host_test_suites.ObsidianExtractionTests.test_exact_real_member_pins_are_preserved)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_missing_member_and_size_mismatch_are_rejected_before_extraction (test_run_host_test_suites.ObsidianExtractionTests.test_missing_member_and_size_mismatch_are_rejected_before_extraction)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_only_two_members_are_installed_under_native_missions_directory (test_run_host_test_suites.ObsidianExtractionTests.test_only_two_members_are_installed_under_native_missions_directory)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_same_size_hash_mismatch_removes_partial_stage (test_run_host_test_suites.ObsidianExtractionTests.test_same_size_hash_mismatch_removes_partial_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_symlink_zip_member_and_excessive_member_count_are_rejected (test_run_host_test_suites.ObsidianExtractionTests.test_symlink_zip_member_and_excessive_member_count_are_rejected)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_benchmark_policy_does_not_build_or_claim_performance (test_run_host_test_suites.PublicProfileTests.test_benchmark_policy_does_not_build_or_claim_performance)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_header_profile_builds_both_workers_and_disables_inner_build (test_run_host_test_suites.PublicProfileTests.test_header_profile_builds_both_workers_and_disables_inner_build)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_imported_profile_has_explicit_worker_and_public_assets (test_run_host_test_suites.PublicProfileTests.test_imported_profile_has_explicit_worker_and_public_assets)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_ordered_and_all_weapons_build_all_backends_with_compile_provenance (test_run_host_test_suites.PublicProfileTests.test_ordered_and_all_weapons_build_all_backends_with_compile_provenance)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_public_matcen_is_native_with_explicit_verified_inputs (test_run_host_test_suites.PublicProfileTests.test_public_matcen_is_native_with_explicit_verified_inputs)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_public_save_and_pickup_bind_existing_fixture_binaries (test_run_host_test_suites.PublicProfileTests.test_public_save_and_pickup_bind_existing_fixture_binaries)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_secret_and_shareware_profiles_cannot_succeed_on_missing_assets (test_run_host_test_suites.PublicProfileTests.test_secret_and_shareware_profiles_cannot_succeed_on_missing_assets)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_setup_failure_is_retryable_and_has_no_assertion_receipt (test_run_host_test_suites.PublicProfileTests.test_setup_failure_is_retryable_and_has_no_assertion_receipt)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_unknown_profile_does_not_construct_an_arbitrary_command (test_run_host_test_suites.PublicProfileTests.test_unknown_profile_does_not_construct_an_arbitrary_command)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_visual_profile_uses_virtual_display_not_dummy_video (test_run_host_test_suites.PublicProfileTests.test_visual_profile_uses_virtual_display_not_dummy_video)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_base_retail_registry_is_four_fixed_owners_and_portable_controls (test_run_host_test_suites.RetailProfileTests.test_base_retail_registry_is_four_fixed_owners_and_portable_controls)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_build_failure_is_retryable_without_assertion_credit (test_run_host_test_suites.RetailProfileTests.test_build_failure_is_retryable_without_assertion_credit)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_counterstrike_route_keeps_existing_bounded_owner (test_run_host_test_suites.RetailProfileTests.test_counterstrike_route_keeps_existing_bounded_owner)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_expansion_setup_errors_never_launch_builds_or_assertions (test_run_host_test_suites.RetailProfileTests.test_expansion_setup_errors_never_launch_builds_or_assertions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_guidebot_uses_native_assertion_and_cannot_pass_exit_two (test_run_host_test_suites.RetailProfileTests.test_guidebot_uses_native_assertion_and_cannot_pass_exit_two)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_missing_mismatched_and_changed_pin_stages_block_before_build (test_run_host_test_suites.RetailProfileTests.test_missing_mismatched_and_changed_pin_stages_block_before_build)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_obsidian_profile_keeps_assertions_and_native_owner_timeout (test_run_host_test_suites.RetailProfileTests.test_obsidian_profile_keeps_assertions_and_native_owner_timeout)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_retail_baseline_and_headers_bind_both_games_without_inner_builds (test_run_host_test_suites.RetailProfileTests.test_retail_baseline_and_headers_bind_both_games_without_inner_builds)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_two_expansion_profiles_require_mission_stage (test_run_host_test_suites.RetailProfileTests.test_two_expansion_profiles_require_mission_stage)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_unknown_retail_profile_cannot_supply_arguments (test_run_host_test_suites.RetailProfileTests.test_unknown_retail_profile_cannot_supply_arguments)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_vertigo_profile_uses_reused_worker_and_exact_staged_missions (test_run_host_test_suites.RetailProfileTests.test_vertigo_profile_uses_reused_worker_and_exact_staged_missions)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_ctest_null_and_excluded_only_receipts_cannot_pass (test_run_host_test_suites.StandaloneCMakeTests.test_ctest_null_and_excluded_only_receipts_cannot_pass)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_run_host_test_suites",
+      "case": "test_existing_ctest_projects_build_exact_targets_and_keep_leaf_receipts (test_run_host_test_suites.StandaloneCMakeTests.test_existing_ctest_projects_build_exact_targets_and_keep_leaf_receipts)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_run_host_test_suites.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_android_save_callsign_reader_consumes_epoch_before_player (test_save_epoch_contract.SaveEpochContractTest.test_android_save_callsign_reader_consumes_epoch_before_player)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_save_epoch_contract.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_exact_android_callsign_readers_enforce_versions_and_epoch_headers (test_save_epoch_contract.SaveEpochContractTest.test_exact_android_callsign_readers_enforce_versions_and_epoch_headers)",
+      "original": "FAIL",
+      "resolved": "ok",
+      "evidence": "save_epoch_linux_retry.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_native_and_translated_boss_active_zero_collision_is_preserved (test_save_epoch_contract.SaveEpochContractTest.test_native_and_translated_boss_active_zero_collision_is_preserved)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_save_epoch_contract.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_new_versions_are_explicit (test_save_epoch_contract.SaveEpochContractTest.test_new_versions_are_explicit)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_save_epoch_contract.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_reader_checks_both_words_before_publishing (test_save_epoch_contract.SaveEpochContractTest.test_reader_checks_both_words_before_publishing)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_save_epoch_contract.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_rewind_replay_then_saved_epoch_precedence (test_save_epoch_contract.SaveEpochContractTest.test_rewind_replay_then_saved_epoch_precedence)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_save_epoch_contract.log"
+    },
+    {
+      "module": "test_save_epoch_contract",
+      "case": "test_writers_keep_zero_legacy_clock_before_authoritative_epoch (test_save_epoch_contract.SaveEpochContractTest.test_writers_keep_zero_legacy_clock_before_authoritative_epoch)",
+      "original": "ok",
+      "resolved": "ok",
+      "evidence": "test_save_epoch_contract.log"
+    }
+  ]
+}

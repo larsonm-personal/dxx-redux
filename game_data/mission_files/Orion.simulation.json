@@ -71,8 +71,8 @@
       ],
       "total_frames": 5109,
       "rng_end": {
-        "state": 2531878940,
-        "calls": 2907
+        "state": 1877186174,
+        "calls": 3593
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -109,8 +109,8 @@
       ],
       "total_frames": 3834,
       "rng_end": {
-        "state": 3915473393,
-        "calls": 3472
+        "state": 3774406895,
+        "calls": 4602
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -151,8 +151,8 @@
       ],
       "total_frames": 5569,
       "rng_end": {
-        "state": 1410616673,
-        "calls": 2464
+        "state": 4098740275,
+        "calls": 3158
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -193,8 +193,8 @@
       ],
       "total_frames": 4860,
       "rng_end": {
-        "state": 3256495106,
-        "calls": 1909
+        "state": 3407426039,
+        "calls": 2546
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -243,8 +243,8 @@
       ],
       "total_frames": 7981,
       "rng_end": {
-        "state": 1850151498,
-        "calls": 2893
+        "state": 1103525262,
+        "calls": 5433
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -280,17 +280,17 @@
         },
         {
           "n": "exit",
-          "s": 138
+          "s": 139
         }
       ],
-      "total_frames": 8285,
+      "total_frames": 8350,
       "rng_end": {
-        "state": 1652325549,
-        "calls": 6420
+        "state": 1706545785,
+        "calls": 7624
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 18.566666,
+        "simulated_seconds": 19.649994,
         "difficulty": 2
       }
     },
@@ -327,8 +327,8 @@
       ],
       "total_frames": 5609,
       "rng_end": {
-        "state": 1047822082,
-        "calls": 4213
+        "state": 3642041288,
+        "calls": 4767
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,

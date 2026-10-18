@@ -32,8 +32,8 @@
       ],
       "total_frames": 464,
       "rng_end": {
-        "state": 2886505125,
-        "calls": 220
+        "state": 559132580,
+        "calls": 435
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -66,8 +66,8 @@
       ],
       "total_frames": 921,
       "rng_end": {
-        "state": 4043410875,
-        "calls": 846
+        "state": 3101968293,
+        "calls": 988
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -104,8 +104,8 @@
       ],
       "total_frames": 1881,
       "rng_end": {
-        "state": 2901314047,
-        "calls": 490
+        "state": 1815597881,
+        "calls": 776
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -134,8 +134,8 @@
       ],
       "total_frames": 862,
       "rng_end": {
-        "state": 1340209086,
-        "calls": 457
+        "state": 3810613905,
+        "calls": 1520
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -164,8 +164,8 @@
       ],
       "total_frames": 1031,
       "rng_end": {
-        "state": 3246260699,
-        "calls": 1838
+        "state": 545873329,
+        "calls": 2000
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -198,8 +198,8 @@
       ],
       "total_frames": 1042,
       "rng_end": {
-        "state": 2005546136,
-        "calls": 655
+        "state": 1416728504,
+        "calls": 1775
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -232,8 +232,8 @@
       ],
       "total_frames": 1282,
       "rng_end": {
-        "state": 816952759,
-        "calls": 562
+        "state": 1770763692,
+        "calls": 1675
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -262,8 +262,8 @@
       ],
       "total_frames": 4365,
       "rng_end": {
-        "state": 696687669,
-        "calls": 1740
+        "state": 517793682,
+        "calls": 2853
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,

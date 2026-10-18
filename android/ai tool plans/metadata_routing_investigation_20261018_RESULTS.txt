@@ -1,0 +1,159 @@
+METADATA AND ROUTING INVESTIGATION - 2026-10-18
+
+Scope: chase the RNG, timing, matcen and three status changes identified in
+the regenerated mission/simulation JSON. This is not a resolution of the
+unrelated Android failures listed in full_validation_20261016_results/REVIEW.txt.
+
+Initial source: 9302a5a4b439858fb7ee558a3f1c42cc3cf0bf5d
+Evidence root: C:/local/dxx-redux/temp/metadata_routing_investigation/run_20261018
+Original snapshots: temp/metadata_routing_refresh/run_20261018_091329
+Machine-readable audit: completion_audit.json under the evidence root
+
+1. HARQYJIA LEVEL 2 - CONFIRMED MEMORY CORRUPTION, FIXED
+
+The original result changed from ok to timeout. Three repeated runs of the
+captured engine reproduced the timeout. Reversing the fireball RNG change did
+not repair it.
+
+Phase instrumentation traced the corruption to incidental trigger 49, an
+OPEN_WALL trigger with 10 links. Existing transitions exhausted the 10-slot
+CloakingWalls array. start_wall_cloak wrote d->time = 0 to slot 10 before its
+capacity check. At GameTime64 10527266, three overflow writes for walls 56, 58
+and 60 landed at exactly the address of ActiveDoors[1].front_wallnum[0]. The
+next frame retired that corrupted entry while wall 140 remained opening.
+This blocked the route indefinitely. The same ordering defect also existed
+in start_wall_decloak.
+
+Fix: move allocation and time initialization after the existing capacity check
+in both functions. Existing full-capacity fallback behavior is preserved.
+D1 has no corresponding wall-cloaking transition implementation to change.
+
+The new upstream compatibility integration test fills the actual transition
+queue while two ordinary doors are opening, exercises both overflow paths,
+checks that both animation arrays remain intact, and verifies the ordinary
+doors finish opening. Linking the NEW test with the ORIGINAL wall.c fails
+the exact queue-preservation assertion. Linking the fixed code passes.
+
+The normal producer regenerated the entire Harqyjia mission using the fixed
+CMake-built engine with Repeat=3. All five level results were byte-identical
+across their three runs. Level 2 is now ok, 10703 frames. Levels 1, 3, 4 and
+secret -1 are unchanged, including the pre-existing level 3 timeout.
+Only game_data/mission_files/d2xxl_downloads/harqyjia.simulation.json was
+republished during this investigation. Original failure JSON is preserved.
+
+Evidence: phase_trace/runs_4; cloak_negative/test.log; cloak_fix/runs_2;
+harqyjia_fixed/summary.json and results; completion_audit.json
+
+2. RNG END VALUES AND TIMING OUTLIERS - INTENDED FIREBALL CHANGE
+
+The original full comparison had 2192 comparable level records with changed
+rng_end, including 1772 with no other level-record changes. Another 415
+unchanged-status records changed total_frames (median absolute delta 17,
+maximum 2201). All 2639 route input hashes were unchanged.
+
+Commit f78547c92214f344780268ca542498849201e0e4, "Keep original fireball
+behavior on the simulation RNG", restored simulation RNG consumption for
+original fireball geometry/cadence. The RNG algorithm itself did not change.
+
+An isolated control build reversed ONLY that commit's five D2 product source
+files, retaining all other current objects. Nine of ten comparable focused
+cases exactly recovered both saved baseline frame counts and RNG end values.
+The exception was Harqyjia, explained separately by the memory corruption.
+af_d1_beta was rejected before producing a comparable simulation result.
+
+This directly explains the tested BelialSystemXL (including its pack copy),
+Disintegration, Pyroball, Incontin, base D1/D2 and selected pack results.
+Belial returned from 15430 to 13229 frames in the control. Disintegration's
+existing timeout returned from 7367 to 8238 frames. Pyroball returned from
+4143 to 4501 frames. Incontin reverted from success at 5474 frames to its
+old timeout at 8562 frames. These are deterministic consequences of native
+simulation behavior, not evidence of unstable RNG between identical runs.
+
+The original fireball behavior and gameplay isolation integration checks are
+included in the passing upstream compatibility suites. The wall bounds fix
+left the other nine comparable focused route outputs' frame counts/RNG values
+unchanged. This is focused causal evidence, not a full-corpus ablation claim.
+Counts include duplicate level records in packs.
+
+Evidence: fireball.patch; old_fireball/src and runs_2; reproduce and
+reproduce_zip; cloak_fix/runs_2; completion_audit.json
+
+3. INCONTIN STATUS IMPROVEMENT - EXPLAINED, RETAINED
+
+The timeout-to-ok transition is directly reproduced/reversed by the fireball
+control above. No special route workaround, timeout relaxation or oracle
+acceptance was introduced.
+
+4. AF_D1_BETA LEVEL 7 - AUTHORED INVALID ROBOT MASK EXPOSED BY GUARD
+
+cefispar.rdl's disk matcen ordinal 4, segment 576, has mask 1078525952,
+including robot bit 30. The loaded D1 robot table has 24 entries; native D1
+metadata identifies robot 30 as invalid_type. This is not selection of the
+wrong shareware data.
+
+The guard added in commit 59dee3c75 validates each declared matcen robot in
+d1_in_d2_initialize_level_ambience using d1_in_d2_require_robot. That produces
+"Robot 30 is unavailable in the selected D1 edition" before route execution.
+The original saved route predates this admission check. Three fresh runs
+reproduce the rejection, including the fireball control.
+
+No product or asset change is warranted merely to suppress this failure.
+The invalid authored mask is retained, and the safety guard is unchanged.
+The producer's infrastructure_error is a coarse classification of a native
+process exiting without a route result; this specific case is an asset
+admission rejection, not an emulator or host setup fault.
+
+Evidence: reproduce_zip/results and logs; d2/main/d1_in_d2/d1_in_d2_levels.c;
+d2/main/d1_in_d2/d1_in_d2_assets.c; game_data/mission_files/af_d1_beta.json
+
+5. MATCEN MASK DIFFERENCES - EXACT COLD/WARM REPRODUCTION, INERT
+
+The large metadata diff mostly adds matcen captures and data warnings. Three
+previously captured logical_disk_unbound entries have different robot masks:
+  Ironblade level 3 / ordinal 4: [0] -> [16384]
+  Orion D1 level 7 / ordinal 0: [0] -> [8]
+  Orion D2 level 7 / ordinal 0: [0,0] -> [16,0]
+
+Using the actual native metadata workers, a single request loads target,
+primer, then target again. Ironblade's primer is level 2; both Orions use
+level 1. Every cold zero and warm nonzero value reproduces exactly. The
+earlier Orion probe using level 6 did not prime a mask and is preserved as
+negative evidence under matcen/.
+
+The logical ordinal lies outside Num_robot_centers even though its physical
+array slot can retain previous-level flags. matcen_get_station_num rejects
+that ordinal, and trigger_matcen leaves it inert. The strengthened D1/D2
+native fixture explicitly supplies a plausible stale station backlink and
+nonzero robot mask, then verifies lookup rejection and no activation.
+No mask was cleared or baseline edited to hide this observable load history.
+This behavior and the cold/warm distinction are documented in the existing
+android/tests/MATCEN_REGRESSION.md.
+
+Evidence: matcen_correct_primer/summary.json and per-mission request/sequence
+JSON; android/tests/matcen_stations_fixture.hpp; native CTest logs
+
+VALIDATION AND LIMITS
+
+Final CMake build: D1/D2 test_upstream_compat and D2 headless route, exit 0.
+Full existing native CTest inventories: D1 79/79, D2 90/90 passed.
+The changed integration executable and route engine were rebuilt; unrelated
+test targets use their existing current-source builds.
+Scoped repository mixed-language Fix quality: exit 0. git diff --check passed.
+The authored_matcen_fixture.hpp C4805 warning is pre-existing, outside this
+change. No new warning was introduced by these edits.
+
+Earlier build attempts include a corrected D1 fixture array assignment and
+an executable-lock collision from overlapping build/test execution. Final
+build and tests ran in order. Earlier formatter attempts could not execute
+the installed clang-format inside the sandbox; the scoped permitted retry
+passed. Failed attempt logs are preserved.
+
+The full 2639-level corpus was not rerun after the small bounds fix. Coverage
+afterward is all five Harqyjia levels repeated three times plus the focused
+RNG/timing/admission set. No Android device was used. Shared emulators and
+other sessions' work were left untouched. No semantic oracle was accepted.
+The original full validation's unrelated findings remain in its REVIEW.txt.
+
+Completion audit verifies all native counts/exits, negative control failure,
+repeat hashes, nine exact fireball control restorations, source hashes and
+that all saved publications except the intended Harqyjia JSON remain intact.

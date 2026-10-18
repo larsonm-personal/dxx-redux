@@ -403,7 +403,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 2,
@@ -532,7 +533,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 3,
@@ -592,6 +594,133 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 527,
+            "robot_centers": 1,
+            "stations": 12,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 507,
+              "station": 0,
+              "robot_flags": [
+                1048578
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 507,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 11,
+              "effective_ordinal": 0,
+              "segment_station": 11,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 11
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 20,
+              "model": 32,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 507,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 37,
+                  "segment": 300,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 507,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 38,
+                  "segment": 306,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 507,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 41,
+                  "segment": 486,
+                  "side": 0
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -675,7 +804,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 4,
@@ -735,6 +865,111 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 394,
+            "robot_centers": 1,
+            "stations": 8,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 374,
+              "station": 0,
+              "robot_flags": [
+                6
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 374,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 7,
+              "effective_ordinal": 0,
+              "segment_station": 7,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 7
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 2,
+              "model": 3,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 374,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 10,
+                  "segment": 356,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 374,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 11,
+                  "segment": 361,
+                  "side": 1
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -844,7 +1079,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 5,
@@ -904,6 +1140,301 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 519,
+            "robot_centers": 5,
+            "stations": 13,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 495,
+              "station": 0,
+              "robot_flags": [
+                3
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 496,
+              "station": 1,
+              "robot_flags": [
+                4
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 497,
+              "station": 2,
+              "robot_flags": [
+                5
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 498,
+              "station": 3,
+              "robot_flags": [
+                7
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            },
+            {
+              "segment": 499,
+              "station": 4,
+              "robot_flags": [
+                2
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 4
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 495,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 8,
+              "effective_ordinal": 0,
+              "segment_station": 8,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 8
+              }
+            },
+            {
+              "segment": 496,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 9,
+              "effective_ordinal": 1,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 497,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 10,
+              "effective_ordinal": 2,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            },
+            {
+              "segment": 498,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 11,
+              "effective_ordinal": 3,
+              "segment_station": 11,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 11
+              }
+            },
+            {
+              "segment": 499,
+              "generated_ordinal": 4,
+              "serialized_matcen": 4,
+              "serialized_station": 12,
+              "effective_ordinal": 4,
+              "segment_station": 12,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 12
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 0,
+              "model": 0,
+              "status": "valid_model"
+            },
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 2,
+              "model": 3,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 495,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 14,
+                  "segment": 389,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 495,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 15,
+                  "segment": 390,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 497,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 47,
+                  "segment": 435,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 497,
+                  "side": 0
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 496,
+                  "side": 1
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 48,
+                  "segment": 470,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 498,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 51,
+                  "segment": 429,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 499,
+                  "side": 1
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 60,
+                  "segment": 164,
+                  "side": 2
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -987,7 +1518,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 6,
@@ -1047,6 +1579,383 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 6,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 775,
+            "robot_centers": 6,
+            "stations": 12,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 750,
+              "station": 0,
+              "robot_flags": [
+                2097408
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 751,
+              "station": 1,
+              "robot_flags": [
+                2097408
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 752,
+              "station": 2,
+              "robot_flags": [
+                2097153
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 753,
+              "station": 3,
+              "robot_flags": [
+                2097408
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            },
+            {
+              "segment": 754,
+              "station": 4,
+              "robot_flags": [
+                2162688
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 4
+            },
+            {
+              "segment": 755,
+              "station": 5,
+              "robot_flags": [
+                2097408
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 5
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 750,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 6,
+              "effective_ordinal": 0,
+              "segment_station": 6,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 6
+              }
+            },
+            {
+              "segment": 751,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 7,
+              "effective_ordinal": 1,
+              "segment_station": 7,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 7
+              }
+            },
+            {
+              "segment": 752,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 8,
+              "effective_ordinal": 2,
+              "segment_station": 8,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 8
+              }
+            },
+            {
+              "segment": 753,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 9,
+              "effective_ordinal": 3,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 754,
+              "generated_ordinal": 4,
+              "serialized_matcen": 4,
+              "serialized_station": 10,
+              "effective_ordinal": 4,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            },
+            {
+              "segment": 755,
+              "generated_ordinal": 5,
+              "serialized_matcen": 5,
+              "serialized_station": 11,
+              "effective_ordinal": 5,
+              "segment_station": 11,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 11
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 0,
+              "model": 0,
+              "status": "valid_model"
+            },
+            {
+              "type": 8,
+              "model": 14,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 21,
+              "model": 34,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 750,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 38,
+                  "segment": 272,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 750,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 39,
+                  "segment": 299,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 750,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 40,
+                  "segment": 288,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 751,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 41,
+                  "segment": 306,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 751,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 42,
+                  "segment": 338,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 752,
+                  "side": 0
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 753,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 75,
+                  "segment": 495,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 752,
+                  "side": 0
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 753,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 76,
+                  "segment": 503,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 755,
+                  "side": 4
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 754,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 93,
+                  "segment": 717,
+                  "side": 2
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1130,7 +2039,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 7,
@@ -1190,6 +2100,238 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 743,
+            "robot_centers": 3,
+            "stations": 12,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 721,
+              "station": 0,
+              "robot_flags": [
+                67584
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 722,
+              "station": 1,
+              "robot_flags": [
+                2050
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 723,
+              "station": 2,
+              "robot_flags": [
+                2097156
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 721,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 9,
+              "effective_ordinal": 0,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 722,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 10,
+              "effective_ordinal": 1,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            },
+            {
+              "segment": 723,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 11,
+              "effective_ordinal": 2,
+              "segment_station": 11,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 11
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 2,
+              "model": 3,
+              "status": "valid_model"
+            },
+            {
+              "type": 11,
+              "model": 19,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 21,
+              "model": 34,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 721,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 31,
+                  "segment": 689,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 722,
+                  "side": 1
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 84,
+                  "segment": 481,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 723,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 101,
+                  "segment": 377,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 723,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 102,
+                  "segment": 376,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 721,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 115,
+                  "segment": 99,
+                  "side": 2
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1299,7 +2441,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 8,
@@ -1359,6 +2502,156 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 645,
+            "robot_centers": 2,
+            "stations": 11,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 614,
+              "station": 0,
+              "robot_flags": [
+                524288
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 615,
+              "station": 1,
+              "robot_flags": [
+                589824
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 614,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 9,
+              "effective_ordinal": 0,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 615,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 10,
+              "effective_ordinal": 1,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 19,
+              "model": 30,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 614,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 10,
+                  "segment": 82,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 614,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 11,
+                  "segment": 100,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 615,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 75,
+                  "segment": 605,
+                  "side": 2
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1469,7 +2762,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 9,
@@ -1529,6 +2823,595 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 10,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 634,
+            "robot_centers": 10,
+            "stations": 20,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 605,
+              "station": 0,
+              "robot_flags": [
+                6815744
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 606,
+              "station": 1,
+              "robot_flags": [
+                65536
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 607,
+              "station": 2,
+              "robot_flags": [
+                6356992
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 608,
+              "station": 3,
+              "robot_flags": [
+                2621440
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            },
+            {
+              "segment": 609,
+              "station": 4,
+              "robot_flags": [
+                4194304
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 4
+            },
+            {
+              "segment": 610,
+              "station": 5,
+              "robot_flags": [
+                524288
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 5
+            },
+            {
+              "segment": 611,
+              "station": 6,
+              "robot_flags": [
+                4720640
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 6
+            },
+            {
+              "segment": 612,
+              "station": 7,
+              "robot_flags": [
+                2621440
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 7
+            },
+            {
+              "segment": 613,
+              "station": 8,
+              "robot_flags": [
+                6291456
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 8
+            },
+            {
+              "segment": 614,
+              "station": 9,
+              "robot_flags": [
+                524544
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 9
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 605,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 10,
+              "effective_ordinal": 0,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            },
+            {
+              "segment": 606,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 11,
+              "effective_ordinal": 1,
+              "segment_station": 11,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 11
+              }
+            },
+            {
+              "segment": 607,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 12,
+              "effective_ordinal": 2,
+              "segment_station": 12,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 12
+              }
+            },
+            {
+              "segment": 608,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 13,
+              "effective_ordinal": 3,
+              "segment_station": 13,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 13
+              }
+            },
+            {
+              "segment": 609,
+              "generated_ordinal": 4,
+              "serialized_matcen": 4,
+              "serialized_station": 14,
+              "effective_ordinal": 4,
+              "segment_station": 14,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 14
+              }
+            },
+            {
+              "segment": 610,
+              "generated_ordinal": 5,
+              "serialized_matcen": 5,
+              "serialized_station": 15,
+              "effective_ordinal": 5,
+              "segment_station": 15,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 15
+              }
+            },
+            {
+              "segment": 611,
+              "generated_ordinal": 6,
+              "serialized_matcen": 6,
+              "serialized_station": 16,
+              "effective_ordinal": 6,
+              "segment_station": 16,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 16
+              }
+            },
+            {
+              "segment": 612,
+              "generated_ordinal": 7,
+              "serialized_matcen": 7,
+              "serialized_station": 17,
+              "effective_ordinal": 7,
+              "segment_station": 17,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 17
+              }
+            },
+            {
+              "segment": 613,
+              "generated_ordinal": 8,
+              "serialized_matcen": 8,
+              "serialized_station": 18,
+              "effective_ordinal": 8,
+              "segment_station": 18,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 18
+              }
+            },
+            {
+              "segment": 614,
+              "generated_ordinal": 9,
+              "serialized_matcen": 9,
+              "serialized_station": 19,
+              "effective_ordinal": 9,
+              "segment_station": 19,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 19
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 8,
+              "model": 14,
+              "status": "valid_model"
+            },
+            {
+              "type": 11,
+              "model": 19,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 19,
+              "model": 30,
+              "status": "valid_model"
+            },
+            {
+              "type": 21,
+              "model": 34,
+              "status": "valid_model"
+            },
+            {
+              "type": 22,
+              "model": 36,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 605,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 20,
+                  "segment": 128,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 606,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 27,
+                  "segment": 260,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 606,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 28,
+                  "segment": 239,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 606,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 29,
+                  "segment": 268,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 607,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 46,
+                  "segment": 144,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 607,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 47,
+                  "segment": 107,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 607,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 48,
+                  "segment": 149,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 610,
+                  "side": 2
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 609,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 67,
+                  "segment": 459,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 610,
+                  "side": 2
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 609,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 68,
+                  "segment": 449,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 13,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 611,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 98,
+                  "segment": 515,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 14,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 611,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 99,
+                  "segment": 509,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 15,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 612,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 106,
+                  "segment": 538,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 16,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 614,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 613,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 107,
+                  "segment": 537,
+                  "side": 0
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1638,7 +3521,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 10,
@@ -1698,6 +3582,521 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 7,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 574,
+            "robot_centers": 7,
+            "stations": 11,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 548,
+              "station": 0,
+              "robot_flags": [
+                66048
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 549,
+              "station": 1,
+              "robot_flags": [
+                4194306
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 550,
+              "station": 2,
+              "robot_flags": [
+                524800
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 551,
+              "station": 3,
+              "robot_flags": [
+                4194816
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            },
+            {
+              "segment": 552,
+              "station": 4,
+              "robot_flags": [
+                528384
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 4
+            },
+            {
+              "segment": 553,
+              "station": 5,
+              "robot_flags": [
+                65536
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 5
+            },
+            {
+              "segment": 554,
+              "station": 6,
+              "robot_flags": [
+                524800
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 6
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 548,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 4,
+              "effective_ordinal": 0,
+              "segment_station": 4,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 4
+              }
+            },
+            {
+              "segment": 549,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 5,
+              "effective_ordinal": 1,
+              "segment_station": 5,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 5
+              }
+            },
+            {
+              "segment": 550,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 6,
+              "effective_ordinal": 2,
+              "segment_station": 6,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 6
+              }
+            },
+            {
+              "segment": 551,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 7,
+              "effective_ordinal": 3,
+              "segment_station": 7,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 7
+              }
+            },
+            {
+              "segment": 552,
+              "generated_ordinal": 4,
+              "serialized_matcen": 4,
+              "serialized_station": 8,
+              "effective_ordinal": 4,
+              "segment_station": 8,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 8
+              }
+            },
+            {
+              "segment": 553,
+              "generated_ordinal": 5,
+              "serialized_matcen": 5,
+              "serialized_station": 9,
+              "effective_ordinal": 5,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 554,
+              "generated_ordinal": 6,
+              "serialized_matcen": 6,
+              "serialized_station": 10,
+              "effective_ordinal": 6,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 9,
+              "model": 16,
+              "status": "valid_model"
+            },
+            {
+              "type": 12,
+              "model": 20,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 19,
+              "model": 30,
+              "status": "valid_model"
+            },
+            {
+              "type": 22,
+              "model": 36,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 548,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 66,
+                  "segment": 252,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 549,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 73,
+                  "segment": 293,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 549,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 74,
+                  "segment": 308,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 550,
+                  "side": 3
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 95,
+                  "segment": 312,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 550,
+                  "side": 3
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 96,
+                  "segment": 190,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 550,
+                  "side": 3
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 97,
+                  "segment": 200,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 551,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 552,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 120,
+                  "segment": 373,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 551,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 552,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 121,
+                  "segment": 375,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 553,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 126,
+                  "segment": 57,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 553,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 127,
+                  "segment": 493,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 553,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 128,
+                  "segment": 447,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 554,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 129,
+                  "segment": 524,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 12,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 554,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 130,
+                  "segment": 525,
+                  "side": 4
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1781,7 +4180,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 11,
@@ -1841,6 +4241,316 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 375,
+            "robot_centers": 5,
+            "stations": 9,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 351,
+              "station": 0,
+              "robot_flags": [
+                4608
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 352,
+              "station": 1,
+              "robot_flags": [
+                4128
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 353,
+              "station": 2,
+              "robot_flags": [
+                69632
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 354,
+              "station": 3,
+              "robot_flags": [
+                3
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            },
+            {
+              "segment": 355,
+              "station": 4,
+              "robot_flags": [
+                514
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 4
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 351,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 4,
+              "effective_ordinal": 0,
+              "segment_station": 4,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 4
+              }
+            },
+            {
+              "segment": 352,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 5,
+              "effective_ordinal": 1,
+              "segment_station": 5,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 5
+              }
+            },
+            {
+              "segment": 353,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 6,
+              "effective_ordinal": 2,
+              "segment_station": 6,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 6
+              }
+            },
+            {
+              "segment": 354,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 7,
+              "effective_ordinal": 3,
+              "segment_station": 7,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 7
+              }
+            },
+            {
+              "segment": 355,
+              "generated_ordinal": 4,
+              "serialized_matcen": 4,
+              "serialized_station": 8,
+              "effective_ordinal": 4,
+              "segment_station": 8,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 8
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 0,
+              "model": 0,
+              "status": "valid_model"
+            },
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 5,
+              "model": 9,
+              "status": "valid_model"
+            },
+            {
+              "type": 9,
+              "model": 16,
+              "status": "valid_model"
+            },
+            {
+              "type": 12,
+              "model": 20,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 351,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 18,
+                  "segment": 325,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 351,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 19,
+                  "segment": 324,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 352,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 30,
+                  "segment": 49,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 352,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 31,
+                  "segment": 48,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 353,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 51,
+                  "segment": 108,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 354,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 355,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 60,
+                  "segment": 136,
+                  "side": 5
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1949,7 +4659,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 12,
@@ -2009,6 +4720,400 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 730,
+            "robot_centers": 5,
+            "stations": 13,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 706,
+              "station": 0,
+              "robot_flags": [
+                514
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 707,
+              "station": 1,
+              "robot_flags": [
+                528384
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 708,
+              "station": 2,
+              "robot_flags": [
+                589824
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 709,
+              "station": 3,
+              "robot_flags": [
+                2560
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            },
+            {
+              "segment": 710,
+              "station": 4,
+              "robot_flags": [
+                69632
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 4
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 706,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 8,
+              "effective_ordinal": 0,
+              "segment_station": 8,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 8
+              }
+            },
+            {
+              "segment": 707,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 9,
+              "effective_ordinal": 1,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 708,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 10,
+              "effective_ordinal": 2,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            },
+            {
+              "segment": 709,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 11,
+              "effective_ordinal": 3,
+              "segment_station": 11,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 11
+              }
+            },
+            {
+              "segment": 710,
+              "generated_ordinal": 4,
+              "serialized_matcen": 4,
+              "serialized_station": 12,
+              "effective_ordinal": 4,
+              "segment_station": 12,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 12
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 1,
+              "model": 2,
+              "status": "valid_model"
+            },
+            {
+              "type": 9,
+              "model": 16,
+              "status": "valid_model"
+            },
+            {
+              "type": 11,
+              "model": 19,
+              "status": "valid_model"
+            },
+            {
+              "type": 12,
+              "model": 20,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 19,
+              "model": 30,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 3,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 708,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 707,
+                  "side": 5
+                },
+                {
+                  "ordinal": 2,
+                  "segment": 706,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 30,
+                  "segment": 442,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 3,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 708,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 707,
+                  "side": 5
+                },
+                {
+                  "ordinal": 2,
+                  "segment": 706,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 31,
+                  "segment": 441,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 3,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 708,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 707,
+                  "side": 5
+                },
+                {
+                  "ordinal": 2,
+                  "segment": 706,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 32,
+                  "segment": 434,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 710,
+                  "side": 2
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 709,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 55,
+                  "segment": 108,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 710,
+                  "side": 2
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 709,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 56,
+                  "segment": 133,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 710,
+                  "side": 2
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 709,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 57,
+                  "segment": 132,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 706,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 86,
+                  "segment": 695,
+                  "side": 1
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 706,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 87,
+                  "segment": 96,
+                  "side": 5
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2145,7 +5250,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 13,
@@ -2205,6 +5311,342 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 386,
+            "robot_centers": 4,
+            "stations": 8,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 363,
+              "station": 0,
+              "robot_flags": [
+                6291456
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 364,
+              "station": 1,
+              "robot_flags": [
+                524800
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 365,
+              "station": 2,
+              "robot_flags": [
+                528896
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 366,
+              "station": 3,
+              "robot_flags": [
+                590336
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 363,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 4,
+              "effective_ordinal": 0,
+              "segment_station": 4,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 4
+              }
+            },
+            {
+              "segment": 364,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 5,
+              "effective_ordinal": 1,
+              "segment_station": 5,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 5
+              }
+            },
+            {
+              "segment": 365,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 6,
+              "effective_ordinal": 2,
+              "segment_station": 6,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 6
+              }
+            },
+            {
+              "segment": 366,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 7,
+              "effective_ordinal": 3,
+              "segment_station": 7,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 7
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 9,
+              "model": 16,
+              "status": "valid_model"
+            },
+            {
+              "type": 12,
+              "model": 20,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 19,
+              "model": 30,
+              "status": "valid_model"
+            },
+            {
+              "type": 21,
+              "model": 34,
+              "status": "valid_model"
+            },
+            {
+              "type": 22,
+              "model": 36,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 0,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 364,
+                  "side": 0
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 30,
+                  "segment": 87,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 364,
+                  "side": 0
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 363,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 31,
+                  "segment": 295,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 364,
+                  "side": 0
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 363,
+                  "side": 4
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 32,
+                  "segment": 148,
+                  "side": 3
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 365,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 107,
+                  "segment": 221,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 365,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 108,
+                  "segment": 231,
+                  "side": 5
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 365,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 109,
+                  "segment": 246,
+                  "side": 3
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 365,
+                  "side": 2
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 110,
+                  "segment": 177,
+                  "side": 4
+                }
+              ]
+            },
+            {
+              "index": 13,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 366,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 142,
+                  "segment": 166,
+                  "side": 4
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2314,7 +5756,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 14,
@@ -2374,6 +5817,183 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 518,
+            "robot_centers": 4,
+            "stations": 11,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 495,
+              "station": 0,
+              "robot_flags": [
+                69632
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 496,
+              "station": 1,
+              "robot_flags": [
+                2097664
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            },
+            {
+              "segment": 497,
+              "station": 2,
+              "robot_flags": [
+                2097664
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 2
+            },
+            {
+              "segment": 498,
+              "station": 3,
+              "robot_flags": [
+                69632
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 3
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 495,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 7,
+              "effective_ordinal": 0,
+              "segment_station": 7,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 7
+              }
+            },
+            {
+              "segment": 496,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 8,
+              "effective_ordinal": 1,
+              "segment_station": 8,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 8
+              }
+            },
+            {
+              "segment": 497,
+              "generated_ordinal": 2,
+              "serialized_matcen": 2,
+              "serialized_station": 9,
+              "effective_ordinal": 2,
+              "segment_station": 9,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 9
+              }
+            },
+            {
+              "segment": 498,
+              "generated_ordinal": 3,
+              "serialized_matcen": 3,
+              "serialized_station": 10,
+              "effective_ordinal": 3,
+              "segment_station": 10,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 10
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 9,
+              "model": 16,
+              "status": "valid_model"
+            },
+            {
+              "type": 12,
+              "model": 20,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 21,
+              "model": 34,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 4,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 496,
+                  "side": 3
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 495,
+                  "side": 3
+                },
+                {
+                  "ordinal": 2,
+                  "segment": 497,
+                  "side": 3
+                },
+                {
+                  "ordinal": 3,
+                  "segment": 498,
+                  "side": 3
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 148,
+                  "segment": 476,
+                  "side": 3
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2457,7 +6077,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 15,
@@ -2517,6 +6138,176 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {
+            "segments": 9000,
+            "robot_centers": 20,
+            "stations": 140,
+            "robot_types": 30,
+            "polygon_models": 85
+          },
+          "runtime_counts": {
+            "segments": 661,
+            "robot_centers": 2,
+            "stations": 5,
+            "robot_types": 24,
+            "polygon_models": 78
+          },
+          "disk_records": [
+            {
+              "segment": 634,
+              "station": 0,
+              "robot_flags": [
+                2560
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 0
+            },
+            {
+              "segment": 641,
+              "station": 1,
+              "robot_flags": [
+                594432
+              ],
+              "hit_points": 0,
+              "interval": 0,
+              "ordinal": 1
+            }
+          ],
+          "bindings": [
+            {
+              "segment": 634,
+              "generated_ordinal": 0,
+              "serialized_matcen": 0,
+              "serialized_station": 3,
+              "effective_ordinal": 0,
+              "segment_station": 3,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 3
+              }
+            },
+            {
+              "segment": 641,
+              "generated_ordinal": 1,
+              "serialized_matcen": 1,
+              "serialized_station": 4,
+              "effective_ordinal": 1,
+              "segment_station": 4,
+              "binding_status": "disk_bound",
+              "station_status": "matching_station",
+              "record_overrides": {
+                "station": 4
+              }
+            }
+          ],
+          "robot_models": [
+            {
+              "type": 9,
+              "model": 16,
+              "status": "valid_model"
+            },
+            {
+              "type": 11,
+              "model": 19,
+              "status": "valid_model"
+            },
+            {
+              "type": 12,
+              "model": 20,
+              "status": "valid_model"
+            },
+            {
+              "type": 16,
+              "model": 25,
+              "status": "valid_model"
+            },
+            {
+              "type": 19,
+              "model": 30,
+              "status": "valid_model"
+            }
+          ],
+          "triggers": [
+            {
+              "index": 1,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 634,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 60,
+                  "segment": 444,
+                  "side": 2
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 1,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 634,
+                  "side": 5
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 61,
+                  "segment": 610,
+                  "side": 0
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "type": 0,
+              "flags": 64,
+              "value": 327680,
+              "time": -1,
+              "declared_link_count": 2,
+              "links": [
+                {
+                  "ordinal": 0,
+                  "segment": 634,
+                  "side": 5
+                },
+                {
+                  "ordinal": 1,
+                  "segment": 641,
+                  "side": 1
+                }
+              ],
+              "runtime_source_walls": [
+                {
+                  "wall": 62,
+                  "segment": 460,
+                  "side": 5
+                }
+              ]
+            }
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2600,7 +6391,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 16,
@@ -2701,7 +6493,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       }
     ],
     "mission_path": "D1LOST.MSN",

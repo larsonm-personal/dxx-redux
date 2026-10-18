@@ -31,6 +31,14 @@ static void test_legacy_matcen_binding_resolution()
 	RobotCenters[0].segnum = 99;
 	RobotCenters[1].fuelcen_num = 3;
 	RobotCenters[1].segnum = -7;
+	// A previous level can leave a plausible station and nonzero robot mask here
+	RobotCenters[2].fuelcen_num = 2;
+	RobotCenters[2].segnum = 2;
+#ifdef DXX_BUILD_DESCENT_II
+	RobotCenters[2].robot_flags[0] = 16;
+#else
+	RobotCenters[2].robot_flags[0] = 8;
+#endif
 	require(matcen_get_station_num(0) == 1 && matcen_get_station_num(1) == 3,
 	        "legacy ordinals resolve independently of stale serialized backlinks");
 	require(matcen_get_station_num(2) == -1,

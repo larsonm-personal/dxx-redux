@@ -111,8 +111,8 @@
       ],
       "total_frames": 8588,
       "rng_end": {
-        "state": 2004497749,
-        "calls": 12460
+        "state": 613364229,
+        "calls": 12924
       },
       "reactor_escape": {
         "countdown_seconds": 30.0,
@@ -171,14 +171,14 @@
           "s": 115
         }
       ],
-      "total_frames": 6905,
+      "total_frames": 6880,
       "rng_end": {
-        "state": 3494881354,
-        "calls": 11597
+        "state": 3330052844,
+        "calls": 14411
       },
       "reactor_escape": {
         "countdown_seconds": 90.0,
-        "simulated_seconds": 31.400009,
+        "simulated_seconds": 30.983337,
         "difficulty": 2
       }
     }

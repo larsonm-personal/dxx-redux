@@ -30,37 +30,37 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 55
+          "s": 56
         },
         {
           "n": "blastable wall",
-          "s": 87
+          "s": 88
         },
         {
           "n": "boss",
-          "s": 93
-        },
-        {
-          "n": "blastable wall",
           "s": 94
         },
         {
           "n": "blastable wall",
-          "s": 95
+          "s": 96
         },
         {
           "n": "blastable wall",
           "s": 97
         },
         {
+          "n": "blastable wall",
+          "s": 98
+        },
+        {
           "n": "exit",
-          "s": 97
+          "s": 99
         }
       ],
-      "total_frames": 5838,
+      "total_frames": 5943,
       "rng_end": {
-        "state": 4222898646,
-        "calls": 3473
+        "state": 3560020420,
+        "calls": 5395
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -105,8 +105,8 @@
       ],
       "total_frames": 9416,
       "rng_end": {
-        "state": 939825592,
-        "calls": 5359
+        "state": 2704544591,
+        "calls": 6554
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -147,8 +147,8 @@
       ],
       "total_frames": 14451,
       "rng_end": {
-        "state": 1646444472,
-        "calls": 5871
+        "state": 3296773175,
+        "calls": 7090
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -189,8 +189,8 @@
       ],
       "total_frames": 14538,
       "rng_end": {
-        "state": 1393353846,
-        "calls": 6513
+        "state": 1192424137,
+        "calls": 7672
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -218,7 +218,7 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 131
+          "s": 130
         },
         {
           "n": "boss",
@@ -229,14 +229,14 @@
           "s": 185
         }
       ],
-      "total_frames": 11119,
+      "total_frames": 11085,
       "rng_end": {
-        "state": 3779979548,
-        "calls": 5723
+        "state": 2062784604,
+        "calls": 7707
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 4.850006,
+        "simulated_seconds": 4.883347,
         "difficulty": 2
       }
     },
@@ -261,8 +261,8 @@
       ],
       "total_frames": 6602,
       "rng_end": {
-        "state": 1713460939,
-        "calls": 2110
+        "state": 883633187,
+        "calls": 3174
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
