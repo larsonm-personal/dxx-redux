@@ -88,6 +88,7 @@ jobs:
           requirements = {
               'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware') for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
+              'native_replay': any(test.get('owner') == 'shareware' and test.get('args', {}).get('suite') in ('test_auto_level_cheats', 'test_auto_level_demos') for test in selected),
           }
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               for name, needed in requirements.items():
@@ -222,6 +223,18 @@ jobs:
         run: |
           set -euo pipefail
           bash android/get_deps/helpers/get_linux_build_prereqs.sh 2>&1 | tee ../results/setup/dual-host-prerequisites.log
+      - name: Provision selected auto-level replay prerequisites
+        if: steps.selection.outputs.native_replay == 'true'
+        timeout-minutes: 10
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          {
+            bash android/get_deps/helpers/get_linux_build_prereqs.sh
+            sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri
+            command -v xvfb-run
+          } 2>&1 | tee ../results/setup/native-replay-prerequisites.log
       - name: Provision emulator image
         if: inputs.lane != 'jvm'
         id: emulator
@@ -366,14 +379,22 @@ jobs:
         id: execute
         timeout-minutes: 50
         shell: bash
+        env:
+          NATIVE_REPLAY: ${{ steps.selection.outputs.native_replay }}
         run: |
           set -euo pipefail
           if [[ "$SWEEP_LANE" != 'jvm' ]]; then
             bash control/android/helpers/refresh_nightly_kvm_access.sh
           fi
-          python3 control/android/tests/nightly_tooling_sweep.py execute \
-            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
-            --lane "$SWEEP_LANE" --repo "$GITHUB_WORKSPACE/target" --output "$GITHUB_WORKSPACE/results"
+          command=(python3 control/android/tests/nightly_tooling_sweep.py execute
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json
+            --lane "$SWEEP_LANE" --repo "$GITHUB_WORKSPACE/target" --output "$GITHUB_WORKSPACE/results")
+          if [[ "$NATIVE_REPLAY" == true ]]; then
+            # Auto-level owners record on Android, then replay in the native SDL/OpenGL executable
+            command=(xvfb-run -a -s '-screen 0 1280x720x24 -nolisten tcp'
+              env LIBGL_ALWAYS_SOFTWARE=1 SDL_VIDEODRIVER=x11 SDL_AUDIODRIVER=dummy "${command[@]}")
+          fi
+          "${command[@]}"
       - name: Reconcile durable test evidence
         if: always() && hashFiles('plan/plan.json') != '' && hashFiles('control/android/tests/nightly_tooling_sweep.py') != ''
         shell: bash
