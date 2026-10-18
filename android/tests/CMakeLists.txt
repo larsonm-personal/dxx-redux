@@ -314,7 +314,7 @@ add_executable(
     test_android_rewind_capture
     test_android_rewind_capture.c "${DXX_TEST_SHARED_SOURCE_DIR}/android_rewind.c"
     "${DXX_TEST_SHARED_SOURCE_DIR}/android_rewind_policy.c")
-target_compile_definitions(test_android_rewind_capture PRIVATE DXX_REWIND_FILE_WRAPPER)
+target_compile_definitions(test_android_rewind_capture PRIVATE __ANDROID__ DXX_REWIND_FILE_WRAPPER)
 if(DXX_TEST_GAME STREQUAL "d2")
     target_compile_definitions(test_android_rewind_capture PRIVATE DXX_BUILD_DESCENT_II=1)
 endif()
