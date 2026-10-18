@@ -29,7 +29,8 @@
       "trace": "android/tests/fixtures/matcen-authored/orion-d2-level7.json",
       "inputs": "android/tests/fixtures/matcen-authored/orion-d2-level7.inputs.json",
       "expected_status": "review-required",
-      "capture_sha256": "84e0d5baa15e8ad684e3f680040e5f865a18090e9db77c4afd3e2b3ce3eeec49"
+      "capture_sha256": "84e0d5baa15e8ad684e3f680040e5f865a18090e9db77c4afd3e2b3ce3eeec49",
+      "compact_projection_sha256": "77e05ab3c4a2727a7d2145cef3eaef12c3e1d88daca053b45f68bf9c1e0f71fb"
     },
     {
       "archive": "missions/Orion.ZIP",
@@ -41,7 +42,8 @@
       "trace": "android/tests/fixtures/matcen-authored/orion-level7.json",
       "inputs": "android/tests/fixtures/matcen-authored/orion-level7.inputs.json",
       "expected_status": "review-required",
-      "capture_sha256": "93aaa460bf73574601bbc471baae43b6556e6e2c2be6c84afb418b02d3d5270e"
+      "capture_sha256": "93aaa460bf73574601bbc471baae43b6556e6e2c2be6c84afb418b02d3d5270e",
+      "compact_projection_sha256": "6deb8bfbd1b2b77bed17d5b561dc6ce1a846bd469c2f0ffc0598102af9801a4b"
     },
     {
       "archive": "missions/Vignettes.zip",
@@ -53,7 +55,8 @@
       "trace": "android/tests/fixtures/matcen-authored/vignette-secret1.json",
       "inputs": "android/tests/fixtures/matcen-authored/vignette-secret1.inputs.json",
       "expected_status": "passed",
-      "capture_sha256": "39ffaf77286e3a3825dc34a5692369bc3394f5af2fb762600a861bd22c63756a"
+      "capture_sha256": "39ffaf77286e3a3825dc34a5692369bc3394f5af2fb762600a861bd22c63756a",
+      "compact_projection_sha256": "b7172af22a91ee5fd1881d1c3cd6e453cae2f9ccf97fe16ba53e4bd718f09397"
     },
     {
       "archive": "missions/Vignettes.zip",
@@ -65,7 +68,8 @@
       "trace": "android/tests/fixtures/matcen-authored/vignette-level13.json",
       "inputs": "android/tests/fixtures/matcen-authored/vignette-level13.inputs.json",
       "expected_status": "passed",
-      "capture_sha256": "16ba8b5b02ec127d08bce90bccf61422ac8f5b3e9f3addd86ec75d979cb254c0"
+      "capture_sha256": "16ba8b5b02ec127d08bce90bccf61422ac8f5b3e9f3addd86ec75d979cb254c0",
+      "compact_projection_sha256": "a2bfc9de8afcd512d139cb8fd7dc913bde7b84dc3f234833de74e242e968e9e4"
     },
     {
       "archive": "missions/Vignettes.zip",
@@ -77,7 +81,8 @@
       "trace": "android/tests/fixtures/matcen-authored/vignette-level17.json",
       "inputs": "android/tests/fixtures/matcen-authored/vignette-level17.inputs.json",
       "expected_status": "passed",
-      "capture_sha256": "56e55f8483271b23060333e43d9f7aee5e4a2386b34f40103980a168134d4216"
+      "capture_sha256": "56e55f8483271b23060333e43d9f7aee5e4a2386b34f40103980a168134d4216",
+      "compact_projection_sha256": "d668d9fccebf590c68a709e90c8ac32512f49d9c4cc004a67399a894a8509ac2"
     },
     {
       "archive": "missions/Vignettes.zip",
@@ -89,7 +94,8 @@
       "trace": "android/tests/fixtures/matcen-authored/vignette-level20.json",
       "inputs": "android/tests/fixtures/matcen-authored/vignette-level20.inputs.json",
       "expected_status": "passed",
-      "capture_sha256": "60aa9518f998b3f68aad5c9f50777378104a9448e036163a87ab1de5c11bcb1c"
+      "capture_sha256": "60aa9518f998b3f68aad5c9f50777378104a9448e036163a87ab1de5c11bcb1c",
+      "compact_projection_sha256": "d9f9973b1903145d8283f985ea48c5d7f4bbb4088ecdd3a8b79cab968064a9ab"
     },
     {
       "archive": "missions/Vignettes.zip",
@@ -101,7 +107,8 @@
       "trace": "android/tests/fixtures/matcen-authored/vignette-level21.json",
       "inputs": "android/tests/fixtures/matcen-authored/vignette-level21.inputs.json",
       "expected_status": "passed",
-      "capture_sha256": "7d0bed31aabbf3d020e440a509929f2d641987d3140e3dd50e454d124f92c3fe"
+      "capture_sha256": "7d0bed31aabbf3d020e440a509929f2d641987d3140e3dd50e454d124f92c3fe",
+      "compact_projection_sha256": "69bcb0133d1e1d2b2d3bbe04be4270fed4539f874bc3a5a075b65911c77986ca"
     },
     {
       "archive": "missions/galmond2.zip",
@@ -113,7 +120,8 @@
       "trace": "android/tests/fixtures/matcen-authored/galmond2-level2.json",
       "inputs": "android/tests/fixtures/matcen-authored/galmond2-level2.inputs.json",
       "expected_status": "review-required",
-      "capture_sha256": "811d62e193449969a90a853292a7e4002b7f073becb5c5615a51cb5647e06258"
+      "capture_sha256": "811d62e193449969a90a853292a7e4002b7f073becb5c5615a51cb5647e06258",
+      "compact_projection_sha256": "28ed7b9cfb7c5fbb5d1a8d8d1c173f97de182803946ac9a1363841819f52a98a"
     },
     {
       "archive": "missions/galmond2.zip",
@@ -125,7 +133,8 @@
       "trace": "android/tests/fixtures/matcen-authored/galmond2-level3.json",
       "inputs": "android/tests/fixtures/matcen-authored/galmond2-level3.inputs.json",
       "expected_status": "review-required",
-      "capture_sha256": "8bf402ad96a36219c1c19966ad96a35796cfd983dc0217ca42c83f4f3b10d96b"
+      "capture_sha256": "8bf402ad96a36219c1c19966ad96a35796cfd983dc0217ca42c83f4f3b10d96b",
+      "compact_projection_sha256": "6c1e9f01c6f22e8a064d38073c84f35f76d946fa60a7e04f40a42a18e3c09770"
     },
     {
       "archive": "missions/galmond2.zip",
@@ -137,7 +146,8 @@
       "trace": "android/tests/fixtures/matcen-authored/galmond2-level11.json",
       "inputs": "android/tests/fixtures/matcen-authored/galmond2-level11.inputs.json",
       "expected_status": "review-required",
-      "capture_sha256": "f67710bfc540c7affc2def82e16bedf97e52f0e72525f1c2795f4f514382c110"
+      "capture_sha256": "f67710bfc540c7affc2def82e16bedf97e52f0e72525f1c2795f4f514382c110",
+      "compact_projection_sha256": "b7a35e63217ffc0434bc3142cd833e25866941b152338ef79ad129c9acbdbab8"
     },
     {
       "archive": "missions/ironblade.zip",
@@ -149,8 +159,10 @@
       "trace": "android/tests/fixtures/matcen-authored/ironbl01-level3.json",
       "inputs": "android/tests/fixtures/matcen-authored/ironbl01-level3.inputs.json",
       "expected_status": "review-required",
-      "capture_sha256": "371af58c6b7cb03edf719d8802ada2c1c6fd2fa74a3529900b7c68398541102a"
+      "capture_sha256": "371af58c6b7cb03edf719d8802ada2c1c6fd2fa74a3529900b7c68398541102a",
+      "compact_projection_sha256": "e16f97cfe08e8c5a3266d67823f7b5cee84e6b28f6ea36f4a36b16a3fd4ec335"
     }
   ],
-  "capture_hash_encoding": "SHA256 of the additive matcen_regression block encoded as UTF-8 JSON with sorted keys and separators comma/colon, without whitespace or trailing newline"
+  "capture_hash_encoding": "SHA256 of the original historical schema-1 observation block, UTF-8 JSON with sorted keys and comma/colon separators, no whitespace or trailing newline; preserved unchanged by compact projection",
+  "compact_projection": "Schema 2 mechanically projected from the recorded capture; compact_projection_sha256 uses the same canonical JSON encoding. Original gameplay, assets, traces and capture hashes are unchanged."
 }
