@@ -58,6 +58,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "textures.h"
 #include "multi.h"
+#include "coop/coop_robot_door.h"
 #ifdef __ANDROID__
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
@@ -117,7 +118,7 @@ void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short h
 		int	wall_num = Segments[hitseg].sides[hitwall].wall_num;
 		if (wall_num != -1) {
 			if ((Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys == KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED)) {
-				wall_open_door(&Segments[hitseg], hitwall);
+				coop_robot_open_door(robot, hitseg, hitwall);
 			}
 		}
 	}

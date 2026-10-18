@@ -135,7 +135,9 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "endlevel_validation.h"
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
+#include "ai.h"
 #include "escort.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 #include "d1_in_d2/d1_in_d2_presentation.h"
 #include "guidebot_info_overlay.h"
 #include "gamemine.h"
@@ -529,7 +531,7 @@ enum step_type {
 	STEP_ANALYZE_LEVEL_METADATA,     /* launcher-only: no-op in game engine (skip) */
 	STEP_ANALYZE_LEVEL_METADATA_ALL, /* launcher-only: no-op in game engine (skip) */
 	STEP_TRIGGER_ENDLEVEL,           /* call start_endlevel_sequence() */
-	STEP_TRIGGER_LEVELCOMPLETE,      /* call PlayerFinishedLevel(0) directly */
+	STEP_TRIGGER_LEVELCOMPLETE,      /* normal completion or the authored D1 secret trigger */
 	STEP_TRIGGER_POSTLEVEL,          /* open the multiplayer post-level summary */
 	STEP_MUSIC_CONTROL,              /* invoke shared Android track controls */
 	STEP_REDBOOK_INVALIDATE_SOURCE,  /* automation-only source I/O failure injection */
@@ -4163,8 +4165,34 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("trigger_levelcomplete: game is not running");
 				break;
 			}
-			advance_step();
-			PlayerFinishedLevel(0);
+			if ((!s.value.empty() && s.value != "secret")
+#ifdef DXX_BUILD_DESCENT_II
+			    || (s.value == "secret" && !EMULATING_D1)
+#endif
+			) {
+				stop_script_fail("trigger_levelcomplete: secret exits require a D1 mission");
+				break;
+			}
+			if (s.value == "secret") {
+				int exit_wall = -1;
+				for (int i = 0; i < Num_walls; ++i) {
+					if (Walls[i].trigger >= Num_triggers) continue;
+					const bool secret = (trigger_exit_flags(Walls[i].trigger) & TRIGGER_SECRET_EXIT) != 0;
+					if (secret) {
+						exit_wall = i;
+						break;
+					}
+				}
+				if (exit_wall < 0) {
+					stop_script_fail("trigger_levelcomplete: no authored secret exit in this mine");
+					break;
+				}
+				advance_step();
+				check_trigger(&Segments[Walls[exit_wall].segnum], Walls[exit_wall].sidenum, Players[Player_num].objnum, 0);
+			} else {
+				advance_step();
+				PlayerFinishedLevel(0);
+			}
 			break;
 
 		case STEP_TRIGGER_POSTLEVEL: {
@@ -4538,6 +4566,107 @@ extern "C" void game_automate_tick(void)
 				}
 			} else if (s.field == "recovery_test_trace") {
 				debug_log_enabled[DLOG_COOP_DESYNC] = 1;
+				debug_log_enabled[DLOG_NETWORK] = 1;
+			} else if (s.field == "recovery_test_laser_contact") {
+				if (s.value == "release") {
+					if (coop_recovery_test_pickup_pending() != 1 || !coop_recovery_test_pickup_gate(0))
+						stop_script_fail("Laser race requires one pending contact with held datagrams");
+				} else if (s.value == "arm") {
+					object *target = nullptr;
+					uint32_t id = 0;
+					unsigned candidates = 0;
+					for (size_t i = 0; i < coop_recovery_count(); ++i) {
+						const coop_recovery_item &item = coop_recovery_data()[i];
+						if (item.state != COOP_RECOVERY_LIVE || item.world_level != Current_level_num || item.powerup != POW_LASER) continue;
+						int n = item.object_index;
+						if (n < 0 || n > Highest_object_index || Objects[n].signature != item.signature ||
+						    Objects[n].type != OBJ_POWERUP || (Objects[n].flags & OF_SHOULD_BE_DEAD)) continue;
+						target = &Objects[n];
+						id = item.id;
+						++candidates;
+					}
+					if (!ConsoleObject || Player_is_dead || Players[Player_num].laser_level != 0 || candidates != 1) {
+						stop_script_fail("Laser race requires a live starting ship and exactly one dropped laser");
+						break;
+					}
+					coop_recovery_test_pickup_gate(1);
+					vms_vector position = ConsoleObject->pos;
+					ConsoleObject->pos = target->pos;
+					collide_player_and_powerup(ConsoleObject, target, &target->pos);
+					ConsoleObject->pos = position;
+					if (coop_recovery_test_pickup_pending() != 1 || Players[Player_num].laser_level != 0)
+						stop_script_fail("Laser race awarded inventory before releasing held datagrams");
+					debug_log(DLOG_NETWORK, "[RECOVERY] test_contact player=%d id=%u pending=%u laser=%u",
+					          Player_num, id, coop_recovery_test_pickup_pending(), Players[Player_num].laser_level);
+				} else stop_script_fail("Unknown laser contact fixture action");
+			} else if (s.field == "recovery_test_touch_equipment") {
+				static Uint32 contact_step_start = UINT32_MAX;
+				static unsigned contact_attempts;
+				if (contact_step_start != g_step_start) {
+					contact_step_start = g_step_start;
+					contact_attempts = coop_recovery_test_pickup_attempts();
+				}
+				if (coop_recovery_test_pickup_attempts() > contact_attempts) {
+					advance_step();
+					return;
+				}
+				int type = s.value == "plasma" ? POW_PLASMA_WEAPON : POW_QUAD_FIRE;
+				object *target = nullptr;
+				for (size_t i = 0; i < coop_recovery_count(); ++i) {
+					const coop_recovery_item &item = coop_recovery_data()[i];
+					int n = item.object_index;
+					if (item.state == COOP_RECOVERY_LIVE && item.world_level == Current_level_num &&
+					    item.powerup == type && n >= 0 && n <= Highest_object_index &&
+					    Objects[n].signature == item.signature && Objects[n].type == OBJ_POWERUP &&
+					    !(Objects[n].flags & OF_SHOULD_BE_DEAD)) {
+						target = &Objects[n];
+						break;
+					}
+				}
+				if (!ConsoleObject || Player_is_dead || !target) {
+					if (ConsoleObject && !Player_is_dead && elapsed < 15000) return;
+					stop_script_fail("Equipment contact requires a live player and a live dropped item");
+					break;
+				}
+				/* Exercise reward eligibility after the ordinary fresh-drop delay */
+#ifdef DXX_BUILD_DESCENT_II
+				if (GameTime64 < target->ctype.powerup_info.creation_time + 2 * F1_0) {
+					if (elapsed < 15000) return;
+					stop_script_fail("Equipment contact fresh-drop delay did not finish");
+					break;
+				}
+#endif
+				vms_vector position = ConsoleObject->pos;
+				ConsoleObject->pos = target->pos;
+				collide_player_and_powerup(ConsoleObject, target, &target->pos);
+				ConsoleObject->pos = position;
+				if (coop_recovery_test_pickup_attempts() == contact_attempts) {
+					if (elapsed < 15000) return;
+					stop_script_fail("Equipment contact did not complete a pickup attempt");
+					break;
+				}
+			} else if (s.field == "recovery_test_policy_check") {
+				static unsigned initial_attempts;
+				bool equipped = (Players[Player_num].primary_weapon_flags & (1 << PLASMA_INDEX)) &&
+				                (Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS);
+				bool plasma_live = false, quad_live = false, departed = false;
+				for (size_t i = 0; i < coop_recovery_count(); ++i) {
+					const coop_recovery_item &item = coop_recovery_data()[i];
+					if (item.world_level != Current_level_num) continue;
+					departed |= item.state == COOP_RECOVERY_DEPARTED;
+					if (item.state != COOP_RECOVERY_LIVE) continue;
+					plasma_live |= item.powerup == POW_PLASMA_WEAPON;
+					quad_live |= item.powerup == POW_QUAD_FIRE;
+				}
+				if (s.value == "begin") initial_attempts = coop_recovery_test_pickup_attempts();
+				else if (!equipped || (s.value == "preserved" &&
+				                       (coop_recovery_test_pickup_attempts() < initial_attempts + 2 ||
+				                        Players[Player_num].energy != 50 * F1_0 || !departed || !plasma_live || !quad_live))) {
+					debug_log_force(DLOG_NETWORK, "[RECOVERY] policy check=%s equipped=%d attempts=%u/%u energy=%d departed=%d plasma=%d quad=%d",
+					                s.value.c_str(), equipped, coop_recovery_test_pickup_attempts(), initial_attempts,
+					                Players[Player_num].energy, departed, plasma_live, quad_live);
+					stop_script_fail("Dead teammate equipment was consumed for energy or could not be recovered");
+				}
 			} else if (s.field == "score_catchup_test") {
 				if (!net_udp_test_score_catchup(s.value == "verify"))
 					stop_script_fail("Score catch-up did not recover lost completion packets");
@@ -4599,18 +4728,31 @@ extern "C" void game_automate_tick(void)
 				}
 				if (!found) stop_script_fail("recovery_test_approach_homing: no live pack");
 			} else if (s.field == "recovery_test_collect_homing") {
-				bool found = false;
-				if (ConsoleObject && (Game_mode & GM_MULTI_COOP)) {
+				static Uint32 contact_step_start = UINT32_MAX;
+				static int contact_ammo;
+				if (contact_step_start != g_step_start) {
+					contact_step_start = g_step_start;
+					contact_ammo = Players[Player_num].secondary_ammo[HOMING_INDEX];
+				}
+				bool found = Players[Player_num].secondary_ammo[HOMING_INDEX] > contact_ammo;
+				if (!found && ConsoleObject && (Game_mode & GM_MULTI_COOP)) {
 					for (int n = 0; n <= Highest_object_index; n++) {
 						object *powerup = &Objects[n];
 						if (powerup->type != OBJ_POWERUP || powerup->id != POW_HOMING_AMMO_4 ||
 						    !(powerup->flags & OF_COOP_RECOVERY) || (powerup->flags & OF_SHOULD_BE_DEAD)) continue;
 						vms_vector position = ConsoleObject->pos;
+						int ammo_before = Players[Player_num].secondary_ammo[HOMING_INDEX];
 						render_reset_gameplay_view_objects();
 						ConsoleObject->pos = powerup->pos;
 						collide_player_and_powerup(ConsoleObject, powerup, &powerup->pos);
 						render_reset_gameplay_view_objects();
 						ConsoleObject->pos = position;
+						if (!(powerup->flags & OF_SHOULD_BE_DEAD) &&
+						    Players[Player_num].secondary_ammo[HOMING_INDEX] == ammo_before) {
+							if (elapsed >= 10000)
+								stop_script_fail("recovery_test_collect_homing: pickup permission or award timed out");
+							return;
+						}
 						found = true;
 						break;
 					}
@@ -5886,6 +6028,13 @@ extern "C" void game_automate_tick(void)
 				Players[Player_num].secondary_ammo[HOMING_INDEX] = 6;
 				Players[Player_num].laser_level = 2;
 				Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
+				if (s.value == "laser") {
+					Players[Player_num].primary_weapon_flags = 1;
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 0;
+					Players[Player_num].laser_level = 1;
+					Players[Player_num].flags &= ~PLAYER_FLAGS_QUAD_LASERS;
+				}
+				if (s.value == "policy_collector") Players[Player_num].energy = 50 * F1_0;
 				multi_send_ship_status();
 			} else if (s.field == "level_demo_secret") {
 #ifdef DXX_BUILD_DESCENT_II
@@ -5971,6 +6120,123 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "guidebot_door_test") {
+#ifdef DXX_BUILD_DESCENT_II
+				static int door = -1;
+				static bool closing;
+				const bool verify_wall = s.value.find("verify_wall_") == 0;
+				if (verify_wall) {
+					char *end = nullptr;
+					const char *number = s.value.c_str() + strlen("verify_wall_");
+					long index = strtol(number, &end, 10);
+					if (end == number || *end || index < 0 || index >= Num_walls) {
+						stop_script_fail("Door verification requires a valid wall index");
+						break;
+					}
+					door = (int) index;
+				}
+				if (!(Game_mode & GM_MULTI_COOP) || !escort_buddy_is_active() || !Buddy_allowed_to_talk) {
+					stop_script_fail("Door fixture requires a released co-op Guide-Bot");
+					break;
+				}
+				if (s.value.find("prepare_") == 0) {
+					Game_suspended |= SUSP_ROBOTS;
+					Escort_special_goal = ESCORT_GOAL_SCRAM;
+					Players[Player_num].flags |= KEY_BLUE;
+					closing = s.value == "prepare_closing";
+					/* Select the same untouched portal on both peers, away from spawns */
+					for (++door; door < Num_walls; ++door) {
+						const wall &w = Walls[door];
+						if (w.type != WALL_DOOR || w.linked_wall != -1 || w.segnum < 0 || w.sidenum < 0) continue;
+						int child = Segments[w.segnum].children[w.sidenum];
+						if (child < 0) continue;
+						int side = find_connect_side(&Segments[w.segnum], &Segments[child]);
+						if (side < 0 || Segments[child].sides[side].wall_num <= door ||
+						    Segments[child].sides[side].wall_num >= Num_walls) continue;
+						bool spawn = false;
+						for (int i = 0; i < NumNetPlayerPositions; ++i)
+							spawn |= Player_init[i].segnum == w.segnum || Player_init[i].segnum == child;
+						if (!spawn) break;
+					}
+					if (door >= Num_walls || Walls[door].state != WALL_DOOR_CLOSED) {
+						stop_script_fail("Door fixture requires an untouched two-sided portal");
+						break;
+					}
+					wall &w = Walls[door];
+					int child = Segments[w.segnum].children[w.sidenum];
+					int side = find_connect_side(&Segments[w.segnum], &Segments[child]);
+					wall &back = Walls[Segments[child].sides[side].wall_num];
+					w.keys = back.keys = s.value == "prepare_keyed" ? KEY_BLUE : KEY_NONE;
+					w.flags &= ~(WALL_DOOR_LOCKED | WALL_DOOR_AUTO);
+					back.flags &= ~(WALL_DOOR_LOCKED | WALL_DOOR_AUTO);
+					if (Escort_owner_player != Player_num) {
+						collide_object_with_wall(&Objects[Buddy_objnum], 0, w.segnum, w.sidenum, &Objects[Buddy_objnum].pos);
+						if (w.state != WALL_DOOR_CLOSED) stop_script_fail("Nonowner opened the Guide-Bot door locally");
+					}
+					debug_log_force(DLOG_NETWORK, "[DOOR] test_prepare player=%d owner=%d wall=%d keys=%d closing=%d",
+					                Player_num, Escort_owner_player, door, w.keys, closing);
+				} else if (door < 0 || door >= Num_walls) {
+					stop_script_fail("Door fixture was not prepared");
+				} else if (s.value == "flare" || s.value == "flare_nonowner") {
+					if (s.value == "flare_nonowner" && Escort_owner_player == Player_num) {
+						advance_step();
+						break;
+					}
+					wall &w = Walls[door];
+					vms_vector center, hit, direction, start;
+					compute_segment_center(&center, &Segments[w.segnum]);
+					compute_center_point_on_side(&hit, &Segments[w.segnum], w.sidenum);
+					vm_vec_normalized_dir(&direction, &hit, &center);
+					vm_vec_scale_add(&start, &hit, &direction, -i2f(2));
+					if (w.state != WALL_DOOR_CLOSED || find_point_seg(&start, w.segnum) != w.segnum ||
+					    Laser_create_new(&direction, &start, w.segnum, Buddy_objnum, FLARE_ID, 0) < 0) {
+						stop_script_fail("Could not fire a Guide-Bot flare into the prepared closed door");
+						break;
+					}
+					debug_log_force(DLOG_NETWORK, "[DOOR] test_flare player=%d owner=%d wall=%d", Player_num, Escort_owner_player, door);
+				} else if (s.value == "verify_nonowner_closed") {
+					if (Escort_owner_player != Player_num && Walls[door].state != WALL_DOOR_CLOSED)
+						stop_script_fail("Nonowner Guide-Bot flare opened a door locally");
+				} else if (s.value == "contact") {
+					wall &w = Walls[door];
+					if (Escort_owner_player != Player_num || w.state != WALL_DOOR_CLOSED) {
+						stop_script_fail("Door contact requires the owner and a closed portal");
+						break;
+					}
+					if (closing) {
+						wall_open_door(&Segments[w.segnum], w.sidenum);
+						for (int i = 0; i < Num_open_doors; ++i)
+							if (ActiveDoors[i].front_wallnum[0] == door || ActiveDoors[i].back_wallnum[0] == door)
+								ActiveDoors[i].time = WallAnims[w.clip_num].play_time / 2;
+						wall_close_door(&Segments[w.segnum], w.sidenum);
+						if (w.state != WALL_DOOR_CLOSING) {
+							stop_script_fail("Door fixture could not start closing");
+							break;
+						}
+					}
+					collide_object_with_wall(&Objects[Buddy_objnum], 0, w.segnum, w.sidenum, &Objects[Buddy_objnum].pos);
+					if (w.state != WALL_DOOR_OPENING) stop_script_fail("Guide-Bot body contact did not open the door");
+				} else if (s.value == "verify" || verify_wall) {
+					wall &w = Walls[door];
+					int child = Segments[w.segnum].children[w.sidenum];
+					int side = find_connect_side(&Segments[w.segnum], &Segments[child]);
+					wall &back = Walls[Segments[child].sides[side].wall_num];
+					const int completed_state = d1_in_d2_completed_door_state();
+					bool animating = false;
+					for (int i = 0; i < Num_open_doors; ++i)
+						animating |= ActiveDoors[i].front_wallnum[0] == door || ActiveDoors[i].back_wallnum[0] == door;
+					if (animating || w.state != completed_state || !(w.flags & WALL_DOOR_OPENED) ||
+					    back.state != completed_state || !(back.flags & WALL_DOOR_OPENED)) {
+						if (elapsed < 15000) return;
+						debug_log_force(DLOG_NETWORK, "[DOOR] test_failed player=%d wall=%d state=%d/%d expected=%d flags=%d/%d animating=%d",
+						                Player_num, door, w.state, back.state, completed_state, w.flags, back.flags, animating);
+						stop_script_fail("Guide-Bot door did not open on both peers");
+					} else debug_log_force(DLOG_NETWORK, "[DOOR] test_verified player=%d owner=%d wall=%d state=%d flags=%d",
+						                   Player_num, Escort_owner_player, door, w.state, w.flags);
+				} else stop_script_fail("Unknown Guide-Bot door fixture action");
+#else
+				stop_script_fail("Guide-Bot door fixture requires D2");
+#endif
 			} else if (s.field == "guidebot_travel_shields") {
 #ifdef DXX_BUILD_DESCENT_II
 				if (!escort_buddy_is_active() || !Buddy_allowed_to_talk) {

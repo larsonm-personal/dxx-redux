@@ -24,48 +24,58 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 class RegressionToolContractsTest(unittest.TestCase):
     def test_coop_positive_save_fixture_uses_authoritative_format(self) -> None:
-        source = (ROOT / 'android/tests/test_coop_save_compatibility.ps1').read_text()
-        header_path = 'android/app/src/main/cpp/shared/android_save_format.h'
+        source = (ROOT / "android/tests/test_coop_save_compatibility.ps1").read_text()
+        header_path = "android/app/src/main/cpp/shared/android_save_format.h"
         header = ROOT / header_path
-        text = header.read_text() if header.exists() else subprocess.check_output(
-            ['git', 'show', 'HEAD:' + header_path], cwd=ROOT, text=True)
+        text = (
+            header.read_text()
+            if header.exists()
+            else subprocess.check_output(["git", "show", "HEAD:" + header_path], cwd=ROOT, text=True)
+        )
         pattern = re.search(r"'([^']*ANDROID_D1_IN_D2_SAVE_VERSION[^']*)'", source).group(1)
         values = re.findall(pattern, text)
         self.assertEqual(1, len(values))
         self.assertGreater(int(values[0]), 0)
-        self.assertIn('$versionDefinitions.Count -ne 1', source)
-        self.assertIn('Write-VersionFixture $oldSave $currentD1InD2Version', source)
-        self.assertNotIn('Write-VersionFixture $oldSave 44', source)
+        self.assertIn("$versionDefinitions.Count -ne 1", source)
+        self.assertIn("Write-VersionFixture $oldSave $currentD1InD2Version", source)
+        self.assertNotIn("Write-VersionFixture $oldSave 44", source)
         self.assertIn("throw 'Current D1-in-D2 save version was rejected'", source)
-        self.assertIn('foreach ($version in @(40, 42, 45))', source)
+        self.assertRegex(source, r"foreach \(\$version in .*?@\(40, 42, 45\b")
+        for offset in ("- 1", "+ 1"):
+            self.assertIn(f"($currentD1InD2Version {offset})", source)
         for version in (40, 42, 45):
             self.assertNotEqual(version, int(values[0]))
 
     def test_lan_broadcast_failure_contract(self) -> None:
         source = (ROOT / "android/tests/test_lan_broadcast.ps1").read_text(encoding="utf-8")
-        self.assertIn('$script:udpFailureCount = 0', source)
+        self.assertIn("$script:udpFailureCount = 0", source)
         # Every non-terminal failed probe, including the native fallback, contributes
         # to the final exit status; early prerequisite failures already exit one.
-        self.assertEqual(5, source.count('$script:udpFailureCount++'))
-        for message in ('Ping failed', 'UDP unicast not received',
-                        'UDP broadcast not received', 'UDP subnet broadcast not received'):
-            self.assertRegex(source, re.escape('Write-Host "FAIL: ' + message + '"') +
-                             r'\s+\$script:udpFailureCount\+\+')
-        self.assertRegex(source, r'Write-Host \$FailMessage\s+\$script:udpFailureCount\+\+')
-        self.assertTrue(source.rstrip().endswith('if ($script:udpFailureCount -gt 0) { exit 1 }\nexit 0'))
+        self.assertEqual(5, source.count("$script:udpFailureCount++"))
+        for message in (
+            "Ping failed",
+            "UDP unicast not received",
+            "UDP broadcast not received",
+            "UDP subnet broadcast not received",
+        ):
+            self.assertRegex(
+                source, re.escape('Write-Host "FAIL: ' + message + '"') + r"\s+\$script:udpFailureCount\+\+"
+            )
+        self.assertRegex(source, r"Write-Host \$FailMessage\s+\$script:udpFailureCount\+\+")
+        self.assertTrue(source.rstrip().endswith("if ($script:udpFailureCount -gt 0) { exit 1 }\nexit 0"))
         pattern = re.search(r'\$pingResult -match "([^"]+)"', source).group(1)
-        self.assertRegex('2 received, 0% packet loss', pattern)
-        for failed in ('0 received, 100% packet loss', '1 received, 50% packet loss'):
+        self.assertRegex("2 received, 0% packet loss", pattern)
+        for failed in ("0 received, 100% packet loss", "1 received, 50% packet loss"):
             self.assertNotRegex(failed, pattern)
 
     def test_lan_owners_keep_configured_pair_and_report_missing_devices(self) -> None:
-        for name in ('test_lan_broadcast.ps1', 'test_lan_lobby_discovery.ps1'):
-            source = (ROOT / 'android/tests' / name).read_text(encoding='utf-8')
-            self.assertIn('$EMU1 = $script:PRIMARY_EMULATOR_SERIAL', source)
-            self.assertIn('$EMU2 = $script:SECONDARY_EMULATOR_SERIAL', source)
-            self.assertRegex(source, r'RESULT: SKIP \(Need[^\n]+\n\s+exit 2')
-        source = (ROOT / 'android/tests/test_lan_broadcast.ps1').read_text(encoding='utf-8')
-        self.assertNotIn('$emus[0]', source)
+        for name in ("test_lan_broadcast.ps1", "test_lan_lobby_discovery.ps1"):
+            source = (ROOT / "android/tests" / name).read_text(encoding="utf-8")
+            self.assertIn("$EMU1 = $script:PRIMARY_EMULATOR_SERIAL", source)
+            self.assertIn("$EMU2 = $script:SECONDARY_EMULATOR_SERIAL", source)
+            self.assertRegex(source, r"RESULT: SKIP \(Need[^\n]+\n\s+exit 2")
+        source = (ROOT / "android/tests/test_lan_broadcast.ps1").read_text(encoding="utf-8")
+        self.assertNotIn("$emus[0]", source)
         self.assertIn("if addr in ('255.255.255.255', '10.0.2.255'):", source)
 
     def test_health_uses_selected_emulator(self) -> None:

@@ -23,7 +23,8 @@ deadline. Port 42424 must be free on the test host
 The comparison uses shared-socket mode so the real socket can be substituted
 without a production fault-injection hook. It confirms that the old implementation
 also loses outbound forwarding after the injected keepalive error, while leaving
-its shared receiver and sockets open. The current implementation closes them.
+its shared receiver and sockets open. The current implementation keeps both
+forwarding directions working after a transient keepalive send failure.
 This test does not establish the cause of the original device send error
 
 With Network logging enabled, exports now include `[PROXY]` creation, shutdown

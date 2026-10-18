@@ -1717,6 +1717,7 @@ multi_leave_game(void)
 	if (!(Game_mode & GM_MULTI))
 		return;
 #ifdef __ANDROID__
+	debug_log_force(DLOG_NETWORK, "[NETEXIT] leave player=%d level=%d status=%d dead=%d quit=%d", Player_num, Current_level_num, Network_status, Player_is_dead, multi_quit_game);
 	/* Save before quitting drops the host's gear or clears the network state */
 	if (multi_i_am_master()) coop_autosave();
 	coop_level_restart_clear();
@@ -2881,6 +2882,17 @@ multi_do_remobj(const ubyte *buf, int authenticated_sender)
 
 	if (local_objnum < 0 || local_objnum > Highest_object_index)
 	{
+		return;
+	}
+
+	/* Rejoin can reuse an excluded unowned slot for a different owned drop */
+	sbyte mapped_owner;
+	const int mapped_remote = objnum_local_to_remote(local_objnum, &mapped_owner);
+	if (mapped_owner != obj_owner || mapped_remote != objnum) {
+#ifdef __ANDROID__
+		debug_log(DLOG_NETWORK, "[RECOVERY] discard_remove remote=%d owner=%d local=%d current_remote=%d current_owner=%d",
+		          objnum, obj_owner, local_objnum, mapped_remote, mapped_owner);
+#endif
 		return;
 	}
 
@@ -5038,6 +5050,9 @@ void multi_consistency_error(int reset)
 	if (++count < 10)
 		return;
 
+#ifdef __ANDROID__
+	debug_log_force(DLOG_NETWORK, "[NETEXIT] consistency errors player=%d level=%d", Player_num, Current_level_num);
+#endif
 	if (Game_wind)
 		window_set_visible(Game_wind, 0);
 	nm_messagebox(NULL, 1, TXT_OK, TXT_CONSISTENCY_ERROR);

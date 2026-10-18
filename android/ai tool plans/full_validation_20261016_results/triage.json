@@ -1,0 +1,193 @@
+{
+  "scope": "Main suite and all regression generators are complete. Original failures remain unchanged; focused verification is separate. Supplemental tests are still running.",
+  "findings": [
+    {
+      "test": "test_android_mod_renderer",
+      "kind": "runtime_failure",
+      "observed": "D1 passed 11 actual GLES cases. D2 failed equality between UUD-alone rendering and higher-priority UUD over KTX2 rendering after its door checks",
+      "evidence": "renderer_failure/",
+      "pending": "Current fixture reproduces priority failure with custom0 andflags3; direct custom guard hypothesis refuted. Preserve assertion, inspect lookup/ranking/cache behavior before any product fix.",
+      "current_evidence": "renderer_current_results/"
+    },
+    {
+      "test": "test_android_mod_sounds",
+      "kind": "runtime_failure",
+      "observed": "D2 rejects UUD2SP HAM patch op 580: robot 33 AnimState0_0Offset expects 685 but loaded value is zero; door sound assignments remain stock",
+      "cause": "d2/main/robot.c normalizes offsets of empty joint lists to zero; introduced by e193bdb8af on 2026-10-16 at 20:00 PDT",
+      "evidence": "sound_mod_failure/",
+      "pending": "Reproduces same normalized empty-joint HAM patch rejection in current fresh NDK fixture; no patch guard changed.",
+      "current_evidence": "sound_current_results/"
+    },
+    {
+      "test": "test_controller_live_rebind",
+      "kind": "runtime_or_async_fixture_failure",
+      "observed": "D2 baseline passed 69/69 steps, but reopening launcher mapping and holding L2 for 2300 ms leaves selected_control=null at launcher step 3/12. Independent raw-input, response and hotplug owners passed",
+      "evidence": "controller_rebind_failure/",
+      "pending": "Serial D1/D2 retries with launcher, automation and window-focus logs; original assertions retained"
+    },
+    {
+      "test": "test_graphics_first_run",
+      "kind": "original_d1_rearm_intermediate_resume_expectation",
+      "observed": "D1 Rearm expected an intermediate pause menu and first_run_pending=true, but the rearmed chooser was already editing with pending=false",
+      "cause": "The original fixture requires an intermediate idle native pause menu with first_run_pending=true. The fresh D1 run already presents the correct automatic editor: phaseediting,TexFilt2,accepted0,pendingfalse,candidate_readytrue,time_pausedtrue,game_window_is_fronttrue. The earlier unconditional removal of pause/resume was also invalid when that native menu remains open; source is restored and unchanged.",
+      "evidence": "graphics_first_run_failure/",
+      "pending": "Current full D2 matrix remains queued. A proper conditional resume handshake would need to handle both observed paths; no blind fixture deletion or product fix applied.",
+      "current_evidence": "coop_refresh/graphics_original_results/; coop_refresh/graphics_original_capture_index.json",
+      "current_observed": "All3 unchanged original Rearm variants completed on the fresh APK: D1 FAIL at the intermediate step43/51; D2 PASS; importedD1 PASS. D1 correct editor state is captured, but its remaining dwell/cancel/handled assertions were not reached. Do not label D1 full ownerPASS or force a single resume path."
+    },
+    {
+      "test": "test_idle_screen_saver",
+      "kind": "runtime_or_lifecycle_failure",
+      "observed": "D1 fails after background/screen lock with wake_count=0, park_entry_count=0; D2 wakes once then controller A input times out at step 33. Both retain original checks",
+      "evidence": "idle_screen_saver_failure/",
+      "pending": "Serial D1/D2 retries with bounded automation, lifecycle and window/logcat diagnostics"
+    },
+    {
+      "test": "test_launch_to_automap",
+      "kind": "timing_fixture_fix_pending_runtime_verification",
+      "observed": "D1 passed. D2 parked/woke successfully but recorded 3750 ms parked versus required 4000 ms after a five-second background hold",
+      "cause": "Fixed background hold leaves insufficient margin for the asynchronous lifecycle handoff",
+      "evidence": "launch_to_automap_failure/",
+      "pending": "Extend only the main-menu background stimulus to seven seconds, retain four-second parked assertion, retry full D2 owner with diagnostics"
+    },
+    {
+      "test": "test_mod_fuzz/all-on-d1-in-d2-L1",
+      "kind": "runtime_or_reload_sampling_failure",
+      "observed": "All-on imported D1 completes automation, but post-toggle snapshot has mounted UUD/hires/sounds/font packs and texture_packs.loaded=0, packs=[], status=none_loaded",
+      "evidence": "mod_fuzz_failure/all_on_imported/",
+      "pending": "Review exact owners/texture/presentation JSON; presence of a lower-priority pack may need coverage-aware interpretation. Do not weaken ownership assertions or claim all-on replay passed. D2 missing UUD metadata retains the earlier HAM normalization evidence.",
+      "current_evidence": "isolated_android/results/mod_fuzz_all_on_imported_retry/",
+      "focused_retry": "Actual runner timeout247.8seconds at briefing dismissal step36/69, before gameplay. This is a real elapsed timeout; the separate14-control classifier suite passes. Externally updated APK scope applies.",
+      "shared_retry_evidence": "supplemental/mod_fuzz_all_on_imported_retry/",
+      "current_observed": "Exclusive emulator/frozen APK gameplay automation completes, then owner verification fails: controller: High-resolution pack was not rendered: d1-hires-256-textures-ktx2.dxa. Elapsed actual runner 87.875seconds. Original/shared retry outcomes remain separate."
+    },
+    {
+      "test": "test_mod_fuzz/all-on-d2-L1",
+      "kind": "runtime_metadata_failure",
+      "observed": "All-on D2 and Vertigo fail enabled-UUD metadata assertions. Both logs show HAM patch op 606 robot33 AnimState0_0Offset expected685 actual0, same normalized empty-joint field as the UUD2SP sound failure",
+      "evidence": "mod_fuzz_results/",
+      "pending": "Review exact owners/texture/presentation JSON; presence of a lower-priority pack may need coverage-aware interpretation. Do not weaken ownership assertions or claim all-on replay passed. D2 missing UUD metadata retains the earlier HAM normalization evidence.",
+      "current_evidence": "isolated_android/results/mod_fuzz_all_on_d2_retry/",
+      "focused_retry": "Fresh retry fails setup step19/69 toggling512px pack, before reaching original HAM patch failure. Import began16:39:14, ordered command advanced16:40:16, toggle failed16:40:27, import completed16:40:35. Device had12.7GB free. Large asynchronous import outlived ordered-broadcast wait; receiver accepts any result except explicit failure. Platform timeout is an inference from timing, not an instrumented cause. No timeout/patch checks weakened. Externally updated APK scope applies.",
+      "shared_retry_evidence": "supplemental/mod_fuzz_all_on_d2_retry/",
+      "current_observed": "Exclusive emulator/frozen APK gameplay automation completes, then owner verification fails: controller: Enabled UUD metadata was not applied. Elapsed actual runner 90.031seconds. Original/shared retry outcomes remain separate."
+    },
+    {
+      "test": "test_obsidian_level7_switch_guidance",
+      "kind": "isolated_android_metadata_worker_timeout",
+      "observed": "All18 Obsidian metadata levels passed. After game launch, emulator health failed, ADB transport reset did not recover it, and adb devices had no connected target after122 seconds. No game assertion or native crash evidence captured",
+      "evidence": "obsidian_switch_failure/",
+      "pending": "Review cold metadata worker startup/request timing in saved logcat and JSON. Do not bypass timeout/metadata assertions or claim the level7 switch route ran.",
+      "current_evidence": "isolated_android/results/obsidian_level7_switch_retry/",
+      "shared_retry_evidence": "supplemental/obsidian_level7_switch_retry/",
+      "current_observed": "Exclusive fresh emulator5580, frozen APK: import succeeds; analyze_level_metadata_all fails before gameplay. Metadata requests report timeout at6157ms and6303ms. No concurrent package update in this attempt. Earlier shared retry was invalidated by PACKAGE UPDATED and remains separate. Native full metadata regeneration separately passes140/140 inputs."
+    },
+    {
+      "test": "test_uud_mod_combinations",
+      "kind": "runtime_texture_priority_failure",
+      "observed": "All15 runtime states captured. Final verifier fails D2 uud-first because no UUD replacements rendered; nativeD1 allfive phases and D2 baseline/UUD-only verified before failure",
+      "evidence": "uud_combination_results/",
+      "pending": "Compare with existing D2 standalone priority failure and focused UUD/extras gameplay order probes; no assertion relaxed"
+    },
+    {
+      "test": "test_uud2sp",
+      "kind": "runtime_metadata_failure",
+      "observed": "Sound-only passes; sound-first completes automation40/40 then fails no applied metadata source. HAM patch op575 robot33 AnimState0_0Offset expected685 actual0, matching mod-sound and fuzz failures. Remaining three phases not reached.",
+      "evidence": "uud2sp_results/",
+      "pending": "Retain original JSON/logs; focused mod sound/fuzz retries will exercise same normalized joint field; do not weaken patch guards",
+      "source_diagnosis": "Commit e193bdb8af normalizes zero-joint offsets to0 in jointlist_read_n (d2/main/robot.c). The pack producer Get-Uud2spHamFieldValue reads raw int16 offsets directly, so merely rebuilding unchanged producer would preserve the mismatch. Requires agreeing on normalized HAM patch semantics, beyond a simple test fixture change.",
+      "patch_operations": [
+        {
+          "index": 580,
+          "op": "test",
+          "path": "/sections/robots/33/AnimState0_0Offset",
+          "value": 685
+        },
+        {
+          "index": 581,
+          "op": "replace",
+          "path": "/sections/robots/33/AnimState0_0Offset",
+          "value": 0
+        }
+      ],
+      "patch_archive": "game_data/mods/xfing/d2x_sp/uud2sp-sounds.dxa"
+    },
+    {
+      "test": "test_lan_host_migration_public_shareware",
+      "kind": "runtime_rejoin_state_failure",
+      "observed": "Initial nativeD1 shareware LAN sync and bidirectional PDATA pass. Slot1 takes host role and retains spew/recovery records. Former host launches and discovers migrated host, but full matching-object pair predicate times out120s. Second swap unreached. Saved states show returning peer menu says removed for failing important packets; native trace verify_objects remote74 local0, SYNCFAILED retry1/3, then PLAYING. Final synchronized/allocated/active counts74 on both peers, but returning peer in_gamefalse and host num_connected1.",
+      "evidence": "public_migration_failure/",
+      "pending": "Unchanged full publicD1 scenario replay queued on freshly provisioned managed pair; preserve earlySYNC and object-end checks and120s bound"
+    },
+    {
+      "test": "test_lan_launch_preparation",
+      "kind": "emulator_admission_probe_failure_pending_unchanged_retry",
+      "observed": "Refuses to reset emulator5554 because ro.kernel.qemu probe is not exact1; get-state passed. Probe response not captured by original owner. Subsequent public variant passes identical guard on both targets and reaches nativeD1 two-peer gameplay.",
+      "evidence": "launch_preparation_failure/",
+      "pending": "Unchanged retail owner retry queued with freshly provisioned managed pair; do not bypass positive identity guards"
+    },
+    {
+      "test": "full_simulation/af_d1_beta/level7",
+      "kind": "native_runtime_input_rejection",
+      "observed": "All2639 work items recorded. One engine invocation exits1 because Robot30 is unavailable in the selected D1 edition. Metadata stage passed140/140 inputs. Fresh publication JSON and exact rejection log preserved.",
+      "evidence": "simulation_results/",
+      "pending": "User review of fresh simulation data; no edition/robot-limit bypass attempted",
+      "current_evidence": "coop_refresh/simulation_current/summary.json; coop_refresh/simulation_current/logs/af_d1_beta.json_0_7_cefispar.rdl_run_1.log; coop_refresh/publication_snapshots/simulation/scope.json",
+      "current_observed": "Current-source full batch records all2639 selected levels in943.003seconds with140 changed publication files. Same single input/edition rejection: Robot30 unavailable in the selected D1 edition; no expected timeouts. Exact140 publications hash-verified, no edition/oracle/baseline bypass."
+    },
+    {
+      "test": "test_all_weapons_runtime",
+      "kind": "clean_source_qualification_requirement",
+      "observed": "Original owner refuses dirty source before gameplay or report creation. It requires exact clean HEAD recipes and clean recorder/build stamps. Current tree includes initial user work plus validation fixes. All four separate native assertion captures pass: D1 scourge, D1 bigred, D2 honestbob and imported D1.",
+      "evidence": "supplemental/all_weapons.log",
+      "current_evidence": "all_weapons_capture_diagnostic/scope.json",
+      "pending": "Full compact qualification remains unexecuted behind its clean-commit guard. No source was committed, no guard bypassed and no compact oracle generated; separate captures are diagnostic only."
+    },
+    {
+      "test": "test_level_metadata_benchmark",
+      "kind": "metadata_digest_difference",
+      "observed": "Policy self-test passes. First d1-first-strike-01 metadata digest expected dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83, actual 6e9d76eb8b1c0f01ff0da6592294d21a0a84b4d49800e4b2909e6fc32aba9cf7. Remaining benchmark levels were not reached. Full canonical metadata regeneration separately passes140/140 inputs.",
+      "evidence": "metadata_benchmark_failure/",
+      "pending": "User review of fresh metadata/timing JSON; no digest baseline or thresholds changed"
+    },
+    {
+      "test": "test_replay_window_progress/d1",
+      "kind": "replay_pause_contract_or_fast_loop_failure",
+      "observed": "Original Pause-key owner records a pause request but no dialog and exits0, failing interaction assertion. A temporary Space-key probe retains a one-second frozen-frame requirement; it also fails pause_frame_unchanged while replay exits0. D2 imported progress owner passes. Original tracked fixture was restored exactly; no assertions weakened.",
+      "cause": "D1 game.c filters Pause during input replay since44eaf97401 (Oct12); Space/Right set manual flags. Source inspection shows shared input_demo_process_fast_replay advances directly without consulting those flags. Source supports a fast-loop handling gap, but native receipt of posted Windows key messages was not instrumented, so the Space probe alone is not proof of delivery.",
+      "evidence": "supplemental/replay_window_d1/",
+      "current_evidence": "replay_window_d1_retry/",
+      "pending": "Retain original failure, temporary probe source/patch, result and state traces. Target native key delivery and fast-loop gating before any production or fixture fix."
+    },
+    {
+      "test": "test_d1_replay_parity/public_corpus",
+      "kind": "native_to_imported_replay_differences",
+      "observed": "All eight selected public D1 recordings completed. Comparison statuses: {\"native_repeatability\": {\"pass\": 8}, \"native_to_imported\": {\"fail\": 8}, \"recording_to_native\": {\"incomplete\": 8}}. Owner raw FAIL exit1; full qualification remains incomplete because original full observation/RNG companions are absent from compact public inputs. Scoped compact checks passed separately.",
+      "evidence": "supplemental/d1_public_paired_parity/",
+      "pending": "User review of fresh paired report JSON and per-case state/object/world/RNG captures; no comparator policy, missing companion or oracle was bypassed"
+    },
+    {
+      "test": "sanitizer_all/loader_bounds",
+      "kind": "expected_texture_diagnostics_missing",
+      "observed": "Comet engine simulation completes1493 frames with no captured ASan report, but emits neither the expected texture repair log nor compact notes. Fixture null-index error occurs because notes is absent; expected invalid texture14924,two occurrences. Other3 loader-fixture assertions not reached; full all2639 ASan route workitems separately finished, with1 edition rejection and1 expected timeout.",
+      "evidence": "supplemental/sanitizer_all/loader-bounds/",
+      "pending": "Preserve engine/compact JSON and logs for review; do not weaken repair/count assertions or claim full loader-bound fixture pass"
+    },
+    {
+      "test": "sanitizer_all/default_recorded_corpus",
+      "kind": "default_private_recordings_unavailable",
+      "observed": "Default android/regression_demos contains no recordings. Empty discovery became null demo and caused ReadLines/empty-path errors in both demo stages. Fixed runner to preserve an empty array; actual empty inventory and missing-recording rejection checks pass. Actual private D2 inventory elsewhere contains2 recordings; D1 corpus remains unavailable.",
+      "evidence": "supplemental/sanitizer_all/Demos.log",
+      "current_evidence": "empty_corpus_after.json",
+      "pending": "Both available private D2 recordings separately pass actual ASan replay; source recording hashes unchanged. Default D1 corpus remains unavailable; default corpus stages retain failure.",
+      "private_d2_evidence": "asan_private_d2/scope.json"
+    },
+    {
+      "test": "sanitizer_all/routes",
+      "kind": "native_input_rejection_and_expected_timeout",
+      "observed": "All2639 workitems recorded in4446.75seconds. One native rejection af_d1_beta level7 Robot30 unavailable in selectedD1 edition, matching regular regeneration. One producer-classified expected timeout Uneasy4 after360seconds. No nonempty asan.* report files captured.",
+      "evidence": "supplemental/sanitizer_all/routes/",
+      "pending": "User review of new ASan route JSON; no edition, robot-limit, timeout classification or expected baseline changed"
+    }
+  ]
+}

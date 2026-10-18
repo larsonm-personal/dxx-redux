@@ -1,0 +1,350 @@
+{
+  "scope": "Focused retries kept separate from unchanged original master observations",
+  "retries": [
+    {
+      "name": "test_android_test_target",
+      "original_log": "tests/test_android_test_target_20261016_231016.log",
+      "retry_log": "android_test_target_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T06:33:04.7168378Z",
+      "source": "android/tests/test_android_test_target.ps1",
+      "source_sha256": "7e84cdae6f83849df8a1b9230701ff36ef0185e0538ba4cb84479fc8560fdc5d",
+      "reason": "Fixture now loads Install-SuiteTarget dependency and retail provisioning context"
+    },
+    {
+      "name": "test_test_runner_result",
+      "original_log": "tests/test_test_runner_result_20261016_231016.log",
+      "retry_log": "test_runner_result_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T10:34:05.1718967Z",
+      "source": "android/tests/test_test_runner_result.ps1",
+      "source_sha256": "85ca790c3c170327b4c88ee94648a45ec240d03671625854814655d676331fe4",
+      "reason": "Fixture now loads evidence journal and provisioning dependencies"
+    },
+    {
+      "name": "test_test_execution_evidence",
+      "original_log": "tests/test_test_execution_evidence_20261016_231016.log",
+      "retry_log": "test_execution_evidence_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T10:34:13.5860104Z",
+      "source": "android/tests/test_test_execution_evidence.ps1",
+      "source_sha256": "596f78d8365a446d8e1694351a4278ab1410db2df5921de5b9af1041ce06f333",
+      "reason": "Unmodified test passed after Modern Standby interruption ended"
+    },
+    {
+      "name": "test_automation_result_evidence",
+      "original_log": "tests/test_automation_result_evidence_20261016_231016.log",
+      "retry_log": "automation_result_evidence_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T11:12:21.1293541Z",
+      "source": "android/tests/test_automation_result_evidence.ps1",
+      "source_sha256": "45164c1419433135ef7ec7323f0ef0fbd2ee0c644553b1cece5dc802dd45c7d7",
+      "reason": "Prefer working python command on Windows over the Store python3 launcher"
+    },
+    {
+      "name": "test_dependency_install",
+      "original_status": "SKIP",
+      "original_log": "tests/test_dependency_install_20261016_231016.log",
+      "retry_log": "linux_installers.log",
+      "retry_exit_code": 0,
+      "retry_platform": "Ubuntu WSL2",
+      "retry_completed_utc": "2026-10-17T11:08:51.1040116Z",
+      "source": "android/tests/test_dependency_install.ps1",
+      "source_sha256": "0b623a62b3e02024a4c941c585f4e1dd34047b6b4cac533e3418d06bca658497",
+      "reason": "Executed all six Linux/flock installer fixture scripts through the repository WSL bridge"
+    },
+    {
+      "name": "test_test_helpers_process_wait",
+      "original_status": "PASS",
+      "original_log": "tests/test_test_helpers_process_wait_20261016_231016.log",
+      "retry_log": "helpers_process_wait_awake_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T11:50:55.5450086Z",
+      "source": "android/tests/test_test_helpers_process_wait.ps1",
+      "source_sha256": "6564f6879876880e8d5f155ff8000ac6401c3ca9a7cd7c4fe0edcb46ff0144f0",
+      "reason": "Original passing execution was suspended by Modern Standby for over two hours; isolated mocked-device rerun passed in about two seconds"
+    },
+    {
+      "name": "fluid_render_contracts",
+      "original_status": "FAIL",
+      "original_log": "additional_native_now.log",
+      "retry_log": "additional_native_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T14:18:40.5457519Z",
+      "source": "android/tests/fluidsynth_quality/CMakeLists.txt",
+      "source_sha256": "fa7ab7c6668abc977f9fe25ade1b8960f164daf7745ca73a1bfec070c424b913",
+      "reason": "Standalone Windows project now emits libfluidsynth DLL beside fluid_render.exe; real renderer CTest passes. ETC2 also passes"
+    },
+    {
+      "name": "mod_fuzz_classifier_regression",
+      "verification_kind": "new_regression_reproduction",
+      "original_log": "mod_fuzz_classifier_before_fix.log",
+      "retry_log": "mod_fuzz_classifier_after_fix.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T14:37:16.7629069Z",
+      "source": "android/helpers/mod_fuzz.py",
+      "source_sha256": "7ae343c226df060cbf1b61d177e2d7bc6c4ce275d875eafff78a949588875cf3",
+      "test_source": "android/tests/test_mod_fuzz_controls.py",
+      "test_source_sha256": "cadd2925fbcfbf9e3124a74cd03f45152861838c7a13ece0d3185f63508f8107",
+      "reason": "Captured unrelated Google service timeout no longer overrides successful runner exit. New test failed before fix; all 14 controller checks now pass, including explicit watchdog timeout. Device replay remains queued"
+    },
+    {
+      "name": "Linux D2 test_upstream_compat",
+      "original_status": "TIMEOUT",
+      "original_log": "linux_native/d2.log",
+      "additional_original_log": "linux_native/d2_upstream_retry.log",
+      "diagnostic_log": "linux_native/d2_upstream_backtrace.log",
+      "native_filesystem_control": "linux_native/d2_nativefs_retry.log",
+      "retry_log": "linux_buffered_retry.log",
+      "retry_exit_code": 0,
+      "windows_retry_log": "windows_buffered_corrected.log",
+      "windows_retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T14:59:36.1722257Z",
+      "source": "android/tests/test_upstream_compat.cpp",
+      "source_sha256": "967cbbb689b4ef563110e6d5cf25a66da8c136a7e40202158338d116b880df45",
+      "reason": "Fixture now uses production buffered I/O helpers. Full Linux D1 76/76 and D2 86/86 pass under original120-second limits; both Windows game targets rebuild and pass. Original120/300-second failures preserved"
+    },
+    {
+      "name": "updated_GuideBot_runner_Python_selection",
+      "original_log": "concurrent_updates_windows/test_guidebot_simulation_runner.log",
+      "retry_log": "concurrent_updates_windows_retry/test_guidebot_simulation_runner.log",
+      "retry_exit_code": 0,
+      "source": "android/helpers/test_host_platform.ps1",
+      "source_sha256": "d7a55833e5e550b9b1cdf91a5e4898e2cee9e343de56f3819ea257bef7135d8e",
+      "reason": "Direct Python now preferred before unregistered Windows py launcher; full updated GuideBot runner test passes"
+    },
+    {
+      "name": "updated_Windows_legacy_platform_host_execution",
+      "original_log": "concurrent_updates_windows_retry/test_dep_platform.log",
+      "retry_log": "dep_platform_host_retry.log",
+      "retry_exit_code": 0,
+      "source": "android/tests/test_dep_platform.ps1",
+      "reason": "Same unchanged test passes under normal host execution; sandbox legacy PowerShell execution policy blocked helper load; no policy changed"
+    },
+    {
+      "name": "updated_nightly_tooling_Linux_symlink_coverage",
+      "original_log": "concurrent_updates_windows_retry/test_nightly_tooling_sweep.log",
+      "retry_log": "concurrent_updates_linux/test_nightly_tooling_sweep.log",
+      "retry_exit_code": 0,
+      "source": "android/tests/test_nightly_tooling_sweep.py",
+      "reason": "Windows link creation lacks privilege; same updated module passes under Linux with real symlinks"
+    },
+    {
+      "name": "updated_Linux_configured_test_run_all_tests_catalog",
+      "original_log": "concurrent_updates_linux/test_run_all_tests_catalog.log",
+      "retry_log": "concurrent_updates_linux_retry/test_run_all_tests_catalog.log",
+      "retry_exit_code": 0,
+      "source": "android/tests/test_run_all_tests_catalog.ps1",
+      "reason": "Same source passes in disposable Linux-configured clone with native Linux PATH and dependency base; original shared checkout used Windows paths/interop. Clone removed after containment verification."
+    },
+    {
+      "name": "updated_Linux_configured_test_validate_automation_catalog",
+      "original_log": "concurrent_updates_linux/test_validate_automation_catalog.log",
+      "retry_log": "concurrent_updates_linux_retry/test_validate_automation_catalog.log",
+      "retry_exit_code": 0,
+      "source": "android/tests/test_validate_automation_catalog.ps1",
+      "reason": "Same source passes in disposable Linux-configured clone with native Linux PATH and dependency base; original shared checkout used Windows paths/interop. Clone removed after containment verification."
+    },
+    {
+      "name": "updated_Linux_configured_test_dep_platform",
+      "original_log": "concurrent_updates_linux/test_dep_platform.log",
+      "retry_log": "concurrent_updates_linux_retry/test_dep_platform.log",
+      "retry_exit_code": 0,
+      "source": "android/tests/test_dep_platform.ps1",
+      "reason": "Same source passes in disposable Linux-configured clone with native Linux PATH and dependency base; original shared checkout used Windows paths/interop. Clone removed after containment verification."
+    },
+    {
+      "name": "test_castaway_level2_restored_switch_route_current_regeneration",
+      "original_log": "tests/test_castaway_level2_restored_switch_route_20261016_231016.log",
+      "retry_logs": [
+        "supplemental/castaway_restored_switch_fresh.log"
+      ],
+      "retry_exit_code": 0,
+      "reason": "Focused original failing owner/members pass after current-source metadata build and full regeneration. Route aggregate reruns only its two original failed members, not all87; secret fixtures use incoming committed baselines, not a baseline accepted by this task."
+    },
+    {
+      "name": "test_primary_target_grates_current_regeneration",
+      "original_log": "tests/test_primary_target_grates_20261016_231016.log",
+      "retry_logs": [
+        "supplemental/primary_target_grates_post_metadata.log"
+      ],
+      "retry_exit_code": 0,
+      "reason": "Focused original failing owner/members pass after current-source metadata build and full regeneration. Route aggregate reruns only its two original failed members, not all87; secret fixtures use incoming committed baselines, not a baseline accepted by this task."
+    },
+    {
+      "name": "test_secret_area_baseline_current_regeneration",
+      "original_log": "tests/test_secret_area_baseline_20261016_231016.log",
+      "retry_logs": [
+        "supplemental/secret_area_current_retail.log",
+        "supplemental/secret_area_current_shareware.log"
+      ],
+      "retry_exit_code": 0,
+      "reason": "Focused original failing owner/members pass after current-source metadata build and full regeneration. Route aggregate reruns only its two original failed members, not all87; secret fixtures use incoming committed baselines, not a baseline accepted by this task."
+    },
+    {
+      "name": "test_guidebot_route_regressions_current_regeneration",
+      "original_log": "tests/test_guidebot_route_regressions_20261016_231016.log",
+      "retry_logs": [
+        "supplemental/post_metadata_test_castaway_level9_second_boss_route.log",
+        "supplemental/post_metadata_test_crossfire_zero_countdown.log"
+      ],
+      "retry_exit_code": 0,
+      "reason": "Focused original failing owner/members pass after current-source metadata build and full regeneration. Route aggregate reruns only its two original failed members, not all87; secret fixtures use incoming committed baselines, not a baseline accepted by this task."
+    },
+    {
+      "name": "test_classic_demo_dump_transaction",
+      "original_log": "supplemental/classic_dump_transaction.log",
+      "retry_log": "classic_transaction_retry.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T21:23:29.964079+00:00",
+      "source": "android/tests/test_classic_demo_dump_transaction.py",
+      "source_sha256": "0cfb66ebc1620da220f268c847345538887a465a8f7a3f8188449b1c2f979366",
+      "reason": "Use the full d2x-redux classic-export executable and invoke unchanged owner from repository root; input-only headless executable does not implement this CLI"
+    },
+    {
+      "name": "test_classic_trigger_demo/AssetIdentity",
+      "original_log": "supplemental/classic_asset_identity.log",
+      "retry_log": "classic_corrected/asset_identity.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T21:23:20.638484+00:00",
+      "source": "android/tests/test_classic_trigger_demo.ps1",
+      "source_sha256": "c97b71a967d16aa92e3563fd8b8ce15c25d22e91af25a19d127f89fa136632a3",
+      "reason": "Distinct disposable D1/D2 asset copies fix optional-mount removal; full d2x-redux GameExe fixes actual native export subcases"
+    },
+    {
+      "name": "test_d1_network_assets",
+      "original_log": "supplemental/d1_network_assets.log",
+      "retry_log": "classic_followup/network_assets.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T21:21:42.971727+00:00",
+      "source": "android/tests/test_d1_network_assets.ps1",
+      "source_sha256": "3e48ee10df06360f46782a7a362144bffbfcac60cd55a832295e426b734420db",
+      "reason": "Distinct disposable D1/D2 asset copies allow the optional mount to retire independently of base D1 assets"
+    },
+    {
+      "name": "test_secret_area_liquid_obsidian",
+      "original_log": "supplemental/obsidian_liquid.log",
+      "retry_log": "obsidian_followup.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T21:27:27.963515+00:00",
+      "source": "android\\tests\\test_secret_area_liquid_obsidian.py",
+      "source_sha256": "81321ae2811f877f29fe22e929474703e223a2d8819a8ea4d78308071d665441",
+      "reason": "Supply installed Vertigo missions/ directory using disposable copies, not its parent asset directory. Original metadata/44-worker requests passed; full unchanged retry also passes both native checkpoint routes."
+    },
+    {
+      "name": "fm_quality/run",
+      "original_log": "supplemental/fm_quality.log",
+      "retry_log": "fm_quality_retry2.log",
+      "retry_exit_code": 0,
+      "retry_completed_utc": "2026-10-17T21:49:19.941744+00:00",
+      "sources": [
+        {
+          "path": "android/tests/fm_quality/prepare.py",
+          "sha256": "8df830b909376246d32bd680d8d2bdfba89bc45435214e60d830ca1b7e6019df"
+        },
+        {
+          "path": "android/tests/fm_quality/CMakeLists.txt",
+          "sha256": "182e6b81ec34c3eebb9cf8be0215cd016661aa2995e88cfab7b9ab8c30b5b015"
+        }
+      ],
+      "reason": "Full default60-second/3-track audition after guarded gain and FluidSynth integration fixture updates:2/2CTest,15clips,equal registers,exact repeated renders,no clipping. Original and first build-only retry failures remain separate."
+    },
+    {
+      "name": "test_d1_replay_parity_compare/cleanup",
+      "original_log": "demo_runner_compare_retry.log",
+      "retry_log": "demo_runner_compare_cleanup_retry.log",
+      "retry_exit_code": 0,
+      "reason": "Full65-case module had one Windows WinError32 temporary cleanup error after functional assertions; exact unchanged failing case passes on normal host. Other64 cases passed; do not report a fresh full65/65 rerun."
+    },
+    {
+      "name": "run_input_demo_regressions/empty_discovery",
+      "original_log": "empty_corpus_before.log",
+      "verification": [
+        "empty_corpus_after.json",
+        "empty_corpus_linux.json",
+        "private_d2_inventory.log"
+      ],
+      "verification_passed": true,
+      "reason": "Both Windows and Linux actual runners pass empty inventory/all/imported cases and retain expected nonzero rejection when asked to replay absent recordings. Real private D2 inventory lists2 recordings. This does not turn the unavailable default sanitizer corpus stages into passes."
+    },
+    {
+      "name": "private_input_demos/strict_repeatability",
+      "original_log": "supplemental/private_input_demos.log",
+      "intermediate_failure": "private_input_demos_retry.log",
+      "isolation_probe": "private_input_isolation_probe/replay/summary.json",
+      "retry_log": "private_input_demos_retry2.log",
+      "retry_exit_code": 0,
+      "reason": "Windows PHYSFS settings are beside the executable; isolated HOME/CWD alone inherited MissileView0. Per-repeat EXE/DLL copy excludes old player settings. Both original private recordings now pass embedded strict oracles, independent comparisons and exact repeated terminal states (4 actual runs). No oracle changed.",
+      "controls": {
+        "windows": "private_input_controls_retry.log",
+        "linux": "private_input_controls_linux.log",
+        "windows_tests": 9,
+        "linux_tests": 9,
+        "linux_windows_only_skips": 1
+      },
+      "sources": [
+        {
+          "path": "android/tests/private_input_demos.py",
+          "sha256": "e1c55bee75d5af9781d16d1d6226f8d7f42e0ef9e607b41c76b8fee6e4fc601f"
+        },
+        {
+          "path": "android/tests/test_private_input_demos.py",
+          "sha256": "913871bf370bf0c584f2f5e13ee9bf589484f2ff436c57ebbc444404ec5dc530"
+        }
+      ]
+    },
+    {
+      "name": "test_mod_fuzz/baseline-d2-L1",
+      "retry_exit_code": 0,
+      "retry_cases": [
+        {
+          "name": "mod_fuzz_baseline_d2_retry",
+          "status": "PASS",
+          "exit_code": 0,
+          "log": "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\isolated_android\\results\\mod_fuzz_baseline_d2_retry.log",
+          "scope": "Exclusive emulator pair; frozen original supplemental APK"
+        }
+      ],
+      "reason": "Actual baseline gameplay/menu replay passes with corrected timeout classifier;14 classifier controls also pass. Current exclusive-emulator result supersedes the passing shared-device focused retry; raw reports remain intact.",
+      "scope": "Original raw outcomes retained. Each retry row identifies its shared-device or exclusive-emulator APK scope."
+    },
+    {
+      "name": "test_startup_restore_failure",
+      "retry_exit_code": 0,
+      "retry_cases": [
+        {
+          "name": "startup_restore_failure_retry",
+          "status": "PASS",
+          "exit_code": 0,
+          "log": "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\isolated_android\\results\\startup_restore_failure_retry.log",
+          "scope": "Exclusive emulator pair; frozen original supplemental APK"
+        }
+      ],
+      "reason": "Both D1/D2 complete actual autosave preparation, incompatible-version warning before world replacement, usable recovery menu and native touch Quit. The launcher preparation fixture fix is now runtime-verified on an exclusive device;45-second warning deadline retained.",
+      "scope": "Original raw outcomes retained. Each retry row identifies its shared-device or exclusive-emulator APK scope."
+    },
+    {
+      "name": "test_launcher_media_controls_generated",
+      "retry_exit_code": 0,
+      "retry_cases": [
+        {
+          "name": "launcher_media_controls_generated",
+          "status": "PASS",
+          "exit_code": 0,
+          "log": "C:\\local\\dxx-redux\\temp\\full_validation\\run_20261016\\isolated_android\\results\\launcher_media_controls_generated.log",
+          "scope": "Exclusive emulator pair; frozen original supplemental APK"
+        }
+      ],
+      "reason": "Portable verified FFmpeg tools supplied on process PATH; generated media and actual device preview controls pass2/2 automation steps. No source changes to this owner.",
+      "scope": "Original raw outcomes retained. Each retry row identifies its shared-device or exclusive-emulator APK scope."
+    },
+    {
+      "name": "supplemental/windows_current_native",
+      "original_log": "supplemental/windows_current_native.log",
+      "retry_log": "windows_current_native_retry.log",
+      "retry_exit_code": 0,
+      "retry_summary": "windows_current_native_retry/summary.json",
+      "reason": "Initial scratch wrapper refused the architecture check before tests; corrected guard positively verifies X86/4-byte compiler metadata. Actual full current native builds and CTest then pass D1 79/79 and D2 90/90. Original refusal retained."
+    }
+  ]
+}

@@ -3178,6 +3178,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	short TempTmapNum[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 	short TempTmapNum2[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 #ifdef __ANDROID__
+	player coop_live_players[MAX_PLAYERS];
+	const fix64 coop_live_time = GameTime64;
+	memcpy(coop_live_players, Players, sizeof(coop_live_players));
 	struct android_profile_restore_metrics restore_profile = { 0 };
 	const long long restore_profile_start_us = android_profile_monotonic_us();
 	const int restore_profile_had_game_window = Game_wind != NULL;
@@ -3904,7 +3907,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		#endif
 #ifdef __ANDROID__
 		coop_got_nplayers = coop_remap_restored_players(fp, restore_players,
-			restore_objects, restore_object_valid, coop_player_got);
+			restore_objects, restore_object_valid, coop_player_got,
+			coop_live_players, coop_live_time);
 		{
 			coop_save_metadata meta;
 			if (state_android_read_coop_metadata_trailer(fp, &meta))

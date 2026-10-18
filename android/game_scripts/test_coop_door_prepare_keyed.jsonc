@@ -1,0 +1,4 @@
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "guidebot_door_test", "value": "prepare_keyed" },
+]

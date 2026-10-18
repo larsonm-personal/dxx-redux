@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -124,11 +125,14 @@ class PrivateDemoTests(unittest.TestCase):
                 self.subTest(scenario=scenario),
                 tempfile.TemporaryDirectory() as directory,
             ):
+                executable = Path(directory) / "engine" / "runner.exe"
+                executable.parent.mkdir()
+                executable.write_bytes(b"synthetic executable")
                 args = argparse.Namespace(
                     output=Path(directory) / "output",
                     demos=Path("/private"),
                     data=Path("/data"),
-                    exe=Path("/exe"),
+                    exe=executable,
                     timeout=10,
                     minimum_free_gb=0,
                 )
@@ -163,6 +167,44 @@ class PrivateDemoTests(unittest.TestCase):
                     self.assertEqual(len(calls), 4)
                 report = json.loads((args.output / "summary.json").read_text())
                 self.assertEqual(report["status"], "PASS" if scenario == "pass" else "FAIL")
+
+    @unittest.skipUnless(os.name == "nt", "Windows executable-directory settings")
+    def test_windows_replay_isolates_executable_settings_and_runtime_libraries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            engine = root / "engine"
+            engine.mkdir()
+            executable = engine / "runner.exe"
+            executable.write_bytes(b"synthetic executable")
+            (engine / "runtime.dll").write_bytes(b"runtime")
+            original_config = engine / "descent.cfg"
+            original_config.write_bytes(b"conflicting original settings")
+            oracle = {"frame_count": 10}
+            args = argparse.Namespace(
+                output=root / "output", demos=root, data=root, exe=executable, timeout=10, minimum_free_gb=0
+            )
+            directories = []
+
+            def launch(command, **kwargs):
+                staged = Path(command[0])
+                self.assertEqual(staged.parent, kwargs["cwd"])
+                self.assertNotEqual(staged.parent, engine)
+                self.assertEqual(staged.read_bytes(), executable.read_bytes())
+                self.assertEqual((staged.parent / "runtime.dll").read_bytes(), b"runtime")
+                self.assertFalse((staged.parent / "descent.cfg").exists())
+                (staged.parent / "descent.cfg").write_bytes(b"private settings")
+                result = Path(command[command.index("-inputdemo-actual-result") + 1])
+                result.write_text(json.dumps(oracle))
+                directories.append(staged.parent)
+                return argparse.Namespace(returncode=0)
+
+            with (
+                patch.object(demos, "validate", return_value=[oracle] * 2),
+                patch.object(demos.subprocess, "run", side_effect=launch),
+            ):
+                self.assertEqual(demos.run(args), 0)
+            self.assertEqual(len(set(directories)), 4)
+            self.assertEqual(original_config.read_bytes(), b"conflicting original settings")
 
 
 if __name__ == "__main__":

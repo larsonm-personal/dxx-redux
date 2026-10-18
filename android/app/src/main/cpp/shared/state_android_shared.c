@@ -915,7 +915,10 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	char android_desc[STATE_ANDROID_DESC_LENGTH + 1];
 
 #ifdef __ANDROID__
-	if (!mod_save_write(fp)) return 0;
+	if (!mod_save_write(fp)) {
+		debug_log(DLOG_NETWORK, "[SAVE] metadata rejected: mod trailer level=%d", Current_level_num);
+		return 0;
+	}
 #endif
 
 	if (rewind_file_is_memory(fp)) {

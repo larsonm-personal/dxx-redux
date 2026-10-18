@@ -25,6 +25,7 @@
 object Objects[MAX_OBJECTS];
 int Highest_object_index, Game_mode, Player_num, Difficulty_level, N_players;
 int Current_level_num;
+int Player_is_dead;
 struct netgame_info Netgame;
 #ifdef DXX_BUILD_DESCENT_II
 player Players[MAX_PLAYERS + 4];
@@ -75,6 +76,7 @@ static int mapping_offset;
 static int reused_remote;
 static ubyte packets[4096][160];
 static int packet_count;
+static fix64 test_time;
 
 int d_stricmp(const char *a, const char *b)
 {
@@ -104,7 +106,7 @@ int multi_who_is_master(void)
 }
 fix64 timer_query(void)
 {
-	return 100 * F1_0;
+	return test_time;
 }
 #ifdef DXX_BUILD_DESCENT_II
 fix vm_vec_dist_quick(const vms_vector *a, const vms_vector *b)
@@ -154,9 +156,26 @@ void coop_snapshot_player(int pnum, coop_player_record *r)
 	memcpy(r->secondary_ammo, p->secondary_ammo, sizeof(p->secondary_ammo));
 }
 
+/* The brief-contact test uses the real permission gate with a minimal engine
+ * award. Emulator coverage exercises the actual collision/powerup dispatcher */
+void collide_player_and_powerup(object *ship, object *powerup, vms_vector *point)
+{
+	(void) point;
+	CHECK(ship == &Objects[Players[Player_num].objnum]);
+	CHECK(powerup->id == POW_LASER);
+	if (coop_recovery_pickup_blocked(powerup)) return;
+	coop_player_record before;
+	coop_snapshot_player(Player_num, &before);
+	Players[Player_num].laser_level++;
+	coop_recovery_note_pickup(powerup, &before, 1);
+	powerup->flags |= OF_SHOULD_BE_DEAD;
+}
+
 static void reset(void)
 {
 	coop_recovery_reset();
+	test_time = 100 * F1_0;
+	Player_is_dead = 0;
 	absorption_animations = absorption_sounds = 0;
 	Vclip[VCLIP_POWERUP_DISAPPEARANCE].sound_num = 123;
 	pickup_sounds = pickup_flashes = broadcast_sounds = 0;
@@ -195,6 +214,30 @@ static void egg(int n, int id)
 	Net_create_objnums[Net_create_loc++] = n;
 }
 
+/* These ledger scenarios model peers that immediately grant permission.
+ * The independent-peer transport test exercises competing requests */
+static int pickup_ready(object *obj)
+{
+	test_time += F1_0;
+	int start = packet_count;
+	if (!coop_recovery_pickup_blocked(obj)) return 1;
+	ubyte reply[160];
+	int found = 0;
+	for (int i = start; i < packet_count; ++i)
+		if (packets[i][1] == 8) {
+			memcpy(reply, packets[i], sizeof(reply));
+			found = 1;
+			break;
+		}
+	if (!found) return 0;
+	reply[1] = 9;
+	reply[2] = (ubyte) (Player_num + 1);
+	for (int peer = 0; peer < N_players; ++peer)
+		if (peer != Player_num && Players[peer].connected != CONNECT_DISCONNECTED)
+			coop_recovery_receive(reply, peer);
+	return !coop_recovery_pickup_blocked(obj);
+}
+
 /* Simulate the normal engine's inventory result, then exercise the real
  * tracking hook. Paired emulator tests exercise do_powerup itself */
 static void request(int n, int pnum)
@@ -203,7 +246,7 @@ static void request(int n, int pnum)
 	Player_num = pnum;
 	coop_player_record before;
 	coop_snapshot_player(pnum, &before);
-	CHECK(!coop_recovery_pickup_blocked(&Objects[n]));
+	CHECK(pickup_ready(&Objects[n]));
 	int used = 1;
 	switch (Objects[n].id) {
 		case POW_HOMING_AMMO_4:
@@ -245,7 +288,13 @@ static void test_partial_collection_expiry_and_rejoin(void)
 	request(11, 2);
 	CHECK(Players[2].secondary_ammo[HOMING_INDEX] == 4);
 	CHECK(Objects[11].flags & OF_SHOULD_BE_DEAD);
-	coop_recovery_expire(&Objects[12]);
+	CHECK(coop_recovery_expire(&Objects[12]));
+	ubyte frozen[160];
+	memcpy(frozen, packets[packet_count - 1], sizeof(frozen));
+	frozen[1] = 4;
+	coop_recovery_receive(frozen, 1);
+	coop_recovery_receive(frozen, 2);
+	coop_recovery_frame();
 	CHECK(coop_recovery_prepare_rejoin(1, &absent) == 3);
 	CHECK(absent.primary_weapon_flags & (1u << PLASMA_INDEX));
 	CHECK(absent.secondary_ammo[HOMING_INDEX] == 2);
@@ -698,7 +747,10 @@ static void test_dormant_reclaim_and_two_world_roundtrip(void)
 	coop_recovery_drop(2, 0);
 	object secret_object = Objects[10];
 	CHECK(coop_recovery_data()[2].world_level == -1);
-	CHECK(!coop_recovery_pickup_blocked(&Objects[10]));
+	CHECK(pickup_ready(&Objects[10]));
+	coop_player_record unchanged;
+	coop_snapshot_player(Player_num, &unchanged);
+	coop_recovery_note_pickup(&Objects[10], &unchanged, 0);
 	coop_recovery_prepare_save();
 	CHECK(coop_recovery_count() == 4);
 	/* A settled secret save retains the base's ledger without binding its slots */
@@ -741,7 +793,6 @@ static void test_dormant_reclaim_and_two_world_roundtrip(void)
 	Objects[10] = secret_object;
 	CHECK(coop_recovery_set_pending(secret_ledger, secret_count));
 	CHECK(coop_recovery_apply_world_pending());
-	CHECK(!coop_recovery_pickup_blocked(&Objects[10]));
 	request(10, 0);
 	CHECK(Players[0].secondary_ammo[HOMING_INDEX] == 4);
 	CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_TAKEN);
@@ -1128,8 +1179,138 @@ static void test_orb_pickup_keeps_absent_resources(void)
 	CHECK(absorption_animations == 0 && absorption_sounds == 0);
 }
 
+static void test_permission_reply_carries_consumption(void)
+{
+	reset();
+	Players[1].laser_level = 1;
+	egg(10, POW_LASER);
+	coop_recovery_drop(1, 0);
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	CHECK(!coop_recovery_save_ready());
+	ubyte reply[160];
+	memcpy(reply, packets[packet_count - 1], sizeof(reply));
+	reply[1] = 9;
+	reply[2] = 1;
+	coop_recovery_item consumed = coop_recovery_data()[0];
+	consumed.state = COOP_RECOVERY_TAKEN;
+	memset(&consumed.gear, 0, sizeof(consumed.gear));
+	memcpy(reply + 16, &consumed, sizeof(consumed));
+	/* Ordinary REC_COLLECT is withheld: the permission reply must still stop
+	 * a second inventory award, and replaying it must not reopen the object */
+	coop_recovery_receive(reply, 1);
+	coop_recovery_receive(reply, 1);
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_TAKEN);
+	CHECK(Players[0].laser_level == 0);
+	CHECK(coop_recovery_save_ready());
+}
+
+static void test_permission_survives_migration_and_cancels_on_death(void)
+{
+	reset();
+	Players[1].laser_level = 1;
+	egg(10, POW_LASER);
+	coop_recovery_drop(1, 0);
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	ubyte reply[160];
+	memcpy(reply, packets[packet_count - 1], sizeof(reply));
+	reply[1] = 9;
+	reply[2] = 1;
+	uint32_t revision = coop_recovery_data()[0].revision;
+	mapping_offset = 100;
+	coop_recovery_host_changed();
+	CHECK(coop_recovery_data()[0].revision == revision);
+	coop_recovery_receive(reply, 1);
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	coop_recovery_receive(reply, 2);
+	CHECK(!coop_recovery_pickup_blocked(&Objects[10]));
+	CHECK(coop_recovery_pickup_blocked(&Objects[10])); /* One entry per request */
+	coop_player_record before;
+	coop_snapshot_player(0, &before);
+	coop_recovery_note_pickup(&Objects[10], &before, 0);
+	CHECK(coop_recovery_save_ready());
+	test_time += F1_0;
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	Player_is_dead = 1;
+	coop_recovery_frame();
+	CHECK(coop_recovery_save_ready());
+	coop_recovery_receive(reply, 1);
+	coop_recovery_receive(reply, 2);
+	CHECK(coop_recovery_save_ready());
+	CHECK(Players[0].laser_level == 0);
+}
+
+static void test_expiry_waits_for_inflight_collection(void)
+{
+	reset();
+	Players[1].laser_level = 1;
+	egg(10, POW_LASER);
+	coop_recovery_drop(1, 0);
+	CHECK(coop_recovery_expire(&Objects[10]));
+	CHECK(!coop_recovery_save_ready());
+	CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+	ubyte reply[160];
+	memcpy(reply, packets[packet_count - 1], sizeof(reply));
+	reply[1] = 4;
+	coop_recovery_receive(reply, 1);
+	coop_recovery_frame();
+	CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+	coop_recovery_item consumed = coop_recovery_data()[0];
+	memset(&consumed.gear, 0, sizeof(consumed.gear));
+	memcpy(reply + 16, &consumed, sizeof(consumed));
+	coop_recovery_receive(reply, 2);
+	coop_recovery_frame();
+	CHECK(coop_recovery_save_ready());
+	CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_TAKEN);
+	CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
+}
+
+static void test_loading_peer_does_not_block_pickup(void)
+{
+	reset();
+	Players[1].connected = CONNECT_WAITING;
+	Players[2].connected = CONNECT_DISCONNECTED;
+	Players[1].laser_level = 1;
+	egg(10, POW_LASER);
+	coop_recovery_drop(1, 0);
+	CHECK(!coop_recovery_pickup_blocked(&Objects[10]));
+	coop_player_record before;
+	coop_snapshot_player(0, &before);
+	coop_recovery_note_pickup(&Objects[10], &before, 0);
+	test_time += F1_0;
+	Players[1].connected = CONNECT_PLAYING;
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	CHECK(!coop_recovery_save_ready());
+}
+
+static void test_brief_contact_completes_after_permission(void)
+{
+	reset();
+	Players[1].laser_level = 1;
+	egg(10, POW_LASER);
+	coop_recovery_drop(1, 0);
+	CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+	ubyte reply[160];
+	memcpy(reply, packets[packet_count - 1], sizeof(reply));
+	reply[1] = 9;
+	reply[2] = 1;
+	coop_recovery_receive(reply, 1);
+	coop_recovery_receive(reply, 2);
+	test_time += F1_0 / 10;
+	coop_recovery_frame(); /* No second physical collision */
+	coop_recovery_frame();
+	CHECK(Players[0].laser_level == 1);
+	CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_TAKEN);
+	CHECK(coop_recovery_save_ready());
+}
+
 int main(void)
 {
+	test_brief_contact_completes_after_permission();
+	test_loading_peer_does_not_block_pickup();
+	test_permission_reply_carries_consumption();
+	test_permission_survives_migration_and_cancels_on_death();
+	test_expiry_waits_for_inflight_collection();
 	test_reclaim_absorption_delivery_order();
 	test_orb_pickup_keeps_absent_resources();
 	test_saved_orbs_reclaim_without_resource_bonus();

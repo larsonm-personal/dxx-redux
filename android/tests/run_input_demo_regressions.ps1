@@ -136,14 +136,14 @@ if (-not (Test-Path -LiteralPath $DemoRoot)) {
     throw "Regression demo directory not found: $DemoRoot"
 }
 $resolvedDemoRoot = (Resolve-Path -LiteralPath $DemoRoot).Path
-$allDemos = if ($SharewareOnly -and -not $PSBoundParameters.ContainsKey('DemoRoot')) {
-    # Committed corpus roots only; never discover generated scratch recordings
-    @(@('android/regression_demos', 'android/tests/fixtures') | ForEach-Object {
-            Get-ChildItem -LiteralPath (Join-Path $repoRoot $_) -Recurse -Filter '*.dximdemo' -File
-        } | Sort-Object FullName)
-} else {
-    @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
-}
+$allDemos = @(if ($SharewareOnly -and -not $PSBoundParameters.ContainsKey('DemoRoot')) {
+        # Committed corpus roots only; never discover generated scratch recordings
+        @(@('android/regression_demos', 'android/tests/fixtures') | ForEach-Object {
+                Get-ChildItem -LiteralPath (Join-Path $repoRoot $_) -Recurse -Filter '*.dximdemo' -File
+            } | Sort-Object FullName)
+    } else {
+        @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
+    })
 $effectiveRecordedGame = Get-EffectiveRecordedGameFilter -RequestedGame $Game -RequestedRecordedGame $RecordedGame -UseD1InD2:$D1InD2
 $demos = @(Select-RegressionDemos -Demos $allDemos -RecordedGameFilter $effectiveRecordedGame)
 $demos = @(Select-NamedRegressionDemos -Demos $demos -RequestedFileNames $DemoFileName)

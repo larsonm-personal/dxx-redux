@@ -255,7 +255,6 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
         self.assertNotIn("PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE", MUSIC_PANEL)
 
 
-
 class GraphicsBackgroundRecoveryTest(unittest.TestCase):
     """Compile real lifecycle/graphics functions; mock only engine/platform boundaries."""
 
@@ -314,9 +313,7 @@ class GraphicsBackgroundRecoveryTest(unittest.TestCase):
                 ):
                     with self.subTest(game=game, mode=mode):
                         code = (
-                            GRAPHICS_BACKGROUND_FIXTURE
-                            + recovery
-                            + "\n#ifndef OGL\n"
+                            GRAPHICS_BACKGROUND_FIXTURE + recovery + "\n#ifndef OGL\n"
                             "#define android_graphics_safety_event_tick software_build_must_not_call_graphics_recovery\n"
                             "#endif\n"
                             + body
@@ -332,13 +329,31 @@ class GraphicsBackgroundRecoveryTest(unittest.TestCase):
                             defines.append("DXX_BUILD_DESCENT_II=1")
                         if Path(compiler).stem.lower() == "cl":
                             command = [
-                                compiler, "/nologo", "/EHsc", "/std:c++17", "/W4", "/WX",
-                                f"/I{shared}", *[f"/D{value}" for value in defines], "test.cpp", "/Fe:test.exe",
+                                compiler,
+                                "/nologo",
+                                "/EHsc",
+                                "/std:c++17",
+                                "/W4",
+                                "/WX",
+                                f"/I{shared}",
+                                *[f"/D{value}" for value in defines],
+                                "test.cpp",
+                                "/Fe:test.exe",
                             ]
                         else:
                             command = [
-                                compiler, "-std=c++17", "-pthread", "-Wall", "-Wextra", "-Werror",
-                                "-I", str(shared), *[f"-D{value}" for value in defines], "test.cpp", "-o", "test.exe",
+                                compiler,
+                                "-std=c++17",
+                                "-pthread",
+                                "-Wall",
+                                "-Wextra",
+                                "-Werror",
+                                "-I",
+                                str(shared),
+                                *[f"-D{value}" for value in defines],
+                                "test.cpp",
+                                "-o",
+                                "test.exe",
                             ]
                         build = subprocess.run(command, cwd=folder, capture_output=True, text=True, timeout=60)
                         self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
@@ -356,6 +371,7 @@ class GraphicsBackgroundRecoveryTest(unittest.TestCase):
 GRAPHICS_BACKGROUND_FIXTURE = r"""
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <mutex>
 #include <stdexcept>
@@ -394,7 +410,7 @@ uint64_t preview_apply_deadline = 0, quiet_until = 0, candidate_revision = 0, ap
 uint64_t staged_generation = 0;
 constexpr uint64_t overlay_prepare_timeout_ms = 5000;
 graphics_safety_snapshot observed_current = {}, pending_candidate = {};
-graphics_safety_record record = {};
+graphics_safety_record stored_record = {};
 std::thread::id game_thread = std::this_thread::get_id();
 int restores = 0, parks = 0, checkpoints = 0, audio_pauses = 0;
 bool recovery_before_checkpoint = true;
@@ -410,12 +426,12 @@ bool eligible() { return ui_foreground; }
 void notify() {}
 #define DLOG_GRAPHICS 0
 void debug_log_force(int, const char *, ...) {}
-int graphics_safety_read_record(const char *, graphics_safety_record *out) { *out = record; return 1; }
+int graphics_safety_read_record(const char *, graphics_safety_record *out) { *out = stored_record; return 1; }
 int graphics_safety_flush_staged(const char *) { return 1; }
 int graphics_safety_decide(const char *, uint64_t id, int accept, uint64_t, const char *) {
     check(!accept && id == active_id, "unexpected graphics decision");
-    if (record.phase == GRAPHICS_SAFE_IDLE) return 0;
-    record.phase = GRAPHICS_SAFE_RESTORING;
+    if (stored_record.phase == GRAPHICS_SAFE_IDLE) return 0;
+    stored_record.phase = GRAPHICS_SAFE_RESTORING;
     return 2;
 }
 bool apply_snapshot(const graphics_safety_snapshot &target, bool persist) {
@@ -430,11 +446,12 @@ bool apply_snapshot(const graphics_safety_snapshot &target, bool persist) {
     return true;
 }
 int graphics_safety_complete_restore(const char *, uint64_t) {
-    record.phase = GRAPHICS_SAFE_IDLE;
+    stored_record.phase = GRAPHICS_SAFE_IDLE;
     return 1;
 }
 int graphics_safety_preview(const char *, const graphics_safety_snapshot *, uint64_t, int, int) {
-    throw std::runtime_error("background rollback reopened the preview");
+    std::fputs("background rollback reopened the preview\n", stderr);
+    std::exit(1);
 }
 
 void request_background() {
@@ -464,7 +481,7 @@ void android_lifecycle_diagnostics_checkpoint_finish(int) {}
 int android_lifecycle_diagnostics_park_until_wake(uint64_t) {
     ++parks;
     check(!restore_pending, "pending graphics rollback at park");
-    check(record.phase == GRAPHICS_SAFE_IDLE, "graphics store still restoring at park");
+    check(stored_record.phase == GRAPHICS_SAFE_IDLE, "graphics store still restoring at park");
     pending_visibility = wake_foreground ? ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND : 0;
     return wake_foreground ? ANDROID_LIFECYCLE_WAKE_FOREGROUND : ANDROID_LIFECYCLE_WAKE_EXTERNAL;
 }
@@ -502,9 +519,9 @@ void android_idle_saver_tick(int, int) {}
 
 GRAPHICS_BACKGROUND_MAIN = r"""
 void reset_trial() {
-    record = {};
-    record.accepted.values[0] = 7;
-    record.phase = GRAPHICS_SAFE_CHALLENGE;
+    stored_record = {};
+    stored_record.accepted.values[0] = 7;
+    stored_record.phase = GRAPHICS_SAFE_CHALLENGE;
     restore_pending = false;
     armed = true;
     preparing = accepted_pending = false;
@@ -524,7 +541,7 @@ int main() {
         for (int phase : {GRAPHICS_SAFE_CHALLENGE, GRAPHICS_SAFE_PREPARING, GRAPHICS_SAFE_PREVIEW})
         for (int gameplay : {0, 1}) for (int front : {0, 1}) for (bool wake : {false, true}) {
             reset_trial();
-            record.phase = phase;
+            stored_record.phase = phase;
             armed = phase == GRAPHICS_SAFE_CHALLENGE;
             preparing = phase == GRAPHICS_SAFE_PREPARING;
             preview = phase == GRAPHICS_SAFE_PREVIEW ? preview_live : preview_none;
@@ -567,7 +584,7 @@ int main() {
         check(restores == 0 && parks == 0 && audio_pauses == 0,
               "foreground request performed background work");
 #else
-        record.phase = GRAPHICS_SAFE_IDLE;
+        stored_record.phase = GRAPHICS_SAFE_IDLE;
         pending_visibility = ANDROID_LIFECYCLE_VISIBILITY_BACKGROUND;
         android_lifecycle_actions_game_tick(0, 0, 0, 0);
         check(parks == 1 && restores == 0, "software lifecycle path changed");

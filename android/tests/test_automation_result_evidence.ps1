@@ -60,7 +60,8 @@ try {
     $script:deviceApiLevels = @{ 'emulator-5554' = 35 }
     Set-StrictMode -Version Latest
     # Execute the real process wrapper against a harmless Python fixture, never ADB
-    $python = @('python3', 'python') | ForEach-Object { Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue } | Select-Object -First 1
+    $pythonNames = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { @('python', 'python3') } else { @('python3', 'python') }
+    $python = $pythonNames | ForEach-Object { Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue } | Select-Object -First 1
     if (-not $python) { throw 'Python is required for SDK-free ADB diagnostic controls' }
     New-Item -ItemType Directory -Path $diagnosticRoot -Force | Out-Null
     $fakeAdb = Join-Path $diagnosticRoot 'fake_adb.py'
@@ -98,7 +99,7 @@ print('123')
     $script:probeMode = 'missing'
     function Adb-Timeout {
         param([string[]]$AdbArgs, [int]$Seconds, [switch]$IncludeStandardError, [ref]$DiagnosticResult)
-        $script:diagnosticCalls += ,$AdbArgs
+        $script:diagnosticCalls += , $AdbArgs
         if ($Seconds -gt 3) { throw 'Unbounded snapshot query' }
         $result = [ordered]@{ arguments = $AdbArgs; exit_code = 0; timed_out = $false; stderr = ''; error = '' }
         if ($AdbArgs -contains 'pidof') {

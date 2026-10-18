@@ -2377,8 +2377,22 @@ function Get-GameIntrospection {
         Start-Sleep -Milliseconds 800
         $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
     }
-    if (-not $json -or $json -notmatch '^\s*\{') { return $null }
-    try { return ($json | ConvertFrom-Json) } catch { return $null }
+    # A slow game frame can publish after the initial read; do not discard that
+    # pending fresh response by returning immediately to a caller's retry loop
+    $responseWait = [Diagnostics.Stopwatch]::StartNew()
+    while ($true) {
+        if ($json -and $json -match '^\s*\{') {
+            try { return ($json | ConvertFrom-Json -ErrorAction Stop) } catch {}
+        }
+        if (-not $Fresh -or $responseWait.Elapsed.TotalSeconds -ge 5) { return $null }
+        Start-Sleep -Milliseconds 200
+        $readArgs = @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/introspect.json')
+        $json = if ($Serial) {
+            Adb-Dev-Timeout -Serial $Serial -AdbArgs $readArgs -Seconds 5
+        } else {
+            Adb-Timeout -AdbArgs $readArgs -Seconds 5
+        }
+    }
 }
 
 function Get-TestScriptInfo {

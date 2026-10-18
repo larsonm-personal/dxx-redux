@@ -1,0 +1,5 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "recovery_test_laser_contact", "value": "arm" },
+    { "action": "assert", "expect": { "player.laser_level": 0, "multiplayer.recovery.ready_to_save": false } },
+]

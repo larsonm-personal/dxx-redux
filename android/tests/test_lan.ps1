@@ -22,6 +22,7 @@
 #   .\test_lan.ps1 -Game d2 -D1FlyoutPlayers -D1FlyoutCase near
 #   .\test_lan.ps1 -Game d2 -D1LevelTransition  # First Strike in the D2 engine
 #   .\test_lan.ps1 -Game d1 -D1LevelTransition  # Native control
+#   .\test_lan.ps1 -Game d2 -InitialLevel 10 -D1SecretSave
 #   .\test_lan.ps1 -Game d2 -ScoreCatchup host  # Lost completion updates, host advances first
 #   .\test_lan.ps1 -Game d1 -ScoreCatchup client  # Client advances first
 #   .\test_lan.ps1 -Game d2 -EndgameBoss
@@ -38,11 +39,13 @@
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
+#   .\test_lan.ps1 -NewPlayerRestore -Game d2 -MissionFile descent -InitialLevel 8
 #   .\test_lan.ps1 -GhostInventory -Game d2 -MissionFile descent
 #   .\test_lan.ps1 -GhostInventory -GhostInventoryPickup -NoCoopQol -Game d2 -MissionFile descent
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -Game d2 -MissionFile descent -ClientRewind -GuidebotRewind
 #   .\test_lan.ps1 -HostMigration
+#   .\test_lan.ps1 -Game d1 -PickupRelayDevice emulator-5558 -PickupRelayAvd DxxSdk36
 #   .\test_lan.ps1 -PublicShareware -Game d1 -HostMigration  # Disposable emulators only
 #   .\test_lan.ps1 -HostMigration -Game d2 -MissionFile descent -InitialLevel 8
 #   .\test_lan.ps1 -BackgroundRuntime  # Host and client keep serving while another app is visible
@@ -105,6 +108,8 @@ param(
     [switch]$BackgroundRuntime,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
+    [ValidateSet('host', 'client')]
+    [string]$GuidebotDoors,
     [ValidateSet('Original', 'Enhanced')]
     [string]$GuidebotRoutingMode,
     [ValidateSet('cage', 'deploy')]
@@ -114,6 +119,7 @@ param(
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
+    [switch]$NewPlayerRestore,
     [switch]$GhostInventory,
     [switch]$GhostInventoryPickup,
     [ValidateRange(1, 10)]
@@ -132,9 +138,17 @@ param(
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
+    [switch]$PickupRace,
+    [string]$PickupRelayDevice,
+    [string]$PickupRelayAvd = 'DxxSdk36',
+    [ValidateSet('race', 'restore', 'travel')]
+    [string]$PickupRelayCase = 'race',
+    [ValidateSet('host', 'client')]
+    [string]$PickupPolicy,
     [switch]$Briefings,
     [switch]$BriefingAspect,
     [switch]$D1LevelTransition,
+    [switch]$D1SecretSave,
     [ValidateSet("host", "client")]
     [string]$ScoreCatchup,
     [switch]$D1FlyoutPlayers,
@@ -255,6 +269,7 @@ if ($PublicShareware) {
 } elseif ($D1DataDirectory) { throw 'D1DataDirectory requires -PublicShareware' }
 if ($HostDevice -eq $JoinDevice) { throw 'Host and joiner require separate devices' }
 if ($GuidebotRoutingMode -and $Game -ne 'd2') { throw 'Guidebot routing requires D2' }
+if ($GuidebotDoors -and $Game -ne 'd2') { throw 'GuidebotDoors requires D2' }
 if ($GuidebotTravel) {
     if ($Game -ne 'd2' -or $InitialLevel -ne 8 -or $MissionFile -or -not $AllowSecretWarps) {
         throw 'GuidebotTravel requires Counterstrike level 8 and AllowSecretWarps'
@@ -262,6 +277,17 @@ if ($GuidebotTravel) {
     $SecretWorld = $SecretRevisit = $true
 }
 if ($D1FlyoutPlayers -or $ScoreCatchup) { $D1LevelTransition = $true }
+if ($NewPlayerRestore -and ($Briefings -or $RestoreSavePath -or $SavedLateJoin -or $D1SecretSave)) {
+    throw 'NewPlayerRestore requires a fresh session without briefings or another restore fixture'
+}
+if ($D1SecretSave) {
+    if ($Game -notin @('d1', 'd2') -or $InitialLevel -ne 10 -or $RestoreSavePath -or
+        ($MissionFile -and $MissionFile -ne 'descent') -or $SecretWorld -or $SecretSaveRestore) {
+        throw 'D1SecretSave requires a fresh First Strike level 10 session in d1 or d2'
+    }
+    if ($Game -eq 'd2') { $MissionFile = 'descent' }
+    $Briefings = $true
+}
 if ($D1LevelTransition) {
     if ($Game -notin @('d1', 'd2') -or $InitialLevel -ne 1 -or $RestoreSavePath -or
         ($MissionFile -and $MissionFile -ne 'descent')) {
@@ -386,6 +412,7 @@ if (($NormalPhysical -or $SecretExitRace) -and ($Game -ne "d2" -or $InitialLevel
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 if ($GraphicsConfirmation) { . "$PSScriptRoot\..\helpers\test_graphics_multiplayer.ps1" }
 if ($PauseMenus) { . "$PSScriptRoot\..\helpers\test_pause_multiplayer.ps1" }
+if ($PickupRelayDevice) { . "$PSScriptRoot/../helpers/test_pickup_multiplayer.ps1" }
 
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
@@ -396,7 +423,7 @@ $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
 # This runner resets preferences and save fixtures; physical devices require
 # the isolated diagnostic installation, never the user's normal application
-foreach ($serial in @($HostDevice, $JoinDevice)) {
+foreach ($serial in @($HostDevice, $JoinDevice, $PickupRelayDevice) | Where-Object { $_ }) {
     if ($serial -notmatch '^emulator-\d+$') {
         if ($PACKAGE -ne 'com.dxxredux.app.nsdtest') {
             throw 'Physical-device LAN fixtures require DXX_TEST_PACKAGE=com.dxxredux.app.nsdtest'
@@ -1707,7 +1734,8 @@ function Test-PublicMigrationState {
 function Save-PublicMigrationEvidence {
     param([string]$Phase, $HostState, $JoinState)
     @{ phase = $Phase; engine = 'd1'; content = 'pinned-d1-shareware'; level = 1
-        host = $HostState; join = $JoinState; pdata = $script:publicMigrationPdata } |
+        host = $HostState; join = $JoinState; pdata = $script:publicMigrationPdata
+    } |
         ConvertTo-Json -Depth 100 | Set-Content (Join-Path $script:PublicMigrationEvidenceDirectory "$Phase.json") -Encoding utf8
 }
 
@@ -1913,14 +1941,18 @@ function Wait-BidirectionalPdata {
         [string]$Description
     )
 
-    $firstIntro = Get-GameIntrospection -Serial $FirstSerial -Fresh
-    $secondIntro = Get-GameIntrospection -Serial $SecondSerial -Fresh
-    $firstStart = Get-IntroPdataSequence -Intro $firstIntro -PlayerSlot $FirstRemoteSlot
-    $secondStart = Get-IntroPdataSequence -Intro $secondIntro -PlayerSlot $SecondRemoteSlot
-    if ($null -eq $firstStart -or $null -eq $secondStart) {
-        Write-Status "FAIL: PDATA sequence counters unavailable" "Red"
-        return $false
-    }
+    $baseline = @{}
+    if (-not (Wait-ForCondition -Description "$Description counters available" -TimeoutSec 30 -PollMs 1000 -Condition {
+                $baseline.first = Get-GameIntrospection -Serial $FirstSerial -Fresh
+                $baseline.second = Get-GameIntrospection -Serial $SecondSerial -Fresh
+                $baseline.firstSequence = Get-IntroPdataSequence -Intro $baseline.first -PlayerSlot $FirstRemoteSlot
+                $baseline.secondSequence = Get-IntroPdataSequence -Intro $baseline.second -PlayerSlot $SecondRemoteSlot
+                return $null -ne $baseline.firstSequence -and $null -ne $baseline.secondSequence
+            })) { return $false }
+    $firstIntro = $baseline.first
+    $secondIntro = $baseline.second
+    $firstStart = $baseline.firstSequence
+    $secondStart = $baseline.secondSequence
     return Wait-ForCondition -Description $Description -TimeoutSec 15 -PollMs 1000 -Condition {
         $firstNow = Get-GameIntrospection -Serial $FirstSerial -Fresh
         $secondNow = Get-GameIntrospection -Serial $SecondSerial -Fresh
@@ -1941,7 +1973,8 @@ function Wait-BidirectionalPdata {
         if ($advanced -and $PublicShareware) {
             $script:publicMigrationPdata = @{ first_serial = $FirstSerial; second_serial = $SecondSerial
                 first_remote_slot = $FirstRemoteSlot; second_remote_slot = $SecondRemoteSlot
-                first_start = $firstStart; first_end = $firstSequence; second_start = $secondStart; second_end = $secondSequence }
+                first_start = $firstStart; first_end = $firstSequence; second_start = $secondStart; second_end = $secondSequence
+            }
         }
         return $advanced
     }
@@ -1966,6 +1999,12 @@ function Invoke-HostMigrationScenario {
 
     Write-Status ""
     Write-Status "--- Host migration, rejoin, and second-swap scenario ---" "White"
+    if (-not (Invoke-PairedGameAutomation `
+                -PrimarySerial $EMU1 -PrimaryScript 'test_coop_host_migration_prepare_world.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_host_migration_prepare_world.jsonc' `
+                -Description 'Prepare migration world without unrelated combat' -TimeoutSec $TimeoutSeconds)) {
+        return $false
+    }
     if ($checkGuidebot) {
         if (-not (Invoke-PairedGameAutomation `
                     -PrimarySerial $EMU1 `
@@ -1981,19 +2020,24 @@ function Invoke-HostMigrationScenario {
     if ($PublicShareware) {
         foreach ($serial in @($EMU1, $EMU2)) { Assert-PublicMigrationEngine -Serial $serial }
     }
-    $initialHost = Get-GameIntrospection -Serial $EMU1 -Fresh
-    $initialJoin = Get-GameIntrospection -Serial $EMU2 -Fresh
-    $initialGuidebot = Get-IntroGuidebot -Intro $initialHost
-    if (-not (Test-IntroHostRole -Intro $initialHost -LocalSlot 0 -MasterSlot 0 `
-                -ConnectedPlayers 2 -IsMaster $true) -or
-        -not (Test-IntroHostRole -Intro $initialJoin -LocalSlot 1 -MasterSlot 0 `
-                -ConnectedPlayers 2 -IsMaster $false) -or
-        ($checkGuidebot -and -not $initialGuidebot) -or
-        (Get-IntroObjectOwnerSignature -Intro $initialHost) -ne
-        (Get-IntroObjectOwnerSignature -Intro $initialJoin)) {
+    if (-not (Wait-ForCondition -Description 'Initial peers agree on host and synchronized object ownership' -TimeoutSec 30 -Condition {
+                $script:migrationInitialHost = Get-GameIntrospection -Serial $EMU1 -Fresh
+                $script:migrationInitialJoin = Get-GameIntrospection -Serial $EMU2 -Fresh
+                $buddy = Get-IntroGuidebot -Intro $script:migrationInitialHost
+                return (Test-IntroHostRole -Intro $script:migrationInitialHost -LocalSlot 0 -MasterSlot 0 `
+                        -ConnectedPlayers 2 -IsMaster $true) -and
+                (Test-IntroHostRole -Intro $script:migrationInitialJoin -LocalSlot 1 -MasterSlot 0 `
+                    -ConnectedPlayers 2 -IsMaster $false) -and
+                (-not $checkGuidebot -or $buddy) -and
+                (Get-IntroObjectOwnerSignature -Intro $script:migrationInitialHost) -eq
+                (Get-IntroObjectOwnerSignature -Intro $script:migrationInitialJoin)
+            })) {
         Write-Status "FAIL: initial peers do not agree on host/object state" "Red"
         return $false
     }
+    $initialHost = $script:migrationInitialHost
+    $initialJoin = $script:migrationInitialJoin
+    $initialGuidebot = Get-IntroGuidebot -Intro $initialHost
     if ($checkGuidebot) {
         $initialGuidebotGeneration = [int]$initialGuidebot.owner_generation
     }
@@ -2219,15 +2263,17 @@ function Invoke-PairedGameAutomation {
         [string]$SecondarySerial,
         [string]$SecondaryScript,
         [string]$Description,
+        [hashtable]$PrimaryParams = @{},
+        [hashtable]$SecondaryParams = @{},
         [int]$TimeoutSec = 60,
         [switch]$IndependentEndgame
     )
 
-    if (-not (Start-DeviceGameAutomation -Serial $SecondarySerial -ScriptName $SecondaryScript)) {
+    if (-not (Start-DeviceGameAutomation -Serial $SecondarySerial -ScriptName $SecondaryScript -Params $SecondaryParams)) {
         return $false
     }
     Start-Sleep -Milliseconds 250
-    if (-not (Start-DeviceGameAutomation -Serial $PrimarySerial -ScriptName $PrimaryScript)) {
+    if (-not (Start-DeviceGameAutomation -Serial $PrimarySerial -ScriptName $PrimaryScript -Params $PrimaryParams)) {
         return $false
     }
 
@@ -3027,6 +3073,18 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
 
 try {
 
+    if ($PickupRelayDevice) {
+        $allowed = @('Game', 'HostDevice', 'JoinDevice', 'HostAvd', 'JoinAvd', 'HostCallsign', 'JoinCallsign',
+            'PickupRelayDevice', 'PickupRelayAvd', 'PickupRelayCase', 'MissionFile', 'InitialLevel', 'TimeoutSeconds', 'SkipBuild')
+        foreach ($key in $PSBoundParameters.Keys) {
+            if ($key -notin $allowed) { throw "PickupRelayDevice runs separately from -$key" }
+        }
+        $testPassed = Invoke-CoopPickupRelayScenario
+        if (-not $testPassed) { throw 'Three-player pickup relay failed' }
+        Write-Status "=== THREE-PLAYER PICKUP $($PickupRelayCase.ToUpperInvariant()) PASSED ===" 'Green'
+        exit 0
+    }
+
     Write-Status "=== LAN Multiplayer Integration Test ===" "White"
     Write-Status "Game: $Game | Mission: $MISSION | Mode: $MODE"
     Write-Status ""
@@ -3211,12 +3269,22 @@ try {
         }
     }
 
-    if ($D1LevelTransition -or $HostMigration) {
+    if ($D1LevelTransition -or $D1SecretSave -or $NewPlayerRestore -or $HostMigration) {
         foreach ($serial in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
                 'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
                 '--es', 'command', 'write_probe_debug_prefs', '--ez', 'enabled', 'true'
             ) -Seconds 10 | Out-Null
+            if ($HostMigration) {
+                # Per-face rendering traces can stall snapshots during network timing checks
+                foreach ($category in @('graphics', 'texture')) {
+                    Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                        'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                        '--es', 'command', 'write_bool_pref',
+                        '--es', 'key', "dlog_${category}_enabled", '--ez', 'value', 'false'
+                    ) -Seconds 10 | Out-Null
+                }
+            }
         }
     }
 
@@ -3414,6 +3482,38 @@ try {
     }
     if ($PublicShareware) { Assert-PublicMigrationEngine -Serial $EMU1 }
     Write-Status "Host network lobby ready" "Green"
+
+    if ($NewPlayerRestore) {
+        # Publish a real one-player checkpoint before this client has ever joined
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_start.jsonc')) {
+            throw 'Could not start the solo save fixture'
+        }
+        if (-not (Wait-ForCondition -Description 'Solo host enters the mine' -TimeoutSec 90 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1
+                    return $state -and $state.in_game -and $state.game_window_is_front -and
+                    $state.multiplayer.num_connected -eq 1
+                })) { throw 'Solo host did not enter the mine' }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_solo_checkpoint.jsonc') -or
+            -not (Wait-ForCondition -Description 'Solo checkpoint fixture completes' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $EMU1
+                    return $result -and $result.result -in @('PASS', 'FAIL')
+                }) -or (Get-DeviceAutomationResult -Serial $EMU1).result -ne 'PASS') {
+            throw 'Solo checkpoint fixture failed'
+        }
+        $soloSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+        if ($soloSlot -lt 0) { throw 'Solo checkpoint was not published' }
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+        if (-not (Start-SetupActivity -Serial $EMU1) -or
+            -not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $soloSlot)) {
+            throw 'Could not stage the solo checkpoint for startup restore'
+        }
+        Send-MpCommand -Serial $EMU1 -Command 'lan_launch' -Extras $hostExtras
+        if (-not (Wait-ForCondition -Description 'Saved host returns to its empty lobby' -TimeoutSec 60 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1 -Fresh
+                    return $state -and $state.multiplayer.network_status -eq 4 -and
+                    $state.multiplayer.num_connected -eq 1
+                })) { throw 'Saved host did not return to its lobby' }
+    }
 
     # Joiner (EMU2)
     Write-Status "Sending lan_launch join to $EMU2..."
@@ -4486,6 +4586,116 @@ try {
         $testPassed = Invoke-HostMigrationScenario
     }
 
+    if ($testPassed -and $GuidebotDoors) {
+        $owner = if ($GuidebotDoors -eq 'host') { $EMU1 } else { $EMU2 }
+        $peer = if ($GuidebotDoors -eq 'host') { $EMU2 } else { $EMU1 }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $owner -PrimaryScript 'test_coop_door_deploy.jsonc' `
+            -SecondarySerial $peer -SecondaryScript 'test_coop_door_observe.jsonc' `
+            -Description 'Deploy Guide-Bot for door replication' -TimeoutSec 40
+        $doorScripts = [ordered]@{
+            unkeyed = 'test_coop_door_prepare_unkeyed.jsonc'
+            keyed = 'test_coop_door_prepare_keyed.jsonc'
+            closing = 'test_coop_door_prepare_closing.jsonc'
+        }
+        foreach ($kind in $doorScripts.Keys) {
+            if (-not $testPassed) { break }
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $owner -PrimaryScript $doorScripts[$kind] `
+                -SecondarySerial $peer -SecondaryScript $doorScripts[$kind] `
+                -Description "Prepare $kind door and reject nonowner body contact" -TimeoutSec 25
+            if (-not $testPassed) { break }
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $owner -PrimaryScript 'test_coop_door_contact.jsonc' `
+                -SecondarySerial $peer -SecondaryScript 'test_coop_door_verify.jsonc' `
+                -Description "Replicate $kind door from Guide-Bot body contact" -TimeoutSec 25
+        }
+        foreach ($kind in @('unkeyed', 'keyed')) {
+            if (-not $testPassed) { break }
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $owner -PrimaryScript 'test_coop_door_flare_prepare.jsonc' `
+                -SecondarySerial $peer -SecondaryScript 'test_coop_door_flare_prepare.jsonc' `
+                -PrimaryParams @{ kind = $kind } -SecondaryParams @{ kind = $kind } `
+                -Description "Reject nonowner Guide-Bot flare at $kind door" -TimeoutSec 25
+            if (-not $testPassed) { break }
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $owner -PrimaryScript 'test_coop_door_flare.jsonc' `
+                -SecondarySerial $peer -SecondaryScript 'test_coop_door_verify.jsonc' `
+                -Description "Replicate $kind door from a moving Guide-Bot flare" -TimeoutSec 25
+        }
+        if ($testPassed) {
+            $doorLog = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG:*', '*:S') -Seconds 10
+            $openedWalls = @([regex]::Matches($doorLog, '\[DOOR\] test_verified player=\d+ owner=-?\d+ wall=(\d+)') |
+                    ForEach-Object { [int]$_.Groups[1].Value } | Select-Object -Unique)
+            if ($openedWalls.Count -ne 5) { throw 'Expected five verified body/flare doors before rejoin' }
+            if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_host_migration_leave.jsonc')) { throw 'Door observer could not leave' }
+            if (-not (Wait-ForCondition -Description 'Host retains opened doors after client departure' -TimeoutSec 40 -Condition {
+                        $state = Get-GameIntrospection -Serial $EMU1 -Fresh
+                        return $state -and $state.in_game -and $state.multiplayer.num_connected -eq 1
+                    })) { throw 'Door client did not leave the session' }
+            if (-not (Start-SetupActivity -Serial $EMU2)) { throw 'Door client launcher did not return' }
+            $hostAddress = Get-DeviceWlanIp -Serial $EMU1
+            if (-not $hostAddress) { throw 'Door host has no LAN address' }
+            Send-MpCommand -Serial $EMU2 -Command 'lan_discover' -Extras @('--es', 'callsign', $CALLSIGN2)
+            Send-MpCommand -Serial $EMU2 -Command 'lan_join_ip' -Extras @('--es', 'host_addr', $hostAddress)
+            $script:doorRejoinApproved = $false
+            if (-not (Wait-ForCondition -Description 'Client rejoins the world with five opened doors' -TimeoutSec 90 -Condition {
+                        foreach ($serial in @($EMU1, $EMU2)) {
+                            $state = Get-GameIntrospection -Serial $serial -Fresh
+                            if ($serial -eq $EMU1 -and $state -and $state.multiplayer.join_request_pending -and -not $script:doorRejoinApproved) {
+                                if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc')) { throw 'Could not approve door client rejoin' }
+                                $script:doorRejoinApproved = $true
+                            }
+                            if (-not $state -or -not $state.in_game -or $state.multiplayer.num_connected -ne 2) { return $false }
+                        }
+                        return $true
+                    })) { throw 'Door client rejoin failed' }
+            foreach ($wall in $openedWalls) {
+                $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_door_rejoin_verify.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_door_rejoin_verify.jsonc' `
+                    -PrimaryParams @{ wall = $wall } -SecondaryParams @{ wall = $wall } `
+                    -Description "Both peers retain opened wall $wall after rejoin" -TimeoutSec 25
+                if (-not $testPassed) { break }
+            }
+        }
+    }
+
+    if ($testPassed -and $PickupRace) {
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_pickup_race_host.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_pickup_race_client.jsonc' `
+            -Description 'Create one laser in an isolated client death spew' -TimeoutSec 60
+        if ($testPassed) {
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_pickup_race_arm.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_pickup_race_arm.jsonc' `
+                -Description 'Both players contact the same laser with pickup traffic held' -TimeoutSec 20
+        }
+        if ($testPassed) {
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_pickup_race_release.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_pickup_race_release.jsonc' `
+                -Description 'Release competing pickup requests' -TimeoutSec 20
+        }
+        if ($testPassed) {
+            $hostState = Get-GameIntrospection -Serial $EMU1
+            $clientState = Get-GameIntrospection -Serial $EMU2
+            if (-not $hostState -or -not $clientState -or
+                ($hostState.player.laser_level + $clientState.player.laser_level) -ne 1) {
+                throw 'One dropped laser must award exactly one level across both players'
+            }
+            Write-Status "One laser award: host=$($hostState.player.laser_level) client=$($clientState.player.laser_level)" 'Green'
+        }
+    }
+
+    if ($testPassed -and $PickupPolicy) {
+        $collector = if ($PickupPolicy -eq 'host') { $EMU1 } else { $EMU2 }
+        $dyingPeer = if ($PickupPolicy -eq 'host') { $EMU2 } else { $EMU1 }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $collector -PrimaryScript 'test_coop_pickup_policy_collector.jsonc' `
+            -SecondarySerial $dyingPeer -SecondaryScript 'test_coop_pickup_policy_dying.jsonc' `
+            -Description 'Preserve dead teammate plasma and quad before respawn' -TimeoutSec 60
+        if ($testPassed) {
+            $testPassed = (Start-DeviceGameAutomation -Serial $dyingPeer -ScriptName 'test_coop_pickup_policy_recover.jsonc') -and
+            (Wait-ForCondition -Description 'Respawned teammate recovers plasma and quad' -TimeoutSec 45 -PollMs 1000 -Condition {
+                $result = Get-DeviceAutomationResult -Serial $dyingPeer
+                return $result -and $result.result -in @('PASS', 'FAIL')
+            }) -and (Get-DeviceAutomationResult -Serial $dyingPeer).result -eq 'PASS'
+            if (-not $testPassed) { Write-DeviceAutomationDiagnostics -Serial $dyingPeer }
+        }
+    }
+
     if ($testPassed -and ($SpewPickup -or $SpewPartialPickup)) {
         $pickupHost = if ($GuidebotSlotRemapRestore) { $EMU2 } else { $EMU1 }
         $pickupClient = if ($GuidebotSlotRemapRestore) { $EMU1 } else { $EMU2 }
@@ -4543,6 +4753,53 @@ try {
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $fastSerial -PrimaryScript $fastScript `
             -SecondarySerial $slowSerial -SecondaryScript $slowScript `
             -Description "Independent campaign ending with $fastSerial returning first" -TimeoutSec 90 -IndependentEndgame
+    }
+
+    if ($testPassed -and $NewPlayerRestore) {
+        if (-not (Wait-ForCondition -Description 'Startup restore admits the player absent from the save' -TimeoutSec 90 -PollMs 500 -Condition {
+                    $hostState = Get-GameIntrospection -Serial $EMU1
+                    $clientState = Get-GameIntrospection -Serial $EMU2
+                    $savedHost = @($hostState.multiplayer.players | Where-Object { $_.is_me })
+                    return $hostState -and $clientState -and $hostState.coop_restore.status -eq 'idle' -and
+                    $clientState.coop_restore.status -eq 'idle' -and $hostState.in_game -and $clientState.in_game -and
+                    $hostState.multiplayer.num_connected -eq 2 -and $clientState.multiplayer.num_connected -eq 2 -and
+                    $savedHost.Count -eq 1 -and $savedHost[0].primary_flags -eq 9 -and $hostState.player.laser_level -eq 2
+                })) { throw 'New player did not complete the startup restore' }
+        $newPeer = Get-GameIntrospection -Serial $EMU2
+        $newShip = @($newPeer.multiplayer.players | Where-Object { $_.is_me })[0]
+        if ($newPeer.player.laser_level -ne 0 -or $newShip.primary_flags -ne 1) {
+            throw 'New player inherited equipment from the saved host'
+        }
+        # Four ordinary timeout windows after restore, with controls and traffic checks
+        for ($sample = 0; $sample -lt 12; ++$sample) {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_restored_session_idle.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_restored_session_idle.jsonc' `
+                        -Description "Restored session remains connected ($sample/12)" -TimeoutSec 20)) {
+                throw 'New-player restored session disconnected'
+            }
+        }
+        $testPassed = Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+            -Description 'Network updates after one minute in the restored session'
+        if ($testPassed) {
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+                -Description 'Both restored players retain control' -TimeoutSec 25
+        }
+    }
+
+    if ($testPassed -and $D1SecretSave) {
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_d1_secret_entry.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_d1_secret_entry.jsonc' `
+            -Description 'First Strike level 10 to secret level -1' -TimeoutSec 180
+        if ($testPassed) {
+            $testPassed = Invoke-IndependentCheckpointsScenario
+            foreach ($serial in @($EMU1, $EMU2)) {
+                $state = Get-GameIntrospection -Serial $serial
+                if (-not $state -or $state.current_level_num -ne -1 -or $state.multiplayer.num_connected -ne 2) {
+                    throw 'D1 secret checkpoint restore lost the secret level or a teammate'
+                }
+            }
+        }
     }
 
     if ($testPassed -and $D1LevelTransition) {

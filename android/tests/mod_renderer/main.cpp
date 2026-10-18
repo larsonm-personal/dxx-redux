@@ -376,6 +376,12 @@ static void test_mode(json &trace, GLuint program, int content_game)
 #endif
 	mount(uud, point);
 	const auto uud_first = render(program, bitmap);
+	if (uud_first != only_uud) {
+		std::fprintf(stderr, "UUD priority mismatch for content game %d: expected %s, actual %s\n", content_game, only_uud.dump().c_str(), uud_first.dump().c_str());
+#ifdef DXX_BUILD_DESCENT_II
+		std::fprintf(stderr, "UUD bitmap classification: custom=%d, stored_flags=%d, current_flags=%d\n", piggy_bitmap_is_custom(bitmap), piggy_bitmap_get_flags(bitmap), bitmap->bm_flags);
+#endif
+	}
 	require(uud_first == only_uud, "higher priority UUD PNG beats lower priority KTX2, with its own mask");
 	trace.push_back({ { "case", "uud_first" }, { "game", content_game }, { "render", uud_first } });
 	unmount(hires);

@@ -11,7 +11,7 @@ $helpersDir = Join-Path $scriptDir 'helpers'
 
 # Load the real runner functions without starting the full suite
 foreach ($source in @(
-        @{ Path = "$scriptDir/run_all_tests.ps1"; Names = @('Invoke-SingleTest', 'Save-SuiteTestEvidence', 'ConvertTo-ArgumentText', 'Get-PassingResultNotes', 'Add-ReportSidecarLog', 'Test-SingleEmulatorFailureNeedsRecovery', 'Recover-SingleEmulatorEnvironment', 'Recover-DualEmulatorEnvironment') },
+        @{ Path = "$scriptDir/run_all_tests.ps1"; Names = @('Invoke-SingleTest', 'Save-SuiteTestEvidence', 'Write-SuiteEvidenceJournal', 'ConvertTo-ArgumentText', 'Get-PassingResultNotes', 'Add-ReportSidecarLog', 'Test-SingleEmulatorFailureNeedsRecovery', 'Install-SuiteTarget', 'Recover-SingleEmulatorEnvironment', 'Recover-DualEmulatorEnvironment') },
         @{ Path = "$helpersDir/test_helpers.ps1"; Names = @('Get-TestStatusFromExitCode', 'Install-ApkOnDevice') }
     )) {
     $ast = [Management.Automation.Language.Parser]::ParseFile($source.Path, [ref]$null, [ref]$null)
@@ -100,6 +100,7 @@ function Reconnect-AdbDevice { }
 function Test-DeviceOnline { param($Serial) return $true }
 function Start-SecondEmulator { return $true }
 function Install-AppAndData { param($Serial) return $Serial -ne $script:failedInstallSerial }
+$script:suiteRequiresStandardGameData = $true
 $helpersDir = $ReportDir
 [IO.File]::WriteAllText((Join-Path $helpersDir 'emu_health.ps1'), 'exit 0')
 $script:PRIMARY_EMULATOR_SERIAL = 'emulator-5554'

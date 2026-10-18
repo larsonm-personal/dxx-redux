@@ -92,6 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "collide.h"
 #include "escort.h"
+#include "coop/coop_robot_door.h"
 #include "multibot.h"
 
 #define WALL_DAMAGE_SCALE (128) // Was 32 before 8:55 am on Thursday, September 15, changed by MK, walls were hurting me more than robots!
@@ -155,21 +156,21 @@ void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short h
 		int	wall_num = Segments[hitseg].sides[hitwall].wall_num;
 		if (wall_num != -1) {
 			if ((Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys == KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED)) {
-				wall_open_door(&Segments[hitseg], hitwall);
+				coop_robot_open_door(robot, hitseg, hitwall);
 			// -- Changed from this, 10/19/95, MK: Don't want buddy getting stranded from player
 			//-- } else if ((Robot_info[robot->id].companion == 1) && (Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys != KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED)) {
 			} else if ((Robot_info[robot->id].companion == 1) && (Walls[wall_num].type == WALL_DOOR)) {
 				if ((ailp->mode == AIM_GOTO_PLAYER) || (Escort_special_goal == ESCORT_GOAL_SCRAM)) {
 					if (Walls[wall_num].keys != KEY_NONE) {
 						if (Walls[wall_num].keys & Players[Player_num].flags)
-							wall_open_door(&Segments[hitseg], hitwall);
+							coop_robot_open_door(robot, hitseg, hitwall);
 					} else if (!(Walls[wall_num].flags & WALL_DOOR_LOCKED))
-						wall_open_door(&Segments[hitseg], hitwall);
+						coop_robot_open_door(robot, hitseg, hitwall);
 				}
 			} else if (Robot_info[robot->id].thief) {		//	Thief allowed to go through doors to which player has key.
 				if (Walls[wall_num].keys != KEY_NONE)
 					if (Walls[wall_num].keys & Players[Player_num].flags)
-						wall_open_door(&Segments[hitseg], hitwall);
+							coop_robot_open_door(robot, hitseg, hitwall);
 			}
 		}
 	}

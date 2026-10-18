@@ -1,0 +1,7 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "recovery_test_laser_contact", "value": "release" },
+    { "action": "wait_for", "timeout_ms": 10000, "expect": { "multiplayer.recovery.ready_to_save": true } },
+    { "action": "assert", "expect": { "player.laser_level": { "lte": 1 }, "multiplayer.num_connected": 2 } },
+    { "action": "introspect" },
+]

@@ -114,10 +114,13 @@ try {
     # Exercise the real suite preflight with mocked transports and provisioning
     $suitePath = Join-Path $PSScriptRoot '../run_all_tests.ps1'
     $suiteAst = [Management.Automation.Language.Parser]::ParseFile($suitePath, [ref]$null, [ref]$null)
-    $preflight = $suiteAst.Find({ param($node)
-            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-PrimaryEmulatorPreflight'
-        }, $true)
-    . ([scriptblock]::Create($preflight.Extent.Text))
+    foreach ($functionName in @('Install-SuiteTarget', 'Invoke-PrimaryEmulatorPreflight')) {
+        $functionAst = $suiteAst.Find({ param($node)
+                $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
+            }, $true)
+        . ([scriptblock]::Create($functionAst.Extent.Text))
+    }
+    $script:suiteRequiresStandardGameData = $true
     $script:singleTestSerial = 'phone2'
     function Ensure-EmulatorHealthy { return $true }
     function Install-AppAndData { param($Serial); Assert-Equal 'phone2' $Serial 'Provision selected phone'; return $true }

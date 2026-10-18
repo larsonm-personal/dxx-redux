@@ -1,0 +1,155 @@
+CHECKPOINT: execution is still in progress.
+Raw evidence paths below are relative to: C:\local\dxx-redux\temp\full_validation\run_20261016
+Canonical regenerated JSON remains under game_data in the repository.
+
+FULL VALIDATION REVIEW
+Updated UTC: 2026-10-18T03:56:18.651405+00:00
+Execution complete: False
+
+START HERE
+review_status.json: consolidated machine-readable index and original failures
+triage.json: unresolved findings and exact evidence directories
+retry_results.json: focused resolutions; original main results are retained
+source_changes.json: explicit validation changes, reasons, and source hashes
+json_change_index.json: worktree JSON hash index with initial-state scope
+artifact_hash_audit.json: saved metadata, simulation, extraction and diagnostic snapshot verification
+
+MAIN SUITE (ORIGINAL OUTCOMES)
+{'PASS': 306, 'FAIL': 22, 'SKIP': 33}
+Do not add counts from overlapping native, host, device and retry owners
+
+EXECUTION STAGES
+main_suite: exit 1; evidence: tests/
+regression_generation: exit 1; evidence: regressions/
+supplemental: exit -1; evidence: supplemental/
+isolated_android: INTERRUPTED; remaining work resumed in coop_refresh; evidence: isolated_android/
+original_graphics_rearm_retry: INTERRUPTED; remaining work resumed in coop_refresh; evidence: original_graphics_rearm_retry/
+linux_native: exit 0; evidence: linux_native/
+standalone_native: exit 0; evidence: extra_native/
+updated_host_windows: exit 1; evidence: concurrent_updates_windows_retry/
+updated_host_linux: exit 1; evidence: concurrent_updates_linux/
+updated_host_linux_configured_retry: exit 0; evidence: concurrent_updates_linux_retry/
+current_windows_native_retry: exit 0; evidence: windows_current_native_retry/
+fm_quality_current_retry: exit 0; evidence: fm_quality_retry2/
+fm_shipping_current_reference: exit 0; evidence: fm_shipping_current_reference/
+available_private_d2_asan: exit 0; evidence: asan_private_d2/
+current_coop_refresh: RUNNING / QUEUED; evidence: coop_refresh/
+
+FRESH REGRESSION DATA
+All four canonical regeneration stages were attempted to completion
+regressions/run_20261017_105810/summary.json: stage status and logs
+regeneration_cd_results/: 39-source extraction/import validation reports
+metadata_results/: 140-input metadata results, exact JSON snapshots and hashes
+simulation_results/published/game_data/: 140 exact publication JSON files
+simulation_results/scope.json: full producer location and native rejection
+Full simulation producer: android/temp/guidebot_simulation_regression/20261017_122605
+coop_refresh/metadata_current and coop_refresh/simulation_current: later full regeneration after current co-op source changes; inspect their owner outcomes
+Fingerprint publication paths and changes are indexed by json_change_index.json
+No replay oracle or semantic regression baseline was manually accepted
+
+SUPPLEMENTAL COVERAGE
+{'FAIL': 18, 'PASS': 39}
+supplemental/plan.json: exact commands and timeouts
+supplemental/summary.json: raw outcomes; supplemental/exclusions.json: unavailable coverage
+isolated_android/results/summary.json: cases50-80 repeated/resumed on exclusive emulators after user confirmed the original devices were shared
+Compact public replay full simulation qualification remains incomplete
+Public save continuation full trajectory remains UNQUALIFIED; imported D1 is diagnostic only
+All-weapons native diagnostic captures do not satisfy its clean-source compact qualification
+
+UNRESOLVED FINDINGS
+test_android_mod_renderer: runtime_failure
+  D1 passed 11 actual GLES cases. D2 failed equality between UUD-alone rendering and higher-priority UUD over KTX2 rendering after its door checks
+  Evidence: renderer_failure/
+  Current evidence: renderer_current_results/
+test_android_mod_sounds: runtime_failure
+  D2 rejects UUD2SP HAM patch op 580: robot 33 AnimState0_0Offset expects 685 but loaded value is zero; door sound assignments remain stock
+  Evidence: sound_mod_failure/
+  Current evidence: sound_current_results/
+test_controller_live_rebind: runtime_or_async_fixture_failure
+  D2 baseline passed 69/69 steps, but reopening launcher mapping and holding L2 for 2300 ms leaves selected_control=null at launcher step 3/12. Independent raw-input, response and hotplug owners passed
+  Evidence: controller_rebind_failure/
+test_graphics_first_run: original_d1_rearm_intermediate_resume_expectation
+  D1 Rearm expected an intermediate pause menu and first_run_pending=true, but the rearmed chooser was already editing with pending=false
+  Evidence: graphics_first_run_failure/
+  Current: All3 unchanged original Rearm variants completed on the fresh APK: D1 FAIL at the intermediate step43/51; D2 PASS; importedD1 PASS. D1 correct editor state is captured, but its remaining dwell/cancel/handled assertions were not reached. Do not label D1 full ownerPASS or force a single resume path.
+  Current evidence: coop_refresh/graphics_original_results/; coop_refresh/graphics_original_capture_index.json
+test_idle_screen_saver: runtime_or_lifecycle_failure
+  D1 fails after background/screen lock with wake_count=0, park_entry_count=0; D2 wakes once then controller A input times out at step 33. Both retain original checks
+  Evidence: idle_screen_saver_failure/
+test_launch_to_automap: timing_fixture_fix_pending_runtime_verification
+  D1 passed. D2 parked/woke successfully but recorded 3750 ms parked versus required 4000 ms after a five-second background hold
+  Evidence: launch_to_automap_failure/
+test_mod_fuzz/all-on-d1-in-d2-L1: runtime_or_reload_sampling_failure
+  All-on imported D1 completes automation, but post-toggle snapshot has mounted UUD/hires/sounds/font packs and texture_packs.loaded=0, packs=[], status=none_loaded
+  Evidence: mod_fuzz_failure/all_on_imported/
+  Current: Exclusive emulator/frozen APK gameplay automation completes, then owner verification fails: controller: High-resolution pack was not rendered: d1-hires-256-textures-ktx2.dxa. Elapsed actual runner 87.875seconds. Original/shared retry outcomes remain separate.
+  Current evidence: isolated_android/results/mod_fuzz_all_on_imported_retry/
+test_mod_fuzz/all-on-d2-L1: runtime_metadata_failure
+  All-on D2 and Vertigo fail enabled-UUD metadata assertions. Both logs show HAM patch op 606 robot33 AnimState0_0Offset expected685 actual0, same normalized empty-joint field as the UUD2SP sound failure
+  Evidence: mod_fuzz_results/
+  Current: Exclusive emulator/frozen APK gameplay automation completes, then owner verification fails: controller: Enabled UUD metadata was not applied. Elapsed actual runner 90.031seconds. Original/shared retry outcomes remain separate.
+  Current evidence: isolated_android/results/mod_fuzz_all_on_d2_retry/
+test_obsidian_level7_switch_guidance: isolated_android_metadata_worker_timeout
+  All18 Obsidian metadata levels passed. After game launch, emulator health failed, ADB transport reset did not recover it, and adb devices had no connected target after122 seconds. No game assertion or native crash evidence captured
+  Evidence: obsidian_switch_failure/
+  Current: Exclusive fresh emulator5580, frozen APK: import succeeds; analyze_level_metadata_all fails before gameplay. Metadata requests report timeout at6157ms and6303ms. No concurrent package update in this attempt. Earlier shared retry was invalidated by PACKAGE UPDATED and remains separate. Native full metadata regeneration separately passes140/140 inputs.
+  Current evidence: isolated_android/results/obsidian_level7_switch_retry/
+test_uud_mod_combinations: runtime_texture_priority_failure
+  All15 runtime states captured. Final verifier fails D2 uud-first because no UUD replacements rendered; nativeD1 allfive phases and D2 baseline/UUD-only verified before failure
+  Evidence: uud_combination_results/
+test_uud2sp: runtime_metadata_failure
+  Sound-only passes; sound-first completes automation40/40 then fails no applied metadata source. HAM patch op575 robot33 AnimState0_0Offset expected685 actual0, matching mod-sound and fuzz failures. Remaining three phases not reached.
+  Evidence: uud2sp_results/
+test_lan_host_migration_public_shareware: runtime_rejoin_state_failure
+  Initial nativeD1 shareware LAN sync and bidirectional PDATA pass. Slot1 takes host role and retains spew/recovery records. Former host launches and discovers migrated host, but full matching-object pair predicate times out120s. Second swap unreached. Saved states show returning peer menu says removed for failing important packets; native trace verify_objects remote74 local0, SYNCFAILED retry1/3, then PLAYING. Final synchronized/allocated/active counts74 on both peers, but returning peer in_gamefalse and host num_connected1.
+  Evidence: public_migration_failure/
+test_lan_launch_preparation: emulator_admission_probe_failure_pending_unchanged_retry
+  Refuses to reset emulator5554 because ro.kernel.qemu probe is not exact1; get-state passed. Probe response not captured by original owner. Subsequent public variant passes identical guard on both targets and reaches nativeD1 two-peer gameplay.
+  Evidence: launch_preparation_failure/
+full_simulation/af_d1_beta/level7: native_runtime_input_rejection
+  All2639 work items recorded. One engine invocation exits1 because Robot30 is unavailable in the selected D1 edition. Metadata stage passed140/140 inputs. Fresh publication JSON and exact rejection log preserved.
+  Evidence: simulation_results/
+  Current: Current-source full batch records all2639 selected levels in943.003seconds with140 changed publication files. Same single input/edition rejection: Robot30 unavailable in the selected D1 edition; no expected timeouts. Exact140 publications hash-verified, no edition/oracle/baseline bypass.
+  Current evidence: coop_refresh/simulation_current/summary.json; coop_refresh/simulation_current/logs/af_d1_beta.json_0_7_cefispar.rdl_run_1.log; coop_refresh/publication_snapshots/simulation/scope.json
+test_all_weapons_runtime: clean_source_qualification_requirement
+  Original owner refuses dirty source before gameplay or report creation. It requires exact clean HEAD recipes and clean recorder/build stamps. Current tree includes initial user work plus validation fixes. All four separate native assertion captures pass: D1 scourge, D1 bigred, D2 honestbob and imported D1.
+  Evidence: supplemental/all_weapons.log
+  Current evidence: all_weapons_capture_diagnostic/scope.json
+test_level_metadata_benchmark: metadata_digest_difference
+  Policy self-test passes. First d1-first-strike-01 metadata digest expected dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83, actual 6e9d76eb8b1c0f01ff0da6592294d21a0a84b4d49800e4b2909e6fc32aba9cf7. Remaining benchmark levels were not reached. Full canonical metadata regeneration separately passes140/140 inputs.
+  Evidence: metadata_benchmark_failure/
+test_replay_window_progress/d1: replay_pause_contract_or_fast_loop_failure
+  Original Pause-key owner records a pause request but no dialog and exits0, failing interaction assertion. A temporary Space-key probe retains a one-second frozen-frame requirement; it also fails pause_frame_unchanged while replay exits0. D2 imported progress owner passes. Original tracked fixture was restored exactly; no assertions weakened.
+  Evidence: supplemental/replay_window_d1/
+  Current evidence: replay_window_d1_retry/
+test_d1_replay_parity/public_corpus: native_to_imported_replay_differences
+  All eight selected public D1 recordings completed. Comparison statuses: {"native_repeatability": {"pass": 8}, "native_to_imported": {"fail": 8}, "recording_to_native": {"incomplete": 8}}. Owner raw FAIL exit1; full qualification remains incomplete because original full observation/RNG companions are absent from compact public inputs. Scoped compact checks passed separately.
+  Evidence: supplemental/d1_public_paired_parity/
+sanitizer_all/loader_bounds: expected_texture_diagnostics_missing
+  Comet engine simulation completes1493 frames with no captured ASan report, but emits neither the expected texture repair log nor compact notes. Fixture null-index error occurs because notes is absent; expected invalid texture14924,two occurrences. Other3 loader-fixture assertions not reached; full all2639 ASan route workitems separately finished, with1 edition rejection and1 expected timeout.
+  Evidence: supplemental/sanitizer_all/loader-bounds/
+sanitizer_all/default_recorded_corpus: default_private_recordings_unavailable
+  Default android/regression_demos contains no recordings. Empty discovery became null demo and caused ReadLines/empty-path errors in both demo stages. Fixed runner to preserve an empty array; actual empty inventory and missing-recording rejection checks pass. Actual private D2 inventory elsewhere contains2 recordings; D1 corpus remains unavailable.
+  Evidence: supplemental/sanitizer_all/Demos.log
+  Current evidence: empty_corpus_after.json
+sanitizer_all/routes: native_input_rejection_and_expected_timeout
+  All2639 workitems recorded in4446.75seconds. One native rejection af_d1_beta level7 Robot30 unavailable in selectedD1 edition, matching regular regeneration. One producer-classified expected timeout Uneasy4 after360seconds. No nonempty asan.* report files captured.
+  Evidence: supplemental/sanitizer_all/routes/
+
+SOURCE AND ENVIRONMENT SCOPE
+The checkout advanced during this run; concurrent_source_delta.json identifies incoming changes
+Original evidence records its execution commit; updated affected owners ran separately
+Source Fix-quality originally covered21 files; the abandoned graphics fixture edit was restored, leaving20 retained changes. Later co-owned UDP assertions are separate in co_owned_source_delta.json. Current full-scope read-only quality evidence is indexed under coop_refresh.
+external_package_update.json: another APK replaced com.dxxredux.app during Obsidian retry at16:23PDT; that retry is invalidated and later device cases have a different installed APK scope
+User confirmed another session uses the shared emulator; dispatcher stopped after57 recorded cases. The first exclusive attempt was later interrupted after8 cases. coop_refresh resumes missing work with a fresh APK and the recent co-op fixes; only exclusive5580/5582/5584 are targeted. Shared emulators are left alone.
+duplicate_asan_stage_input_reclamation.json:42 large staged input duplicates removed after the ASan run finished; hash-identical raw inputs and every JSON/log/trace retained
+Initial user modifications: initial_status.txt, initial_changes.patch, initial_hashes.json
+Some original Windows host failures are environment limitations with successful Linux or normal-host retries
+A passing wrapper can contain declared skips; use detailed owner reports for actual coverage
+
+CURRENT CO-OP SOURCE REFRESH
+Recorded 152/207; queue sealed: False
+{'BLOCKED': 125, 'PASS': 23, 'FAIL': 4}
+coop_refresh/queue.json: exact commands and dependencies; summary.json: raw outcomes
+Native/JVM/proxy-history/sanitizer/catalog checks, fresh APK and four distributions, full metadata/simulation regeneration, private recordings and device co-op scenarios
+Original fixtures and assertions are retained; no new replay oracle or semantic baseline is accepted

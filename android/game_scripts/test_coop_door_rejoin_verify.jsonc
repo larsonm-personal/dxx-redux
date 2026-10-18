@@ -1,0 +1,13 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_lan",
+            "vars": { "d2": { "wall": "0" } },
+            "params": { "wall": { "label": "Previously opened wall index" } },
+        },
+    },
+    { "action": "set_debug", "field": "guidebot_door_test", "value": "verify_wall_${wall}" },
+    { "action": "introspect" },
+]

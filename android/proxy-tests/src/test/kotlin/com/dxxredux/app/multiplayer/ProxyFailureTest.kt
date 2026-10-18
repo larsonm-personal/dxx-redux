@@ -124,7 +124,7 @@ class ProxyFailureTest {
     }
 
     @Test(timeout = 30_000)
-    fun currentKeepaliveIOExceptionClosesProxyAndExportsOriginalOperation() {
+    fun keepaliveIOExceptionPreservesBidirectionalForwardingAndExportsOriginalOperation() {
         NetLog.entries.clear()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val failed = CountDownLatch(1)
@@ -144,9 +144,23 @@ class ProxyFailureTest {
                     assertEquals(43.toByte(), receive(engine))
 
                     assertTrue("Keepalive must reach injected send", socket.injected.await(20, TimeUnit.SECONDS))
-                    assertTrue("Current proxy must report failure", failed.await(3, TimeUnit.SECONDS))
-                    assertTrue("Current behavior closes shared socket", socket.isClosed)
+                    // Observe the exported failure before adding more traffic to its counters
+                    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+                    while (NetLog.entries.none { it.contains("failure operation=keepalive-send") } &&
+                        System.nanoTime() < deadline
+                    ) {
+                        Thread.sleep(10)
+                    }
                     val failure = NetLog.entries.first { it.contains("failure operation=keepalive-send") }
+                    send(engine, localPort, 44)
+                    assertEquals(44.toByte(), receive(remote))
+                    send(remote, socket.localPort, 45)
+                    assertEquals(45.toByte(), receive(engine))
+                    assertFalse(
+                        "Transient keepalive failure must not stop the proxy",
+                        failed.await(250, TimeUnit.MILLISECONDS),
+                    )
+                    assertFalse("Transient keepalive failure must not close shared socket", socket.isClosed)
                     assertTrue(failure.contains("java.io.IOException: injected keepalive send failure"))
                     assertTrue(failure.contains("ENETUNREACH"))
                     assertTrue(failure.contains("closed=false"))
@@ -154,10 +168,10 @@ class ProxyFailureTest {
                     assertTrue(failure.contains("last_tx_ms="))
                     assertTrue(failure.contains("last_rx_ms="))
                     assertTrue(failure.contains("remote=/127.0.0.1:${remote.localPort}"))
-                    assertTrue(NetLog.entries.any { it.contains("worker keepalive") })
-                    assertTrue(NetLog.entries.any { it.contains("shutdown caller") })
+                    assertFalse(NetLog.entries.any { it.contains("worker keepalive") })
+                    assertFalse(NetLog.entries.any { it.contains("shutdown caller") })
                     println(
-                        "CURRENT: keepalive IOException closes proxy; exported log identifies original operation and recent successful traffic",
+                        "PASS: keepalive IOException preserves both forwarding directions and exports the original failure",
                     )
                 }
             }

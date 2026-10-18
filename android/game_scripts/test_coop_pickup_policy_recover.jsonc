@@ -1,0 +1,11 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "assert", "expect": { "player_dead": true } },
+    { "action": "key", "key": "space" },
+    { "action": "wait_for", "timeout_ms": 15000, "expect": { "player_dead": false } },
+    { "action": "set_debug", "field": "recovery_test_touch_equipment", "value": "plasma" },
+    { "action": "set_debug", "field": "recovery_test_touch_equipment", "value": "quad" },
+    { "action": "wait_for", "timeout_ms": 5000, "expect": { "multiplayer.recovery.ready_to_save": true } },
+    { "action": "set_debug", "field": "recovery_test_policy_check", "value": "recovered" },
+    { "action": "introspect" },
+]

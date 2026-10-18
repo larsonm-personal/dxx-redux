@@ -103,7 +103,8 @@
             "android_lifecycle.work_counters.central_overlay_polls": { "gt": 0 },
         },
     },
-    { "action": "log", "when": "d2", "message": "SCRIPT_BACKGROUND: dormant-main-menu duration_s=5 lock_screen=true" },
+    // Allow lifecycle handoff time in addition to the four-second parked interval
+    { "action": "log", "when": "d2", "message": "SCRIPT_BACKGROUND: dormant-main-menu duration_s=7 lock_screen=true" },
     { "action": "wait_for", "when": "d2", "field": "egl_recreate_count", "value": "1", "timeout_ms": 30000 },
     {
         "action": "assert",

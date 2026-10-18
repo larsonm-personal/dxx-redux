@@ -1,0 +1,7 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "recovery_test_trace", "value": "true" },
+    { "action": "set_debug", "field": "clear_robots", "value": "true" },
+    { "action": "assert", "expect": { "player.laser_level": 0 } },
+    { "action": "wait_for", "timeout_ms": 30000, "expect": { "multiplayer.recovery.live": { "gte": 1 } } },
+]

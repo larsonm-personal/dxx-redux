@@ -78,9 +78,9 @@ def stage(source, destination):
     validate(destination)
 
 
-def command(args, case, result):
+def command(args, case, result, executable=None):
     return [
-        str(args.exe),
+        str(executable if executable is not None else args.exe),
         "-hogdir",
         str(args.data),
         "-inputdemo-replay",
@@ -134,11 +134,18 @@ def run(args):
                     directory = sandbox / key.lower()
                     directory.mkdir()
                     environment[key] = str(directory)
+                executable = args.exe
+                if os.name == "nt":
+                    # Windows PhysFS uses the executable directory for settings
+                    executable = sandbox / args.exe.name
+                    shutil.copy2(args.exe, executable)
+                    for library in args.exe.parent.glob("*.dll"):
+                        shutil.copy2(library, sandbox / library.name)
                 if shutil.disk_usage(args.output).free < args.minimum_free_gb * 1024**3:
                     raise OSError("Insufficient private output disk reserve")
                 with (args.output / (stem + ".log")).open("w") as log:
                     completed = subprocess.run(
-                        command(args, case, result),
+                        command(args, case, result, executable=executable),
                         stdout=log,
                         stderr=subprocess.STDOUT,
                         timeout=args.timeout,

@@ -47,6 +47,10 @@ int coop_recovery_active(void);
 #if defined(__ANDROID__) && defined(INTROSPECT_ON)
 /* A valid but destructive life update for the delayed-datagram rejection probe */
 int coop_recovery_test_life_packet(ubyte *buf, size_t size, int pnum);
+/* Hold real pickup datagrams until both runtime test peers have made contact */
+unsigned coop_recovery_test_pickup_gate(int hold);
+unsigned coop_recovery_test_pickup_pending(void);
+unsigned coop_recovery_test_pickup_attempts(void);
 #endif
 void coop_recovery_reset(void);
 void coop_recovery_begin_restore(uint32_t generation);
@@ -68,7 +72,8 @@ void coop_recovery_note_pickup(object *powerup, const coop_player_record *before
 int coop_recovery_rejoin_ready(const char *callsign, const char *client_id);
 int coop_recovery_rejoin_skip_object(int objnum, const char *callsign, const char *client_id);
 unsigned coop_recovery_absorptions(void);
-void coop_recovery_expire(object *powerup);
+/* Retain the object while the host settles expiry with every active peer */
+int coop_recovery_expire(object *powerup);
 void coop_recovery_level_leave(void);
 /* Call after the travel freeze has settled all pending collections */
 int coop_recovery_suspend_world(void);

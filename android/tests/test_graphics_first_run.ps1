@@ -138,6 +138,9 @@ foreach ($engine in $games) {
             $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'idle'; 'graphics_safety.current.TexFilt' = $accepted; 'graphics_safety.accepted.TexFilt' = $accepted; 'graphics_safety.requested.TexFilt' = $accepted; 'time_paused' = 'false'; 'graphics_safety.first_run_pending' = 'false' }))
             $steps.Add((New-ExpectStep @{ 'fire_primary_state' = '0'; 'fire_primary_count' = '0' }))
             if ($case -eq 'Rearm') {
+                # Establish the native pause-menu precondition before rearming in the background
+                $steps.Add(@{ action = 'key'; key = 'escape'; post_delay_ms = 100 })
+                $steps.Add((New-ExpectStep -Wait @{ 'menu_subtitle' = 'Game Menu'; 'graphics_safety.phase' = 'idle'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
                 $steps.Add(@{ action = 'log'; message = 'SCRIPT_BACKGROUND: rearm-chooser duration_s=4 rearm_graphics_chooser=true' })
                 # Backgrounding opens the native pause menu; resume gameplay to present the rearmed chooser
                 $steps.Add((New-ExpectStep -Wait @{ 'egl_recreate_count' = @{ gte = 1 }; 'android_lifecycle.observed_visibility' = 'foreground'; 'menu_subtitle' = 'Game Menu'; 'graphics_safety.phase' = 'idle'; 'graphics_safety.first_run_pending' = 'true' }))

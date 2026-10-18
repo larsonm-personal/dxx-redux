@@ -31,7 +31,7 @@ def prepare(repo, build):
         + """void music_synth_render_short(music_synth *s, short *out, int frames, int mixing)
 {
     if (s->fm) s->fm->generate(out, frames);
-    else tsf_render_short(s->sf, out, frames, mixing);
+    else s->sf.render(out, frames, mixing);
 }
 """
         + synth[end:]
@@ -75,7 +75,11 @@ static float *quality_pcm, *quality_cursor;""",
         start = text.index("static int render_comparison(")
         end = text.index("\nint main(", start)
         part = text[start:end]
-        part = replace_once(part, f"{rate}, -10);", f"{rate}, {gain});")
+        part = replace_once(
+            part,
+            "const float gain_db = argc == 10 ? (float) atof(argv[9]) : -10.0f;",
+            f"const float gain_db = {gain}.0f;",
+        )
         part = replace_once(
             part,
             "CHECK(pcm);",

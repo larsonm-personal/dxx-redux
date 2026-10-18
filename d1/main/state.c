@@ -2297,6 +2297,9 @@ int state_restore_all_sub(char *filename)
 	int rebirth = 0;
 	fix64 saved_epoch = 0;
 #ifdef __ANDROID__
+	player coop_live_players[MAX_PLAYERS];
+	const fix64 coop_live_time = GameTime64;
+	memcpy(coop_live_players, Players, sizeof(coop_live_players));
 	struct android_profile_restore_metrics restore_profile = { 0 };
 	const long long restore_profile_start_us = android_profile_monotonic_us();
 	const int restore_profile_had_game_window = Game_wind != NULL;
@@ -2812,7 +2815,8 @@ RetryObjectLoading:
 		#endif
 #ifdef __ANDROID__
 		coop_got_nplayers = coop_remap_restored_players(fp, restore_players,
-			restore_objects, restore_object_valid, coop_player_got);
+			restore_objects, restore_object_valid, coop_player_got,
+			coop_live_players, coop_live_time);
 #else
 		for (i = 0; i < MAX_PLAYERS; i++) // copy restored players to the current slots
 		{

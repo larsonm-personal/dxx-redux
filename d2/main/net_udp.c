@@ -3208,41 +3208,51 @@ static int net_udp_validate_sync_object(const object_rw *wire)
 	if (decoded.type >= MAX_OBJECT_TYPES || decoded.type == OBJ_NONE ||
 	    decoded.segnum < -1 || decoded.segnum > Highest_segment_index ||
 	    decoded.attached_obj < -1 || decoded.attached_obj >= MAX_OBJECTS)
-		return 0;
+		goto invalid;
 	if (decoded.movement_type != MT_NONE && decoded.movement_type != MT_PHYSICS &&
 	    decoded.movement_type != MT_SPINNING)
-		return 0;
+		goto invalid;
 	if (decoded.control_type > CT_CNTRLCEN || decoded.render_type > RT_WEAPON_VCLIP)
-		return 0;
+		goto invalid;
 
 	switch (decoded.type) {
 		case OBJ_PLAYER:
 		case OBJ_GHOST:
 		case OBJ_COOP:
 			if (decoded.id >= MAX_PLAYERS)
-				return 0;
+				goto invalid;
 			break;
 		case OBJ_ROBOT:
 			if (decoded.id >= N_robot_types)
-				return 0;
+				goto invalid;
 			break;
 		case OBJ_WEAPON:
 			if (decoded.id >= N_weapon_types)
-				return 0;
+				goto invalid;
 			break;
 		case OBJ_POWERUP:
 			if (decoded.id >= N_powerup_types)
-				return 0;
+				goto invalid;
 			break;
 	}
 	if ((decoded.render_type == RT_POLYOBJ || decoded.render_type == RT_MORPH) &&
 	    (decoded.rtype.pobj_info.model_num < 0 || decoded.rtype.pobj_info.model_num >= N_polygon_models))
-		return 0;
+		goto invalid;
 	if ((decoded.render_type == RT_FIREBALL || decoded.render_type == RT_HOSTAGE ||
 	     decoded.render_type == RT_POWERUP || decoded.render_type == RT_WEAPON_VCLIP) &&
 	    (decoded.rtype.vclip_info.vclip_num < 0 || decoded.rtype.vclip_info.vclip_num >= Num_vclips))
-		return 0;
+		goto invalid;
 	return 1;
+
+invalid:
+#ifdef __ANDROID__
+	REJOIN_LOG("objects_reject reason=object_fields type=%u id=%u seg=%d/%d attached=%d control=%u movement=%u render=%u model_or_vclip=%d models=%d vclips=%d robots=%d weapons=%d powerups=%d",
+	           (unsigned) decoded.type, (unsigned) decoded.id, decoded.segnum, Highest_segment_index,
+	           decoded.attached_obj, (unsigned) decoded.control_type, (unsigned) decoded.movement_type,
+	           (unsigned) decoded.render_type, decoded.rtype.pobj_info.model_num, N_polygon_models,
+	           Num_vclips, N_robot_types, N_weapon_types, N_powerup_types);
+#endif
+	return 0;
 }
 
 void net_udp_read_object_packet( ubyte *data, int data_len )
@@ -8010,7 +8020,8 @@ void net_udp_do_frame(int force, int listen)
 
 	if ((time>=last_endlevel_time+F1_0) && (Control_center_destroyed
 #ifdef __ANDROID__
-	    || coop_travel_ending_campaign() || coop_flyout_active()
+	    /* Secret exits can reach the score screen with the reactor intact */
+	    || Network_status == NETSTAT_ENDLEVEL || coop_travel_ending_campaign() || coop_flyout_active()
 #endif
 	    ))
 	{
@@ -8127,7 +8138,7 @@ void net_udp_noloss_add_queue_pkt(uint32_t pkt_num, fix64 time, ubyte *data, ush
 	if (UDP_mdata_queue[found].used) // seems the slot we found is used (list is full) so screw  those who still need ack's.
 	{
 		#ifdef __ANDROID__
-		COOPLOG("network reliable queue full: level=%d packet=%u type=%u bytes=%d travel=%d", Current_level_num,
+		debug_log_force(DLOG_NETWORK, "[NETEXIT] reliable queue full: level=%d packet=%u type=%u bytes=%d travel=%d", Current_level_num,
 		        UDP_mdata_queue[found].pkt_num, (unsigned) UDP_mdata_queue[found].data[0], UDP_mdata_queue[found].data_size, coop_travel_active());
 		#endif
 		con_printf(CON_VERBOSE, "P#%i: MData store list is full!\n", Player_num);
@@ -8450,7 +8461,7 @@ void net_udp_noloss_process_queue(fix64 time)
 			if (needack) // packet timed out but still not all have ack'd. SCREW THEM NOW!
 			{
 				#ifdef __ANDROID__
-				COOPLOG("network reliable timeout: level=%d packet=%u type=%u bytes=%d needack=%d travel=%d", Current_level_num,
+				debug_log_force(DLOG_NETWORK, "[NETEXIT] reliable timeout: level=%d packet=%u type=%u bytes=%d needack=%d travel=%d", Current_level_num,
 				        UDP_mdata_queue[queuec].pkt_num, (unsigned) UDP_mdata_queue[queuec].data[0],
 				        UDP_mdata_queue[queuec].data_size, needack, coop_travel_active());
 				if (android_net_udp_handle_silent_host_timeout(time, UDP_TIMEOUT))

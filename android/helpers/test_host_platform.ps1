@@ -36,7 +36,7 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
 
     function Resolve-RegressionPythonCommand {
         # Ordinary host utilities; extraction admission uses its separately verified runtime
-        $candidates = if (Test-RegressionWindowsHost) { @('py', 'python3', 'python') } else { @('python3', 'python') }
+        $candidates = if (Test-RegressionWindowsHost) { @('python', 'py', 'python3') } else { @('python3', 'python') }
         foreach ($name in $candidates) {
             $command = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
             if ($command) {

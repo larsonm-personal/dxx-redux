@@ -2050,10 +2050,11 @@ void object_move_one( object * obj )
 
 	}
 
-	if (obj->lifeleft < 0 ) {		// We died of old age
 #ifdef __ANDROID__
-		if (obj->type == OBJ_POWERUP) coop_recovery_expire(obj);
+	if (obj->lifeleft < 0 && obj->type == OBJ_POWERUP && coop_recovery_expire(obj))
+		obj->lifeleft = F1_0;
 #endif
+	if (obj->lifeleft < 0 ) {		// We died of old age
 		obj->flags |= OF_SHOULD_BE_DEAD;
 		if ( obj->type==OBJ_WEAPON && Weapon_info[obj->id].damage_radius )
 			explode_badass_weapon(obj);

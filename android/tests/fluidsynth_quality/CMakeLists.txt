@@ -6,6 +6,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/fluidsynth-music.cmake)
+if(WIN32)
+    # Keep the linked Windows DLL beside this standalone renderer
+    set_target_properties(libfluidsynth PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                                   "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/dxx-verified-dependencies.cmake)
 dxx_verified_fetchcontent_declare(tsf_headers TINYSOUNDFONT)

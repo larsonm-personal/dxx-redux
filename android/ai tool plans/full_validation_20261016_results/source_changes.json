@@ -1,0 +1,126 @@
+{
+  "scope": "Explicit tracked source/test changes made during this validation; initial user JSON changes are separately preserved",
+  "count": 20,
+  "quality_log": "code_quality_combined_21.log",
+  "quality_exit_code": 0,
+  "focused_validation": "retry_results.json",
+  "unresolved_or_pending": "triage.json",
+  "files": [
+    {
+      "path": "android/app/src/main/cpp/shared/android_graphics_safety.cpp",
+      "sha256": "5b58c12dcd377397c74bde1e39159b1ccb151dccacaa2463ae91a5646dbabb29",
+      "change": "Initialize rollback snapshot to resolve MSVC uninitialized-value warning"
+    },
+    {
+      "path": "android/game_scripts/test_launch_to_automap.jsonc",
+      "sha256": "63a671c9077cf7302b101193ba5625d5ab7e44003f1802d212bf484894262f1b",
+      "change": "Allow seven-second background stimulus while retaining four-second actual parked assertion"
+    },
+    {
+      "path": "android/helpers/mod_fuzz.py",
+      "sha256": "7ae343c226df060cbf1b61d177e2d7bc6c4ce275d875eafff78a949588875cf3",
+      "change": "Do not classify unrelated logcat timeouts as a failed successful runner"
+    },
+    {
+      "path": "android/helpers/test_host_platform.ps1",
+      "change": "Prefer working direct Python on Windows before launcher and Store aliases; fixes JSON formatter selecting installed py with no registered interpreter",
+      "sha256": "d7a55833e5e550b9b1cdf91a5e4898e2cee9e343de56f3819ea257bef7135d8e"
+    },
+    {
+      "path": "android/tests/fluidsynth_quality/CMakeLists.txt",
+      "sha256": "fa7ab7c6668abc977f9fe25ade1b8960f164daf7745ca73a1bfec070c424b913",
+      "change": "Emit Windows FluidSynth DLL beside standalone renderer"
+    },
+    {
+      "path": "android/tests/mod_renderer/main.cpp",
+      "sha256": "addf878667190225430eef81111b953b9e1cb3087a9e1fb8d62aeb3d849756c3",
+      "change": "Log expected/actual JSON plus custom-bitmap classification for existing UUD texture-priority failure"
+    },
+    {
+      "path": "android/tests/test_android_audio_lifecycle.py",
+      "sha256": "7e2cf461dc57384112097a484cdcaa5d540df11d9552a5debc5585b232e77b00",
+      "change": "Remove fixture shadowing and C-boundary exception compiler warnings"
+    },
+    {
+      "path": "android/tests/test_android_test_target.ps1",
+      "sha256": "7e84cdae6f83849df8a1b9230701ff36ef0185e0538ba4cb84479fc8560fdc5d",
+      "change": "Load extracted target-install dependency and retail context"
+    },
+    {
+      "path": "android/tests/test_automation_result_evidence.ps1",
+      "sha256": "45164c1419433135ef7ec7323f0ef0fbd2ee0c644553b1cece5dc802dd45c7d7",
+      "change": "Prefer installed Windows Python over Store python3 alias"
+    },
+    {
+      "path": "android/tests/test_mod_fuzz_controls.py",
+      "sha256": "cadd2925fbcfbf9e3124a74cd03f45152861838c7a13ece0d3185f63508f8107",
+      "change": "Reproduce unrelated service-timeout false positive and retain watchdog failure"
+    },
+    {
+      "path": "android/tests/test_regression_tool_contracts.py",
+      "sha256": "92cd7924d44d79eae7040a70a905ef3e315b5e7ee0f91e599a729f16be3cbd5b",
+      "change": "Check expanded unsupported save-version matrix using current-version neighbors"
+    },
+    {
+      "path": "android/tests/test_retail_ci_assets.py",
+      "sha256": "e79fb573055b4b18c3cf115d68b0d479bfb5584140650afb0b676a87a898c422",
+      "change": "Make same-size fixture mutation observable even with same-tick writes"
+    },
+    {
+      "path": "android/tests/test_startup_restore_failure.ps1",
+      "sha256": "6c502a374eb0ff24815a006937c05392101e6d6db78768fb62b333bc34a9d82f",
+      "change": "Remove unused native-only introspect step after returning to launcher"
+    },
+    {
+      "path": "android/tests/test_test_runner_result.ps1",
+      "sha256": "85ca790c3c170327b4c88ee94648a45ec240d03671625854814655d676331fe4",
+      "change": "Load evidence-journal and target-install dependencies for extracted fixture"
+    },
+    {
+      "path": "android/tests/test_upstream_compat.cpp",
+      "sha256": "967cbbb689b4ef563110e6d5cf25a66da8c136a7e40202158338d116b880df45",
+      "change": "Use production buffered I/O helpers for full boss-sound save fixture matrix"
+    },
+    {
+      "path": "android/tests/fm_quality/prepare.py",
+      "change": "Adapt guarded isolated FM audition to explicit gain_db and the current FluidSynth SF2 adapter, preserving -10dB float and unity native variants",
+      "sha256": "8df830b909376246d32bd680d8d2bdfba89bc45435214e60d830ca1b7e6019df"
+    },
+    {
+      "path": "android/tests/fm_quality/CMakeLists.txt",
+      "change": "Link the current shared FluidSynth renderer and its contracts through the existing pinned dependency; C++17 and per-target Windows runtime DLL copy match production host tests",
+      "sha256": "182e6b81ec34c3eebb9cf8be0215cd016661aa2995e88cfab7b9ab8c30b5b015"
+    },
+    {
+      "path": "android/tests/run_input_demo_regressions.ps1",
+      "change": "Preserve empty demo discovery as an actual empty collection, so inventory succeeds and replay rejects absent recordings clearly instead of treating null as a demo",
+      "sha256": "d6874dbf096fdcee1d7e910a262c41ba1da1bd357cd22f001cd059a18f357640"
+    },
+    {
+      "path": "android/tests/private_input_demos.py",
+      "change": "Isolate Windows executable-directory player settings per strict replay repeat; preserve embedded oracles and independent terminal comparison",
+      "sha256": "e1c55bee75d5af9781d16d1d6226f8d7f42e0ef9e607b41c76b8fee6e4fc601f"
+    },
+    {
+      "path": "android/tests/test_private_input_demos.py",
+      "change": "Verify private executable/DLL copies exclude inherited settings and do not mutate the source engine directory",
+      "sha256": "913871bf370bf0c584f2f5e13ee9bf589484f2ff436c57ebbc444404ec5dc530"
+    }
+  ],
+  "concurrent_source_delta": "concurrent_source_delta.json",
+  "sha256_scope": "File hashes preserve the original Fix-quality snapshot for the20 retained changes. The abandoned graphics edit was restored. Later co-owned deltas are separate; current hashes passed a stable read-only quality audit.",
+  "later_co_owned_delta": "co_owned_source_delta.json",
+  "current_read_only_quality": {
+    "log": "code_quality_current_read_only.log",
+    "exit_code": 0,
+    "stable_during_check": true,
+    "hashes": "current_source_quality_scope.json"
+  },
+  "reverted_validation_edits": [
+    {
+      "path": "android/tests/test_graphics_first_run.ps1",
+      "status": "Original restored; no retained source change",
+      "reason": "Native pause-menu resume was incorrectly removed during validation; original assertions will run unchanged"
+    }
+  ]
+}

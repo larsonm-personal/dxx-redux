@@ -1,0 +1,6 @@
+// Keep unrelated combat from changing inventory while peers restart
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "assert", "expect": { "in_game": "true", "is_network": "true" } },
+    { "action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100 },
+]

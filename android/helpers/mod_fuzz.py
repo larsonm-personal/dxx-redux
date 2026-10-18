@@ -411,7 +411,7 @@ def classify(code, text, timed_out=False):
         return "crash"
     if "ANR in " in text:
         return "anr"
-    if timed_out or "Timed out" in text or "FAIL: Timeout" in text:
+    if timed_out or (code != 0 and ("Timed out" in text or "FAIL: Timeout" in text)):
         return "timeout"
     if code == 2 or "RESULT: SKIP" in text:
         return "missing_prerequisite"

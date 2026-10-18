@@ -625,7 +625,7 @@ extern "C" void android_graphics_safety_event_tick(void)
 	bool restore = false, accepted = false;
 	bool poll_staged = false;
 	uint64_t cancel_id = 0, restore_id = 0;
-	graphics_safety_snapshot target;
+	graphics_safety_snapshot target = {};
 	{
 		std::lock_guard<std::mutex> lock(mutex);
 		if (!initialized) return;

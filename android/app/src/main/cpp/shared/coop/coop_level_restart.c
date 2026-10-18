@@ -21,6 +21,7 @@
 #include "physfsx.h"
 #include "player.h"
 #include "state_android_shared.h"
+#include "timer.h"
 
 enum { COOP_LEVEL_RESTART_MISSION_LEN = 32 };
 
@@ -30,6 +31,7 @@ typedef struct coop_level_restart_session {
 	int busy;
 	int restore_suppressed;
 	int level_num;
+	fix64 next_capture_time;
 	uint64_t campaign_generation;
 	char mission[COOP_LEVEL_RESTART_MISSION_LEN];
 	rewind_memory_buffer buffer;
@@ -235,6 +237,7 @@ void coop_level_restart_note_natural_level(int level_num)
 		return;
 	g_level_restart.pending_capture = 1;
 	g_level_restart.restore_suppressed = 0;
+	g_level_restart.next_capture_time = 0;
 }
 
 void coop_level_restart_maybe_capture_ready(void)
@@ -247,6 +250,10 @@ void coop_level_restart_maybe_capture_ready(void)
 	    Current_level_num == 0 || !multi_all_players_alive() ||
 	    coop_level_restart_has_duplicate_callsigns() || multi_save_transfer_busy())
 		return;
+	if (timer_query() < g_level_restart.next_capture_time)
+		return;
+	/* Failed serialization must not retry on every frame */
+	g_level_restart.next_capture_time = timer_query() + 5 * (fix64) F1_0;
 	if (!state_save_to_memory(&next, "LEVEL START",
 	                          ANDROID_SAVE_META_KIND_MANUAL, 1)) {
 		free(next.data);

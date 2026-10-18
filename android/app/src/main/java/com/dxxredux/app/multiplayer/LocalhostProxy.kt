@@ -601,6 +601,10 @@ private class PeerProxy(
                     break
                 }
                 Log.w(TAG, "keepalive error: $msg")
+            } catch (e: IOException) {
+                // Android can report transient route loss as a plain IOException
+                // Keep the forwarding workers alive so native retries can recover
+                Log.w(TAG, "keepalive send failed slot=${config.peerSlot}: ${e.message}")
             }
         }
         Log.w(TAG, "keepalive loop EXITED slot=${config.peerSlot} count=$keepaliveCount")

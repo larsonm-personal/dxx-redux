@@ -86,6 +86,8 @@ void cockpit_decode_alpha(grs_bitmap *bm);
 #include "menu.h"
 #include "multi.h"
 #include "net_udp.h"
+void net_udp_read_object_packet(ubyte *data, int length);
+void multi_do_remobj(const ubyte *data, int authenticated_sender);
 int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr);
 int net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, struct _sockaddr sender_addr);
 int net_udp_mdata_source_is_authorized(ubyte pnum, struct _sockaddr sender_addr, int needack);
@@ -4486,7 +4488,8 @@ static void test_boss_sound_storage()
 					if (swap) std::reverse(state.begin() + sound_offset, state.begin() + sound_offset + 4);
 					write_fixture("boss-sound-state.bin", state);
 					Boss_dying_sound_playing = 42;
-					PHYSFS_file *handle = PHYSFS_openRead("boss-sound-state.bin");
+					// Match production save I/O instead of issuing a filesystem call for each AI field
+					PHYSFS_file *handle = PHYSFSX_openReadBuffered("boss-sound-state.bin");
 					REWIND_PHYSFS_FILE(reader, handle);
 					require(handle && ai_restore_state(reader, version, swap) && PHYSFS_tell(handle) == static_cast<PHYSFS_sint64>(state_size) && PHYSFS_close(handle),
 					        "restore a complete AI core in either byte order without changing its layout");
@@ -4496,17 +4499,17 @@ static void test_boss_sound_storage()
 					if (version == 35 && !swap) {
 						require(input_demo_ai_trace_snapshot()["boss"]["Boss_dying_sound_playing"] == expected,
 						        "raw observation preserves full-width boss sound state");
-						handle = PHYSFS_openWrite("boss-sound-written.bin");
+						handle = PHYSFSX_openWriteBuffered("boss-sound-written.bin");
 						REWIND_PHYSFS_FILE(writer, handle);
 						require(handle && ai_save_state(writer) && PHYSFS_close(handle), "write actual full-width boss sound state");
-						handle = PHYSFS_openRead("boss-sound-written.bin");
+						handle = PHYSFSX_openReadBuffered("boss-sound-written.bin");
 						require(handle && PHYSFS_seek(handle, sound_offset) && PHYSFSX_readSXE32(handle, 0) == value && PHYSFS_close(handle),
 						        "actual AI writer serializes exactly the full boss sound integer");
 					}
 					state.pop_back();
 					write_fixture("boss-sound-truncated.bin", state);
 					Boss_dying_sound_playing = 42;
-					handle = PHYSFS_openRead("boss-sound-truncated.bin");
+					handle = PHYSFSX_openReadBuffered("boss-sound-truncated.bin");
 					REWIND_PHYSFS_FILE(invalid, handle);
 					require(handle && !ai_restore_state(invalid, version, swap) && PHYSFS_close(handle) && Boss_dying_sound_playing == 42,
 					        "truncated AI input cannot partially overwrite boss sound state");
@@ -12150,6 +12153,73 @@ static void test_udp_security_validation()
 		        "accept authenticated player flag update");
 	}
 #endif
+
+#ifndef DXX_BUILD_DESCENT_II
+	// Retail D1 loads a fixed clip table even when its serialized count is zero
+	init_test_corridor(1);
+	const int saved_clips = Num_vclips, saved_powerups = N_powerup_types;
+	const vclip saved_clip = Vclip[19];
+	Num_vclips = 0;
+	N_powerup_types = MAX_POWERUP_TYPES;
+	Vclip[19].num_frames = 1;
+	Vclip[19].play_time = Vclip[19].frame_time = F1_0;
+	object powerup = {};
+	powerup.type = OBJ_POWERUP;
+	powerup.id = POW_ENERGY;
+	powerup.control_type = CT_POWERUP;
+	powerup.render_type = RT_POWERUP;
+	powerup.segnum = 0;
+	powerup.attached_obj = powerup.next = powerup.prev = -1;
+	bytes objects(27 + sizeof(object_rw), 0);
+	objects[0] = UPID_OBJECT_DATA;
+	set_int(objects, 5, 2);
+	set_int(objects, 9, -1);
+	set_int(objects, 18, 1);
+	objects[22] = 255;
+	set_int(objects, 23, 1);
+	const std::vector<object> before(Objects, Objects + MAX_OBJECTS);
+	for (const int frames : { 0, VCLIP_MAX_FRAMES + 1, 1 }) {
+		Vclip[19].num_frames = frames;
+		for (const int clip : { -1, VCLIP_MAXNUM, 19 }) {
+			powerup.rtype.vclip_info.vclip_num = clip;
+			multi_object_to_object_rw(&powerup, reinterpret_cast<object_rw *>(objects.data() + 27));
+			multi_received_objects = 0;
+			net_udp_read_object_packet(objects.data(), static_cast<int>(objects.size()));
+			if (clip == 19 && frames == 1) {
+				require(multi_received_objects && Objects[1].type == OBJ_POWERUP &&
+				            Objects[1].id == POW_ENERGY && Objects[1].rtype.vclip_info.vclip_num == 19,
+				        "D1 rejoin admits a populated retail clip when Num_vclips is zero");
+			} else {
+				require(!multi_received_objects && std::memcmp(before.data(), Objects, MAX_OBJECTS * sizeof(object)) == 0,
+				        "invalid D1 clip rejects the whole batch before its clear marker");
+			}
+		}
+	}
+	Num_vclips = saved_clips;
+	N_powerup_types = saved_powerups;
+	Vclip[19] = saved_clip;
+#endif
+
+	// Rejoin can allocate an owned drop in a slot freed by an excluded old drop
+	init_test_corridor(1);
+	reset_network_objects();
+	Player_num = 0;
+	N_players = 2;
+	const int saved_mode = Game_mode;
+	Game_mode = GM_NETWORK | GM_MULTI_COOP;
+	require(obj_allocate() == 1, "allocate reused local powerup slot");
+	Objects[1].type = OBJ_POWERUP;
+	Objects[1].id = POW_ENERGY;
+	Objects[1].flags = 0;
+	map_objnum_local_to_remote(1, 86, 1);
+	ubyte stale_remove[] = { MULTI_REMOVE_OBJECT, 1, 0, 255, 41 };
+	multi_do_remobj(stale_remove, 1);
+	require(!(Objects[1].flags & OF_SHOULD_BE_DEAD),
+	        "old unowned removal cannot delete a rejoined drop in a reused local slot");
+	ubyte current_remove[] = { MULTI_REMOVE_OBJECT, 86, 0, 1, 42 };
+	multi_do_remobj(current_remove, 1);
+	require(Objects[1].flags & OF_SHOULD_BE_DEAD, "current network identity still removes the owned drop");
+	Game_mode = saved_mode;
 
 	N_players = saved_players;
 	Multi_master_playernum = saved_master;

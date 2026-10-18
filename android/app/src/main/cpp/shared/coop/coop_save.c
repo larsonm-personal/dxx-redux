@@ -114,7 +114,13 @@ void coop_campaign_note_normal_level(int level)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	unsigned i;
-	if (!(Game_mode & GM_MULTI_COOP) || level < 1 || level > 127) return;
+	if (!(Game_mode & GM_MULTI_COOP)) return;
+	/* D1 secrets advance linearly and have no dormant D2 worlds to retain */
+	if (EMULATING_D1) {
+		coop_campaign_reset_runtime();
+		return;
+	}
+	if (level < 1 || level > 127) return;
 	coop_travel_reset();
 	if (strncmp(campaign_live.mission, Current_mission_filename, 9))
 		coop_campaign_clear(&campaign_live);
@@ -137,6 +143,9 @@ void coop_campaign_apply_pending(void)
 	coop_campaign_clear(&campaign_live);
 	campaign_live = campaign_pending;
 	memset(&campaign_pending, 0, sizeof(campaign_pending));
+#ifdef DXX_BUILD_DESCENT_II
+	if (EMULATING_D1) coop_campaign_clear(&campaign_live);
+#endif
 	coop_refresh_campaign_cache();
 #ifdef DXX_BUILD_DESCENT_II
 	/* The legacy save body does not store the secret mine's return level */
@@ -630,7 +639,8 @@ int coop_remap_restored_players(rewind_file *file,
                                 const player restore_players[MAX_PLAYERS],
                                 const object restore_objects[MAX_PLAYERS],
                                 const unsigned char restore_object_valid[MAX_PLAYERS],
-                                int coop_player_got[MAX_PLAYERS])
+                                int coop_player_got[MAX_PLAYERS],
+                                const player live_players[MAX_PLAYERS], fix64 live_time)
 {
 	coop_save_metadata meta_early;
 	int have_meta = state_android_read_coop_metadata_trailer(file, &meta_early);
@@ -674,6 +684,12 @@ int coop_remap_restored_players(rewind_file *file,
 			        Players[i].callsign);
 			HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
 			                 Players[i].callsign);
+			/* The legacy save body temporarily loads its writer into the local
+			 * player slot. An unmatched player keeps their own pre-restore gear */
+			coop_restore_player_game_state(&Players[i], &live_players[i]);
+			Players[i].level = Current_level_num;
+			Players[i].cloak_time += GameTime64 - live_time;
+			Players[i].invulnerable_time += GameTime64 - live_time;
 			/* A saved absent ship is a stationary ghost: its physics union was
 			 * not read. Initialize it before state.c enables local thrust */
 			obj = &Objects[Players[i].objnum];
@@ -683,6 +699,7 @@ int coop_remap_restored_players(rewind_file *file,
 			obj->movement_type = MT_PHYSICS;
 			obj->mtype.phys_info.flags = PF_USES_THRUST;
 			multi_reset_player_object(obj);
+			obj->shields = Players[i].shields;
 			COOPLOG("restore fresh ship: player=%d obj=%d mass=%d drag=%d", i,
 			        Players[i].objnum, obj->mtype.phys_info.mass, obj->mtype.phys_info.drag);
 			continue;
@@ -1071,6 +1088,17 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	return 1;
 }
 
+static int coop_metadata_failure(const char *reason)
+{
+	/* Android diagnostics: identify the rejecting stage without dumping saves */
+	debug_log(DLOG_NETWORK, "[SAVE] metadata rejected: %s level=%d campaign_level=%d generation=%llu recovery=%u pickups=%u",
+	          reason, Current_level_num, campaign_live.active_level,
+	          (unsigned long long) campaign_live.generation,
+	          (unsigned) coop_recovery_count(), (unsigned) coop_powerup_duplication_count());
+	(void) reason;
+	return 0;
+}
+
 static int coop_write_save_payload(rewind_file *file)
 {
 	/* Only normalize the ledger here; objects have already been serialized */
@@ -1091,27 +1119,29 @@ static int coop_write_save_payload(rewind_file *file)
 	size_t campaign_size = 0;
 	int result = 0, campaign_deferred = 0;
 
-	if (!file || !coop_recovery_save_ready() || !coop_build_save_metadata(&meta) ||
-	    count > UINT32_MAX ||
+	if (!file) return coop_metadata_failure("missing output");
+	if (!coop_recovery_save_ready()) return coop_metadata_failure("recovery transfer pending");
+	if (!coop_build_save_metadata(&meta)) return coop_metadata_failure("player metadata");
+	if (count > UINT32_MAX ||
 	    count > (SIZE_MAX - sizeof(meta)) / sizeof(*items) ||
 	    recovery_size > UINT32_MAX ||
 	    sizeof(meta) + count * sizeof(*items) > UINT32_MAX - recovery_size)
-		return 0;
+		return coop_metadata_failure("ledger size overflow");
 	if (!meta.duplicate_energy_shields && count)
-		return 0;
+		return coop_metadata_failure("pickup ledger present with duplication disabled");
 	android_save_probe_mark("coop_metadata");
 	items_size = count * sizeof(*items);
 	if (!saving_raw_world && campaign_live.active_level) {
 		if (campaign_live.active_level != Current_level_num ||
-		    strncmp(campaign_live.mission, Current_mission_filename, 9)) return 0;
+		    strncmp(campaign_live.mission, Current_mission_filename, 9)) return coop_metadata_failure("campaign identity mismatch");
 #ifdef __ANDROID__
 		/* Stable worlds are validated/encoded once at the mutation boundary */
-		if (!campaign_cache_valid && !coop_refresh_campaign_cache()) return 0;
+		if (!campaign_cache_valid && !coop_refresh_campaign_cache()) return coop_metadata_failure("campaign cache refresh");
 		state_checkpoint_get_campaign(&campaign_data, &campaign_size);
 #else
-		if (!coop_campaign_worlds_valid(&campaign_live)) return 0;
+		if (!coop_campaign_worlds_valid(&campaign_live)) return coop_metadata_failure("invalid archived world");
 		android_save_probe_mark("campaign_validate");
-		if (!coop_campaign_encode(&campaign_live, &owned_campaign, &campaign_size)) return 0;
+		if (!coop_campaign_encode(&campaign_live, &owned_campaign, &campaign_size)) return coop_metadata_failure("campaign encoding");
 		campaign_data = owned_campaign;
 #endif
 	}
@@ -1152,6 +1182,7 @@ static int coop_write_save_payload(rewind_file *file)
 	result = 1;
 done:
 	free(owned_campaign);
+	if (!result) coop_metadata_failure("payload serialization");
 	return result;
 }
 

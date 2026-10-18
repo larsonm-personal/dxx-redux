@@ -121,6 +121,8 @@ void coop_snapshot_player(int pnum, coop_player_record *rec);
 /* Write the coop metadata trailer to an already-open save file.
  * Call this just before PHYSFS_close(). */
 int coop_write_save_metadata(void *fp);
+struct coop_campaign;
+const struct coop_campaign *coop_campaign_current(void);
 #ifdef ANDROID
 int coop_write_save_metadata_rewind(rewind_file *file);
 /* Raw world captures deliberately exclude the campaign archive */
@@ -139,8 +141,6 @@ int coop_source_restore_validate_gear(void);
 void coop_campaign_reset_runtime(void);
 void coop_campaign_note_normal_level(int level);
 void coop_campaign_apply_pending(void);
-struct coop_campaign;
-const struct coop_campaign *coop_campaign_current(void);
 struct coop_campaign_travel;
 /* Prepare from the frozen current world; does not load or commit the destination */
 int coop_prepare_secret_travel(struct coop_campaign_travel *travel);

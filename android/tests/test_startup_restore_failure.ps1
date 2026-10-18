@@ -26,7 +26,6 @@ foreach ($step in $template) {
 if (!$enteredLevel) { throw 'Autosave preparation template no longer enters a level' }
 $prepare += @{ action = 'wait_for'; field = 'resume_offer_enabled'; value = 'true'; timeout_ms = 10000 }
 $prepare += @{ action = 'setup_command'; command = 'write_bool_pref'; args = @{ key = 'dlog_game logs_enabled'; value = $true }; post_delay_ms = 250 }
-$prepare += @{ action = 'introspect' }
 $preparePath = Join-Path $output 'prepare.jsonc'
 $prepare | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $preparePath -Encoding utf8
 

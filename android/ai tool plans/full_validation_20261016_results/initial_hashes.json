@@ -1,0 +1,618 @@
+[
+  {
+    "path": "game_data/mission_files/-MOON-.simulation.json",
+    "sha256": "D40AE16CC08DE7576B17F6E80B62CC9CE426A17B8E57BDC16251633F8CCE33B9"
+  },
+  {
+    "path": "game_data/mission_files/Bahagad.simulation.json",
+    "sha256": "71FE253D3C11CC3A37AD86C0E23FF4FBD285609124D08D64570C79657A160693"
+  },
+  {
+    "path": "game_data/mission_files/BelialSystemXL.simulation.json",
+    "sha256": "BB65694BCDD2B8A8A47E238543F96AA17F0F3AB556C5D288BEE41D82D8F549DF"
+  },
+  {
+    "path": "game_data/mission_files/CD - Descent - Anniversary Edition (USA) extras.simulation.json",
+    "sha256": "C1A9C4B0197A3073C7DF2DBAA8C8DB13EADB2D01AE8BEAD62FD6D67A8B6F6041"
+  },
+  {
+    "path": "game_data/mission_files/CD - Descent - Destination Saturn (USA).simulation.json",
+    "sha256": "7CCB87C8E1DACFFACFD0CC88B74EB9787DB04FB8027643BBFF2FA22D4D0B77FB"
+  },
+  {
+    "path": "game_data/mission_files/CD - Descent - Levels of the World (USA).simulation.json",
+    "sha256": "756F8AE453E62CDA88FABBED2AE62349B91D4837D9DFEFE1EB2FECCACC62086E"
+  },
+  {
+    "path": "game_data/mission_files/CD - Descent II - The Vertigo Series (USA).simulation.json",
+    "sha256": "FAFEF272E909E27F9C7650196D502954D44AFDEC3D33CB474A48DCFF064F3799"
+  },
+  {
+    "path": "game_data/mission_files/CD - Dimensions for Descent (USA).simulation.json",
+    "sha256": "2909D69A611CFE834139750B190FCFF63AA07170EA4214D82D5F398C5EAEE650"
+  },
+  {
+    "path": "game_data/mission_files/Chasm.simulation.json",
+    "sha256": "C188A8CE0DC91354181F0966F4D0BBC0C14146B0D3CC9344DFAA7A951455E7C0"
+  },
+  {
+    "path": "game_data/mission_files/Countd2.simulation.json",
+    "sha256": "047B2E358FC14E51E61D2D14C849065007E7DDF8545724F3012932E32C532BD8"
+  },
+  {
+    "path": "game_data/mission_files/Counterstrike.simulation.json",
+    "sha256": "11386EC828A434897E0FB58D323F215347EF06735A380FAEA1E564633A42AF64"
+  },
+  {
+    "path": "game_data/mission_files/D1Lost.simulation.json",
+    "sha256": "D0DB01F8440C5F050A281C97E038D5E883766DC7C737A6E5E7050A89C318FCCB"
+  },
+  {
+    "path": "game_data/mission_files/D2Crossfire.json",
+    "sha256": "031DDCD5A3E49383328477294A0D2DF3C28E5A495B5AB9709D8C1140D6E68DE1"
+  },
+  {
+    "path": "game_data/mission_files/D2Crossfire.simulation.json",
+    "sha256": "D66399A42CDBE0772E885EAA34FB563F02EB3195D16C3F96E6DB17401710A9B7"
+  },
+  {
+    "path": "game_data/mission_files/DVLVLS1.simulation.json",
+    "sha256": "B9CF48F0F7948BD64A6DDB48ECE4B539DD08B02F944BC7335F4B951D34D7C081"
+  },
+  {
+    "path": "game_data/mission_files/Descend Again.json",
+    "sha256": "66FFE7087276D510C8B56A582CEF0BEC9716FDA523CDA3110B166F33F4CCF2C6"
+  },
+  {
+    "path": "game_data/mission_files/Descend Again.simulation.json",
+    "sha256": "0F0D4F54E2476C715FE174FAC76CFE600D51A586FEBACE5A957FBA218B7DF5E4"
+  },
+  {
+    "path": "game_data/mission_files/Descent 1 to Descent 2 Conversion.simulation.json",
+    "sha256": "D87E0051140DD8228BB843923C723DCBDDCD8385277CAEC3018BF955C8BA291B"
+  },
+  {
+    "path": "game_data/mission_files/Descent- Invertaus 1.2.simulation.json",
+    "sha256": "EDE1E52FF3BEE4FB46FD3AD6458F6CB9025AB7A928A1FEA85DCCD6579F024F63"
+  },
+  {
+    "path": "game_data/mission_files/Disint_Beta_3.simulation.json",
+    "sha256": "14093C81167FFFFB1DEF574A18FB77DEA5907B0E3EB38240309CC03A0ED22DBD"
+  },
+  {
+    "path": "game_data/mission_files/EAF2.json",
+    "sha256": "7583357D770565BBFC498B38D31E8E96F5EAAB4E5BB868D6F0D1F667A8F2C612"
+  },
+  {
+    "path": "game_data/mission_files/EAF2.simulation.json",
+    "sha256": "F37D85ED7FCCB68CD1180D1462127D4AB0DCE08D34A5F4834662420B42EAD117"
+  },
+  {
+    "path": "game_data/mission_files/Entropy.json",
+    "sha256": "F016100D0AC80D93E357A4175B1E85C6F6212AB878ADB5D0B71B2E2BFF9C5E9C"
+  },
+  {
+    "path": "game_data/mission_files/Entropy.simulation.json",
+    "sha256": "A90357491B0395401ACDD98D374296EF519ABC2F436DB7EECC70B3A9BB7DC961"
+  },
+  {
+    "path": "game_data/mission_files/Entropy2.simulation.json",
+    "sha256": "0A7B4DE215F6923F05CBC23A5F16259090DB971790B949C77FB206D56D05630D"
+  },
+  {
+    "path": "game_data/mission_files/Extra_Missions.simulation.json",
+    "sha256": "C0D14CF64E220F532417E74FE5A270752F8F3F22AD77B57B805DE8D10D82C819"
+  },
+  {
+    "path": "game_data/mission_files/FFYL.json",
+    "sha256": "C46E76FB4510F20CB9965BB49F9B1AF113D48285DBAC5682DEB26F40D7820814"
+  },
+  {
+    "path": "game_data/mission_files/FFYL.simulation.json",
+    "sha256": "E4B3840A25697280CCF1BAD4568BBF8477A7AAD1F354B9DDD5BA94AF9DAD675D"
+  },
+  {
+    "path": "game_data/mission_files/FirstStrike.simulation.json",
+    "sha256": "8CD69C803ED7B6797C93BDACA076D9EE98A1903C5A886BDB1EFE5C1519A498F6"
+  },
+  {
+    "path": "game_data/mission_files/GALAXY ASTEROIDS ALL.simulation.json",
+    "sha256": "B065800E96FE76DA74E03AAB93429C537374EC2946EC71B163E61D3BAA6E979C"
+  },
+  {
+    "path": "game_data/mission_files/HDPACK1.simulation.json",
+    "sha256": "C288B250B7812A230857D80C14A0057EE1C9F957B131C15EDEAB1C89CD52156D"
+  },
+  {
+    "path": "game_data/mission_files/HDVBETA2.simulation.json",
+    "sha256": "E18FC122C1C94B941C17E9555440DA11093038E4A123140B3DD5225B038209D2"
+  },
+  {
+    "path": "game_data/mission_files/Hydro.json",
+    "sha256": "6015FA756D7DB9D88672737B9E0B8459846DA91DF9807E1999792BCF5DAB77DE"
+  },
+  {
+    "path": "game_data/mission_files/Hydro.simulation.json",
+    "sha256": "EF052FC56ED9771A9898721F9B159533DC250CC514922443E11E084F2C69C97B"
+  },
+  {
+    "path": "game_data/mission_files/INSANE MISSION PACK ULTRA.simulation.json",
+    "sha256": "1E16F628769C8A9EC7BBE653245F7E335CFCD95CE7A9F82D7FBFF2DEDBE7ED51"
+  },
+  {
+    "path": "game_data/mission_files/KCXF2RMv11.json",
+    "sha256": "78EBEFB15F0E6293171A15B1FDFE2CDDB4926A33E28E3C355A0843E843421042"
+  },
+  {
+    "path": "game_data/mission_files/KCXF2RMv11.simulation.json",
+    "sha256": "3D3357C8FA41892AA50B3BCB6307652A701DB48256B1F38A5BC264D51E466B27"
+  },
+  {
+    "path": "game_data/mission_files/KKR.json",
+    "sha256": "CCF6D71E2C9E7B9A78077E014FAD5AFBDEF538344F7C83A22B8F8A6EBE96FB2B"
+  },
+  {
+    "path": "game_data/mission_files/KKR.simulation.json",
+    "sha256": "79E4269A1705A0A3C9423BDF9FFF896583E90C118ECF40667DF0F43004024B47"
+  },
+  {
+    "path": "game_data/mission_files/Lostlvls.simulation.json",
+    "sha256": "15C9EDD77F2B5CD4FE839C82793939446ECB4BB4B4F4A45FA384D6955E208A9D"
+  },
+  {
+    "path": "game_data/mission_files/Lunar Series Revamped.simulation.json",
+    "sha256": "B704A133EDD8771AA4B14B4D4F6C737213A884A681F56F27616DEC1612737C11"
+  },
+  {
+    "path": "game_data/mission_files/Mandrill.simulation.json",
+    "sha256": "186DC4DE366492F6DE545EBC3758DBBC5E65ECEDCB459B21C14663D02B528828"
+  },
+  {
+    "path": "game_data/mission_files/ORION-D2.json",
+    "sha256": "D2862D678957350FDCF14D7C7ED902D9CB0F7CC48420F2ED0144D22E8DB405CA"
+  },
+  {
+    "path": "game_data/mission_files/Obsidian.simulation.json",
+    "sha256": "059A3BAACA06F77B50EE82662EDEE5239D8937242EACF750489A8BBE641C7547"
+  },
+  {
+    "path": "game_data/mission_files/Orion.json",
+    "sha256": "A5C662D8FEC14788C6E88E0C92C286D73D3290B059963D51DD634694D7DA561B"
+  },
+  {
+    "path": "game_data/mission_files/Orion.simulation.json",
+    "sha256": "CD73199A690DC2AE62C181D1E5106313024A3DB29783040034D8D48B9F636FE7"
+  },
+  {
+    "path": "game_data/mission_files/Phobos.simulation.json",
+    "sha256": "B2EAE241BCBAE7132D8EA5AE4E32A7A0857631DE0B85D5686FBF89AA2DE1DDD1"
+  },
+  {
+    "path": "game_data/mission_files/ROGUE.simulation.json",
+    "sha256": "471545A298F1D80B72A2968557DB7BE4277073060EEFFB98165393949A84C791"
+  },
+  {
+    "path": "game_data/mission_files/TEW.simulation.json",
+    "sha256": "D79F64144DB75022B0B5B49ACA6081E75E314AB4760774BC9688B580F7338284"
+  },
+  {
+    "path": "game_data/mission_files/THEHIVE.simulation.json",
+    "sha256": "DEBF8C593A5A4C1F8CDB1FDBFCF850C89E009C57060CB05327A8429AFBEBD548"
+  },
+  {
+    "path": "game_data/mission_files/TRINITY.simulation.json",
+    "sha256": "CD7BB973DA014EF7D925FCCFA2EF5BDAB9691FB4A2CBC6B30424D3ACEC0484C8"
+  },
+  {
+    "path": "game_data/mission_files/TheOmicronProject.json",
+    "sha256": "0C486DFCA431F58212C6F16EF32A0B153C654FD32D87A8BC47713FE9F7AFE1BC"
+  },
+  {
+    "path": "game_data/mission_files/TheOmicronProject.simulation.json",
+    "sha256": "2EB5BF9BCFBFC9A11FA24312B971A5511C269CC3461B64071E07F8587B33962A"
+  },
+  {
+    "path": "game_data/mission_files/Trine1.json",
+    "sha256": "33F39F22A3FE92E6A59416359B145B4998DBC9D3BCA5CCD93A7C7C57348C9525"
+  },
+  {
+    "path": "game_data/mission_files/Trine1.simulation.json",
+    "sha256": "065F62CCBE46513FF06B7567403688D8B216BBA5E6B1A7678612F0CCCB99EFC4"
+  },
+  {
+    "path": "game_data/mission_files/U3AAH.json",
+    "sha256": "EEE295166D678924D2C97698B20325E8B90A2604C4C5EFB07933543FF6D42245"
+  },
+  {
+    "path": "game_data/mission_files/Uneasy4.json",
+    "sha256": "AD8F56BE22044EA3C3AA2D159C52BFD8365C7B19FD2076AAC3851314A519C3EA"
+  },
+  {
+    "path": "game_data/mission_files/Vertigo Missions.simulation.json",
+    "sha256": "7607B2B726C46A9345C8AC9338D30E8A4A4B1683AAA03E6F3861E650E3E66187"
+  },
+  {
+    "path": "game_data/mission_files/Vesta.simulation.json",
+    "sha256": "623062C8D1E590BD8277A1224E79825CF0E6269C3FA880A28A91FD354335AE8B"
+  },
+  {
+    "path": "game_data/mission_files/Vignettes.json",
+    "sha256": "F1BD98B5AA59E190D1B0DE78023F96A907AA0A8E4C8B338431A0011ED0D5C961"
+  },
+  {
+    "path": "game_data/mission_files/Vignettes.simulation.json",
+    "sha256": "EF8943FF32E477DA3486817554198A06C2E302E85094311F193054BB7E017FF6"
+  },
+  {
+    "path": "game_data/mission_files/af-d2x.simulation.json",
+    "sha256": "2A34560CFC64AFAEC3C6AD093CD48651F8BB22DADF70F66ADEE30468F7810E3C"
+  },
+  {
+    "path": "game_data/mission_files/af_d1_beta.simulation.json",
+    "sha256": "CAE148B00A08BF8F85DDC7751661413D0D34DB1FA1D209D09109E5DCA18EC222"
+  },
+  {
+    "path": "game_data/mission_files/anachron.simulation.json",
+    "sha256": "BB7739332E5074CCFE2197D46ED982171C105DE2304BFD6483C14D430452B9DD"
+  },
+  {
+    "path": "game_data/mission_files/ascent.simulation.json",
+    "sha256": "1B499C2E735921264ABBD92854D99420F0FE77CA919772C9A9151BE932954A24"
+  },
+  {
+    "path": "game_data/mission_files/bitesize.simulation.json",
+    "sha256": "3D2F0CCE3124341B0F39383F78AEFA60A219A76DFE3935578A41A2C97E59B83F"
+  },
+  {
+    "path": "game_data/mission_files/castaway_redux.json",
+    "sha256": "6BC2CDDC6527B16B329AD33DEC6D0CADEA90CD070F86FAF1D9FBF6F0A0BABBA1"
+  },
+  {
+    "path": "game_data/mission_files/castaway_redux.simulation.json",
+    "sha256": "4DB4C7877D70688D1A777CA6A623BB8FC3B9BB655E5283D1DA5073142CD85493"
+  },
+  {
+    "path": "game_data/mission_files/cererian_1.3.json",
+    "sha256": "EC774E4EAD75310E0A8E00171A76F14F212D796CADB424C35636C9FF8CF79017"
+  },
+  {
+    "path": "game_data/mission_files/cererian_1.3.simulation.json",
+    "sha256": "2C0B86880C3FCE850BB8040335E7E470EC18F1C45ED5DD7D9121D445DDAE33AA"
+  },
+  {
+    "path": "game_data/mission_files/chromium.simulation.json",
+    "sha256": "1CFC27CC8E3BB85A1FFC4F5015713A607278AD72AFA3BC38C0A96883BD3780C5"
+  },
+  {
+    "path": "game_data/mission_files/chron10b.simulation.json",
+    "sha256": "B434FD21EA1ED502DB29841C58E74BD5DBC425EC7F8CCD8453955E767761FEE3"
+  },
+  {
+    "path": "game_data/mission_files/d1mercen.simulation.json",
+    "sha256": "9C51D29705FCDB116E02EC2CA6E7B6F6FCCC99E0333961DF04E360498C05B037"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/D1-levelpack.json",
+    "sha256": "C1F6911E95AC65D12E1FC6EF51F987536D52B501BACBCF0E242F3E73B992F995"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/D1-levelpack.simulation.json",
+    "sha256": "CEA3820739BAEE698D26B67884B8E355AA93731F79FE8FF5A9D6B5D700450274"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/bahagad.simulation.json",
+    "sha256": "2369C5890AFCA1C6C20DBF81A1D5B887FC76C519A6787357F46D4FE52E3EB3FD"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/diehard.simulation.json",
+    "sha256": "A8F42D41063FD05830D64E9E43DF03D72C74BBB01B9283AE1C3828E871A2B7CB"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/eaf.simulation.json",
+    "sha256": "C5498EB4D49EFE8039435FB5D422ED840939E660A4D91A7B0764FF651A608F4E"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/eaf2.simulation.json",
+    "sha256": "5B9BC051C6BC6844BCDB34C29F9D10471E8B505DC30514DF9631D51F76B098A9"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/harqyjia.simulation.json",
+    "sha256": "8441CE772745E397C6BD8CE41845420BF3DBC6D654B0B3AB03883A431EB45852"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/ironblade.simulation.json",
+    "sha256": "D0C903961C67DC37E8A6730BD154A19D0E58E1C7F57121271CFBB1DBABEDBEB6"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/ironstar.simulation.json",
+    "sha256": "EA7C6851D11C9E08163DC3EEF9306F36AB733C097528EE401B9ACDAD41A1B8F2"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/levelpack.json",
+    "sha256": "5532CA11F07B4A9B5FE1C97DC66663074D09EA9ADC90778555847FF650919F02"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/levelpack.simulation.json",
+    "sha256": "183649A627E065AB57CC27801F7061F72AB077F1C073A125B2FB5B0FCEBFAC72"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/maximum.json",
+    "sha256": "3D4A33608A2D1D32DB44708B476244ED9FA4C6EB5F0699F15C81C220FED71FAB"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/maximum.simulation.json",
+    "sha256": "BEAD4039A3B5F444A194A09425862E5C4C88773C3461D953A69412B89B778D3B"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/orionneb.simulation.json",
+    "sha256": "988EC4790A8D87B8C9B44CABCF27C7D71AC33B78F8DDCA8727B5C03E20D86B84"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/phobos-e.simulation.json",
+    "sha256": "BAB66129784E762B8EB8419342CEA5BCCC4F84F37FD39C42C30A18DE1A4F5D0D"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/po2.simulation.json",
+    "sha256": "B52F3D4EFC84DB3764D32ED296988055DA83AF0D0640EA58D1A2A12DA4AAC253"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/revodrav.simulation.json",
+    "sha256": "2548583A4C0F7BCD044326DFD2760D39AAF13F5E27603E087EDFD207237B298F"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/saturn.simulation.json",
+    "sha256": "3EEBF548964E105933BD76458AAA9C49F57E2B143E2B76C318817CE42DEDDE07"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/tt.simulation.json",
+    "sha256": "11A1AE3BFCE87141128B35E2F43EBA220B0290BECBF92062230C4B7FA43275F4"
+  },
+  {
+    "path": "game_data/mission_files/d2xxl_downloads/vignettes.simulation.json",
+    "sha256": "C8B874BB2A88019A518681D8BEF8A2A24C3013BFC7F3E9EFC93BEB1B65DBE5F3"
+  },
+  {
+    "path": "game_data/mission_files/dd1lvls1.simulation.json",
+    "sha256": "9FFBAEA150BBE1AD5B75ABDADE3E4953DC2324597997DFA49A870A9D3581BC6D"
+  },
+  {
+    "path": "game_data/mission_files/dd2lvls1.json",
+    "sha256": "A915CBA4957B8CA2EFB7AA5F2099AF3B53957327563EEF0075DD9AFDA8538CEB"
+  },
+  {
+    "path": "game_data/mission_files/dd2lvls1.simulation.json",
+    "sha256": "18AF03C75AAAF15933BC5F30AFD110DE458E0B698325A91C764D3B98E21C5359"
+  },
+  {
+    "path": "game_data/mission_files/descent.fan_d2_conversion.json",
+    "sha256": "CDF7C873C6FC6E3C44929406E338A6F19F3AA87CF1000D21673238C5559E4E0C"
+  },
+  {
+    "path": "game_data/mission_files/descent.fan_d2_conversion.simulation.json",
+    "sha256": "1DD7963E155DC43AE28113C4EF1744B90587199DA4B5DFC27A7F6896866B930B"
+  },
+  {
+    "path": "game_data/mission_files/descent_maximum_fixed.simulation.json",
+    "sha256": "D31E35F8CCE13FC5F4C6A04708477B5CAB10727861D2D59BF03BF605DCAC8D92"
+  },
+  {
+    "path": "game_data/mission_files/diehard.simulation.json",
+    "sha256": "1522FAF87F159B463F540F583445BF847782119CFDB74A268C99AA5238A36BE2"
+  },
+  {
+    "path": "game_data/mission_files/dontpnic.simulation.json",
+    "sha256": "FAC89E487F8B4D937C5B28F99FFC6A70DC5AED2CA9306E9FA4C0C314382C6AF5"
+  },
+  {
+    "path": "game_data/mission_files/dozen.simulation.json",
+    "sha256": "8A5D37B7122FA76E175D918292A080D15D68AE029C4E37B3A0A8B0FE40A347F9"
+  },
+  {
+    "path": "game_data/mission_files/driller1.simulation.json",
+    "sha256": "98AE894E3880105876C09DBBFCE479E4BC781913AE6654D05446E80F781AAEAA"
+  },
+  {
+    "path": "game_data/mission_files/driller2.simulation.json",
+    "sha256": "8B6EF8833C35C062493AC27CE7D13A4D8212630F51E5D70CED6A7ED4B263E851"
+  },
+  {
+    "path": "game_data/mission_files/entropy_v.1.0.json",
+    "sha256": "22BBE101D93A7FDEC00A75FEDF3747022FB30B3BCD3B719C33C62E849B6C19F5"
+  },
+  {
+    "path": "game_data/mission_files/entropy_v.1.0.simulation.json",
+    "sha256": "6AC0E9E94CE9C6E9E05EBA048928A20D1490AB1327963C32B5267815DDA7532E"
+  },
+  {
+    "path": "game_data/mission_files/erisreb.simulation.json",
+    "sha256": "83E8AE9F7D545F3D74B7743DE6BF105D3D12272D6A39267C7DF7A89EEC7C49C4"
+  },
+  {
+    "path": "game_data/mission_files/ewithin-versions.json",
+    "sha256": "112B9ED24B7833050E436930C824D595C90EFC56C7FBDEC83F8EF7B81058D66C"
+  },
+  {
+    "path": "game_data/mission_files/ewithin-versions.simulation.json",
+    "sha256": "14BC8D96A8312B86D7A08711826606C69F73CE8001ED5BB8A0CED1E55CBE8939"
+  },
+  {
+    "path": "game_data/mission_files/ex0core.simulation.json",
+    "sha256": "A3410498DF61B4B2AD19924C72518B319A505F0C3275BC9F8A37AAA4D11AFADE"
+  },
+  {
+    "path": "game_data/mission_files/freelan.simulation.json",
+    "sha256": "9E35A0A6487733E69D748F2D9076B67E6EA9DDC61F7FDD87508CFCC11ABE0637"
+  },
+  {
+    "path": "game_data/mission_files/galmond2.json",
+    "sha256": "AFADF2D3C90C3443DCD5DFFD9B00229F07EECAA061FE98D05EF3A9EFCBEB68BB"
+  },
+  {
+    "path": "game_data/mission_files/galmond2.simulation.json",
+    "sha256": "7423FC1F2F02B6925B36ADF2651E5D77DB42AA0CA134B0316936EA85E57072A5"
+  },
+  {
+    "path": "game_data/mission_files/gigalo.json",
+    "sha256": "D1292ED6D24BA46A759153622FA3D33630B309A883459C289BA8942546696D29"
+  },
+  {
+    "path": "game_data/mission_files/gigalo.simulation.json",
+    "sha256": "AD06E839972C612FA4EED8C17C507B62E732E56EEB5061DEAD1B90C7BA057D49"
+  },
+  {
+    "path": "game_data/mission_files/gnomes.simulation.json",
+    "sha256": "9E16DC7EA49052BAB461A1849E13D486E1477E19089FD99F167DD89A52FE9C25"
+  },
+  {
+    "path": "game_data/mission_files/grad3d.simulation.json",
+    "sha256": "08B8822ABCCA3412BDEE29F0756B127C14216FA9FAB93FDD37E4A7AC41117498"
+  },
+  {
+    "path": "game_data/mission_files/icerealm.simulation.json",
+    "sha256": "5658D9C56C2E75BF197BAE720775AF72F09C92018ACCB54D9A1A4D8956D05AB4"
+  },
+  {
+    "path": "game_data/mission_files/ironblade.json",
+    "sha256": "2FDA98C622F1E39089DE3C172F97D70CA450D8DEB8CE179E3FE6C56EC1CA3947"
+  },
+  {
+    "path": "game_data/mission_files/ironblade.simulation.json",
+    "sha256": "D475B9CB1800B9AFBA5F686CE7735EFFE2A5B0D28BBD0F290BF7791DA99906B3"
+  },
+  {
+    "path": "game_data/mission_files/ironstar.simulation.json",
+    "sha256": "E18CD6158E9C955FDEA908B3FEF6AF0DFD476FD09E92B4C15DB46BE202C9CDC3"
+  },
+  {
+    "path": "game_data/mission_files/k_sos.simulation.json",
+    "sha256": "FBB0FFD7D48FF371203464EF0D540068DCFD9BB3EA3F628F67A8B78C9687B354"
+  },
+  {
+    "path": "game_data/mission_files/kcxf2.json",
+    "sha256": "7653E30D967AC48F4A9B4D5344F4CCE4BCA3A2626A97CA801AFB9DA22724B525"
+  },
+  {
+    "path": "game_data/mission_files/kcxf2.simulation.json",
+    "sha256": "683F6DFCC3DF0FFE5885FFC774535131DF01AB41559EA0CB5A9A6E42BDF1A7A0"
+  },
+  {
+    "path": "game_data/mission_files/lagrange.simulation.json",
+    "sha256": "60245C80C4ACF33B85DCF920C826CE3EF35CB8E1BAB0F21BBB8AAB58D97A307A"
+  },
+  {
+    "path": "game_data/mission_files/legacy.simulation.json",
+    "sha256": "EE8CB141F092B07558A789CF0A35C306CAF4E7D2BBC9E4D96123E6F5F2577AC1"
+  },
+  {
+    "path": "game_data/mission_files/levigen.simulation.json",
+    "sha256": "A6F29C40B018BA604D673BF6A0D52B3EF31A9F062D9314D892908A4E2455B1B5"
+  },
+  {
+    "path": "game_data/mission_files/megalo.simulation.json",
+    "sha256": "47010DCE2ECDC28E4D21717F990EC02E39877CFA517A4F0BC8FD56241E015A16"
+  },
+  {
+    "path": "game_data/mission_files/mna.simulation.json",
+    "sha256": "A58216B8A105EF2A859416927E0AEC36E86EB594CB3F0AE41114E0D6B3147F5D"
+  },
+  {
+    "path": "game_data/mission_files/nefarious.json",
+    "sha256": "67374B68719E0ECE137BF49A7CD2A57F6A89E865B194027482DE4B8269232EAF"
+  },
+  {
+    "path": "game_data/mission_files/nefarious.simulation.json",
+    "sha256": "E2DCEF08248729C5D9937B03D3F1F9CEFE7C9FB8DFB7EDF8D9D2F127078D019C"
+  },
+  {
+    "path": "game_data/mission_files/outerrch11.simulation.json",
+    "sha256": "DF6F1CC5A4CB4F873D5EEA11B8958C48611B80E1DC933B38ADF47F6E4E39DE24"
+  },
+  {
+    "path": "game_data/mission_files/phenomia.json",
+    "sha256": "054DBF387D199FC9CD2077B61E3B303586F4A75F6A508C8334CD95C68071252F"
+  },
+  {
+    "path": "game_data/mission_files/phenomia.simulation.json",
+    "sha256": "C3037D3126819041C77DE45FFEBBE7DF5E8C8A6371927BC1247AE7B7D39C5FC1"
+  },
+  {
+    "path": "game_data/mission_files/plutonia.json",
+    "sha256": "8DC7953DD04E9BFDF1113EB4D277ED3981D5C54748E5CEE10ADE6A88B3E2D9F2"
+  },
+  {
+    "path": "game_data/mission_files/plutonia.simulation.json",
+    "sha256": "E957A815799C5A5DF092B15FB54B3D6077ADFB3BF3D63410805385F39569DA8D"
+  },
+  {
+    "path": "game_data/mission_files/plutonionOutbreak.json",
+    "sha256": "B5BF43EAFB8BCE76EAC6E7A3337F3738036A086E1D7DA31B996AC71BD25227D3"
+  },
+  {
+    "path": "game_data/mission_files/plutonionOutbreak.simulation.json",
+    "sha256": "0C0A3CFDFDD33028BC7D989C9BA2D27EB3A51E4E9F7CB6DED8E92F878401E609"
+  },
+  {
+    "path": "game_data/mission_files/prophecy.json",
+    "sha256": "E285F6CF0302C478BA4DCC439A07E66D6A1061C0ABAA85DBD3EA1B26B7CF6881"
+  },
+  {
+    "path": "game_data/mission_files/prophecy.simulation.json",
+    "sha256": "086C5CBA9BDCE768A2171CAD4E4504D35FF6716908FA616CE8E6DFBB22684254"
+  },
+  {
+    "path": "game_data/mission_files/quotienc_1.1.1.simulation.json",
+    "sha256": "31444265D98F8A7163D217271FB5AEADB5E8547E0F9C78F021474F93BBD47E6D"
+  },
+  {
+    "path": "game_data/mission_files/reetus.simulation.json",
+    "sha256": "3324A6F38199331982E55F7FF8F44FD74381EAF5159E73ACAB4C104253AB9A45"
+  },
+  {
+    "path": "game_data/mission_files/reetus2.simulation.json",
+    "sha256": "1E99F9C718F81B87B1FA5F0FA9E2D973ED303EE341C27CB030817CF1254D1033"
+  },
+  {
+    "path": "game_data/mission_files/revdrav2.simulation.json",
+    "sha256": "8518EDEB428FE89A3E47ED240E94DB6453B03C93ED7C5FA76655D2EC206DF5CB"
+  },
+  {
+    "path": "game_data/mission_files/revodrav.simulation.json",
+    "sha256": "B49B35BCFEBA9E8A43DCBAAF15C0B0DB68E37728EEB5C83794AA4CD8889D0459"
+  },
+  {
+    "path": "game_data/mission_files/sanitati2.simulation.json",
+    "sha256": "7E9F5F6C8A7BA3AF2C14E34DAE9285E8751DF97D21AAD248B2F8D03ECFF2A270"
+  },
+  {
+    "path": "game_data/mission_files/sirius2.simulation.json",
+    "sha256": "C517E9811A452A32D27B80CDB3F7D51C4DA44E2A59D77EC2D3DA5642FEAAA006"
+  },
+  {
+    "path": "game_data/mission_files/trainng.simulation.json",
+    "sha256": "81FAAAD9C788FFCF1877385503A0DCF60A17894F54749C7DCB0CD22AAD80F215"
+  },
+  {
+    "path": "game_data/mission_files/trine2.json",
+    "sha256": "B33CA526F4EDD32259F4998BE166F9361444E7F65922FE8AEEB60FD1D6A4DCC0"
+  },
+  {
+    "path": "game_data/mission_files/trine2.simulation.json",
+    "sha256": "F8069F4D5BF808ED1DE39E1279EA99C6447FC26CC5571AE87EEDE947151BDD83"
+  },
+  {
+    "path": "game_data/mission_files/tu.simulation.json",
+    "sha256": "4C2FF2FF12CEB0151B1A7E594EC733DE9E1C62748B3309E2482740BD62DEB90C"
+  },
+  {
+    "path": "game_data/mission_files/ulterior_v1.0.6b.json",
+    "sha256": "3A8358F7B397AF4060BF1E3A9873D2A5B641CB7A35C003F0AB8078A1BEAB1E19"
+  },
+  {
+    "path": "game_data/mission_files/ulterior_v1.0.6b.simulation.json",
+    "sha256": "FB4EE534A0BA70C786B4D316A1EDD430CB5968CC05BEDDD33581689203C65DF7"
+  },
+  {
+    "path": "game_data/mission_files/vignett2.simulation.json",
+    "sha256": "ECFBF91BEC51545A2C6C1A066A867D628150FE321D4F4C537DC2FFF27DC892D7"
+  }
+]

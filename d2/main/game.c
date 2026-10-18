@@ -1592,6 +1592,8 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_CLOSE:
 			#ifdef __ANDROID__
+			if (Game_mode & GM_MULTI)
+				debug_log_force(DLOG_NETWORK, "[NETEXIT] game window closing player=%d level=%d", Player_num, Current_level_num);
 			android_profile_flush();
 			/* Closing this mine fulfills any pending restore-to-menu request */
 			state_restore_take_menu_request();

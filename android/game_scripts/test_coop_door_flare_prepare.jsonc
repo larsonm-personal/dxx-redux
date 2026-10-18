@@ -1,0 +1,15 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_lan",
+            "vars": { "d2": { "kind": "unkeyed" } },
+            "params": { "kind": { "label": "Door key requirement" } },
+        },
+    },
+    { "action": "set_debug", "field": "guidebot_door_test", "value": "prepare_${kind}" },
+    { "action": "set_debug", "field": "guidebot_door_test", "value": "flare_nonowner" },
+    { "action": "wait_ms", "ms": 1000 },
+    { "action": "set_debug", "field": "guidebot_door_test", "value": "verify_nonowner_closed" },
+]

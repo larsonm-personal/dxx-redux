@@ -1,0 +1,11 @@
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "recovery_test_trace", "value": "true" },
+    { "action": "set_debug", "field": "clear_robots", "value": "true" },
+    { "action": "meta_action", "id": 1037 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 25000,
+        "expect": { "guidebot.released": true, "guidebot.owner_is_local": true },
+    },
+]

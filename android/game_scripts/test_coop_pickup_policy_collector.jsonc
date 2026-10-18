@@ -1,0 +1,15 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "recovery_test_trace", "value": "true" },
+    { "action": "set_debug", "field": "clear_robots", "value": "true" },
+    { "action": "set_debug", "field": "recovery_test_inventory", "value": "policy_collector" },
+    { "action": "wait_for", "timeout_ms": 20000, "expect": { "multiplayer.recovery.live": { "gte": 1 } } },
+    { "action": "wait_ms", "ms": 2500 },
+    { "action": "set_debug", "field": "recovery_test_policy_check", "value": "begin" },
+    { "action": "set_debug", "field": "recovery_test_touch_equipment", "value": "plasma" },
+    { "action": "set_debug", "field": "recovery_test_touch_equipment", "value": "quad" },
+    { "action": "wait_ms", "ms": 1500 },
+    { "action": "wait_for", "timeout_ms": 5000, "expect": { "multiplayer.recovery.ready_to_save": true } },
+    { "action": "set_debug", "field": "recovery_test_policy_check", "value": "preserved" },
+    { "action": "introspect" },
+]

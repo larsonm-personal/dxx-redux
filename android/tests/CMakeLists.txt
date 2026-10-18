@@ -204,6 +204,17 @@ target_include_directories(
                                ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
 set_property(TARGET test_coop_recovery PROPERTY C_STANDARD 11)
 
+add_executable(test_coop_pickup_lock test_coop_pickup_lock.c)
+target_include_directories(test_coop_pickup_lock PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop")
+set_property(TARGET test_coop_pickup_lock PROPERTY C_STANDARD 11)
+
+add_executable(test_coop_robot_door test_coop_robot_door.c)
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_coop_robot_door PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+target_include_directories(test_coop_robot_door PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
+                                                        ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
+
 add_executable(coop_restore_fixture coop_restore_fixture.c)
 set_property(TARGET coop_restore_fixture PROPERTY C_STANDARD 11)
 target_include_directories(coop_restore_fixture PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop"
@@ -299,9 +310,37 @@ add_executable(test_android_rewind_policy test_android_rewind_policy.c
 target_link_libraries(test_android_rewind_policy PRIVATE ${DXX_TARGET_PREFIX}maths)
 target_include_directories(test_android_rewind_policy PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(
+    test_android_rewind_capture
+    test_android_rewind_capture.c "${DXX_TEST_SHARED_SOURCE_DIR}/android_rewind.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/android_rewind_policy.c")
+target_compile_definitions(test_android_rewind_capture PRIVATE DXX_REWIND_FILE_WRAPPER)
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_android_rewind_capture PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+target_include_directories(
+    test_android_rewind_capture
+    PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}" "${DXX_TEST_SHARED_SOURCE_DIR}/coop"
+            ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
+target_link_libraries(test_android_rewind_capture PRIVATE ${DXX_TARGET_PREFIX}maths)
+
 add_executable(test_android_render_fov test_android_render_fov.c
                                        "${DXX_TEST_SHARED_SOURCE_DIR}/android_render_fov.c")
 target_include_directories(test_android_render_fov PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(
+    test_coop_level_restart_capture test_coop_level_restart_capture.c
+                                    "${DXX_TEST_SHARED_SOURCE_DIR}/coop/coop_level_restart.c")
+target_compile_definitions(test_coop_level_restart_capture PRIVATE __ANDROID__)
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_coop_level_restart_capture PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+target_include_directories(
+    test_coop_level_restart_capture
+    PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}" "${DXX_TEST_SHARED_SOURCE_DIR}/coop"
+            ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
+target_link_libraries(test_coop_level_restart_capture PRIVATE ${PHYSFS_LIBRARY})
+add_test(NAME test_coop_level_restart_capture COMMAND test_coop_level_restart_capture)
 
 add_executable(test_android_gpu_policy test_android_gpu_policy.c)
 target_include_directories(test_android_gpu_policy PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
@@ -527,6 +566,8 @@ set(DXX_HOST_TEST_TARGETS
     test_coop_warp_policy
     test_coop_powerup_duplication
     test_coop_recovery
+    test_coop_pickup_lock
+    test_coop_robot_door
     test_hud_layout
     test_hud_counts
     test_homing_compat
@@ -543,6 +584,7 @@ set(DXX_HOST_TEST_TARGETS
     test_kconfig_android_shared
     test_android_virtual_gamepad
     test_android_rewind_policy
+    test_android_rewind_capture
     test_android_render_fov
     test_ogl_gpu_timer
     test_android_gpu_policy

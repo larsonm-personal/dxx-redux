@@ -1,4 +1,6 @@
 // Exercise duplicate reward admission through the actual native pickup dispatcher
+extern "C" sbyte PKilledFlags[MAX_PLAYERS];
+
 static void test_coop_pickup_rewards(const char *output)
 {
 	using nlohmann::json;
@@ -13,6 +15,7 @@ static void test_coop_pickup_rewards(const char *output)
 	};
 	std::vector<reward_case> items = {
 		{ POW_SPREADFIRE_WEAPON, SPREADFIRE_INDEX, -1, 0 },
+		{ POW_PLASMA_WEAPON, PLASMA_INDEX, -1, 0 },
 		{ POW_VULCAN_WEAPON, VULCAN_INDEX, -1, 0 },
 		{ POW_LASER, -1, MAX_LASER_LEVEL, 0 },
 		{ POW_QUAD_FIRE, -1, -1, PLAYER_FLAGS_QUAD_LASERS },
@@ -37,56 +40,72 @@ static void test_coop_pickup_rewards(const char *output)
 				for (int host_observer : { 0, 1 })
 					for (int subject : { 0, 2 })
 						for (int phase = CONNECT_DISCONNECTED; phase <= CONNECT_END_MENU; ++phase)
-							for (int missing : { 0, 1 }) {
+							for (int missing : { 0, 1 })
+								for (int death_phase : { 0, 1, 2, 3, 4 }) {
 #ifdef DXX_BUILD_DESCENT_II
-								if (edition == 1 && (item.weapon > FUSION_INDEX || item.laser > MAX_LASER_LEVEL || item.id == POW_FULL_MAP)) continue;
+									if (edition == 1 && (item.weapon > FUSION_INDEX || item.laser > MAX_LASER_LEVEL || item.id == POW_FULL_MAP)) continue;
 #endif
-								Game_mode = mode;
-								Player_num = 1;
-								N_players = 3;
-								Netgame.host_is_obs = static_cast<ubyte>(host_observer);
-								Netgame.GaussAmmoStyle = GAUSS_STYLE_DUPLICATING;
-								ConsoleObject = &Objects[0];
-								ConsoleObject->type = OBJ_PLAYER;
-								for (int i = 0; i < N_players; ++i) {
-									Players[i] = {};
-									Players[i].connected = CONNECT_PLAYING;
-									Players[i].shields = Players[i].energy = 100 * F1_0;
-									Players[i].lives = 3;
-									Players[i].primary_weapon_flags = (1 << MAX_PRIMARY_WEAPONS) - 1;
-									Players[i].laser_level = static_cast<decltype(Players[i].laser_level)>(item.laser < 0 ? MAX_LASER_LEVEL : item.laser);
-									Players[i].flags = item.flag;
+									Game_mode = mode;
+									Player_num = 1;
+									N_players = 3;
+									Netgame.host_is_obs = static_cast<ubyte>(host_observer);
+									Netgame.GaussAmmoStyle = GAUSS_STYLE_DUPLICATING;
+									ConsoleObject = &Objects[0];
+									ConsoleObject->type = OBJ_PLAYER;
+									for (int i = 0; i < N_players; ++i) {
+										PKilledFlags[i] = 0;
+										Players[i] = {};
+										Players[i].connected = CONNECT_PLAYING;
+										Players[i].shields = Players[i].energy = 100 * F1_0;
+										Players[i].lives = 3;
+										Players[i].primary_weapon_flags = (1 << MAX_PRIMARY_WEAPONS) - 1;
+										Players[i].laser_level = static_cast<decltype(Players[i].laser_level)>(item.laser < 0 ? MAX_LASER_LEVEL : item.laser);
+										Players[i].flags = item.flag;
+									}
+									Players[subject].connected = static_cast<decltype(Players[subject].connected)>(phase);
+									// Keep pre-death equipment populated: zero shields before spew,
+									// then an exploded ship, then reappearance with a fresh inventory
+									if (death_phase == 1) Players[subject].shields = 0;
+									if (death_phase == 2) PKilledFlags[subject] = 1;
+									// A reordered reappearance still awaits the explosion's inventory reset
+									if (death_phase == 4) PKilledFlags[subject] = -1;
+									if (death_phase == 3) {
+										Players[subject].primary_weapon_flags = HAS_LASER_FLAG;
+										Players[subject].laser_level = 0;
+										Players[subject].flags = 0;
+									}
+									if (missing && death_phase != 3) {
+										if (item.weapon >= 0) Players[subject].primary_weapon_flags &= ~(1 << item.weapon);
+										if (item.laser >= 0) --Players[subject].laser_level;
+										Players[subject].flags = 0;
+									}
+									const bool excluded = phase == CONNECT_DISCONNECTED || (subject == 0 && host_observer);
+									const bool reward = mode == 0 || ((mode & GM_MULTI_COOP) && ((!missing && !death_phase) || excluded));
+									Powerup_info[item.id].hit_sound = -1;
+									object pickup = {};
+									pickup.type = OBJ_POWERUP;
+									pickup.id = static_cast<decltype(pickup.id)>(item.id);
+									pickup.ctype.powerup_info.count = 2 * VULCAN_AMMO_AMOUNT;
+									const unsigned sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+									const int used = do_powerup(&pickup);
+									if ((used != 0) != reward)
+										std::fprintf(stderr, "reward case: edition=%d item=%d mode=%d observer=%d subject=%d connection=%d missing=%d death=%d used=%d expected=%d\n",
+										             edition, item.id, mode, host_observer, subject, phase, missing, death_phase, used, reward);
+									require((used != 0) == reward, "native duplicate pickup retains the reward/consumption contract");
+									if (item.weapon != VULCAN_INDEX)
+										require(Players[1].energy == (reward ? 112 : 100) * F1_0, "duplicate energy depends on every included peer's inventory");
+									require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "duplicate rewards do not consume SIM or FX RNG");
+									// Copy packed scalar fields before JSON binds forwarding references
+									trace.push_back({ { "case", { edition, item.id, mode, host_observer, subject, phase, missing, death_phase } },
+									                  { "used", used },
+									                  { "energy", static_cast<fix>(Players[1].energy) },
+									                  { "ammo", static_cast<ushort>(Players[1].primary_ammo[VULCAN_INDEX]) },
+									                  { "remaining_ammo", static_cast<int>(pickup.ctype.powerup_info.count) },
+									                  { "score", static_cast<int>(Players[1].score) },
+									                  { "flags", static_cast<uint>(Players[1].flags) },
+									                  { "weapons", static_cast<unsigned>(Players[1].primary_weapon_flags) },
+									                  { "laser", Players[1].laser_level } });
 								}
-								Players[subject].connected = static_cast<decltype(Players[subject].connected)>(phase);
-								if (missing) {
-									if (item.weapon >= 0) Players[subject].primary_weapon_flags &= ~(1 << item.weapon);
-									if (item.laser >= 0) --Players[subject].laser_level;
-									Players[subject].flags = 0;
-								}
-								const bool excluded = phase == CONNECT_DISCONNECTED || (subject == 0 && host_observer);
-								const bool reward = mode == 0 || ((mode & GM_MULTI_COOP) && (!missing || excluded));
-								Powerup_info[item.id].hit_sound = -1;
-								object pickup = {};
-								pickup.type = OBJ_POWERUP;
-								pickup.id = static_cast<decltype(pickup.id)>(item.id);
-								pickup.ctype.powerup_info.count = 2 * VULCAN_AMMO_AMOUNT;
-								const unsigned sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
-								const int used = do_powerup(&pickup);
-								require((used != 0) == reward, "native duplicate pickup retains the reward/consumption contract");
-								if (item.weapon != VULCAN_INDEX)
-									require(Players[1].energy == (reward ? 112 : 100) * F1_0, "duplicate energy depends on every included peer's inventory");
-								require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "duplicate rewards do not consume SIM or FX RNG");
-								// Copy packed scalar fields before JSON binds forwarding references
-								trace.push_back({ { "case", { edition, item.id, mode, host_observer, subject, phase, missing } },
-								                  { "used", used },
-								                  { "energy", static_cast<fix>(Players[1].energy) },
-								                  { "ammo", static_cast<ushort>(Players[1].primary_ammo[VULCAN_INDEX]) },
-								                  { "remaining_ammo", static_cast<int>(pickup.ctype.powerup_info.count) },
-								                  { "score", static_cast<int>(Players[1].score) },
-								                  { "flags", static_cast<uint>(Players[1].flags) },
-								                  { "weapons", static_cast<unsigned>(Players[1].primary_weapon_flags) },
-								                  { "laser", Players[1].laser_level } });
-							}
 	}
 	Current_mission = nullptr;
 	std::FILE *file = std::fopen(output, "wb");

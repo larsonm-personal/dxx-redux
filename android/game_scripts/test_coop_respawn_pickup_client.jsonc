@@ -2,6 +2,7 @@
     { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
     { "action": "set_debug", "field": "recovery_test_trace", "value": "true" },
     { "action": "set_debug", "field": "recovery_test_inventory", "value": "true", "post_delay_ms": 2000 },
+    { "action": "set_debug", "field": "recovery_test_isolate_drop", "value": "true", "post_delay_ms": 1000 },
     { "action": "set_debug", "field": "damage_player", "value": "500" },
     {
         "action": "wait_for",

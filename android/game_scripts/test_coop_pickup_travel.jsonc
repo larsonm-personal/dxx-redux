@@ -1,0 +1,27 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "assert", "expect": { "player.laser_level": 0, "multiplayer.num_connected": 3 } },
+    { "action": "trigger_levelcomplete" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 90000,
+        "expect": { "postlevel_active": true, "screen_advance_can_activate": true },
+    },
+    { "action": "request_screen_advance", "generation": "current" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 60000,
+        "expect": {
+            "in_game": true,
+            "time_paused": false,
+            "postlevel_active": false,
+            "game_window_is_front": true,
+            "coop_briefing.active": false,
+            "multiplayer.num_connected": 3,
+        },
+    },
+    { "action": "set_debug", "field": "clear_robots", "value": "true" },
+    { "action": "wait_ms", "ms": 1500 },
+    { "action": "assert", "expect": { "player.laser_level": 0, "multiplayer.recovery.ready_to_save": true } },
+    { "action": "introspect" },
+]

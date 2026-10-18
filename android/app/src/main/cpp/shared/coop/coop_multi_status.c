@@ -16,6 +16,17 @@
 #include "coop_gameplay_runtime.h"
 #endif
 
+extern sbyte PKilledFlags[MAX_PLAYERS];
+
+static int coop_player_has_live_inventory(int pnum)
+{
+	/* Explosion packets retain the old ship's equipment to create its drops
+	 * Respawn replaces that inventory, so it cannot authorize duplicate rewards
+	 * Shields cover the death animation before the explosion packet arrives */
+	return !(pnum == Player_num && Player_is_dead) &&
+	       PKilledFlags[pnum] == 0 && Players[pnum].shields > 0;
+}
+
 static int all_coop_players_have_primary(int weapon_index)
 {
 	int i;
@@ -23,7 +34,7 @@ static int all_coop_players_have_primary(int weapon_index)
 
 	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
 		if (Players[i].connected != CONNECT_DISCONNECTED &&
-		    !(Players[i].primary_weapon_flags & flag))
+		    (!coop_player_has_live_inventory(i) || !(Players[i].primary_weapon_flags & flag)))
 			return 0;
 
 	return 1;
@@ -46,7 +57,7 @@ int duplicate_laser_gives_energy(int laser_level)
 
 	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
 		if (Players[i].connected != CONNECT_DISCONNECTED &&
-		    Players[i].laser_level < laser_level)
+		    (!coop_player_has_live_inventory(i) || Players[i].laser_level < laser_level))
 			return 0;
 
 	return 1;
@@ -63,7 +74,7 @@ int duplicate_flag_gives_energy(int flag)
 
 	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
 		if (Players[i].connected != CONNECT_DISCONNECTED &&
-		    !(Players[i].flags & flag))
+		    (!coop_player_has_live_inventory(i) || !(Players[i].flags & flag)))
 			return 0;
 
 	return 1;

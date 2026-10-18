@@ -394,14 +394,16 @@ void android_rewind_maybe_capture_frame(void)
 	    GameTime64 < g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count - 1].game_time64 &&
 	    !android_rewind_begin_level_history())
 		return;
-	if (g_android_rewind_session.snapshot_count > 0 &&
-	    GameTime64 < g_android_rewind_session.next_capture_game_time64)
+	if (GameTime64 < g_android_rewind_session.next_capture_game_time64)
 		return;
 	if (g_android_rewind_session.snapshot_count > 0 &&
 	    g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count - 1].game_time64 == GameTime64)
 		return;
-	if (pending_token || !android_rewind_capture_snapshot()) return;
+	if (pending_token) return;
+	/* A rejected capture must also wait, including before the first snapshot
+	 * Keep previously successful snapshots available while saving recovers */
 	g_android_rewind_session.next_capture_game_time64 = GameTime64 + ANDROID_REWIND_INTERVAL;
+	android_rewind_capture_snapshot();
 }
 
 int android_rewind_select_restore(android_rewind_authoritative_restore *restore)

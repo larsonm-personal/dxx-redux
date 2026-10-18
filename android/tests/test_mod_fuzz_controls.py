@@ -212,6 +212,15 @@ class CampaignControls(unittest.TestCase):
         self.assertEqual(fuzz.classify(1, "ANR in com.dxxredux.app.nsdtest"), "anr")
         self.assertEqual(fuzz.classify(1, "device offline"), "infrastructure_failure")
 
+    def test_successful_case_ignores_unrelated_system_timeout(self):
+        text = (
+            "E PhenotypeFlagCommitter: java.util.concurrent.TimeoutException: Timed out waiting for Task\n"
+            "PASS (file-based, 53/53 steps, 28359ms)"
+        )
+        self.assertEqual(fuzz.classify(0, text), "passed")
+        self.assertEqual(fuzz.classify(0, text, timed_out=True), "timeout")
+        self.assertEqual(fuzz.classify(1, "FAIL: Timeout"), "timeout")
+
     def test_shrinking_keeps_trigger_and_bounds_attempts(self):
         attempts = []
 

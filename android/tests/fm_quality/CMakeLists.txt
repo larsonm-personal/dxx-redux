@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
 project(fm_quality LANGUAGES C CXX)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 get_filename_component(REPO "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 set(SHARED "${REPO}/android/app/src/main/cpp/shared")
 set(EXTRACT "${REPO}/android/app/src/main/cpp/extract")
 include("${REPO}/cmake/ymfm-music.cmake")
+include("${REPO}/cmake/fluidsynth-music.cmake")
 dxx_verified_fetchcontent_declare(tinysoundfont_test TINYSOUNDFONT)
 FetchContent_MakeAvailable(tinysoundfont_test)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS prepare.py
@@ -43,12 +44,27 @@ foreach(variant current float native shipping)
     endif()
     add_executable(
         fm_quality_${variant}
-        "${driver}" "${synth}" "${SHARED}/music_soundfont.c" "${SHARED}/tsf_impl.c"
-        "${SHARED}/hmp_android_shared.c" "${SHARED}/midi_seek_timeline.c")
+        "${driver}"
+        "${synth}"
+        "${EXTRACT}/test_music_fluid.cpp"
+        "${SHARED}/music_fluid.cpp"
+        "${SHARED}/music_soundfont.c"
+        "${SHARED}/tsf_impl.c"
+        "${SHARED}/hmp_android_shared.c"
+        "${SHARED}/midi_seek_timeline.c")
     target_include_directories(
         fm_quality_${variant} PRIVATE "${EXTRACT}/test_hmp_stubs" "${SHARED}"
                                       "${tinysoundfont_test_SOURCE_DIR}")
     target_compile_definitions(fm_quality_${variant} PRIVATE DXX_MUSIC_SYNTH_TEST_TRACE)
+    target_link_libraries(fm_quality_${variant} PRIVATE libfluidsynth)
+    if(WIN32)
+        add_custom_command(
+            TARGET fm_quality_${variant}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libfluidsynth>
+                    $<TARGET_FILE_DIR:fm_quality_${variant}>
+            COMMENT "Place FluidSynth beside the FM quality renderer")
+    endif()
     if(variant STREQUAL float)
         target_link_libraries(fm_quality_${variant} PRIVATE quality_float_player)
     else()
