@@ -22,6 +22,7 @@ VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_o
                   'master:test_launcher_media_controls_generated', 'python:test_music_spectra.py',
                   'shareware:test_auto_level_cheats#d2'}
 
+PUBLIC_LAN_IDS = {'master:test_lan_launch_preparation_public_shareware'}
 BASIC_USE_IDS = {'master:test_demo_import_public_basic_use', 'master:test_lan_launch_preparation_public_shareware'}
 
 FIRST_PLAY_IDS = {
@@ -194,7 +195,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
 
 def select_public_campaign(plan, policy, catalog, campaign):
     """A fixed asset-free sample; never inherits rotating retail selections or progress."""
-    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS, 'basic-use': BASIC_USE_IDS}[campaign]
+    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS, 'basic-use': BASIC_USE_IDS, 'lan-smoke': PUBLIC_LAN_IDS}[campaign]
     entries = policy_entries(policy)
     if not campaign_ids <= entries.keys():
         raise ValueError(f'Missing {campaign} campaign suites')
@@ -210,6 +211,20 @@ def select_public_campaign(plan, policy, catalog, campaign):
     plan['estimated_seconds'] = sum(entry['estimated_seconds'] for entry in selected)
     plan['lanes'] = [lane for lane in LANES if any(entry['lane'] == lane for entry in selected)]
     plan['batch_id'] = digest({key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')})
+    validate_plan(plan, policy)
+    return plan
+
+
+def omit_pr_public_lan(plan, policy):
+    """The unconditional PR workflow owns this one public LAN test"""
+    plan = dict(plan)
+    plan['tests'] = [entry for entry in plan['tests'] if entry['id'] not in PUBLIC_LAN_IDS]
+    plan['estimated_seconds'] = sum(entry['estimated_seconds'] for entry in plan['tests'])
+    plan['lanes'] = [lane for lane in LANES if any(entry['lane'] == lane for entry in plan['tests'])]
+    identity = {key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')}
+    if plan.get('retail_assets'):
+        identity['retail_assets'] = plan['retail_assets']
+    plan['batch_id'] = digest(identity)
     validate_plan(plan, policy)
     return plan
 
@@ -626,7 +641,8 @@ def main():
         p.add_argument('--' + option, required=True)
     p.add_argument('--state')
     p.add_argument('--validation', action='store_true')
-    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities', 'basic-use'))
+    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities', 'basic-use', 'lan-smoke'))
+    p.add_argument('--omit-pr-public-lan', action='store_true')
     p = sub.add_parser('retail-check')
     for option in ('plan', 'policy', 'lane'):
         p.add_argument('--' + option, required=True)
@@ -691,6 +707,10 @@ def main():
                 raise ValueError('Choose validation or campaign, not both')
             plan = select_public_campaign(plan, read(args.policy), read(args.catalog), args.campaign)
             state = fresh_state(plan['target_sha'], plan['catalog_hash'])
+        if args.omit_pr_public_lan:
+            if not (args.validation or args.campaign == 'first-play'):
+                raise ValueError('LAN omission is only for extended PR selections')
+            plan = omit_pr_public_lan(plan, read(args.policy))
         validate_plan(plan, read(args.policy))
         write(args.output, plan)
         write(args.state_output, state)

@@ -4,7 +4,7 @@ run-name: >-
 
 on:
   schedule:
-    - cron: '15 2 * * *'
+    - cron: "15 2 * * *"
       timezone: America/Los_Angeles
   pull_request:
     types: [opened, synchronize, reopened, labeled]
@@ -108,6 +108,8 @@ jobs:
           elif [[ "$VALIDATION" == true ]]; then
             validation=(--validation)
           fi
+          # The unconditional public LAN workflow owns this test on every PR
+          if [[ "$VALIDATION" == true ]]; then validation+=(--omit-pr-public-lan); fi
           python3 control/android/tests/nightly_tooling_sweep.py plan \
             --target-sha "$TARGET_SHA" --catalog plan/catalog.json \
             --policy control/android/tests/nightly_tooling_policy.json --state plan/previous.json \
@@ -349,7 +351,6 @@ jobs:
             summary-state.json
             published-state.json
           retention-days: 30
-
 
   publish:
     name: Save nightly progress (scheduled/manual only)
