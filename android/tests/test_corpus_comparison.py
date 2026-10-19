@@ -55,7 +55,7 @@ class ComparisonTests(unittest.TestCase):
         after["engine"][self.identity][1]["frames"] = 101
         self.assertEqual("nondeterministic", self.classification(self.outcome(), after))
         after = self.outcome("failed")
-        after["process"][self.identity] = [{"exit_code": 0}, {"exit_code": 2}]
+        after["process"][self.identity] = [{"exit_code": 0, "timed_out": False}, {"exit_code": 2, "timed_out": False}]
         self.assertEqual("nondeterministic", self.classification(self.outcome("failed"), after))
         after["process"][self.identity].pop()
         self.assertEqual("incomplete", self.classification(self.outcome("failed"), after))
@@ -70,6 +70,10 @@ class ComparisonTests(unittest.TestCase):
             self.assertEqual("incomplete", self.classification(self.outcome("failed"), after))
         before = self.outcome("failed")
         before["process"][self.identity] = [{"exit_code": 1, "timed_out": False}] * 2
+        self.assertEqual("incomplete", self.classification(before, self.outcome()))
+        before = self.outcome("timeout")
+        before["process"][self.identity] = [{"exit_code": -1, "timed_out": True}] * 2
+        before["engine"][self.identity] = []
         self.assertEqual("incomplete", self.classification(before, self.outcome()))
         before = self.outcome("failed")
         before["engine"][self.identity].pop()

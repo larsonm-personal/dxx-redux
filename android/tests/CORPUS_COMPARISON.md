@@ -60,7 +60,9 @@ Improvements, regressions, other semantic changes, repeat disagreement, unsuppor
 results, uncovered entries and incomplete collection remain visible separately.
 Unbound matcen history is retained in metadata artifacts but the existing semantic
 projection excludes its accidental masks/models. Metadata changes are counted even
-when routing is unchanged. Missing shards or assigned rows fail aggregation. Regressions,
+when routing is unchanged. A supervisor timeout is incomplete evidence, even when the other head succeeds;
+a native simulation timeout with complete results remains a comparable outcome.
+Missing shards or assigned rows fail aggregation. Regressions,
 nondeterminism and incomplete rows fail the report job. An otherwise green report
 can still contain uncovered rows and requires manual review; it is not blanket
 baseline acceptance. All generated results are artifacts, never committed references.
