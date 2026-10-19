@@ -1,0 +1,123 @@
+name: Public two-player LAN smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-lan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Select public LAN smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out trusted controller
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Check out exact target catalog
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: target
+          persist-credentials: false
+      - name: Prepare host dependency location
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+      - name: Export authoritative master catalog
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path plan -Force | Out-Null
+          & ./target/android/run_all_tests.ps1 -ListTests -ExtendedGraphics | Set-Content plan/catalog.json -Encoding utf8
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Select the public two-player smoke
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 control/android/tests/nightly_tooling_sweep.py plan \
+            --target-sha "$TARGET_SHA" --catalog plan/catalog.json \
+            --policy control/android/tests/nightly_tooling_policy.json --campaign lan-smoke \
+            --output plan/plan.json --state-output plan/state.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-plan
+          path: plan/
+          retention-days: 30
+
+  android:
+    name: Two-player lobby to game
+    needs: plan
+    uses: ./.github/workflows/android-nightly-tooling.yml
+    with:
+      target_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+      plan_artifact: nightly-plan
+      lane: android-dual
+      retail_assets: false
+
+  finish:
+    name: Require public LAN pass
+    needs: [plan, android]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: nightly-plan
+          path: plan
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        continue-on-error: true
+        with:
+          pattern: nightly-results-*
+          path: receipts
+      - name: Reconcile terminal results and retain unresolved failures
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PLAN_RESULT: ${{ needs.plan.result }}
+          ANDROID_RESULT: ${{ needs.android.result }}
+        run: |
+          [[ "$PLAN_RESULT" == success && "$ANDROID_RESULT" == success ]]
+          # A setup-only, missing, or unexpectedly empty selection cannot pass
+          python3 - <<'PYTHON'
+          import json, os
+          p = json.load(open('plan/plan.json'))
+          assert [e['id'] for e in p['tests']] == ['master:test_lan_launch_preparation_public_shareware']
+          assert p['lanes'] == ['android-dual']
+          assert p['target_sha'] == os.environ['TARGET_SHA']
+          PYTHON
+          status=0
+          mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
+          python3 control/android/tests/nightly_tooling_sweep.py reconcile \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
+            --state plan/state.json --output summary-state.json --require-selected --receipts "${receipts[@]}" > summary.json || status=$?
+          {
+            echo '## Public two-player LAN smoke'
+            echo 'Exact target, completed owners, unresolved failures, blocked suites and exclusions:'
+            echo '```json'
+            cat summary.json
+            echo '```'
+            echo 'Both peers must reach in-game through the launcher lobby flow; missing or skipped results fail this check.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: always()
+        with:
+          name: nightly-sweep-summary
+          path: |
+            summary.json
+            summary-state.json
+          retention-days: 30

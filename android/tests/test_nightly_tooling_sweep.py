@@ -209,6 +209,72 @@ class SweepTests(unittest.TestCase):
                 with self.subTest(status=status), patch.object(sys, 'argv', argv), patch('builtins.print'):
                     self.assertEqual(sweep.main(), 0 if status == 'PASS' else 1)
 
+    def test_lan_smoke_discards_old_pass_and_requires_all_fresh_receipts(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        _, state = sweep.plan_batch(SHA, catalog, policy)
+        state['records'] = {ident: {'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/1'}
+                            for ident in sweep.PUBLIC_LAN_IDS}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, value in (('policy', policy), ('catalog', catalog), ('previous', state)):
+                sweep.write(root / name, value)
+            argv = ['sweep', 'plan', '--campaign', 'lan-smoke', '--target-sha', SHA,
+                    '--catalog', str(root / 'catalog'), '--policy', str(root / 'policy'), '--state', str(root / 'previous'),
+                    '--output', str(root / 'plan'), '--state-output', str(root / 'state')]
+            with patch.object(sys, 'argv', argv), patch.object(sweep.retail, 'configured_identity', return_value=None), patch('builtins.print'):
+                self.assertEqual(sweep.main(), 0)
+            plan = sweep.read(root / 'plan')
+            self.assertEqual(plan['target_sha'], SHA)
+            self.assertEqual({e['id'] for e in plan['tests']}, sweep.PUBLIC_LAN_IDS)
+            self.assertEqual(sweep.read(root / 'state')['records'], {})
+            receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
+            receipt['lane'] = 'android-dual'
+            argv = ['sweep', 'reconcile', '--require-selected', '--plan', str(root / 'plan'), '--policy', str(root / 'policy'),
+                    '--state', str(root / 'state'), '--output', str(root / 'out'), '--receipts', str(root / 'receipt')]
+            for status in (None, 'BLOCKED', 'NOT_RUN', 'RUNNING', 'TIMEOUT', 'FAIL', 'PASS'):
+                receipt['results'] = [{'id': e['id'], 'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/2'} for e in plan['tests']]
+                if status is None:
+                    receipt['results'].pop()
+                else:
+                    receipt['results'][0]['status'] = status
+                sweep.write(root / 'receipt', receipt)
+                with self.subTest(status=status), patch.object(sys, 'argv', argv), patch('builtins.print'):
+                    self.assertEqual(sweep.main(), 0 if status == 'PASS' else 1)
+
+    def test_extended_pr_omits_only_unconditional_lan(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, value in (('policy', policy), ('catalog', catalog)):
+                sweep.write(root / name, value)
+            for selection, expected in ((['--validation'], sweep.VALIDATION_IDS),
+                                        (['--campaign', 'first-play'], sweep.FIRST_PLAY_IDS)):
+                argv = ['sweep', 'plan', *selection, '--omit-pr-public-lan', '--target-sha', SHA,
+                        '--catalog', str(root / 'catalog'), '--policy', str(root / 'policy'),
+                        '--output', str(root / 'plan'), '--state-output', str(root / 'state')]
+                with self.subTest(selection=selection), patch.object(sys, 'argv', argv), patch('builtins.print'), patch.object(sweep.retail, 'configured_identity', return_value=None):
+                    self.assertEqual(sweep.main(), 0)
+                    plan = sweep.read(root / 'plan')
+                    self.assertEqual({e['id'] for e in plan['tests']}, expected - sweep.PUBLIC_LAN_IDS)
+                    self.assertEqual(set(plan['lanes']), {e['lane'] for e in plan['tests']})
+                    sweep.validate_plan(plan, policy)
+
+    def test_lan_smoke_rejects_absent_or_private_suite(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': 'test_lan_launch_preparation_public_shareware'}]}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        chosen = sweep.select_public_campaign(plan, policy, catalog, 'lan-smoke')
+        self.assertEqual(chosen['lanes'], ['android-dual'])
+        self.assertEqual(len(chosen['tests']), 1)
+        self.assertNotIn('retail_assets', chosen)
+        with self.assertRaisesRegex(ValueError, 'absent'):
+            sweep.select_public_campaign(plan, policy, {'tests': []}, 'lan-smoke')
+        next(e for e in policy['suites'] if e['id'] in sweep.PUBLIC_LAN_IDS)['fixture'] = 'retail-base'
+        with self.assertRaisesRegex(ValueError, 'asset-free'):
+            sweep.select_public_campaign(plan, policy, catalog, 'lan-smoke')
+
     def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
         self.assertIn('options: [nightly, first-play, graphics-capabilities, basic-use]', workflow)
@@ -287,6 +353,46 @@ class SweepTests(unittest.TestCase):
         self.assertIn("bash android/get_deps/helpers/get_linux_build_prereqs.sh", setup)
         self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
         self.assertIn("timeout-minutes: 10", setup)
+
+    @unittest.skipUnless(sys.platform == "linux", "Native replay setup uses Bash")
+    def test_native_replay_setup_builds_only_selected_games_before_emulator_boot(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        name = "      - name: Build selected native replay executables before test budget"
+        self.assertLess(workflow.index(name), workflow.index("      - name: Prepare isolated headless emulators"))
+        step = workflow.split(name, 1)[1].split("      - name:", 1)[0]
+        script = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+
+        def entry(game, lane="android-single", suite="test_auto_level_cheats"):
+            return {"lane": lane, "owner": "shareware", "args": {"game": game, "suite": suite}}
+
+        cases = [
+            ([entry("d2"), entry("d1", lane="android-dual"), entry("d1", suite="test_death")], ["d2"]),
+            ([entry("d1"), entry("d1-in-d2"), entry("d2")], ["d1", "d2"]),
+            ([], None),
+        ]
+        for selected, expected in cases:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                for path in ("target", "plan", "results/setup"):
+                    (root / path).mkdir(parents=True)
+                sweep.write(root / "plan/plan.json", {"tests": selected})
+                (root / "target/run-linux-build.sh").write_text('printf "%s\\n" "$*" >> ../build-calls\n')
+                result = subprocess.run(
+                    ["bash", "-c", script],
+                    cwd=root / "target",
+                    env={**os.environ, "SWEEP_LANE": "android-single"},
+                    capture_output=True,
+                    text=True,
+                )
+                if expected is None:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertFalse((root / "build-calls").exists())
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        (root / "build-calls").read_text().splitlines(),
+                        [f"--target {game} --game-only --jobs 2" for game in expected],
+                    )
 
     @unittest.skipUnless(sys.platform == 'linux', 'Native replay display setup runs in the Linux Android job')
     def test_native_replay_display_wraps_unchanged_executor_only_when_selected(self):

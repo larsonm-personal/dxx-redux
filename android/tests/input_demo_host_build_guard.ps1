@@ -141,7 +141,10 @@ function Get-InputDemoLatestSourceFileStamp {
     foreach ($root in (Get-InputDemoFreshnessSourceRoots -RepoRoot $RepoRoot -GameName $GameName)) {
         $candidate = Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
             Where-Object {
-                $_.Extension -in @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl', '.cmake') -or $_.Name -eq 'CMakeLists.txt'
+                # Nested fixture builds contain generated CMake scripts and compiler probes
+                $_.FullName -notmatch '[\\/]CMakeFiles[\\/]' -and
+                $_.Name -notin @('cmake_install.cmake', 'CTestTestfile.cmake') -and
+                ($_.Extension -in @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl', '.cmake') -or $_.Name -eq 'CMakeLists.txt')
             } |
             Sort-Object -Property LastWriteTimeUtc -Descending |
             Select-Object -First 1
