@@ -235,6 +235,33 @@ jobs:
             sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri
             command -v xvfb-run
           } 2>&1 | tee ../results/setup/native-replay-prerequisites.log
+      - name: Build selected native replay executables before test budget
+        if: steps.selection.outputs.native_replay == 'true'
+        timeout-minutes: 20
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON' > ../results/setup/native-replay-games.txt
+          import json, os
+          plan = json.load(open('../plan/plan.json'))
+          games = set()
+          for test in plan['tests']:
+              if test.get('lane') != os.environ['SWEEP_LANE'] or test.get('owner') != 'shareware':
+                  continue
+              if test.get('args', {}).get('suite') not in ('test_auto_level_cheats', 'test_auto_level_demos'):
+                  continue
+              game = test['args']['game']
+              if game not in ('d1', 'd2', 'd1-in-d2'):
+                  raise ValueError('Unsupported native replay game')
+              games.add('d1' if game == 'd1' else 'd2')
+          if not games:
+              raise ValueError('Native replay setup selected no games')
+          print('\n'.join(sorted(games)))
+          PYTHON
+          while IFS= read -r game; do
+            bash ./run-linux-build.sh --target "$game" --game-only --jobs 2
+          done < ../results/setup/native-replay-games.txt 2>&1 | tee ../results/setup/native-replay-build.log
       - name: Provision emulator image
         if: inputs.lane != 'jvm'
         id: emulator

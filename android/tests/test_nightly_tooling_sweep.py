@@ -288,6 +288,46 @@ class SweepTests(unittest.TestCase):
         self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
         self.assertIn("timeout-minutes: 10", setup)
 
+    @unittest.skipUnless(sys.platform == "linux", "Native replay setup uses Bash")
+    def test_native_replay_setup_builds_only_selected_games_before_emulator_boot(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        name = "      - name: Build selected native replay executables before test budget"
+        self.assertLess(workflow.index(name), workflow.index("      - name: Prepare isolated headless emulators"))
+        step = workflow.split(name, 1)[1].split("      - name:", 1)[0]
+        script = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+
+        def entry(game, lane="android-single", suite="test_auto_level_cheats"):
+            return {"lane": lane, "owner": "shareware", "args": {"game": game, "suite": suite}}
+
+        cases = [
+            ([entry("d2"), entry("d1", lane="android-dual"), entry("d1", suite="test_death")], ["d2"]),
+            ([entry("d1"), entry("d1-in-d2"), entry("d2")], ["d1", "d2"]),
+            ([], None),
+        ]
+        for selected, expected in cases:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                for path in ("target", "plan", "results/setup"):
+                    (root / path).mkdir(parents=True)
+                sweep.write(root / "plan/plan.json", {"tests": selected})
+                (root / "target/run-linux-build.sh").write_text('printf "%s\\n" "$*" >> ../build-calls\n')
+                result = subprocess.run(
+                    ["bash", "-c", script],
+                    cwd=root / "target",
+                    env={**os.environ, "SWEEP_LANE": "android-single"},
+                    capture_output=True,
+                    text=True,
+                )
+                if expected is None:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertFalse((root / "build-calls").exists())
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        (root / "build-calls").read_text().splitlines(),
+                        [f"--target {game} --game-only --jobs 2" for game in expected],
+                    )
+
     @unittest.skipUnless(sys.platform == 'linux', 'Native replay display setup runs in the Linux Android job')
     def test_native_replay_display_wraps_unchanged_executor_only_when_selected(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
