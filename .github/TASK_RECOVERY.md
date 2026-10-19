@@ -109,7 +109,52 @@ Global Git configuration can be read-only. Where permitted, use command-scoped
 `git -c key=value ...` or repository-local configuration instead of retrying
 writes to the global file. Keep secrets out of configuration arguments.
 
-## 6. Inspect CI evidence before diagnosing or rerunning
+## 6. Separate task admission failures from GitHub access
+
+On 2026-10-19, attempts to resume or create coding tasks failed before execution
+because automatic review reported capacity/timeouts. GitHub connector reads and
+authentication still worked. Repeated backoff did not restore task admission;
+this was not evidence of a GitHub credential failure or a failed build.
+
+Use a bounded retry for a transient capacity/timeout error, then identify the
+failing layer and check another permitted route. Confirm whether an uncertain
+request created a task or changed remote state before repeating it. Never use an
+alternate route to bypass a denied review, permission check or security control.
+Working read access does not authorize writes.
+
+The successful alternative used the existing authorized GitHub connector and an
+isolated local scratch directory:
+
+1. Read the exact source commit and tree. Fetch source files and required
+   dependencies through the connector at pinned revisions, preserving paths.
+   Keep scratch work separate from active checkouts; do not copy credentials.
+2. Implement and test the change locally. Record commands, exit codes and the
+   coverage actually exercised. Unit tests do not establish full-corpus replay
+   or Android integration coverage.
+3. Before publication, verify authorization for the exact repository and topic
+   branch. For new work, branch from the verified current base. For resumed
+   work, preserve the original topic head as the parent.
+4. Use `create_tree` with `base_tree_sha` from that parent and inline content
+   for only the reviewed changed files, preserving file modes. Use
+   `create_commit` with the original head as its parent; inspect the resulting
+   tree/diff so unrelated files are not dropped or changed.
+5. Fetch the raw Git commit and verify both author and committer name/email
+   against the authorized identity, plus the parent, tree and message. Check
+   that no unintended co-author trailers were added. A profile or PR display
+   name is not a substitute for this check.
+6. Advance only the authorized topic ref with `update_ref`, `force=false`
+   and `expected_sha` equal to its original head. If the head changed, stop
+   and reconcile instead of overwriting it. Fetch the ref afterward and verify
+   it equals the new commit SHA, even if the write response was lost.
+7. Reuse or open the authorized PR, then inspect checks and Actions runs for
+   that exact SHA through terminal status. A stale PR cache is not evidence
+   that a write succeeded or that the new commit passed CI.
+
+This route needed no new login, credential transfer or security-setting change.
+It did not require pushing to `cmake` or merging; those remain separate actions
+requiring explicit authorization.
+
+## 7. Inspect CI evidence before diagnosing or rerunning
 
 Prefer the newly authorized GitHub connector for Actions logs and artifacts.
 In the 2026-10-18 PC setup, it retrieved PR #93 rerun job `117739476608` logs and
