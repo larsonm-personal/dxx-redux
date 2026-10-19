@@ -47,6 +47,27 @@ class RouteMetadataSchedulingTest {
     }
 
     @Test
+    fun automapDutyCompletionToleratesStorageFailureAndCanRetry() {
+        val root = temporaryFolder.newFolder()
+        val control = RouteMetadataInGameCpuPolicy.controlFile(root)
+        assertTrue(RouteMetadataInGameCpuPolicy.publish(root, RouteMetadataInGameCpuPolicy.dutyPercent(true, true)))
+        assertEquals("100\n", control.readText())
+
+        // A file in place of filesDir deterministically simulates unavailable storage, even as root
+        assertTrue(control.delete())
+        assertTrue(root.delete())
+        root.writeText("blocked")
+        assertFalse(RouteMetadataInGameCpuPolicy.publish(root, RouteMetadataInGameCpuPolicy.dutyPercent(false, true)))
+        assertFalse(RouteMetadataInGameCpuPolicy.publish(root, RouteMetadataInGameCpuPolicy.dutyPercent(true, true)))
+
+        assertTrue(root.delete())
+        assertTrue(root.mkdir())
+        assertTrue(RouteMetadataInGameCpuPolicy.publish(root, RouteMetadataInGameCpuPolicy.dutyPercent(false, true)))
+        assertEquals("10\n", control.readText())
+        assertEquals(listOf(control), root.listFiles()!!.toList())
+    }
+
+    @Test
     fun completeCurrentLevelSkipsDirectlyToNextWork() {
         val complete = RouteMetadataCurrentWork.forReadiness("complete")
         val partial = RouteMetadataCurrentWork.forReadiness("next_ready")

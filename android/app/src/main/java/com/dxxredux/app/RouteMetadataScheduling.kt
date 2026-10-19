@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.util.Log
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.io.RandomAccessFile
 import java.util.Locale
 
@@ -64,9 +65,14 @@ internal object RouteMetadataInGameCpuPolicy {
     fun publish(
         filesDir: File,
         dutyPercent: Int,
-    ) {
-        AtomicFilePublication.writeUtf8(controlFile(filesDir), "${dutyPercent.coerceIn(1, 100)}\n")
-    }
+    ): Boolean =
+        try {
+            AtomicFilePublication.writeUtf8(controlFile(filesDir), "${dutyPercent.coerceIn(1, 100)}\n")
+            true
+        } catch (_: IOException) {
+            // Optional control writes must not prevent current-level completion or cancellation
+            false
+        }
 }
 
 internal object RouteMetadataPreemption {

@@ -879,7 +879,10 @@ class MainActivity :
                     routeMetadataAutomapOpen,
                 )
             if (dutyPercent == routeMetadataPublishedDutyPercent) return
-            RouteMetadataInGameCpuPolicy.publish(filesDir, dutyPercent)
+            if (!RouteMetadataInGameCpuPolicy.publish(filesDir, dutyPercent)) {
+                Log.w("DXX-RouteMetadata", "Could not publish route metadata CPU duty: storage unavailable")
+                return
+            }
             routeMetadataPublishedDutyPercent = dutyPercent
             RouteMetadataDiagnostics.log(
                 "Route metadata in-game cpu_duty_percent=$dutyPercent " +

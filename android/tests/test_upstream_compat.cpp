@@ -5883,12 +5883,17 @@ static void test_guidebot_source()
 	d_free(bank.data);
 	bytes disk_robot(480);
 	for (size_t i = 0; i < disk_robot.size(); ++i) disk_robot[i] = static_cast<unsigned char>(i * 37 + 19);
+	// Empty nonnegative offsets are part of exact HAM patch preconditions
+	set_short(disk_robot, 296, 0);
+	set_short(disk_robot, 298, 685);
 	write_fixture("robot-codec.bin", disk_robot);
 	PHYSFS_file *robot_file = PHYSFS_openRead("robot-codec.bin");
 	robot_info decoded = {};
 	require(robot_file && robot_info_read_n(&decoded, 1, robot_file) == 1 && PHYSFS_tell(robot_file) == 480,
 	        "runtime robot sound widths do not change disk decoding");
 	PHYSFS_close(robot_file);
+	require(decoded.anim_states[0][0].n_joints == 0 && decoded.anim_states[0][0].offset == 685,
+	        "robot loader preserves empty nonnegative joint offsets for exact HAM patches");
 	robot_file = PHYSFS_openWrite("robot-roundtrip.bin");
 	require(robot_file && robot_info_write_n(&decoded, 1, robot_file) && PHYSFS_tell(robot_file) == 480,
 	        "robot writer emits the original fixed disk record");
