@@ -85,6 +85,9 @@ internal class LobbyLatencyChecks(
                 }
                 LobbyService.startDiscovery(context, "LatencyHost")
                 LobbyService.hostLobby("LatencyHost", "d2", "d2", "coop", 4)
+                check(LobbyService.isHosting.value) {
+                    "Latency fixture did not establish its initial lobby: ${LobbyService.diagnostics.value}"
+                }
                 check(entered.await(3, TimeUnit.SECONDS))
                 repeat(3) {
                     val started = System.nanoTime()

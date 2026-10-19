@@ -142,12 +142,12 @@ fn validate_mission_requirement(game_info: &serde_json::Value) -> Result<(), &'s
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
     match kind {
-        "wrapper" => {
+        "builtin" | "wrapper" => {
             let size = requirement
                 .get("size_bytes")
                 .and_then(serde_json::Value::as_u64)
                 .filter(|size| *size > 0)
-                .ok_or("invalid mission wrapper size")?;
+                .ok_or("invalid mission content size")?;
             let hash = bounded_string("sha256", 64, false)?;
             if hash.len() != 64
                 || !hash
@@ -155,21 +155,31 @@ fn validate_mission_requirement(game_info: &serde_json::Value) -> Result<(), &'s
                     .iter()
                     .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(byte))
             {
-                return Err("invalid mission wrapper hash");
+                return Err("invalid mission content hash");
             }
-            let filename = bounded_string("wrapper_filename", 255, false)?;
-            if matches!(filename, "." | "..")
-                || filename
-                    .chars()
-                    .any(|value| value.is_control() || matches!(value, '/' | '\\'))
-            {
-                return Err("invalid mission wrapper filename");
-            }
-            if offer && size > 256 * 1024 * 1024 {
-                return Err("offered mission wrapper exceeds transfer limit");
+            if kind == "builtin" {
+                if offer
+                    || requirement
+                        .get("wrapper_filename")
+                        .is_some_and(|value| !value.is_null())
+                {
+                    return Err("built-in mission cannot be offered as a wrapper");
+                }
+            } else {
+                let filename = bounded_string("wrapper_filename", 255, false)?;
+                if matches!(filename, "." | "..")
+                    || filename
+                        .chars()
+                        .any(|value| value.is_control() || matches!(value, '/' | '\\'))
+                {
+                    return Err("invalid mission wrapper filename");
+                }
+                if offer && size > 256 * 1024 * 1024 {
+                    return Err("offered mission wrapper exceeds transfer limit");
+                }
             }
         }
-        "builtin" | "loose" => {
+        "loose" => {
             if offer
                 || requirement
                     .get("size_bytes")
@@ -178,7 +188,7 @@ fn validate_mission_requirement(game_info: &serde_json::Value) -> Result<(), &'s
                     .get("sha256")
                     .is_some_and(|value| !value.is_null())
             {
-                return Err("non-wrapper mission cannot be offered or hashed");
+                return Err("loose mission cannot be offered or hashed");
             }
         }
         _ => return Err("invalid mission source kind"),
@@ -1753,6 +1763,7 @@ async fn handle_authenticated_message(
             transfer_id,
             attempt,
             failure_code,
+            game_data_warning,
         } => {
             let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
             if let Some(lobby_id) = lobby_id {
@@ -1799,6 +1810,7 @@ async fn handle_authenticated_message(
                             transfer_id,
                             attempt,
                             failure_code,
+                            game_data_warning,
                         });
                     }
                     broadcast_lobby_update(&lobby, state);
@@ -2862,6 +2874,34 @@ mod tests {
     use crate::lobby::{ConnectionType, LobbyPlayer};
     use crate::protocol::ConnectionCandidate;
     use uuid::Uuid;
+
+    #[test]
+    fn test_mission_content_identity_for_builtin_and_wrapper() {
+        for kind in ["builtin", "wrapper"] {
+            let mut info = serde_json::json!({
+                "game": "d2", "mission": "custom",
+                "mission_requirement": {
+                    "schema": 1, "revision": "identity", "game": "d2", "mission_key": "custom",
+                    "display_name": "Custom", "kind": kind,
+                    "size_bytes": 42, "sha256": "ab".repeat(32), "offer_available": false
+                }
+            });
+            if kind == "wrapper" {
+                info["mission_requirement"]["wrapper_filename"] = serde_json::json!("custom.zip");
+            }
+            assert!(validate_mission_requirement(&info).is_ok());
+            for invalid_hash in [serde_json::Value::Null, serde_json::json!("invalid")] {
+                let mut changed = info.clone();
+                changed["mission_requirement"]["sha256"] = invalid_hash;
+                assert!(validate_mission_requirement(&changed).is_err());
+            }
+            for invalid_size in [0, -1] {
+                let mut changed = info.clone();
+                changed["mission_requirement"]["size_bytes"] = serde_json::json!(invalid_size);
+                assert!(validate_mission_requirement(&changed).is_err());
+            }
+        }
+    }
 
     fn make_player(candidates: Vec<(&str, &str)>, nat_type: Option<&str>) -> LobbyPlayer {
         LobbyPlayer {

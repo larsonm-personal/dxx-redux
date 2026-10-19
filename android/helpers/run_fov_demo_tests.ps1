@@ -25,20 +25,26 @@ try {
         Adb -AdbArgs @('logcat', '-c') | Out-Null
         & (Join-Path $PSScriptRoot 'run_test.ps1') -Game $gameName -ScriptName test_fov_demo_compatibility.jsonc -TimeoutSeconds 240 -Params @{DEMO_NAME = $name } *>&1 |
             Tee-Object -FilePath (Join-Path $destination 'android.txt')
-        if ($LASTEXITCODE -ne 0) { throw "Android demo round trip failed for $gameName" }
+        $roundTripExitCode = $LASTEXITCODE
         Adb -AdbArgs @('logcat', '-d') | Set-Content (Join-Path $destination 'logcat.txt') -Encoding utf8NoBOM
-        foreach ($extension in @('.dximdemo', '.dximdemo.rngtrace.jsonl', '.dem')) {
-            # Launch reconciliation moves demos into the engine projection
-            # Export the managed source, which stays stable across launches
-            $sourcePaths = @(Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'find', 'files/imported/sets/default/.content/entries', '-name', "$name$extension"))
-            if ($sourcePaths.Count -ne 1) { throw "Expected one managed source for $name$extension" }
-            $remote = $sourcePaths[0].Trim()
-            # Base64 keeps binary classic demos intact through PowerShell pipelines
-            $encoded = Adb -AdbArgs @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $remote)
-            $bytes = [Convert]::FromBase64String(($encoded -join ''))
-            if (!$bytes.Length) { throw "Empty demo export: $remote" }
-            [IO.File]::WriteAllBytes((Join-Path $destination ('fov_cpu_compat' + $extension)), $bytes)
+        try {
+            foreach ($extension in @('.dximdemo', '.dximdemo.rngtrace.jsonl', '.dem')) {
+                # Launch reconciliation moves demos into the engine projection
+                # Export the managed source, which stays stable across launches
+                $sourcePaths = @(Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'find', 'files/imported/sets/default/.content/entries', '-name', "$name$extension"))
+                if ($sourcePaths.Count -ne 1) { throw "Expected one managed source for $name$extension" }
+                $remote = $sourcePaths[0].Trim()
+                # Base64 keeps binary classic demos intact through PowerShell pipelines
+                $encoded = Adb -AdbArgs @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $remote)
+                $bytes = [Convert]::FromBase64String(($encoded -join ''))
+                if (!$bytes.Length) { throw "Empty demo export: $remote" }
+                [IO.File]::WriteAllBytes((Join-Path $destination ('fov_cpu_compat' + $extension)), $bytes)
+            }
+        } catch {
+            if ($roundTripExitCode -eq 0) { throw }
+            Write-Warning "Could not export every failed recording companion: $_"
         }
+        if ($roundTripExitCode -ne 0) { throw "Android demo round trip failed for $gameName; recordings and logs: $destination" }
         Write-Output "PASS: $gameName recording and classic playback; companions: $destination"
     }
 } finally {

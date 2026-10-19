@@ -7363,6 +7363,29 @@ net_udp_level_sync(void)
 	return(0);
 }
 
+// Check the installed mission before a network-selected level reaches LoadLevel
+static int net_udp_join_level_available(void)
+{
+	if (Netgame.levelnum != 0 && Netgame.levelnum <= Last_level && Netgame.levelnum >= Last_secret_level)
+		return 1;
+
+	con_printf(CON_URGENT, "Cannot join: mission='%s' host_level=%d local_last_level=%d local_last_secret_level=%d",
+	           Netgame.mission_name, Netgame.levelnum, Last_level, Last_secret_level);
+#ifdef __ANDROID__
+	if (net_join_wait_active())
+		net_join_wait_end();
+#endif
+	Network_status = NETSTAT_MENU;
+	Game_mode = GM_GAME_OVER;
+	net_udp_close();
+	nm_messagebox(TXT_ERROR, 1, TXT_OK,
+	              "Cannot join: host level %d is not installed.\n\n"
+	              "Your mission has levels 1-%d\nand %d secret levels.\n\n"
+	              "Install the same game data as the host,\nthen try joining again.",
+	              Netgame.levelnum, Last_level, -Last_secret_level);
+	return 0;
+}
+
 int
 net_udp_do_join_game(ubyte join_as_obs)
 {
@@ -7382,6 +7405,9 @@ net_udp_do_join_game(ubyte join_as_obs)
 		nm_messagebox(NULL, 1, TXT_OK, TXT_MISSION_NOT_FOUND);
 		return 0;
 	}
+
+	if (!net_udp_join_level_available())
+		return 0;
 
 	switch (net_udp_can_join_netgame(&Netgame, join_as_obs))
 	{
@@ -7421,6 +7447,8 @@ net_udp_do_join_game(ubyte join_as_obs)
 #ifdef __ANDROID__
 	if (net_join_wait_active()) {
 		while (net_join_wait_prepare()) {
+			if (!net_udp_join_level_available())
+				break;
 			coop_world_visit_sync(net_join_wait_visit());
 			N_players = 0;
 			Network_rejoined = 0;

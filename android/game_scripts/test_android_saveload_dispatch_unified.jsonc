@@ -153,6 +153,20 @@
     },
     { "action": "introspect" },
 
+    // Prepare route metadata before saving so the restore assertion measures a
+    // rescan instead of racing cold background analysis at gameplay priority
+    { "action": "key", "key": "tab", "when": "d2" },
+    { "action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000, "when": "d2" },
+    { "action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100, "when": "d2" },
+    {
+        "action": "wait_for",
+        "expect": { "guidebot.route_next_waypoint_pending": false },
+        "timeout_ms": 240000,
+        "when": "d2",
+    },
+    { "action": "key", "key": "escape", "when": "d2" },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000, "when": "d2" },
+
     // Wait for the next frame after rebuilding the game window during a restore
     { "action": "set_debug", "field": "android_game_request", "value": "quick_save", "post_delay_ms": 1000 },
     { "action": "set_debug", "field": "android_game_request", "value": "difficulty:3", "post_delay_ms": 300 },

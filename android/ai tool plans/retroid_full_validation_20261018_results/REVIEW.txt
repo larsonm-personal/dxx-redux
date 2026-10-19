@@ -1,0 +1,235 @@
+RETROID POCKET 4 PRO VALIDATION - COMPLETE, 2026-10-19
+
+Device: Retroid_Pocket_4_Pro, serial JYPR42510121028, Android API 33, Mali-G77
+Isolated application: com.dxxredux.app.nsdtest
+Evidence root: temp/retroid_full_20261018
+
+The full portable single-device profile was executed serially, with extended
+graphics coverage. The original run finished 173 entries: 141 PASS, 32 FAIL,
+191 SKIP, 0 NOT_RUN. Its elapsed 5h 23m includes a host timing/suspension gap
+during random preview. Original outcomes remain intact in
+report_20261018_222300.md and execution_evidence_windows_x64.json.
+
+Latest combined disposition: 160 PASS, 10 FAIL, 194 SKIP across 364 catalog entries.
+The corrected physical profile contains 170 portable tests. 19 original failed
+entries now pass; 3 were invalid physical admissions and are explicitly excluded;
+10 still fail. These are latest outcomes across the documented builds and serial
+reruns, not a single clean all-green run. See final_dispositions.json for every
+catalog entry. Original and retry reports are copied beside this review.
+
+Command:
+pwsh -NoProfile -File android/run_all_tests.ps1 -Serial JYPR42510121028
+  -SingleDevice -FullSuite -ExtendedGraphics -ReportDir temp/retroid_full_20261018
+
+Initial APK SHA256:
+BC374874324D29DE6ABAF3A0F0A3B0A03475BAE1903DD63FBE7E35AC55DA25AA
+The installed APK still matched the frozen APK when the original run ended.
+Frozen rerun APK SHA256:
+2FDA1FA78F445EE5CD8A3C4C249FCCA0BE8394D65273AA3C51EA1D70525D7CC6
+
+This was a dirty working tree at commit 3bab162341dd85dab3bb7978a68d5ab17b99ff4d.
+Concurrent application changes, including mission identity and classic demo
+validation, were preserved. Passes after rebuilding cannot all be attributed
+to test repairs. The original report and the rerun report identify each build.
+
+SCOPE AND LIMITS
+
+The original 191 exclusions comprise 158 host/no-device entries, 16 dual-device,
+6 explicit investigation/caller-configuration entries, 4 extraction, 4 emulator
+crash/network fault fixtures, 2 manual tests and1 server entry. Three additional
+original failures were wrongly admitted to physical testing and are now
+explicit exclusions: controller_touch_hotplug requires uinput and a disposable
+controller environment; demo_import_public_basic_use and first_play explicitly
+require a verified disposable emulator. Extraction remains excluded because
+its child scripts hardcode the regular package and emulator startup.
+
+FullSuite does not mean every optional corpus or endurance profile. The mod
+fuzzer used the default seeded 14-case smoke profile, not overnight fuzzing.
+Mission ZIP batch used its default 3-archive sample. Host geometric physical-route
+simulation is host-only despite the word physical. No two-device networking,
+server integration or host replay corpus is claimed as Retroid coverage.
+
+TEST HARNESS REPAIRS
+
+- Shared selected-target/isolation support and package-scoped broadcasts allow
+  graphics recovery to run against the physical diagnostic app
+- Scoped DXX-DLOG DEBUG overrides restore the original device property in
+  finally. The Retroid global log.tag=I had suppressed records required by
+  several otherwise successful test verifiers. Host checks cover rollback,
+  blank/I/D originals and device selection changes
+- Mission isolation streams required log tags to the host: the small device
+  log ring dropped its first activation during the 95-step campaign
+- Save/load, Counterstrike21 and Obsidian6 fixtures explicitly prepare route
+  metadata in automap before testing their original route assertions
+- Audio measurement provisions its pinned analysis environment. Synthetic
+  preview audio accepts explicit FFmpeg/FFprobe paths or environment variables
+- Headed simulation staging/introspection uses the selected package instead
+  of the regular com.dxxredux.app package
+- Classic demo failures export their recording, input/RNG companions and
+  logcat before propagating the failed playback assertion
+- Instrumentation checks establish the initial hosted-lobby precondition and
+  wait for Compose to present the document-free fixture before checking controls
+- LAN orphan failure evidence is captured before the test app is stopped
+- Random preview separates physical metadata preparation600s from the unchanged
+  live-render 180s deadline, with master 900s. Direct calls now use the existing
+  restored power lease, already held by the full-suite runner
+- LAN orphan checks local UDP 42430 availability before attempting the fixture
+- Three intrinsically emulator-only fixtures are excluded from physical scope
+
+No gameplay assertion was changed to accept an observed incorrect value.
+No edits were made to android/outstanding_bugs.md. Repairs are listed in
+repair_paths.json, with a scoped patch and source hashes in the evidence root.
+The scoped working-tree patch can include preexisting edits in those paths;
+it is not an assertion that every diff line was authored by this validation.
+
+FINAL FOLLOW-UPS
+
+Package documentation passes the complete metadata/recommended/original-byte/
+Back/retry/saved-copy flow after the two fixture fixes. Instrumentation-only
+APK SHA256: DF4CCC7EEF7293772290FD0D9134EEDBCEEB535516E1A6AD3C89C60142B423C5.
+The application APK stayed fixed throughout, verified by a final installed-APK
+pull matching 2FDA1FA78F445EE5CD8A3C4C249FCCA0BE8394D65273AA3C51EA1D70525D7CC6.
+
+Mission isolation passes95/95 gameplay steps and the full streamed verifier:
+exactly 7 activation-owner transitions and7 resident sample checks.
+
+Random preview: exact seed 1999534517 selects -MOON-.zip. The warmed600s-caller
+retry passed in 109s. A subsequent no-power-lease cold attempt was invalidated
+by Android background-service start restrictions after the launcher slept.
+Both result and route caches were explicitly cleared again, and the repaired
+default path then passed:238s preparation, 2s to live introspection, all original
+pixel/palette/geometry/camera/alive/return/cache-cleanup assertions intact.
+Evidence: cold_preview_final.log, cold_preview_fixed_setup.log,
+cold_preview_artifacts/. Failed no-lease evidence remains separate in
+cold_preview_without_power*; the suite's original power lease was already active
+in its main/retry runs, so that direct-call issue does not explain every earlier
+metadata failure.
+
+LAN orphan: UID 10155/com.dxxredux.app.github owned 127.0.0.1:42430 and prevented
+the diagnostic proxy from starting (EADDRINUSE). This was fixture interference,
+not an orphan-restart result. After verifying no GitHub game engine was running,
+its background launcher was temporarily stopped. Both multiplayer-retry and
+Play-button-retry variants then passed healthy return, orphan creation and fresh
+native process assertions. The GitHub launcher was reopened and returned to the
+background afterward; no app data was cleared. Port parsing was checked against
+the real occupied-port capture. Evidence: continuation/lan-orphan-failure/,
+udp_sockets.txt, lan_free_port_final.log, lan_free_port_game_final.log.
+
+Final device state: stay_on_while_plugged_in restored 0, DXX-DLOG per-tag override
+restored blank, GitHub launcher running again, test directory fault permissions
+restored. USB-powered, 100% battery, 25C. See final_device_state.json.
+
+SIGNIFICANT POSITIVE COVERAGE
+
+The original full first-run graphics matrix passed in 17m 27s, including both
+initiating engines and cross-engine accept/cancel/back/timeout/previous/
+unchanged/background/stall/unsupported/crash/rearm behavior. Context loss,
+EGL and MSAA failures, native/menu rendering and overlays also passed.
+High-resolution pack baseline/on/off testing passed across D1, D2 and imported
+D1 modes at 128/256. Retroid live controller rebind passed launcher and native
+checks without changing the game PID. Campaign demo import/autopilot,
+record/rewind restore, all 7 UUD author acceptance levels and corrected D1
+surfaces across both engines passed. Sample mission ZIP import passed 3/3.
+
+Rebuilt-app reruns additionally passed full audio measurement, D1/D2 pause and
+save/load, Counterstrike21, Obsidian6, DXA 12-phase PCM/mixer verification,
+graphics preview, headed/headless semantic parity, co-op session, LAN QR,
+lobby latency and generated media controls. Co-op/QR/latency also benefit from
+the user's concurrent mission-identity changes.
+
+REPRODUCED FINDINGS
+
+1. Texture precedence: test_android_mod_renderer and test_uud_mod_combinations
+   fail in the D2 engine. Higher-priority UUD over KTX2 does not match UUD-alone
+   rendering. All 15 combination states were captured; separate verification
+   passes all 5 native-D1 phases, but D2 and imported D1 fail uud-first because
+   no UUD replacements are rendered. Evidence: retry_current/renderer_failure/,
+   uud_combinations_failure/ and the three uud_verify_*.log files.
+
+2. HAM patch composition: test_android_mod_sounds, test_uud2sp and the D2/Vertigo
+   mod-fuzz cases reject robot 33 AnimState0_0Offset: expected 685, actual 0.
+   Patch operations 580, 575 and606 vary with the composition. Sound-only UUD2SP
+   passes real mixer verification; sound-first reaches gameplay but has no
+   applied metadata. The remaining UUD2SP phases are blocked by that assertion.
+   Evidence: retry_current/sound_failure/, uud2sp_failure/, mod_fuzz_failure/.
+   This shared field mismatch is stronger evidence of a common patch-base/
+   normalized-HAM issue than of three independent sound failures. No patch
+   precondition was relaxed. Imported-D1 fuzz also fails its rendered-highres
+   assertion; whether an occluded lower-priority pack should be required to
+   render remains unresolved and is not classified as a proven engine defect.
+
+3. D1 classic playback: a newly recorded classic demo is rejected by Android.
+   D2 independently passes the full82-step record/playback fixture. Recordings,
+   input/RNG companions and logs are preserved. See the validator qualification
+   below; a structurally accepted recording does not establish actual playback.
+
+4. D1 recovery message: blocked OK publication retains the accepted graphics
+   tuple and ends the process, but no expected launcher recovery message appears.
+   This fails twice in D1. All other17 distinct recovery scenarios pass, including
+   the same blocked-acceptance case in D2. Evidence: retry_current/recovery_failure/,
+   recovery_d1_accept_retry/ and continuation/results.json. No rollback settings
+   or expected message assertion was weakened.
+
+5. Obsidian7: metadata, initial shoot-switch guidance and blue-key door checks
+   pass. After pose_route_guidance and warp-to-me, expected trigger 7/endpoint 321
+   changes to trigger 8/endpoint 379 on the rebuilt app (original trigger 8,
+   endpoint 321). route_problem is empty. Keep this late runtime guidance failure
+   separate from earlier cold metadata prerequisites. Evidence:
+   retry_current/obsidian7_failure_snapshot.json and its owner log.
+
+6. Graphics chooser layout: test_slider_navigation fails before controller
+   navigation because 640x360 at font2.0 leaves <48px usable scrolling area.
+   Both initial and rebuilt instrumentation reproduce it. Preserved layout PNGs
+   show the title/footer/buttons consuming the panel. This is a layout finding;
+   the later slider-navigation assertions were not reached. Evidence:
+   chooser_layout_failure/ and retry_current/test_slider_navigation_*.log.
+
+7. Uneasy4 throughput: test_level_metadata_result_cache_reuse fails twice at
+   the600s child deadline before its first analysis completes. It never reaches
+   the cache-hit assertion. This remains a performance/prerequisite failure,
+   with cache correctness unqualified. See detailed timing below.
+
+The remaining findings affect10 catalog owners, with overlapping native causes.
+Counts of subcases, frames and automation steps are not added to owner totals.
+
+Comparison with full_validation_20261016_results/REVIEW.txt: D2 renderer
+precedence, HAM patch op580/575/606 and the same3 fuzz cases were already
+reproduced on emulators. These are cross-device findings, not evidence of
+Retroid-only or ARM-only defects. The earlier report already qualified the
+imported-D1 lower-priority highres sampling assertion as potentially requiring
+coverage-aware interpretation; that remains unresolved here. Retroid live
+controller rebind passes where the earlier emulator fixture stopped. Retroid
+Obsidian7 reaches actual late guidance assertions that the prior emulator
+attempt could not reach because metadata/startup failed.
+
+Both original and new D1 recordings pass host structural validation (74 and 73
+frames respectively), but actual Android playback rejects them. These use
+different validation/playback paths; a host validator pass does not establish
+runtime compatibility. Raw recordings are preserved in fov_failure/ and
+retry_current/fov_failure/.
+
+Uneasy4 failed twice at the600s child deadline before the first analysis
+completed. Logs show active worker duty 10% and queued background requests
+timing out at 120s. This establishes a throughput/prerequisite problem;
+the cache-hit assertion was never reached, so cache correctness is unresolved.
+
+The original fuzz run and current rerun both passed 11/14 cases. All 7 baseline
+modes passed; failures are all-on imported D1 (highres KTX2 pack not rendered),
+D2 and Vertigo (UUD metadata not applied). Detailed cases/private evidence are
+preserved in mod_fuzz_failure/ and retry_current/mod_fuzz_failure/.
+
+VALIDATION
+
+Current app and instrumentation builds succeeded. Scoped mixed-language
+format/lint passed, as did target/log-session checks, automation catalog,
+suite catalog and simulation-runner discovery/sampling checks. Catalogs:
+364 top-level entries, 426 support scripts, 95 standalone JSON and 260 standalone
+PowerShell entries. The final 23-path mixed-language quality pass, target/session
+checks and git diff --check passed. Catalog integration and automation catalog
+passed after the profile/budget changes. No engine changes were made by this
+validation. Native/app and instrumentation build outcomes belong to the frozen
+artifacts above; concurrent source work remains separate.
+
+All planned device runs, failure triage, harness repairs and final verification
+are complete. The10 failing owners above remain findings for product/fixture
+follow-up; they were not changed into passes by relaxing their assertions.

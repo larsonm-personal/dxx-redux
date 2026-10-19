@@ -121,14 +121,14 @@ class MissionScannerManagedArchiveTest {
 
         assertEquals("PTMC Castaway Redux", mission.displayName)
         assertEquals(imported.filename, mission.wrapperFilename)
-        assertNotNull(mission.archiveSha256)
-        assertTrue(mission.archiveSizeBytes!! > 0L)
+        assertNotNull(mission.contentSha256)
+        assertTrue(mission.contentSizeBytes!! > 0L)
         assertTrue(requirement.isValid)
         assertTrue(requirement.offerAvailable)
         assertTrue(MissionTransferService.hostArchiveAllowed(requirement, manager.modFile(imported.filename)))
 
         val persisted = ModManager(filesDir, setDir = setDir).listMods().single()
-        assertEquals(mission.archiveSha256, persisted.archiveSha256)
+        assertEquals(mission.contentSha256, persisted.archiveSha256)
         assertFalse(persisted.archiveChunkSha256.isEmpty())
     }
 

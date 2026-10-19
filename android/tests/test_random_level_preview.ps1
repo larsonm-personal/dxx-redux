@@ -10,8 +10,9 @@ param(
     [string]$Game = "",
     [int]$Seed = 0,
     [long]$MaxZipBytes = 268435456,
+    [int]$PreparationTimeoutSeconds = 0,
     [int]$TimeoutSeconds = 180,
-    [string]$Serial = "emulator-5554"
+    [string]$Serial
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,7 +28,11 @@ if ($Seed -eq 0) {
     $Seed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue)
 }
 $previousSerial = $env:ANDROID_SERIAL
-$env:ANDROID_SERIAL = $Serial
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
+if ($PreparationTimeoutSeconds -le 0) {
+    $PreparationTimeoutSeconds = if (Test-PhysicalTestTarget) { 600 } else { 180 }
+}
 $deviceZip = "level_preview_smoke_$Seed.zip"
 $deviceScript = "level_preview_smoke_$Seed.jsonc"
 $localScript = Join-Path $androidRoot "temp\level_preview_smoke\$deviceScript"
@@ -37,6 +42,7 @@ $presentedProbeFile = "files/level_preview_presented_probe.json"
 $compositeProbeFile = "files/level_preview_composite_probe.json"
 $requestId = ""
 $previewPassed = $false
+$powerSession = $null
 
 function Read-AppJson {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -46,6 +52,7 @@ function Read-AppJson {
 }
 
 try {
+    $powerSession = Start-AndroidTestPowerSession
     $candidates =
     @(Get-ChildItem -LiteralPath $MissionDir -File -Filter $MissionFile | Where-Object {
             $_.Length -le $MaxZipBytes -and (Test-Path -LiteralPath (Join-Path $_.DirectoryName "$($_.BaseName).json"))
@@ -127,6 +134,13 @@ try {
     $initial = $null
     $presentedProbe = $null
     $compositeProbe = $null
+    # Multi-mission archives need metadata preparation before a preview can launch
+    $prepared = Wait-ForCondition -Description "random preview metadata preparation" -TimeoutSec $PreparationTimeoutSeconds -PollMs 1000 -Condition {
+        $result = Read-AppJson -Path "files/automation_result.json"
+        if ($result -and $result.result -eq "FAIL") { throw "Launcher automation failed: $($result.reason)" }
+        $null -ne (Read-AppJson -Path $selectionFile)
+    }
+    if (-not $prepared) { throw "Preview metadata preparation did not select a level" }
     $ready = Wait-ForCondition -Description "random level preview introspection" -TimeoutSec $TimeoutSeconds -PollMs 1000 -Condition {
         $result = Read-AppJson -Path "files/automation_result.json"
         if ($result -and $result.result -eq "FAIL") { throw "Launcher automation failed: $($result.reason)" }
@@ -375,5 +389,6 @@ try {
     try {
         if (Test-DeviceOnline -Serial $Serial) { Stop-AppAndWait }
     } catch {}
+    Stop-AndroidTestPowerSession -Session $powerSession
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

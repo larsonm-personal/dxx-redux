@@ -23,42 +23,43 @@ internal object MissionCompatibilityResolver {
             return report(requirement, MissionCompatibilityStatus.MISSING)
         }
         return when (requirement.kind) {
-            MissionRequirement.KIND_BUILTIN -> {
-                if (local.isBuiltin) {
-                    report(requirement, MissionCompatibilityStatus.MATCH)
-                } else {
-                    report(requirement, MissionCompatibilityStatus.HASH_MISMATCH, "builtin_shadowed")
-                }
-            }
-
             MissionRequirement.KIND_LOOSE -> {
                 report(requirement, MissionCompatibilityStatus.MATCH)
             }
 
-            MissionRequirement.KIND_WRAPPER -> {
-                when {
-                    local.archiveSizeBytes == null || local.archiveSha256 == null -> {
-                        report(requirement, MissionCompatibilityStatus.MISSING)
-                    }
-
-                    local.archiveSizeBytes != requirement.sizeBytes -> {
-                        report(requirement, MissionCompatibilityStatus.SIZE_MISMATCH)
-                    }
-
-                    local.archiveSha256 != requirement.sha256 -> {
-                        report(requirement, MissionCompatibilityStatus.HASH_MISMATCH)
-                    }
-
-                    else -> {
-                        report(requirement, MissionCompatibilityStatus.MATCH)
-                    }
-                }
+            MissionRequirement.KIND_BUILTIN, MissionRequirement.KIND_WRAPPER -> {
+                resolveContent(requirement, local)
             }
 
             else -> {
                 report(requirement, MissionCompatibilityStatus.ERROR, "unsupported_kind")
             }
         }
+    }
+
+    // Campaign HOGs and mission ZIPs share the same size/SHA-256 comparison
+    internal fun resolveContent(
+        requirement: MissionRequirement,
+        local: MissionScanner.MissionInfo,
+    ): MissionStatusReport {
+        if (requirement.kind == MissionRequirement.KIND_BUILTIN && !local.isBuiltin) {
+            return report(requirement, MissionCompatibilityStatus.HASH_MISMATCH, "builtin_shadowed")
+        }
+        val status =
+            when {
+                local.contentSizeBytes == null || local.contentSha256 == null -> MissionCompatibilityStatus.MISSING
+                local.contentSizeBytes != requirement.sizeBytes -> MissionCompatibilityStatus.SIZE_MISMATCH
+                local.contentSha256 != requirement.sha256 -> MissionCompatibilityStatus.HASH_MISMATCH
+                else -> MissionCompatibilityStatus.MATCH
+            }
+        // Built-in differences are advisory; downloading and verifying a mission ZIP remains required
+        val warning =
+            requirement.kind == MissionRequirement.KIND_BUILTIN &&
+                status in setOf(MissionCompatibilityStatus.SIZE_MISMATCH, MissionCompatibilityStatus.HASH_MISMATCH)
+        return report(
+            requirement,
+            if (warning) MissionCompatibilityStatus.MATCH else status,
+        ).copy(gameDataWarning = warning)
     }
 
     fun enableMatchingWrapper(
@@ -114,21 +115,70 @@ internal object MissionCompatibilityResolver {
 
 internal fun MissionCompatibilityStatus.userLabel(progress: MissionStatusReport? = null): String =
     when (this) {
-        MissionCompatibilityStatus.CHECKING -> "Checking mission"
-        MissionCompatibilityStatus.MATCH -> "Mission ready"
-        MissionCompatibilityStatus.INSTALLED_DISABLED -> "Matching mission is disabled"
-        MissionCompatibilityStatus.MISSING -> "Missing mission"
-        MissionCompatibilityStatus.SIZE_MISMATCH -> "Warning: mission size differs"
-        MissionCompatibilityStatus.HASH_MISMATCH -> "Warning: mission hash differs"
-        MissionCompatibilityStatus.UNSUPPORTED_SOURCE -> "Mission cannot be synchronized"
-        MissionCompatibilityStatus.ERROR -> "Mission check failed"
-        MissionCompatibilityStatus.QUEUED -> "Mission download queued"
-        MissionCompatibilityStatus.DOWNLOADING -> transferStatusLabel("Downloading mission", progress)
-        MissionCompatibilityStatus.PAUSED -> "Mission download paused"
-        MissionCompatibilityStatus.RETRYING -> "Retrying mission download"
-        MissionCompatibilityStatus.FAILED_RESUMABLE -> "Mission download interrupted"
-        MissionCompatibilityStatus.VERIFYING -> transferStatusLabel("Verifying mission", progress)
-        MissionCompatibilityStatus.FINALIZING -> transferStatusLabel("Finalizing mission", progress)
+        MissionCompatibilityStatus.CHECKING -> {
+            "Checking mission"
+        }
+
+        MissionCompatibilityStatus.MATCH -> {
+            if (progress?.gameDataWarning == true) {
+                "Warning: game data differs from host. Some levels may be unavailable. " +
+                    "Import the same game data as the host."
+            } else {
+                "Mission ready"
+            }
+        }
+
+        MissionCompatibilityStatus.INSTALLED_DISABLED -> {
+            "Matching mission is disabled"
+        }
+
+        MissionCompatibilityStatus.MISSING -> {
+            "Missing mission"
+        }
+
+        MissionCompatibilityStatus.SIZE_MISMATCH -> {
+            "Warning: mission size differs"
+        }
+
+        MissionCompatibilityStatus.HASH_MISMATCH -> {
+            "Warning: mission hash differs"
+        }
+
+        MissionCompatibilityStatus.UNSUPPORTED_SOURCE -> {
+            "Mission cannot be synchronized"
+        }
+
+        MissionCompatibilityStatus.ERROR -> {
+            "Mission check failed"
+        }
+
+        MissionCompatibilityStatus.QUEUED -> {
+            "Mission download queued"
+        }
+
+        MissionCompatibilityStatus.DOWNLOADING -> {
+            transferStatusLabel("Downloading mission", progress)
+        }
+
+        MissionCompatibilityStatus.PAUSED -> {
+            "Mission download paused"
+        }
+
+        MissionCompatibilityStatus.RETRYING -> {
+            "Retrying mission download"
+        }
+
+        MissionCompatibilityStatus.FAILED_RESUMABLE -> {
+            "Mission download interrupted"
+        }
+
+        MissionCompatibilityStatus.VERIFYING -> {
+            transferStatusLabel("Verifying mission", progress)
+        }
+
+        MissionCompatibilityStatus.FINALIZING -> {
+            transferStatusLabel("Finalizing mission", progress)
+        }
     }
 
 internal fun MissionStatusReport.percentText(): String = "${(progress * 100f).toInt()}%"

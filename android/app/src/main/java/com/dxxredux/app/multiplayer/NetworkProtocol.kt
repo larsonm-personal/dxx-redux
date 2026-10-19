@@ -70,6 +70,7 @@ data class MissionStatusMsg(
     @SerialName("transfer_id") val transferId: String? = null,
     val attempt: Int = 0,
     @SerialName("failure_code") val failureCode: String? = null,
+    @SerialName("game_data_warning") val gameDataWarning: Boolean = false,
 )
 
 @Serializable

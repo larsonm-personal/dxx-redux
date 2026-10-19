@@ -51,6 +51,26 @@ internal class PackageDocumentChecks(
 
     private fun visible(text: String) = waitFor("Missing text: $text") { node(text) != null }
 
+    private fun reveal(text: String) {
+        fun scroll(node: AccessibilityNodeInfo): Boolean {
+            if (node.isScrollable && node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) return true
+            for (i in 0 until node.childCount) {
+                if (node.getChild(i)?.let(::scroll) == true) return true
+            }
+            return false
+        }
+        waitFor("Could not scroll to control: $text") {
+            if (node(text) != null) {
+                true
+            } else {
+                instrumentation.uiAutomation.rootInActiveWindow?.let(::scroll)
+                instrumentation.waitForIdleSync()
+                Thread.sleep(100)
+                false
+            }
+        }
+    }
+
     fun run(verifyPublished: Boolean = false) {
         val context = instrumentation.targetContext
         val root = File(context.cacheDir, "document-integration-${System.nanoTime()}").apply { mkdirs() }
@@ -210,10 +230,13 @@ internal class PackageDocumentChecks(
             visible("View readme")
             instrumentation.runOnMainSync { mode.value = 2 }
             instrumentation.waitForIdleSync()
-            check(node("View docs") == null && node("View readme") == null)
+            waitFor("Documentation controls remained visible for a document-free mod") {
+                node("Document fixture") != null && node("View docs") == null && node("View readme") == null
+            }
 
             instrumentation.runOnMainSync { mode.value = 3 }
             visible("Download")
+            reveal("View docs")
             click("View docs")
             visible("Injected unavailable documentation")
             click("Retry")
@@ -227,6 +250,7 @@ internal class PackageDocumentChecks(
             visible("Recommended mods")
             instrumentation.runOnMainSync { installed.value = true }
             visible("Installed")
+            reveal("View docs")
             click("View docs")
             visible("Original author instructions")
             visible("Published documentation")

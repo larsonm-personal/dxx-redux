@@ -46,9 +46,39 @@ class MissionContentProtocolTest {
                 displayName = "Descent 2",
                 kind = MissionRequirement.KIND_BUILTIN,
                 offerAvailable = true,
+                sizeBytes = 42L,
+                sha256 = hash,
             )
 
         assertFalse(builtin.isValid)
+    }
+
+    @Test
+    fun builtinEditionRoundTripsWithoutEnablingDownloads() {
+        val requirement =
+            MissionRequirement(
+                revision = "$hash:42:d2:descent",
+                game = "d2",
+                missionKey = "descent",
+                displayName = "Descent: First Strike",
+                kind = MissionRequirement.KIND_BUILTIN,
+                sizeBytes = 42L,
+                sha256 = hash,
+            )
+        assertTrue(requirement.isValid)
+        assertEquals(
+            requirement,
+            missionRequirementFromGameInfo(
+                buildJsonObject {
+                    requirement.toGameInfoFields().forEach(::put)
+                },
+            ),
+        )
+        assertFalse(requirement.copy(sizeBytes = 0).isValid)
+        assertFalse(requirement.copy(sha256 = "invalid").isValid)
+        assertFalse(requirement.copy(sizeBytes = null, sha256 = null).isValid)
+        assertFalse(requirement.copy(kind = MissionRequirement.KIND_LOOSE).isValid)
+        assertFalse(requirement.copy(offerAvailable = true).isValid)
     }
 
     @Test

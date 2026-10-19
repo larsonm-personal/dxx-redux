@@ -1,0 +1,87 @@
+[
+  {
+    "name": "package-documents",
+    "exit_code": 0,
+    "elapsed_seconds": 9
+  },
+  {
+    "name": "fov-d2",
+    "exit_code": 0,
+    "elapsed_seconds": 41
+  },
+  {
+    "name": "lan-orphan",
+    "exit_code": 1,
+    "elapsed_seconds": 47
+  },
+  {
+    "name": "mission-isolation",
+    "exit_code": 0,
+    "elapsed_seconds": 131
+  },
+  {
+    "name": "random-preview-moon",
+    "exit_code": 0,
+    "elapsed_seconds": 109
+  },
+  {
+    "name": "recovery-d1-normal_exit",
+    "exit_code": 0,
+    "elapsed_seconds": 40
+  },
+  {
+    "name": "recovery-d1-repair_interrupted",
+    "exit_code": 0,
+    "elapsed_seconds": 40
+  },
+  {
+    "name": "recovery-d1-activity_replaced",
+    "exit_code": 0,
+    "elapsed_seconds": 38
+  },
+  {
+    "name": "recovery-d2-stall",
+    "exit_code": 0,
+    "elapsed_seconds": 40
+  },
+  {
+    "name": "recovery-d2-record_unreadable",
+    "exit_code": 0,
+    "elapsed_seconds": 35
+  },
+  {
+    "name": "recovery-d2-publication_blocked",
+    "exit_code": 0,
+    "elapsed_seconds": 33
+  },
+  {
+    "name": "recovery-d2-rebuild_failure",
+    "exit_code": 0,
+    "elapsed_seconds": 45
+  },
+  {
+    "name": "recovery-d2-menu_abandoned",
+    "exit_code": 0,
+    "elapsed_seconds": 37
+  },
+  {
+    "name": "recovery-d2-accept_publication_blocked",
+    "exit_code": 0,
+    "elapsed_seconds": 39
+  },
+  {
+    "name": "recovery-d2-normal_exit",
+    "exit_code": 0,
+    "elapsed_seconds": 40
+  },
+  {
+    "name": "recovery-d2-repair_interrupted",
+    "exit_code": 0,
+    "elapsed_seconds": 39
+  },
+  {
+    "name": "recovery-d2-activity_replaced",
+    "exit_code": 0,
+    "elapsed_seconds": 35
+  }
+]

@@ -101,6 +101,9 @@ internal class LanQrChecks(
                 .startDiscovery(context, "QrTest")
             com.dxxredux.app.lobby.LobbyService
                 .hostLobby("QrTest", "d2", "d2", "anarchy", 4)
+            check(com.dxxredux.app.lobby.LobbyService.isHosting.value) {
+                "QR fixture did not establish its initial lobby: ${com.dxxredux.app.lobby.LobbyService.diagnostics.value}"
+            }
         }
         try {
             context.startActivity(implicit)

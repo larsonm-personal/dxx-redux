@@ -34,6 +34,8 @@ internal class CoopSessionChecks(
                     missionKey = "d2",
                     displayName = "Counterstrike",
                     kind = MissionRequirement.KIND_BUILTIN,
+                    sizeBytes = 42L,
+                    sha256 = "ab".repeat(32),
                 )
             val game =
                 GameLaunchInfo(

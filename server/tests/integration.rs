@@ -2074,6 +2074,8 @@ async fn test_mission_requirement_rejects_invalid_base_offer() {
                     "mission_key": "d2",
                     "display_name": "Descent 2",
                     "kind": "builtin",
+                    "size_bytes": 42,
+                    "sha256": "ab".repeat(32),
                     "offer_available": true
                 }
             }
@@ -2083,6 +2085,52 @@ async fn test_mission_requirement_rejects_invalid_base_offer() {
 
     assert_eq!(response["type"], "ERROR");
     assert_eq!(response["code"], "INVALID_PARAMS");
+}
+
+#[tokio::test]
+async fn test_builtin_mission_hash_and_advisory_warning_round_trip() {
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "BuiltinHost").await;
+    let hash = "ab".repeat(32);
+    let revision = format!("{hash}:42:d2:descent");
+    let created = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY", "game": "d2", "max_players": 4,
+            "game_info": {
+                "game": "d2", "mission": "descent", "mode": "coop",
+                "mission_requirement": {
+                    "schema": 1, "revision": revision, "game": "d2", "mission_key": "descent",
+                    "display_name": "Descent: First Strike", "kind": "builtin",
+                    "size_bytes": 42, "sha256": hash, "offer_available": false
+                }
+            }
+        }),
+    )
+    .await;
+    assert_eq!(created["type"], "LOBBY_UPDATE");
+    let lobby_id = uuid::Uuid::parse_str(created["lobby_id"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        server.state.lobbies.get(&lobby_id).unwrap().game_info["mission_requirement"]["sha256"]
+            .as_str(),
+        Some(hash.as_str())
+    );
+    let update = send_recv(
+        &mut host,
+        json!({
+            "type": "MISSION_STATUS", "revision": revision, "status": "match",
+            "total_bytes": 42, "game_data_warning": true
+        }),
+    )
+    .await;
+    assert_eq!(update["type"], "LOBBY_UPDATE");
+    assert_eq!(
+        update["players"][0]["mission_status"]["game_data_warning"],
+        true
+    );
+    let ready = send_recv(&mut host, json!({ "type": "READY", "ready": true })).await;
+    assert_eq!(ready["players"][0]["ready"], true);
 }
 
 #[tokio::test]

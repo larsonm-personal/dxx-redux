@@ -403,6 +403,7 @@ $manualTests = @(
 
 # Infrastructure requirement classification
 $twoEmuTests = @("test_mp", "test_lan", "test_coop_pause", "test_independent_checkpoints", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
+$twoEmuTests += 'test_coop_join_missing_level'
 $serverTests = @("test_bot_client")
 $tierServerManagedDualEmuTests = @()
 
@@ -480,7 +481,7 @@ $testTimeouts = @{
     "test_guidebot_simulation_headed_headless_parity" = 1800
     "test_guided_shot_annotations"        = 600
     "test_primary_target_grates"         = 600
-    "test_random_level_preview"          = 600
+    "test_random_level_preview"          = 900
     "test_robot_preview"                 = 600
     "test_route_regeneration_audit"       = 600
     "test_vertigo_metadata_checkpoints"   = 600
@@ -520,6 +521,7 @@ $testTimeouts = @{
     "test_mp"                             = 240
     "test_lan"                            = 900 # Cold save/reload and repeated ghost-inventory returns
     "test_coop_pause"                      = 600
+    "test_coop_join_missing_level"         = 900
     "test_device_network_campaign"        = 21600
     "test_server_integration"             = 600
     "test_secret_area_baseline_diff"      = 60
@@ -600,6 +602,7 @@ $noInfraTests = @(
     "test_download_verification",
     "test_d2xxl_sound_format",
     "test_d2xxl_texture_merge",
+    "test_classic_demo_compatibility",
     "test_classic_trigger_demo",
     "test_pickup_autoselect_parity",
     "test_d1_network_assets",
@@ -1106,7 +1109,17 @@ if ($Filter) {
 $extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_probe")
 $profileSkipped = @()
 if (Test-PhysicalTestTarget) {
-    $emulatorOnlyTests = @('test_xcrash_native_report', 'test_coop_save_compatibility', 'test_lan_active_discovery')
+    $allTests = @($allTests | Where-Object {
+            if ($_.Name -ne 'test_controller_touch_hotplug') { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'requires emulator uinput hotplug with no built-in controller' }
+            return $false
+        })
+    $allTests = @($allTests | Where-Object {
+            if ($_.Name -notin @('test_demo_import_public_basic_use', 'test_demo_import_public_first_play')) { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'cold first-play fixture requires a verified disposable emulator' }
+            return $false
+        })
+    $emulatorOnlyTests = @('test_xcrash_native_report', 'test_coop_save_compatibility', 'test_coop_join_missing_level', 'test_lan_active_discovery')
     $allTests = @($allTests | Where-Object {
             if ($_.Name -notin $emulatorOnlyTests) { return $true }
             $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'requires emulator crash injection or emulator console networking' }

@@ -85,17 +85,21 @@ data class MissionRequirement(
                 displayName.none(Char::isISOControl) &&
                 revision.length in 1..160 &&
                 kind in setOf(KIND_BUILTIN, KIND_WRAPPER, KIND_LOOSE) &&
-                if (kind == KIND_WRAPPER) {
+                if (kind == KIND_BUILTIN || kind == KIND_WRAPPER) {
                     sizeBytes != null && sizeBytes > 0L &&
                         sha256 != null && MissionContentIdentity.isValidSha256(sha256) &&
-                        !wrapperFilename.isNullOrBlank() && wrapperFilename.length <= 255 &&
-                        wrapperFilename.none { it.isISOControl() || it == '/' || it == '\\' } &&
-                        wrapperFilename !in setOf(".", "..") &&
-                        (
-                            descriptorPath == null ||
-                                (descriptorPath.length <= 512 && descriptorPath.none(Char::isISOControl))
-                        ) &&
-                        (!offerAvailable || sizeBytes <= MISSION_TRANSFER_MAX_BYTES)
+                        if (kind == KIND_BUILTIN) {
+                            !offerAvailable && wrapperFilename == null
+                        } else {
+                            !wrapperFilename.isNullOrBlank() && wrapperFilename.length <= 255 &&
+                                wrapperFilename.none { it.isISOControl() || it == '/' || it == '\\' } &&
+                                wrapperFilename !in setOf(".", "..") &&
+                                (
+                                    descriptorPath == null ||
+                                        (descriptorPath.length <= 512 && descriptorPath.none(Char::isISOControl))
+                                ) &&
+                                (!offerAvailable || sizeBytes <= MISSION_TRANSFER_MAX_BYTES)
+                        }
                 } else {
                     sizeBytes == null && sha256 == null && !offerAvailable
                 }
@@ -117,6 +121,7 @@ data class MissionStatusReport(
     val attempt: Int = 0,
     @SerialName("failure_code") val failureCode: String? = null,
     @SerialName("bytes_per_second") val bytesPerSecond: Long = 0L,
+    @SerialName("game_data_warning") val gameDataWarning: Boolean = false,
 ) {
     val progress: Float
         get() =

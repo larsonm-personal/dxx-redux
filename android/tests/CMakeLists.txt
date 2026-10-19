@@ -291,6 +291,21 @@ add_executable(
 add_executable(test_kconfig_android_shared test_kconfig_android_shared.c
                                            "${DXX_TEST_SHARED_SOURCE_DIR}/kconfig_android_shared.c")
 
+add_executable(test_classic_demo_string test_classic_demo_string.c)
+target_include_directories(test_classic_demo_string PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(test_classic_demo_player test_classic_demo_player.c)
+target_include_directories(test_classic_demo_player PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(test_classic_demo_world test_classic_demo_world.c)
+target_include_directories(test_classic_demo_world PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(test_classic_demo_weapon test_classic_demo_weapon.c)
+target_include_directories(test_classic_demo_weapon PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(test_classic_demo_laser test_classic_demo_laser.c)
+target_include_directories(test_classic_demo_laser PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
 add_executable(
     test_android_virtual_gamepad test_android_virtual_gamepad.c
                                  "${DXX_TEST_SHARED_SOURCE_DIR}/android_virtual_gamepad.c")
@@ -582,6 +597,11 @@ set(DXX_HOST_TEST_TARGETS
     test_playsave_layout
     test_playsave_text
     test_kconfig_android_shared
+    test_classic_demo_string
+    test_classic_demo_player
+    test_classic_demo_world
+    test_classic_demo_weapon
+    test_classic_demo_laser
     test_android_virtual_gamepad
     test_android_rewind_policy
     test_android_rewind_capture

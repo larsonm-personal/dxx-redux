@@ -101,6 +101,39 @@ try {
     Assert-Equal $callCount $script:powerCalls.Count 'No emulator power calls'
     $env:ANDROID_SERIAL = 'phone2'
 
+    $script:logPriority = ''
+    $script:unverifiedLogPriority = $false
+    function Adb {
+        param($AdbArgs)
+        if ($AdbArgs[1] -eq 'getprop' -and $script:unverifiedLogPriority) { return 'I' }
+        if ($AdbArgs[1] -eq 'getprop') { return $script:logPriority }
+        if ($AdbArgs[1] -eq 'setprop') { $script:logPriority = $AdbArgs[3] }
+    }
+    function Adb-Dev {
+        param($Serial, $AdbArgs)
+        Assert-Equal 'phone2' $Serial 'Restore log priority on the original target'
+        if ($AdbArgs[1] -eq 'getprop') { return $script:logPriority }
+        if ($AdbArgs[1] -eq 'setprop') {
+            $script:logPriority = if ($AdbArgs[3] -eq "''") { '' } else { $AdbArgs[3] }
+        }
+    }
+    foreach ($originalPriority in @('', 'I', 'D')) {
+        $script:logPriority = $originalPriority
+        $logSession = Start-AndroidTestDebugLogSession
+        Assert-Equal 'D' $script:logPriority 'Enable diagnostic debug records'
+        $env:ANDROID_SERIAL = 'emulator-5554'
+        Stop-AndroidTestDebugLogSession -Session $logSession
+        Assert-Equal $originalPriority $script:logPriority 'Restore prior diagnostic log priority'
+        $env:ANDROID_SERIAL = 'phone2'
+    }
+    $script:logPriority = 'I'
+    $script:unverifiedLogPriority = $true
+    $failed = $false
+    try { Start-AndroidTestDebugLogSession | Out-Null } catch { $failed = $_ -match 'Cannot enable' }
+    Assert-Equal $true $failed 'Refuse an unverified diagnostic log priority'
+    Assert-Equal 'I' $script:logPriority 'Roll back after log priority verification fails'
+    $script:unverifiedLogPriority = $false
+
     function Confirm-EmulatorHealthWithAdbRecovery { return $false }
     $failed = $false
     try { Ensure-EmulatorHealthy | Out-Null } catch { $failed = $_ -match 'unavailable' }

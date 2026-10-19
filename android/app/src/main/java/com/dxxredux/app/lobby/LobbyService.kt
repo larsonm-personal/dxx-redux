@@ -10,9 +10,11 @@ import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.lanGameReadinessWarning
 import com.dxxredux.app.multiplayer.ClientIdentity
+import com.dxxredux.app.multiplayer.MissionCatalog
 import com.dxxredux.app.multiplayer.MissionCompatibilityResolver
 import com.dxxredux.app.multiplayer.MissionCompatibilityStatus
 import com.dxxredux.app.multiplayer.MissionRequirement
+import com.dxxredux.app.multiplayer.MissionScanner
 import com.dxxredux.app.multiplayer.MissionStatusReport
 import com.dxxredux.app.multiplayer.MissionTransferGrant
 import com.dxxredux.app.multiplayer.MissionTransferService
@@ -511,20 +513,29 @@ object LobbyService {
     private fun defaultMissionRequirement(
         game: String,
         mission: String,
-    ) = MissionRequirement(
-        revision = "builtin:$game:$mission",
-        game = game,
-        missionKey = mission,
-        displayName = mission.ifBlank { if (game == "d1") "Descent: First Strike" else "Base mission" },
-        kind =
-            if (mission in
-                setOf("", "descent", "d2", "d2demo")
-            ) {
-                MissionRequirement.KIND_BUILTIN
-            } else {
-                MissionRequirement.KIND_LOOSE
-            },
-    )
+        mode: String,
+    ): MissionRequirement {
+        // Direct hosting and migration use the same content identity as UI hosts
+        appContext?.let { context ->
+            val sets = FileSetManager(context.filesDir)
+            val catalog = MissionCatalog.scan(context.filesDir, sets.getSetDir(sets.getActive()), game)
+            catalog.find(mission, mode)?.let { return MissionScanner.requirement(game, it, offerDownload = false) }
+        }
+        return MissionRequirement(
+            revision = "builtin:$game:$mission",
+            game = game,
+            missionKey = mission,
+            displayName = mission.ifBlank { if (game == "d1") "Descent: First Strike" else "Base mission" },
+            kind =
+                if (mission in
+                    setOf("", "descent", "d2", "d2demo")
+                ) {
+                    MissionRequirement.KIND_BUILTIN
+                } else {
+                    MissionRequirement.KIND_LOOSE
+                },
+        )
+    }
 
     /**
      * Start hosting a LAN lobby. Begins broadcasting ANNOUNCE every 3 seconds.
@@ -537,7 +548,7 @@ object LobbyService {
         mission: String,
         mode: String,
         maxPlayers: Int,
-        missionRequirement: MissionRequirement = defaultMissionRequirement(game, mission),
+        missionRequirement: MissionRequirement = defaultMissionRequirement(game, mission, mode),
         restrictNonCoopFovToBase: Boolean = false,
         stockVisualsEnforced: Boolean = false,
         omittedVisualModCount: Int = 0,
@@ -618,7 +629,8 @@ object LobbyService {
             game.mission,
             game.mode,
             game.maxPlayers,
-            missionRequirement = game.missionRequirement ?: defaultMissionRequirement(game.game, game.mission),
+            missionRequirement =
+                game.missionRequirement ?: defaultMissionRequirement(game.game, game.mission, game.mode),
             restrictNonCoopFovToBase = game.restrictNonCoopFovToBase,
         )
         if (!_isHosting.value) return
