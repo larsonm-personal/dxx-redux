@@ -1,0 +1,9 @@
+{
+    "base": "3bab162341dd85dab3bb7978a68d5ab17b99ff4d",
+    "candidate": "cecd63fe4951d7134786ae18e24d6335cd70672b",
+    "assets": "5fb5b199f9f8c670cff7b0b4ea7086c8505bbefa",
+    "shards": 4,
+    "repeat": 2,
+    "speed_percent": 160,
+    "workers": 2
+}
