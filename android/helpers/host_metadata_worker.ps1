@@ -12,6 +12,10 @@ function New-MetadataWorker {
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
+    # Both native and Kotlin workers exchange UTF-8, including under hidden Windows parents
+    $startInfo.StandardInputEncoding = [Text.UTF8Encoding]::new($false)
+    $startInfo.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     if ($env:DXX_METADATA_WORKER_DIAGNOSTICS_DIR) {
@@ -19,7 +23,8 @@ function New-MetadataWorker {
     }
     $process = [Diagnostics.Process]::Start($startInfo)
     $worker = @{ Process = $process; ErrorTask = $process.StandardError.ReadToEndAsync(); Executable = $Executable; Arguments = $Arguments
-        Stage = $env:DXX_SANITIZER_STAGE; DiagnosticsDirectory = $env:DXX_METADATA_WORKER_DIAGNOSTICS_DIR; LastRequestId = $null; LastShutdown = $null; LastStandardOutput = '' }
+        Stage = $env:DXX_SANITIZER_STAGE; DiagnosticsDirectory = $env:DXX_METADATA_WORKER_DIAGNOSTICS_DIR; LastRequestId = $null; LastShutdown = $null; LastStandardOutput = ''
+    }
     if ($worker.DiagnosticsDirectory) {
         try {
             $started = @{ pid = $process.Id; stage = $worker.Stage; executable = $Executable; arguments = $Arguments }
@@ -199,7 +204,8 @@ function Stop-MetadataWorkerProcess {
         if ($null -eq $exitCode -and $process.HasExited) { $exitCode = $process.ExitCode }
         $record = [ordered]@{ pid = $workerId; stage = $Worker.Stage; request_id = $Worker.LastRequestId
             executable = $Worker.Executable; exit_code = $exitCode; timed_out = $timedOut
-            shutdown_ms = $watch.ElapsedMilliseconds; stdout_complete = $stdoutComplete; stderr_complete = $stderrComplete; shutdown_error = $shutdownError }
+            shutdown_ms = $watch.ElapsedMilliseconds; stdout_complete = $stdoutComplete; stderr_complete = $stderrComplete; shutdown_error = $shutdownError
+        }
         $Worker.LastShutdown = [pscustomobject]$record
         $Worker.LastStandardOutput = $stdout
         try {

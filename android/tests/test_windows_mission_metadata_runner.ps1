@@ -78,13 +78,14 @@ $worker = $null
 $fixtureLock = $null
 try {
     $fixtureLock = [IO.File]::Open((Join-Path $fixtureRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
-    $descriptor = Join-Path $fixtureRoot 'worker fixture.mn2'
-    [IO.File]::WriteAllText($descriptor, "name = Worker Fixture`ntype = normal`nnum_levels = 1`nlevel01.rl2`n")
+    $displayName = 'Rub' + [char]0x00e9 + 'n ' + [char]0xfffd
+    $descriptor = Join-Path $fixtureRoot ('worker ' + [char]0x00e9 + '.mn2')
+    [IO.File]::WriteAllText($descriptor, "name = $displayName`ntype = normal`nnum_levels = 1`nlevel01.rl2`n")
     $worker = New-MetadataKotlinWorker -CliPath $cli
     $workerPid = $worker.Process.Id
     foreach ($iteration in 1..2) {
         $result = Invoke-MetadataKotlinWorker -Worker $worker -Request ([ordered]@{ op = 'descriptor'; path = $descriptor })
-        if (-not $result.valid -or $result.display_name -ne 'Worker Fixture' -or
+        if (-not $result.valid -or $result.display_name -cne $displayName -or
             @($result.normal_level_files).Count -ne 1 -or $result.normal_level_files[0] -ne 'level01.rl2') {
             throw "Persistent Kotlin descriptor request $iteration returned invalid metadata"
         }

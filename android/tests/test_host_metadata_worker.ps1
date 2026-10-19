@@ -9,6 +9,8 @@ $root = Join-Path $androidRoot ('temp/test_host_metadata_worker-' + [guid]::NewG
 New-Item -ItemType Directory -Path $root -Force | Out-Null
 $fixture = Join-Path $root 'worker.ps1'
 [IO.File]::WriteAllText($fixture, @'
+[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 while ($null -ne ($line = [Console]::ReadLine())) {
     $request = $line | ConvertFrom-Json
     [Console]::WriteLine("request=$($request.request_id)")
@@ -34,11 +36,18 @@ while ($null -ne ($line = [Console]::ReadLine())) {
         [Console]::Error.WriteLine('crash diagnostic')
         exit 23
     }
-    [Console]::WriteLine("DXXMETA`t" + (@{ status = 'ok'; request_id = $request.request_id } | ConvertTo-Json -Compress))
+    [Console]::WriteLine("DXXMETA`t" + (@{ status = 'ok'; request_id = $request.request_id; text = $request.text } | ConvertTo-Json -Compress))
 }
 '@)
-$worker = New-MetadataWorker -Executable (Get-Process -Id $PID).Path -Arguments @('-NoProfile', '-File', $fixture)
+$originalEncoding = [Console]::OutputEncoding
 try {
+    [Console]::OutputEncoding = [Text.Encoding]::GetEncoding(437)
+    $worker = New-MetadataWorker -Executable (Get-Process -Id $PID).Path -Arguments @('-NoProfile', '-File', $fixture)
+} finally { [Console]::OutputEncoding = $originalEncoding }
+try {
+    $unicodeText = 'Rub' + [char]0x00e9 + 'n ' + [char]0xfffd
+    $unicodeResult = Invoke-MetadataWorker -Worker $worker -Request @{ request_id = 'utf8'; action = 'ok'; text = $unicodeText } -RawOutputPath (Join-Path $root 'utf8.json') -LogPath (Join-Path $root 'utf8.log')
+    if ($unicodeResult.text -cne $unicodeText) { throw 'Worker UTF-8 transport depends on parent code page' }
     foreach ($action in @('ok', 'progress', 'stale-progress', 'unchanged-progress', 'malformed-progress', 'timeout', 'ok', 'crash', 'ok')) {
         $requestId = [guid]::NewGuid().ToString('N')
         $log = Join-Path $root "$requestId.log"

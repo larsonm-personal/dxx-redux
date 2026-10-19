@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import sys
 import tempfile
 
@@ -148,6 +149,31 @@ def validate_mission_intent(value: object) -> None:
         raise ValueError("mission_intent declarations are missing required fields: " + ", ".join(missing_declarations))
 
 
+def format_matcen_rows(text: str) -> str:
+    """Match native metadata_json_dump and Kotlin formatMatcenRows at publication.
+
+    The input is our own two-space JSON encoding, so an equally indented closing
+    brace unambiguously ends the block. Escaped text cannot contain a raw newline.
+    """
+    output = []
+    offset = 0
+    for match in re.finditer(r'(?m)^([ ]*)"matcen_regression": \{\n', text):
+        indent = match[1]
+        start = match.end() - 2
+        end = text.index("\n" + indent + "}", start) + len(indent) + 2
+        block = json.loads(text[start:end])
+        inline = lambda value: json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(", ", ": "))
+        rows = []
+        for name, value in block.items():
+            formatted = inline(value)
+            if isinstance(value, list) and value:
+                formatted = "[\n" + ",\n".join(indent + "    " + inline(item) for item in value) + "\n" + indent + "  ]"
+            rows.append(indent + "  " + inline(name) + ": " + formatted)
+        output.append(text[offset:start] + "{\n" + ",\n".join(rows) + "\n" + indent + "}")
+        offset = end
+    return "".join(output) + text[offset:]
+
+
 def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False) -> str:
     value = json.loads(
         text,
@@ -159,7 +185,7 @@ def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False)
             raise ValueError("mission metadata root must be an object or array")
         validate_mission_intent(value)
         value = canonicalize_mission_metadata(value)
-    return (
+    formatted = (
         json.dumps(
             value,
             ensure_ascii=False,
@@ -169,6 +195,7 @@ def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False)
         )
         + "\n"
     )
+    return format_matcen_rows(formatted) if mission_metadata else formatted
 
 
 def read_file(path: pathlib.Path) -> str:

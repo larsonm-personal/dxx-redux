@@ -2258,6 +2258,36 @@ static void test_d1_follow_path_frame()
 		N_polygon_models = 1;
 		Polygon_models[0].rad = F1_0;
 		Robot_info[10] = info;
+		const int old_level_robots = Players[Player_num].num_robots_level;
+		const int old_total_robots = Players[Player_num].num_robots_total;
+		const int old_objects = Highest_object_index;
+		const auto old_rng_calls = d_rand_get_call_count();
+		for (const int id : { -1, N_robot_types, 30, MAX_ROBOT_TYPES })
+			require(create_morph_robot(&Segments[1], &origin, id) == nullptr,
+			        "unavailable factory robots are safely skipped in native D1, imported D1 and D2");
+		for (const int model : { -1, N_polygon_models }) {
+			Robot_info[0].model_num = model;
+			require(create_morph_robot(&Segments[1], &origin, 0) == nullptr,
+			        "factory rejects unavailable models before indexing model storage");
+		}
+		Robot_info[0].model_num = 0;
+		require(Players[Player_num].num_robots_level == old_level_robots &&
+		            Players[Player_num].num_robots_total == old_total_robots &&
+		            Highest_object_index == old_objects && d_rand_get_call_count() == old_rng_calls,
+		        "rejected factory creation does not allocate robots, change kill totals or consume RNG");
+#ifdef DXX_BUILD_DESCENT_II
+		const int old_centers = Num_robot_centers;
+		const auto old_center = RobotCenters[0];
+		Num_robot_centers = 1;
+		RobotCenters[0].robot_flags[0] = (1u << 30) | 1u;
+		RobotCenters[0].robot_flags[1] = 0;
+		require(d1_in_d2_initialize_level_ambience() == (profile == 1),
+		        "a mixed valid/unavailable factory mask does not reject an imported D1 level");
+		require(RobotCenters[0].robot_flags[0] == ((1u << 30) | 1u),
+		        "level initialization preserves authored robot choices and their selection weights");
+		RobotCenters[0] = old_center;
+		Num_robot_centers = old_centers;
+#endif
 		for (const int id : { 0, 10 }) {
 #ifdef DXX_BUILD_DESCENT_II
 			Robot_info[id].behavior = id == 10 ? AIB_RUN_FROM : AIB_NORMAL;

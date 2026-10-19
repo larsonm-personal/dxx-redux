@@ -212,88 +212,21 @@
           "admission": "loaded",
           "capture_status": "complete",
           "declared_disk_count": 1,
-          "engine_limits": {
-            "segments": 9000,
-            "robot_centers": 20,
-            "stations": 140,
-            "robot_types": 85,
-            "polygon_models": 200
-          },
-          "runtime_counts": {
-            "segments": 389,
-            "robot_centers": 1,
-            "stations": 23,
-            "robot_types": 66,
-            "polygon_models": 166
-          },
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 389, "robot_centers": 1, "stations": 23, "robot_types": 66, "polygon_models": 166},
           "disk_records": [
-            {
-              "segment": 388,
-              "station": 0,
-              "robot_flags": [
-                264,
-                262144
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 0
-            }
+            {"segment": 388, "station": 0, "robot_flags": [264, 262144], "hit_points": 0, "interval": 0, "ordinal": 0}
           ],
           "bindings": [
-            {
-              "segment": 388,
-              "generated_ordinal": 0,
-              "serialized_matcen": 0,
-              "serialized_station": 22,
-              "effective_ordinal": 0,
-              "segment_station": 22,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 22
-              }
-            }
+            {"segment": 388, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 22, "effective_ordinal": 0, "segment_station": 22, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 22}}
           ],
           "robot_models": [
-            {
-              "type": 3,
-              "model": 6,
-              "status": "valid_model"
-            },
-            {
-              "type": 8,
-              "model": 15,
-              "status": "valid_model"
-            },
-            {
-              "type": 50,
-              "model": 74,
-              "status": "valid_model"
-            }
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 8, "model": 15, "status": "valid_model"},
+            {"type": 50, "model": 74, "status": "valid_model"}
           ],
           "triggers": [
-            {
-              "index": 4,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 388,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 77,
-                  "segment": 270,
-                  "side": 3
-                }
-              ]
-            }
+            {"index": 4, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 388, "side": 4}], "runtime_source_walls": [{"wall": 77, "segment": 270, "side": 3}]}
           ]
         },
         "route_required_key_mask": 7,
@@ -574,183 +507,30 @@
           "admission": "loaded",
           "capture_status": "complete",
           "declared_disk_count": 3,
-          "engine_limits": {
-            "segments": 9000,
-            "robot_centers": 20,
-            "stations": 140,
-            "robot_types": 85,
-            "polygon_models": 200
-          },
-          "runtime_counts": {
-            "segments": 451,
-            "robot_centers": 3,
-            "stations": 10,
-            "robot_types": 66,
-            "polygon_models": 166
-          },
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 451, "robot_centers": 3, "stations": 10, "robot_types": 66, "polygon_models": 166},
           "disk_records": [
-            {
-              "segment": 154,
-              "station": 0,
-              "robot_flags": [
-                33554440,
-                64
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 0
-            },
-            {
-              "segment": 195,
-              "station": 1,
-              "robot_flags": [
-                269484288,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 1
-            },
-            {
-              "segment": 197,
-              "station": 2,
-              "robot_flags": [
-                269484288,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 2
-            }
+            {"segment": 154, "station": 0, "robot_flags": [33554440, 64], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 195, "station": 1, "robot_flags": [269484288, 524352], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 197, "station": 2, "robot_flags": [269484288, 524352], "hit_points": 0, "interval": 0, "ordinal": 2}
           ],
           "bindings": [
-            {
-              "segment": 154,
-              "generated_ordinal": 0,
-              "serialized_matcen": 0,
-              "serialized_station": 2,
-              "effective_ordinal": 0,
-              "segment_station": 2,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 2
-              }
-            },
-            {
-              "segment": 195,
-              "generated_ordinal": 1,
-              "serialized_matcen": 1,
-              "serialized_station": 3,
-              "effective_ordinal": 1,
-              "segment_station": 3,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 3
-              }
-            },
-            {
-              "segment": 197,
-              "generated_ordinal": 2,
-              "serialized_matcen": 2,
-              "serialized_station": 4,
-              "effective_ordinal": 2,
-              "segment_station": 4,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 4
-              }
-            }
+            {"segment": 154, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 2, "effective_ordinal": 0, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 2}},
+            {"segment": 195, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 3, "effective_ordinal": 1, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 3}},
+            {"segment": 197, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 4, "effective_ordinal": 2, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}}
           ],
           "robot_models": [
-            {
-              "type": 3,
-              "model": 6,
-              "status": "valid_model"
-            },
-            {
-              "type": 8,
-              "model": 15,
-              "status": "valid_model"
-            },
-            {
-              "type": 20,
-              "model": 33,
-              "status": "valid_model"
-            },
-            {
-              "type": 25,
-              "model": 41,
-              "status": "valid_model"
-            },
-            {
-              "type": 28,
-              "model": 45,
-              "status": "valid_model"
-            },
-            {
-              "type": 38,
-              "model": 58,
-              "status": "valid_model"
-            },
-            {
-              "type": 51,
-              "model": 75,
-              "status": "valid_model"
-            }
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 8, "model": 15, "status": "valid_model"},
+            {"type": 20, "model": 33, "status": "valid_model"},
+            {"type": 25, "model": 41, "status": "valid_model"},
+            {"type": 28, "model": 45, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
           ],
           "triggers": [
-            {
-              "index": 0,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 154,
-                  "side": 1
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 24,
-                  "segment": 148,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 3,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 2,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 197,
-                  "side": 3
-                },
-                {
-                  "ordinal": 1,
-                  "segment": 195,
-                  "side": 5
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 54,
-                  "segment": 209,
-                  "side": 5
-                }
-              ]
-            }
+            {"index": 0, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 154, "side": 1}], "runtime_source_walls": [{"wall": 24, "segment": 148, "side": 5}]},
+            {"index": 3, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 197, "side": 3}, {"ordinal": 1, "segment": 195, "side": 5}], "runtime_source_walls": [{"wall": 54, "segment": 209, "side": 5}]}
           ]
         },
         "route_required_key_mask": 7,
@@ -1054,411 +834,46 @@
           "admission": "loaded",
           "capture_status": "complete",
           "declared_disk_count": 7,
-          "engine_limits": {
-            "segments": 9000,
-            "robot_centers": 20,
-            "stations": 140,
-            "robot_types": 85,
-            "polygon_models": 200
-          },
-          "runtime_counts": {
-            "segments": 628,
-            "robot_centers": 7,
-            "stations": 18,
-            "robot_types": 66,
-            "polygon_models": 166
-          },
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 628, "robot_centers": 7, "stations": 18, "robot_types": 66, "polygon_models": 166},
           "disk_records": [
-            {
-              "segment": 121,
-              "station": 0,
-              "robot_flags": [
-                285213248,
-                524288
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 0
-            },
-            {
-              "segment": 345,
-              "station": 1,
-              "robot_flags": [
-                4194888,
-                64
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 1
-            },
-            {
-              "segment": 341,
-              "station": 2,
-              "robot_flags": [
-                301989888,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 2
-            },
-            {
-              "segment": 432,
-              "station": 3,
-              "robot_flags": [
-                301989888,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 3
-            },
-            {
-              "segment": 501,
-              "station": 4,
-              "robot_flags": [
-                285213186,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 4
-            },
-            {
-              "segment": 481,
-              "station": 5,
-              "robot_flags": [
-                50331658,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 5
-            },
-            {
-              "segment": 482,
-              "station": 6,
-              "robot_flags": [
-                50331658,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 6
-            }
+            {"segment": 121, "station": 0, "robot_flags": [285213248, 524288], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 345, "station": 1, "robot_flags": [4194888, 64], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 341, "station": 2, "robot_flags": [301989888, 524352], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 432, "station": 3, "robot_flags": [301989888, 524352], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 501, "station": 4, "robot_flags": [285213186, 524352], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 481, "station": 5, "robot_flags": [50331658, 524352], "hit_points": 0, "interval": 0, "ordinal": 5},
+            {"segment": 482, "station": 6, "robot_flags": [50331658, 524352], "hit_points": 0, "interval": 0, "ordinal": 6}
           ],
           "bindings": [
-            {
-              "segment": 121,
-              "generated_ordinal": 0,
-              "serialized_matcen": 0,
-              "serialized_station": 0,
-              "effective_ordinal": 0,
-              "segment_station": 0,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station"
-            },
-            {
-              "segment": 341,
-              "generated_ordinal": 1,
-              "serialized_matcen": 2,
-              "serialized_station": 4,
-              "effective_ordinal": 1,
-              "segment_station": 4,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 4
-              }
-            },
-            {
-              "segment": 345,
-              "generated_ordinal": 2,
-              "serialized_matcen": 1,
-              "serialized_station": 5,
-              "effective_ordinal": 2,
-              "segment_station": 5,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 5
-              }
-            },
-            {
-              "segment": 432,
-              "generated_ordinal": 3,
-              "serialized_matcen": 3,
-              "serialized_station": 6,
-              "effective_ordinal": 3,
-              "segment_station": 6,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 6
-              }
-            },
-            {
-              "segment": 481,
-              "generated_ordinal": 4,
-              "serialized_matcen": 5,
-              "serialized_station": 12,
-              "effective_ordinal": 4,
-              "segment_station": 12,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 12
-              }
-            },
-            {
-              "segment": 482,
-              "generated_ordinal": 5,
-              "serialized_matcen": 6,
-              "serialized_station": 13,
-              "effective_ordinal": 5,
-              "segment_station": 13,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 13
-              }
-            },
-            {
-              "segment": 501,
-              "generated_ordinal": 6,
-              "serialized_matcen": 4,
-              "serialized_station": 14,
-              "effective_ordinal": 6,
-              "segment_station": 14,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 14
-              }
-            }
+            {"segment": 121, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 341, "generated_ordinal": 1, "serialized_matcen": 2, "serialized_station": 4, "effective_ordinal": 1, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}},
+            {"segment": 345, "generated_ordinal": 2, "serialized_matcen": 1, "serialized_station": 5, "effective_ordinal": 2, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 432, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 6, "effective_ordinal": 3, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 481, "generated_ordinal": 4, "serialized_matcen": 5, "serialized_station": 12, "effective_ordinal": 4, "segment_station": 12, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 12}},
+            {"segment": 482, "generated_ordinal": 5, "serialized_matcen": 6, "serialized_station": 13, "effective_ordinal": 5, "segment_station": 13, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 13}},
+            {"segment": 501, "generated_ordinal": 6, "serialized_matcen": 4, "serialized_station": 14, "effective_ordinal": 6, "segment_station": 14, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 14}}
           ],
           "robot_models": [
-            {
-              "type": 1,
-              "model": 2,
-              "status": "valid_model"
-            },
-            {
-              "type": 3,
-              "model": 6,
-              "status": "valid_model"
-            },
-            {
-              "type": 6,
-              "model": 12,
-              "status": "valid_model"
-            },
-            {
-              "type": 9,
-              "model": 17,
-              "status": "valid_model"
-            },
-            {
-              "type": 22,
-              "model": 37,
-              "status": "valid_model"
-            },
-            {
-              "type": 24,
-              "model": 40,
-              "status": "valid_model"
-            },
-            {
-              "type": 25,
-              "model": 41,
-              "status": "valid_model"
-            },
-            {
-              "type": 28,
-              "model": 45,
-              "status": "valid_model"
-            },
-            {
-              "type": 38,
-              "model": 58,
-              "status": "valid_model"
-            },
-            {
-              "type": 51,
-              "model": 75,
-              "status": "valid_model"
-            }
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 6, "model": 12, "status": "valid_model"},
+            {"type": 9, "model": 17, "status": "valid_model"},
+            {"type": 22, "model": 37, "status": "valid_model"},
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 25, "model": 41, "status": "valid_model"},
+            {"type": 28, "model": 45, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
           ],
           "triggers": [
-            {
-              "index": 1,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 121,
-                  "side": 2
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 17,
-                  "segment": 216,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 4,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 345,
-                  "side": 0
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 65,
-                  "segment": 369,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 7,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 2,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 481,
-                  "side": 2
-                },
-                {
-                  "ordinal": 1,
-                  "segment": 482,
-                  "side": 2
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 99,
-                  "segment": 485,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 9,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 2,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 432,
-                  "side": 2
-                },
-                {
-                  "ordinal": 1,
-                  "segment": 341,
-                  "side": 2
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 104,
-                  "segment": 350,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 10,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 2,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 432,
-                  "side": 2
-                },
-                {
-                  "ordinal": 1,
-                  "segment": 341,
-                  "side": 2
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 105,
-                  "segment": 351,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 11,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 121,
-                  "side": 1
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 108,
-                  "segment": 122,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 14,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 501,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 142,
-                  "segment": 502,
-                  "side": 4
-                }
-              ]
-            }
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 121, "side": 2}], "runtime_source_walls": [{"wall": 17, "segment": 216, "side": 2}]},
+            {"index": 4, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 345, "side": 0}], "runtime_source_walls": [{"wall": 65, "segment": 369, "side": 2}]},
+            {"index": 7, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 481, "side": 2}, {"ordinal": 1, "segment": 482, "side": 2}], "runtime_source_walls": [{"wall": 99, "segment": 485, "side": 2}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 432, "side": 2}, {"ordinal": 1, "segment": 341, "side": 2}], "runtime_source_walls": [{"wall": 104, "segment": 350, "side": 2}]},
+            {"index": 10, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 432, "side": 2}, {"ordinal": 1, "segment": 341, "side": 2}], "runtime_source_walls": [{"wall": 105, "segment": 351, "side": 2}]},
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 121, "side": 1}], "runtime_source_walls": [{"wall": 108, "segment": 122, "side": 5}]},
+            {"index": 14, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 501, "side": 4}], "runtime_source_walls": [{"wall": 142, "segment": 502, "side": 4}]}
           ]
         },
         "route_required_key_mask": 7,
@@ -1690,301 +1105,40 @@
           "admission": "loaded",
           "capture_status": "complete",
           "declared_disk_count": 6,
-          "engine_limits": {
-            "segments": 9000,
-            "robot_centers": 20,
-            "stations": 140,
-            "robot_types": 85,
-            "polygon_models": 200
-          },
-          "runtime_counts": {
-            "segments": 477,
-            "robot_centers": 6,
-            "stations": 18,
-            "robot_types": 66,
-            "polygon_models": 166
-          },
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 477, "robot_centers": 6, "stations": 18, "robot_types": 66, "polygon_models": 166},
           "disk_records": [
-            {
-              "segment": 472,
-              "station": 4,
-              "robot_flags": [
-                0,
-                4
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 0
-            },
-            {
-              "segment": 0,
-              "station": 5,
-              "robot_flags": [
-                0,
-                537133056
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 1
-            },
-            {
-              "segment": 0,
-              "station": 5,
-              "robot_flags": [
-                0,
-                537133056
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 2
-            },
-            {
-              "segment": 474,
-              "station": 3,
-              "robot_flags": [
-                17302026,
-                524352
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 3
-            },
-            {
-              "segment": 473,
-              "station": 4,
-              "robot_flags": [
-                8,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 4
-            },
-            {
-              "segment": 475,
-              "station": 5,
-              "robot_flags": [
-                8,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 5
-            }
+            {"segment": 472, "station": 4, "robot_flags": [0, 4], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 0, "station": 5, "robot_flags": [0, 537133056], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 0, "station": 5, "robot_flags": [0, 537133056], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 474, "station": 3, "robot_flags": [17302026, 524352], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 473, "station": 4, "robot_flags": [8, 0], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 475, "station": 5, "robot_flags": [8, 0], "hit_points": 0, "interval": 0, "ordinal": 5}
           ],
           "bindings": [
-            {
-              "segment": 471,
-              "generated_ordinal": 0,
-              "serialized_matcen": 0,
-              "serialized_station": 13,
-              "effective_ordinal": 0,
-              "segment_station": 13,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 13
-              }
-            },
-            {
-              "segment": 472,
-              "generated_ordinal": 1,
-              "serialized_matcen": 0,
-              "serialized_station": 14,
-              "effective_ordinal": 1,
-              "segment_station": 14,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 14
-              }
-            },
-            {
-              "segment": 473,
-              "generated_ordinal": 2,
-              "serialized_matcen": 2,
-              "serialized_station": 15,
-              "effective_ordinal": 2,
-              "segment_station": 15,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 15
-              }
-            },
-            {
-              "segment": 474,
-              "generated_ordinal": 3,
-              "serialized_matcen": 1,
-              "serialized_station": 16,
-              "effective_ordinal": 3,
-              "segment_station": 16,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 16
-              }
-            },
-            {
-              "segment": 475,
-              "generated_ordinal": 4,
-              "serialized_matcen": 3,
-              "serialized_station": 17,
-              "effective_ordinal": 4,
-              "segment_station": 17,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 17
-              }
-            }
+            {"segment": 471, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 13, "effective_ordinal": 0, "segment_station": 13, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 13}},
+            {"segment": 472, "generated_ordinal": 1, "serialized_matcen": 0, "serialized_station": 14, "effective_ordinal": 1, "segment_station": 14, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 14}},
+            {"segment": 473, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 15, "effective_ordinal": 2, "segment_station": 15, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 15}},
+            {"segment": 474, "generated_ordinal": 3, "serialized_matcen": 1, "serialized_station": 16, "effective_ordinal": 3, "segment_station": 16, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 16}},
+            {"segment": 475, "generated_ordinal": 4, "serialized_matcen": 3, "serialized_station": 17, "effective_ordinal": 4, "segment_station": 17, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 17}}
           ],
           "robot_models": [
-            {
-              "type": 1,
-              "model": 2,
-              "status": "valid_model"
-            },
-            {
-              "type": 3,
-              "model": 6,
-              "status": "valid_model"
-            },
-            {
-              "type": 9,
-              "model": 17,
-              "status": "valid_model"
-            },
-            {
-              "type": 19,
-              "model": 31,
-              "status": "valid_model"
-            },
-            {
-              "type": 24,
-              "model": 40,
-              "status": "valid_model"
-            },
-            {
-              "type": 34,
-              "model": 52,
-              "status": "valid_model"
-            },
-            {
-              "type": 38,
-              "model": 58,
-              "status": "valid_model"
-            },
-            {
-              "type": 50,
-              "model": 74,
-              "status": "valid_model"
-            },
-            {
-              "type": 51,
-              "model": 75,
-              "status": "valid_model"
-            },
-            {
-              "type": 61,
-              "model": 88,
-              "status": "valid_model"
-            }
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 9, "model": 17, "status": "valid_model"},
+            {"type": 19, "model": 31, "status": "valid_model"},
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 34, "model": 52, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 50, "model": 74, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"},
+            {"type": 61, "model": 88, "status": "valid_model"}
           ],
           "triggers": [
-            {
-              "index": 1,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 2,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 471,
-                  "side": 4
-                },
-                {
-                  "ordinal": 1,
-                  "segment": 472,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 44,
-                  "segment": 170,
-                  "side": 4
-                }
-              ]
-            },
-            {
-              "index": 3,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 474,
-                  "side": 5
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 73,
-                  "segment": 321,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 7,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 473,
-                  "side": 5
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 103,
-                  "segment": 157,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 9,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 475,
-                  "side": 0
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 49,
-                  "segment": 97,
-                  "side": 4
-                }
-              ]
-            }
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 471, "side": 4}, {"ordinal": 1, "segment": 472, "side": 4}], "runtime_source_walls": [{"wall": 44, "segment": 170, "side": 4}]},
+            {"index": 3, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 474, "side": 5}], "runtime_source_walls": [{"wall": 73, "segment": 321, "side": 5}]},
+            {"index": 7, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 473, "side": 5}], "runtime_source_walls": [{"wall": 103, "segment": 157, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 475, "side": 0}], "runtime_source_walls": [{"wall": 49, "segment": 97, "side": 4}]}
           ]
         },
         "route_required_key_mask": 7,
@@ -2289,507 +1443,58 @@
           "admission": "loaded",
           "capture_status": "complete",
           "declared_disk_count": 10,
-          "engine_limits": {
-            "segments": 9000,
-            "robot_centers": 20,
-            "stations": 140,
-            "robot_types": 85,
-            "polygon_models": 200
-          },
-          "runtime_counts": {
-            "segments": 602,
-            "robot_centers": 10,
-            "stations": 29,
-            "robot_types": 66,
-            "polygon_models": 166
-          },
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 602, "robot_centers": 10, "stations": 29, "robot_types": 66, "polygon_models": 166},
           "disk_records": [
-            {
-              "segment": 194,
-              "station": 0,
-              "robot_flags": [
-                64,
-                4720640
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 0
-            },
-            {
-              "segment": 468,
-              "station": 1,
-              "robot_flags": [
-                64,
-                34148356
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 1
-            },
-            {
-              "segment": 469,
-              "station": 2,
-              "robot_flags": [
-                64,
-                34148356
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 2
-            },
-            {
-              "segment": 592,
-              "station": 3,
-              "robot_flags": [
-                66,
-                589828
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 3
-            },
-            {
-              "segment": 588,
-              "station": 4,
-              "robot_flags": [
-                66,
-                589828
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 4
-            },
-            {
-              "segment": 596,
-              "station": 5,
-              "robot_flags": [
-                38798088,
-                593984
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 5
-            },
-            {
-              "segment": 601,
-              "station": 6,
-              "robot_flags": [
-                525122,
-                4096
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 6
-            },
-            {
-              "segment": 599,
-              "station": 7,
-              "robot_flags": [
-                525122,
-                4096
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 7
-            },
-            {
-              "segment": 366,
-              "station": 8,
-              "robot_flags": [
-                8,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 8
-            },
-            {
-              "segment": 485,
-              "station": 9,
-              "robot_flags": [
-                8,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 9
-            }
+            {"segment": 194, "station": 0, "robot_flags": [64, 4720640], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 468, "station": 1, "robot_flags": [64, 34148356], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 469, "station": 2, "robot_flags": [64, 34148356], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 592, "station": 3, "robot_flags": [66, 589828], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 588, "station": 4, "robot_flags": [66, 589828], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 596, "station": 5, "robot_flags": [38798088, 593984], "hit_points": 0, "interval": 0, "ordinal": 5},
+            {"segment": 601, "station": 6, "robot_flags": [525122, 4096], "hit_points": 0, "interval": 0, "ordinal": 6},
+            {"segment": 599, "station": 7, "robot_flags": [525122, 4096], "hit_points": 0, "interval": 0, "ordinal": 7},
+            {"segment": 366, "station": 8, "robot_flags": [8, 0], "hit_points": 0, "interval": 0, "ordinal": 8},
+            {"segment": 485, "station": 9, "robot_flags": [8, 0], "hit_points": 0, "interval": 0, "ordinal": 9}
           ],
           "bindings": [
-            {
-              "segment": 194,
-              "generated_ordinal": 0,
-              "serialized_matcen": 0,
-              "serialized_station": 8,
-              "effective_ordinal": 0,
-              "segment_station": 8,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 8
-              }
-            },
-            {
-              "segment": 468,
-              "generated_ordinal": 1,
-              "serialized_matcen": 1,
-              "serialized_station": 18,
-              "effective_ordinal": 1,
-              "segment_station": 18,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 18
-              }
-            },
-            {
-              "segment": 469,
-              "generated_ordinal": 2,
-              "serialized_matcen": 2,
-              "serialized_station": 19,
-              "effective_ordinal": 2,
-              "segment_station": 19,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 19
-              }
-            },
-            {
-              "segment": 588,
-              "generated_ordinal": 3,
-              "serialized_matcen": 4,
-              "serialized_station": 25,
-              "effective_ordinal": 3,
-              "segment_station": 24,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 24
-              }
-            },
-            {
-              "segment": 592,
-              "generated_ordinal": 4,
-              "serialized_matcen": 3,
-              "serialized_station": 26,
-              "effective_ordinal": 4,
-              "segment_station": 25,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 25
-              }
-            },
-            {
-              "segment": 596,
-              "generated_ordinal": 5,
-              "serialized_matcen": 5,
-              "serialized_station": 27,
-              "effective_ordinal": 5,
-              "segment_station": 26,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 26
-              }
-            },
-            {
-              "segment": 599,
-              "generated_ordinal": 6,
-              "serialized_matcen": 7,
-              "serialized_station": 28,
-              "effective_ordinal": 6,
-              "segment_station": 27,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 27
-              }
-            },
-            {
-              "segment": 601,
-              "generated_ordinal": 7,
-              "serialized_matcen": 6,
-              "serialized_station": 29,
-              "effective_ordinal": 7,
-              "segment_station": 28,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 28
-              }
-            }
+            {"segment": 194, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 8, "effective_ordinal": 0, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 8}},
+            {"segment": 468, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 18, "effective_ordinal": 1, "segment_station": 18, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 18}},
+            {"segment": 469, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 19, "effective_ordinal": 2, "segment_station": 19, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 19}},
+            {"segment": 588, "generated_ordinal": 3, "serialized_matcen": 4, "serialized_station": 25, "effective_ordinal": 3, "segment_station": 24, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 24}},
+            {"segment": 592, "generated_ordinal": 4, "serialized_matcen": 3, "serialized_station": 26, "effective_ordinal": 4, "segment_station": 25, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 25}},
+            {"segment": 596, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 27, "effective_ordinal": 5, "segment_station": 26, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 26}},
+            {"segment": 599, "generated_ordinal": 6, "serialized_matcen": 7, "serialized_station": 28, "effective_ordinal": 6, "segment_station": 27, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 27}},
+            {"segment": 601, "generated_ordinal": 7, "serialized_matcen": 6, "serialized_station": 29, "effective_ordinal": 7, "segment_station": 28, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 28}}
           ],
           "robot_models": [
-            {
-              "type": 1,
-              "model": 2,
-              "status": "valid_model"
-            },
-            {
-              "type": 3,
-              "model": 6,
-              "status": "valid_model"
-            },
-            {
-              "type": 6,
-              "model": 12,
-              "status": "valid_model"
-            },
-            {
-              "type": 8,
-              "model": 15,
-              "status": "valid_model"
-            },
-            {
-              "type": 9,
-              "model": 17,
-              "status": "valid_model"
-            },
-            {
-              "type": 19,
-              "model": 31,
-              "status": "valid_model"
-            },
-            {
-              "type": 20,
-              "model": 33,
-              "status": "valid_model"
-            },
-            {
-              "type": 22,
-              "model": 37,
-              "status": "valid_model"
-            },
-            {
-              "type": 25,
-              "model": 41,
-              "status": "valid_model"
-            },
-            {
-              "type": 34,
-              "model": 52,
-              "status": "valid_model"
-            },
-            {
-              "type": 38,
-              "model": 58,
-              "status": "valid_model"
-            },
-            {
-              "type": 43,
-              "model": 67,
-              "status": "valid_model"
-            },
-            {
-              "type": 44,
-              "model": 68,
-              "status": "valid_model"
-            },
-            {
-              "type": 48,
-              "model": 72,
-              "status": "valid_model"
-            },
-            {
-              "type": 51,
-              "model": 75,
-              "status": "valid_model"
-            },
-            {
-              "type": 54,
-              "model": 78,
-              "status": "valid_model"
-            },
-            {
-              "type": 57,
-              "model": 83,
-              "status": "valid_model"
-            }
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 6, "model": 12, "status": "valid_model"},
+            {"type": 8, "model": 15, "status": "valid_model"},
+            {"type": 9, "model": 17, "status": "valid_model"},
+            {"type": 19, "model": 31, "status": "valid_model"},
+            {"type": 20, "model": 33, "status": "valid_model"},
+            {"type": 22, "model": 37, "status": "valid_model"},
+            {"type": 25, "model": 41, "status": "valid_model"},
+            {"type": 34, "model": 52, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 44, "model": 68, "status": "valid_model"},
+            {"type": 48, "model": 72, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"},
+            {"type": 54, "model": 78, "status": "valid_model"},
+            {"type": 57, "model": 83, "status": "valid_model"}
           ],
           "triggers": [
-            {
-              "index": 11,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 468,
-                  "side": 5
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 144,
-                  "segment": 397,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 16,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 2,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 592,
-                  "side": 3
-                },
-                {
-                  "ordinal": 1,
-                  "segment": 588,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 171,
-                  "segment": 465,
-                  "side": 4
-                }
-              ]
-            },
-            {
-              "index": 17,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 469,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 172,
-                  "segment": 372,
-                  "side": 4
-                }
-              ]
-            },
-            {
-              "index": 18,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 194,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 68,
-                  "segment": 298,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 19,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 596,
-                  "side": 0
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 175,
-                  "segment": 522,
-                  "side": 0
-                }
-              ]
-            },
-            {
-              "index": 20,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 596,
-                  "side": 0
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 176,
-                  "segment": 526,
-                  "side": 2
-                }
-              ]
-            },
-            {
-              "index": 21,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 599,
-                  "side": 5
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 179,
-                  "segment": 501,
-                  "side": 0
-                }
-              ]
-            },
-            {
-              "index": 22,
-              "type": 2,
-              "flags": 0,
-              "value": 327680,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 601,
-                  "side": 0
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 180,
-                  "segment": 500,
-                  "side": 2
-                }
-              ]
-            }
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 468, "side": 5}], "runtime_source_walls": [{"wall": 144, "segment": 397, "side": 5}]},
+            {"index": 16, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 592, "side": 3}, {"ordinal": 1, "segment": 588, "side": 4}], "runtime_source_walls": [{"wall": 171, "segment": 465, "side": 4}]},
+            {"index": 17, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 469, "side": 4}], "runtime_source_walls": [{"wall": 172, "segment": 372, "side": 4}]},
+            {"index": 18, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 194, "side": 4}], "runtime_source_walls": [{"wall": 68, "segment": 298, "side": 2}]},
+            {"index": 19, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 596, "side": 0}], "runtime_source_walls": [{"wall": 175, "segment": 522, "side": 0}]},
+            {"index": 20, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 596, "side": 0}], "runtime_source_walls": [{"wall": 176, "segment": 526, "side": 2}]},
+            {"index": 21, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 599, "side": 5}], "runtime_source_walls": [{"wall": 179, "segment": 501, "side": 0}]},
+            {"index": 22, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 601, "side": 0}], "runtime_source_walls": [{"wall": 180, "segment": 500, "side": 2}]}
           ]
         },
         "route_required_key_mask": 7,

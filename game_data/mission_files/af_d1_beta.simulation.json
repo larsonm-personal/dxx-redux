@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 9,
-    "infrastructure_error": 1
+    "ok": 10
   },
   "levels": [
     {
@@ -268,9 +267,43 @@
       "level_num": 7,
       "level_file": "cefispar.rdl",
       "route_input_sha256": "AA2449D68F89748ACC4E03F1501DB33E0876E84E7ACB9EB1EF5815CE2F7FF6E3",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure",
-      "exit_code": 1
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
+          "n": "red key",
+          "s": 85
+        },
+        {
+          "n": "boss",
+          "s": 110
+        },
+        {
+          "n": "exit",
+          "s": 123
+        }
+      ],
+      "total_frames": 7394,
+      "rng_end": {
+        "state": 4001129761,
+        "calls": 14304
+      },
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 13.483322,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 8,

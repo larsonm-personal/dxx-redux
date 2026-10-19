@@ -39,7 +39,9 @@ fun main(args: Array<String>) {
         return
     }
     if (args.singleOrNull() == "--server") {
-        generateSequence(::readlnOrNull).forEach { line ->
+        // The worker protocol must not depend on the Windows console code page
+        val output = System.out.bufferedWriter(Charsets.UTF_8)
+        System.`in`.bufferedReader(Charsets.UTF_8).lineSequence().forEach { line ->
             val request = Json.parseToJsonElement(line).jsonObject
             val op = request["op"]?.jsonPrimitive?.contentOrNull
             val response =
@@ -71,8 +73,9 @@ fun main(args: Array<String>) {
                         buildJsonObject { put("error", "unknown operation") }
                     }
                 }
-            println("DXXKOTLIN\t${Json.encodeToString(response)}")
-            System.out.flush()
+            output.write("DXXKOTLIN\t${Json.encodeToString(response)}")
+            output.newLine()
+            output.flush()
         }
         return
     }

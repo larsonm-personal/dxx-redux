@@ -204,316 +204,35 @@
           "admission": "loaded",
           "capture_status": "complete",
           "declared_disk_count": 4,
-          "engine_limits": {
-            "segments": 9000,
-            "robot_centers": 20,
-            "stations": 140,
-            "robot_types": 85,
-            "polygon_models": 200
-          },
-          "runtime_counts": {
-            "segments": 9000,
-            "robot_centers": 4,
-            "stations": 35,
-            "robot_types": 66,
-            "polygon_models": 166
-          },
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 9000, "robot_centers": 4, "stations": 35, "robot_types": 66, "polygon_models": 166},
           "disk_records": [
-            {
-              "segment": 965,
-              "station": 0,
-              "robot_flags": [
-                4718592,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 0
-            },
-            {
-              "segment": 4398,
-              "station": 0,
-              "robot_flags": [
-                2,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 1
-            },
-            {
-              "segment": 4834,
-              "station": 0,
-              "robot_flags": [
-                16777216,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 2
-            },
-            {
-              "segment": 8846,
-              "station": 0,
-              "robot_flags": [
-                2,
-                0
-              ],
-              "hit_points": 0,
-              "interval": 0,
-              "ordinal": 3
-            }
+            {"segment": 965, "station": 0, "robot_flags": [4718592, 0], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 4398, "station": 0, "robot_flags": [2, 0], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 4834, "station": 0, "robot_flags": [16777216, 0], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 8846, "station": 0, "robot_flags": [2, 0], "hit_points": 0, "interval": 0, "ordinal": 3}
           ],
           "bindings": [
-            {
-              "segment": 965,
-              "generated_ordinal": 0,
-              "serialized_matcen": 0,
-              "serialized_station": 0,
-              "effective_ordinal": 0,
-              "segment_station": 0,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station"
-            },
-            {
-              "segment": 4398,
-              "generated_ordinal": 1,
-              "serialized_matcen": 1,
-              "serialized_station": 0,
-              "effective_ordinal": 1,
-              "segment_station": 5,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 5
-              }
-            },
-            {
-              "segment": 4834,
-              "generated_ordinal": 2,
-              "serialized_matcen": 2,
-              "serialized_station": 0,
-              "effective_ordinal": 2,
-              "segment_station": 6,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 6
-              }
-            },
-            {
-              "segment": 8846,
-              "generated_ordinal": 3,
-              "serialized_matcen": 3,
-              "serialized_station": 0,
-              "effective_ordinal": 3,
-              "segment_station": 30,
-              "binding_status": "disk_bound",
-              "station_status": "matching_station",
-              "record_overrides": {
-                "station": 30
-              }
-            }
+            {"segment": 965, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 4398, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 0, "effective_ordinal": 1, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 4834, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 0, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 8846, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 0, "effective_ordinal": 3, "segment_station": 30, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 30}}
           ],
           "robot_models": [
-            {
-              "type": 1,
-              "model": 2,
-              "status": "valid_model"
-            },
-            {
-              "type": 19,
-              "model": 31,
-              "status": "valid_model"
-            },
-            {
-              "type": 22,
-              "model": 37,
-              "status": "valid_model"
-            },
-            {
-              "type": 24,
-              "model": 40,
-              "status": "valid_model"
-            }
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 19, "model": 31, "status": "valid_model"},
+            {"type": 22, "model": 37, "status": "valid_model"},
+            {"type": 24, "model": 40, "status": "valid_model"}
           ],
           "triggers": [
-            {
-              "index": 4,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 965,
-                  "side": 1
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 40,
-                  "segment": 715,
-                  "side": 4
-                }
-              ]
-            },
-            {
-              "index": 5,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 965,
-                  "side": 1
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 41,
-                  "segment": 716,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 6,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 4834,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 174,
-                  "segment": 4879,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 7,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 4834,
-                  "side": 4
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 175,
-                  "segment": 4880,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 17,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 4398,
-                  "side": 1
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 243,
-                  "segment": 4377,
-                  "side": 5
-                }
-              ]
-            },
-            {
-              "index": 18,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 4398,
-                  "side": 1
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 244,
-                  "segment": 4370,
-                  "side": 4
-                }
-              ]
-            },
-            {
-              "index": 21,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 8846,
-                  "side": 3
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 250,
-                  "segment": 4231,
-                  "side": 0
-                }
-              ]
-            },
-            {
-              "index": 22,
-              "type": 2,
-              "flags": 0,
-              "value": 0,
-              "time": -1,
-              "declared_link_count": 1,
-              "links": [
-                {
-                  "ordinal": 0,
-                  "segment": 8846,
-                  "side": 3
-                }
-              ],
-              "runtime_source_walls": [
-                {
-                  "wall": 251,
-                  "segment": 4230,
-                  "side": 0
-                }
-              ]
-            }
+            {"index": 4, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 965, "side": 1}], "runtime_source_walls": [{"wall": 40, "segment": 715, "side": 4}]},
+            {"index": 5, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 965, "side": 1}], "runtime_source_walls": [{"wall": 41, "segment": 716, "side": 5}]},
+            {"index": 6, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 4834, "side": 4}], "runtime_source_walls": [{"wall": 174, "segment": 4879, "side": 5}]},
+            {"index": 7, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 4834, "side": 4}], "runtime_source_walls": [{"wall": 175, "segment": 4880, "side": 5}]},
+            {"index": 17, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 4398, "side": 1}], "runtime_source_walls": [{"wall": 243, "segment": 4377, "side": 5}]},
+            {"index": 18, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 4398, "side": 1}], "runtime_source_walls": [{"wall": 244, "segment": 4370, "side": 4}]},
+            {"index": 21, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 8846, "side": 3}], "runtime_source_walls": [{"wall": 250, "segment": 4231, "side": 0}]},
+            {"index": 22, "type": 2, "flags": 0, "value": 0, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 8846, "side": 3}], "runtime_source_walls": [{"wall": 251, "segment": 4230, "side": 0}]}
           ]
         },
         "route_required_key_mask": 0,
