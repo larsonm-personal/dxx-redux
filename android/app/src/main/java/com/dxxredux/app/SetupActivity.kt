@@ -2006,9 +2006,14 @@ class SetupActivity : ComponentActivity() {
                         MatchmakingStateHolder.update { it.copy(callsign = callsign) }
                         com.dxxredux.app.lobby.LobbyService
                             .startDiscovery(this@SetupActivity, callsign)
-                        com.dxxredux.app.lobby.LobbyService
-                            .hostLobby(callsign, game, mission, mode, maxPlayers)
-                        Log.i("DXX-MP", "lan_host_lobby: hosting as $callsign ($game/$mission/$mode)")
+                        val hosted =
+                            com.dxxredux.app.lobby.LobbyService
+                                .hostLobby(callsign, game, mission, mode, maxPlayers)
+                        if (hosted) {
+                            Log.i("DXX-MP", "lan_host_lobby: hosting as $callsign ($game/$mission/$mode)")
+                        } else {
+                            Log.w("DXX-MP", "lan_host_lobby: failed to host as $callsign ($game/$mission/$mode)")
+                        }
                     }
 
                     "lan_start_game" -> {

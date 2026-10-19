@@ -554,15 +554,15 @@ object LobbyService {
         omittedVisualModCount: Int = 0,
         omittedVisualTextureCount: Int = 0,
         omittedVisualModNames: List<String> = emptyList(),
-    ) {
-        if (!_isDiscovering.value) return
+    ): Boolean {
+        if (!_isDiscovering.value) return false
         if (
             !missionRequirement.isValid ||
             missionRequirement.game != game ||
             missionRequirement.missionKey != mission
         ) {
             _diagnostics.value = "Cannot host: invalid mission requirement"
-            return
+            return false
         }
         leaveLanLobby(hostCallsign)
         hostedLobbyId = UUID.randomUUID().toString()
@@ -614,6 +614,7 @@ object LobbyService {
         updateNsdDiscovery()
         NetLog.log("LAN", "Hosting lobby $hostedLobbyId ($game, $mission, $mode, max=$maxPlayers)")
         Log.i(TAG, "Hosting LAN lobby $hostedLobbyId ($game, $mission, $mode)")
+        return true
     }
 
     /** Advertise an existing engine session without entering the new-game launch flow */
