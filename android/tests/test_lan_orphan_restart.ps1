@@ -18,9 +18,18 @@ function Start-LanJoin {
         '--es', 'host_addr', '192.0.2.1') | Out-Null
 }
 
+$logSession = $null
 try {
+    $logSession = Start-AndroidTestDebugLogSession
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw 'Emulator is not online' }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
+    # Keep this fixture port synchronized with NetworkConstants.PROXY_PORT_BASE
+    $socketState = (Adb -AdbArgs @('shell', 'ss', '-uanpe')) -join "`n"
+    $boundPort = @(($socketState -split '\r?\n') |
+            Where-Object { $_ -match '^\S+\s+\d+\s+\d+\s+\S+:42430\s' })
+    if ($boundPort.Count) {
+        throw "LAN orphan fixture requires free local UDP port 42430; another app has it bound: $($boundPort -join ' ')"
+    }
     Adb -AdbArgs @('logcat', '-c') | Out-Null
     Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
@@ -73,7 +82,21 @@ try {
         throw 'Native duplicate-start guard rejected the second join'
     }
     Write-Host "PASS: abandoned LAN join is replaced by a fresh native engine through $RetryKind"
+} catch {
+    $failure = $_
+    $outputDirectory = Join-Path $script:REPO_ROOT ('android/temp/lan-orphan-restart-failure-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    & (Join-Path $PSScriptRoot '../helpers/retain-recent-artifacts.ps1') -Artifacts @($outputDirectory)
+    New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+    try {
+        Adb -AdbArgs @('logcat', '-d') | Set-Content (Join-Path $outputDirectory 'logcat.txt') -Encoding utf8NoBOM
+        Adb -AdbArgs @('shell', 'ss', '-uanpe') | Set-Content (Join-Path $outputDirectory 'udp_sockets.txt') -Encoding utf8NoBOM
+        Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/setup_introspect.json') |
+            Set-Content (Join-Path $outputDirectory 'setup_introspect.json') -Encoding utf8NoBOM
+        Write-Host "LAN orphan restart failure evidence: $outputDirectory"
+    } catch { Write-Warning "Could not capture LAN orphan restart failure: $_" }
+    throw $failure
 } finally {
+    Stop-AndroidTestDebugLogSession -Session $logSession
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

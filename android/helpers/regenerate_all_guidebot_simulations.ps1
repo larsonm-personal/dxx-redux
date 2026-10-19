@@ -37,6 +37,13 @@ if ($TestSpeedPercent -ne 160 -and ($WriteRegression -or $Mode -eq 'Headed')) {
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+$androidPackage = if ($env:DXX_TEST_PACKAGE) {
+    $env:DXX_TEST_PACKAGE
+} elseif ($env:ANDROID_SERIAL -and $env:ANDROID_SERIAL -notmatch '^emulator-\d+$') {
+    'com.dxxredux.app.nsdtest'
+} else {
+    'com.dxxredux.app'
+}
 . (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 . (Join-Path $scriptDir 'test_host_platform.ps1')
 . (Join-Path $scriptDir 'standard_game_data.ps1')
@@ -400,8 +407,8 @@ function Push-GuidebotMissionArchive {
     $deviceName = [IO.Path]::GetFileName($ArchivePath)
     & $adb push $ArchivePath "/data/local/tmp/$deviceName" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Could not push headed mission archive $ArchivePath" }
-    & $adb shell run-as com.dxxredux.app mkdir -p files/mission_zip_batch_cache | Out-Null
-    & $adb shell run-as com.dxxredux.app cp "/data/local/tmp/$deviceName" "files/mission_zip_batch_cache/$deviceName" | Out-Null
+    & $adb shell run-as $androidPackage mkdir -p files/mission_zip_batch_cache | Out-Null
+    & $adb shell run-as $androidPackage cp "/data/local/tmp/$deviceName" "files/mission_zip_batch_cache/$deviceName" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Could not stage headed mission archive $deviceName" }
     & $adb shell rm -f "/data/local/tmp/$deviceName" | Out-Null
     return $deviceName
@@ -501,7 +508,7 @@ function New-GuidebotHeadedScript {
 
 function Read-GuidebotHeadedIntrospection {
     $adb = Get-GuidebotAdb
-    $text = (& $adb exec-out run-as com.dxxredux.app cat files/introspect.json) | Out-String
+    $text = (& $adb exec-out run-as $androidPackage cat files/introspect.json) | Out-String
     if ($LASTEXITCODE -ne 0 -or -not $text.Trim()) { throw 'Could not read headed route introspection' }
     return $text | ConvertFrom-Json
 }

@@ -1,0 +1,198 @@
+{
+    "schema": 2,
+    "profiles": {
+        "d1-retail": "game_data/CD images/Descent (Europe)/data_tracks/descent",
+        "d1-mac-retail": "game_data/CD images/d1 mac 2nd bin+cue/data_tracks",
+        "d2-shareware": "game_data/shareware/d2",
+        "d2-retail": "game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data"
+    },
+    "cases": [
+        {
+            "id": "d1-retail-descent",
+            "game": "d1",
+            "mode": "validate",
+            "data_profile": "d1-retail",
+            "source_path": "game_data/CD images/Descent (Europe)/data_tracks/descent/descent.dem",
+            "source_size": 2211582,
+            "source_sha256": "3ed575389e80953bcd0953f71344f036398ceb1f12aef044188d4f8ccb8aaaed",
+            "result": {
+                "type": "classic_demo_validation",
+                "game": "d1",
+                "status": "pass",
+                "version": 13,
+                "game_type": 2,
+                "frames_decoded": 1573,
+                "final_level": 10,
+                "final_score": 7400,
+                "roundtrip_bytes": 2211574,
+                "file_size": 2211582
+            }
+        },
+        {
+            "id": "d1-retail-level18",
+            "game": "d1",
+            "mode": "validate",
+            "data_profile": "d1-retail",
+            "source_path": "game_data/CD images/Descent (Europe)/data_tracks/descent/level18.dem",
+            "source_size": 273939,
+            "source_sha256": "54d475393390f5a9e8170fff0527a713cac76e8ab8152507c7ee1c5e57bc1bee",
+            "result": {
+                "type": "classic_demo_validation",
+                "game": "d1",
+                "status": "pass",
+                "version": 13,
+                "game_type": 2,
+                "frames_decoded": 266,
+                "final_level": 18,
+                "final_score": 5700,
+                "roundtrip_bytes": 273931,
+                "file_size": 273939
+            }
+        },
+        {
+            "id": "d1-retail-miniboss",
+            "game": "d1",
+            "mode": "validate",
+            "data_profile": "d1-retail",
+            "source_path": "game_data/CD images/Descent (Europe)/data_tracks/descent/miniboss.dem",
+            "source_size": 403783,
+            "source_sha256": "78284a7cf9fd894b401bfdb95e12b2d0564a5b8e563762ea034f7dac9a2a517a",
+            "result": {
+                "type": "classic_demo_validation",
+                "game": "d1",
+                "status": "pass",
+                "version": 13,
+                "game_type": 2,
+                "frames_decoded": 339,
+                "final_level": -1,
+                "final_score": 13100,
+                "roundtrip_bytes": 403775,
+                "file_size": 403783
+            }
+        },
+        {
+            "id": "d1-mac-demo1",
+            "game": "d1",
+            "mode": "validate",
+            "data_profile": "d1-mac-retail",
+            "source_path": "game_data/CD images/d1 mac 2nd bin+cue/data_tracks/demo1.dem",
+            "source_size": 1244458,
+            "source_sha256": "182b0f6e209f6e4b5d34fe7c1cbe9222425f3295f6dfe50917fb0bc0cf6cde6a",
+            "result": {
+                "type": "classic_demo_validation",
+                "game": "d1",
+                "status": "pass",
+                "version": 13,
+                "game_type": 2,
+                "frames_decoded": 1685,
+                "final_level": 2,
+                "final_score": 6200,
+                "roundtrip_bytes": 1244450,
+                "file_size": 1244458
+            }
+        },
+        {
+            "id": "d1-mac-watchme",
+            "game": "d1",
+            "mode": "validate",
+            "data_profile": "d1-mac-retail",
+            "source_path": "game_data/CD images/d1 mac 2nd bin+cue/data_tracks/watchme.dem",
+            "source_size": 1015201,
+            "source_sha256": "a1d8fd365022a0ca56026d6a9325a6dbd41e483f76e6ec8c13d844a13ce24c87",
+            "result": {
+                "type": "classic_demo_validation",
+                "game": "d1",
+                "status": "pass",
+                "version": 13,
+                "game_type": 2,
+                "frames_decoded": 550,
+                "final_level": 7,
+                "final_score": 428680,
+                "roundtrip_bytes": 1015193,
+                "file_size": 1015201
+            }
+        },
+        {
+            "id": "d1-mac-yep9",
+            "game": "d1",
+            "mode": "validate",
+            "data_profile": "d1-mac-retail",
+            "source_path": "game_data/CD images/d1 mac 2nd bin+cue/data_tracks/yep9.dem",
+            "source_size": 906688,
+            "source_sha256": "20ee0e297f114b1ded6c1156db7247479866d30556598992dfd9ae245deee49b",
+            "result": {
+                "type": "classic_demo_validation",
+                "game": "d1",
+                "status": "pass",
+                "version": 13,
+                "game_type": 2,
+                "frames_decoded": 1288,
+                "final_level": 10,
+                "final_score": 0,
+                "roundtrip_bytes": 906635,
+                "file_size": 906688
+            }
+        },
+        {
+            "id": "d1-test-flight-preview",
+            "game": "d1",
+            "mode": "inventory",
+            "source_path": "game_data/CD images/Descent - Test Flight (USA)/data_tracks/DESCENT.DEM",
+            "source_size": 880717,
+            "source_sha256": "cdacbf72bedb612a876f053d4a7c179550cd10c4017b93c3bea04c1b0c44f954",
+            "baseline": "The existing D1 reader does not complete this pre-release version 5 demo; retain it as a corpus and security-fix target"
+        },
+        {
+            "id": "d2-shareware-1.0",
+            "game": "d2",
+            "mode": "dump",
+            "data_profile": "d2-shareware",
+            "source_path": "game_data/shareware/d2/d2demo.dem",
+            "source_size": 355173,
+            "source_sha256": "8c6e2d43ba88166d17759d90e3817edd0c3ef0a33861ef35a51a8cd4db89c892",
+            "output_size": 2054225,
+            "output_lines": 556,
+            "output_sha256": "b6beb87e19a78a55a60c31bc74c626e1ba40b4504bd54d601e6c27c9dfb12afa",
+            "header": {
+                "type": "header",
+                "format": "classic_dem_runtime_dump",
+                "game": "d2",
+                "version": 15,
+                "game_type": 3,
+                "mission": "d2demo"
+            },
+            "result": {
+                "type": "result",
+                "frames_decoded": 554,
+                "objects_emitted": 4544,
+                "truncated": false
+            }
+        },
+        {
+            "id": "d2-retail-1.1",
+            "game": "d2",
+            "mode": "dump",
+            "data_profile": "d2-retail",
+            "source_path": "game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data/DESCENT2.DEM",
+            "source_size": 1168217,
+            "source_sha256": "e2fe2989350f14e270b954cbeae63d612493006778b29e2b66e318b679ae9e34",
+            "output_size": 6025093,
+            "output_lines": 635,
+            "output_sha256": "835a64585932924c155b98576f2b10db234a36d252cf6b2f9935658e8655b918",
+            "header": {
+                "type": "header",
+                "format": "classic_dem_runtime_dump",
+                "game": "d2",
+                "version": 15,
+                "game_type": 3,
+                "mission": "d2"
+            },
+            "result": {
+                "type": "result",
+                "frames_decoded": 633,
+                "objects_emitted": 15468,
+                "truncated": false
+            }
+        }
+    ]
+}

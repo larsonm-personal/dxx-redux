@@ -29,7 +29,7 @@ internal fun MissionStatusIndicator(
             style = MaterialTheme.typography.bodySmall,
             color =
                 when {
-                    isProblem -> MaterialTheme.colorScheme.error
+                    isProblem || report.gameDataWarning -> MaterialTheme.colorScheme.error
                     report.status == MissionCompatibilityStatus.MATCH -> MaterialTheme.colorScheme.primary
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },

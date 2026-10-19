@@ -24,12 +24,37 @@ internal data class MissionContentIdentity(
         const val DEFAULT_CHUNK_SIZE_BYTES = 1024 * 1024
         private val SHA256_PATTERN = Regex("[0-9a-f]{64}")
 
+        private data class CachedFile(
+            val size: Long,
+            val modified: Long,
+            val identity: MissionContentIdentity,
+        )
+
+        private val fileCache = LinkedHashMap<String, CachedFile>(16, 0.75f, true)
+
+        // Lobby refreshes rescan campaigns; invalidate just as for persisted mission ZIP identities
+        @Synchronized
+        fun forFile(file: File): MissionContentIdentity? {
+            if (!file.isFile) return null
+            val path = file.canonicalPath
+            val size = file.length()
+            val modified = file.lastModified()
+            fileCache[path]?.let {
+                if (it.size == size && it.modified == modified) return it.identity
+            }
+            val identity = compute(file)
+            check(file.lastModified() == modified) { "Mission content changed while hashing: ${file.name}" }
+            fileCache[path] = CachedFile(size, modified, identity)
+            if (fileCache.size > 32) fileCache.remove(fileCache.keys.first())
+            return identity
+        }
+
         fun compute(
             file: File,
             chunkSizeBytes: Int = DEFAULT_CHUNK_SIZE_BYTES,
             onProgress: (Long) -> Unit = {},
         ): MissionContentIdentity {
-            require(file.isFile) { "Mission wrapper is missing: ${file.absolutePath}" }
+            require(file.isFile) { "Mission content is missing: ${file.absolutePath}" }
             require(chunkSizeBytes > 0)
             val whole = MessageDigest.getInstance("SHA-256")
             val chunks = mutableListOf<String>()
@@ -54,7 +79,7 @@ internal data class MissionContentIdentity(
                     if (used < buffer.size) break
                 }
             }
-            check(total == file.length()) { "Mission wrapper changed while hashing: ${file.name}" }
+            check(total == file.length()) { "Mission content changed while hashing: ${file.name}" }
             return MissionContentIdentity(total, whole.digest().toHex(), chunkSizeBytes, chunks)
         }
 

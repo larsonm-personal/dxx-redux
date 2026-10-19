@@ -6,62 +6,68 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 Ensure-EmulatorHealthy | Out-Null
-if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Emulator $Serial is not online" }
-if ($Install) {
-    & $ADB -s $Serial shell am force-stop $script:PACKAGE
-    & $ADB -s $Serial shell run-as $script:PACKAGE rm -rf files/d2x-redux/.mission_assets
-    if (-not (Install-ApkOnDevice -Serial $Serial)) { throw 'APK installation failed' }
-}
-$source = Join-Path $repoRoot 'game_data/extracted/VERTIGO/MISSIONS'
-$fixture = Join-Path $repoRoot 'temp/vertigo-probe.zip'
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$stream = [IO.File]::Create($fixture)
-$zip = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create)
+$logSession = $null
 try {
-    [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, (Join-Path $source 'D2X.HOG'), 'd2x.hog') | Out-Null
-    $descriptor = [IO.File]::ReadAllText((Join-Path $source 'D2X.MN2')).Replace('Descent 2: Vertigo', 'Vertigo Probe')
-    $writer = [IO.StreamWriter]::new($zip.CreateEntry('d2x.mn2').Open())
-    try { $writer.Write($descriptor) } finally { $writer.Dispose() }
-} finally { $zip.Dispose(); $stream.Dispose() }
-& $ADB -s $Serial push $fixture /data/local/tmp/vertigo-probe.zip
-if ($LASTEXITCODE -ne 0) { throw 'Fixture push failed' }
-& $ADB -s $Serial shell run-as $script:PACKAGE mkdir -p files/imported/sets/default/.content/mods
-& $ADB -s $Serial shell run-as $script:PACKAGE cp /data/local/tmp/vertigo-probe.zip files/imported/sets/default/.content/mods/vertigo-probe.zip
-if ($LASTEXITCODE -ne 0) { throw 'Fixture staging failed' }
-& $ADB -s $Serial logcat -c
-& (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_vertigo_merge_creation.jsonc -Game d2 -Serial $Serial -TimeoutSeconds 240
-$testResult = $LASTEXITCODE
-$logPath = Join-Path $repoRoot 'temp/vertigo-creation-logcat.txt'
-& $ADB -s $Serial logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
-if ($testResult -ne 0) { throw "Automation failed; see $logPath" }
-$log = Get-Content -LiteralPath $logPath -Raw
-foreach ($stage in @('event=begin', 'stage=before_draw', 'stage=created', 'stage=after_mipmap', 'stage=tap_direct')) {
-    if ($log -notmatch ('\[mwall_create\].*' + [regex]::Escape($stage))) { throw "Missing capture: $stage" }
-}
-if ($log -match '\[mwall_create\].*(read_error|incomplete_fbo|stage=state_query gl_error)') {
-    throw "Diagnostic failed; see $logPath"
-}
-if ($log -match '\[mwall_create\].*(requested_merge_program=0 |requested_is_program=0|stage=(setup|draw|mipmap) gl_error)') {
-    throw "Merge shader setup failed; see $logPath"
-}
-$created = [regex]::Matches($log, '\[mwall_create\] serial=(\d+) stage=created .*?hash=(0x[0-9a-f]+) zero_alpha=(\d+) alpha=(\d+)/(\d+)')
-if ($created.Count -lt 2) { throw 'Expected fresh merge captures before and after mission switching' }
-foreach ($capture in $created) {
-    if ($capture.Groups[3].Value -ne '0' -or $capture.Groups[4].Value -ne '255' -or $capture.Groups[5].Value -ne '255') {
-        throw "Vertigo composite is not fully opaque: $($capture.Value)"
+    $logSession = Start-AndroidTestDebugLogSession
+    if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Emulator $Serial is not online" }
+    if ($Install) {
+        & $ADB -s $Serial shell am force-stop $script:PACKAGE
+        & $ADB -s $Serial shell run-as $script:PACKAGE rm -rf files/d2x-redux/.mission_assets
+        if (-not (Install-ApkOnDevice -Serial $Serial)) { throw 'APK installation failed' }
     }
-    $hash = $capture.Groups[2].Value
-    if ($hash -ne $created[0].Groups[2].Value) { throw 'Composite changed across mission switching' }
-}
-$taps = [regex]::Matches($log, '\[mwall_create\] serial=(\d+) stage=tap_direct .*?hash=(0x[0-9a-f]+) zero_alpha=(\d+) alpha=(\d+)/(\d+)')
-$tappedSerials = @($taps | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
-if ($tappedSerials.Count -lt 2) { throw 'Expected taps of separate merges before and after mission switching' }
-foreach ($tap in $taps) {
-    $serial = $tap.Groups[1].Value
-    if ($tap.Groups[2].Value -ne $created[0].Groups[2].Value -or
-        $tap.Groups[3].Value -ne '0' -or $tap.Groups[4].Value -ne '255' -or $tap.Groups[5].Value -ne '255' -or
-        !($created | Where-Object { $_.Groups[1].Value -eq $serial })) {
-        throw "Tap does not match opaque creation: $($tap.Value)"
+    $source = Join-Path $repoRoot 'game_data/extracted/VERTIGO/MISSIONS'
+    $fixture = Join-Path $repoRoot 'temp/vertigo-probe.zip'
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $stream = [IO.File]::Create($fixture)
+    $zip = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, (Join-Path $source 'D2X.HOG'), 'd2x.hog') | Out-Null
+        $descriptor = [IO.File]::ReadAllText((Join-Path $source 'D2X.MN2')).Replace('Descent 2: Vertigo', 'Vertigo Probe')
+        $writer = [IO.StreamWriter]::new($zip.CreateEntry('d2x.mn2').Open())
+        try { $writer.Write($descriptor) } finally { $writer.Dispose() }
+    } finally { $zip.Dispose(); $stream.Dispose() }
+    & $ADB -s $Serial push $fixture /data/local/tmp/vertigo-probe.zip
+    if ($LASTEXITCODE -ne 0) { throw 'Fixture push failed' }
+    & $ADB -s $Serial shell run-as $script:PACKAGE mkdir -p files/imported/sets/default/.content/mods
+    & $ADB -s $Serial shell run-as $script:PACKAGE cp /data/local/tmp/vertigo-probe.zip files/imported/sets/default/.content/mods/vertigo-probe.zip
+    if ($LASTEXITCODE -ne 0) { throw 'Fixture staging failed' }
+    & $ADB -s $Serial logcat -c
+    & (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_vertigo_merge_creation.jsonc -Game d2 -Serial $Serial -TimeoutSeconds 240
+    $testResult = $LASTEXITCODE
+    $logPath = Join-Path $repoRoot 'temp/vertigo-creation-logcat.txt'
+    & $ADB -s $Serial logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
+    if ($testResult -ne 0) { throw "Automation failed; see $logPath" }
+    $log = Get-Content -LiteralPath $logPath -Raw
+    foreach ($stage in @('event=begin', 'stage=before_draw', 'stage=created', 'stage=after_mipmap', 'stage=tap_direct')) {
+        if ($log -notmatch ('\[mwall_create\].*' + [regex]::Escape($stage))) { throw "Missing capture: $stage" }
     }
+    if ($log -match '\[mwall_create\].*(read_error|incomplete_fbo|stage=state_query gl_error)') {
+        throw "Diagnostic failed; see $logPath"
+    }
+    if ($log -match '\[mwall_create\].*(requested_merge_program=0 |requested_is_program=0|stage=(setup|draw|mipmap) gl_error)') {
+        throw "Merge shader setup failed; see $logPath"
+    }
+    $created = [regex]::Matches($log, '\[mwall_create\] serial=(\d+) stage=created .*?hash=(0x[0-9a-f]+) zero_alpha=(\d+) alpha=(\d+)/(\d+)')
+    if ($created.Count -lt 2) { throw 'Expected fresh merge captures before and after mission switching' }
+    foreach ($capture in $created) {
+        if ($capture.Groups[3].Value -ne '0' -or $capture.Groups[4].Value -ne '255' -or $capture.Groups[5].Value -ne '255') {
+            throw "Vertigo composite is not fully opaque: $($capture.Value)"
+        }
+        $hash = $capture.Groups[2].Value
+        if ($hash -ne $created[0].Groups[2].Value) { throw 'Composite changed across mission switching' }
+    }
+    $taps = [regex]::Matches($log, '\[mwall_create\] serial=(\d+) stage=tap_direct .*?hash=(0x[0-9a-f]+) zero_alpha=(\d+) alpha=(\d+)/(\d+)')
+    $tappedSerials = @($taps | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+    if ($tappedSerials.Count -lt 2) { throw 'Expected taps of separate merges before and after mission switching' }
+    foreach ($tap in $taps) {
+        $serial = $tap.Groups[1].Value
+        if ($tap.Groups[2].Value -ne $created[0].Groups[2].Value -or
+            $tap.Groups[3].Value -ne '0' -or $tap.Groups[4].Value -ne '255' -or $tap.Groups[5].Value -ne '255' -or
+            !($created | Where-Object { $_.Groups[1].Value -eq $serial })) {
+            throw "Tap does not match opaque creation: $($tap.Value)"
+        }
+    }
+    Write-Host "Vertigo opaque creation and tap verified across mission switching: $logPath"
+} finally {
+    Stop-AndroidTestDebugLogSession -Session $logSession
 }
-Write-Host "Vertigo opaque creation and tap verified across mission switching: $logPath"

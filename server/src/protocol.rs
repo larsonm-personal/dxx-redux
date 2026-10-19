@@ -106,6 +106,8 @@ pub enum ClientMessage {
         attempt: u8,
         #[serde(default)]
         failure_code: Option<String>,
+        #[serde(default)]
+        game_data_warning: bool,
     },
 
     #[serde(rename = "START_GAME")]
@@ -414,6 +416,7 @@ pub struct MissionStatusReport {
     pub attempt: u8,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_code: Option<String>,
+    pub game_data_warning: bool,
 }
 
 #[derive(Debug, Serialize, Clone)]

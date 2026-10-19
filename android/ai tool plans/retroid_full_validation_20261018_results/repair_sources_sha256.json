@@ -1,0 +1,94 @@
+[
+  {
+    "path": "android/app/src/androidTest/java/com/dxxredux/app/LanQrChecks.kt",
+    "sha256": "7f1cb662f54c6f122b2609c7834946a6a9f4edca3d9fea9cf8dc816c6781d232"
+  },
+  {
+    "path": "android/app/src/androidTest/java/com/dxxredux/app/LobbyLatencyChecks.kt",
+    "sha256": "18b83d97a2159bbee59698ef4edde1e0002aeb32994e830b8b742bcda69f6686"
+  },
+  {
+    "path": "android/app/src/androidTest/java/com/dxxredux/app/PackageDocumentChecks.kt",
+    "sha256": "1e3a101c1ea6a6327004642d177599905be4ceb41bf25325b2f9e8e7888a77a0"
+  },
+  {
+    "path": "android/game_scripts/test_android_saveload_dispatch_unified.jsonc",
+    "sha256": "8041ba98afe301980bd4a314eaea2c7296d7e61dab7d03cecf81e4c63790be51"
+  },
+  {
+    "path": "android/game_scripts/test_counterstrike_level21_guidebot_pre_reactor_exit.jsonc",
+    "sha256": "ba16b22a655d661a065098d8161efc4ccc9e0813dffd84c4ecf1a8005dca6ba7"
+  },
+  {
+    "path": "android/game_scripts/test_obsidian_level6_guidebot_switch_grate.jsonc",
+    "sha256": "2855c6d558aeecef89c452dcf0ba3e0c456740c45239d4c5fe425d88fca1a31b"
+  },
+  {
+    "path": "android/helpers/generate_preview_test_audio.py",
+    "sha256": "891329e0d8ea9dda22d201dcd475a22766d9b86f19593bec47699460048c5a08"
+  },
+  {
+    "path": "android/helpers/regenerate_all_guidebot_simulations.ps1",
+    "sha256": "5df90c3d32a5bce0cc555f94ba0e211cd3ee77899a956c388e86b219878dc477"
+  },
+  {
+    "path": "android/helpers/run_fov_demo_tests.ps1",
+    "sha256": "d3c67cc142cbcb59ab68c8aaa8efde5725c036f282e327c3e0a1f5325f2da4a5"
+  },
+  {
+    "path": "android/helpers/run_graphics_recovery_tests.ps1",
+    "sha256": "8048dffe25d01392b4660be7a7d5df56c01a66e77916cf137726a913ca897053"
+  },
+  {
+    "path": "android/helpers/test_target.ps1",
+    "sha256": "f1bb64f31a7f464cb8bc28c1416704c5e7675bb009736afd28f6a26b907d0ec9"
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "sha256": "d06cd3a7e74d8d832d808fac869e933ce0adb08f774f66663edb4f6b5c5a43c8"
+  },
+  {
+    "path": "android/tests/test_android_test_target.ps1",
+    "sha256": "074e6460f7bf92dd6674a0bc4ece4c8b90548aee7ac31d38116f57c34e8a51ab"
+  },
+  {
+    "path": "android/tests/test_audio_mix.ps1",
+    "sha256": "49952b44dfc61fbfff2d0e8c2254d6d3add1aca259a603f0d75a27f860efb29f"
+  },
+  {
+    "path": "android/tests/test_dxa_asset_usage.ps1",
+    "sha256": "715a93d6b4a389f01516b50d3dbdd01d5b629e574471068a6f817dde33bd4410"
+  },
+  {
+    "path": "android/tests/test_graphics_recovery.ps1",
+    "sha256": "794ee1dfa8fe598351e4caf85d680c468225022434eb6379a73c6a531eaf811c"
+  },
+  {
+    "path": "android/tests/test_lan_orphan_restart.ps1",
+    "sha256": "4f203557dfc1aaccea1146599506e253231b313811968dd216e410468b9af086"
+  },
+  {
+    "path": "android/tests/test_mission_asset_isolation.ps1",
+    "sha256": "208962cb6b5c4b4751b43ef569bf000c3bbcf96840e3919a4ab1dd21cb6281f7"
+  },
+  {
+    "path": "android/tests/test_sound_trace.ps1",
+    "sha256": "52afb21ccfc2e347332701783e88b6dd7829f2327b9eb3f74254c4a7576ba2fa"
+  },
+  {
+    "path": "android/tests/test_uud_mod_combinations.ps1",
+    "sha256": "efa79d462b7fea20dc7a9865af27827f1f930b3ed4f05c60926fe7239d14c6c4"
+  },
+  {
+    "path": "android/tests/test_uud2sp.ps1",
+    "sha256": "54c50b3e7f0fc3d059053d0d4c49fd534deb439dc0e6ec789df330a300f5b8fd"
+  },
+  {
+    "path": "android/tests/test_vertigo_merge_creation.ps1",
+    "sha256": "387309bae7466666a79103a964202236ca6df6b9aecc05d40c0c819140eaa42b"
+  },
+  {
+    "path": "android/tests/test_random_level_preview.ps1",
+    "sha256": "613757367656699f5ce34f2c55698f130ddbaa1549d7af740cc8eadcadee15e2"
+  }
+]

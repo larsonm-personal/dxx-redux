@@ -1,29 +1,32 @@
 #!/usr/bin/env pwsh
-# Provisioned-emulator faults; restores changed permissions even after an assertion fails
+# Isolated-app faults; restores changed permissions even after an assertion fails
 param(
     [switch]$Install,
     [ValidateSet('d1', 'd2')][string]$Game,
     [ValidateSet('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted', 'activity_replaced')][string]$Fault,
-    [string]$Serial = 'emulator-5554'
+    [string]$Serial
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'test_helpers.ps1')
-if ($Serial -notmatch '^emulator-[0-9]+$') { throw 'This reset-state fixture is restricted to provisioned emulators' }
+$previousSerial = $env:ANDROID_SERIAL
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
 $outputDirectory = Join-Path $script:REPO_ROOT ('android/temp/graphics-recovery-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 & (Join-Path $PSScriptRoot 'retain-recent-artifacts.ps1') -Artifacts @($outputDirectory)
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
-$previousSerial = $env:ANDROID_SERIAL
 $env:ANDROID_SERIAL = $Serial
 $games = if ($Game) { @($Game) } else { @('d1', 'd2') }
 $faults = if ($Fault) { @($Fault) } else { @('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted', 'activity_replaced') }
 $results = [System.Collections.Generic.List[object]]::new()
 $permissionFault = ''
 $originalPermissionMode = ''
+$logSession = $null
 
 function Invoke-Device {
     param([string[]]$Arguments)
-    $output = & $script:ADB -s $Serial @Arguments 2>&1
+    $scopedArguments = Get-TestPackageAdbArguments -Arguments $Arguments
+    $output = & $script:ADB -s $Serial @scopedArguments 2>&1
     if ($LASTEXITCODE -ne 0) { throw "adb failed: $($Arguments -join ' '): $output" }
     return ($output -join "`n")
 }
@@ -90,6 +93,7 @@ function Push-RecoveryScript {
 }
 
 try {
+    $logSession = Start-AndroidTestDebugLogSession
     foreach ($gameId in $games) {
         foreach ($faultName in $faults) {
             $caseName = "$gameId-$faultName"
@@ -316,6 +320,7 @@ try {
     } catch { Write-Warning "Could not capture recovery failure: $($_.Exception.Message)" }
     throw $failure
 } finally {
+    Stop-AndroidTestDebugLogSession -Session $logSession
     Restore-FaultPermissions
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial }
     else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }

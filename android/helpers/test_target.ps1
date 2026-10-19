@@ -121,6 +121,36 @@ function Get-TestPackageAdbArguments {
     return $Arguments
 }
 
+function Start-AndroidTestDebugLogSession {
+    $original = [string](Adb -AdbArgs @('shell', 'getprop', 'log.tag.DXX-DLOG'))
+    if ($original -notmatch '^(?:[VDIWEFS]|VERBOSE|DEBUG|INFO|WARN|ERROR|FATAL|SILENT)?$') {
+        throw 'Cannot preserve the DXX-DLOG log priority'
+    }
+    $session = @{ Serial = $env:ANDROID_SERIAL; Original = $original }
+    # Override a physical device's global INFO threshold only for our diagnostic tag
+    try {
+        Adb -AdbArgs @('shell', 'setprop', 'log.tag.DXX-DLOG', 'D') | Out-Null
+        if ((Adb -AdbArgs @('shell', 'getprop', 'log.tag.DXX-DLOG')) -ne 'D') {
+            throw 'Cannot enable DXX-DLOG debug records required by this test'
+        }
+    } catch {
+        Stop-AndroidTestDebugLogSession -Session $session
+        throw
+    }
+    return $session
+}
+
+function Stop-AndroidTestDebugLogSession {
+    param($Session)
+    if (-not $Session) { return }
+    $priority = if ($Session.Original) { $Session.Original } else { "''" }
+    Adb-Dev -Serial $Session.Serial -AdbArgs @('shell', 'setprop', 'log.tag.DXX-DLOG', $priority) | Out-Null
+    $restored = Adb-Dev -Serial $Session.Serial -AdbArgs @('shell', 'getprop', 'log.tag.DXX-DLOG')
+    if ([string]$restored -ne $Session.Original) {
+        Write-Warning "Could not restore DXX-DLOG log priority on $($Session.Serial)"
+    }
+}
+
 function Start-AndroidTestPowerSession {
     if (-not (Test-PhysicalTestTarget)) { return $null }
     $original = Adb -AdbArgs @('shell', 'settings', 'get', 'global', 'stay_on_while_plugged_in')

@@ -32,7 +32,10 @@ if ((Get-FileHash -LiteralPath $enemy -Algorithm SHA256).Hash.ToLowerInvariant()
     throw 'Enemy Within fixture does not match the phone reproduction sample fixture'
 }
 $target = 'files/imported/sets/default/.content/mods'
+$logSession = $null
+$logCapture = $null
 try {
+    $logSession = Start-AndroidTestDebugLogSession
     & $ADB shell run-as $script:PACKAGE mkdir -p $target
     foreach ($source in @($enemy, (Join-Path $repoRoot 'game_data/mission_files/descent_maximum_fixed.zip'))) {
         $name = Split-Path -Leaf $source
@@ -43,10 +46,22 @@ try {
         & $ADB shell rm -f "/data/local/tmp/$name"
     }
     & $ADB logcat -c
+    $logPath = Join-Path $repoRoot 'temp/mission_isolation_logcat.txt'
+    # Stream the whole campaign: small physical-device log rings discard early activations
+    $captureOptions = @{
+        FilePath = $ADB
+        ArgumentList = @('-s', $env:ANDROID_SERIAL, 'logcat', '-v', 'threadtime', '-s', 'DXX-DLOG:D', 'DXX-Automate:I', '*:S')
+        PassThru = $true
+        RedirectStandardOutput = $logPath
+        RedirectStandardError = Join-Path $repoRoot 'temp/mission_isolation_logcat_stderr.txt'
+    }
+    if ($IsWindows) { $captureOptions.WindowStyle = 'Hidden' }
+    $logCapture = Start-Process @captureOptions
     & (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_mission_asset_isolation.jsonc -Game d2 -TimeoutSeconds 600
     $testResult = $LASTEXITCODE
-    $logPath = Join-Path $repoRoot 'temp/mission_isolation_logcat.txt'
-    & $ADB logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
+    if (!$logCapture.HasExited) { Stop-Process -Id $logCapture.Id }
+    $logCapture.WaitForExit()
+    if ($logCapture.ExitCode -ne 0 -and !(Test-Path -LiteralPath $logPath)) { throw 'Could not capture campaign logcat' }
     if ($testResult -ne 0) { throw "Mission switching failed; see $logPath" }
     $lines = Get-Content -LiteralPath $logPath
     $marker = $lines | Where-Object { $_ -match 'DXX-Automate: SCRIPT: ISOLATION start Counterstrike' } | Select-Object -First 1
@@ -75,6 +90,8 @@ try {
     }
     Write-Host "Mission asset isolation passed in process $($processes[0]): $logPath"
 } finally {
+    if ($logCapture -and !$logCapture.HasExited) { Stop-Process -Id $logCapture.Id; $logCapture.WaitForExit() }
+    Stop-AndroidTestDebugLogSession -Session $logSession
     # The test replaces the default mod manifest; release its archives and generated mounts
     & $ADB shell am force-stop $script:PACKAGE
     & $ADB shell rm -f /data/local/tmp/ewithin-rebirth.zip /data/local/tmp/descent_maximum_fixed.zip

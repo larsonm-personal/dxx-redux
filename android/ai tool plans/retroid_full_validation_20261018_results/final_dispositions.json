@@ -1,0 +1,2943 @@
+{
+  "schema": 1,
+  "serial": "JYPR42510121028",
+  "package": "com.dxxredux.app.nsdtest",
+  "initial_counts": {
+    "SKIP": 191,
+    "PASS": 141,
+    "FAIL": 32
+  },
+  "latest_counts": {
+    "SKIP": 194,
+    "PASS": 160,
+    "FAIL": 10
+  },
+  "portable_counts": {
+    "PASS": 160,
+    "FAIL": 10
+  },
+  "portable_total": 170,
+  "scope": "Combined latest dispositions across documented builds and retries; not a single clean run",
+  "final_device_results": {
+    "recovery_d1_accept_exit": 1,
+    "lan_free_port_exit": 0,
+    "lan_prerequisite_exit": 1,
+    "lan_free_port_game_exit": 0,
+    "cold_preview_exit": 0,
+    "cold_preview_without_power_exit": 1
+  },
+  "records": [
+    {
+      "name": "test_7zip_install",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_abort_game_to_main_menu_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_abort_game_to_main_menu_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_acoustid_config_packaging",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_acoustid_regeneration",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_active_game_data_reset",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_all_extracts",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: extract",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_all_weapons_runtime",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_android_automap_route_policy",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_automap_route_policy_20261018_222300.log"
+    },
+    {
+      "name": "test_android_cd_preview_completion",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_cd_preview_completion_20261018_222300.log"
+    },
+    {
+      "name": "test_android_config_policy",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_config_policy_20261018_222300.log"
+    },
+    {
+      "name": "test_android_d1_mod_patches",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_d1_mod_patches_20261018_222300.log"
+    },
+    {
+      "name": "test_android_distributions",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_android_ktx2_mipmaps",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_ktx2_mipmaps_20261018_222300.log"
+    },
+    {
+      "name": "test_android_matcen_stations",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_matcen_stations_20261018_222300.log"
+    },
+    {
+      "name": "test_android_merge_cache",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_merge_cache_20261018_222300.log"
+    },
+    {
+      "name": "test_android_merged_wrap",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_merged_wrap_20261018_222300.log"
+    },
+    {
+      "name": "test_android_metadata_worker",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "explicit investigation/caller configuration; run directly",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_android_mod_bitmaps",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_mod_bitmaps_20261018_222300.log"
+    },
+    {
+      "name": "test_android_mod_renderer",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_mod_renderer_20261018_222300.log"
+    },
+    {
+      "name": "test_android_mod_save",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_mod_save_20261018_222300.log"
+    },
+    {
+      "name": "test_android_mod_sounds",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_mod_sounds_20261018_222300.log"
+    },
+    {
+      "name": "test_android_music_completion",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_music_completion_20261018_222300.log"
+    },
+    {
+      "name": "test_android_ogl_batches",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_ogl_batches_20261018_222300.log"
+    },
+    {
+      "name": "test_android_pause_state",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_pause_state_20261018_222300.log"
+    },
+    {
+      "name": "test_android_redbook_completion",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_redbook_completion_20261018_222300.log"
+    },
+    {
+      "name": "test_android_saveload_dispatch_unified",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_saveload_dispatch_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_android_sdk_lifecycle",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_sdk_lifecycle_20261018_222300.log"
+    },
+    {
+      "name": "test_android_secret_origins",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_secret_origins_20261018_222300.log"
+    },
+    {
+      "name": "test_android_test_target",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_android_texture_bindings",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_texture_bindings_20261018_222300.log"
+    },
+    {
+      "name": "test_android_texture_labels",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_texture_labels_20261018_222300.log"
+    },
+    {
+      "name": "test_android_xmodel_mipmaps",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_android_xmodel_mipmaps_20261018_222300.log"
+    },
+    {
+      "name": "test_async_checkpoint_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_async_checkpoint_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_audio_mix",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_audio_mix_20261018_222300.log"
+    },
+    {
+      "name": "test_auto_level_demos",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_auto_level_demos_20261018_222300.log"
+    },
+    {
+      "name": "test_automap_objective_readiness_progress",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_automap_objective_readiness_progress_20261018_222300.log"
+    },
+    {
+      "name": "test_automation_result_evidence",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_automation_result_evidence_20261018_222300.log"
+    },
+    {
+      "name": "test_autosave_resume_missing_pilot_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_autosave_resume_missing_pilot_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_autoselect_crash_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_autoselect_crash_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_axis_mapping",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_axis_mapping_20261018_222300.log"
+    },
+    {
+      "name": "test_boss_health_bar",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_boss_health_bar_20261018_222300.log"
+    },
+    {
+      "name": "test_bot_client",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: server",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_bounded_extraction",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_bounded_python_runtime",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_castaway_level2_restored_switch_route",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_cd_level_metadata_sources",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_cd_mission_hog_isolation",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_cd_regression_runner",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_classic_demo_compatibility",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_classic_trigger_demo",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_clean_old_artifacts",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_clean_workspace",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_client_identity_backup",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_code_quality_files",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_combined_package_identity",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_compact_public_replay_failures",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_compact_public_replays",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_compressed_music_metadata",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_compressed_music_metadata_20261018_222300.log"
+    },
+    {
+      "name": "test_compute_faster_dialog",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_compute_faster_dialog_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_compare_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_compare_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_live_rebind",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_live_rebind_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_overlay",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_overlay_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_raw_inputs",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_raw_inputs_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_response",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_response_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_touch_hotplug",
+      "initial_status": "FAIL",
+      "latest_status": "SKIP",
+      "reason": "requires emulator uinput hotplug with no built-in controller",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_touch_hotplug_20261018_222300.log"
+    },
+    {
+      "name": "test_controller_trigger_axis_priority",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controller_trigger_axis_priority_20261018_222300.log"
+    },
+    {
+      "name": "test_controls_readability_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_controls_readability_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_coop_join_missing_level",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "requires emulator crash injection or emulator console networking",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_coop_launch_feedback",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_coop_launch_feedback_20261018_222300.log"
+    },
+    {
+      "name": "test_coop_pause",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_coop_save_compatibility",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "requires emulator crash injection or emulator console networking",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_coop_session",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_coop_session_20261018_222300.log"
+    },
+    {
+      "name": "test_coop_start_fanout_mapset",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_counterstrike_level20_guidebot_dropped_notification",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_counterstrike_level20_guidebot_dropped_notification_20261018_222300.log"
+    },
+    {
+      "name": "test_counterstrike_level20_guidebot_post_boss_exit",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_counterstrike_level20_guidebot_post_boss_exit_20261018_222300.log"
+    },
+    {
+      "name": "test_counterstrike_level20_guidebot_trigger3",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_counterstrike_level20_guidebot_trigger3_20261018_222300.log"
+    },
+    {
+      "name": "test_counterstrike_level21_guidebot_pre_reactor_exit",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_counterstrike_level21_guidebot_pre_reactor_exit_20261018_222300.log"
+    },
+    {
+      "name": "test_counterstrike_level23_guidebot_trigger_liveness",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_counterstrike_level23_guidebot_trigger_liveness_20261018_222300.log"
+    },
+    {
+      "name": "test_counterstrike_level24_guidebot_gold_key_liveness",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_counterstrike_level24_guidebot_gold_key_liveness_20261018_222300.log"
+    },
+    {
+      "name": "test_counterstrike_level2_trigger21_route",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_cue_iso",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d1_in_d2_standalone",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_d1_in_d2_standalone_20261018_222300.log"
+    },
+    {
+      "name": "test_d1_network_assets",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d1_replay_parity",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d1_wall_blast_save",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d2_boss_difficulty_save_restore",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_d2_boss_difficulty_save_restore_20261018_222300.log"
+    },
+    {
+      "name": "test_d2_level7_reactor_water_profile",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_d2_level7_reactor_water_profile_20261018_222300.log"
+    },
+    {
+      "name": "test_d2xxl_sound_format",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d2xxl_texture_animation",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_d2xxl_texture_animation_20261018_222300.log"
+    },
+    {
+      "name": "test_d2xxl_texture_merge",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d2xxl_tga_layout",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_d2xxl_tga_pixels",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_death",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_death_20261018_222300.log"
+    },
+    {
+      "name": "test_debug_log_refresh_button",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_debug_log_refresh_button_20261018_222300.log"
+    },
+    {
+      "name": "test_demo_group_file_set_content",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_demo_group_file_set_content_20261018_222300.log"
+    },
+    {
+      "name": "test_demo_import",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_demo_import_20261018_222300.log"
+    },
+    {
+      "name": "test_demo_import_first_play_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_demo_import_public_basic_use",
+      "initial_status": "FAIL",
+      "latest_status": "SKIP",
+      "reason": "cold first-play fixture requires a verified disposable emulator",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_demo_import_public_basic_use_20261018_222300.log"
+    },
+    {
+      "name": "test_demo_import_public_first_play",
+      "initial_status": "FAIL",
+      "latest_status": "SKIP",
+      "reason": "cold first-play fixture requires a verified disposable emulator",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_demo_import_public_first_play_20261018_222300.log"
+    },
+    {
+      "name": "test_dep_platform",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_dependency_install",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_device_network_campaign",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "explicit investigation/caller configuration; run directly",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_device_network_campaign_cli",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_disc_content_import",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_disc_content_import_20261018_222300.log"
+    },
+    {
+      "name": "test_distribution_build_info",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_distribution_build_info_20261018_222300.log"
+    },
+    {
+      "name": "test_distribution_launch",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_distribution_launch_20261018_222300.log"
+    },
+    {
+      "name": "test_dos_midi_parity",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_double_launch",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_double_launch_20261018_222300.log"
+    },
+    {
+      "name": "test_download_verification",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_dual_emu",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_dual_emu_setup",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_dxa_asset_usage",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_dxa_asset_usage_20261018_222300.log"
+    },
+    {
+      "name": "test_emulator_recovery",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_endgame_singleplayer_d1",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_endgame_singleplayer_d1_20261018_222300.log"
+    },
+    {
+      "name": "test_endgame_singleplayer_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_endgame_singleplayer_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_enemy_within_import",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_enemy_within_import_20261018_222300.log"
+    },
+    {
+      "name": "test_enemy_within_level2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_enemy_within_level2_20261018_222300.log"
+    },
+    {
+      "name": "test_engine_prefs_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_engine_prefs_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_extract_all_cds_batch",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_extract_all_gog_batch",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_extract_regression_workflow",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_extract_suite_device_preflight",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_extraction_cache_provenance",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_extraction_publication",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fingerprint_audio_enumeration",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fingerprint_manifest_publication",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fingerprint_mission_zip_budgets",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fingerprint_music_pack_build_guard",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fingerprint_source_identity",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fingerprint_threshold",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_flyout_safety",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_formatter_process_cleanup",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_fov_cpu_visibility",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_fov_cpu_visibility_20261018_222300.log"
+    },
+    {
+      "name": "test_fov_demo_compatibility",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_fov_demo_compatibility_20261018_222300.log"
+    },
+    {
+      "name": "test_fpcalc_and_acoustid",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_game_data_asset_manifest_writer",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_gamepad_menu_navigation_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_gamepad_menu_navigation_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_generate_regression_specs",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_get_deps_runtime_updates",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_github_release",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_gles3_shim_vbo_arrays",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_gles3_shim_vbo_arrays_20261018_222300.log"
+    },
+    {
+      "name": "test_gog_installer_d1_unified",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: extract",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_gog_installer_redbook_unified",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: extract",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_gradle_unit_test_evidence",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_gradle_unit_test_evidence_20261018_222300.log"
+    },
+    {
+      "name": "test_gradle_unit_tests",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_graphics_black_output",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_black_output_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_capabilities",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_capabilities_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_confirmation_input",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_confirmation_input_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_context_loss",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_context_loss_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_egl_failure",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_egl_failure_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_first_run",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_first_run_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_lifecycle",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_lifecycle_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_mode_restore",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_mode_restore_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_msaa_allocation_failure",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_msaa_allocation_failure_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_native_interruption",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_native_interruption_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_preview",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_preview_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_recovery",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "D1 blocked-acceptance recovery message failure reproduces; other17 distinct cases pass",
+      "latest_evidence": "recovery_d1_accept_retry.log;continuation/results.json;retry_current/recovery_failure",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_recovery_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_settings_confirmation",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_settings_confirmation_20261018_222300.log"
+    },
+    {
+      "name": "test_graphics_video_overlay",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_graphics_video_overlay_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_goal_message",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_goal_message_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_info_overlay",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_info_overlay_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_mission_metadata",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_mission_metadata_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_publication_batching",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_recall_to_ship",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_recall_to_ship_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_route_regressions",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_routing_menus",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_routing_menus_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_routing_modes",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_routing_modes_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_saved_world",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_secret_transition",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_simulation_browser",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_simulation_headed_headless_parity",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_simulation_headed_headless_parity_20261018_222300.log"
+    },
+    {
+      "name": "test_guidebot_simulation_reporting",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_simulation_runner",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_simulation_schema",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_simulation_timeout_policy",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_guidebot_unexplored_goal",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_guidebot_unexplored_goal_20261018_222300.log"
+    },
+    {
+      "name": "test_guided_shot_annotations",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_hash_assets_force_completeness",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_headless_process_pool",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_hires_pack_release",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_hires_pack_release_20261018_222300.log"
+    },
+    {
+      "name": "test_host_dialog_loading",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_host_dialog_loading_20261018_222300.log"
+    },
+    {
+      "name": "test_host_metadata_worker",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_host_metadata_workspace",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_host_process_cleanup",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_idle_screen_saver",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_idle_screen_saver_20261018_222300.log"
+    },
+    {
+      "name": "test_independent_checkpoints",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_independent_trigger_axes",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_independent_trigger_axes_20261018_222300.log"
+    },
+    {
+      "name": "test_input_demo_assets",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_comparison_policy",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_determinism_matrix",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_explicit_path",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_host_build_guard",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_recording_profile",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_input_demo_recording_profile_20261018_222300.log"
+    },
+    {
+      "name": "test_input_demo_regressions_d1",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_regressions_d1_graphics",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_regressions_d1_in_d2",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_regressions_d1_in_d2_graphics",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_regressions_d2",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_regressions_d2_graphics",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_replay_failures",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_replay_menu",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_rng_trace_compare",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_runtime_smoke",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_input_demo_state_trace_compare",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_intro_skip_inputs_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_intro_skip_inputs_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_jsonc_and_tracklist_parsing",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_kcxf2_guidebot_route_next",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_kcxf2_guidebot_route_next_20261018_222300.log"
+    },
+    {
+      "name": "test_keyboard_manual",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "manual/interactive",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_active_discovery",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "requires emulator crash injection or emulator console networking",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_broadcast",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_discovery",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_host_migration_public_shareware",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_launch_preparation",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_launch_preparation_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_launch_preparation_public_shareware",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_lobby_discovery",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_nsd",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "explicit investigation/caller configuration; run directly",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_orphan_restart",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "Port42430 collision diagnosed; both variants retried after temporarily stopping background GitHub launcher",
+      "latest_evidence": "lan_free_port_final.log;lan_free_port_game_final.log",
+      "initial_log": "temp\\retroid_full_20261018\\test_lan_orphan_restart_20261018_222300.log"
+    },
+    {
+      "name": "test_lan_public_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_qr",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_lan_qr_20261018_222300.log"
+    },
+    {
+      "name": "test_lan_qr_join",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_lan_transport_recovery",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_lan_transport_recovery_20261018_222300.log"
+    },
+    {
+      "name": "test_launch_to_automap",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_launch_to_automap_20261018_222300.log"
+    },
+    {
+      "name": "test_launcher_dpad",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_launcher_dpad_20261018_222300.log"
+    },
+    {
+      "name": "test_launcher_media_controls",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_launcher_media_controls_20261018_222300.log"
+    },
+    {
+      "name": "test_launcher_media_controls_generated",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_launcher_media_controls_generated_20261018_222300.log"
+    },
+    {
+      "name": "test_level_metadata_benchmark",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_level_metadata_hxm_worker_reuse",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_level_metadata_hxm_worker_reuse_20261018_222300.log"
+    },
+    {
+      "name": "test_level_metadata_interactive_preemption",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_level_metadata_interactive_preemption_20261018_222300.log"
+    },
+    {
+      "name": "test_level_metadata_launcher_zip_reusable",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_level_metadata_launcher_zip_reusable_20261018_222300.log"
+    },
+    {
+      "name": "test_level_metadata_request_mount_scope",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_level_metadata_request_mount_scope_20261018_222300.log"
+    },
+    {
+      "name": "test_level_metadata_result_cache_reuse",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_level_metadata_result_cache_reuse_20261018_222300.log"
+    },
+    {
+      "name": "test_levelcomplete_touch_skip",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_levelcomplete_touch_skip_20261018_222300.log"
+    },
+    {
+      "name": "test_lobby_latency",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_lobby_latency_20261018_222300.log"
+    },
+    {
+      "name": "test_lunar_series_revamped_metadata_only",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_lunar_series_revamped_metadata_only_20261018_222300.log"
+    },
+    {
+      "name": "test_mac_d2_demo_graphics",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_mac_d2_demo_graphics_20261018_222300.log"
+    },
+    {
+      "name": "test_mac_extract_saf",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: extract",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_macplay_audio",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_macplay_audio_20261018_222300.log"
+    },
+    {
+      "name": "test_managed_dependencies",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_managed_emulator_start",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_manual_ip_engine",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_manual_lan_coop",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_maximum_nested_secret",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "explicit investigation/caller configuration; run directly",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_merged_wall_snapshot_regression",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_merged_wall_snapshot_regression_20261018_222300.log"
+    },
+    {
+      "name": "test_merged_wall_two_pass_probe",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_merged_wall_two_pass_probe_20261018_222300.log"
+    },
+    {
+      "name": "test_metadata_level_headers",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_metadata_parallel_results",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_archive_variants",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_asset_isolation",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "PASS: full streamed log verifier",
+      "latest_evidence": "continuation/mission-isolation.log",
+      "initial_log": "temp\\retroid_full_20261018\\test_mission_asset_isolation_20261018_222300.log"
+    },
+    {
+      "name": "test_mission_intent_regression_schema",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_launch_cache",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_mission_launch_cache_20261018_222300.log"
+    },
+    {
+      "name": "test_mission_level_names",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_metadata_archive_sources",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_metadata_flyouts",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_metadata_json_normalization",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_metadata_level_statistics",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_metadata_travel_times",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_metadata_trigger_cycles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_movies",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_provenance",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_rar_archive",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_zip_batch",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_mission_zip_batch_20261018_222300.log"
+    },
+    {
+      "name": "test_mission_zip_batch_publication",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mission_zip_batch_recovery",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_mod_fuzz",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_mod_fuzz_20261018_222300.log"
+    },
+    {
+      "name": "test_mod_loading",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_mod_loading_20261018_222300.log"
+    },
+    {
+      "name": "test_mod_save_toggle",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_mod_save_toggle_20261018_222300.log"
+    },
+    {
+      "name": "test_movie_skip_controls_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_movie_skip_controls_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_mp",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: two_emulators",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_msaa_render_and_menu",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_msaa_render_and_menu_20261018_222300.log"
+    },
+    {
+      "name": "test_multiplayer_recovery",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_multiplayer_recovery_20261018_222300.log"
+    },
+    {
+      "name": "test_music_save_source_restore_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_music_save_source_restore_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_music_track_controls_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_music_track_controls_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_native_host_unit_tests",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_native_metadata_worker",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_newmenu_render_paths_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_newmenu_render_paths_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_object_packet_decoders",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_obsidian_level13_open_wall_profile",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_obsidian_level13_open_wall_profile_20261018_222300.log"
+    },
+    {
+      "name": "test_obsidian_level1_objective_markers",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_obsidian_level1_objective_markers_20261018_222300.log"
+    },
+    {
+      "name": "test_obsidian_level3_blastable_wall",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_obsidian_level4_closed_trigger_source",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_obsidian_level4_post_reactor_keys",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_obsidian_level4_post_reactor_keys_20261018_222300.log"
+    },
+    {
+      "name": "test_obsidian_level6_guidebot_switch_grate",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_obsidian_level6_guidebot_switch_grate_20261018_222300.log"
+    },
+    {
+      "name": "test_obsidian_level7_exit_route",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_obsidian_level7_switch_guidance",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_obsidian_level7_switch_guidance_20261018_222300.log"
+    },
+    {
+      "name": "test_ogl_gauge_batch_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_ogl_gauge_batch_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_ogl_runtime_texture_options_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_ogl_runtime_texture_options_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_ordered_input_runtime",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_package_documents",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "PASS: repaired Compose wait and accessibility scroll",
+      "latest_evidence": "continuation/package-documents.log",
+      "initial_log": "temp\\retroid_full_20261018\\test_package_documents_20261018_222300.log"
+    },
+    {
+      "name": "test_pc_d2_demo_music",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_pc_d2_demo_music_20261018_222300.log"
+    },
+    {
+      "name": "test_pcm_ring",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_pcm_ring_20261018_222300.log"
+    },
+    {
+      "name": "test_pickup_autoselect_parity",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_pickup_autoselect_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_pilot_long_hold_delete_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_pilot_long_hold_delete_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_powershell_51_compatibility",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_primary_target_grates",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_public_combat_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_public_d1_fault_tools",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_public_matcen_stations",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "explicit investigation/caller configuration; run directly",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_public_save_continuation",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_public_save_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_publish_menu",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_quick_record_classic_sidecar",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_quick_record_classic_sidecar_20261018_222300.log"
+    },
+    {
+      "name": "test_random_level_preview",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "Separate metadata preparation and unchanged180s rendering deadline; cold caches explicitly cleared",
+      "latest_evidence": "cold_preview_final.log",
+      "initial_log": "temp\\retroid_full_20261018\\test_random_level_preview_20261018_222300.log"
+    },
+    {
+      "name": "test_readable_tiny_help_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_readable_tiny_help_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_regenerate_all_regression_data",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_regression_process_lifetime",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_repository_artifact_policy",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_resolution_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_resolution_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_review_ledger_generation",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_robot_preview",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_robot_preview_20261018_222300.log"
+    },
+    {
+      "name": "test_route_metadata_background_priority",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_route_metadata_background_priority_20261018_222300.log"
+    },
+    {
+      "name": "test_route_metadata_import_handoff",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_route_metadata_import_handoff_20261018_222300.log"
+    },
+    {
+      "name": "test_route_metadata_large_level_budget",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_route_metadata_large_level_budget_20261018_222300.log"
+    },
+    {
+      "name": "test_route_regeneration_audit",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_run_all_tests_catalog",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_runtime_targeted_sampling",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_saf_archiver",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_saf_archiver_20261018_222300.log"
+    },
+    {
+      "name": "test_saf_redbook",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_saf_redbook_20261018_222300.log"
+    },
+    {
+      "name": "test_sdk_package_cleanup",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_sdk_package_inventory",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_sdk_writer_lock",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_secret_area_baseline",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_secret_area_baseline_diff",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_secret_area_data_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_secret_reveal_automap_d2",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_secret_reveal_automap_d2_20261018_222300.log"
+    },
+    {
+      "name": "test_server_integration",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_shareware_automation_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_shareware_test_data",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_skip_every_launch_button_manual_unified",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "manual/interactive",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_slider_navigation",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_slider_navigation_20261018_222300.log"
+    },
+    {
+      "name": "test_sound_trace",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_sound_trace_20261018_222300.log"
+    },
+    {
+      "name": "test_soundfont_download_catalog",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_soundfont_download_catalog_20261018_222300.log"
+    },
+    {
+      "name": "test_standard_game_data_resolution",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_startup_restore_failure",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_startup_restore_failure_20261018_222300.log"
+    },
+    {
+      "name": "test_store_asset_pipeline",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "explicit investigation/caller configuration; run directly",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_test_execution_evidence",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_test_helpers_process_wait",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_test_process_output_capture",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_test_report_runtimes",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_test_runner_result",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_test_suite_progress",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_texture_index_level_load",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_texture_index_level_load_20261018_222300.log"
+    },
+    {
+      "name": "test_title_music_skip_pref_unified",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_title_music_skip_pref_unified_20261018_222300.log"
+    },
+    {
+      "name": "test_touch_layout_format",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_touch_layout_format_20261018_222300.log"
+    },
+    {
+      "name": "test_trine2_d1_in_d2_custom_textures",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_trine2_d1_in_d2_custom_textures_20261018_222300.log"
+    },
+    {
+      "name": "test_unified_content_mission_picker",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_unified_content_mission_picker_20261018_222300.log"
+    },
+    {
+      "name": "test_unified_file_set_content",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_unified_file_set_content_20261018_222300.log"
+    },
+    {
+      "name": "test_uud2sp",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_uud2sp_20261018_222300.log"
+    },
+    {
+      "name": "test_uud_mission_gameplay",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_uud_mission_gameplay_20261018_222300.log"
+    },
+    {
+      "name": "test_uud_mod_combinations",
+      "initial_status": "FAIL",
+      "latest_status": "FAIL",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_uud_mod_combinations_20261018_222300.log"
+    },
+    {
+      "name": "test_uud_surface_levels",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_uud_surface_levels_20261018_222300.log"
+    },
+    {
+      "name": "test_validate_automation_catalog",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_validate_extract_regression_specs",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_vertigo_level_metadata",
+      "initial_status": "PASS",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "main",
+      "initial_log": "temp\\retroid_full_20261018\\test_vertigo_level_metadata_20261018_222300.log"
+    },
+    {
+      "name": "test_vertigo_merge_creation",
+      "initial_status": "FAIL",
+      "latest_status": "PASS",
+      "reason": "",
+      "latest_evidence": "retry_current",
+      "initial_log": "temp\\retroid_full_20261018\\test_vertigo_merge_creation_20261018_222300.log"
+    },
+    {
+      "name": "test_vertigo_metadata",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_vertigo_metadata_checkpoints",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_wall_blast_save_profiles",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_windows_mission_metadata_route_masks",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_windows_mission_metadata_runner",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_xcrash_native_report",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "requires emulator crash injection or emulator console networking",
+      "latest_evidence": "main",
+      "initial_log": ""
+    },
+    {
+      "name": "test_xfing_asset_validation",
+      "initial_status": "SKIP",
+      "latest_status": "SKIP",
+      "reason": "single-device profile excludes declared infrastructure: none",
+      "latest_evidence": "main",
+      "initial_log": ""
+    }
+  ]
+}

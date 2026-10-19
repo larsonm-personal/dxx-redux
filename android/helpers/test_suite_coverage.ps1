@@ -39,6 +39,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_multiplayer_recovery'
             'test_coop_launch_feedback'
             'test_coop_save_compatibility'
+            'test_coop_join_missing_level'
             'test_coop_session'
             'test_coop_pause'
             'test_independent_checkpoints'
@@ -223,6 +224,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_lan_nsd'
             # These probes require caller-supplied binaries or data directories
             'test_android_metadata_worker'
+            'test_classic_demo_compatibility'
             'test_classic_trigger_demo'
             'test_combined_package_identity'
             'test_d1_network_assets'

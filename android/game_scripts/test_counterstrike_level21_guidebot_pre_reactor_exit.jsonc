@@ -41,6 +41,14 @@
     { "action": "select", "text": "Ok", "timeout_ms": 5000 },
     { "action": "select", "text": "Trainee", "optional": true },
     { "action": "skip_briefing", "timeout_ms": 60000 },
+    // Request route metadata at automap priority before checking guidance
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 30000 },
+    { "action": "key", "key": "tab" },
+    { "action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000 },
+    { "action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100 },
+    { "action": "wait_for", "expect": { "guidebot.route_next_waypoint_pending": false }, "timeout_ms": 240000 },
+    { "action": "key", "key": "escape" },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000 },
     {
         "action": "wait_for",
         "timeout_ms": 30000,

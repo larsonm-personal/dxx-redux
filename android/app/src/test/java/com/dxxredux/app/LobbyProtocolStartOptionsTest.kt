@@ -171,4 +171,32 @@ class LobbyProtocolStartOptionsTest {
         assertTrue(announce.size < 8 * 1024)
         assertTrue(statusPacket.size < 8 * 1024)
     }
+
+    @Test
+    fun builtinEditionWarningRoundTripsThroughLanLobby() {
+        val requirement =
+            MissionRequirement(
+                revision = "${"ab".repeat(32)}:42:d2:descent",
+                game = "d2",
+                missionKey = "descent",
+                displayName = "Descent: First Strike",
+                kind = MissionRequirement.KIND_BUILTIN,
+                sizeBytes = 42L,
+                sha256 = "ab".repeat(32),
+            )
+        val announce = buildAnnounce("lobby", "Host", "d2", "descent", "coop", 2, 4, missionRequirement = requirement)
+        val status =
+            MissionStatusReport(
+                requirement.revision,
+                MissionCompatibilityStatus.MATCH,
+                totalBytes = 42L,
+                gameDataWarning = true,
+            )
+        val statusPacket = buildMissionStatus("lobby", "Wing", "wing-id", status)
+        val announceJson = requireNotNull(parsePacket(announce, announce.size))
+        val statusJson = requireNotNull(parsePacket(statusPacket, statusPacket.size))
+        assertEquals(requirement, missionRequirementFromJson(announceJson.getJSONObject("mission_requirement")))
+        assertEquals(status, missionStatusFromJson(statusJson.getJSONObject("mission_status")))
+        assertTrue(status.validFor(requirement))
+    }
 }

@@ -136,20 +136,28 @@ function Invoke-D1OnlyLanDiagnostic {
     try {
         $d1Files = @($publicFiles | Where-Object Game -CEQ 'd1')
         foreach ($serial in @($hostSerial, $clientSerial)) {
-            Stage-PublicLanAssets -Serial $serial -Files $d1Files
+            $files = if ($serial -eq $hostSerial) { $publicFiles } else { $d1Files }
+            Stage-PublicLanAssets -Serial $serial -Files $files
             Reset-DeviceGameState -Serial $serial
             if (-not (Start-SetupActivity -Serial $serial)) { throw "D1-only launcher did not start on $serial" }
             $env:ANDROID_SERIAL = $serial
             $ready = Wait-ForCondition -Description "D1-only assets ready on $serial" -TimeoutSec 60 -Condition {
                 $setup = Get-SetupIntrospection
                 $setup | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $outputDirectory "d1-only-$serial-setup.json") -Encoding utf8
-                $setup.d1.ready -eq $true -and $setup.d1_in_d2.ready -eq $true -and $setup.d2.ready -eq $false
+                $setup.d1.ready -eq $true -and $setup.d1_in_d2.ready -eq $true -and
+                $setup.d2.ready -eq ($serial -eq $hostSerial)
             }
             if (-not $ready) { throw "D1-only fixture readiness was not verified on $serial" }
         }
         $hostIp = Get-DeviceWlanIp -Serial $hostSerial
         if (-not $hostIp) { throw 'D1-only diagnostic requires the host shared-Wi-Fi address' }
         Send-MpCommand -Serial $hostSerial -Command 'lan_host_lobby' -Extras @('--es', 'callsign', 'D1ProbeH', '--es', 'game', 'd2', '--es', 'mission', 'descent')
+        $hosting = Wait-ForCondition -Description 'D1 probe host lobby is active' -TimeoutSec 30 -Condition {
+            $state = Read-LanPreparationLobby -Serial $hostSerial
+            $state | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $outputDirectory 'd1-only-host-lobby.json') -Encoding utf8
+            $state -and $state.callsign -ceq 'D1ProbeH' -and $state.lan.hosting -eq $true
+        }
+        if (-not $hosting) { throw 'D1-only diagnostic host did not create a lobby' }
         Send-MpCommand -Serial $clientSerial -Command 'lan_discover' -Extras @('--es', 'callsign', 'D1ProbeJ')
         $observed = Wait-ForCondition -Description 'D1-only LAN admission or explicit rejection' -TimeoutSec 30 -PollMs 1000 -Condition {
             Send-MpCommand -Serial $clientSerial -Command 'lan_join_first_lobby' -Extras @('--es', 'host_addr', $hostIp)
@@ -320,7 +328,8 @@ New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 Write-Output "LAN launch evidence: $outputDirectory"
 if ($PublicShareware) {
     Invoke-D1OnlyLanDiagnostic
-    # The D1-only candidate left exactly the two verified D1 files on both devices
+    # Restore D1-only host assets before the native D1 session
+    Stage-PublicLanAssets -Serial $hostSerial -Files @($publicFiles | Where-Object Game -CEQ 'd1')
     Invoke-LanPreparationSession -HostSerial $hostSerial -ClientSerial $clientSerial -Session 1 -Engine d1 -Content d1 -SessionMission '' -AssetFiles @($publicFiles | Where-Object Game -CEQ 'd1')
     Write-Output 'Staging both pinned public base asset sets for native D2 and imported-D1 LAN starts'
     foreach ($serial in @($hostSerial, $clientSerial)) { Stage-PublicLanAssets -Serial $serial }

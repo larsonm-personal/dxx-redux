@@ -191,6 +191,7 @@ void print_commandline_help()
 #endif
 	printf( "  -inputdemo-state-log <s>      Write replay frame-state JSONL during input demo replay\n");
 	printf( "  -inputdemo-rng-trace <s>      Write replay RNG trace JSONL during input demo replay\n");
+	printf( "  -classicdemo-validate <s> <s> Validate classic .dem and write result JSON\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
 	printf( "  -text <s>                     Specify alternate .tex file\n");
 	printf( "  -tmap <s>                     Select texmapper <s> to use\n\t\t\t\t(default: c, available: c, fp, quad, i386)\n");
@@ -213,6 +214,69 @@ void print_commandline_help()
 	printf( "\n Help:\n\n");
 	printf( "  -help, -h, -?, ?             View this help screen\n");
 	printf( "\n\n");
+}
+
+static int classic_demo_paths_same(const char *source_path, const char *output_path)
+{
+#ifdef _WIN32
+	char source_full[PATH_MAX];
+	char output_full[PATH_MAX];
+
+	return _fullpath(source_full, source_path, sizeof(source_full)) &&
+		_fullpath(output_full, output_path, sizeof(output_full)) &&
+		!_stricmp(source_full, output_full);
+#else
+	struct stat source_info;
+	struct stat output_info;
+
+	return !stat(source_path, &source_info) && !stat(output_path, &output_info) &&
+		source_info.st_dev == output_info.st_dev && source_info.st_ino == output_info.st_ino;
+#endif
+}
+
+static int maybe_validate_classic_demo(void)
+{
+	int arg_index = startup_find_cmd_arg("-classicdemo-validate");
+	newdemo_validation_result result;
+	char validation_error[256] = "";
+	FILE *output;
+
+	if (!arg_index)
+		return -1;
+	if (arg_index + 2 >= Num_args || !Args[arg_index + 1] || !Args[arg_index + 2] ||
+		Args[arg_index + 1][0] == '-' || Args[arg_index + 2][0] == '-') {
+		printf("Usage: -classicdemo-validate <demo.dem> <result.json>\n");
+		return 1;
+	}
+	if (classic_demo_paths_same(Args[arg_index + 1], Args[arg_index + 2])) {
+		printf("Classic demo validation failed: source and result identify the same file\n");
+		return 1;
+	}
+	output = fopen(Args[arg_index + 2], "wb");
+	if (!output) {
+		printf("Classic demo validation failed: could not open result path\n");
+		return 1;
+	}
+	if (!newdemo_validate_file(Args[arg_index + 1], &result,
+		validation_error, sizeof(validation_error))) {
+		fprintf(output, "{\"type\":\"classic_demo_validation\",\"game\":\"d1\","
+			"\"status\":\"fail\",\"error\":\"%s\"}\n",
+			validation_error[0] ? validation_error : "unknown error");
+		fclose(output);
+		printf("Classic demo validation failed: %s\n",
+			validation_error[0] ? validation_error : "unknown error");
+		return 1;
+	}
+	fprintf(output, "{\"type\":\"classic_demo_validation\",\"game\":\"d1\",\"status\":\"pass\",\"version\":%d,"
+		"\"game_type\":%d,\"frames_decoded\":%d,\"final_level\":%d,"
+		"\"final_score\":%d,\"roundtrip_bytes\":%lld,\"file_size\":%lld}\n",
+		result.version, result.game_type, result.frames_decoded, result.final_level,
+		result.final_score, result.roundtrip_bytes, result.file_size);
+	if (fclose(output)) {
+		printf("Classic demo validation failed: could not close result path\n");
+		return 1;
+	}
+	return 0;
 }
 
 int Quitting = 0;
@@ -463,6 +527,15 @@ int main(int argc, char *argv[])
 	ReadConfigFile();
 
 	PHYSFSX_addArchiveContent();
+	if (startup_find_cmd_arg("-classicdemo-validate")) {
+		GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+		digi_select_system(SDLAUDIO_SYSTEM);
+		gr_use_palette_table("PALETTE.256");
+		gamedata_init();
+		texmerge_init(10);
+		init_game();
+		return maybe_validate_classic_demo();
+	}
 
 	arch_init();
 

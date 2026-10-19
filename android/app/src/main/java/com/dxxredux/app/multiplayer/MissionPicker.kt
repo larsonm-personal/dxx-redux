@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.dxxredux.app.AssetManifest
 import com.dxxredux.app.FileSetContentManager
 import com.dxxredux.app.GameFileFormats
+import com.dxxredux.app.MissionContentIdentity
 import com.dxxredux.app.MissionDistributionPolicy
 import com.dxxredux.app.MissionDownloadPolicy
 import com.dxxredux.app.MissionZip
@@ -56,8 +57,8 @@ object MissionScanner {
         val isBuiltin: Boolean = false,
         val descriptorPath: String? = null,
         val wrapperFilename: String? = null,
-        val archiveSizeBytes: Long? = null,
-        val archiveSha256: String? = null,
+        val contentSizeBytes: Long? = null,
+        val contentSha256: String? = null,
         val archiveChunkSizeBytes: Int = 0,
         val archiveChunkSha256: List<String> = emptyList(),
         val downloadPolicy: MissionDownloadPolicy = MissionDistributionPolicy.missionPolicy(filename),
@@ -68,9 +69,9 @@ object MissionScanner {
                 !isBuiltin &&
                     downloadPolicy == MissionDownloadPolicy.USER_SUPPLIED &&
                     wrapperFilename != null &&
-                    archiveSha256 != null &&
-                    archiveSizeBytes != null &&
-                    archiveSizeBytes in 1..MISSION_TRANSFER_MAX_BYTES
+                    contentSha256 != null &&
+                    contentSizeBytes != null &&
+                    contentSizeBytes in 1..MISSION_TRANSFER_MAX_BYTES
     }
 
     fun requirement(
@@ -85,8 +86,8 @@ object MissionScanner {
                 else -> MissionRequirement.KIND_LOOSE
             }
         val revision =
-            if (mission.archiveSha256 != null && mission.archiveSizeBytes != null) {
-                "${mission.archiveSha256}:${mission.archiveSizeBytes}:$game:${mission.filename}"
+            if (mission.contentSha256 != null && mission.contentSizeBytes != null) {
+                "${mission.contentSha256}:${mission.contentSizeBytes}:$game:${mission.filename}"
             } else {
                 "$kind:$game:${mission.filename}"
             }
@@ -98,8 +99,8 @@ object MissionScanner {
             kind = kind,
             descriptorPath = mission.descriptorPath,
             wrapperFilename = mission.wrapperFilename,
-            sizeBytes = mission.archiveSizeBytes,
-            sha256 = mission.archiveSha256,
+            sizeBytes = mission.contentSizeBytes,
+            sha256 = mission.contentSha256,
             offerAvailable = offerDownload && mission.transferable,
         )
     }
@@ -157,7 +158,9 @@ object MissionScanner {
                     )
                 }
             }
-        return if (includeD1ForD2) listOf(d2, d1) else listOf(d2)
+        val identity = runCatching { MissionContentIdentity.forFile(if (full.isFile) full else demo) }.getOrNull()
+        val identifiedD2 = d2.copy(contentSizeBytes = identity?.sizeBytes, contentSha256 = identity?.sha256)
+        return if (includeD1ForD2) listOf(identifiedD2, d1) else listOf(identifiedD2)
     }
 
     private fun d1Builtin(
@@ -172,7 +175,16 @@ object MissionScanner {
                 in D1_OEM_HOG_SIZES -> "Destination Saturn" to 15
                 else -> "Descent: First Strike" to 27
             }
-        return MissionInfo(filename, name, levelCount = levels, isBuiltin = true, contentGame = "d1")
+        val identity = runCatching { MissionContentIdentity.forFile(File(setDir, "descent.hog")) }.getOrNull()
+        return MissionInfo(
+            filename,
+            name,
+            levelCount = levels,
+            isBuiltin = true,
+            contentGame = "d1",
+            contentSizeBytes = identity?.sizeBytes,
+            contentSha256 = identity?.sha256,
+        )
     }
 
     fun scan(
@@ -230,8 +242,8 @@ object MissionScanner {
                         anarchyOnly = anarchyOnly,
                         descriptorPath = descriptor.path,
                         wrapperFilename = mod.filename,
-                        archiveSizeBytes = identity?.sizeBytes,
-                        archiveSha256 = identity?.sha256,
+                        contentSizeBytes = identity?.sizeBytes,
+                        contentSha256 = identity?.sha256,
                         archiveChunkSizeBytes = identity?.chunkSizeBytes ?: 0,
                         archiveChunkSha256 = identity?.chunkSha256.orEmpty(),
                         downloadPolicy = downloadPolicy,

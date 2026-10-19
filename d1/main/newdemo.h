@@ -21,6 +21,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _NEWDEMO_H
 #define _NEWDEMO_H
 
+#include <stddef.h>
+
 #define ND_STATE_NORMAL			0
 #define ND_STATE_RECORDING		1
 #define ND_STATE_PLAYBACK		2
@@ -104,6 +106,17 @@ extern void newdemo_goto_beginning();
 // Interactive functions to control playback/record;
 extern void newdemo_start_playback( char * filename );
 extern void newdemo_stop_playback();
+typedef struct newdemo_validation_result {
+	int version;
+	int game_type;
+	int frames_decoded;
+	int final_level;
+	int final_score;
+	long long roundtrip_bytes;
+	long long file_size;
+} newdemo_validation_result;
+extern int newdemo_validate_file(const char *demo_path,
+	newdemo_validation_result *result, char *error, size_t error_size);
 extern void newdemo_start_recording(int is_autorecord);
 extern void newdemo_stop_recording(int is_manual);
 extern int newdemo_toggle_quick_recording(void);

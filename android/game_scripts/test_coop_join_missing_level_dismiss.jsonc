@@ -1,0 +1,9 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_coop_join_missing_level" } },
+    { "action": "key", "key": "enter" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": { "is_network": false, "menu.num_items": { "range": [2, 100] } },
+    },
+]

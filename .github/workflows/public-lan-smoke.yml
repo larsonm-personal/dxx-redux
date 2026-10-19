@@ -90,16 +90,16 @@ jobs:
           PLAN_RESULT: ${{ needs.plan.result }}
           ANDROID_RESULT: ${{ needs.android.result }}
         run: |
-          [[ "$PLAN_RESULT" == success && "$ANDROID_RESULT" == success ]]
+          status=0
+          [[ "$PLAN_RESULT" == success && "$ANDROID_RESULT" == success ]] || status=$?
           # A setup-only, missing, or unexpectedly empty selection cannot pass
-          python3 - <<'PYTHON'
+          python3 - <<'PYTHON' || status=$?
           import json, os
           p = json.load(open('plan/plan.json'))
           assert [e['id'] for e in p['tests']] == ['master:test_lan_launch_preparation_public_shareware']
           assert p['lanes'] == ['android-dual']
           assert p['target_sha'] == os.environ['TARGET_SHA']
           PYTHON
-          status=0
           mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
           python3 control/android/tests/nightly_tooling_sweep.py reconcile \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \

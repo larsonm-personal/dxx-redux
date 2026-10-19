@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.inputmethod.InputMethodManager
 import android.view.inspector.WindowInspector
+import com.dxxredux.app.lobby.toJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -820,6 +821,8 @@ internal fun SetupActivity.writeMpIntrospectJson() {
         val joined = lanService.joinedLobby.value
         lan.put("joined_lobby_id", joined?.lobbyId ?: JSONObject.NULL)
         lan.put("joined_host", joined?.hostAddr ?: JSONObject.NULL)
+        lan.put("joined_mission_requirement", joined?.missionRequirement?.toJson() ?: JSONObject.NULL)
+        lan.put("joined_mission_status", joined?.missionStatus?.toJson() ?: JSONObject.NULL)
         lan.put(
             "players",
             JSONArray(

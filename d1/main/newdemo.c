@@ -38,6 +38,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "3d.h"
 #include "segment.h"
 #include "texmap.h"
+#include "textures.h"
 #include "laser.h"
 #include "key.h"
 #include "gameseg.h"
@@ -57,6 +58,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "morph.h"
 
 #include "powerup.h"
+#include "weapon.h"
 #include "fuelcen.h"
 
 #include "sounds.h"
@@ -94,6 +96,11 @@ extern volatile int g_demo_record_per_frame_state;
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_rng_mode.h"
+#include "classic_demo_laser.h"
+#include "classic_demo_player.h"
+#include "classic_demo_string.h"
+#include "classic_demo_weapon.h"
+#include "classic_demo_world.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -181,10 +188,15 @@ static int swap_endian = 0;
 // playback variables
 static unsigned int nd_playback_v_demosize;
 static char nd_playback_v_save_callsign[CALLSIGN_LEN+1];
+static sbyte nd_playback_v_demo_version = DEMO_VERSION;
+static sbyte nd_playback_v_game_type = DEMO_GAME_TYPE;
 static sbyte nd_playback_v_at_eof;
 static sbyte nd_playback_v_cntrlcen_destroyed = 0;
 static sbyte nd_playback_v_bad_read;
 static int nd_playback_v_framecount;
+static int nd_validation_v_active;
+static const char *nd_validation_v_object_error;
+static char nd_validation_v_object_error_buffer[160];
 static fix nd_playback_total, nd_recorded_total, nd_recorded_time;
 static sbyte nd_playback_v_style;
 static ubyte nd_playback_v_dead = 0, nd_playback_v_rear = 0;
@@ -222,34 +234,39 @@ int newdemo_get_percent_done()	{
 
 #define VEL_PRECISION 12
 
-void my_extract_shortpos(object *objp, shortpos *spp)
+int my_extract_shortpos(object *objp, shortpos *spp)
 {
 	int segnum;
 	sbyte *sp;
 
 	sp = spp->bytemat;
-	objp->orient.rvec.x = *sp++ << MATRIX_PRECISION;
-	objp->orient.uvec.x = *sp++ << MATRIX_PRECISION;
-	objp->orient.fvec.x = *sp++ << MATRIX_PRECISION;
+	objp->orient.rvec.x = *sp++ * (1 << MATRIX_PRECISION);
+	objp->orient.uvec.x = *sp++ * (1 << MATRIX_PRECISION);
+	objp->orient.fvec.x = *sp++ * (1 << MATRIX_PRECISION);
 
-	objp->orient.rvec.y = *sp++ << MATRIX_PRECISION;
-	objp->orient.uvec.y = *sp++ << MATRIX_PRECISION;
-	objp->orient.fvec.y = *sp++ << MATRIX_PRECISION;
+	objp->orient.rvec.y = *sp++ * (1 << MATRIX_PRECISION);
+	objp->orient.uvec.y = *sp++ * (1 << MATRIX_PRECISION);
+	objp->orient.fvec.y = *sp++ * (1 << MATRIX_PRECISION);
 
-	objp->orient.rvec.z = *sp++ << MATRIX_PRECISION;
-	objp->orient.uvec.z = *sp++ << MATRIX_PRECISION;
-	objp->orient.fvec.z = *sp++ << MATRIX_PRECISION;
+	objp->orient.rvec.z = *sp++ * (1 << MATRIX_PRECISION);
+	objp->orient.uvec.z = *sp++ * (1 << MATRIX_PRECISION);
+	objp->orient.fvec.z = *sp++ * (1 << MATRIX_PRECISION);
 
 	segnum = spp->segment;
 	objp->segnum = segnum;
 
-	objp->pos.x = (spp->xo << RELPOS_PRECISION) + Vertices[Segments[segnum].verts[0]].x;
-	objp->pos.y = (spp->yo << RELPOS_PRECISION) + Vertices[Segments[segnum].verts[0]].y;
-	objp->pos.z = (spp->zo << RELPOS_PRECISION) + Vertices[Segments[segnum].verts[0]].z;
+	if (!classic_demo_scaled_short_add(Vertices[Segments[segnum].verts[0]].x,
+	                                   spp->xo, 1 << RELPOS_PRECISION, &objp->pos.x) ||
+	    !classic_demo_scaled_short_add(Vertices[Segments[segnum].verts[0]].y,
+	                                   spp->yo, 1 << RELPOS_PRECISION, &objp->pos.y) ||
+	    !classic_demo_scaled_short_add(Vertices[Segments[segnum].verts[0]].z,
+	                                   spp->zo, 1 << RELPOS_PRECISION, &objp->pos.z))
+		return 0;
 
-	objp->mtype.phys_info.velocity.x = (spp->velx << VEL_PRECISION);
-	objp->mtype.phys_info.velocity.y = (spp->vely << VEL_PRECISION);
-	objp->mtype.phys_info.velocity.z = (spp->velz << VEL_PRECISION);
+	objp->mtype.phys_info.velocity.x = spp->velx * (1 << VEL_PRECISION);
+	objp->mtype.phys_info.velocity.y = spp->vely * (1 << VEL_PRECISION);
+	objp->mtype.phys_info.velocity.z = spp->velz * (1 << VEL_PRECISION);
+	return 1;
 }
 
 int newdemo_read( void *buffer, int elsize, int nelem )
@@ -392,12 +409,16 @@ static void nd_read_int(int *i)
 		*i = SWAPINT(*i);
 }
 
-static void nd_read_string(char *str)
+static int nd_read_string_bytes(void *context, void *buffer, size_t size)
 {
-	sbyte len;
+	(void)context;
+	return newdemo_read(buffer, 1, (int)size) == (int)size;
+}
 
-	nd_read_byte(&len);
-	newdemo_read(str, len, 1);
+static classic_demo_string_status nd_read_string(char *str, size_t str_size)
+{
+	return classic_demo_read_counted_string(nd_read_string_bytes, NULL,
+		str, str_size, NULL);
 }
 
 static void nd_read_fix(fix *f)
@@ -428,16 +449,18 @@ static void nd_read_angvec(vms_angvec *v)
 	nd_read_fixang(&(v->h));
 }
 
-static void nd_read_shortpos(object *obj)
+static int nd_read_shortpos(object *obj, int capacity_only)
 {
 	shortpos sp;
-	int i;
+	int has_orientation, i, vertex;
 	ubyte render_type;
 
 	memset(&sp,0,sizeof(shortpos));
 
 	render_type = obj->render_type;
-	if (((render_type == RT_POLYOBJ) || (render_type == RT_HOSTAGE) || (render_type == RT_MORPH)) || (obj->type == OBJ_CAMERA)) {
+	has_orientation = ((render_type == RT_POLYOBJ) || (render_type == RT_HOSTAGE) ||
+		(render_type == RT_MORPH)) || (obj->type == OBJ_CAMERA);
+	if (has_orientation) {
 		for (i = 0; i < 9; i++)
 			nd_read_byte(&(sp.bytemat[i]));
 	}
@@ -449,154 +472,328 @@ static void nd_read_shortpos(object *obj)
 	nd_read_short(&(sp.velx));
 	nd_read_short(&(sp.vely));
 	nd_read_short(&(sp.velz));
+	if (has_orientation) {
+		for (i = 0; i < 9; ++i)
+			if (sp.bytemat[i] != 0)
+				break;
+		if (i == 9) {
+			if (nd_validation_v_active)
+				nd_validation_v_object_error = "classic demo object has an empty orientation";
+			nd_playback_v_bad_read = -1;
+			return 0;
+		}
+	}
+	if (nd_playback_v_bad_read ||
+	    !classic_demo_segment_valid(sp.segment,
+		capacity_only ? MAX_SEGMENTS - 1 : Highest_segment_index)) {
+		if (nd_validation_v_active) {
+			nd_validation_v_object_error = "classic demo object has invalid segment";
+		}
+		nd_playback_v_bad_read = -1;
+		return 0;
+	}
+	vertex = Segments[sp.segment].verts[0];
+	if (!classic_demo_index_valid(vertex,
+		capacity_only ? MAX_VERTICES : Highest_vertex_index + 1)) {
+		if (nd_validation_v_active) {
+			nd_validation_v_object_error = "classic demo object segment has invalid vertex";
+		}
+		nd_playback_v_bad_read = -1;
+		return 0;
+	}
 
-	my_extract_shortpos(obj, &sp);
+	if (!my_extract_shortpos(obj, &sp)) {
+		nd_playback_v_bad_read = -1;
+		return 0;
+	}
 	if ((obj->id == VCLIP_MORPHING_ROBOT) && (render_type == RT_FIREBALL) && (obj->control_type == CT_EXPLOSION))
 		extract_orient_from_segment(&obj->orient,&Segments[obj->segnum]);
 
+	return 1;
 }
 
 object *prev_obj=NULL;      //ptr to last object read in
 static int shareware = 0;	// reading shareware demo?
 
-void nd_read_object(object *obj)
+static int nd_demo_object_type_valid(ubyte type)
 {
+	return type < MAX_OBJECT_TYPES;
+}
+
+static int nd_demo_movement_type_valid(ubyte type)
+{
+	return type == MT_NONE || type == MT_PHYSICS || type == MT_SPINNING;
+}
+
+static int nd_demo_control_type_valid(ubyte type)
+{
+	switch (type) {
+	case CT_NONE:
+	case CT_AI:
+	case CT_EXPLOSION:
+	case CT_FLYING:
+	case CT_SLEW:
+	case CT_FLYTHROUGH:
+	case CT_WEAPON:
+	case CT_REPAIRCEN:
+	case CT_MORPH:
+	case CT_DEBRIS:
+	case CT_POWERUP:
+	case CT_LIGHT:
+	case CT_REMOTE:
+	case CT_CNTRLCEN:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static int nd_demo_render_type_valid(ubyte type)
+{
+	return type <= RT_WEAPON_VCLIP;
+}
+
+static int nd_demo_model_valid(int model_num)
+{
+	return classic_demo_index_valid(model_num, N_polygon_models) &&
+	       Polygon_models[model_num].n_models >= 1 &&
+	       Polygon_models[model_num].n_models <= MAX_SUBMODELS;
+}
+
+static int nd_demo_object_pointer_valid(const object *candidate)
+{
+	const uintptr_t base = (uintptr_t)(const void *)Objects;
+	const uintptr_t address = (uintptr_t)(const void *)candidate;
+	const uintptr_t span = MAX_OBJECTS * sizeof(object);
+
+	return candidate != NULL && address >= base && address - base < span &&
+	       (address - base) % sizeof(object) == 0;
+}
+
+void nd_read_object(object *obj, int capacity_only)
+{
+	object staged;
+	object *decoded = &staged;
+	object *attach_parent = NULL;
 	short shortsig = 0;
 
-	memset(obj, 0, sizeof(object));
+	memset(decoded, 0, sizeof(object));
 
 	/*
 	 * Do render type first, since with render_type == RT_NONE, we
 	 * blow by all other object information
 	 */
-	nd_read_byte((sbyte *) &(obj->render_type));
-	nd_read_byte((sbyte *) &(obj->type));
-	if ((obj->render_type == RT_NONE) && (obj->type != OBJ_CAMERA))
+	nd_read_byte((sbyte *) &(decoded->render_type));
+	nd_read_byte((sbyte *) &(decoded->type));
+	if (nd_playback_v_bad_read || !nd_demo_render_type_valid(decoded->render_type)) {
+		if (nd_validation_v_active) {
+			nd_validation_v_object_error = "classic demo object has invalid render type";
+		}
+		nd_playback_v_bad_read = -1;
+		return;
+	}
+	if ((decoded->render_type == RT_NONE) && (decoded->type != OBJ_CAMERA)) {
+		if (decoded->type != OBJ_NONE && !nd_demo_object_type_valid(decoded->type)) {
+			if (nd_validation_v_active)
+				nd_validation_v_object_error = "classic demo object has invalid object type";
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		*obj = staged;
+		return;
+	}
+	if (!nd_demo_object_type_valid(decoded->type)) {
+		if (nd_validation_v_active) {
+			nd_validation_v_object_error = "classic demo object has invalid object type";
+		}
+		nd_playback_v_bad_read = -1;
+		return;
+	}
+
+	nd_read_byte((sbyte *) &(decoded->id));
+	nd_read_byte((sbyte *) &(decoded->flags));
+	nd_read_short(&shortsig);
+	decoded->signature = shortsig;  // It's OKAY! We made sure, obj->signature is never has a value which short cannot handle!!! We cannot do this otherwise, without breaking the demo format!
+	if (!nd_read_shortpos(decoded, capacity_only))
 		return;
 
-	nd_read_byte((sbyte *) &(obj->id));
-	nd_read_byte((sbyte *) &(obj->flags));
-	nd_read_short(&shortsig);
-	obj->signature = shortsig;  // It's OKAY! We made sure, obj->signature is never has a value which short cannot handle!!! We cannot do this otherwise, without breaking the demo format!
-	nd_read_shortpos(obj);
+	decoded->attached_obj = -1;
 
-	obj->attached_obj = -1;
-
-	switch(obj->type) {
+	switch(decoded->type) {
 
 	case OBJ_HOSTAGE:
-		obj->control_type = CT_POWERUP;
-		obj->movement_type = MT_NONE;
-		obj->size = HOSTAGE_SIZE;
+		if (!classic_demo_index_valid(decoded->id, MAX_HOSTAGES)) {
+			if (nd_validation_v_active)
+				nd_validation_v_object_error = "classic demo object has invalid hostage";
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		decoded->control_type = CT_POWERUP;
+		decoded->movement_type = MT_NONE;
+		decoded->size = HOSTAGE_SIZE;
 		break;
 
 	case OBJ_ROBOT:
-		obj->control_type = CT_AI;
-		obj->movement_type = MT_PHYSICS;
-		obj->size = Polygon_models[Robot_info[obj->id].model_num].rad;
-		obj->rtype.pobj_info.model_num = Robot_info[obj->id].model_num;
-		obj->rtype.pobj_info.subobj_flags = 0;
-		obj->ctype.ai_info.CLOAKED = (Robot_info[obj->id].cloak_type?1:0);
+		if (!classic_demo_index_valid(decoded->id, N_robot_types) ||
+		    !nd_demo_model_valid(Robot_info[decoded->id].model_num)) {
+			if (nd_validation_v_active) {
+				nd_validation_v_object_error = "classic demo object has invalid robot";
+			}
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		decoded->control_type = CT_AI;
+		decoded->movement_type = MT_PHYSICS;
+		decoded->size = Polygon_models[Robot_info[decoded->id].model_num].rad;
+		decoded->rtype.pobj_info.model_num = Robot_info[decoded->id].model_num;
+		decoded->rtype.pobj_info.subobj_flags = 0;
+		decoded->ctype.ai_info.CLOAKED = (Robot_info[decoded->id].cloak_type?1:0);
 		break;
 
 	case OBJ_POWERUP:
-		obj->control_type = CT_POWERUP;
-		nd_read_byte((sbyte *) &(obj->movement_type));        // might have physics movement
-		obj->size = Powerup_info[obj->id].size;
+		if (!classic_demo_index_valid(decoded->id, N_powerup_types)) {
+			if (nd_validation_v_active) {
+				nd_validation_v_object_error = "classic demo object has invalid powerup";
+			}
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		decoded->control_type = CT_POWERUP;
+		nd_read_byte((sbyte *) &(decoded->movement_type));        // might have physics movement
+		decoded->size = Powerup_info[decoded->id].size;
 		break;
 
 	case OBJ_PLAYER:
-		obj->control_type = CT_NONE;
-		obj->movement_type = MT_PHYSICS;
-		obj->size = Polygon_models[Player_ship->model_num].rad;
-		obj->rtype.pobj_info.model_num = Player_ship->model_num;
-		obj->rtype.pobj_info.subobj_flags = 0;
+		if (!classic_demo_index_valid(decoded->id, MAX_PLAYERS) ||
+		    Player_ship == NULL || !nd_demo_model_valid(Player_ship->model_num)) {
+			if (nd_validation_v_active) {
+				nd_validation_v_object_error = "classic demo object has invalid player";
+			}
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		decoded->control_type = CT_NONE;
+		decoded->movement_type = MT_PHYSICS;
+		decoded->size = Polygon_models[Player_ship->model_num].rad;
+		decoded->rtype.pobj_info.model_num = Player_ship->model_num;
+		decoded->rtype.pobj_info.subobj_flags = 0;
 		break;
 
 	case OBJ_CLUTTER:
-		obj->control_type = CT_NONE;
-		obj->movement_type = MT_NONE;
-		obj->size = Polygon_models[obj->id].rad;
-		obj->rtype.pobj_info.model_num = obj->id;
-		obj->rtype.pobj_info.subobj_flags = 0;
+		if (!nd_demo_model_valid(decoded->id)) {
+			if (nd_validation_v_active) {
+				nd_validation_v_object_error = "classic demo object has invalid clutter model";
+			}
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		decoded->control_type = CT_NONE;
+		decoded->movement_type = MT_NONE;
+		decoded->size = Polygon_models[decoded->id].rad;
+		decoded->rtype.pobj_info.model_num = decoded->id;
+		decoded->rtype.pobj_info.subobj_flags = 0;
 		break;
 
 	default:
-		nd_read_byte((sbyte *) &(obj->control_type));
-		nd_read_byte((sbyte *) &(obj->movement_type));
-		nd_read_fix(&(obj->size));
+		nd_read_byte((sbyte *) &(decoded->control_type));
+		nd_read_byte((sbyte *) &(decoded->movement_type));
+		nd_read_fix(&(decoded->size));
 		break;
+	}
+	if (nd_playback_v_bad_read ||
+	    ((decoded->type == OBJ_PLAYER || decoded->type == OBJ_GHOST || decoded->type == OBJ_COOP) &&
+	     !classic_demo_index_valid(decoded->id, MAX_PLAYERS)) ||
+	    (decoded->type == OBJ_WEAPON &&
+	     !classic_demo_index_valid(decoded->id,
+		capacity_only ? MAX_WEAPON_TYPES : N_weapon_types)) ||
+	    !nd_demo_movement_type_valid(decoded->movement_type) ||
+	    !nd_demo_control_type_valid(decoded->control_type)) {
+		if (nd_validation_v_active) {
+			nd_validation_v_object_error = "classic demo object has invalid type tuple";
+		}
+		nd_playback_v_bad_read = -1;
+		return;
 	}
 
 
-	nd_read_vector(&(obj->last_pos));
-	if ((obj->type == OBJ_WEAPON) && (obj->render_type == RT_WEAPON_VCLIP))
-		nd_read_fix(&(obj->lifeleft));
+	nd_read_vector(&(decoded->last_pos));
+	if ((decoded->type == OBJ_WEAPON) && (decoded->render_type == RT_WEAPON_VCLIP))
+		nd_read_fix(&(decoded->lifeleft));
 	else {
 		sbyte b;
 
 		// MWA old way -- won't work with big endian machines       nd_read_byte((ubyte *)&(obj->lifeleft));
 		nd_read_byte(&b);
-		obj->lifeleft = (fix)b;
-		if (obj->lifeleft == -1)
-			obj->lifeleft = IMMORTAL_TIME;
+		decoded->lifeleft = (fix)b;
+		if (decoded->lifeleft == -1)
+			decoded->lifeleft = IMMORTAL_TIME;
 		else
-			obj->lifeleft = (fix)((int)obj->lifeleft << 12);
+			decoded->lifeleft = (fix)((int)decoded->lifeleft * (1 << 12));
 	}
 
-	if ((obj->type == OBJ_ROBOT) && !shareware) {
-		if (Robot_info[obj->id].boss_flag) {
+	if ((decoded->type == OBJ_ROBOT) && !shareware) {
+		if (Robot_info[decoded->id].boss_flag) {
 			sbyte cloaked;
 
 			nd_read_byte(&cloaked);
-			obj->ctype.ai_info.CLOAKED = cloaked;
+			decoded->ctype.ai_info.CLOAKED = cloaked;
 		}
 	}
 
-	switch (obj->movement_type) {
+	switch (decoded->movement_type) {
 
 	case MT_PHYSICS:
-		nd_read_vector(&(obj->mtype.phys_info.velocity));
-		nd_read_vector(&(obj->mtype.phys_info.thrust));
+		nd_read_vector(&(decoded->mtype.phys_info.velocity));
+		nd_read_vector(&(decoded->mtype.phys_info.thrust));
 		break;
 
 	case MT_SPINNING:
-		nd_read_vector(&(obj->mtype.spin_rate));
+		nd_read_vector(&(decoded->mtype.spin_rate));
 		break;
 
 	case MT_NONE:
 		break;
 
 	default:
-		Int3();
+		nd_playback_v_bad_read = -1;
+		return;
 	}
 
-	switch (obj->control_type) {
+	switch (decoded->control_type) {
 
 	case CT_EXPLOSION:
 
-		nd_read_fix(&(obj->ctype.expl_info.spawn_time));
-		nd_read_fix(&(obj->ctype.expl_info.delete_time));
-		nd_read_short(&(obj->ctype.expl_info.delete_objnum));
+		nd_read_fix(&(decoded->ctype.expl_info.spawn_time));
+		nd_read_fix(&(decoded->ctype.expl_info.delete_time));
+		nd_read_short(&(decoded->ctype.expl_info.delete_objnum));
+		if (decoded->ctype.expl_info.delete_objnum != -1 &&
+		    !classic_demo_index_valid(decoded->ctype.expl_info.delete_objnum, MAX_OBJECTS)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 
-		obj->ctype.expl_info.next_attach = obj->ctype.expl_info.prev_attach = obj->ctype.expl_info.attach_parent = -1;
+		decoded->ctype.expl_info.next_attach = decoded->ctype.expl_info.prev_attach = decoded->ctype.expl_info.attach_parent = -1;
 
-		if (obj->flags & OF_ATTACHED) {     //attach to previous object
-			Assert(prev_obj!=NULL);
-			if (prev_obj->control_type == CT_EXPLOSION) {
-				if (prev_obj->flags & OF_ATTACHED && prev_obj->ctype.expl_info.attach_parent!=-1)
-					obj_attach(&Objects[prev_obj->ctype.expl_info.attach_parent],obj);
+		if (decoded->flags & OF_ATTACHED) {     //attach to previous object
+			if (decoded->type != OBJ_FIREBALL ||
+			    !nd_demo_object_pointer_valid(prev_obj) ||
+			    !nd_demo_object_pointer_valid(obj)) {
+				decoded->flags &= ~OF_ATTACHED;
+			} else if (prev_obj->control_type == CT_EXPLOSION) {
+				if (prev_obj->flags & OF_ATTACHED &&
+				    classic_demo_index_valid(prev_obj->ctype.expl_info.attach_parent, MAX_OBJECTS))
+					attach_parent = &Objects[prev_obj->ctype.expl_info.attach_parent];
 				else
-					obj->flags &= ~OF_ATTACHED;
+					decoded->flags &= ~OF_ATTACHED;
 			}
 			else
-				obj_attach(prev_obj,obj);
+				attach_parent = prev_obj;
 		}
 
 		break;
 
 	case CT_LIGHT:
-		nd_read_fix(&(obj->ctype.light_info.intensity));
+		nd_read_fix(&(decoded->ctype.light_info.intensity));
 		break;
 
 	case CT_AI:
@@ -613,12 +810,15 @@ void nd_read_object(object *obj)
 
 	case CT_FLYTHROUGH:
 	case CT_REPAIRCEN:
+		break;
+
 	default:
-		Int3();
+		nd_playback_v_bad_read = -1;
+		return;
 
 	}
 
-	switch (obj->render_type) {
+	switch (decoded->render_type) {
 
 	case RT_NONE:
 		break;
@@ -627,33 +827,47 @@ void nd_read_object(object *obj)
 	case RT_POLYOBJ: {
 		int i, tmo;
 
-		if ((obj->type != OBJ_ROBOT) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_CLUTTER)) {
-			nd_read_int(&(obj->rtype.pobj_info.model_num));
-			nd_read_int(&(obj->rtype.pobj_info.subobj_flags));
+		if ((decoded->type != OBJ_ROBOT) && (decoded->type != OBJ_PLAYER) && (decoded->type != OBJ_CLUTTER)) {
+			nd_read_int(&(decoded->rtype.pobj_info.model_num));
+			nd_read_int(&(decoded->rtype.pobj_info.subobj_flags));
+		}
+		if (nd_playback_v_bad_read || !nd_demo_model_valid(decoded->rtype.pobj_info.model_num)) {
+			if (nd_validation_v_active) {
+				nd_validation_v_object_error = "classic demo object has invalid model";
+			}
+			nd_playback_v_bad_read = -1;
+			return;
 		}
 
-		if ((obj->type != OBJ_PLAYER) && (obj->type != OBJ_DEBRIS))
+		if ((decoded->type != OBJ_PLAYER) && (decoded->type != OBJ_DEBRIS))
 #if 0
 			for (i=0;i<MAX_SUBMODELS;i++)
 				nd_read_angvec(&(obj->pobj_info.anim_angles[i]));
 #endif
-		for (i = 0; i < Polygon_models[obj->rtype.pobj_info.model_num].n_models; i++)
-			nd_read_angvec(&obj->rtype.pobj_info.anim_angles[i]);
+		for (i = 0; i < Polygon_models[decoded->rtype.pobj_info.model_num].n_models; i++)
+			nd_read_angvec(&decoded->rtype.pobj_info.anim_angles[i]);
 
 		nd_read_int(&tmo);
+		if (tmo != -1 && !classic_demo_index_valid(tmo, NumTextures)) {
+			if (nd_validation_v_active) {
+				nd_validation_v_object_error = "classic demo object has invalid texture override";
+			}
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 
 #ifndef EDITOR
-		obj->rtype.pobj_info.tmap_override = tmo;
+		decoded->rtype.pobj_info.tmap_override = tmo;
 #else
 		if (tmo==-1)
-			obj->rtype.pobj_info.tmap_override = -1;
+			decoded->rtype.pobj_info.tmap_override = -1;
 		else {
 			int xlated_tmo = tmap_xlate_table[tmo];
 			if (xlated_tmo < 0) {
-				Int3();
-				xlated_tmo = 0;
+				nd_playback_v_bad_read = -1;
+				return;
 			}
-			obj->rtype.pobj_info.tmap_override = xlated_tmo;
+			decoded->rtype.pobj_info.tmap_override = xlated_tmo;
 		}
 #endif
 
@@ -663,20 +877,52 @@ void nd_read_object(object *obj)
 	case RT_POWERUP:
 	case RT_WEAPON_VCLIP:
 	case RT_FIREBALL:
-	case RT_HOSTAGE:
-		nd_read_int(&(obj->rtype.vclip_info.vclip_num));
-		nd_read_fix(&(obj->rtype.vclip_info.frametime));
-		nd_read_byte(&(obj->rtype.vclip_info.framenum));
+	case RT_HOSTAGE: {
+		int clip_count, frame_count;
+
+		nd_read_int(&(decoded->rtype.vclip_info.vclip_num));
+		nd_read_fix(&(decoded->rtype.vclip_info.frametime));
+		nd_read_byte(&(decoded->rtype.vclip_info.framenum));
+		clip_count = capacity_only ? VCLIP_MAXNUM : Num_vclips;
+		frame_count = classic_demo_index_valid(decoded->rtype.vclip_info.vclip_num, clip_count)
+			? (capacity_only ? VCLIP_MAX_FRAMES : Vclip[decoded->rtype.vclip_info.vclip_num].num_frames)
+			: 0;
+		if (nd_playback_v_bad_read ||
+		    !classic_demo_index_valid(decoded->rtype.vclip_info.vclip_num, clip_count) ||
+		    !classic_demo_index_valid(decoded->rtype.vclip_info.framenum, frame_count)) {
+			if (nd_validation_v_active) {
+				snprintf(nd_validation_v_object_error_buffer,
+					sizeof(nd_validation_v_object_error_buffer),
+					"classic demo object has invalid vclip %d frame %d count %d frames %d",
+					decoded->rtype.vclip_info.vclip_num,
+					decoded->rtype.vclip_info.framenum, clip_count, frame_count);
+				nd_validation_v_object_error = nd_validation_v_object_error_buffer;
+			}
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 		break;
+	}
 
 	case RT_LASER:
 		break;
 
 	default:
-		Int3();
+		nd_playback_v_bad_read = -1;
+		return;
 
 	}
 
+	if (nd_playback_v_bad_read)
+		return;
+	*obj = staged;
+	if (attach_parent != NULL &&
+	    nd_demo_object_pointer_valid(attach_parent) &&
+	    (attach_parent->attached_obj == -1 ||
+	     classic_demo_index_valid(attach_parent->attached_obj, MAX_OBJECTS)))
+		obj_attach(attach_parent, obj);
+	else if (attach_parent != NULL)
+		obj->flags &= ~OF_ATTACHED;
 	prev_obj = obj;
 }
 
@@ -1121,7 +1367,8 @@ void newdemo_record_player_flags(uint flags)
 		return;
 	stop_time();
 	nd_write_byte( ND_EVENT_PLAYER_FLAGS );
-	nd_write_int(((short)nd_record_v_player_flags << 16) | (short)flags);
+	nd_write_int((int)(((unsigned int)(unsigned short)nd_record_v_player_flags << 16) |
+	                   (unsigned short)flags));
 	nd_record_v_player_flags = flags;
 	start_time();
 }
@@ -1404,7 +1651,7 @@ enum purpose_type
 int newdemo_read_demo_start(enum purpose_type purpose)
 {
 	sbyte i=0, version=0, game_type=0, laser_level=0, c=0;
-	ubyte energy=0, shield=0;
+	ubyte energy=0, shield=0, primary_weapon=0, secondary_weapon=0;
 	char current_mission[9];
 	fix nd_GameTime32 = 0;
 
@@ -1419,6 +1666,7 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 		return 1;
 	}
 	nd_read_byte(&version);
+	nd_playback_v_demo_version = version;
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_byte(version);
 	if (version == DEMO_VERSION_SHAREWARE)
@@ -1430,12 +1678,14 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 		return 1;
 	}
 	nd_read_byte(&game_type);
+	nd_playback_v_game_type = game_type;
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_byte(game_type);
 	if ((game_type == DEMO_GAME_TYPE_SHAREWARE) && shareware)
 		shareware = shareware;	// all good
 	else if (game_type != DEMO_GAME_TYPE) {
-		nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_CANT_PLAYBACK, TXT_DEMO_OLD );
+		if (!nd_validation_v_active)
+			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_CANT_PLAYBACK, TXT_DEMO_OLD );
 
 		return 1;
 	}
@@ -1470,8 +1720,9 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	{
 		if (Newdemo_game_mode & GM_TEAM) {
 			nd_read_byte((sbyte *) &(Netgame.team_vector));
-			nd_read_string(Netgame.team_name[0]);
-			nd_read_string(Netgame.team_name[1]);
+			if (nd_read_string(Netgame.team_name[0], sizeof(Netgame.team_name[0])) != CLASSIC_DEMO_STRING_OK ||
+				nd_read_string(Netgame.team_name[1], sizeof(Netgame.team_name[1])) != CLASSIC_DEMO_STRING_OK)
+				return 1;
 			if (purpose == PURPOSE_REWRITE)
 			{
 				nd_write_byte(Netgame.team_vector);
@@ -1484,6 +1735,10 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 			if (purpose != PURPOSE_REWRITE)
 				multi_new_game();
 			nd_read_byte(&c);
+			if (nd_playback_v_bad_read || !classic_demo_player_count_valid(c, MAX_PLAYERS)) {
+				nd_playback_v_bad_read = -1;
+				return 1;
+			}
 			N_players = (int)c;
 			// changed this to above two lines -- breaks on the mac because of
 			// endian issues
@@ -1493,7 +1748,8 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 			for (i = 0 ; i < N_players; i++) {
 				Players[i].cloak_time = 0;
 				Players[i].invulnerable_time = 0;
-				nd_read_string(Players[i].callsign);
+				if (nd_read_string(Players[i].callsign, sizeof(Players[i].callsign)) != CLASSIC_DEMO_STRING_OK)
+					return 1;
 				nd_read_byte(&(Players[i].connected));
 				if (purpose == PURPOSE_REWRITE)
 				{
@@ -1546,6 +1802,11 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	}
 
 	nd_read_byte(&laser_level);
+	if (nd_playback_v_bad_read ||
+	    !classic_demo_laser_level_valid(laser_level, MAX_LASER_LEVEL)) {
+		nd_playback_v_bad_read = -1;
+		return 1;
+	}
 	if ((purpose != PURPOSE_REWRITE) && (laser_level != Players[Player_num].laser_level)) {
 		Players[Player_num].laser_level = laser_level;
 		update_laser_weapon_info();
@@ -1555,7 +1816,8 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 
 	// Support for missions
 
-	nd_read_string(current_mission);
+	if (nd_read_string(current_mission, sizeof(current_mission)) != CLASSIC_DEMO_STRING_OK)
+		return 1;
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_string(current_mission);
 	if (!shareware)
@@ -1593,12 +1855,12 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	if (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)
 		Players[Player_num].invulnerable_time = GameTime64 - (INVULNERABLE_TIME_MAX / 2);
 
-	nd_read_byte((sbyte *)&Players[Player_num].primary_weapon);
-	nd_read_byte((sbyte *)&Players[Player_num].secondary_weapon);
+	nd_read_byte((sbyte *)&primary_weapon);
+	nd_read_byte((sbyte *)&secondary_weapon);
 	if (purpose == PURPOSE_REWRITE)
 	{
-		nd_write_byte(Players[Player_num].primary_weapon);
-		nd_write_byte(Players[Player_num].secondary_weapon);
+		nd_write_byte(primary_weapon);
+		nd_write_byte(secondary_weapon);
 	}
 
 // Next bit of code to fix problem that I introduced between 1.0 and 1.1
@@ -1617,12 +1879,20 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 			energy = shield;
 			shield = (unsigned char)flags;
 			flags = (flags >> 8) & 0x00ffffff;
-			flags |= (Players[Player_num].primary_weapon << 24);
-			Players[Player_num].primary_weapon = Players[Player_num].secondary_weapon;
-			Players[Player_num].secondary_weapon = c;
+			flags |= (int)((unsigned int)primary_weapon << 24);
+			primary_weapon = secondary_weapon;
+			secondary_weapon = c;
 		} else
 			PHYSFS_seek(infile, PHYSFS_tell(infile) - 1);
 	}
+	if (nd_playback_v_bad_read ||
+	    !classic_demo_weapon_index_valid(primary_weapon, MAX_PRIMARY_WEAPONS) ||
+	    !classic_demo_weapon_index_valid(secondary_weapon, MAX_SECONDARY_WEAPONS)) {
+		nd_playback_v_bad_read = -1;
+		return 1;
+	}
+	Players[Player_num].primary_weapon = primary_weapon;
+	Players[Player_num].secondary_weapon = secondary_weapon;
 
 	Players[Player_num].energy = i2f(energy);
 	Players[Player_num].shields = i2f(shield);
@@ -1650,6 +1920,42 @@ void newdemo_pop_ctrlcen_triggers()
 			seg->sides[side].tmap_num2 = csegp->sides[cside].tmap_num2 = WallAnims[anim_num].frames[n-1];
 		}
 	}
+}
+
+static int nd_event_segment_side_valid(int segment, int side, int rewrite)
+{
+	int highest_segment = rewrite ? MAX_SEGMENTS - 1 : Highest_segment_index;
+
+	return classic_demo_segment_side_valid(segment, highest_segment, side,
+		MAX_SIDES_PER_SEGMENT);
+}
+
+static int nd_event_sound_valid(int soundno)
+{
+	return soundno >= 0 && soundno < MAX_SOUNDS;
+}
+
+static int nd_demo_level_valid(int level)
+{
+#ifdef DEST_SAT
+	return classic_demo_level_valid(level, Last_secret_level, Last_level - 1, 0);
+#else
+	return classic_demo_level_valid(level, Last_secret_level, Last_level, 0);
+#endif
+}
+
+static int nd_demo_level_event_valid(int old_level, int new_level, int rewrite)
+{
+	if (rewrite)
+		return classic_demo_level_number_valid(old_level, 0) &&
+		       classic_demo_level_number_valid(new_level, 0);
+#ifdef DEST_SAT
+	return classic_demo_level_event_valid(old_level, new_level,
+	                                      Last_secret_level, Last_level - 1, 0);
+#else
+	return classic_demo_level_event_valid(old_level, new_level,
+	                                      Last_secret_level, Last_level, 0);
+#endif
 }
 
 int newdemo_read_frame_information(int rewrite)
@@ -1695,13 +2001,15 @@ int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if (Newdemo_vcr_state == ND_STATE_PLAYBACK)
-				nd_recorded_total += nd_recorded_time;
-			nd_playback_v_framecount--;
+				nd_recorded_total = classic_demo_time_advance(nd_recorded_total,
+				                                                nd_recorded_time);
+			nd_playback_v_framecount =
+				classic_demo_frame_count_previous(nd_playback_v_framecount);
 			break;
 		}
 
 		case ND_EVENT_VIEWER_OBJECT:        // Followed by an object structure
-			nd_read_object(Viewer);
+			nd_read_object(Viewer, rewrite || nd_validation_v_active);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
 			{
@@ -1730,7 +2038,7 @@ int newdemo_read_frame_information(int rewrite)
 			if (objnum==-1)
 				break;
 			obj = &Objects[objnum];
-			nd_read_object(obj);
+			nd_read_object(obj, rewrite || nd_validation_v_active);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
 			{
@@ -1774,6 +2082,10 @@ int newdemo_read_frame_information(int rewrite)
 		case ND_EVENT_SOUND:
 			nd_read_int(&soundno);
 			if (nd_playback_v_bad_read) {done = -1; break; }
+			if (!nd_event_sound_valid(soundno)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(soundno);
@@ -1783,11 +2095,31 @@ int newdemo_read_frame_information(int rewrite)
 				digi_play_sample( soundno, F1_0 );
 			break;
 
+		case ND_EVENT_SOUND_ONCE:
+			nd_read_int(&soundno);
+			if (nd_playback_v_bad_read) {done = -1; break; }
+			if (!nd_event_sound_valid(soundno)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
+			if (rewrite)
+			{
+				nd_write_int(soundno);
+				break;
+			}
+			if (Newdemo_vcr_state == ND_STATE_PLAYBACK)
+				digi_play_sample_once( soundno, F1_0 );
+			break;
+
 		case ND_EVENT_SOUND_3D:
 			nd_read_int(&soundno);
 			nd_read_int(&angle);
 			nd_read_int(&volume);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_sound_valid(soundno)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(soundno);
@@ -1804,6 +2136,10 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_int(&angle);
 			nd_read_int(&volume);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_sound_valid(soundno)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(soundno);
@@ -1825,6 +2161,11 @@ int newdemo_read_frame_information(int rewrite)
 				nd_read_int( &max_distance );
 				nd_read_int( &loop_start );
 				nd_read_int( &loop_end );
+				if (nd_playback_v_bad_read) { done = -1; break; }
+				if (!nd_event_sound_valid(soundno)) {
+					if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+					break;
+				}
 				if (rewrite)
 				{
 					nd_write_int( soundno );
@@ -1867,6 +2208,17 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_fix(&damage);
 			nd_read_int(&player);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_segment_side_valid(segnum, side, rewrite) ||
+			    (!rewrite &&
+			     !classic_demo_wall_reference_valid(Segments[segnum].sides[side].wall_num,
+				 Num_walls)) ||
+			    (player != -1 && !classic_demo_player_index_valid(player, MAX_PLAYERS))) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);
@@ -1885,6 +2237,14 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_int(&side);
 			nd_read_int(&objnum);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_segment_side_valid(segnum, side, rewrite) ||
+			    !classic_demo_index_valid(objnum, MAX_OBJECTS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);
@@ -1901,6 +2261,10 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_int(&hostage_number);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_index_valid(hostage_number, MAX_HOSTAGES)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(hostage_number);
@@ -1924,7 +2288,7 @@ int newdemo_read_frame_information(int rewrite)
 			if (objnum==-1)
 				break;
 			obj = &Objects[objnum];
-			nd_read_object(obj);
+			nd_read_object(obj, rewrite || nd_validation_v_active);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
 			{
@@ -1946,6 +2310,16 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_int(&segnum);
 			nd_read_int(&side);
 			if (nd_playback_v_bad_read) {done = -1; break; }
+			if (!nd_event_segment_side_valid(segnum, side, rewrite) ||
+			    (!rewrite &&
+			     !classic_demo_wall_reference_valid(Segments[segnum].sides[side].wall_num,
+				 Num_walls))) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);
@@ -1973,12 +2347,20 @@ int newdemo_read_frame_information(int rewrite)
 
 		case ND_EVENT_HUD_MESSAGE: {
 			char hud_msg[60];
+			classic_demo_string_status string_status;
 
-			nd_read_string(&(hud_msg[0]));
+			string_status = nd_read_string(hud_msg, sizeof(hud_msg));
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (string_status != CLASSIC_DEMO_STRING_OK) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
-				nd_write_string(&(hud_msg[0]));
+				nd_write_string(hud_msg);
 				break;
 			}
 			#if 0 // adb: would cause noise for non-D1X...
@@ -2127,6 +2509,12 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_byte((sbyte *)&weapon_type);
 			nd_read_byte((sbyte *)&weapon_num);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_weapon_event_valid(weapon_type, weapon_num, 0, 0,
+				MAX_PRIMARY_WEAPONS, MAX_SECONDARY_WEAPONS)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(weapon_type);
@@ -2149,6 +2537,12 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_byte((sbyte *)&weapon_type);
 			nd_read_byte((sbyte *)&weapon_num);
 			nd_read_byte((sbyte *)&old_weapon);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_weapon_event_valid(weapon_type, weapon_num, old_weapon, 1,
+				MAX_PRIMARY_WEAPONS, MAX_SECONDARY_WEAPONS)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(weapon_type);
@@ -2178,6 +2572,14 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_short(&segnum);
 			nd_read_byte(&side);
 			nd_read_vector(&pnt);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_segment_side_valid(segnum, side, rewrite)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_short(segnum);
@@ -2199,7 +2601,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_short(distance);
 				break;
 			}
-			Players[Player_num].homing_object_dist = distance << 16;
+			Players[Player_num].homing_object_dist = distance * F1_0;
 			break;
 		}
 
@@ -2244,6 +2646,16 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_short(&cseg);
 			nd_read_byte(&cside);
 			nd_read_short( &tmap );
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_segment_side_valid(seg, side, rewrite) ||
+			    !nd_event_segment_side_valid(cseg, cside, rewrite) ||
+			    !classic_demo_primary_texture_valid(tmap, NumTextures)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_short(seg);
@@ -2267,6 +2679,16 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_short(&cseg);
 			nd_read_byte(&cside);
 			nd_read_short( &tmap );
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_segment_side_valid(seg, side, rewrite) ||
+			    !nd_event_segment_side_valid(cseg, cside, rewrite) ||
+			    !classic_demo_overlay_texture_valid(tmap, NumTextures)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_short(seg);
@@ -2287,6 +2709,14 @@ int newdemo_read_frame_information(int rewrite)
 			sbyte pnum;
 
 			nd_read_byte(&pnum);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2306,6 +2736,14 @@ int newdemo_read_frame_information(int rewrite)
 			sbyte pnum;
 
 			nd_read_byte(&pnum);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2326,15 +2764,23 @@ int newdemo_read_frame_information(int rewrite)
 			sbyte pnum;
 
 			nd_read_byte(&pnum);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
 				break;
 			}
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
-				Players[pnum].net_killed_total--;
+				Players[pnum].net_killed_total = classic_demo_int16_wrap_subtract(Players[pnum].net_killed_total, 1);
 			else if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD))
-				Players[pnum].net_killed_total++;
+				Players[pnum].net_killed_total = classic_demo_int16_wrap_add(Players[pnum].net_killed_total, 1);
 			break;
 		}
 
@@ -2344,6 +2790,14 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_byte(&pnum);
 			nd_read_byte(&kill);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2351,13 +2805,13 @@ int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) {
-				Players[pnum].net_kills_total -= kill;
+				Players[pnum].net_kills_total = classic_demo_int16_wrap_subtract(Players[pnum].net_kills_total, kill);
 				if (Newdemo_game_mode & GM_TEAM)
-					team_kills[get_team(pnum)] -= kill;
+					team_kills[get_team(pnum)] = classic_demo_int16_wrap_subtract(team_kills[get_team(pnum)], kill);
 			} else if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD)) {
-				Players[pnum].net_kills_total += kill;
+				Players[pnum].net_kills_total = classic_demo_int16_wrap_add(Players[pnum].net_kills_total, kill);
 				if (Newdemo_game_mode & GM_TEAM)
-					team_kills[get_team(pnum)] += kill;
+					team_kills[get_team(pnum)] = classic_demo_int16_wrap_add(team_kills[get_team(pnum)], kill);
 			}
 			Game_mode = Newdemo_game_mode;
 			multi_sort_kill_list();
@@ -2369,15 +2823,28 @@ int newdemo_read_frame_information(int rewrite)
 			sbyte pnum, new_player;
 			int killed_total, kills_total;
 			char new_callsign[CALLSIGN_LEN+1], old_callsign[CALLSIGN_LEN+1];
+			classic_demo_string_status old_callsign_status = CLASSIC_DEMO_STRING_OK;
+			classic_demo_string_status new_callsign_status;
 
 			nd_read_byte(&pnum);
 			nd_read_byte(&new_player);
 			if (!new_player) {
-				nd_read_string(old_callsign);
+				old_callsign_status = nd_read_string(old_callsign, sizeof(old_callsign));
+				if (nd_playback_v_bad_read) { done = -1; break; }
 				nd_read_int(&killed_total);
 				nd_read_int(&kills_total);
 			}
-			nd_read_string(new_callsign);
+			new_callsign_status = nd_read_string(new_callsign, sizeof(new_callsign));
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (old_callsign_status != CLASSIC_DEMO_STRING_OK ||
+				new_callsign_status != CLASSIC_DEMO_STRING_OK ||
+				!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2391,6 +2858,8 @@ int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) {
+				if (new_player && !classic_demo_player_count_can_remove(N_players, MAX_PLAYERS))
+					break;
 				Players[pnum].connected = CONNECT_DISCONNECTED;
 
 				if (Current_obs_player == pnum) {
@@ -2405,6 +2874,8 @@ int newdemo_read_frame_information(int rewrite)
 					N_players--;
 				}
 			} else if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD)) {
+				if (new_player && !classic_demo_player_count_can_add(N_players, MAX_PLAYERS))
+					break;
 				Players[pnum].connected = CONNECT_PLAYING;
 				Players[pnum].net_kills_total = 0;
 				Players[pnum].net_killed_total = 0;
@@ -2419,6 +2890,14 @@ int newdemo_read_frame_information(int rewrite)
 			sbyte pnum;
 
 			nd_read_byte(&pnum);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2439,6 +2918,14 @@ int newdemo_read_frame_information(int rewrite)
 			sbyte pnum;
 
 			nd_read_byte(&pnum);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2461,6 +2948,14 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_byte(&pnum);
 			nd_read_int(&score);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_player_index_valid(pnum, MAX_PLAYERS)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(pnum);
@@ -2468,9 +2963,9 @@ int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
-				Players[pnum].score -= score;
+				Players[pnum].score = classic_demo_int32_wrap_subtract(Players[pnum].score, score);
 			else if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD))
-				Players[pnum].score += score;
+				Players[pnum].score = classic_demo_int32_wrap_add(Players[pnum].score, score);
 			Game_mode = Newdemo_game_mode;
 			multi_sort_kill_list();
 			Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);
@@ -2488,9 +2983,9 @@ int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
-				Players[Player_num].score -= score;
+				Players[Player_num].score = classic_demo_int32_wrap_subtract(Players[Player_num].score, score);
 			else if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD))
-				Players[Player_num].score += score;
+				Players[Player_num].score = classic_demo_int32_wrap_add(Players[Player_num].score, score);
 			break;
 		}
 
@@ -2500,12 +2995,16 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_short((short *)&old_ammo);
 			nd_read_short((short *)&new_ammo);
+			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
 			{
 				nd_write_short(old_ammo);
 				nd_write_short(new_ammo);
 				break;
 			}
+			if (!classic_demo_weapon_index_valid(Players[Player_num].primary_weapon,
+				MAX_PRIMARY_WEAPONS))
+				break;
 
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
 				Players[Player_num].primary_ammo[Players[Player_num].primary_weapon] = old_ammo;
@@ -2519,12 +3018,16 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_short(&old_ammo);
 			nd_read_short(&new_ammo);
+			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
 			{
 				nd_write_short(old_ammo);
 				nd_write_short(new_ammo);
 				break;
 			}
+			if (!classic_demo_weapon_index_valid(Players[Player_num].secondary_weapon,
+				MAX_SECONDARY_WEAPONS))
+				break;
 
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
 				Players[Player_num].secondary_ammo[Players[Player_num].secondary_weapon] = old_ammo;
@@ -2539,6 +3042,14 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_short(&segnum);
 			nd_read_byte(&side);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_event_segment_side_valid(segnum, side, rewrite)) {
+				if (rewrite) {
+					nd_playback_v_bad_read = -1;
+					done = -1;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_short(segnum);
@@ -2548,12 +3059,22 @@ int newdemo_read_frame_information(int rewrite)
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) {
 				int anim_num;
 				int cside;
+				int csegnum;
+				int wall_num;
 				segment *segp, *csegp;
 
 				segp = &Segments[segnum];
-				csegp = &Segments[segp->children[side]];
+				csegnum = segp->children[side];
+				wall_num = segp->sides[side].wall_num;
+				if (!classic_demo_segment_valid(csegnum, Highest_segment_index) ||
+				    !classic_demo_index_valid(wall_num, Num_walls) ||
+				    !classic_demo_index_valid(Walls[wall_num].clip_num, Num_wall_anims))
+					break;
+				csegp = &Segments[csegnum];
 				cside = find_connect_side(segp, csegp);
-				anim_num = Walls[segp->sides[side].wall_num].clip_num;
+				if (!classic_demo_index_valid(cside, MAX_SIDES_PER_SEGMENT))
+					break;
+				anim_num = Walls[wall_num].clip_num;
 
 				if (WallAnims[anim_num].flags & WCF_TMAP1) {
 					segp->sides[side].tmap_num = csegp->sides[cside].tmap_num = WallAnims[anim_num].frames[0];
@@ -2569,6 +3090,11 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_byte(&old_level);
 			nd_read_byte(&new_level);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!classic_demo_laser_event_valid(old_level, new_level, MAX_LASER_LEVEL)) {
+				if (rewrite) { nd_playback_v_bad_read = -1; done = -1; }
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte(old_level);
@@ -2590,6 +3116,13 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_byte (&new_level);
 			nd_read_byte (&old_level);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (!nd_demo_level_event_valid(old_level, new_level, rewrite)) {
+				if (rewrite)
+					nd_playback_v_bad_read = -1;
+				done = -1;
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte (new_level);
@@ -2610,13 +3143,13 @@ int newdemo_read_frame_information(int rewrite)
 				}
 			}
 #ifdef DEST_SAT
-			if ( (loaded_level < Last_secret_level) || (loaded_level > Last_level - 1) ) {
+			if (!nd_demo_level_valid(loaded_level)) {
 				nm_messagebox( NULL, 1, TXT_OK, TXT_NO_DESTSAT_LVL );
 				free_mission();
 				return -1;
 			}
 #else
-			if ((loaded_level < Last_secret_level) || (loaded_level > Last_level)) {
+			if (!nd_demo_level_valid(loaded_level)) {
 				nm_messagebox( NULL, 1, TXT_OK, "%s\n%s\n%s", TXT_CANT_PLAYBACK, TXT_LEVEL_CANT_LOAD, TXT_DEMO_OLD_CORRUPT );
 				free_mission();
 				return -1;
@@ -2642,7 +3175,8 @@ int newdemo_read_frame_information(int rewrite)
 		}
 
 		default:
-			Int3();
+			nd_playback_v_bad_read = -1;
+			done = -1;
 		}
 	}
 
@@ -2666,7 +3200,7 @@ int newdemo_read_frame_information(int rewrite)
 			select_cockpit(PlayerCfg.PreferredCockpitMode);
 	}
 
-	if (nd_playback_v_bad_read) {
+	if (nd_playback_v_bad_read && !nd_validation_v_active) {
 		nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_DEMO_ERR_READING, TXT_DEMO_OLD_CORRUPT );
 		free_mission();
 	}
@@ -2690,24 +3224,55 @@ void newdemo_goto_beginning()
 	nd_playback_v_at_eof = 0;
 }
 
+static int nd_seek_back_frame_link(void)
+{
+	const PHYSFS_sint64 origin = PHYSFS_tell(infile);
+	PHYSFS_sint64 target;
+	short last_frame_length;
+
+	if (origin < 10 || !PHYSFS_seek(infile, origin - 10))
+		goto invalid_link;
+	nd_read_short(&last_frame_length);
+	if (nd_playback_v_bad_read ||
+	    !classic_demo_backward_link_target(origin, last_frame_length, 0, &target) ||
+	    !PHYSFS_seek(infile, target))
+		goto invalid_link;
+	return 1;
+
+invalid_link:
+	nd_playback_v_bad_read = -1;
+	return 0;
+}
+
 void newdemo_goto_end(int to_rewrite)
 {
-	short frame_length=0, byte_count=0, bshort=0;
+	short frame_length=0, bshort=0;
+	unsigned short byte_count=0;
 	sbyte level=0, bbyte=0, laser_level=0, c=0, cloaked=0;
-	ubyte energy=0, shield=0;
-	int i=0, loc=0, bint=0;
+	ubyte energy=0, shield=0, primary_weapon=0, secondary_weapon=0;
+	int i=0, bint=0;
+	const PHYSFS_sint64 file_length = PHYSFS_fileLength(infile);
+	PHYSFS_sint64 loc=0, frame_position=0;
 
-	PHYSFSX_fseek(infile, -2, SEEK_END);
-	nd_read_byte(&level);
+	if (file_length < 4 || !PHYSFS_seek(infile, file_length - 2))
+		nd_playback_v_bad_read = -1;
+	else
+		nd_read_byte(&level);
+	if (nd_playback_v_bad_read ||
+	    (to_rewrite ? !classic_demo_level_number_valid(level, 0) :
+	                  !nd_demo_level_valid(level))) {
+		nd_playback_v_bad_read = -1;
+		if (!to_rewrite) {
+			nm_messagebox( NULL, 1, TXT_OK, "%s\n%s\n%s", TXT_CANT_PLAYBACK,
+			               TXT_LEVEL_CANT_LOAD, TXT_DEMO_OLD_CORRUPT );
+			free_mission();
+			newdemo_stop_playback();
+		}
+		return;
+	}
 
 	if (!to_rewrite)
 	{
-		if ((level < Last_secret_level) || (level > Last_level)) {
-			nm_messagebox( NULL, 1, TXT_OK, "%s\n%s\n%s", TXT_CANT_PLAYBACK, TXT_LEVEL_CANT_LOAD, TXT_DEMO_OLD_CORRUPT );
-			free_mission();
-			newdemo_stop_playback();
-			return;
-		}
 		if (level != Current_level_num)
 		{
 			LoadLevel(level,1);
@@ -2718,8 +3283,23 @@ void newdemo_goto_end(int to_rewrite)
 
 	if (shareware)
 	{
+		if (file_length < 12 || !PHYSFS_seek(infile, file_length - 12)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		nd_read_short(&frame_length);
+		loc = PHYSFS_tell(infile);
+		if (nd_playback_v_bad_read ||
+		    !classic_demo_backward_link_target(loc, frame_length, 0, &frame_position)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+
 		if (Newdemo_game_mode & GM_MULTI) {
-			PHYSFSX_fseek(infile, -10, SEEK_END);
+			if (!PHYSFS_seek(infile, file_length - 10)) {
+				nd_playback_v_bad_read = -1;
+				return;
+			}
 			nd_read_byte(&cloaked);
 			for (i = 0; i < MAX_PLAYERS; i++) {
 				if ((1 << i) & cloaked)
@@ -2730,18 +3310,27 @@ void newdemo_goto_end(int to_rewrite)
 
 		if (to_rewrite)
 			return;
-
-		PHYSFSX_fseek(infile, -12, SEEK_END);
-		nd_read_short(&frame_length);
 	}
 	else
 	{
-		PHYSFSX_fseek(infile, -4, SEEK_END);
-		nd_read_short(&byte_count);
-		PHYSFSX_fseek(infile, -2 - byte_count, SEEK_CUR);
+		if (!PHYSFS_seek(infile, file_length - 4)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		nd_read_short((short *)&byte_count);
+		if (nd_playback_v_bad_read || byte_count > file_length - 4 ||
+		    !PHYSFS_seek(infile, file_length - 4 - byte_count)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 
 		nd_read_short(&frame_length);
 		loc = PHYSFS_tell(infile);
+		if (nd_playback_v_bad_read ||
+		    !classic_demo_backward_link_target(loc, frame_length, 0, &frame_position)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 		if (Newdemo_game_mode & GM_MULTI)
 		{
 			nd_read_byte(&cloaked);
@@ -2765,13 +3354,26 @@ void newdemo_goto_end(int to_rewrite)
 		}
 		if (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)
 			Players[Player_num].invulnerable_time = GameTime64 - (INVULNERABLE_TIME_MAX / 2);
-		nd_read_byte((sbyte *)&Players[Player_num].primary_weapon);
-		nd_read_byte((sbyte *)&Players[Player_num].secondary_weapon);
+		nd_read_byte((sbyte *)&primary_weapon);
+		nd_read_byte((sbyte *)&secondary_weapon);
+		if (nd_playback_v_bad_read ||
+		    !classic_demo_weapon_index_valid(primary_weapon, MAX_PRIMARY_WEAPONS) ||
+		    !classic_demo_weapon_index_valid(secondary_weapon, MAX_SECONDARY_WEAPONS)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+		Players[Player_num].primary_weapon = primary_weapon;
+		Players[Player_num].secondary_weapon = secondary_weapon;
 		for (i = 0; i < MAX_PRIMARY_WEAPONS; i++)
 			nd_read_short((short *)&(Players[Player_num].primary_ammo[i]));
 		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
 			nd_read_short((short *)&(Players[Player_num].secondary_ammo[i]));
 		nd_read_byte(&laser_level);
+		if (nd_playback_v_bad_read ||
+		    !classic_demo_laser_level_valid(laser_level, MAX_LASER_LEVEL)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 		if (laser_level != Players[Player_num].laser_level) {
 			Players[Player_num].laser_level = laser_level;
 			if (!to_rewrite)
@@ -2780,12 +3382,23 @@ void newdemo_goto_end(int to_rewrite)
 
 		if (Newdemo_game_mode & GM_MULTI) {
 			nd_read_byte(&c);
+			if (nd_playback_v_bad_read || !classic_demo_player_count_valid(c, MAX_PLAYERS)) {
+				nd_playback_v_bad_read = -1;
+				return;
+			}
 			N_players = (int)c;
 			// see newdemo_read_start_demo for explanation of
 			// why this is commented out
 			//		nd_read_byte((sbyte *)&N_players);
 			for (i = 0; i < N_players; i++) {
-				nd_read_string(Players[i].callsign);
+				classic_demo_string_status string_status =
+					nd_read_string(Players[i].callsign, sizeof(Players[i].callsign));
+
+				if (string_status != CLASSIC_DEMO_STRING_OK &&
+					(to_rewrite || string_status == CLASSIC_DEMO_STRING_TRUNCATED)) {
+					nd_playback_v_bad_read = -1;
+					return;
+				}
 				nd_read_byte(&(Players[i].connected));
 				if (Newdemo_game_mode & GM_MULTI_COOP) {
 					nd_read_int(&(Players[i].score));
@@ -2801,13 +3414,23 @@ void newdemo_goto_end(int to_rewrite)
 		if (to_rewrite)
 			return;
 
-		PHYSFSX_fseek(infile, loc, SEEK_SET);
+		if (!PHYSFS_seek(infile, loc)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 	}
 
-	PHYSFSX_fseek(infile, -frame_length, SEEK_CUR);
+	if (!PHYSFS_seek(infile, frame_position)) {
+		nd_playback_v_bad_read = -1;
+		return;
+	}
 	nd_read_int(&nd_playback_v_framecount);            // get the frame count
-	nd_playback_v_framecount--;
-	PHYSFSX_fseek(infile, 4, SEEK_CUR);
+	if (nd_playback_v_bad_read || !PHYSFS_seek(infile, frame_position + 8)) {
+		nd_playback_v_bad_read = -1;
+		return;
+	}
+	nd_playback_v_framecount =
+		classic_demo_frame_count_previous(nd_playback_v_framecount);
 	Newdemo_vcr_state = ND_STATE_PLAYBACK;
 	newdemo_read_frame_information(0); // then the frame information
 	Newdemo_vcr_state = ND_STATE_PAUSED;
@@ -2816,14 +3439,14 @@ void newdemo_goto_end(int to_rewrite)
 
 void newdemo_back_frames(int frames)
 {
-	short last_frame_length;
 	int i;
 
 	for (i = 0; i < frames; i++)
 	{
-		PHYSFS_seek(infile, PHYSFS_tell(infile) - 10);
-		nd_read_short(&last_frame_length);
-		PHYSFS_seek(infile, PHYSFS_tell(infile) + 8 - last_frame_length);
+		if (!nd_seek_back_frame_link()) {
+			newdemo_stop_playback();
+			return;
+		}
 
 		if (!nd_playback_v_at_eof && newdemo_read_frame_information(0) == -1) {
 			newdemo_stop_playback();
@@ -2832,9 +3455,10 @@ void newdemo_back_frames(int frames)
 		if (nd_playback_v_at_eof)
 			nd_playback_v_at_eof = 0;
 
-		PHYSFS_seek(infile, PHYSFS_tell(infile) - 10);
-		nd_read_short(&last_frame_length);
-		PHYSFS_seek(infile, PHYSFS_tell(infile) + 8 - last_frame_length);
+		if (!nd_seek_back_frame_link()) {
+			newdemo_stop_playback();
+			return;
+		}
 	}
 
 }
@@ -2856,7 +3480,7 @@ void interpolate_frame(fix d_play, fix d_recorded)
 	object *cur_objs;
 	static fix InterpolStep = F1_0 / 100;
 
-	if (nd_playback_v_framecount < 1)
+	if (nd_playback_v_framecount < 1 || d_recorded <= 0)
 		return;
 
 	factor = fixdiv(d_play, d_recorded);
@@ -3044,7 +3668,7 @@ void newdemo_playback_one_frame()
 		if (nd_playback_v_framecount <= 0)
 			nd_playback_total = nd_recorded_total;      // baseline total playback time
 		else
-			nd_playback_total += FrameTime;
+			nd_playback_total = classic_demo_time_advance(nd_playback_total, FrameTime);
 
 		if (nd_playback_v_style == NORMAL_PLAYBACK)
 		{
@@ -3054,7 +3678,8 @@ void newdemo_playback_one_frame()
 			if (nd_recorded_total > 0 && nd_recorded_time > 0)
 			{
 				nd_playback_v_style = INTERPOLATE_PLAYBACK;
-				nd_playback_total = nd_recorded_total + FrameTime; // baseline playback time
+				nd_playback_total = classic_demo_time_advance(nd_recorded_total,
+				                                                  FrameTime); // baseline playback time
 				base_interpol_time = nd_recorded_total;
 				d_recorded = nd_recorded_time; // baseline delta recorded
 			}
@@ -3108,7 +3733,7 @@ void newdemo_playback_one_frame()
 						}
 					}
 					d_free(cur_objs);
-					d_recorded += nd_recorded_time;
+					d_recorded = classic_demo_time_advance(d_recorded, nd_recorded_time);
 					base_interpol_time = nd_playback_total - FrameTime;
 				}
 			}
@@ -3498,6 +4123,197 @@ void newdemo_stop_playback()
 	
 	if (Game_wind)
 		window_close(Game_wind);               // Exit game loop
+}
+
+static void newdemo_validation_set_error(char *error, size_t error_size, const char *message)
+{
+	if (error && error_size)
+		snprintf(error, error_size, "%s", message ? message : "unknown error");
+}
+
+static const char *newdemo_validation_find_last_sep(const char *path)
+{
+	const char *slash = strrchr(path, '/');
+	const char *backslash = strrchr(path, '\\');
+
+	if (!slash)
+		return backslash;
+	if (!backslash)
+		return slash;
+	return slash > backslash ? slash : backslash;
+}
+
+static int newdemo_validation_open_input(const char *demo_path,
+	char *mount_dir, size_t mount_dir_size, int *mounted,
+	char *error, size_t error_size)
+{
+	const char *sep = newdemo_validation_find_last_sep(demo_path);
+	char basename[PATH_MAX];
+	char logical_path[PATH_MAX];
+	int logical_length;
+	size_t parent_len;
+	const char *existing_mount;
+
+	*mounted = 0;
+	if (!sep) {
+		snprintf(mount_dir, mount_dir_size, "%s", ".");
+		snprintf(basename, sizeof(basename), "%s", demo_path);
+	} else {
+		parent_len = (size_t)(sep - demo_path);
+		if (!parent_len) {
+			snprintf(mount_dir, mount_dir_size, "%c", *sep);
+		} else {
+			if (parent_len >= mount_dir_size) {
+				newdemo_validation_set_error(error, error_size, "classic demo directory path is too long");
+				return 0;
+			}
+			memcpy(mount_dir, demo_path, parent_len);
+			mount_dir[parent_len] = '\0';
+		}
+		snprintf(basename, sizeof(basename), "%s", sep + 1);
+	}
+	if (!basename[0]) {
+		newdemo_validation_set_error(error, error_size, "invalid classic demo path");
+		return 0;
+	}
+	existing_mount = PHYSFS_getMountPoint(mount_dir);
+	if (existing_mount) {
+		const char *source_dir;
+
+		logical_length = snprintf(logical_path, sizeof(logical_path), "%s%s",
+			existing_mount[0] == '/' ? existing_mount + 1 : existing_mount, basename);
+		if (logical_length < 0 || (size_t)logical_length >= sizeof(logical_path)) {
+			newdemo_validation_set_error(error, error_size, "classic demo file path is too long");
+			return 0;
+		}
+		source_dir = PHYSFS_getRealDir(logical_path);
+		if (!source_dir || strcmp(source_dir, mount_dir)) {
+			newdemo_validation_set_error(error, error_size,
+				"classic demo source is missing or shadowed in its mounted directory");
+			return 0;
+		}
+	} else {
+		if (!PHYSFS_mount(mount_dir, "__classicdemo_validate", 0)) {
+			newdemo_validation_set_error(error, error_size, "could not mount classic demo directory");
+			return 0;
+		}
+		*mounted = 1;
+		logical_length = snprintf(logical_path, sizeof(logical_path),
+			"__classicdemo_validate/%s", basename);
+	}
+	if (logical_length < 0 || (size_t)logical_length >= sizeof(logical_path)) {
+		newdemo_validation_set_error(error, error_size, "classic demo file path is too long");
+		return 0;
+	}
+	infile = PHYSFSX_openReadBuffered(logical_path);
+	if (!infile) {
+		newdemo_validation_set_error(error, error_size, "could not open classic demo file");
+		return 0;
+	}
+	return 1;
+}
+
+int newdemo_validate_file(const char *demo_path,
+	newdemo_validation_result *result, char *error, size_t error_size)
+{
+	char mount_dir[PATH_MAX] = "";
+	char temporary_path[PATH_MAX] = "";
+	int mounted = 0;
+	int input_opened = 0;
+	int frame_count = 0;
+	int complete = 0;
+	int attempt;
+
+	if (error && error_size)
+		error[0] = '\0';
+	if (!demo_path || !demo_path[0] || !result) {
+		newdemo_validation_set_error(error, error_size, "classic demo validation requires a source path and result");
+		return 0;
+	}
+	memset(result, 0, sizeof(*result));
+	if (!newdemo_validation_open_input(demo_path, mount_dir, sizeof(mount_dir),
+		&mounted, error, error_size))
+		goto cleanup;
+	input_opened = 1;
+
+	for (attempt = 0; attempt < 100; ++attempt) {
+		snprintf(temporary_path, sizeof(temporary_path),
+			"__classicdemo_validate_%lu_%d.tmp", (unsigned long)time(NULL), attempt);
+		if (!PHYSFSX_exists(temporary_path, 0))
+			break;
+	}
+	if (attempt == 100) {
+		newdemo_validation_set_error(error, error_size, "could not allocate classic demo validation output");
+		goto cleanup;
+	}
+	outfile = PHYSFSX_openWriteBuffered(temporary_path);
+	if (!outfile) {
+		newdemo_validation_set_error(error, error_size, "could not open classic demo validation output");
+		goto cleanup;
+	}
+
+	Newdemo_num_written = 0;
+	nd_playback_v_bad_read = 0;
+	nd_playback_v_at_eof = 0;
+	nd_playback_v_demo_version = DEMO_VERSION;
+	nd_playback_v_game_type = DEMO_GAME_TYPE;
+	nd_validation_v_active = 1;
+	nd_validation_v_object_error = NULL;
+	swap_endian = 0;
+	Newdemo_state = ND_STATE_NORMAL;
+	Newdemo_vcr_state = ND_STATE_PLAYBACK;
+	nd_playback_v_demosize = (unsigned int)PHYSFS_fileLength(infile);
+	if (newdemo_read_demo_start(PURPOSE_REWRITE)) {
+		newdemo_validation_set_error(error, error_size, "classic demo header parse failed");
+		goto cleanup;
+	}
+	while (newdemo_read_frame_information(1) == 1)
+		++frame_count;
+	if (nd_playback_v_bad_read || !nd_playback_v_at_eof) {
+		newdemo_validation_set_error(error, error_size,
+			nd_validation_v_object_error ? nd_validation_v_object_error : "classic demo frame parse failed");
+		goto cleanup;
+	}
+	newdemo_goto_end(1);
+	if (nd_playback_v_bad_read) {
+		newdemo_validation_set_error(error, error_size, "classic demo trailer parse failed");
+		goto cleanup;
+	}
+	newdemo_write_end();
+	if (!PHYSFS_close(outfile)) {
+		newdemo_validation_set_error(error, error_size, "classic demo validation output close failed");
+		outfile = NULL;
+		goto cleanup;
+	}
+	outfile = NULL;
+
+	result->version = nd_playback_v_demo_version;
+	result->game_type = nd_playback_v_game_type;
+	result->frames_decoded = frame_count;
+	result->final_level = Current_level_num;
+	result->final_score = Players[Player_num].score;
+	result->roundtrip_bytes = Newdemo_num_written;
+	result->file_size = nd_playback_v_demosize;
+	complete = 1;
+
+cleanup:
+	nd_validation_v_active = 0;
+	swap_endian = 0;
+	Newdemo_state = ND_STATE_NORMAL;
+	Newdemo_vcr_state = ND_STATE_NORMAL;
+	if (outfile) {
+		PHYSFS_close(outfile);
+		outfile = NULL;
+	}
+	if (input_opened) {
+		PHYSFS_close(infile);
+		infile = NULL;
+	}
+	if (temporary_path[0])
+		PHYSFS_delete(temporary_path);
+	if (mounted)
+		PHYSFS_removeFromSearchPath(mount_dir);
+	return complete;
 }
 
 

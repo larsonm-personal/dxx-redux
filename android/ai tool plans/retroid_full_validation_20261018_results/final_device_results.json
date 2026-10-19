@@ -1,0 +1,8 @@
+{
+  "recovery_d1_accept_exit": 1,
+  "lan_free_port_exit": 0,
+  "lan_prerequisite_exit": 1,
+  "lan_free_port_game_exit": 0,
+  "cold_preview_exit": 0,
+  "cold_preview_without_power_exit": 1
+}

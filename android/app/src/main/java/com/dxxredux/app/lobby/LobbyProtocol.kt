@@ -484,6 +484,7 @@ internal fun MissionStatusReport.toJson(): JSONObject =
         .put("total_bytes", totalBytes)
         .put("attempt", attempt)
         .put("bytes_per_second", bytesPerSecond)
+        .put("game_data_warning", gameDataWarning)
         .apply {
             transferId?.let { put("transfer_id", it) }
             failureCode?.let { put("failure_code", it) }
@@ -503,5 +504,6 @@ internal fun missionStatusFromJson(json: JSONObject?): MissionStatusReport? {
         attempt = json.optInt("attempt", 0),
         failureCode = json.optString("failure_code").takeIf(String::isNotBlank),
         bytesPerSecond = json.optLong("bytes_per_second", 0L),
+        gameDataWarning = json.optBoolean("game_data_warning", false),
     )
 }

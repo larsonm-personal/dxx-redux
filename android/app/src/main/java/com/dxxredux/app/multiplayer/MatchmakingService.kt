@@ -510,6 +510,7 @@ object MatchmakingService {
                 transferId = report.transferId,
                 attempt = report.attempt,
                 failureCode = report.failureCode,
+                gameDataWarning = report.gameDataWarning,
             )
         send(protocolJson.encodeToString(MissionStatusMsg.serializer(), msg))
     }
