@@ -55,13 +55,33 @@ class ComparisonTests(unittest.TestCase):
         after["engine"][self.identity][1]["frames"] = 101
         self.assertEqual("nondeterministic", self.classification(self.outcome(), after))
         after = self.outcome("failed")
-        after["process"][self.identity] = [{"exit_code": 0}, {"exit_code": 1}]
+        after["process"][self.identity] = [{"exit_code": 0}, {"exit_code": 2}]
         self.assertEqual("nondeterministic", self.classification(self.outcome("failed"), after))
         after["process"][self.identity].pop()
         self.assertEqual("incomplete", self.classification(self.outcome("failed"), after))
         after = self.outcome()
         after["engine"][self.identity].pop()
         self.assertEqual("incomplete", self.classification(self.outcome(), after))
+
+    def test_partial_or_failed_process_cannot_be_a_clean_improvement(self):
+        for receipt in ({"exit_code": 1, "timed_out": False}, {"exit_code": 0, "timed_out": True}):
+            after = self.outcome()
+            after["process"][self.identity] = [receipt] * 2
+            self.assertEqual("incomplete", self.classification(self.outcome("failed"), after))
+        before = self.outcome("failed")
+        before["process"][self.identity] = [{"exit_code": 1, "timed_out": False}] * 2
+        self.assertEqual("incomplete", self.classification(before, self.outcome()))
+        before = self.outcome("failed")
+        before["engine"][self.identity].pop()
+        self.assertEqual("incomplete", self.classification(before, self.outcome()))
+        after = self.outcome()
+        after["engine"][self.identity] = [{"status": "timeout"}] * 2
+        row = c.compare(self.entry, self.outcome("failed"), after)[0]
+        self.assertEqual("incomplete", row["classification"])
+        self.assertEqual("timeout", row["raw_after"][0]["status"])
+        after = self.outcome()
+        after["incomplete"] = "selection_or_oracle_contract_changed"
+        self.assertEqual("incomplete", self.classification(self.outcome("failed"), after))
 
     def test_semantic_differences_are_retained(self):
         for field, value in (

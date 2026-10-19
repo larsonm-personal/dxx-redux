@@ -16,6 +16,13 @@ existing `retail-ci` environment, deployment restrictions, read token and reposi
 variable must already support that trusted run. A mismatch stops execution; this
 change does not adjust any of those settings or the existing nightly gate.
 
+The configuration permits only collection and artifact reporting for that exact
+base/candidate/asset tuple and fixed settings. It authorizes no baseline update,
+merge or deployment. For a future comparison, review a small PR replacing the
+three pins and documenting its purpose; review any required setting or asset-pin
+change separately. The same trusted activation procedure applies. There is no
+campaign registry, arbitrary-ref input or new scheduling framework.
+
 ## Collection and coverage
 
 Four shards build both revisions with the same dependencies before private checkout.

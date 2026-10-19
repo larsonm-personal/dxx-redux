@@ -315,8 +315,17 @@ def compare(entry, before, after):
             for value, runs, receipts in zip((a, b), engines, processes):
                 if value["status"] != "unsupported" and len(receipts) != 2:
                     status = "incomplete"
-                if value["status"] == "ok" and (len(runs) != 2 or any(r.get("status") != "confirmed" for r in runs)):
+                if any(r.get("exit_code") not in (0, 2) and r.get("timed_out") is not True for r in receipts):
                     status = "incomplete"
+                if value["status"] == "ok" and (
+                    len(runs) != 2
+                    or any(r.get("status") != "confirmed" for r in runs)
+                    or any(r.get("timed_out") is not False or r.get("exit_code") != 0 for r in receipts)
+                ):
+                    status = "incomplete"
+                if value["status"] not in ("ok", "unsupported") and len(runs) != 2:
+                    if value["status"] != "timeout" or not all(r.get("timed_out") is True for r in receipts):
+                        status = "incomplete"
             if identity not in entry["levels"] or any(
                 side.get("incomplete") or side.get("route_exit_code", 0) for side in (before, after)
             ):
