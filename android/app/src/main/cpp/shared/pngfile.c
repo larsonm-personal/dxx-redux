@@ -258,6 +258,16 @@ static int texture_lookup_walk_push(texture_lookup_walk *walk, char *path, unsig
 {
 	texture_lookup_directory *next;
 	size_t path_bytes = strlen(path) + 1u;
+	size_t i;
+
+	/* PhysFS enumerates a shared directory once per mount, but walking it
+	 * already enumerates every mounted source beneath that virtual path */
+	for (i = 0; i < walk->directory_count; ++i) {
+		if (!strcmp(walk->directories[i].path, path)) {
+			free(path);
+			return 1;
+		}
+	}
 
 	if (depth > TEXTURE_LOOKUP_MAX_DEPTH ||
 	    (depth && walk->discovered_directories >= TEXTURE_LOOKUP_MAX_DIRECTORIES) ||

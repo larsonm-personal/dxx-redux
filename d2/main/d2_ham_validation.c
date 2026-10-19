@@ -127,8 +127,9 @@ static int d2_ham_read_robot_meta(const uint8_t *record, d2_ham_robot_meta *meta
 		if (meta->joint_count[joint] < 0) return 0;
 		/* Legacy writers left unused offsets negative; an empty list has no addressable range */
 		if (!meta->joint_count[joint]) {
-			if (meta->joint_offset[joint] && report)
+			if (meta->joint_offset[joint] < 0 && report)
 				++report->normalized_empty_joint_offsets;
+			/* Ignore empty ranges here; the reader retains nonnegative patch baseline values */
 			meta->joint_offset[joint] = 0;
 		} else if (meta->joint_offset[joint] < 0)
 			return 0;

@@ -883,7 +883,8 @@ void nd_read_object(object *obj, int capacity_only)
 		nd_read_int(&(decoded->rtype.vclip_info.vclip_num));
 		nd_read_fix(&(decoded->rtype.vclip_info.frametime));
 		nd_read_byte(&(decoded->rtype.vclip_info.framenum));
-		clip_count = capacity_only ? VCLIP_MAXNUM : Num_vclips;
+		/* Original D1 data can report zero while populating the fixed-size clip table */
+		clip_count = capacity_only || !Num_vclips ? VCLIP_MAXNUM : Num_vclips;
 		frame_count = classic_demo_index_valid(decoded->rtype.vclip_info.vclip_num, clip_count)
 			? (capacity_only ? VCLIP_MAX_FRAMES : Vclip[decoded->rtype.vclip_info.vclip_num].num_frames)
 			: 0;

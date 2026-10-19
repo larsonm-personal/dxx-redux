@@ -236,7 +236,8 @@ static int jointlist_read_n(jointlist *jl, int n, PHYSFS_file *fp)
 	for (i = 0; i < n; i++) {
 		jl[i].n_joints = PHYSFSX_readShort(fp);
 		jl[i].offset = PHYSFSX_readShort(fp);
-		if (!jl[i].n_joints)
+		/* Preserve nonnegative offsets used by HAM patch preconditions */
+		if (!jl[i].n_joints && jl[i].offset < 0)
 			jl[i].offset = 0;
 	}
 	return i;

@@ -1,8 +1,9 @@
-// TEST: Reopening a completed large-level metadata result does not start another analysis
+// Uneasy4 has a known route-planning timeout; use a bounded mission to test cache reuse
+// TEST: Reopening a completed mission metadata result does not start another analysis
 [
     {
         "_info": {
-            "description": "Analyze Uneasy 4 once, then require the next metadata open to use the persisted full result",
+            "description": "Analyze Obsidian once, then require the next metadata open to use the persisted full result",
             "games": ["d2"],
             "_deps": [
                 {
@@ -24,8 +25,8 @@
                 { "file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1" },
                 { "file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1" },
                 {
-                    "file": "uneasy4.zip",
-                    "sha256": "7721851ec28d7f554ed8f5790f861602bf081f58dd76125bb7b29fb5a8454968",
+                    "file": "obsidian.zip",
+                    "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce",
                     "target": "files/mission_zip_batch_cache",
                 },
             ],
@@ -36,22 +37,22 @@
     { "action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250 },
     {
         "action": "import_mission_zip",
-        "file": "uneasy4.zip",
-        "label": "uneasy_result_cache",
-        "display_name": "Uneasy4.zip",
+        "file": "obsidian.zip",
+        "label": "obsidian_result_cache",
+        "display_name": "Obsidian.zip",
     },
     {
         "action": "analyze_level_metadata",
-        "label": "uneasy_first",
-        "mod_file": "Uneasy4.zip",
+        "label": "obsidian_first",
+        "mod_file": "Obsidian.zip",
         "game": "d2",
         "status": "ok",
         "min_levels": 1,
     },
     {
         "action": "analyze_level_metadata",
-        "label": "uneasy_second",
-        "mod_file": "Uneasy4.zip",
+        "label": "obsidian_second",
+        "mod_file": "Obsidian.zip",
         "game": "d2",
         "status": "ok",
         "min_levels": 1,
