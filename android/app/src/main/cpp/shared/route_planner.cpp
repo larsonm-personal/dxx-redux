@@ -3521,11 +3521,18 @@ class dependency_planner
 		if (!valid_wall(snapshot_, wall))
 			return true;
 		/* Reaching the exit room does not cross its final wall
-		 * Resolve an opener before committing to a solid exit barrier */
-		if (route_progress_wall_kind(snapshot_, state_.progress, wall) == route_wall_kind::closed) {
+		 * A locked door also needs its remote opener, even without a key */
+		auto needs_opener = [&]() {
+			const auto kind = route_progress_wall_kind(snapshot_, state_.progress, wall);
+			return kind == route_wall_kind::closed ||
+			       (kind == route_wall_kind::door &&
+			        route_progress_wall_locked(snapshot_, state_.progress, wall) &&
+			        !route_progress_wall_opened(snapshot_, state_.progress, wall));
+		};
+		if (needs_opener()) {
 			if (!fire_trigger(target.segment, target.side, 0))
 				return false;
-			if (route_progress_wall_kind(snapshot_, state_.progress, wall) == route_wall_kind::closed) {
+			if (needs_opener()) {
 				set_problem("exit wall remains closed after its prerequisite");
 				return false;
 			}

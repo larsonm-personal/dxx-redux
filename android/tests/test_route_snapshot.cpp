@@ -991,8 +991,72 @@ level_metadata_scan_view make_view(test_level &level)
 
 } // namespace
 
+static void test_locked_exit_prerequisites()
+{
+	auto snapshot = make_nested_trigger_snapshot();
+	snapshot.state.control_center_destroyed = true;
+	snapshot.state.segments[1].sides[1].exit_trigger = true;
+	snapshot.state.walls[1].locked = true;
+	dxx_route::route_query query;
+	query.start = snapshot.state.start_position;
+	query.endpoint = dxx_route::route_endpoint_kind::end_of_level;
+	dxx_route::route_visibility_query visibility;
+	visibility.wall_shootable = [](void *, int segment, const dxx_route::route_position &, int wall) -> int {
+		return segment == 0 && wall == 0;
+	};
+	const auto opened = dxx_route::plan_route(snapshot, query, visibility);
+	assert(opened.status == dxx_route::route_plan_status::ok);
+	assert(opened.steps.size() == 3);
+	assert(opened.steps[1].kind == dxx_route::route_semantic_step_kind::trigger);
+	assert(opened.steps[1].trigger == 1);
+	assert(opened.steps[2].kind == dxx_route::route_semantic_step_kind::exit);
+
+	// An open passage can carry the remote opener, as in Countd2
+	auto passage = snapshot;
+	passage.topology.segments[0].sides[2].wall = -1;
+	passage.topology.segments[0].sides[0].wall = 0;
+	passage.topology.walls[0].side = 0;
+	passage.topology.walls[0].shootable_trigger = false;
+	passage.state.walls[0].kind = dxx_route::route_wall_kind::open;
+	const auto crossed = dxx_route::plan_route(passage, query, visibility);
+	assert(crossed.status == dxx_route::route_plan_status::ok);
+	assert(crossed.steps.size() == 3);
+	assert(crossed.steps[1].kind == dxx_route::route_semantic_step_kind::trigger);
+	assert(crossed.steps[1].trigger == 1);
+	assert(crossed.steps[2].kind == dxx_route::route_semantic_step_kind::exit);
+
+	// The source room is reachable, but an inaccessible opener cannot certify exit
+	auto isolated = snapshot;
+	isolated.topology.segments[0].sides[0].child = -1;
+	isolated.topology.segments[1].sides[0].child = -1;
+	isolated.state.start_segment = 1;
+	isolated.state.start_position = isolated.topology.segments[1].center;
+	auto isolated_query = query;
+	isolated_query.start = isolated.state.start_position;
+	const auto inaccessible = dxx_route::plan_route(isolated, isolated_query, visibility);
+	assert(inaccessible.status != dxx_route::route_plan_status::ok);
+
+	// An ordinary keyed exit needs its key, not an unrelated opener
+	snapshot.state.walls[1].locked = false;
+	snapshot.state.walls[1].key = dxx_route::route_key_requirement::red;
+	snapshot.topology.segments[1].sides[1].opener_walls.clear();
+	dxx_route::route_state_object key;
+	key.segment = 0;
+	key.kind = dxx_route::route_object_kind::powerup;
+	key.key = dxx_route::route_key_requirement::red;
+	key.position = snapshot.state.start_position;
+	snapshot.state.objects.push_back(key);
+	const auto keyed = dxx_route::plan_route(snapshot, query, visibility);
+	assert(keyed.status == dxx_route::route_plan_status::ok);
+	assert(keyed.steps.size() == 3);
+	assert(keyed.steps[1].kind == dxx_route::route_semantic_step_kind::key);
+	assert(keyed.steps[1].key == dxx_route::route_key_requirement::red);
+	assert(keyed.steps[2].kind == dxx_route::route_semantic_step_kind::exit);
+}
+
 int main()
 {
+	test_locked_exit_prerequisites();
 	test_level level;
 	auto view = make_view(level);
 	dxx_route::route_snapshot first;
