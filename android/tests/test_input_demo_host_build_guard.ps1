@@ -79,6 +79,29 @@ try {
     $issue = Get-InputDemoExecutableFreshnessIssue -RepoRoot $caseRoot -GameName 'd2' -ExecutablePath $executablePath
     Assert-True ($null -eq $issue) 'Matching revision stamp should accept a fresh executable'
 
+    foreach ($relative in @(
+            'android/tests/build-shareware-fixture/CMakeFiles/Makefile.cmake',
+            'android/tests/build-shareware-fixture/CMakeFiles/3.31.6/CompilerIdC/CMakeCCompilerId.c',
+            'android/tests/build-shareware-fixture/cmake_install.cmake',
+            'android/tests/build-shareware-fixture/CTestTestfile.cmake'
+        )) {
+        $generatedPath = Join-Path $caseRoot $relative
+        New-Item -ItemType Directory -Path (Split-Path $generatedPath -Parent) -Force | Out-Null
+        [IO.File]::WriteAllText($generatedPath, '# generated')
+        (Get-Item -LiteralPath $generatedPath).LastWriteTimeUtc = [DateTime]::UtcNow.AddMinutes(1)
+    }
+    $issue = Get-InputDemoExecutableFreshnessIssue -RepoRoot $caseRoot -GameName 'd2' -ExecutablePath $executablePath
+    Assert-True ($null -eq $issue) 'Generated nested fixture build files must not invalidate the prebuilt replay executable'
+
+    foreach ($relative in @('android/tests/fixture.c', 'android/tests/fixture.cmake', 'android/tests/CMakeLists.txt', 'd2/source.c')) {
+        $sourcePath = Join-Path $caseRoot $relative
+        [IO.File]::WriteAllText($sourcePath, '# source')
+        (Get-Item -LiteralPath $sourcePath).LastWriteTimeUtc = [DateTime]::UtcNow.AddMinutes(2)
+        $issue = Get-InputDemoExecutableFreshnessIssue -RepoRoot $caseRoot -GameName 'd2' -ExecutablePath $executablePath
+        Assert-True ($null -ne $issue -and $issue.SourceRelative.Replace('\', '/') -eq $relative) 'Real source changes must still invalidate the executable'
+        (Get-Item -LiteralPath $sourcePath).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-1)
+    }
+
     [System.IO.File]::WriteAllText((Join-Path $caseRoot 'README.md'), "revision only`n")
     & git -C $caseRoot add README.md 2>$null
     & git -C $caseRoot commit --quiet -m 'revision change' 2>$null
