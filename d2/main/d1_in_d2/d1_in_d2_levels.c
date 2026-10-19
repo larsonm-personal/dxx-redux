@@ -63,10 +63,9 @@ int d1_in_d2_initialize_level_ambience(void)
 	int i;
 	if (!d1_in_d2_use_d1_gameplay())
 		return 0;
-	for (i = 0; i < Num_robot_centers; ++i)
-		for (int robot = 0; robot < 64; ++robot)
-			if ((uint32_t)RobotCenters[i].robot_flags[robot / 32] & (UINT32_C(1) << (robot % 32)))
-				d1_in_d2_require_robot(robot);
+	/* Matcen masks can contain unused robot IDs in authored D1 levels
+	 * Validate a selected robot at creation, as D2 does, without rejecting
+	 * the whole level or changing the factory's authored selection weights */
 	for (i = 0; i <= Highest_segment_index; ++i)
 		Segment2s[i].s2_flags &= ~(S2F_AMBIENT_LAVA | S2F_AMBIENT_WATER);
 	return 1;

@@ -37,8 +37,8 @@
       ],
       "total_frames": 1315,
       "rng_end": {
-        "state": 1386117904,
-        "calls": 1207
+        "state": 2201537524,
+        "calls": 1315
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -75,8 +75,8 @@
       ],
       "total_frames": 3630,
       "rng_end": {
-        "state": 1430025122,
-        "calls": 5205
+        "state": 1679104895,
+        "calls": 6250
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -117,8 +117,8 @@
       ],
       "total_frames": 7579,
       "rng_end": {
-        "state": 2790703867,
-        "calls": 11790
+        "state": 1205019321,
+        "calls": 12168
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -159,8 +159,8 @@
       ],
       "total_frames": 9211,
       "rng_end": {
-        "state": 1265792371,
-        "calls": 12054
+        "state": 3800520125,
+        "calls": 12676
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -197,8 +197,8 @@
       ],
       "total_frames": 8000,
       "rng_end": {
-        "state": 3891096828,
-        "calls": 10491
+        "state": 1700225801,
+        "calls": 16312
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -235,8 +235,8 @@
       ],
       "total_frames": 4716,
       "rng_end": {
-        "state": 1422849092,
-        "calls": 10387
+        "state": 4136886724,
+        "calls": 11539
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -261,8 +261,8 @@
       ],
       "total_frames": 1115,
       "rng_end": {
-        "state": 382657182,
-        "calls": 617
+        "state": 1713460939,
+        "calls": 2110
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

@@ -228,6 +228,7 @@
             "seg": 0
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_problem": "route target unreachable",
         "notes": [
@@ -562,6 +563,10 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 1 legacy signed dynamic-light count to empty",
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -856,6 +861,10 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 22 legacy signed dynamic-light counts to empty",
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1127,6 +1136,10 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 41 legacy signed dynamic-light counts to empty",
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1368,6 +1381,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Normalized 15 legacy signed dynamic-light counts to empty",
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -1635,6 +1652,10 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 5 legacy signed dynamic-light counts to empty",
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1702,6 +1723,10 @@
             "label": "Start",
             "seg": 0
           }
+        ],
+        "data_warnings": [
+          "Normalized 5 legacy signed dynamic-light counts to empty",
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "route_problem": "route target unreachable",
@@ -2006,6 +2031,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2135,6 +2161,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2234,6 +2263,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -2480,6 +2512,7 @@
             "seg": 0
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_problem": "missing exit",
         "route_note": "missing reactor",

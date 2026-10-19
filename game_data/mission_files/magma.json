@@ -223,6 +223,7 @@
             "seg": 152
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_problem": "route target unreachable",
         "notes": [
@@ -435,6 +436,7 @@
             "seg": 94
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_problem": "route target unreachable",
         "notes": [

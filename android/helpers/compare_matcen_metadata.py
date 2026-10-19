@@ -5,12 +5,48 @@ not golden robot definitions: their allocated globals can contain previous-level
 """
 
 import argparse
+import copy
 import json
 from pathlib import Path
 
 
 class MatcenMismatch(ValueError):
     pass
+
+
+def baseline_capture(value):
+    """Keep authored/effective state strict while excluding unbound mask observations.
+
+    A physically allocated but logically unbound slot retains its previous level's
+    robot mask. Models referenced exclusively by those masks are observations too.
+    Never discard binding identity/status, disk records, or models used by them.
+    """
+    validate_capture(value)
+    result = copy.deepcopy(value)
+
+    def robot_types(record):
+        words = record.get("robot_flags", [])
+        if not isinstance(words, list) or any(type(word) is not int or not 0 <= word <= 0xFFFFFFFF for word in words):
+            raise MatcenMismatch("Invalid robot mask observation")
+        return {32 * i + bit for i, word in enumerate(words) for bit in range(32) if word & (1 << bit)}
+
+    defined = set()
+    observed = set()
+    for record in result["disk_records"]:
+        defined.update(robot_types(record))
+    for binding in result["bindings"]:
+        record = resolve_binding(result, binding)["effective_record"]
+        if binding.get("binding_status") == "logical_disk_unbound":
+            ordinal = binding.get("effective_ordinal")
+            if type(ordinal) is not int or ordinal < result["declared_disk_count"]:
+                raise MatcenMismatch("Unbound observation refers to a declared disk record")
+            observed.update(robot_types(record))
+            binding.get("record_overrides", {}).pop("robot_flags", None)
+        else:
+            defined.update(robot_types(record))
+    incidental = observed - defined
+    result["robot_models"] = [model for model in result["robot_models"] if model["type"] not in incidental]
+    return result
 
 
 def resolve_binding(capture, binding):

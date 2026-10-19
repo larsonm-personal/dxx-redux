@@ -41,8 +41,8 @@
       ],
       "total_frames": 1547,
       "rng_end": {
-        "state": 3839150867,
-        "calls": 1398
+        "state": 2504167540,
+        "calls": 1699
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -75,8 +75,8 @@
       ],
       "total_frames": 1722,
       "rng_end": {
-        "state": 3392316763,
-        "calls": 9134
+        "state": 3515659043,
+        "calls": 9574
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -117,8 +117,8 @@
       ],
       "total_frames": 3038,
       "rng_end": {
-        "state": 1054673587,
-        "calls": 8662
+        "state": 418453380,
+        "calls": 9299
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -211,8 +211,8 @@
       ],
       "total_frames": 6054,
       "rng_end": {
-        "state": 1607691659,
-        "calls": 8574
+        "state": 3904227148,
+        "calls": 10347
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -253,8 +253,8 @@
       ],
       "total_frames": 3182,
       "rng_end": {
-        "state": 1087338525,
-        "calls": 9252
+        "state": 2956076639,
+        "calls": 10122
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -295,8 +295,8 @@
       ],
       "total_frames": 6329,
       "rng_end": {
-        "state": 1496429597,
-        "calls": 2084
+        "state": 673297923,
+        "calls": 3718
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -332,17 +332,17 @@
         },
         {
           "n": "exit",
-          "s": 123
+          "s": 124
         }
       ],
-      "total_frames": 7405,
+      "total_frames": 7420,
       "rng_end": {
-        "state": 364301125,
-        "calls": 10044
+        "state": 448447633,
+        "calls": 11248
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 15.449997,
+        "simulated_seconds": 15.699997,
         "difficulty": 2
       }
     },

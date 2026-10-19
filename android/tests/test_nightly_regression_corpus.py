@@ -4,37 +4,69 @@ from pathlib import Path
 import tempfile
 
 from nightly_regression_corpus import compare_metadata, compare_route, freeze_oracles, require_unchanged_oracles
+from test_matcen_metadata import fixture as matcen_fixture
 
 
 class CorpusComparisons(unittest.TestCase):
     def setUp(self):
-        self.metadata = [{'status': 'ok', 'target_index': 0, 'levels': [
-            {'level_num': 1, 'level_file': 'one.rl2', 'segment_count': 10, 'travel_time_seconds': 12}],
-            'provenance': {'date': '1995-01-01'}}]
-        self.metadata_summary = [{'name': 'mission.zip', 'status': 'passed'}]
-        self.route = {'schema': 'dxx-guidebot-route-simulation-v1',
-                      'mission_filename': 'one.mn2', 'target_index': 0,
-                      'generation': 4, 'fixed_hz': 60, 'seed': 1, 'status': 'ok',
-                      'levels': [{'level_num': 1, 'level_file': 'one.rl2',
-                                  'status': 'ok', 'route_input_sha256': 'A' * 64,
-                                  'total_frames': 100, 'rng_start': {'state': 1, 'calls': 0}, 'rng_end': {'state': 10, 'calls': 20},
-                                  'objectives': [{'n': 'exit', 's': 2}]}]}
-        self.summary = {'schema': 'dxx-guidebot-route-simulation-batch-v1',
-                        'mode': 'headless', 'write_regression': False,
-                        'selected_levels': 1, 'selected_work_items': ['mission.json|0|1|one.rl2'],
-                        'infrastructure_failures': []}
+        self.metadata = [
+            {
+                "status": "ok",
+                "target_index": 0,
+                "levels": [{"level_num": 1, "level_file": "one.rl2", "segment_count": 10, "travel_time_seconds": 12}],
+                "provenance": {"date": "1995-01-01"},
+            }
+        ]
+        self.metadata_summary = [{"name": "mission.zip", "status": "passed"}]
+        self.route = {
+            "schema": "dxx-guidebot-route-simulation-v1",
+            "mission_filename": "one.mn2",
+            "target_index": 0,
+            "generation": 4,
+            "fixed_hz": 60,
+            "seed": 1,
+            "status": "ok",
+            "levels": [
+                {
+                    "level_num": 1,
+                    "level_file": "one.rl2",
+                    "status": "ok",
+                    "route_input_sha256": "A" * 64,
+                    "total_frames": 100,
+                    "rng_start": {"state": 1, "calls": 0},
+                    "rng_end": {"state": 10, "calls": 20},
+                    "objectives": [{"n": "exit", "s": 2}],
+                }
+            ],
+        }
+        self.summary = {
+            "schema": "dxx-guidebot-route-simulation-batch-v1",
+            "mode": "headless",
+            "write_regression": False,
+            "selected_levels": 1,
+            "selected_work_items": ["mission.json|0|1|one.rl2"],
+            "infrastructure_failures": [],
+        }
 
     def metadata_result(self, output=None, summary=None):
-        return compare_metadata(self.metadata, self.metadata if output is None else output,
-                                self.metadata_summary if summary is None else summary, 'mission.zip')['status']
+        return compare_metadata(
+            self.metadata,
+            self.metadata if output is None else output,
+            self.metadata_summary if summary is None else summary,
+            "mission.zip",
+        )["status"]
 
     def route_result(self, output=None, summary=None):
-        return compare_route(self.route, self.route if output is None else output,
-                             self.summary if summary is None else summary, 'mission.json')['status']
+        return compare_route(
+            self.route,
+            self.route if output is None else output,
+            self.summary if summary is None else summary,
+            "mission.json",
+        )["status"]
 
     def test_mutated_oracle_cannot_be_its_own_expected_output(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'baseline.json'
+            path = Path(directory) / "baseline.json"
             path.write_text('{"original": true}')
             snapshot = freeze_oracles([path])
             require_unchanged_oracles(snapshot)
@@ -43,87 +75,155 @@ class CorpusComparisons(unittest.TestCase):
                 require_unchanged_oracles(snapshot)
 
     def test_wrong_selected_level_never_passes(self):
-        result = compare_route(self.route, self.route, self.summary, 'mission.json', 'mission.json|0|2|other.rl2')
-        self.assertEqual(result['status'], 'FAIL')
+        result = compare_route(self.route, self.route, self.summary, "mission.json", "mission.json|0|2|other.rl2")
+        self.assertEqual(result["status"], "FAIL")
 
     def test_metadata_exact_and_semantic_dates(self):
-        self.assertEqual(self.metadata_result(), 'PASS')
+        self.assertEqual(self.metadata_result(), "PASS")
         output = copy.deepcopy(self.metadata)
-        output[0]['provenance']['date'] = '2000-01-01'
-        self.assertEqual(self.metadata_result(output), 'FAIL')
+        output[0]["provenance"]["date"] = "2000-01-01"
+        self.assertEqual(self.metadata_result(output), "FAIL")
         output = copy.deepcopy(self.metadata)
-        output[0]['levels'][0]['travel_time_seconds'] += 1
-        self.assertEqual(self.metadata_result(output), 'FAIL')
+        output[0]["levels"][0]["travel_time_seconds"] += 1
+        self.assertEqual(self.metadata_result(output), "FAIL")
 
     def test_metadata_missing_skipped_failed_and_shape(self):
-        self.assertEqual(self.metadata_result(summary=[]), 'BLOCKED')
-        for status, expected in [('skipped_large', 'BLOCKED'), ('failed', 'FAIL')]:
-            self.assertEqual(self.metadata_result(summary=[{'name': 'mission.zip', 'status': status}]), expected)
-        self.assertEqual(self.metadata_result(self.metadata[0]), 'FAIL')
-        self.assertEqual(compare_metadata(self.metadata, None, self.metadata_summary, 'mission.zip')['status'], 'BLOCKED')
+        self.assertEqual(self.metadata_result(summary=[]), "BLOCKED")
+        for status, expected in [("skipped_large", "BLOCKED"), ("failed", "FAIL")]:
+            self.assertEqual(self.metadata_result(summary=[{"name": "mission.zip", "status": status}]), expected)
+        self.assertEqual(self.metadata_result(self.metadata[0]), "FAIL")
+        self.assertEqual(
+            compare_metadata(self.metadata, None, self.metadata_summary, "mission.zip")["status"], "BLOCKED"
+        )
 
     def test_zero_geometry_is_not_a_passing_oracle(self):
-        self.metadata[0]['levels'][0]['segment_count'] = 0
-        self.assertEqual(self.metadata_result(), 'FAIL')
+        self.metadata[0]["levels"][0]["segment_count"] = 0
+        self.assertEqual(self.metadata_result(), "FAIL")
+
+    def test_unbound_matcen_observations_do_not_define_the_nightly_oracle(self):
+        capture = matcen_fixture()
+        unbound = copy.deepcopy(capture["bindings"][0])
+        unbound.update(
+            segment=7,
+            generated_ordinal=1,
+            effective_ordinal=1,
+            binding_status="logical_disk_unbound",
+            segment_station=4,
+        )
+        unbound["record_overrides"] = dict(segment=7, station=4, robot_flags=[0, 0])
+        capture["bindings"].append(unbound)
+        self.metadata[0]["levels"][0]["matcen_regression"] = capture
+        output = copy.deepcopy(self.metadata)
+        warm = output[0]["levels"][0]["matcen_regression"]
+        warm["bindings"][1]["record_overrides"]["robot_flags"] = [8, 0]
+        warm["robot_models"].append(dict(type=3, model=4, status="valid_model"))
+        saved = copy.deepcopy(output)
+        self.assertEqual(self.metadata_result(output), "PASS")
+        self.assertEqual(output, saved, "comparison must retain the raw observations")
+        # A stale mask can overlap a real disk record; its shared model stays strict.
+        warm["bindings"][1]["record_overrides"]["robot_flags"] = [9, 0]
+        warm["robot_models"][0]["model"] = 99
+        self.assertEqual(self.metadata_result(output), "FAIL")
+        for field, value in [
+            ("binding_status", "disk_bound"),
+            ("effective_ordinal", 0),
+            ("station_status", "wrong_station_type"),
+            ("segment_station", 9),
+        ]:
+            changed = copy.deepcopy(saved)
+            changed[0]["levels"][0]["matcen_regression"]["bindings"][1][field] = value
+            self.assertEqual(self.metadata_result(changed), "FAIL", field)
+        changed = copy.deepcopy(saved)
+        changed[0]["levels"][0]["matcen_regression"]["disk_records"][0]["robot_flags"] = [4, 0]
+        self.assertEqual(self.metadata_result(changed), "FAIL")
+
+    def test_incomplete_matcen_observations_remain_strict(self):
+        capture = matcen_fixture()
+        capture["capture_status"] = "incomplete"
+        self.metadata[0]["levels"][0]["matcen_regression"] = capture
+        self.assertEqual(self.metadata_result(), "PASS")
+        changed = copy.deepcopy(self.metadata)
+        changed[0]["levels"][0]["matcen_regression"]["disk_records"][0]["robot_flags"] = [8, 0]
+        self.assertEqual(self.metadata_result(changed), "FAIL")
 
     def test_route_exact_and_unselected_aggregate(self):
-        self.assertEqual(self.route_result(), 'PASS')
+        self.assertEqual(self.route_result(), "PASS")
         output = copy.deepcopy(self.route)
-        output['status'] = 'partial'
-        output['levels'].append({'level_num': 2, 'level_file': 'two.rl2', 'status': 'not_run'})
-        self.assertEqual(self.route_result(output), 'PASS')
+        output["status"] = "partial"
+        output["levels"].append({"level_num": 2, "level_file": "two.rl2", "status": "not_run"})
+        self.assertEqual(self.route_result(output), "PASS")
 
     def test_route_non_ok_never_passes(self):
-        for status in ['failed', 'route_mismatch', 'partial', 'stale', 'not_run',
-                       'timeout', 'unsupported', 'nondeterministic', 'infrastructure_error', None]:
+        for status in [
+            "failed",
+            "route_mismatch",
+            "partial",
+            "stale",
+            "not_run",
+            "timeout",
+            "unsupported",
+            "nondeterministic",
+            "infrastructure_error",
+            None,
+        ]:
             output = copy.deepcopy(self.route)
-            output['levels'][0]['status'] = status
+            output["levels"][0]["status"] = status
             with self.subTest(status=status):
-                self.assertEqual(self.route_result(output), 'FAIL')
+                self.assertEqual(self.route_result(output), "FAIL")
 
     def test_known_non_ok_outcome_compares_without_confirmed_coverage(self):
-        for status in ('partial', 'failed', 'timeout', 'unsupported', 'route_mismatch'):
-            self.route['levels'][0]['status'] = status
-            result = compare_route(self.route, self.route, self.summary, 'mission.json')
-            self.assertEqual(result['status'], 'PASS')
-            self.assertTrue(result['comparison_only'])
-            self.assertEqual(result['runtime_outcome'], status)
-        self.route['levels'][0]['status'] = 'not_run'
-        self.assertNotEqual(self.route_result(), 'PASS')
+        for status in ("partial", "failed", "timeout", "unsupported", "route_mismatch"):
+            self.route["levels"][0]["status"] = status
+            result = compare_route(self.route, self.route, self.summary, "mission.json")
+            self.assertEqual(result["status"], "PASS")
+            self.assertTrue(result["comparison_only"])
+            self.assertEqual(result["runtime_outcome"], status)
+        self.route["levels"][0]["status"] = "not_run"
+        self.assertNotEqual(self.route_result(), "PASS")
 
     def test_engine_mode_header_is_semantic(self):
-        self.route['engine_mode'] = 'd1_in_d2'
+        self.route["engine_mode"] = "d1_in_d2"
         output = copy.deepcopy(self.route)
-        del output['engine_mode']
-        self.assertEqual(self.route_result(output), 'FAIL')
+        del output["engine_mode"]
+        self.assertEqual(self.route_result(output), "FAIL")
 
     def test_route_requires_full_state(self):
         output = copy.deepcopy(self.route)
-        del output['levels'][0]['rng_start']
-        self.assertEqual(self.route_result(output), 'BLOCKED')
+        del output["levels"][0]["rng_start"]
+        self.assertEqual(self.route_result(output), "BLOCKED")
 
     def test_route_state_drift(self):
-        for field, value in [('total_frames', 101), ('rng_end', {'state': 11, 'calls': 20}),
-                             ('objectives', []), ('route_input_sha256', 'B' * 64)]:
+        for field, value in [
+            ("total_frames", 101),
+            ("rng_end", {"state": 11, "calls": 20}),
+            ("objectives", []),
+            ("route_input_sha256", "B" * 64),
+        ]:
             output = copy.deepcopy(self.route)
-            output['levels'][0][field] = value
-            self.assertEqual(self.route_result(output), 'FAIL')
+            output["levels"][0][field] = value
+            self.assertEqual(self.route_result(output), "FAIL")
 
     def test_route_missing_selection_or_leaf(self):
-        for update in [{'selected_work_items': []}, {'selected_levels': 2},
-                       {'selected_work_items': ['wrong.json|0|1|one.rl2']},
-                       {'selected_work_items': ['mission.json|x|1|one.rl2']}]:
+        for update in [
+            {"selected_work_items": []},
+            {"selected_levels": 2},
+            {"selected_work_items": ["wrong.json|0|1|one.rl2"]},
+            {"selected_work_items": ["mission.json|x|1|one.rl2"]},
+        ]:
             summary = dict(self.summary, **update)
-            self.assertEqual(self.route_result(summary=summary), 'BLOCKED')
-        self.assertEqual(self.route_result(dict(self.route, levels=[])), 'BLOCKED')
-        self.assertEqual(compare_route(self.route, self.route, None, 'mission.json')['status'], 'BLOCKED')
+            self.assertEqual(self.route_result(summary=summary), "BLOCKED")
+        self.assertEqual(self.route_result(dict(self.route, levels=[])), "BLOCKED")
+        self.assertEqual(compare_route(self.route, self.route, None, "mission.json")["status"], "BLOCKED")
 
     def test_route_wrong_mode_publication_and_header(self):
-        for update in [{'write_regression': True}, {'mode': 'headed'},
-                       {'infrastructure_failures': [{'problem': 'missing binary'}]}]:
-            self.assertEqual(self.route_result(summary=dict(self.summary, **update)), 'FAIL')
-        self.assertEqual(self.route_result(dict(self.route, seed=2)), 'FAIL')
+        for update in [
+            {"write_regression": True},
+            {"mode": "headed"},
+            {"infrastructure_failures": [{"problem": "missing binary"}]},
+        ]:
+            self.assertEqual(self.route_result(summary=dict(self.summary, **update)), "FAIL")
+        self.assertEqual(self.route_result(dict(self.route, seed=2)), "FAIL")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

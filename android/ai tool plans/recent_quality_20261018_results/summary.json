@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "commit": "9302a5a4b439858fb7ee558a3f1c42cc3cf0bf5d",
+  "scope": "Focused current-source local validation of changes since 2026-10-15",
+  "execution_complete": true,
+  "native": {
+    "d1_passed": 79,
+    "d2_passed": 90,
+    "exit_code": 0,
+    "evidence": "native_retry.log"
+  },
+  "jvm": {
+    "tests": 1216,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "passed": 1214,
+    "exclusions": [
+      {
+        "class": "com.dxxredux.app.DiscContentImportTest",
+        "case": "anniversaryExtractedMediaRetainsEveryMissionAndLooseLevel",
+        "reason": "org.junit.AssumptionViolatedException: Set DXX_DISC_CONTENT_FIXTURE to native Anniversary extraction output"
+      },
+      {
+        "class": "com.dxxredux.app.multiplayer.ProxyFailureTest",
+        "case": "historicalKeepaliveIOExceptionAlsoBreaksForwardingButLeavesSocketsOpen",
+        "reason": "org.junit.AssumptionViolatedException: Opt in with -PcompareProxyHistory=true"
+      }
+    ]
+  },
+  "python": {
+    "modules": 25,
+    "original_counts": {
+      "ok": 390,
+      "FAIL": 2,
+      "skipped": 21,
+      "ERROR": 1
+    },
+    "resolved_counts": {
+      "ok": 412,
+      "skipped": 2
+    }
+  },
+  "python_exclusions": [
+    {
+      "module": "test_nightly_android_fixtures",
+      "case": "test_real_generated_audio_repeats_and_refuses_overwrite (test_nightly_android_fixtures.FixtureTests.test_real_generated_audio_repeats_and_refuses_overwrite)",
+      "original": "skipped 'FFmpeg tools required'",
+      "resolved": "skipped 'FFmpeg tools required'",
+      "evidence": "linux_exclusions_retry.log"
+    },
+    {
+      "module": "test_run_bounded_extractor",
+      "case": "test_rejects_device_output_when_creation_is_permitted (test_run_bounded_extractor.RunBoundedExtractorTests.test_rejects_device_output_when_creation_is_permitted)",
+      "original": "skipped 'POSIX device fixture'",
+      "resolved": "skipped 'device creation is unavailable: [Errno 1] Operation not permitted'",
+      "evidence": "linux_exclusions_retry.log"
+    }
+  ],
+  "host": {
+    "counts": {
+      "PASS": 12
+    },
+    "report": "host/report_20261018_102641.md"
+  },
+  "android_master": {
+    "counts": {
+      "PASS": 6
+    },
+    "report": "device_master/report_20261018_103108.md"
+  },
+  "coop_latest_attempts": [
+    {
+      "name": "coop_d1_host_migration",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d1",
+        "-HostMigration"
+      ],
+      "exit_code": 0,
+      "seconds": 134.18,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d2_host_migration",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-HostMigration"
+      ],
+      "exit_code": 0,
+      "seconds": 145.62,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d1_pickup_race",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d1",
+        "-PickupRace"
+      ],
+      "exit_code": 0,
+      "seconds": 57.1,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d2_pickup_race",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-PickupRace"
+      ],
+      "exit_code": 0,
+      "seconds": 58.38,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d2_robot_doors",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-GuidebotDoors",
+        "client"
+      ],
+      "exit_code": 0,
+      "seconds": 106.63,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d1_checkpoint",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d1",
+        "-IndependentCheckpoints"
+      ],
+      "exit_code": 0,
+      "seconds": 69.63,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d2_level_restart",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-LevelRestart"
+      ],
+      "exit_code": 0,
+      "seconds": 100.4,
+      "evidence": "coop_retry1/device_results.json"
+    },
+    {
+      "name": "coop_d2_rewind",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-CoopRewind"
+      ],
+      "exit_code": 0,
+      "seconds": 161.93,
+      "evidence": "device_results.json"
+    }
+  ],
+  "public_matcen": {
+    "schema": 1,
+    "scope": "controlled_public_station_loop",
+    "games": [
+      {
+        "game": "d1",
+        "cases": 16,
+        "dispatch_cases": 5,
+        "identical_repeats": 2,
+        "historical_revision": "bc19490fb",
+        "historical_match": true,
+        "without_activation_rejected": true
+      },
+      {
+        "game": "d2",
+        "cases": 24,
+        "dispatch_cases": 5,
+        "identical_repeats": 2,
+        "historical_revision": "bc19490fb",
+        "historical_match": true,
+        "without_activation_rejected": true
+      }
+    ]
+  },
+  "public_matcen_fresh_process_save": {
+    "passed": true,
+    "invocations": 4,
+    "evidence": "public_matcen_save/results.json"
+  },
+  "superseded_infrastructure_attempts": [
+    {
+      "name": "coop_d1_host_migration",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d1",
+        "-HostMigration"
+      ],
+      "exit_code": 1,
+      "seconds": 2.66
+    },
+    {
+      "name": "coop_d2_host_migration",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-HostMigration"
+      ],
+      "exit_code": 1,
+      "seconds": 1.73
+    },
+    {
+      "name": "coop_d1_pickup_race",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d1",
+        "-PickupRace"
+      ],
+      "exit_code": 1,
+      "seconds": 2.16
+    },
+    {
+      "name": "coop_d2_pickup_race",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-PickupRace"
+      ],
+      "exit_code": 1,
+      "seconds": 1.83
+    },
+    {
+      "name": "coop_d2_robot_doors",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-GuidebotDoors",
+        "client"
+      ],
+      "exit_code": 1,
+      "seconds": 1.99
+    },
+    {
+      "name": "coop_d1_checkpoint",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d1",
+        "-IndependentCheckpoints"
+      ],
+      "exit_code": 1,
+      "seconds": 2.45
+    },
+    {
+      "name": "coop_d2_level_restart",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "android/tests/test_lan.ps1",
+        "-HostDevice",
+        "emulator-5580",
+        "-JoinDevice",
+        "emulator-5582",
+        "-HostAvd",
+        "DxxOvernight_1",
+        "-JoinAvd",
+        "DxxOvernight_2",
+        "-SkipBuild",
+        "-Game",
+        "d2",
+        "-LevelRestart"
+      ],
+      "exit_code": 1,
+      "seconds": 2.74
+    }
+  ],
+  "infrastructure_notes": [
+    "Initial native and Gradle sandbox/tool-cache failures were resolved by permitted host-tool access",
+    "Two compiler prerequisites and one Windows symlink-privilege failure passed in WSL; original failures retained",
+    "Master cleanup stopped primary 5580. Seven subsequent attempts stopped during reboot before game assertions; these were retried after explicit full-boot and app/data provisioning",
+    "Master-level snapshots taken after its primary shutdown are not used as game-state evidence; use per-owner logs and execution receipts",
+    "Host workspace disk-full warning is deliberately injected by test_host_metadata_workspace.ps1"
+  ],
+  "coverage_limits": [
+    "No full private matcen lifecycle differential campaign or full mission/replay corpus rerun",
+    "Prior mod-renderer, mod-sound, mod-fuzz, controller-rebind and cold metadata-worker findings were not requalified by this focused run",
+    "No new semantic baseline was accepted and no canonical metadata was regenerated",
+    "Native/JVM/Python/integration owners overlap; do not sum their counts as independent behaviors"
+  ],
+  "raw_evidence_root": "C:\\local\\dxx-redux\\temp\\recent_quality_20261018",
+  "selected_run_passed": true,
+  "failures": [],
+  "metadata_preserved": true,
+  "cleanup": {
+    "observed_local": "2026-10-18T10:58:13.0932346-07:00",
+    "adb_devices": [
+      "List of devices attached",
+      "emulator-5554          device product:sdk_gphone64_x86_64 model:sdk_gphone64_x86_64 device:emu64xa transport_id:3",
+      "emulator-5556          device product:sdk_gphone64_x86_64 model:sdk_gphone64_x86_64 device:emu64xa transport_id:1",
+      ""
+    ],
+    "dedicated_processes": [],
+    "dedicated_stopped": true,
+    "shared_connected": true
+  },
+  "plan": "android/ai tool plans/recent_quality_20261018.md"
+}

@@ -170,6 +170,32 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 289, "robot_centers": 1, "stations": 5, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 280, "station": 4, "robot_flags": [0, 240], "hit_points": 32768000, "interval": 327680, "ordinal": 0}
+          ],
+          "bindings": [
+            {"segment": 280, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 4, "effective_ordinal": 0, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 39, "model": 60, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 5, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 280, "side": 0}], "runtime_source_walls": [{"wall": 87, "segment": 272, "side": 4}]},
+            {"index": 6, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 280, "side": 0}], "runtime_source_walls": [{"wall": 89, "segment": 273, "side": 5}]},
+            {"index": 7, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 280, "side": 4}], "runtime_source_walls": [{"wall": 91, "segment": 262, "side": 5}]},
+            {"index": 10, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 280, "side": 0}], "runtime_source_walls": [{"wall": 104, "segment": 262, "side": 0}]}
+          ]
+        },
         "route_required_key_mask": 3,
         "route_completing_key_mask_set": 8,
         "route_steps": [
@@ -240,6 +266,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -298,6 +327,30 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 406, "robot_centers": 2, "stations": 17, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 113, "station": 0, "robot_flags": [0, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 136, "station": 1, "robot_flags": [0, 16], "hit_points": 32768000, "interval": 327680, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 113, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 136, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 113, "side": 0}, {"ordinal": 1, "segment": 136, "side": 0}], "runtime_source_walls": [{"wall": 96, "segment": 126, "side": 4}]},
+            {"index": 2, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 113, "side": 0}, {"ordinal": 1, "segment": 136, "side": 0}], "runtime_source_walls": [{"wall": 98, "segment": 42, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -462,6 +515,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -520,6 +576,41 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 336, "robot_centers": 3, "stations": 10, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 174, "station": 0, "robot_flags": [0, 416], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 222, "station": 1, "robot_flags": [0, 176], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 150, "station": 2, "robot_flags": [1, 432], "hit_points": 32768000, "interval": 327680, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 150, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 174, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 222, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 0, "model": 0, "status": "valid_model"},
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 39, "model": 60, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 2, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 222, "side": 0}], "runtime_source_walls": [{"wall": 85, "segment": 131, "side": 4}]},
+            {"index": 3, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 222, "side": 0}], "runtime_source_walls": [{"wall": 87, "segment": 223, "side": 5}]},
+            {"index": 4, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 222, "side": 0}], "runtime_source_walls": [{"wall": 89, "segment": 194, "side": 5}]},
+            {"index": 5, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 174, "side": 0}], "runtime_source_walls": [{"wall": 91, "segment": 162, "side": 5}]},
+            {"index": 6, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 174, "side": 0}], "runtime_source_walls": [{"wall": 93, "segment": 161, "side": 5}]},
+            {"index": 7, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 174, "side": 0}], "runtime_source_walls": [{"wall": 95, "segment": 161, "side": 4}]},
+            {"index": 8, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 150, "side": 0}], "runtime_source_walls": [{"wall": 97, "segment": 151, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 150, "side": 0}], "runtime_source_walls": [{"wall": 99, "segment": 151, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -604,6 +695,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -662,6 +756,33 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 558, "robot_centers": 2, "stations": 9, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 319, "station": 0, "robot_flags": [1048580, 262176], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 217, "station": 2, "robot_flags": [1048580, 262176], "hit_points": 32768000, "interval": 327680, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 217, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 319, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 2, "effective_ordinal": 1, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 4, "status": "valid_model"},
+            {"type": 20, "model": 33, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 50, "model": 74, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 8, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 217, "side": 0}, {"ordinal": 1, "segment": 319, "side": 1}], "runtime_source_walls": [{"wall": 85, "segment": 222, "side": 4}]},
+            {"index": 13, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 319, "side": 0}], "runtime_source_walls": [{"wall": 131, "segment": 446, "side": 5}]},
+            {"index": 14, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 217, "side": 0}], "runtime_source_walls": [{"wall": 133, "segment": 439, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -794,6 +915,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -852,6 +976,58 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 7,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 452, "robot_centers": 7, "stations": 16, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 254, "station": 0, "robot_flags": [1, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 367, "station": 1, "robot_flags": [524288, 262432], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 368, "station": 2, "robot_flags": [268435456, 524320], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 190, "station": 3, "robot_flags": [524288, 288], "hit_points": 32768000, "interval": 327680, "ordinal": 3},
+            {"segment": 382, "station": 7, "robot_flags": [268959744, 786720], "hit_points": 32768000, "interval": 327680, "ordinal": 4},
+            {"segment": 400, "station": 8, "robot_flags": [268959744, 288], "hit_points": 32768000, "interval": 327680, "ordinal": 5},
+            {"segment": 449, "station": 14, "robot_flags": [268435456, 262176], "hit_points": 32768000, "interval": 327680, "ordinal": 6}
+          ],
+          "bindings": [
+            {"segment": 190, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 254, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 367, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 368, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 3, "effective_ordinal": 3, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 382, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 7, "effective_ordinal": 4, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 400, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 8, "effective_ordinal": 5, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 449, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 14, "effective_ordinal": 6, "segment_station": 14, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 0, "model": 0, "status": "valid_model"},
+            {"type": 19, "model": 31, "status": "valid_model"},
+            {"type": 28, "model": 45, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"},
+            {"type": 50, "model": 74, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 3, "links": [{"ordinal": 0, "segment": 254, "side": 0}, {"ordinal": 1, "segment": 367, "side": 0}, {"ordinal": 2, "segment": 368, "side": 0}], "runtime_source_walls": [{"wall": 36, "segment": 224, "side": 5}]},
+            {"index": 1, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 3, "links": [{"ordinal": 0, "segment": 254, "side": 0}, {"ordinal": 1, "segment": 368, "side": 0}, {"ordinal": 2, "segment": 367, "side": 0}], "runtime_source_walls": [{"wall": 37, "segment": 223, "side": 0}]},
+            {"index": 2, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 190, "side": 1}], "runtime_source_walls": [{"wall": 40, "segment": 184, "side": 3}]},
+            {"index": 4, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 382, "side": 0}], "runtime_source_walls": [{"wall": 57, "segment": 4, "side": 5}]},
+            {"index": 5, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 382, "side": 0}], "runtime_source_walls": [{"wall": 59, "segment": 338, "side": 5}]},
+            {"index": 6, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 382, "side": 0}], "runtime_source_walls": [{"wall": 61, "segment": 55, "side": 5}]},
+            {"index": 8, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 400, "side": 0}], "runtime_source_walls": [{"wall": 74, "segment": 344, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 400, "side": 0}], "runtime_source_walls": [{"wall": 76, "segment": 335, "side": 4}]},
+            {"index": 10, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 400, "side": 0}], "runtime_source_walls": [{"wall": 78, "segment": 332, "side": 4}]},
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 400, "side": 0}], "runtime_source_walls": [{"wall": 80, "segment": 333, "side": 4}]},
+            {"index": 12, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 400, "side": 0}], "runtime_source_walls": [{"wall": 79, "segment": 331, "side": 2}]},
+            {"index": 14, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 108, "segment": 434, "side": 0}]},
+            {"index": 15, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 110, "segment": 434, "side": 2}]},
+            {"index": 16, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 112, "segment": 426, "side": 0}]},
+            {"index": 17, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 114, "segment": 426, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -936,6 +1112,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -994,6 +1173,45 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 398, "robot_centers": 4, "stations": 7, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 71, "station": 1, "robot_flags": [603979776, 16], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 312, "station": 4, "robot_flags": [603979776, 16], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 322, "station": 5, "robot_flags": [16777216, 16], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 397, "station": 6, "robot_flags": [603979776, 786448], "hit_points": 32768000, "interval": 327680, "ordinal": 3}
+          ],
+          "bindings": [
+            {"segment": 71, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 1, "effective_ordinal": 0, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 312, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 4, "effective_ordinal": 1, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 322, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 5, "effective_ordinal": 2, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 397, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 6, "effective_ordinal": 3, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 26, "model": 43, "status": "valid_model"},
+            {"type": 29, "model": 46, "status": "valid_model"},
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 50, "model": 74, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 2, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 312, "side": 5}], "runtime_source_walls": [{"wall": 25, "segment": 285, "side": 5}]},
+            {"index": 7, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 312, "side": 5}], "runtime_source_walls": [{"wall": 24, "segment": 286, "side": 0}]},
+            {"index": 12, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 322, "side": 0}], "runtime_source_walls": [{"wall": 62, "segment": 125, "side": 5}]},
+            {"index": 13, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 322, "side": 0}, {"ordinal": 1, "segment": 71, "side": 0}], "runtime_source_walls": [{"wall": 122, "segment": 304, "side": 5}]},
+            {"index": 14, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 71, "side": 0}], "runtime_source_walls": [{"wall": 124, "segment": 70, "side": 4}]},
+            {"index": 15, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 312, "side": 0}], "runtime_source_walls": [{"wall": 136, "segment": 168, "side": 5}]},
+            {"index": 18, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 71, "side": 0}], "runtime_source_walls": [{"wall": 4, "segment": 178, "side": 5}]},
+            {"index": 19, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 397, "side": 0}], "runtime_source_walls": [{"wall": 153, "segment": 109, "side": 5}]},
+            {"index": 20, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 397, "side": 0}], "runtime_source_walls": [{"wall": 155, "segment": 109, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1078,6 +1296,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1136,6 +1357,45 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 451, "robot_centers": 5, "stations": 9, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 140, "station": 1, "robot_flags": [0, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 83, "station": 2, "robot_flags": [536870912, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 392, "station": 3, "robot_flags": [603979776, 16], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 162, "station": 5, "robot_flags": [536870912, 48], "hit_points": 32768000, "interval": 327680, "ordinal": 3},
+            {"segment": 252, "station": 8, "robot_flags": [0, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 4}
+          ],
+          "bindings": [
+            {"segment": 83, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 1, "effective_ordinal": 0, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 140, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 2, "effective_ordinal": 1, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 162, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 3, "effective_ordinal": 2, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 252, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 5, "effective_ordinal": 3, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 392, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 8, "effective_ordinal": 4, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 26, "model": 43, "status": "valid_model"},
+            {"type": 29, "model": 46, "status": "valid_model"},
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 2, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 140, "side": 3}], "runtime_source_walls": [{"wall": 71, "segment": 142, "side": 4}]},
+            {"index": 8, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 83, "side": 0}], "runtime_source_walls": [{"wall": 125, "segment": 88, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 83, "side": 0}], "runtime_source_walls": [{"wall": 127, "segment": 63, "side": 5}]},
+            {"index": 12, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 252, "side": 0}], "runtime_source_walls": [{"wall": 47, "segment": 305, "side": 5}]},
+            {"index": 13, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 162, "side": 0}], "runtime_source_walls": [{"wall": 42, "segment": 157, "side": 5}]},
+            {"index": 14, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 162, "side": 0}], "runtime_source_walls": [{"wall": 40, "segment": 156, "side": 5}]},
+            {"index": 15, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 392, "side": 0}], "runtime_source_walls": [{"wall": 142, "segment": 341, "side": 5}]},
+            {"index": 16, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 392, "side": 0}], "runtime_source_walls": [{"wall": 83, "segment": 191, "side": 5}]},
+            {"index": 17, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 392, "side": 0}], "runtime_source_walls": [{"wall": 144, "segment": 380, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1322,6 +1582,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1380,6 +1643,54 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 6,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 462, "robot_centers": 6, "stations": 11, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 120, "station": 1, "robot_flags": [536870912, 48], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 449, "station": 2, "robot_flags": [553648128, 2096], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 128, "station": 3, "robot_flags": [553648128, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 129, "station": 7, "robot_flags": [536870912, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 3},
+            {"segment": 459, "station": 9, "robot_flags": [536870912, 262192], "hit_points": 32768000, "interval": 327680, "ordinal": 4},
+            {"segment": 460, "station": 10, "robot_flags": [553648128, 262160], "hit_points": 32768000, "interval": 327680, "ordinal": 5}
+          ],
+          "bindings": [
+            {"segment": 120, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 1, "effective_ordinal": 0, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 128, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 2, "effective_ordinal": 1, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 129, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 3, "effective_ordinal": 2, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 449, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 7, "effective_ordinal": 3, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 459, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 9, "effective_ordinal": 4, "segment_station": 9, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 460, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 10, "effective_ordinal": 5, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 29, "model": 46, "status": "valid_model"},
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 50, "model": 74, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 3, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 120, "side": 0}], "runtime_source_walls": [{"wall": 124, "segment": 43, "side": 5}]},
+            {"index": 4, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 120, "side": 0}], "runtime_source_walls": [{"wall": 126, "segment": 111, "side": 5}]},
+            {"index": 5, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 120, "side": 0}], "runtime_source_walls": [{"wall": 51, "segment": 81, "side": 5}]},
+            {"index": 6, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 81, "segment": 116, "side": 4}]},
+            {"index": 7, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 128, "segment": 259, "side": 5}]},
+            {"index": 8, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 128, "side": 0}, {"ordinal": 1, "segment": 129, "side": 0}], "runtime_source_walls": [{"wall": 130, "segment": 358, "side": 4}]},
+            {"index": 9, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 128, "side": 0}, {"ordinal": 1, "segment": 129, "side": 0}], "runtime_source_walls": [{"wall": 132, "segment": 453, "side": 5}]},
+            {"index": 10, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 122, "segment": 452, "side": 5}]},
+            {"index": 11, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 449, "side": 0}], "runtime_source_walls": [{"wall": 120, "segment": 452, "side": 0}]},
+            {"index": 12, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 459, "side": 3}, {"ordinal": 1, "segment": 460, "side": 1}], "runtime_source_walls": [{"wall": 140, "segment": 404, "side": 3}]},
+            {"index": 13, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 460, "side": 1}, {"ordinal": 1, "segment": 459, "side": 3}], "runtime_source_walls": [{"wall": 142, "segment": 419, "side": 3}]},
+            {"index": 14, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 460, "side": 1}, {"ordinal": 1, "segment": 459, "side": 3}], "runtime_source_walls": [{"wall": 144, "segment": 403, "side": 4}]},
+            {"index": 15, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 459, "side": 3}, {"ordinal": 1, "segment": 460, "side": 1}], "runtime_source_walls": [{"wall": 146, "segment": 423, "side": 1}]},
+            {"index": 16, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 459, "side": 3}, {"ordinal": 1, "segment": 460, "side": 1}], "runtime_source_walls": [{"wall": 148, "segment": 423, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1464,6 +1775,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1522,6 +1836,57 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 7,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 343, "robot_centers": 7, "stations": 11, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 51, "station": 0, "robot_flags": [150994944, 144], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 124, "station": 1, "robot_flags": [16777216, 128], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 96, "station": 2, "robot_flags": [150994944, 16], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 319, "station": 4, "robot_flags": [150994944, 144], "hit_points": 32768000, "interval": 327680, "ordinal": 3},
+            {"segment": 226, "station": 5, "robot_flags": [16777216, 128], "hit_points": 32768000, "interval": 327680, "ordinal": 4},
+            {"segment": 220, "station": 8, "robot_flags": [0, 144], "hit_points": 32768000, "interval": 327680, "ordinal": 5},
+            {"segment": 342, "station": 10, "robot_flags": [150994944, 526736], "hit_points": 32768000, "interval": 327680, "ordinal": 6}
+          ],
+          "bindings": [
+            {"segment": 51, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 96, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 124, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 220, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 4, "effective_ordinal": 3, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 226, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 5, "effective_ordinal": 4, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 319, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 8, "effective_ordinal": 5, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 342, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 10, "effective_ordinal": 6, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 27, "model": 44, "status": "valid_model"},
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 39, "model": 60, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 7, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 226, "side": 0}], "runtime_source_walls": [{"wall": 87, "segment": 244, "side": 5}]},
+            {"index": 8, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 226, "side": 0}, {"ordinal": 1, "segment": 220, "side": 0}], "runtime_source_walls": [{"wall": 117, "segment": 259, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 124, "side": 0}], "runtime_source_walls": [{"wall": 119, "segment": 124, "side": 0}]},
+            {"index": 10, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 124, "side": 0}], "runtime_source_walls": [{"wall": 121, "segment": 124, "side": 2}]},
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 124, "side": 0}], "runtime_source_walls": [{"wall": 123, "segment": 124, "side": 5}]},
+            {"index": 12, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 3, "links": [{"ordinal": 0, "segment": 51, "side": 0}, {"ordinal": 1, "segment": 96, "side": 0}, {"ordinal": 2, "segment": 319, "side": 0}], "runtime_source_walls": [{"wall": 125, "segment": 52, "side": 5}]},
+            {"index": 13, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 319, "side": 0}], "runtime_source_walls": [{"wall": 38, "segment": 195, "side": 5}]},
+            {"index": 14, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 319, "side": 0}], "runtime_source_walls": [{"wall": 41, "segment": 216, "side": 5}]},
+            {"index": 15, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 220, "side": 0}], "runtime_source_walls": [{"wall": 127, "segment": 263, "side": 5}]},
+            {"index": 16, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 96, "side": 0}], "runtime_source_walls": [{"wall": 129, "segment": 33, "side": 5}]},
+            {"index": 17, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 51, "side": 0}, {"ordinal": 1, "segment": 96, "side": 0}], "runtime_source_walls": [{"wall": 131, "segment": 6, "side": 5}]},
+            {"index": 18, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 342, "side": 0}], "runtime_source_walls": [{"wall": 141, "segment": 326, "side": 2}]},
+            {"index": 19, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 342, "side": 0}], "runtime_source_walls": [{"wall": 143, "segment": 325, "side": 0}]},
+            {"index": 20, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 342, "side": 0}], "runtime_source_walls": [{"wall": 145, "segment": 324, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1606,6 +1971,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1664,6 +2032,45 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 430, "robot_centers": 4, "stations": 9, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 29, "station": 2, "robot_flags": [16777216, 32], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 30, "station": 3, "robot_flags": [4, 288], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 118, "station": 4, "robot_flags": [16777220, 133408], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 318, "station": 5, "robot_flags": [16777220, 131104], "hit_points": 32768000, "interval": 327680, "ordinal": 3}
+          ],
+          "bindings": [
+            {"segment": 29, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 2, "effective_ordinal": 0, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 30, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 3, "effective_ordinal": 1, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 118, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 4, "effective_ordinal": 2, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 318, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 5, "effective_ordinal": 3, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 4, "status": "valid_model"},
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 49, "model": 73, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 29, "side": 1}], "runtime_source_walls": [{"wall": 61, "segment": 170, "side": 4}]},
+            {"index": 2, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 318, "side": 0}], "runtime_source_walls": [{"wall": 67, "segment": 287, "side": 5}]},
+            {"index": 3, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 318, "side": 0}], "runtime_source_walls": [{"wall": 69, "segment": 282, "side": 5}]},
+            {"index": 5, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 29, "side": 1}], "runtime_source_walls": [{"wall": 86, "segment": 68, "side": 0}]},
+            {"index": 6, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 118, "side": 0}], "runtime_source_walls": [{"wall": 104, "segment": 402, "side": 5}]},
+            {"index": 8, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 118, "side": 0}], "runtime_source_walls": [{"wall": 112, "segment": 222, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 118, "side": 0}], "runtime_source_walls": [{"wall": 114, "segment": 247, "side": 5}]},
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 30, "side": 1}], "runtime_source_walls": [{"wall": 124, "segment": 38, "side": 4}]},
+            {"index": 12, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 29, "side": 1}, {"ordinal": 1, "segment": 30, "side": 1}], "runtime_source_walls": [{"wall": 126, "segment": 302, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1748,6 +2155,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1806,6 +2216,35 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 509, "robot_centers": 3, "stations": 7, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 473, "station": 0, "robot_flags": [402653184, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 125, "station": 1, "robot_flags": [402653184, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 132, "station": 6, "robot_flags": [402685952, 2048], "hit_points": 32768000, "interval": 327680, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 125, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 132, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 473, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 6, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 15, "model": 25, "status": "valid_model"},
+            {"type": 27, "model": 44, "status": "valid_model"},
+            {"type": 28, "model": 45, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 0, "links": [], "runtime_source_walls": [{"wall": 179, "segment": 77, "side": 4}]},
+            {"index": 10, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 473, "side": 0}], "runtime_source_walls": [{"wall": 181, "segment": 47, "side": 5}]},
+            {"index": 19, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 125, "side": 0}, {"ordinal": 1, "segment": 132, "side": 0}], "runtime_source_walls": [{"wall": 220, "segment": 161, "side": 1}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1955,6 +2394,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2013,6 +2455,42 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 380, "robot_centers": 3, "stations": 5, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 108, "station": 0, "robot_flags": [1342177280, 304], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 352, "station": 1, "robot_flags": [268435456, 272], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 12, "station": 3, "robot_flags": [1342177280, 304], "hit_points": 32768000, "interval": 327680, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 12, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 108, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 352, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 3, "effective_ordinal": 2, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 28, "model": 45, "status": "valid_model"},
+            {"type": 30, "model": 47, "status": "valid_model"},
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 8, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 108, "side": 0}], "runtime_source_walls": [{"wall": 100, "segment": 216, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 108, "side": 0}], "runtime_source_walls": [{"wall": 102, "segment": 123, "side": 0}]},
+            {"index": 13, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 352, "side": 1}], "runtime_source_walls": [{"wall": 117, "segment": 348, "side": 4}]},
+            {"index": 14, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 352, "side": 1}], "runtime_source_walls": [{"wall": 119, "segment": 347, "side": 4}]},
+            {"index": 15, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 352, "side": 1}], "runtime_source_walls": [{"wall": 118, "segment": 349, "side": 4}]},
+            {"index": 16, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 352, "side": 1}], "runtime_source_walls": [{"wall": 120, "segment": 349, "side": 5}]},
+            {"index": 17, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 12, "side": 3}], "runtime_source_walls": [{"wall": 121, "segment": 84, "side": 4}]},
+            {"index": 18, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 12, "side": 3}], "runtime_source_walls": [{"wall": 123, "segment": 118, "side": 4}]},
+            {"index": 19, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 12, "side": 3}], "runtime_source_walls": [{"wall": 125, "segment": 10, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2097,6 +2575,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2155,6 +2636,63 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 7,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 440, "robot_centers": 7, "stations": 12, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 204, "station": 0, "robot_flags": [453050624, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 222, "station": 1, "robot_flags": [318767104, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 375, "station": 2, "robot_flags": [436273408, 2101248], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 374, "station": 3, "robot_flags": [453050624, 4096], "hit_points": 32768000, "interval": 327680, "ordinal": 3},
+            {"segment": 316, "station": 6, "robot_flags": [184549376, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 4},
+            {"segment": 221, "station": 7, "robot_flags": [285278464, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 5},
+            {"segment": 205, "station": 8, "robot_flags": [33554432, 224], "hit_points": 32768000, "interval": 327680, "ordinal": 6}
+          ],
+          "bindings": [
+            {"segment": 103, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 145, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 204, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 221, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 3, "effective_ordinal": 3, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 234, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 6, "effective_ordinal": 4, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 235, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 7, "effective_ordinal": 5, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 316, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 8, "effective_ordinal": 6, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 8, "model": 15, "status": "valid_model"},
+            {"type": 16, "model": 26, "status": "valid_model"},
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 25, "model": 41, "status": "valid_model"},
+            {"type": 27, "model": 44, "status": "valid_model"},
+            {"type": 28, "model": 45, "status": "valid_model"},
+            {"type": 37, "model": 56, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 39, "model": 60, "status": "valid_model"},
+            {"type": 44, "model": 68, "status": "valid_model"},
+            {"type": 53, "model": 77, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 316, "side": 0}], "runtime_source_walls": [{"wall": 48, "segment": 337, "side": 5}]},
+            {"index": 2, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 316, "side": 0}], "runtime_source_walls": [{"wall": 50, "segment": 338, "side": 5}]},
+            {"index": 5, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 103, "side": 0}], "runtime_source_walls": [{"wall": 60, "segment": 186, "side": 5}]},
+            {"index": 7, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 204, "side": 0}], "runtime_source_walls": [{"wall": 73, "segment": 410, "side": 4}, {"wall": 75, "segment": 28, "side": 5}]},
+            {"index": 8, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 204, "side": 0}], "runtime_source_walls": [{"wall": 85, "segment": 257, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 204, "side": 0}], "runtime_source_walls": [{"wall": 87, "segment": 29, "side": 5}]},
+            {"index": 13, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 234, "side": 0}], "runtime_source_walls": [{"wall": 20, "segment": 250, "side": 4}]},
+            {"index": 14, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 234, "side": 0}], "runtime_source_walls": [{"wall": 23, "segment": 248, "side": 4}]},
+            {"index": 15, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 235, "side": 0}], "runtime_source_walls": [{"wall": 24, "segment": 247, "side": 4}]},
+            {"index": 16, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 235, "side": 0}], "runtime_source_walls": [{"wall": 27, "segment": 249, "side": 4}]},
+            {"index": 17, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 221, "side": 0}], "runtime_source_walls": [{"wall": 102, "segment": 217, "side": 3}]},
+            {"index": 18, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 221, "side": 0}], "runtime_source_walls": [{"wall": 104, "segment": 217, "side": 1}]},
+            {"index": 19, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 221, "side": 0}], "runtime_source_walls": [{"wall": 106, "segment": 217, "side": 2}]},
+            {"index": 20, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 221, "side": 0}], "runtime_source_walls": [{"wall": 108, "segment": 217, "side": 0}]},
+            {"index": 21, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 145, "side": 0}], "runtime_source_walls": [{"wall": 110, "segment": 437, "side": 4}]},
+            {"index": 22, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 145, "side": 0}], "runtime_source_walls": [{"wall": 112, "segment": 119, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2239,6 +2777,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2297,6 +2838,30 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 355, "robot_centers": 2, "stations": 9, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 330, "station": 5, "robot_flags": [0, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 234, "station": 8, "robot_flags": [0, 272], "hit_points": 32768000, "interval": 327680, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 234, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 5, "effective_ordinal": 0, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 330, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 8, "effective_ordinal": 1, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 36, "model": 55, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 9, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 234, "side": 5}, {"ordinal": 1, "segment": 330, "side": 4}], "runtime_source_walls": [{"wall": 91, "segment": 27, "side": 5}]},
+            {"index": 17, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 330, "side": 0}, {"ordinal": 1, "segment": 234, "side": 0}], "runtime_source_walls": [{"wall": 43, "segment": 25, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2381,6 +2946,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2439,6 +3007,36 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 337, "robot_centers": 2, "stations": 14, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 208, "station": 5, "robot_flags": [603979776, 256], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 307, "station": 12, "robot_flags": [603979776, 65536], "hit_points": 32768000, "interval": 327680, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 208, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 5, "effective_ordinal": 0, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 307, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 12, "effective_ordinal": 1, "segment_station": 12, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 26, "model": 43, "status": "valid_model"},
+            {"type": 29, "model": 46, "status": "valid_model"},
+            {"type": 40, "model": 62, "status": "valid_model"},
+            {"type": 48, "model": 72, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 2, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 208, "side": 4}], "runtime_source_walls": [{"wall": 27, "segment": 179, "side": 4}]},
+            {"index": 3, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 208, "side": 4}], "runtime_source_walls": [{"wall": 83, "segment": 208, "side": 2}]},
+            {"index": 4, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 208, "side": 1}], "runtime_source_walls": [{"wall": 84, "segment": 210, "side": 5}]},
+            {"index": 5, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 307, "side": 0}], "runtime_source_walls": [{"wall": 86, "segment": 74, "side": 3}]},
+            {"index": 6, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 307, "side": 0}], "runtime_source_walls": [{"wall": 1, "segment": 141, "side": 4}]},
+            {"index": 7, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 307, "side": 0}], "runtime_source_walls": [{"wall": 24, "segment": 223, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2547,6 +3145,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -2769,6 +3370,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "red key not necessary",
@@ -2828,6 +3432,34 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 207, "robot_centers": 2, "stations": 5, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 79, "station": 0, "robot_flags": [16777216, 2048], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 78, "station": 1, "robot_flags": [16777216, 131072], "hit_points": 32768000, "interval": 327680, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 78, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 79, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 24, "model": 40, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 49, "model": 73, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 78, "side": 0}, {"ordinal": 1, "segment": 79, "side": 0}], "runtime_source_walls": [{"wall": 105, "segment": 81, "side": 4}]},
+            {"index": 10, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 79, "side": 0}], "runtime_source_walls": [{"wall": 107, "segment": 84, "side": 1}]},
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 78, "side": 0}], "runtime_source_walls": [{"wall": 109, "segment": 73, "side": 1}]},
+            {"index": 12, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 78, "side": 0}], "runtime_source_walls": [{"wall": 111, "segment": 86, "side": 2}]},
+            {"index": 13, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 79, "side": 0}], "runtime_source_walls": [{"wall": 113, "segment": 75, "side": 0}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -3026,6 +3658,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3084,6 +3719,45 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 430, "robot_centers": 5, "stations": 9, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 168, "station": 1, "robot_flags": [0, 0], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 186, "station": 2, "robot_flags": [67108864, 196608], "hit_points": 32768000, "interval": 327680, "ordinal": 1},
+            {"segment": 284, "station": 6, "robot_flags": [0, 131072], "hit_points": 32768000, "interval": 327680, "ordinal": 2},
+            {"segment": 423, "station": 7, "robot_flags": [67108864, 720896], "hit_points": 32768000, "interval": 327680, "ordinal": 3},
+            {"segment": 424, "station": 8, "robot_flags": [67108864, 720896], "hit_points": 32768000, "interval": 327680, "ordinal": 4}
+          ],
+          "bindings": [
+            {"segment": 168, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 1, "effective_ordinal": 0, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 186, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 2, "effective_ordinal": 1, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 284, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 6, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 423, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 7, "effective_ordinal": 3, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 424, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 8, "effective_ordinal": 4, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 26, "model": 43, "status": "valid_model"},
+            {"type": 48, "model": 72, "status": "valid_model"},
+            {"type": 49, "model": 73, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 4, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 168, "side": 4}], "runtime_source_walls": [{"wall": 8, "segment": 127, "side": 5}]},
+            {"index": 6, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 186, "side": 0}], "runtime_source_walls": [{"wall": 70, "segment": 244, "side": 4}]},
+            {"index": 7, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 186, "side": 0}], "runtime_source_walls": [{"wall": 72, "segment": 252, "side": 5}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 168, "side": 0}], "runtime_source_walls": [{"wall": 78, "segment": 140, "side": 4}]},
+            {"index": 10, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 284, "side": 0}], "runtime_source_walls": [{"wall": 41, "segment": 305, "side": 5}]},
+            {"index": 13, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 424, "side": 0}, {"ordinal": 1, "segment": 423, "side": 0}], "runtime_source_walls": [{"wall": 91, "segment": 130, "side": 5}]},
+            {"index": 14, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 423, "side": 0}, {"ordinal": 1, "segment": 424, "side": 0}], "runtime_source_walls": [{"wall": 93, "segment": 131, "side": 5}]},
+            {"index": 15, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 423, "side": 0}, {"ordinal": 1, "segment": 424, "side": 0}], "runtime_source_walls": [{"wall": 95, "segment": 129, "side": 5}]},
+            {"index": 16, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 423, "side": 0}, {"ordinal": 1, "segment": 424, "side": 0}], "runtime_source_walls": [{"wall": 97, "segment": 128, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -3247,6 +3921,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3390,6 +4067,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "blue key not necessary",
@@ -3449,6 +4129,34 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 330, "robot_centers": 2, "stations": 5, "robot_types": 78, "polygon_models": 179},
+          "disk_records": [
+            {"segment": 267, "station": 2, "robot_flags": [0, 755712], "hit_points": 32768000, "interval": 327680, "ordinal": 0},
+            {"segment": 227, "station": 4, "robot_flags": [0, 755712], "hit_points": 32768000, "interval": 327680, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 227, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 2, "effective_ordinal": 0, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 267, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 4, "effective_ordinal": 1, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 47, "model": 71, "status": "valid_model"},
+            {"type": 48, "model": 72, "status": "valid_model"},
+            {"type": 49, "model": 73, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 17, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 267, "side": 0}, {"ordinal": 1, "segment": 227, "side": 0}], "runtime_source_walls": [{"wall": 97, "segment": 162, "side": 5}]},
+            {"index": 18, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 267, "side": 0}], "runtime_source_walls": [{"wall": 99, "segment": 157, "side": 0}]},
+            {"index": 19, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 227, "side": 0}], "runtime_source_walls": [{"wall": 101, "segment": 157, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 3,
         "route_completing_key_mask_set": 8,
         "route_steps": [
@@ -3558,6 +4266,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -3681,6 +4392,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -3834,6 +4548,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -4095,6 +4812,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -4273,6 +4993,26 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 83, "robot_centers": 1, "stations": 5, "robot_types": 66, "polygon_models": 166},
+          "disk_records": [
+            {"segment": 34, "station": 0, "robot_flags": [8, 0], "hit_points": 0, "interval": 0, "ordinal": 0}
+          ],
+          "bindings": [
+            {"segment": 34, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 3, "effective_ordinal": 0, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 3}}
+          ],
+          "robot_models": [
+            {"type": 3, "model": 6, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 34, "side": 2}], "runtime_source_walls": [{"wall": 6, "segment": 2, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 1,
         "route_steps": [
@@ -4314,6 +5054,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Level HXM legacy handling: 195 unused joint offsets normalized; 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [

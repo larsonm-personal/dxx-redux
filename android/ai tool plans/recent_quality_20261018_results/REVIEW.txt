@@ -1,0 +1,46 @@
+RECENT-CHANGE LOCAL QUALITY REVIEW - 2026-10-18
+Outcome: PASS for the selected scope
+Commit: 9302a5a4b439858fb7ee558a3f1c42cc3cf0bf5d
+Scope: changes since October 15; current checkout including pre-existing modified mission metadata
+
+Completed checks:
+- Current Windows D1/D2 native builds and complete CTest suites: 79 + 90 passed
+- Current Android APK and JVM suites: 1,214 passed, 2 explicit skips
+- 25 recently changed Python modules: 412 cases passed across Windows/WSL, 2 explicit skips
+- Focused host integration owners: 12 passed
+- Android integration owners: 6 passed, including public basic-use, save compatibility, session, D1/D2 automap/lifecycle, LAN and launcher readiness
+- Controlled public matcen production: 40 policy cases + 10 ordered-dispatch cases; exact repeats and frozen historical matches for D1/D2, plus omitted-activation controls
+- Public-geometry native matcen save: write, two fresh-process restores and no-dispatch control passed
+
+Latest focused co-op results:
+- PASS coop_d1_host_migration: exit 0, 134.18 seconds; coop_retry1/device_results.json
+- PASS coop_d2_host_migration: exit 0, 145.62 seconds; coop_retry1/device_results.json
+- PASS coop_d1_pickup_race: exit 0, 57.1 seconds; coop_retry1/device_results.json
+- PASS coop_d2_pickup_race: exit 0, 58.38 seconds; coop_retry1/device_results.json
+- PASS coop_d2_robot_doors: exit 0, 106.63 seconds; coop_retry1/device_results.json
+- PASS coop_d1_checkpoint: exit 0, 69.63 seconds; coop_retry1/device_results.json
+- PASS coop_d2_level_restart: exit 0, 100.4 seconds; coop_retry1/device_results.json
+- PASS coop_d2_rewind: exit 0, 161.93 seconds; device_results.json
+
+Four remaining exclusions:
+- JVM: external Anniversary extracted-media fixture not configured
+- JVM: optional historical proxy comparison not enabled; current proxy failure-continuation tests passed
+- Python: FFmpeg/ffprobe audio-generation fixture unavailable
+- Python: WSL does not permit device-file creation for one rejection fixture
+
+Infrastructure and provenance:
+- Original failed/blocked attempts are retained, not counted as product failures or independent passes
+- Seven early co-op attempts stopped in emulator reboot setup and were superseded by fully provisioned retries
+- The host workspace disk-full warning is an intentional injected failure
+- No product/test assertions or regression baselines were changed; pre-existing canonical metadata diff is byte-identical
+- Only dedicated DxxOvernight_1/2 profiles on ports 5580/5582 were operated; shared 5554/5556 were left running
+
+Limits:
+- No full private matcen lifecycle differential campaign or full mission/replay corpus rerun
+- Prior mod-renderer, mod-sound, mod-fuzz, controller-rebind and cold metadata-worker findings were not requalified by this focused run
+- No new semantic baseline was accepted and no canonical metadata was regenerated
+- Native/JVM/Python/integration owners overlap; do not sum their counts as independent behaviors
+
+Start with summary.json for machine-readable outcomes and latest-attempt commands
+Raw logs, JVM XML, native CTest logs, hashes, receipts and initial/retry artifacts:
+C:\local\dxx-redux\temp\recent_quality_20261018

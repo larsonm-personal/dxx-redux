@@ -2,6 +2,7 @@
 
 import copy
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
@@ -9,6 +10,9 @@ path = Path(__file__).parents[1] / "helpers" / "compare_matcen_metadata.py"
 spec = importlib.util.spec_from_file_location("compare_matcen_metadata", path)
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
+normalizer_spec = importlib.util.spec_from_file_location("normalize_json", path.with_name("normalize_json.py"))
+normalizer = importlib.util.module_from_spec(normalizer_spec)
+normalizer_spec.loader.exec_module(normalizer)
 
 
 def fixture():
@@ -41,6 +45,17 @@ def fixture():
 
 
 class MatcenMetadataTests(unittest.TestCase):
+    def test_publication_preserves_compact_matcen_rows_and_values(self):
+        value = {"levels": [{"label": 'escaped " brace } and newline\n', "matcen_regression": fixture()}]}
+        pretty = json.dumps(value, indent=2)
+        compact = normalizer.format_json_text(pretty, False, mission_metadata=True)
+        self.assertEqual(json.loads(compact), value)
+        self.assertEqual(normalizer.format_json_text(compact, False, mission_metadata=True), compact)
+        self.assertLess(len(compact.splitlines()), len(pretty.splitlines()) // 2)
+        self.assertIn('"robot_flags": [5, 0]', compact)
+        self.assertIn('"links": [{"segment": 3}, {"segment": 3}, {"segment": 5}]', compact)
+        self.assertEqual(normalizer.format_json_text(pretty, False), pretty + "\n")
+
     def test_same_capture_and_redundant_backlink_normalization(self):
         a, b = fixture(), fixture()
         b["bindings"][0]["record_overrides"]["segment"] = 3

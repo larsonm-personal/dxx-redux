@@ -371,7 +371,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 2,
@@ -481,7 +482,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 3,
@@ -606,7 +608,8 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "data_warnings": []
       },
       {
         "level_num": 4,
@@ -702,6 +705,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
@@ -801,6 +805,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "notes": [
           "gold key not necessary"
         ]
@@ -914,6 +919,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
@@ -1029,6 +1035,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
@@ -1128,6 +1135,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"

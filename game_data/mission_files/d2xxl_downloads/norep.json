@@ -473,6 +473,10 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 1 legacy signed dynamic-light count to empty",
+          "Level HXM legacy handling: 191 unused joint offsets normalized; 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

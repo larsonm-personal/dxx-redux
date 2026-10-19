@@ -331,6 +331,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -389,6 +390,26 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 423, "robot_centers": 1, "stations": 9, "robot_types": 66, "polygon_models": 166},
+          "disk_records": [
+            {"segment": 118, "station": 6, "robot_flags": [524288, 0], "hit_points": 0, "interval": 0, "ordinal": 0}
+          ],
+          "bindings": [
+            {"segment": 118, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 6, "effective_ordinal": 0, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 19, "model": 31, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 118, "side": 2}], "runtime_source_walls": [{"wall": 18, "segment": 120, "side": 1}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -474,6 +495,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -532,6 +554,34 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 620, "robot_centers": 2, "stations": 3, "robot_types": 66, "polygon_models": 166},
+          "disk_records": [
+            {"segment": 242, "station": 0, "robot_flags": [512, 2621440], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 243, "station": 1, "robot_flags": [1074266112, 2048], "hit_points": 0, "interval": 0, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 242, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 243, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 9, "model": 17, "status": "valid_model"},
+            {"type": 19, "model": 31, "status": "valid_model"},
+            {"type": 30, "model": 47, "status": "valid_model"},
+            {"type": 43, "model": 67, "status": "valid_model"},
+            {"type": 51, "model": 75, "status": "valid_model"},
+            {"type": 53, "model": 77, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 2, "flags": 2, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 242, "side": 2}], "runtime_source_walls": [{"wall": 46, "segment": 163, "side": 0}]},
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 243, "side": 0}], "runtime_source_walls": [{"wall": 47, "segment": 163, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -640,6 +690,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -832,6 +883,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -1026,6 +1080,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1168,6 +1225,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1418,6 +1476,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1562,6 +1621,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -1728,6 +1788,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -1793,6 +1856,33 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 447, "robot_centers": 3, "stations": 8, "robot_types": 66, "polygon_models": 166},
+          "disk_records": [
+            {"segment": 371, "station": 4, "robot_flags": [16384, 0], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 372, "station": 5, "robot_flags": [524288, 0], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 373, "station": 6, "robot_flags": [4104, 0], "hit_points": 0, "interval": 0, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 371, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 4, "effective_ordinal": 0, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 372, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 5, "effective_ordinal": 1, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 373, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 6, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 12, "model": 21, "status": "valid_model"},
+            {"type": 14, "model": 23, "status": "valid_model"},
+            {"type": 19, "model": 31, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 8, "type": 2, "flags": 1, "value": 327680, "time": -1, "declared_link_count": 3, "links": [{"ordinal": 0, "segment": 373, "side": 4}, {"ordinal": 1, "segment": 371, "side": 1}, {"ordinal": 2, "segment": 372, "side": 3}], "runtime_source_walls": [{"wall": 154, "segment": 345, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 1,
         "route_steps": [
@@ -2026,6 +2116,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [

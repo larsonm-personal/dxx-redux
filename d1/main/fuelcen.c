@@ -341,6 +341,13 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 	short		objnum;
 	object	*obj;
 	int		default_behavior;
+	if (object_id < 0 || object_id >= N_robot_types || object_id >= MAX_ROBOT_TYPES ||
+	    Robot_info[object_id].model_num < 0 ||
+	    Robot_info[object_id].model_num >= N_polygon_models) {
+		con_printf(CON_URGENT, "Ignoring robotmaker request for unusable robot definition %d\n",
+		           object_id);
+		return NULL;
+	}
 
 	Players[Player_num].num_robots_level++;
 	Players[Player_num].num_robots_total++;

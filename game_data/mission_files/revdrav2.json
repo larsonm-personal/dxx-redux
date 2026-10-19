@@ -255,6 +255,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 1 legacy signed dynamic-light count to empty"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -382,6 +385,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -596,6 +600,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 1 legacy signed dynamic-light count to empty"
+        ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -740,6 +747,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "red and gold and blue keys can be skipped by shooting through a transparent wall",
         "notes": [
@@ -799,6 +807,40 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 586, "robot_centers": 4, "stations": 9, "robot_types": 66, "polygon_models": 166},
+          "disk_records": [
+            {"segment": 241, "station": 0, "robot_flags": [0, 192], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 465, "station": 1, "robot_flags": [24, 0], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 466, "station": 2, "robot_flags": [24, 0], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 529, "station": 3, "robot_flags": [2, 0], "hit_points": 0, "interval": 0, "ordinal": 3}
+          ],
+          "bindings": [
+            {"segment": 241, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 5, "effective_ordinal": 0, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 465, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 6, "effective_ordinal": 1, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 466, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 7, "effective_ordinal": 2, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 7}},
+            {"segment": 529, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 8, "effective_ordinal": 3, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 8}}
+          ],
+          "robot_models": [
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 3, "model": 6, "status": "valid_model"},
+            {"type": 4, "model": 8, "status": "valid_model"},
+            {"type": 38, "model": 58, "status": "valid_model"},
+            {"type": 39, "model": 60, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 7, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 241, "side": 2}], "runtime_source_walls": [{"wall": 161, "segment": 243, "side": 3}]},
+            {"index": 8, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 241, "side": 2}], "runtime_source_walls": [{"wall": 162, "segment": 276, "side": 4}]},
+            {"index": 9, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 529, "side": 1}], "runtime_source_walls": [{"wall": 163, "segment": 277, "side": 5}]},
+            {"index": 10, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 529, "side": 1}], "runtime_source_walls": [{"wall": 164, "segment": 365, "side": 5}]},
+            {"index": 11, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 465, "side": 2}, {"ordinal": 1, "segment": 466, "side": 0}], "runtime_source_walls": [{"wall": 165, "segment": 458, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -882,6 +924,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Normalized 2 legacy signed dynamic-light counts to empty"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
@@ -984,6 +1029,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

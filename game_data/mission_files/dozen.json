@@ -269,6 +269,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -411,6 +412,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -553,6 +555,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -610,6 +613,46 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 9,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 85, "polygon_models": 200},
+          "runtime_counts": {"segments": 445, "robot_centers": 9, "stations": 19, "robot_types": 66, "polygon_models": 166},
+          "disk_records": [
+            {"segment": 188, "station": 0, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 189, "station": 1, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 190, "station": 2, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 191, "station": 3, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 192, "station": 4, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 221, "station": 5, "robot_flags": [1073741824, 0], "hit_points": 0, "interval": 0, "ordinal": 5},
+            {"segment": 222, "station": 6, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 6},
+            {"segment": 223, "station": 7, "robot_flags": [67108864, 0], "hit_points": 0, "interval": 0, "ordinal": 7},
+            {"segment": 224, "station": 8, "robot_flags": [1073741824, 0], "hit_points": 0, "interval": 0, "ordinal": 8}
+          ],
+          "bindings": [
+            {"segment": 188, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 189, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 190, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 191, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 3, "effective_ordinal": 3, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 192, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 4, "effective_ordinal": 4, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 221, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 5, "effective_ordinal": 5, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 222, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 6, "effective_ordinal": 6, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 223, "generated_ordinal": 7, "serialized_matcen": 7, "serialized_station": 7, "effective_ordinal": 7, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 224, "generated_ordinal": 8, "serialized_matcen": 8, "serialized_station": 8, "effective_ordinal": 8, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station"}
+          ],
+          "robot_models": [
+            {"type": 26, "model": 43, "status": "valid_model"},
+            {"type": 30, "model": 47, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 5, "links": [{"ordinal": 0, "segment": 188, "side": 2}, {"ordinal": 1, "segment": 189, "side": 2}, {"ordinal": 2, "segment": 190, "side": 2}, {"ordinal": 3, "segment": 191, "side": 2}, {"ordinal": 4, "segment": 192, "side": 2}], "runtime_source_walls": [{"wall": 6, "segment": 5, "side": 2}]},
+            {"index": 1, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 5, "links": [{"ordinal": 0, "segment": 221, "side": 5}, {"ordinal": 1, "segment": 222, "side": 5}, {"ordinal": 2, "segment": 223, "side": 5}, {"ordinal": 3, "segment": 224, "side": 5}, {"ordinal": 4, "segment": 224, "side": 5}], "runtime_source_walls": [{"wall": 11, "segment": 193, "side": 4}]},
+            {"index": 3, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 4, "links": [{"ordinal": 0, "segment": 188, "side": 2}, {"ordinal": 1, "segment": 189, "side": 2}, {"ordinal": 2, "segment": 190, "side": 2}, {"ordinal": 3, "segment": 191, "side": 2}], "runtime_source_walls": [{"wall": 70, "segment": 80, "side": 0}]},
+            {"index": 4, "type": 2, "flags": 0, "value": 327680, "time": -1, "declared_link_count": 5, "links": [{"ordinal": 0, "segment": 188, "side": 2}, {"ordinal": 1, "segment": 189, "side": 2}, {"ordinal": 2, "segment": 190, "side": 2}, {"ordinal": 3, "segment": 191, "side": 2}, {"ordinal": 4, "segment": 192, "side": 2}], "runtime_source_walls": [{"wall": 71, "segment": 194, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -694,6 +737,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -930,6 +974,9 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [
+          "Normalized 1 legacy signed dynamic-light count to empty"
+        ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1072,6 +1119,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1214,6 +1262,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1355,6 +1404,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1497,6 +1547,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1703,6 +1754,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1845,6 +1897,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2026,6 +2079,9 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [

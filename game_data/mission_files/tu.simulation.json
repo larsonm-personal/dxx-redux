@@ -50,17 +50,17 @@
         },
         {
           "n": "exit",
-          "s": 143
+          "s": 142
         }
       ],
-      "total_frames": 8593,
+      "total_frames": 8549,
       "rng_end": {
-        "state": 3199959492,
-        "calls": 3347
+        "state": 4053155480,
+        "calls": 4239
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 17.71666,
+        "simulated_seconds": 16.983322,
         "difficulty": 2
       }
     },
@@ -105,8 +105,8 @@
       ],
       "total_frames": 6617,
       "rng_end": {
-        "state": 1654543496,
-        "calls": 9951
+        "state": 2615947588,
+        "calls": 10131
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -167,8 +167,8 @@
       ],
       "total_frames": 5888,
       "rng_end": {
-        "state": 1792292533,
-        "calls": 10316
+        "state": 2553173737,
+        "calls": 10968
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -217,8 +217,8 @@
       ],
       "total_frames": 7631,
       "rng_end": {
-        "state": 1946323005,
-        "calls": 11012
+        "state": 1906156657,
+        "calls": 12048
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -247,8 +247,8 @@
       ],
       "total_frames": 132,
       "rng_end": {
-        "state": 1660932118,
-        "calls": 81
+        "state": 2996623694,
+        "calls": 121
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -289,8 +289,8 @@
       ],
       "total_frames": 1896,
       "rng_end": {
-        "state": 649973183,
-        "calls": 554
+        "state": 2685929907,
+        "calls": 726
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -319,8 +319,8 @@
       ],
       "total_frames": 3882,
       "rng_end": {
-        "state": 603327803,
-        "calls": 974
+        "state": 3596852990,
+        "calls": 1929
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,

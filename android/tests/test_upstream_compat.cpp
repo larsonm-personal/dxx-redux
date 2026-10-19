@@ -962,6 +962,70 @@ static nlohmann::json exercise_door_open_completion(bool native)
 	return result;
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+static void test_cloaking_wall_capacity()
+{
+	const auto old_clip = WallAnims[0];
+	Game_mode = 0;
+	Newdemo_state = ND_STATE_NORMAL;
+	GameArg.SndNoSound = 1;
+	FrameTime = F1_0 / 16;
+	for (const bool closing : { false, true }) {
+		const int wall_count = 4 + 2 * (MAX_CLOAKING_WALLS + 1);
+		init_test_corridor(wall_count);
+		Num_walls = wall_count;
+		Num_open_doors = Num_cloaking_walls = 0;
+		std::memset(ActiveDoors, 0, sizeof(ActiveDoors));
+		std::memset(CloakingWalls, 0, sizeof(CloakingWalls));
+		WallAnims[0] = {};
+		WallAnims[0].num_frames = 8;
+		WallAnims[0].play_time = F1_0;
+		WallAnims[0].flags = WCF_TMAP1;
+		WallAnims[0].open_sound = WallAnims[0].close_sound = -1;
+		for (int i = 0; i < 8; ++i) WallAnims[0].frames[i] = i + 1;
+		for (int i = 0; i < wall_count; ++i) {
+			Walls[i] = {};
+			Walls[i].segnum = i;
+			Walls[i].sidenum = i % 2 ? 5 : 4;
+			Walls[i].linked_wall = -1;
+			Walls[i].type = i < 4 ? WALL_DOOR : (closing ? WALL_OPEN : WALL_CLOSED);
+			Walls[i].flags = i < 4 ? WALL_DOOR_AUTO : 0;
+			Walls[i].state = WALL_DOOR_CLOSED;
+			Segments[i].sides[Walls[i].sidenum].wall_num = i;
+		}
+		wall_open_door(&Segments[0], 4);
+		wall_open_door(&Segments[2], 4);
+		for (int pair = 0; pair < MAX_CLOAKING_WALLS; ++pair) {
+			if (closing) start_wall_decloak(&Segments[4 + pair * 2], 4);
+			else start_wall_cloak(&Segments[4 + pair * 2], 4);
+		}
+		require(Num_cloaking_walls == MAX_CLOAKING_WALLS && Num_open_doors == 2,
+		        "fill the actual wall transition queue while two doors are opening");
+		active_door doors[MAX_DOORS];
+		cloaking_wall cloaks[MAX_CLOAKING_WALLS];
+		std::memcpy(doors, ActiveDoors, sizeof(doors));
+		std::memcpy(cloaks, CloakingWalls, sizeof(cloaks));
+		const int extra = wall_count - 2;
+		if (closing) start_wall_decloak(&Segments[extra], 4);
+		else start_wall_cloak(&Segments[extra], 4);
+		require(Num_cloaking_walls == MAX_CLOAKING_WALLS && Num_open_doors == 2 &&
+		            std::memcmp(doors, ActiveDoors, sizeof(doors)) == 0 &&
+		            std::memcmp(cloaks, CloakingWalls, sizeof(cloaks)) == 0,
+		        "exhausted cloaking capacity preserves all active wall and door animations");
+		require(Walls[extra].type == WALL_OPEN && Walls[extra + 1].type == WALL_OPEN &&
+		            Walls[extra].state == WALL_DOOR_CLOSED && Walls[extra + 1].state == WALL_DOOR_CLOSED,
+		        "capacity exhaustion preserves the original immediate-open or deferred-close fallback");
+		for (int frame = 0; frame < 16; ++frame) wall_frame_process();
+		for (int i = 0; i < 4; ++i)
+			require((wall_is_doorway(&Segments[i], Walls[i].sidenum) & WID_FLY_FLAG) &&
+			            Walls[i].state == WALL_DOOR_WAITING,
+			        "unrelated doors finish opening after cloaking capacity exhaustion");
+	}
+	Num_cloaking_walls = 0;
+	WallAnims[0] = old_clip;
+}
+#endif
+
 static void test_door_open_completion()
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -973,6 +1037,7 @@ static void test_door_open_completion()
 #ifdef DXX_BUILD_DESCENT_II
 	mission.descent_version = 2;
 	exercise_door_open_completion(false);
+	test_cloaking_wall_capacity();
 	Current_mission = nullptr;
 #endif
 }
@@ -2193,6 +2258,36 @@ static void test_d1_follow_path_frame()
 		N_polygon_models = 1;
 		Polygon_models[0].rad = F1_0;
 		Robot_info[10] = info;
+		const int old_level_robots = Players[Player_num].num_robots_level;
+		const int old_total_robots = Players[Player_num].num_robots_total;
+		const int old_objects = Highest_object_index;
+		const auto old_rng_calls = d_rand_get_call_count();
+		for (const int id : { -1, N_robot_types, 30, MAX_ROBOT_TYPES })
+			require(create_morph_robot(&Segments[1], &origin, id) == nullptr,
+			        "unavailable factory robots are safely skipped in native D1, imported D1 and D2");
+		for (const int model : { -1, N_polygon_models }) {
+			Robot_info[0].model_num = model;
+			require(create_morph_robot(&Segments[1], &origin, 0) == nullptr,
+			        "factory rejects unavailable models before indexing model storage");
+		}
+		Robot_info[0].model_num = 0;
+		require(Players[Player_num].num_robots_level == old_level_robots &&
+		            Players[Player_num].num_robots_total == old_total_robots &&
+		            Highest_object_index == old_objects && d_rand_get_call_count() == old_rng_calls,
+		        "rejected factory creation does not allocate robots, change kill totals or consume RNG");
+#ifdef DXX_BUILD_DESCENT_II
+		const int old_centers = Num_robot_centers;
+		const auto old_center = RobotCenters[0];
+		Num_robot_centers = 1;
+		RobotCenters[0].robot_flags[0] = (1u << 30) | 1u;
+		RobotCenters[0].robot_flags[1] = 0;
+		require(d1_in_d2_initialize_level_ambience() == (profile == 1),
+		        "a mixed valid/unavailable factory mask does not reject an imported D1 level");
+		require(RobotCenters[0].robot_flags[0] == ((1u << 30) | 1u),
+		        "level initialization preserves authored robot choices and their selection weights");
+		RobotCenters[0] = old_center;
+		Num_robot_centers = old_centers;
+#endif
 		for (const int id : { 0, 10 }) {
 #ifdef DXX_BUILD_DESCENT_II
 			Robot_info[id].behavior = id == 10 ? AIB_RUN_FROM : AIB_NORMAL;

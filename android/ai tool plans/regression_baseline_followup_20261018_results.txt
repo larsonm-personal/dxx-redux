@@ -1,0 +1,95 @@
+REGRESSION BASELINE FOLLOW-UP - COMPLETED 2026-10-18
+
+Assessment
+The online review correctly separated the wall safety fix from qualification of
+all regenerated values. AF_D1_BETA was an actual engine admission/spawn problem,
+not merely a nightly status-policy problem. The follow-up fixes that behavior,
+keeps authored metadata strict, and publishes reviewed producer output.
+
+Evidence root: C:\local\dxx-redux\temp\regression_baseline_followup\run_20261018
+Start commit: d2cbfceae. Changes remain uncommitted. Shared emulators untouched.
+
+AF_D1_BETA
+Imported D1 rejected an entire level because a factory mask included robot 30.
+Removed eager mask-wide validation and the fatal check ahead of D2's existing
+safe creation guard. Invalid selected definitions now skip creation; valid
+selections continue normally. Authored masks, selection weights and RNG calls
+are preserved. Native D1 previously indexed unchecked; it now validates IDs and
+models before indexing, allocation or robot-count changes. Placed-object and
+other edition validation remain in place.
+
+Actual level 7 completes at 7394 frames. Three repeat runs, the full-corpus run,
+and the verified publication run produce identical raw JSON SHA256:
+808aba72d009de785f3a4d566464dafc077fd1a61180c6879646b2f76b2256a2
+Simulation RNG: 14304 calls/state4001129761. Effects: 7553/state2943583014.
+Actual repeat logs show robot 30 selected and safely skipped during gameplay.
+New native integration coverage also rejects invalid IDs/models safely and
+checks valid creation afterward. Original-source negative control fails.
+Published AF simulation changes only level 7: infrastructure_error -> ok.
+See af_repeat_audit.json, af_publication_audit.json and af_original_negative.log.
+
+Matcen comparison
+Nightly now applies the shared semantic projection to complete loaded captures.
+Only logically unbound mask observations and exclusively referenced incidental
+models are excluded from equality. Authored records, bindings/statuses, station
+joins and models used by real records remain strict. Incomplete/rejected
+captures remain entirely strict. The observations remain in published JSON.
+Three actual cold/warm captures pass; mutation controls reject meaningful
+changes. See real_cold_warm_nightly.json and focused Python tests.
+
+Full route follow-up
+All 2639 selected workitems completed. Per-item raw receipts were projected with
+maintained producer functions, avoiding nine aggregate-basename collisions.
+Compared with the frozen regenerated baseline, AF level 7 is the only changed
+route. All other 2638 records match. After publishing AF, nightly comparison is
+2549 PASS  / 90 BLOCKED  / 0 FAIL. Blocks are existing missing rng_start coverage.
+Existing runtime outcomes remain: 2201 ok, 152 failed, 131 timeout, 147 unsupported,
+8 route_mismatch. A matching known failure is not a successful gameplay route.
+See route_comparison.json and route_comparison_published.json.
+This establishes that the follow-up engine fix introduces no other route delta;
+it does not independently explain every earlier fireball-RNG baseline change.
+
+Metadata publication and size
+Native owner completed 140/140 inputs, no skipped/failed owners. Final projection
+uses 696 unchanged native captures and the maintained Kotlin/Python publication
+functions. Compact matcen rows remove 405735 lines and 6141710 bytes versus the
+frozen baseline, without discarding metadata. 128 metadata files change; 12 retain
+their original bytes/mtime. All 140 repeated projections retain bytes and mtimes.
+See metadata_comparison.json, metadata_publication.json,
+metadata_utf8/raw_projection_audit.json and full_projection_repeat.json.
+
+Additional actual encoding defect
+Hidden Windows native workers could decode UTF-8 as CP437. Kotlin's protocol
+could then emit CP1252. Explicit UTF-8 streams now cover both sides. Native
+controls using actual Insnidia, Pumo Mines and SOB captures reproduce the old
+problem and pass under OEM/UTF-8 parents after the fix. Kotlin's Unicode/path
+integration test fails before and passes after the protocol fix.
+Exactly five final text corrections occur:three levelpack credit values,
+one eq-set credit value and one grad3d track name. For every correction, applying
+UTF8->CP437 followed by CP1252(replacement)->CP437 exactly reproduces the previous
+baseline value. No unrelated semantic delta was accepted. Native replacement
+characters and legacy track text are preserved; no original spelling is guessed.
+See metadata_semantic_changes.json, encoding_control/summary.json,
+kotlin_transport_before.json, kotlin_transport_after.json and encoding_evidence
+in metadata_comparison.json.
+
+After publication, metadata nightly comparison is 138 PASS  / 2 FAIL. The failures
+are d2xxl_downloads/levelpack.json and KCXF2RMv11.json, whose existing absent/empty
+geometry also fails when each frozen baseline is compared with itself. Their
+checks were not weakened. See metadata_comparison_published.json.
+
+Verification
+Full CTest: D1 79/79 and D2 90 / 90. Focused Python: 15 nightly + 13 matcen tests pass.
+PowerShell normalization, native-worker watchdog/Unicode/recovery, real Kotlin
+persistent Unicode requests/shutdown, both catalog checks and scoped mixed-
+language quality pass. git diff --check passes. completion_audit.json records
+final source hashes, output hashes and successful owner exit receipts.
+Initial sandbox archive/cache access failures remain in their original logs;
+verified host retries completed. Final AF publication is hash-audited.
+Free C: space at completion exceeds 104 GiB, above the 100 GiB requested floor.
+
+Qualification limits
+90 route records lack canonical RNG-start coverage. Two existing metadata
+inputs fail nightly geometry requirements. The earlier fireball explanation
+remains focused-control evidence, not independent attribution of every changed
+route. This follow-up is host validation, not Android device/import parity.

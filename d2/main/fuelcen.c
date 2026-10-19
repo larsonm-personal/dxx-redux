@@ -367,7 +367,6 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 	short		objnum;
 	object	*obj;
 	int		default_behavior;
-	d1_in_d2_require_robot(object_id);
 	if (!robot_info_is_usable(object_id)) {
 		con_printf(CON_URGENT, "Ignoring robotmaker request for unusable robot definition %d\n",
 		           object_id);

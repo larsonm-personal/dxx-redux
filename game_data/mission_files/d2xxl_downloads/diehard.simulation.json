@@ -86,17 +86,17 @@
         },
         {
           "n": "exit",
-          "s": 99
+          "s": 100
         }
       ],
-      "total_frames": 5965,
+      "total_frames": 5989,
       "rng_end": {
-        "state": 3779979548,
-        "calls": 5723
+        "state": 4118596713,
+        "calls": 16728
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 6.016663,
+        "simulated_seconds": 0.400009,
         "difficulty": 2
       }
     },
@@ -149,8 +149,8 @@
       ],
       "total_frames": 7911,
       "rng_end": {
-        "state": 1186941160,
-        "calls": 3327
+        "state": 2980483924,
+        "calls": 6723
       },
       "reactor_escape": {
         "countdown_seconds": 80.0,
@@ -233,14 +233,14 @@
           "s": 253
         }
       ],
-      "total_frames": 15190,
+      "total_frames": 15168,
       "rng_end": {
-        "state": 1429369868,
-        "calls": 17579
+        "state": 3242644429,
+        "calls": 22772
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 0.133331,
+        "simulated_seconds": 5.783325,
         "difficulty": 2
       }
     },
@@ -273,8 +273,8 @@
       ],
       "total_frames": 1983,
       "rng_end": {
-        "state": 2026383973,
-        "calls": 4892
+        "state": 975800890,
+        "calls": 22557
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -329,14 +329,14 @@
           "s": 80
         }
       ],
-      "total_frames": 4820,
+      "total_frames": 4809,
       "rng_end": {
-        "state": 816574494,
-        "calls": 2793
+        "state": 2115749993,
+        "calls": 9560
       },
       "reactor_escape": {
         "countdown_seconds": 82.0,
-        "simulated_seconds": 15.766663,
+        "simulated_seconds": 15.583328,
         "difficulty": 2
       }
     },
@@ -404,14 +404,14 @@
           "s": 24
         }
       ],
-      "total_frames": 1414,
+      "total_frames": 1450,
       "rng_end": {
-        "state": 3576833760,
-        "calls": 935
+        "state": 4008704969,
+        "calls": 7416
       },
       "reactor_escape": {
         "countdown_seconds": 114.0,
-        "simulated_seconds": 4.933334,
+        "simulated_seconds": 5.533325,
         "difficulty": 2
       }
     },
@@ -552,8 +552,8 @@
       ],
       "total_frames": 4473,
       "rng_end": {
-        "state": 3258630601,
-        "calls": 1784
+        "state": 1307368529,
+        "calls": 2608
       },
       "reactor_escape": {
         "countdown_seconds": 10.0,
@@ -614,8 +614,8 @@
       ],
       "total_frames": 3271,
       "rng_end": {
-        "state": 2207042926,
-        "calls": 1241
+        "state": 3299047331,
+        "calls": 4326
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -656,8 +656,8 @@
       ],
       "total_frames": 3808,
       "rng_end": {
-        "state": 868726942,
-        "calls": 1129
+        "state": 3316391664,
+        "calls": 4439
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -746,8 +746,8 @@
       ],
       "total_frames": 6194,
       "rng_end": {
-        "state": 3242714361,
-        "calls": 8008
+        "state": 3911198060,
+        "calls": 9163
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -792,8 +792,8 @@
       ],
       "total_frames": 3813,
       "rng_end": {
-        "state": 112898560,
-        "calls": 5127
+        "state": 777197799,
+        "calls": 6146
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -842,8 +842,8 @@
       ],
       "total_frames": 6101,
       "rng_end": {
-        "state": 781457496,
-        "calls": 1999
+        "state": 3773260610,
+        "calls": 2357
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -884,8 +884,8 @@
       ],
       "total_frames": 2990,
       "rng_end": {
-        "state": 494057349,
-        "calls": 4348
+        "state": 4165185143,
+        "calls": 5490
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -918,8 +918,8 @@
       ],
       "total_frames": 1360,
       "rng_end": {
-        "state": 1992798444,
-        "calls": 587
+        "state": 3918928471,
+        "calls": 3986
       },
       "reactor_escape": {
         "countdown_seconds": 120.0,
@@ -946,14 +946,14 @@
           "s": 16
         }
       ],
-      "total_frames": 938,
+      "total_frames": 944,
       "rng_end": {
-        "state": 1026108661,
-        "calls": 2060
+        "state": 1186941160,
+        "calls": 3327
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 6.550003,
+        "simulated_seconds": 6.649994,
         "difficulty": 2
       }
     }

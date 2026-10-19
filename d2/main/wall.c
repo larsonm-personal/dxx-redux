@@ -563,8 +563,6 @@ void start_wall_cloak(segment *seg, int side)
 
 	}
 	else if (w->state == WALL_DOOR_CLOSED) {	//create new door
-		d = &CloakingWalls[Num_cloaking_walls];
-		d->time = 0;
 		if (Num_cloaking_walls >= MAX_CLOAKING_WALLS) {		//no more!
 			Int3();		//ran out of cloaking wall slots
 			w->type = WALL_OPEN;
@@ -572,6 +570,8 @@ void start_wall_cloak(segment *seg, int side)
 				Walls[cwall_num].type = WALL_OPEN;
 			return;
 		}
+		d = &CloakingWalls[Num_cloaking_walls];
+		d->time = 0;
 		Num_cloaking_walls++;
 	}
 	else {
@@ -648,8 +648,6 @@ void start_wall_decloak(segment *seg, int side)
 
 	}
 	else if (w->state == WALL_DOOR_CLOSED) {	//create new door
-		d = &CloakingWalls[Num_cloaking_walls];
-		d->time = 0;
 		if (Num_cloaking_walls >= MAX_CLOAKING_WALLS) {		//no more!
 			Int3();		//ran out of cloaking wall slots
 			/* what is this _doing_ here?
@@ -658,6 +656,8 @@ void start_wall_decloak(segment *seg, int side)
 			*/
 			return;
 		}
+		d = &CloakingWalls[Num_cloaking_walls];
+		d->time = 0;
 		Num_cloaking_walls++;
 	}
 	else {

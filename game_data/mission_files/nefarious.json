@@ -394,6 +394,35 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 520, "robot_centers": 3, "stations": 13, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 263, "station": 0, "robot_flags": [8], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 387, "station": 1, "robot_flags": [24], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 390, "station": 2, "robot_flags": [24], "hit_points": 0, "interval": 0, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 263, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 387, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 3, "effective_ordinal": 1, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 3}},
+            {"segment": 390, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 4, "effective_ordinal": 2, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}}
+          ],
+          "robot_models": [
+            {"type": 3, "model": 5, "status": "valid_model"},
+            {"type": 4, "model": 7, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 263, "side": 4}], "runtime_source_walls": [{"wall": 31, "segment": 265, "side": 5}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 390, "side": 0}, {"ordinal": 1, "segment": 387, "side": 2}], "runtime_source_walls": [{"wall": 52, "segment": 128, "side": 1}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 390, "side": 0}, {"ordinal": 1, "segment": 387, "side": 2}], "runtime_source_walls": [{"wall": 53, "segment": 225, "side": 2}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 263, "side": 4}], "runtime_source_walls": [{"wall": 78, "segment": 68, "side": 2}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 263, "side": 4}], "runtime_source_walls": [{"wall": 79, "segment": 69, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -562,6 +591,41 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 578, "robot_centers": 3, "stations": 7, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 328, "station": 0, "robot_flags": [1048602], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 329, "station": 1, "robot_flags": [1048602], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 412, "station": 2, "robot_flags": [1048832], "hit_points": 0, "interval": 0, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 328, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 3, "effective_ordinal": 0, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 3}},
+            {"segment": 329, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 4, "effective_ordinal": 1, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}},
+            {"segment": 412, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 5, "effective_ordinal": 2, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}}
+          ],
+          "robot_models": [
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 3, "model": 5, "status": "valid_model"},
+            {"type": 4, "model": 7, "status": "valid_model"},
+            {"type": 8, "model": 14, "status": "valid_model"},
+            {"type": 20, "model": 32, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 329, "side": 2}, {"ordinal": 1, "segment": 328, "side": 2}], "runtime_source_walls": [{"wall": 44, "segment": 258, "side": 5}]},
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 329, "side": 2}, {"ordinal": 1, "segment": 328, "side": 2}], "runtime_source_walls": [{"wall": 45, "segment": 256, "side": 5}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 329, "side": 2}, {"ordinal": 1, "segment": 328, "side": 2}], "runtime_source_walls": [{"wall": 46, "segment": 272, "side": 5}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 329, "side": 2}, {"ordinal": 1, "segment": 328, "side": 2}], "runtime_source_walls": [{"wall": 47, "segment": 274, "side": 5}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 329, "side": 2}, {"ordinal": 1, "segment": 328, "side": 2}], "runtime_source_walls": [{"wall": 48, "segment": 248, "side": 5}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 329, "side": 2}, {"ordinal": 1, "segment": 328, "side": 2}], "runtime_source_walls": [{"wall": 49, "segment": 250, "side": 5}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 412, "side": 1}], "runtime_source_walls": [{"wall": 68, "segment": 343, "side": 3}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 412, "side": 1}], "runtime_source_walls": [{"wall": 69, "segment": 363, "side": 1}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -757,6 +821,29 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 409, "robot_centers": 1, "stations": 7, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 233, "station": 0, "robot_flags": [259], "hit_points": 0, "interval": 0, "ordinal": 0}
+          ],
+          "bindings": [
+            {"segment": 233, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 1, "effective_ordinal": 0, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 1}}
+          ],
+          "robot_models": [
+            {"type": 0, "model": 0, "status": "valid_model"},
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 8, "model": 14, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 233, "side": 4}], "runtime_source_walls": [{"wall": 57, "segment": 229, "side": 5}]},
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 233, "side": 4}], "runtime_source_walls": [{"wall": 56, "segment": 234, "side": 0}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -902,6 +989,45 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 485, "robot_centers": 5, "stations": 13, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 272, "station": 0, "robot_flags": [2097157], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 273, "station": 1, "robot_flags": [2097157], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 324, "station": 2, "robot_flags": [258], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 325, "station": 3, "robot_flags": [258], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 445, "station": 4, "robot_flags": [2305], "hit_points": 0, "interval": 0, "ordinal": 4}
+          ],
+          "bindings": [
+            {"segment": 272, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 3, "effective_ordinal": 0, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}},
+            {"segment": 273, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 4, "effective_ordinal": 1, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 324, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 5, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 325, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 6, "effective_ordinal": 3, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 7}},
+            {"segment": 445, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 10, "effective_ordinal": 4, "segment_station": 11, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 11}}
+          ],
+          "robot_models": [
+            {"type": 0, "model": 0, "status": "valid_model"},
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 8, "model": 14, "status": "valid_model"},
+            {"type": 11, "model": 19, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 325, "side": 0}, {"ordinal": 1, "segment": 324, "side": 0}], "runtime_source_walls": [{"wall": 42, "segment": 303, "side": 4}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 445, "side": 5}], "runtime_source_walls": [{"wall": 93, "segment": 444, "side": 5}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 445, "side": 5}], "runtime_source_walls": [{"wall": 94, "segment": 421, "side": 4}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 325, "side": 0}, {"ordinal": 1, "segment": 324, "side": 0}], "runtime_source_walls": [{"wall": 44, "segment": 330, "side": 5}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 325, "side": 0}, {"ordinal": 1, "segment": 324, "side": 0}], "runtime_source_walls": [{"wall": 97, "segment": 332, "side": 5}]},
+            {"index": 9, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 325, "side": 0}, {"ordinal": 1, "segment": 324, "side": 0}], "runtime_source_walls": [{"wall": 80, "segment": 391, "side": 0}]},
+            {"index": 10, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 273, "side": 5}, {"ordinal": 1, "segment": 272, "side": 5}], "runtime_source_walls": [{"wall": 98, "segment": 30, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1150,6 +1276,30 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 1,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 528, "robot_centers": 1, "stations": 5, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 325, "station": 0, "robot_flags": [2624000], "hit_points": 0, "interval": 0, "ordinal": 0}
+          ],
+          "bindings": [
+            {"segment": 325, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 1}}
+          ],
+          "robot_models": [
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 11, "model": 19, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 325, "side": 5}], "runtime_source_walls": [{"wall": 41, "segment": 219, "side": 4}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 325, "side": 5}], "runtime_source_walls": [{"wall": 42, "segment": 224, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 3,
         "route_completing_key_mask_set": 136,
         "route_steps": [
@@ -1310,6 +1460,46 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 651, "robot_centers": 4, "stations": 21, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 611, "station": 0, "robot_flags": [67648], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 612, "station": 1, "robot_flags": [67648], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 625, "station": 2, "robot_flags": [3589], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 626, "station": 3, "robot_flags": [6291456], "hit_points": 0, "interval": 0, "ordinal": 3}
+          ],
+          "bindings": [
+            {"segment": 611, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 12, "effective_ordinal": 0, "segment_station": 13, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 13}},
+            {"segment": 612, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 13, "effective_ordinal": 1, "segment_station": 14, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 14}},
+            {"segment": 625, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 18, "effective_ordinal": 2, "segment_station": 19, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 19}},
+            {"segment": 626, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 19, "effective_ordinal": 3, "segment_station": 20, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 20}}
+          ],
+          "robot_models": [
+            {"type": 0, "model": 0, "status": "valid_model"},
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 6, "model": 11, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 10, "model": 18, "status": "valid_model"},
+            {"type": 11, "model": 19, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 611, "side": 3}, {"ordinal": 1, "segment": 612, "side": 4}], "runtime_source_walls": [{"wall": 163, "segment": 561, "side": 4}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 626, "side": 3}], "runtime_source_walls": [{"wall": 75, "segment": 224, "side": 3}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 625, "side": 1}], "runtime_source_walls": [{"wall": 168, "segment": 523, "side": 4}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 625, "side": 1}], "runtime_source_walls": [{"wall": 169, "segment": 515, "side": 4}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 625, "side": 1}], "runtime_source_walls": [{"wall": 170, "segment": 513, "side": 4}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 625, "side": 1}], "runtime_source_walls": [{"wall": 171, "segment": 521, "side": 4}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 625, "side": 1}], "runtime_source_walls": [{"wall": 138, "segment": 540, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1508,6 +1698,40 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 645, "robot_centers": 3, "stations": 23, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 374, "station": 0, "robot_flags": [2162948], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 392, "station": 1, "robot_flags": [2627072], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 613, "station": 2, "robot_flags": [4096], "hit_points": 0, "interval": 0, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 374, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 18, "effective_ordinal": 0, "segment_station": 18, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 18}},
+            {"segment": 392, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 19, "effective_ordinal": 1, "segment_station": 19, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 19}},
+            {"segment": 613, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 21, "effective_ordinal": 2, "segment_station": 22, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 22}}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 8, "model": 14, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 10, "model": 18, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 374, "side": 1}], "runtime_source_walls": [{"wall": 74, "segment": 213, "side": 4}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 374, "side": 1}], "runtime_source_walls": [{"wall": 75, "segment": 256, "side": 0}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 392, "side": 0}], "runtime_source_walls": [{"wall": 76, "segment": 381, "side": 1}]},
+            {"index": 9, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 613, "side": 2}], "runtime_source_walls": [{"wall": 128, "segment": 606, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -1668,6 +1892,30 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 2,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 821, "robot_centers": 2, "stations": 8, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 650, "station": 0, "robot_flags": [2621952], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 651, "station": 1, "robot_flags": [2621952], "hit_points": 0, "interval": 0, "ordinal": 1}
+          ],
+          "bindings": [
+            {"segment": 650, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 2, "effective_ordinal": 0, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 3}},
+            {"segment": 651, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 3, "effective_ordinal": 1, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}}
+          ],
+          "robot_models": [
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 651, "side": 4}, {"ordinal": 1, "segment": 650, "side": 5}], "runtime_source_walls": [{"wall": 36, "segment": 642, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 3,
         "route_completing_key_mask_set": 8,
         "route_steps": [
@@ -1798,6 +2046,42 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 4,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 629, "robot_centers": 4, "stations": 15, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 64, "station": 0, "robot_flags": [6356996], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 71, "station": 1, "robot_flags": [6356996], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 345, "station": 2, "robot_flags": [2626048], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 563, "station": 3, "robot_flags": [66052], "hit_points": 0, "interval": 0, "ordinal": 3}
+          ],
+          "bindings": [
+            {"segment": 64, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 71, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 345, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 563, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 5, "effective_ordinal": 3, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 345, "side": 5}], "runtime_source_walls": [{"wall": 44, "segment": 339, "side": 0}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 563, "side": 2}], "runtime_source_walls": [{"wall": 61, "segment": 530, "side": 3}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 563, "side": 2}], "runtime_source_walls": [{"wall": 62, "segment": 528, "side": 3}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 563, "side": 2}], "runtime_source_walls": [{"wall": 63, "segment": 526, "side": 3}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 64, "side": 2}, {"ordinal": 1, "segment": 71, "side": 4}], "runtime_source_walls": [{"wall": 82, "segment": 101, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -1969,6 +2253,49 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 6,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 490, "robot_centers": 6, "stations": 12, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 41, "station": 0, "robot_flags": [2687492], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 42, "station": 1, "robot_flags": [2687492], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 124, "station": 2, "robot_flags": [6881792], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 130, "station": 3, "robot_flags": [2162724], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 352, "station": 4, "robot_flags": [590400], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 356, "station": 5, "robot_flags": [590400], "hit_points": 0, "interval": 0, "ordinal": 5}
+          ],
+          "bindings": [
+            {"segment": 41, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 42, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 124, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 130, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 3, "effective_ordinal": 3, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 352, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 7, "effective_ordinal": 4, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 7}},
+            {"segment": 356, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 8, "effective_ordinal": 5, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 8}}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 5, "model": 9, "status": "valid_model"},
+            {"type": 6, "model": 11, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 41, "side": 1}, {"ordinal": 1, "segment": 42, "side": 4}], "runtime_source_walls": [{"wall": 55, "segment": 64, "side": 3}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 41, "side": 1}, {"ordinal": 1, "segment": 42, "side": 4}], "runtime_source_walls": [{"wall": 56, "segment": 34, "side": 4}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 130, "side": 2}, {"ordinal": 1, "segment": 124, "side": 3}], "runtime_source_walls": [{"wall": 5, "segment": 152, "side": 0}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 130, "side": 2}, {"ordinal": 1, "segment": 124, "side": 3}], "runtime_source_walls": [{"wall": 6, "segment": 152, "side": 2}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 130, "side": 2}], "runtime_source_walls": [{"wall": 45, "segment": 123, "side": 3}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 352, "side": 2}, {"ordinal": 1, "segment": 356, "side": 2}], "runtime_source_walls": [{"wall": 50, "segment": 335, "side": 5}]},
+            {"index": 10, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 41, "side": 1}, {"ordinal": 1, "segment": 42, "side": 4}], "runtime_source_walls": [{"wall": 54, "segment": 35, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2173,6 +2500,47 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 6,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 720, "robot_centers": 6, "stations": 11, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 309, "station": 0, "robot_flags": [528384], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 310, "station": 1, "robot_flags": [576], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 412, "station": 2, "robot_flags": [594432], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 541, "station": 3, "robot_flags": [70144], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 713, "station": 4, "robot_flags": [589824], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 714, "station": 5, "robot_flags": [4128], "hit_points": 0, "interval": 0, "ordinal": 5}
+          ],
+          "bindings": [
+            {"segment": 309, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 4, "effective_ordinal": 0, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}},
+            {"segment": 310, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 5, "effective_ordinal": 1, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 412, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 6, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 541, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 7, "effective_ordinal": 3, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 7}},
+            {"segment": 713, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 8, "effective_ordinal": 4, "segment_station": 9, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 9}},
+            {"segment": 714, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 9, "effective_ordinal": 5, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 10}}
+          ],
+          "robot_models": [
+            {"type": 5, "model": 9, "status": "valid_model"},
+            {"type": 6, "model": 11, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 412, "side": 5}], "runtime_source_walls": [{"wall": 33, "segment": 427, "side": 5}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 541, "side": 2}], "runtime_source_walls": [{"wall": 38, "segment": 545, "side": 5}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 713, "side": 0}, {"ordinal": 1, "segment": 714, "side": 5}], "runtime_source_walls": [{"wall": 51, "segment": 706, "side": 2}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 713, "side": 0}, {"ordinal": 1, "segment": 714, "side": 5}], "runtime_source_walls": [{"wall": 52, "segment": 707, "side": 2}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 713, "side": 0}, {"ordinal": 1, "segment": 714, "side": 5}], "runtime_source_walls": [{"wall": 53, "segment": 708, "side": 2}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 0, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 309, "side": 5}, {"ordinal": 1, "segment": 310, "side": 5}], "runtime_source_walls": [{"wall": 56, "segment": 247, "side": 4}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 0, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 309, "side": 5}, {"ordinal": 1, "segment": 310, "side": 5}], "runtime_source_walls": [{"wall": 57, "segment": 312, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2340,6 +2708,70 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 12,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 401, "robot_centers": 12, "stations": 17, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 33, "station": 0, "robot_flags": [2097152], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 43, "station": 1, "robot_flags": [2097152], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 74, "station": 2, "robot_flags": [2097152], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 75, "station": 3, "robot_flags": [2097152], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 101, "station": 4, "robot_flags": [6356992], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 102, "station": 5, "robot_flags": [6356992], "hit_points": 0, "interval": 0, "ordinal": 5},
+            {"segment": 180, "station": 6, "robot_flags": [2134016], "hit_points": 0, "interval": 0, "ordinal": 6},
+            {"segment": 242, "station": 7, "robot_flags": [593920], "hit_points": 0, "interval": 0, "ordinal": 7},
+            {"segment": 267, "station": 8, "robot_flags": [65604], "hit_points": 0, "interval": 0, "ordinal": 8},
+            {"segment": 305, "station": 9, "robot_flags": [327776], "hit_points": 0, "interval": 0, "ordinal": 9},
+            {"segment": 308, "station": 10, "robot_flags": [327776], "hit_points": 0, "interval": 0, "ordinal": 10},
+            {"segment": 332, "station": 11, "robot_flags": [2163204], "hit_points": 0, "interval": 0, "ordinal": 11}
+          ],
+          "bindings": [
+            {"segment": 33, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 43, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 74, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 75, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 3, "effective_ordinal": 3, "segment_station": 3, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 101, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 4, "effective_ordinal": 4, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 102, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 5, "effective_ordinal": 5, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 180, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 6, "effective_ordinal": 6, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 242, "generated_ordinal": 7, "serialized_matcen": 7, "serialized_station": 10, "effective_ordinal": 7, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 10}},
+            {"segment": 267, "generated_ordinal": 8, "serialized_matcen": 8, "serialized_station": 11, "effective_ordinal": 8, "segment_station": 11, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 11}},
+            {"segment": 305, "generated_ordinal": 9, "serialized_matcen": 9, "serialized_station": 12, "effective_ordinal": 9, "segment_station": 12, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 12}},
+            {"segment": 308, "generated_ordinal": 10, "serialized_matcen": 10, "serialized_station": 13, "effective_ordinal": 10, "segment_station": 13, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 13}},
+            {"segment": 332, "generated_ordinal": 11, "serialized_matcen": 11, "serialized_station": 14, "effective_ordinal": 11, "segment_station": 14, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 14}}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 5, "model": 9, "status": "valid_model"},
+            {"type": 6, "model": 11, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 15, "model": 24, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 18, "model": 28, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 101, "side": 5}, {"ordinal": 1, "segment": 102, "side": 5}], "runtime_source_walls": [{"wall": 32, "segment": 126, "side": 5}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 101, "side": 5}, {"ordinal": 1, "segment": 102, "side": 5}], "runtime_source_walls": [{"wall": 33, "segment": 127, "side": 0}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 101, "side": 5}, {"ordinal": 1, "segment": 102, "side": 5}], "runtime_source_walls": [{"wall": 34, "segment": 125, "side": 2}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 75, "side": 2}, {"ordinal": 1, "segment": 74, "side": 2}], "runtime_source_walls": [{"wall": 35, "segment": 64, "side": 5}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 75, "side": 2}, {"ordinal": 1, "segment": 74, "side": 2}], "runtime_source_walls": [{"wall": 36, "segment": 63, "side": 4}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 242, "side": 5}], "runtime_source_walls": [{"wall": 51, "segment": 145, "side": 0}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 180, "side": 0}], "runtime_source_walls": [{"wall": 52, "segment": 178, "side": 4}]},
+            {"index": 9, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 242, "side": 4}], "runtime_source_walls": [{"wall": 53, "segment": 165, "side": 0}]},
+            {"index": 11, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 43, "side": 2}, {"ordinal": 1, "segment": 33, "side": 2}], "runtime_source_walls": [{"wall": 63, "segment": 30, "side": 4}]},
+            {"index": 13, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 332, "side": 1}], "runtime_source_walls": [{"wall": 72, "segment": 330, "side": 0}]},
+            {"index": 16, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 267, "side": 1}], "runtime_source_walls": [{"wall": 77, "segment": 259, "side": 0}]},
+            {"index": 17, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 308, "side": 4}, {"ordinal": 1, "segment": 305, "side": 2}], "runtime_source_walls": [{"wall": 78, "segment": 291, "side": 5}]},
+            {"index": 18, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 308, "side": 4}, {"ordinal": 1, "segment": 305, "side": 2}], "runtime_source_walls": [{"wall": 79, "segment": 292, "side": 5}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2551,6 +2983,48 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 719, "robot_centers": 5, "stations": 14, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 95, "station": 0, "robot_flags": [2195520], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 241, "station": 1, "robot_flags": [4264448], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 498, "station": 2, "robot_flags": [70144], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 499, "station": 3, "robot_flags": [70144], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 628, "station": 4, "robot_flags": [4096], "hit_points": 0, "interval": 0, "ordinal": 4}
+          ],
+          "bindings": [
+            {"segment": 95, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 241, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 498, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 10, "effective_ordinal": 2, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 10}},
+            {"segment": 499, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 11, "effective_ordinal": 3, "segment_station": 11, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 11}},
+            {"segment": 628, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 12, "effective_ordinal": 4, "segment_station": 13, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 13}}
+          ],
+          "robot_models": [
+            {"type": 6, "model": 11, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 15, "model": 24, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 499, "side": 0}, {"ordinal": 1, "segment": 498, "side": 2}], "runtime_source_walls": [{"wall": 49, "segment": 496, "side": 4}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 95, "side": 5}], "runtime_source_walls": [{"wall": 50, "segment": 99, "side": 1}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 241, "side": 5}], "runtime_source_walls": [{"wall": 57, "segment": 232, "side": 3}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 241, "side": 5}], "runtime_source_walls": [{"wall": 58, "segment": 234, "side": 3}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 241, "side": 5}], "runtime_source_walls": [{"wall": 59, "segment": 492, "side": 1}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 241, "side": 5}], "runtime_source_walls": [{"wall": 60, "segment": 492, "side": 4}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 628, "side": 5}], "runtime_source_walls": [{"wall": 69, "segment": 630, "side": 4}]},
+            {"index": 9, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 628, "side": 5}], "runtime_source_walls": [{"wall": 70, "segment": 629, "side": 5}]},
+            {"index": 10, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 628, "side": 5}], "runtime_source_walls": [{"wall": 71, "segment": 626, "side": 0}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2732,6 +3206,53 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 8,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 517, "robot_centers": 8, "stations": 12, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 132, "station": 0, "robot_flags": [589824], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 133, "station": 1, "robot_flags": [4608], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 146, "station": 2, "robot_flags": [328196], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 375, "station": 3, "robot_flags": [32768], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 393, "station": 4, "robot_flags": [6291460], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 394, "station": 5, "robot_flags": [2101760], "hit_points": 0, "interval": 0, "ordinal": 5},
+            {"segment": 395, "station": 6, "robot_flags": [2166784], "hit_points": 0, "interval": 0, "ordinal": 6},
+            {"segment": 396, "station": 7, "robot_flags": [2162692], "hit_points": 0, "interval": 0, "ordinal": 7}
+          ],
+          "bindings": [
+            {"segment": 132, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 133, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 146, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 375, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 4, "effective_ordinal": 3, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}},
+            {"segment": 393, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 8, "effective_ordinal": 4, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 8}},
+            {"segment": 394, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 9, "effective_ordinal": 5, "segment_station": 9, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 9}},
+            {"segment": 395, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 10, "effective_ordinal": 6, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 10}},
+            {"segment": 396, "generated_ordinal": 7, "serialized_matcen": 7, "serialized_station": 11, "effective_ordinal": 7, "segment_station": 11, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 11}}
+          ],
+          "robot_models": [
+            {"type": 2, "model": 3, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 15, "model": 24, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 18, "model": 28, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 146, "side": 5}], "runtime_source_walls": [{"wall": 10, "segment": 142, "side": 0}]},
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 146, "side": 5}], "runtime_source_walls": [{"wall": 11, "segment": 143, "side": 2}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 375, "side": 2}], "runtime_source_walls": [{"wall": 44, "segment": 356, "side": 4}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 375, "side": 2}], "runtime_source_walls": [{"wall": 45, "segment": 373, "side": 4}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 133, "side": 4}, {"ordinal": 1, "segment": 132, "side": 4}], "runtime_source_walls": [{"wall": 46, "segment": 235, "side": 4}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 4, "links": [{"ordinal": 0, "segment": 396, "side": 2}, {"ordinal": 1, "segment": 395, "side": 2}, {"ordinal": 2, "segment": 394, "side": 2}, {"ordinal": 3, "segment": 393, "side": 2}], "runtime_source_walls": [{"wall": 49, "segment": 304, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -2801,6 +3322,43 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 5,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 658, "robot_centers": 5, "stations": 10, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 25, "station": 0, "robot_flags": [4259840], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 42, "station": 1, "robot_flags": [2162688], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 289, "station": 2, "robot_flags": [594432], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 352, "station": 3, "robot_flags": [590336], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 359, "station": 4, "robot_flags": [590336], "hit_points": 0, "interval": 0, "ordinal": 4}
+          ],
+          "bindings": [
+            {"segment": 25, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 42, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 289, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 5, "effective_ordinal": 2, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 352, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 8, "effective_ordinal": 3, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 8}},
+            {"segment": 359, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 9, "effective_ordinal": 4, "segment_station": 9, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 9}}
+          ],
+          "robot_models": [
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 42, "side": 5}], "runtime_source_walls": [{"wall": 45, "segment": 5, "side": 4}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 289, "side": 3}], "runtime_source_walls": [{"wall": 40, "segment": 306, "side": 4}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 352, "side": 0}, {"ordinal": 1, "segment": 359, "side": 2}], "runtime_source_walls": [{"wall": 41, "segment": 353, "side": 2}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 25, "side": 0}], "runtime_source_walls": [{"wall": 10, "segment": 311, "side": 0}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 42, "side": 5}], "runtime_source_walls": [{"wall": 44, "segment": 50, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -2974,6 +3532,39 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 744, "robot_centers": 3, "stations": 8, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 136, "station": 0, "robot_flags": [2625536], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 389, "station": 1, "robot_flags": [2099712], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 639, "station": 2, "robot_flags": [530432], "hit_points": 0, "interval": 0, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 136, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 389, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 5, "effective_ordinal": 1, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 639, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 6, "effective_ordinal": 2, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 7}}
+          ],
+          "robot_models": [
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 11, "model": 19, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 96, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 136, "side": 4}], "runtime_source_walls": [{"wall": 32, "segment": 358, "side": 3}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 136, "side": 4}], "runtime_source_walls": [{"wall": 34, "segment": 230, "side": 2}]},
+            {"index": 4, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 389, "side": 4}], "runtime_source_walls": [{"wall": 41, "segment": 368, "side": 0}]},
+            {"index": 5, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 389, "side": 4}], "runtime_source_walls": [{"wall": 42, "segment": 375, "side": 5}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 639, "side": 0}], "runtime_source_walls": [{"wall": 87, "segment": 723, "side": 0}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 389, "side": 2}], "runtime_source_walls": [{"wall": 88, "segment": 454, "side": 2}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
@@ -3171,6 +3762,37 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 3,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 742, "robot_centers": 3, "stations": 7, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 617, "station": 0, "robot_flags": [594432], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 618, "station": 1, "robot_flags": [594432], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 698, "station": 2, "robot_flags": [4718624], "hit_points": 0, "interval": 0, "ordinal": 2}
+          ],
+          "bindings": [
+            {"segment": 617, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 3, "effective_ordinal": 0, "segment_station": 4, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 4}},
+            {"segment": 618, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 4, "effective_ordinal": 1, "segment_station": 5, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 5}},
+            {"segment": 698, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 5, "effective_ordinal": 2, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}}
+          ],
+          "robot_models": [
+            {"type": 5, "model": 9, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 22, "model": 36, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 698, "side": 4}], "runtime_source_walls": [{"wall": 82, "segment": 680, "side": 2}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 698, "side": 4}], "runtime_source_walls": [{"wall": 83, "segment": 695, "side": 2}]},
+            {"index": 3, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 2, "links": [{"ordinal": 0, "segment": 618, "side": 1}, {"ordinal": 1, "segment": 617, "side": 5}], "runtime_source_walls": [{"wall": 86, "segment": 516, "side": 3}]}
+          ]
+        },
         "route_required_key_mask": 3,
         "route_completing_key_mask_set": 8,
         "route_steps": [
@@ -3329,6 +3951,60 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "matcen_regression": {
+          "schema_version": 2,
+          "admission": "loaded",
+          "capture_status": "complete",
+          "declared_disk_count": 8,
+          "engine_limits": {"segments": 9000, "robot_centers": 20, "stations": 140, "robot_types": 30, "polygon_models": 85},
+          "runtime_counts": {"segments": 510, "robot_centers": 8, "stations": 11, "robot_types": 24, "polygon_models": 78},
+          "disk_records": [
+            {"segment": 38, "station": 0, "robot_flags": [2359298], "hit_points": 0, "interval": 0, "ordinal": 0},
+            {"segment": 41, "station": 1, "robot_flags": [590336], "hit_points": 0, "interval": 0, "ordinal": 1},
+            {"segment": 157, "station": 2, "robot_flags": [4608], "hit_points": 0, "interval": 0, "ordinal": 2},
+            {"segment": 316, "station": 3, "robot_flags": [32], "hit_points": 0, "interval": 0, "ordinal": 3},
+            {"segment": 318, "station": 4, "robot_flags": [4096], "hit_points": 0, "interval": 0, "ordinal": 4},
+            {"segment": 439, "station": 5, "robot_flags": [65536], "hit_points": 0, "interval": 0, "ordinal": 5},
+            {"segment": 451, "station": 6, "robot_flags": [622592], "hit_points": 0, "interval": 0, "ordinal": 6},
+            {"segment": 466, "station": 7, "robot_flags": [65536], "hit_points": 0, "interval": 0, "ordinal": 7}
+          ],
+          "bindings": [
+            {"segment": 38, "generated_ordinal": 0, "serialized_matcen": 0, "serialized_station": 0, "effective_ordinal": 0, "segment_station": 0, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 41, "generated_ordinal": 1, "serialized_matcen": 1, "serialized_station": 1, "effective_ordinal": 1, "segment_station": 1, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 157, "generated_ordinal": 2, "serialized_matcen": 2, "serialized_station": 2, "effective_ordinal": 2, "segment_station": 2, "binding_status": "disk_bound", "station_status": "matching_station"},
+            {"segment": 316, "generated_ordinal": 3, "serialized_matcen": 3, "serialized_station": 6, "effective_ordinal": 3, "segment_station": 6, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 6}},
+            {"segment": 318, "generated_ordinal": 4, "serialized_matcen": 4, "serialized_station": 7, "effective_ordinal": 4, "segment_station": 7, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 7}},
+            {"segment": 439, "generated_ordinal": 5, "serialized_matcen": 5, "serialized_station": 8, "effective_ordinal": 5, "segment_station": 8, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 8}},
+            {"segment": 451, "generated_ordinal": 6, "serialized_matcen": 6, "serialized_station": 9, "effective_ordinal": 6, "segment_station": 9, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 9}},
+            {"segment": 466, "generated_ordinal": 7, "serialized_matcen": 7, "serialized_station": 10, "effective_ordinal": 7, "segment_station": 10, "binding_status": "disk_bound", "station_status": "matching_station", "record_overrides": {"station": 10}}
+          ],
+          "robot_models": [
+            {"type": 1, "model": 2, "status": "valid_model"},
+            {"type": 5, "model": 9, "status": "valid_model"},
+            {"type": 9, "model": 16, "status": "valid_model"},
+            {"type": 12, "model": 20, "status": "valid_model"},
+            {"type": 15, "model": 24, "status": "valid_model"},
+            {"type": 16, "model": 25, "status": "valid_model"},
+            {"type": 18, "model": 28, "status": "valid_model"},
+            {"type": 19, "model": 30, "status": "valid_model"},
+            {"type": 21, "model": 34, "status": "valid_model"}
+          ],
+          "triggers": [
+            {"index": 0, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 41, "side": 4}], "runtime_source_walls": [{"wall": 22, "segment": 124, "side": 5}]},
+            {"index": 1, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 157, "side": 4}], "runtime_source_walls": [{"wall": 31, "segment": 153, "side": 3}]},
+            {"index": 2, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 157, "side": 4}], "runtime_source_walls": [{"wall": 30, "segment": 218, "side": 1}]},
+            {"index": 6, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 439, "side": 4}], "runtime_source_walls": [{"wall": 92, "segment": 435, "side": 3}]},
+            {"index": 7, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 451, "side": 3}], "runtime_source_walls": [{"wall": 93, "segment": 450, "side": 4}]},
+            {"index": 8, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 3, "links": [{"ordinal": 0, "segment": 316, "side": 3}, {"ordinal": 1, "segment": 318, "side": 3}, {"ordinal": 2, "segment": 466, "side": 2}], "runtime_source_walls": [{"wall": 102, "segment": 305, "side": 3}]},
+            {"index": 9, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 38, "side": 4}], "runtime_source_walls": [{"wall": 103, "segment": 19, "side": 4}]},
+            {"index": 10, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 157, "side": 4}], "runtime_source_walls": [{"wall": 28, "segment": 170, "side": 2}]},
+            {"index": 12, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 38, "side": 4}], "runtime_source_walls": [{"wall": 11, "segment": 71, "side": 3}]},
+            {"index": 13, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 38, "side": 4}], "runtime_source_walls": [{"wall": 15, "segment": 74, "side": 3}]},
+            {"index": 14, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 41, "side": 3}], "runtime_source_walls": [{"wall": 26, "segment": 129, "side": 1}]},
+            {"index": 15, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 41, "side": 3}], "runtime_source_walls": [{"wall": 42, "segment": 263, "side": 5}]},
+            {"index": 16, "type": 0, "flags": 64, "value": 327680, "time": -1, "declared_link_count": 1, "links": [{"ordinal": 0, "segment": 38, "side": 0}], "runtime_source_walls": [{"wall": 105, "segment": 108, "side": 4}]}
+          ]
+        },
         "route_required_key_mask": 7,
         "route_completing_key_mask_set": 128,
         "route_steps": [
