@@ -1,0 +1,132 @@
+name: Reviewed corpus comparison
+run-name: Reviewed locked-exit corpus comparison
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reviewed-corpus-comparison
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    if: github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/corpus-comparison.yml@refs/heads/cmake'
+    environment: retail-ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: dummy
+    steps:
+      - name: Check out reviewed controller
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Verify trusted entry and approved immutable revisions
+        id: gate
+        run: python3 control/android/tests/corpus_comparison.py gate
+      - name: Check out base
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ steps.gate.outputs.base }}
+          path: base
+          persist-credentials: false
+      - name: Check out candidate
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ steps.gate.outputs.candidate }}
+          path: candidate
+          persist-credentials: false
+      - name: Install common host prerequisites
+        timeout-minutes: 10
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build \
+            libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
+            libarchive-tools p7zip-full
+      - name: Build both revisions before accessing private inputs
+        timeout-minutes: 60
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/corpus-deps"
+          for side in base candidate; do
+            printf '%s\n' "$RUNNER_TEMP/corpus-deps" > "$side/dependency_base.txt"
+            bash "$side/android/get_deps/helpers/get_bounded_python.sh"
+            bash "$side/android/get_deps/helpers/get_jdk.sh"
+            export JAVA_HOME="$RUNNER_TEMP/corpus-deps/jdk-21"
+            bash "$side/android/get_deps/helpers/get_gradle_wrapper.sh"
+            bash "$side/android/gradlew" -p "$side/android" -PhostJvmOnly=true :mission-metadata-cli:installDist --console=plain
+            for game in d1 d2; do
+              cmake -S "$side/$game" -B "$side/build$game" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DENABLE_CCACHE=OFF
+              cmake --build "$side/build$game" --parallel 2 --target "dxx-redux-$game-metadata-worker"
+            done
+            cmake --build "$side/buildd2" --parallel 2 --target dxx-redux-d2-headless-route
+          done
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+      - name: Check out approved private inputs
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: ${{ steps.gate.outputs.assets }}
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: retail-input
+          persist-credentials: false
+      - name: Stage verified retail edition identically
+        run: |
+          set -euo pipefail
+          for side in base candidate; do
+            python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control \
+              --source-map control/android/tests/retail_asset_sources.json \
+              --output "$RUNNER_TEMP/retail-$side.json" --stage "$side/game_data/retail-ci"
+          done
+      - name: Compare the entire assigned selection without publishing baselines
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 control/android/tests/corpus_comparison.py run \
+            --base "$GITHUB_WORKSPACE/base" --candidate "$GITHUB_WORKSPACE/candidate" \
+            --assets "$GITHUB_WORKSPACE/retail-input" --shard "$SHARD" \
+            --work "$RUNNER_TEMP/corpus-work" --output "$GITHUB_WORKSPACE/evidence"
+      - name: Upload only controller-produced JSON evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: corpus-comparison-${{ matrix.shard }}
+          path: evidence/**/*.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  report:
+    needs: compare
+    if: always() && needs.compare.result != 'skipped'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: corpus-comparison-*
+          path: evidence
+      - name: Require every shard and report regressions separately
+        run: python3 android/tests/corpus_comparison.py aggregate --output evidence
+      - name: Keep comparison report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: corpus-comparison-report
+          path: evidence/comparison.json
+          retention-days: 14
+          if-no-files-found: warn
