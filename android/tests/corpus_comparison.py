@@ -83,6 +83,16 @@ def levels(document):
     return result
 
 
+def headers(document, excluded=("levels",)):
+    result = {}
+    for mission in document if isinstance(document, list) else [document]:
+        key = str(mission.get("target_index", 0))
+        if key in result:
+            raise ValueError("Duplicate logical mission identity")
+        result[key] = {field: value for field, value in mission.items() if field not in excluded}
+    return result
+
+
 def manifest(base, candidate, settings):
     retail = [retail_inventory(repo / "game_data/retail-ci", retail_baseline(ROOT)) for repo in (base, candidate)]
     if (
@@ -208,6 +218,7 @@ def collect(repo, entry, settings, work, evidence):
         raise ValueError("Producer metadata escaped output directory")
     document = read(generated)
     result["metadata"] = levels(document)
+    result["metadata_headers"] = headers(document)
     write(evidence / "metadata.json", document)
     scratch = work / "input"
     staged = scratch / relative
@@ -257,7 +268,11 @@ def collect(repo, entry, settings, work, evidence):
         result["incomplete"] = "selection_or_oracle_contract_changed"
     result_file = route / "results" / baseline.with_suffix(".simulation.json").name
     if result_file.is_file():
-        result["levels"] = levels(read(result_file))
+        simulation = read(result_file)
+        result["levels"] = levels(simulation)
+        # Aggregate status/counts describe other levels; compare canonical headers per target
+        result["simulation_headers"] = headers(simulation, ("levels", "status", "level_counts"))
+        write(evidence / "simulation.json", simulation)
     for identity in entry["levels"]:
         safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", relative + "|" + identity)
         result["engine"][identity], result["process"][identity], result["budgets"][identity] = [], [], []
@@ -294,6 +309,9 @@ def compare(entry, before, after):
     rows = []
     identities = sorted(set(entry["levels"]) | set(before.get("levels", {})) | set(after.get("levels", {})))
     for identity in identities:
+        target = identity.split("|", 1)[0]
+        simulation_headers = [side.get("simulation_headers", {}).get(target) for side in (before, after)]
+        metadata_headers = [side.get("metadata_headers", {}).get(target) for side in (before, after)]
         a, b = before.get("levels", {}).get(identity), after.get("levels", {}).get(identity)
         engines = [side.get("engine", {}).get(identity, []) for side in (before, after)]
         processes = [side.get("process", {}).get(identity, []) for side in (before, after)]
@@ -303,14 +321,15 @@ def compare(entry, before, after):
             if unstable or "nondeterministic" in (a["status"], b["status"]):
                 status = "nondeterministic"
             elif any(
-                value["status"] not in ("ok", "failed", "timeout", "unsupported", "route_mismatch") for value in (a, b)
+                value["status"] not in ("ok", "partial", "failed", "timeout", "unsupported", "route_mismatch")
+                for value in (a, b)
             ):
                 status = "incomplete"
             elif a["status"] == "ok" and b["status"] != "ok":
                 status = "regression"
             elif a["status"] != "ok" and b["status"] == "ok":
                 status = "improvement"
-            elif a != b:
+            elif a != b or simulation_headers[0] != simulation_headers[1]:
                 status = "changed"
             for value, runs, receipts in zip((a, b), engines, processes):
                 if value["status"] != "unsupported" and len(receipts) != 2:
@@ -335,6 +354,10 @@ def compare(entry, before, after):
                 "classification": status,
                 "before": a,
                 "after": b,
+                "simulation_header_before": simulation_headers[0],
+                "simulation_header_after": simulation_headers[1],
+                "metadata_header_before": metadata_headers[0],
+                "metadata_header_after": metadata_headers[1],
                 "raw_before": engines[0],
                 "raw_after": engines[1],
                 "process_before": before.get("process", {}).get(identity, []),
@@ -342,7 +365,8 @@ def compare(entry, before, after):
                 "budgets_before": before.get("budgets", {}).get(identity, []),
                 "budgets_after": after.get("budgets", {}).get(identity, []),
                 "metadata_changed": _metadata_baseline({"levels": [before.get("metadata", {}).get(identity, {})]})
-                != _metadata_baseline({"levels": [after.get("metadata", {}).get(identity, {})]}),
+                != _metadata_baseline({"levels": [after.get("metadata", {}).get(identity, {})]})
+                or metadata_headers[0] != metadata_headers[1],
             }
         )
     return rows
@@ -495,3 +519,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

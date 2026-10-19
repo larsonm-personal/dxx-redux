@@ -63,6 +63,80 @@ class ComparisonTests(unittest.TestCase):
         after["engine"][self.identity].pop()
         self.assertEqual("incomplete", self.classification(self.outcome(), after))
 
+    def test_native_partial_is_comparable_with_complete_repeat_receipts(self):
+        partial = self.outcome("partial")
+        partial["process"][self.identity] = [{"exit_code": 2, "timed_out": False}] * 2
+        partial["levels"][self.identity].update(
+            level_num=1,
+            level_file="one.rl2",
+            route_input_sha256="a" * 64,
+            rng_start={"state": 1},
+            rng_end={"state": 2},
+            objectives=[{"n": "exit", "s": 2}],
+        )
+        self.assertEqual("unchanged", self.classification(partial, copy.deepcopy(partial)))
+        self.assertEqual("improvement", self.classification(partial, self.outcome()))
+        self.assertEqual("regression", self.classification(self.outcome(), partial))
+        changed = copy.deepcopy(partial)
+        changed["levels"][self.identity]["total_frames"] += 1
+        self.assertEqual("changed", self.classification(partial, changed))
+        for field in ("engine", "process"):
+            missing = copy.deepcopy(partial)
+            missing[field][self.identity].pop()
+            self.assertEqual("incomplete", self.classification(partial, missing))
+        for receipt in ({"exit_code": 1, "timed_out": False}, {"exit_code": 2, "timed_out": True}):
+            failed = copy.deepcopy(partial)
+            failed["process"][self.identity] = [receipt] * 2
+            self.assertEqual("incomplete", self.classification(partial, failed))
+        unstable = copy.deepcopy(partial)
+        unstable["engine"][self.identity][1]["frames"] += 1
+        self.assertEqual("nondeterministic", self.classification(partial, unstable))
+
+    def test_mission_headers_are_compared_by_target(self):
+        before = self.outcome()
+        before["simulation_headers"] = {
+            "0": {
+                "schema": "dxx-guidebot-route-simulation-v1",
+                "mission_filename": "one.mn2",
+                "target_index": 0,
+                "generation": 4,
+                "fixed_hz": 60,
+                "seed": 1,
+                "engine_mode": "d1_in_d2",
+            }
+        }
+        before["metadata_headers"] = {"0": {"mission_filename": "one.mn2", "game": "d1"}}
+        for field in before["simulation_headers"]["0"]:
+            after = copy.deepcopy(before)
+            after["simulation_headers"]["0"][field] = "changed"
+            row = c.compare(self.entry, before, after)[0]
+            self.assertEqual("changed", row["classification"], field)
+            self.assertNotEqual(row["simulation_header_before"], row["simulation_header_after"])
+        after = copy.deepcopy(before)
+        after["metadata_headers"]["0"]["game"] = "d2"
+        row = c.compare(self.entry, before, after)[0]
+        self.assertTrue(row["metadata_changed"])
+        self.assertNotEqual(row["metadata_header_before"], row["metadata_header_after"])
+        after = copy.deepcopy(before)
+        after["simulation_headers"]["1"] = {"seed": 99}
+        after["metadata_headers"]["1"] = {"game": "d2"}
+        row = c.compare(self.entry, before, after)[0]
+        self.assertEqual("unchanged", row["classification"])
+        self.assertFalse(row["metadata_changed"])
+
+    def test_header_extraction_retains_semantics_and_rejects_duplicate_targets(self):
+        missions = [
+            {"target_index": 0, "seed": 1, "status": "partial", "level_counts": {"partial": 1}, "levels": []},
+            {"target_index": 1, "seed": 2, "status": "ok", "level_counts": {"ok": 1}, "levels": []},
+        ]
+        self.assertEqual(
+            {"0": {"target_index": 0, "seed": 1}, "1": {"target_index": 1, "seed": 2}},
+            c.headers(missions, ("levels", "status", "level_counts")),
+        )
+        self.assertEqual("partial", c.headers(missions)["0"]["status"])
+        with self.assertRaises(ValueError):
+            c.headers([missions[0], missions[0]])
+
     def test_partial_or_failed_process_cannot_be_a_clean_improvement(self):
         for receipt in ({"exit_code": 1, "timed_out": False}, {"exit_code": 0, "timed_out": True}):
             after = self.outcome()
@@ -185,7 +259,33 @@ class ComparisonTests(unittest.TestCase):
             baseline = root / "repo/game_data/mission_files/one.json"
             c.write(baseline, {"untouched": True})
             baseline.with_suffix(".zip").write_bytes(b"fixture")
-            document = {"levels": [{"level_num": 1, "level_file": "one.rl2", "status": "timeout"}]}
+            document = {
+                "mission_filename": "one.mn2",
+                "game": "d2",
+                "levels": [{"level_num": 1, "level_file": "one.rl2"}],
+            }
+            simulation = {
+                "schema": "dxx-guidebot-route-simulation-v1",
+                "mission_filename": "one.mn2",
+                "target_index": 0,
+                "generation": 4,
+                "fixed_hz": 60,
+                "seed": 1,
+                "status": "partial",
+                "level_counts": {"partial": 1},
+                "levels": [
+                    {
+                        "level_num": 1,
+                        "level_file": "one.rl2",
+                        "route_input_sha256": "a" * 64,
+                        "status": "partial",
+                        "rng_start": {"state": 1},
+                        "objectives": [],
+                        "total_frames": 123,
+                        "rng_end": {"state": 2},
+                    }
+                ],
+            }
 
             def producer(repo, script, arguments, log):
                 output = Path(arguments[arguments.index("-OutputRoot") + 1])
@@ -207,10 +307,10 @@ class ComparisonTests(unittest.TestCase):
                             "selected_work_items": ["one.json|" + self.identity],
                         },
                     )
-                    c.write(output / "results/one.simulation.json", document)
+                    c.write(output / "results/one.simulation.json", simulation)
                     for repeat in (1, 2):
                         path = output / "results" / f"one.json_0_1_one.rl2_run_{repeat}.json"
-                        c.write(path, {"status": "timeout", "frames": 123, "problem": "route stalled"})
+                        c.write(path, {"status": "partial", "frames": 123, "problem": "route stalled"})
                         c.write(Path(str(path) + ".process.json"), {"exit_code": 2, "timed_out": False})
                         c.write(
                             Path(str(path) + ".launch.json"),
@@ -223,6 +323,14 @@ class ComparisonTests(unittest.TestCase):
             self.assertEqual(2, len(result["engine"][self.identity]))
             self.assertEqual("route stalled", result["engine"][self.identity][0]["problem"])
             self.assertEqual(90, result["budgets"][self.identity][0]["simulation_seconds"])
+            self.assertEqual(simulation, c.read(root / "evidence/simulation.json"))
+            self.assertEqual(document, c.read(root / "evidence/metadata.json"))
+            self.assertEqual("d2", result["metadata_headers"]["0"]["game"])
+            self.assertEqual(4, result["simulation_headers"]["0"]["generation"])
+            self.assertEqual("unchanged", self.classification(result, copy.deepcopy(result)))
+            changed = copy.deepcopy(result)
+            changed["simulation_headers"]["0"]["seed"] = 2
+            self.assertEqual("changed", self.classification(result, changed))
             self.assertEqual({"untouched": True}, c.read(baseline))
 
     def test_workflow_is_manual_and_artifacts_are_allowlisted(self):
@@ -238,3 +346,4 @@ class ComparisonTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
