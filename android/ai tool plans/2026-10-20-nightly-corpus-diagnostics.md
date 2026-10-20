@@ -52,3 +52,17 @@ complete stderr (47 bytes) and the assertion category without exposing the marke
 - Final strict targeted reruns passed: Lostlvls 42.817 seconds, Vela1 6.107
   seconds; both worker commands exited 0. Both D1 and D2 metadata workers rebuilt
 - Repeated Python qualification: 128 nightly tests and 68 adapter tests passed
+
+## Persistent headless connectivity regression
+
+Reuse test_upstream_compat's synthetic corridor in both games. The production
+load_level path calls the extracted diagnostic function; the test verifies a
+healthy corridor, then breaks a reciprocal connection and confirms validation
+still reports it without a canvas. Register a 30-second CTest for both builds;
+profiles without debug connectivity validation explicitly skip it.
+
+Both focused CTests and both full test_upstream_compat suites passed. Temporarily
+disabling the no-render guard made each game's focused test exit with SIGSEGV
+(-11); restoring it made both pass. Scoped native/CMake quality and automation
+catalog checks passed. The master catalog remains blocked by the executor's
+missing /proc child-supervision interface, exit 125.

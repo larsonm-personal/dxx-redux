@@ -1461,6 +1461,27 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 int check_segment_connections(void);
 
+int gamesave_check_segment_connections(void)
+{
+#if !defined(NDEBUG) && !defined(COMPACT_SEGS)
+	const int errors = check_segment_connections();
+	if (errors)
+		/* Headless scans and read-only previews have no gameplay dialog UI */
+		if (!GameArg.SysInputDemoNoRender
+#ifdef __ANDROID__
+		    && !android_level_preview_request_path()
+#endif
+		)
+		nm_messagebox( "ERROR", 1, "Ok",
+				"Connectivity errors detected in\n"
+				"mine.  See monochrome screen for\n"
+				"details, and contact Matt or Mike." );
+	return errors;
+#else
+	return 0;
+#endif
+}
+
 extern void	set_ambient_sound_flags(void);
 
 // ----------------------------------------------------------------------------
@@ -1762,19 +1783,7 @@ int load_level(const char * filename_passed)
 		editor_status_fmt("Loaded NEW mine %s, \"%s\"",filename,Current_level_name);
 	#endif
 
-	#if !defined(NDEBUG) && !defined(COMPACT_SEGS)
-	if (check_segment_connections())
-		/* Headless scans and read-only previews have no gameplay dialog UI */
-		if (!GameArg.SysInputDemoNoRender
-#ifdef __ANDROID__
-		    && !android_level_preview_request_path()
-#endif
-		)
-		nm_messagebox( "ERROR", 1, "Ok", 
-				"Connectivity errors detected in\n"
-				"mine.  See monochrome screen for\n"
-				"details, and contact Matt or Mike." );
-	#endif
+	gamesave_check_segment_connections();
 
 	secret_area_level_loaded(filename);
 	return 0;

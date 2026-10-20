@@ -776,6 +776,25 @@ static void init_test_corridor(int cells = 2)
 	Num_walls = 0;
 }
 
+static void test_headless_connectivity_warning()
+{
+#if !defined(NDEBUG) && !defined(COMPACT_SEGS) && !defined(DXX_MATCEN_CAPTURE_ONLY_MAIN)
+	const int old_no_render = GameArg.SysInputDemoNoRender;
+	grs_canvas *old_canvas = grd_curcanv;
+	grd_curcanv = nullptr;
+	init_test_corridor();
+	GameArg.SysInputDemoNoRender = 0;
+	require(!gamesave_check_segment_connections(), "valid corridor has no connectivity warning");
+	// Break the reciprocal connection without invalid indices or private level data
+	Segments[1].children[5] = -1;
+	GameArg.SysInputDemoNoRender = 1;
+	require(gamesave_check_segment_connections(), "headless validation still detects broken connectivity");
+	grd_curcanv = old_canvas;
+	GameArg.SysInputDemoNoRender = old_no_render;
+	std::puts("PASS: headless connectivity warning without a graphical canvas");
+#endif
+}
+
 static void test_death_camera_sim_isolation()
 {
 	const fix old_distance = Camera_to_player_dist_goal;
@@ -12882,6 +12901,16 @@ int main(int argc, char **argv)
 		PHYSFS_deinit();
 		return 0;
 	}
+	if (argc == 2 && std::strcmp(argv[1], "--headless-connectivity") == 0) {
+#if defined(NDEBUG) || defined(COMPACT_SEGS)
+		std::puts("SKIP: connectivity diagnostics are not compiled in this profile");
+		return 77;
+#else
+		test_headless_connectivity_warning();
+		return 0;
+#endif
+	}
+	test_headless_connectivity_warning();
 	std::fprintf(stderr, "Testing model texture seek\n");
 	test_seek();
 	test_pcx_short_header();
