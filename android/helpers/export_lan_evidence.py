@@ -65,10 +65,10 @@ for path in sorted(root.rglob("*")):
         for line in text.splitlines():
             # Preserve native startup diagnostics, including packet/retry events,
             # up to briefing readiness. This exports saved evidence, not a rerun
-            if pattern.search(line) or (startup and re.search(r"DXX|MainActivity|SDL", line)):
+            if pattern.search(line) or (startup and re.search(r"\sDXX(?:-DLOG)?\s*:|SDL", line)):
                 lines.append(line)
-            if "[LAN-TIMING]" in line and "phase=6 armed=1" in line:
-                startup = False
+            if startup and "[LAN-TIMING]" in line and "phase=6 armed=1" in line:
+                break
         text = "\n".join(lines)
     if text:
         selected[relative] = {"source_sha256": hashlib.sha256(raw).hexdigest(), "text": text}
