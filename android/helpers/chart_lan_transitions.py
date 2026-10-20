@@ -312,7 +312,7 @@ def comparison_groups(rows):
     return groups
 
 
-def write_comparison(before_rows, after_rows, output):
+def write_comparison(before_rows, after_rows, output, png=False):
     before, after = comparison_groups(before_rows), comparison_groups(after_rows)
     summary = []
     for key in sorted(before.keys() | after.keys()):
@@ -365,6 +365,42 @@ def write_comparison(before_rows, after_rows, output):
             )
     parts.append("</g></svg>")
     (output / "comparison.svg").write_text("\n".join(parts) + "\n", encoding="utf-8")
+    if png:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(figsize=(14, max(6, len(selected) * 0.48)))
+        for offset, variant, color in ((-0.18, "before", "#8290a3"), (0.18, "after", "#207b54")):
+            for index, item in enumerate(selected):
+                if not item[f"{variant}_n"]:
+                    continue
+                values = [float(v) / 1000 for v in item[f"{variant}_samples_ms"].split(";")]
+                y = index + offset
+                ax.barh(y, statistics.mean(values), height=0.3, color=color, label=variant if index == 0 else None)
+                ax.scatter(values, [y] * len(values), color="#17233b", s=12, zorder=3)
+                ax.text(
+                    maximum / 1000 * 1.04,
+                    y,
+                    f"{statistics.mean(values):.3f}s (n={len(values)})",
+                    va="center",
+                    fontsize=8,
+                )
+        ax.set_yticks(
+            range(len(selected)), [f"{r['game'].upper()} {r['peer'][-4:]}  {r['metric']}" for r in selected], fontsize=8
+        )
+        ax.invert_yaxis()
+        ax.set_xlim(0, maximum / 1000 * 1.35)
+        ax.set_xlabel("Seconds — device-local observations; controller polling and viewing dwell excluded")
+        ax.set_title(
+            "LAN co-op: before / immediate phase publication\nMeans and individual samples; three sequential runs per game, not a significance test"
+        )
+        ax.legend(loc="lower right")
+        ax.grid(axis="x", alpha=0.2)
+        fig.tight_layout()
+        fig.savefig(output / "comparison.png", dpi=160)
+        plt.close(fig)
 
 
 def main():
@@ -372,6 +408,7 @@ def main():
     parser.add_argument("evidence", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--compare", type=Path, help="Before timings.csv; compare against this evidence run")
+    parser.add_argument("--png", action="store_true", help="Also render comparison.png (requires matplotlib)")
     args = parser.parse_args()
     manifest, rows = extract(args.evidence)
     events = read_jsonl(args.evidence / "events.jsonl")
@@ -400,7 +437,7 @@ def main():
         write_chart(overview, args.output / "overview.svg")
     if args.compare:
         with args.compare.open(newline="", encoding="utf-8") as stream:
-            write_comparison(list(csv.DictReader(stream)), rows, args.output)
+            write_comparison(list(csv.DictReader(stream)), rows, args.output, png=args.png)
     print(f"Wrote {len(rows)} observed intervals to {args.output}")
 
 
