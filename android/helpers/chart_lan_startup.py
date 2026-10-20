@@ -251,7 +251,7 @@ def compare(control, candidate, output, plt):
                 )
             )
             for offset, data, color, label in (
-                (-0.18, before, "#1f77b4", "Original retry"),
+                (-0.18, before, "#1f77b4", "Control"),
                 (0.18, after, "#ff7f0e", "Candidate"),
             ):
                 ax.bar(
