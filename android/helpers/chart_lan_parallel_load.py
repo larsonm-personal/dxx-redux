@@ -63,7 +63,13 @@ def check_pair(host_path, client_path, case):
         assert released["time"] - wait["time"] >= 59.5, "Canceled loader expired before loading allowance"
         assert "timeout_check: player 1 timed out" in host_path.read_text(encoding="utf-8-sig")
         assert not any(e.get("event") == "load_hold_end" for e in ce)
-        return dict(case=case, verified="canceled before load/readiness; inspect case.pass for timeout recovery")
+        return dict(
+            case=case,
+            verified="canceled before load/readiness; bounded timeout and case.pass verified",
+            host_wait_to_sync_s=released["time"] - wait["time"],
+            host_wait_source=wait["source"],
+            host_sync_source=released["source"],
+        )
     h, c = hl[0], cl[0]
     ready = first(ce, "readiness_send")
     assert ready["time"] >= c["end"], "Client requested readiness before load completed"
@@ -86,6 +92,7 @@ def check_pair(host_path, client_path, case):
     if case == "dropped-admission":
         first(ce, "admission_test_drop")
         assert not any(e.get("event") == "admission_send" for e in ce)
+        assert h["start"] >= first(he, "request_received")["time"], "Dropped admission did not use serialized fallback"
         return row
     admission = first(ce, "admission_send")
     received = next(
@@ -112,6 +119,11 @@ def check_pair(host_path, client_path, case):
         sync_send_source=send_sync["source"],
         sync_receive_source=receive_sync["source"],
     )
+    for role, events in (("host", he), ("client", ce)):
+        holds = [e for e in events if e.get("event") == "load_hold_begin"]
+        if holds:
+            end = first(events, "load_hold_end")
+            row[f"{role}_deliberate_hold_s"] = end["time"] - holds[0]["time"]
     if case == "slow-client-duplicate":
         ignored = first(he, "admission_ignored")
         assert ignored.get("status") == "3", "Duplicate was not ignored in WAITING"
@@ -123,6 +135,7 @@ def check_pair(host_path, client_path, case):
         assert end["time"] - hold["time"] >= 19.9
         wait = first(he, "wait_requests_flush")
         assert accepted["time"] - wait["time"] > 15, "Long load did not cross old timeout"
+        row["host_wait_to_accept_s"] = accepted["time"] - wait["time"]
     if case == "slow-host":
         first(he, "load_hold_end")
     return row
@@ -146,7 +159,7 @@ def main():
             ]
             assert any(e["event"] == "case.pass" for e in events), f"Fault case {game}/{case} did not pass"
         row.update(game=game, directory=str(host.parent.relative_to(args.evidence)))
-        rows.append(row)
+        rows.append({key: round(value, 6) if isinstance(value, float) else value for key, value in row.items()})
     assert rows, "No peer captures found"
     if not args.allow_incomplete:
         cases = {
@@ -178,8 +191,9 @@ def main():
     import matplotlib.pyplot as plt
 
     measured = [r for r in rows if r["case"].isdigit()]
-    fig, axes = plt.subplots(len(measured), 1, figsize=(10, 2 * len(measured)), squeeze=False)
-    for ax, row in zip(axes[:, 0], measured):
+    fig, axes = plt.subplots(3, 2, figsize=(12, 8), sharex=True, squeeze=False)
+    for row in measured:
+        ax = axes[int(row["case"]) - 1, 0 if row["game"] == "d1" else 1]
         origin = row["host_start_s"]
         middle = (row["offset_lower_s"] + row["offset_upper_s"]) / 2
         ax.barh(1, row["host_load_s"], left=0, color="#2878b5", label="Host LoadLevel")

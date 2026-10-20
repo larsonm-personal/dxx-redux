@@ -83,3 +83,11 @@ This excludes observer hosts before early admission. The measured non-observer
 path is unchanged. Keep the full experiment ata673dfd8e running, and validate
 this additional excluded-path guard with the normal dual-emulator smoke on a
 separate validation branch; record both exact revisions/results.
+
+Latest-code smoke passed: run39451088229 at
+7bc1593d1915be6d6986d8bd87a25d6f8910a207. Public owner checks native D1,
+native D2 with reversed host/client roles, and imported D1 in D2. Artifact
+12279865438 retains full evidence. Export39453900746 hit the128KiB annotation
+limit; compact session snapshots/log filters are being applied to recover its
+receipts without rerunning emulators. Full matched/fault run39450006075 at
+a673dfd8e86a6315f9c557cb051340efe529c2da remains in progress.
