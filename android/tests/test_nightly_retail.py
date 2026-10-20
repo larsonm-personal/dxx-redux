@@ -124,7 +124,7 @@ class RetailBoundaryTests(unittest.TestCase):
         marker = 'ASSET_BYTES_MUST_NOT_ESCAPE'
         plan, state = self.plan(self.identity)
         row = {'id': 'master:retail', 'status': 'FAIL', 'phase': 'tests', 'attempted_tests': True,
-               'reason': marker, 'run_url': marker, 'exclusions': [marker], 'traceback': marker,
+               'reason': marker, 'run_url': marker, 'exclusions': [marker], 'traceback': marker, 'private_error': marker,
                'cases': [{'id': marker, 'status': 'FAIL', 'reason': marker}], 'blocker_kind': marker,
                'exit_code': 1, 'coverage_complete': False}
         receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id', 'retail_assets')}
