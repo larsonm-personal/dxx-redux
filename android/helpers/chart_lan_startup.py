@@ -9,6 +9,7 @@ No cross-device clock subtraction; profile boundaries use recorded local duratio
 import argparse
 import csv
 import json
+import io
 import re
 from pathlib import Path
 
@@ -18,6 +19,11 @@ def extract(root):
     rows, trace, checkpoints, assets = [], [], [], []
     for path in sorted(root.glob("d?-*-emulator-*-logcat.txt")):
         game, sample, _, port, _ = path.name.split("-", 4)
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+        game_pids = {line.split()[1] for line in lines if "auto_net: starting auto-" in line}
+        if len(game_pids) != 1:
+            raise ValueError(f"Expected one native game process in {path.name}")
+        game_pid = next(iter(game_pids))
         points = {}
         profile = None
         previous_checkpoint = None
@@ -30,15 +36,16 @@ def extract(root):
             "auto_net": "auto_net: starting auto-",
             "briefing_ready": "phase=6 armed=1",
         }
-        for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+        for number, line in enumerate(lines, 1):
             clock = re.match(r"\s*(\d+\.\d+)\s", line)
             if not clock:
                 continue
             stamp = float(clock[1])
+            is_game = line.split()[1] == game_pid
             for key, marker in markers.items():
                 if marker in line and key not in points:
                     points[key] = (stamp, number)
-            if "CHECKPOINT:" in line and "launch" in points:
+            if is_game and "CHECKPOINT:" in line and "launch" in points:
                 checkpoint = line.split("CHECKPOINT:", 1)[1].strip()
                 if previous_checkpoint:
                     before, title, source_line = previous_checkpoint
@@ -58,7 +65,7 @@ def extract(root):
                         )
                     )
                 previous_checkpoint = (stamp, checkpoint, number)
-            if "[STARTUP-ASSET]" in line and "launch" in points:
+            if is_game and "[STARTUP-ASSET]" in line and "launch" in points:
                 fields = dict(re.findall(r"(\w+)=([^ ]+)", line.split("[STARTUP-ASSET]", 1)[1]))
                 assets.append(
                     dict(
@@ -71,14 +78,14 @@ def extract(root):
                         **fields,
                     )
                 )
-            if "type=level_init" in line and "requested=1 " in line and profile is None:
+            if is_game and "type=level_init" in line and "requested=1 " in line and profile is None:
                 fields = {k: int(v) / 1e6 for k, v in re.findall(r"(\w+)_us=(\d+)", line)}
                 start = stamp - fields["total"]
                 points["level_begin"] = (start, number)
                 points["sync_begin"] = (start + fields["pre_load"] + fields["load"], number)
                 points["sync_end"] = (points["sync_begin"][0] + fields["network_sync"], number)
                 profile = fields
-            if "[STARTUP-SYNC]" in line:
+            if is_game and "[STARTUP-SYNC]" in line:
                 trace.append(
                     dict(
                         revision=revision,
@@ -101,6 +108,9 @@ def extract(root):
             ("native synchronization", "sync_begin", "sync_end"),
             ("post-sync to briefing ready", "sync_end", "briefing_ready"),
         ]
+        required = {point for _, first, last in stages for point in (first, last)}
+        if missing := required.difference(points):
+            raise ValueError(f"Incomplete startup evidence: {path.name}: {sorted(missing)}")
         for stage, first, last in stages:
             if first not in points or last not in points or "launch" not in points:
                 continue
@@ -126,6 +136,11 @@ def extract(root):
     return rows, trace, checkpoints, assets
 
 
+def write_if_changed(path, content):
+    if not path.exists() or path.read_bytes() != content:
+        path.write_bytes(content)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("evidence", type=Path)
@@ -135,13 +150,15 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     for name, data in [("stages", rows), ("packets", trace), ("checkpoints", checkpoints), ("assets", assets)]:
         if data:
-            with (args.output / f"{name}.csv").open("w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=list(data[0]))
-                writer.writeheader()
-                writer.writerows(data)
+            f = io.StringIO(newline="")
+            writer = csv.DictWriter(f, fieldnames=list(data[0]))
+            writer.writeheader()
+            writer.writerows(data)
+            write_if_changed(args.output / f"{name}.csv", f.getvalue().encode())
     import matplotlib
 
     matplotlib.use("Agg")
+    matplotlib.rcParams["svg.hashsalt"] = "dxx-redux-startup-v1"
     import matplotlib.pyplot as plt
 
     labels = list(dict.fromkeys((r["game"], r["sample"], r["peer"]) for r in rows))
@@ -168,7 +185,10 @@ def main():
     ax.grid(axis="x", alpha=0.2)
     fig.tight_layout()
     for extension in ("svg", "png"):
-        fig.savefig(args.output / f"startup.{extension}", dpi=160, bbox_inches="tight")
+        buffer = io.BytesIO()
+        metadata = {"Date": None} if extension == "svg" else {"Software": "dxx-redux startup chart"}
+        fig.savefig(buffer, format=extension, dpi=160, bbox_inches="tight", metadata=metadata)
+        write_if_changed(args.output / f"startup.{extension}", buffer.getvalue())
     print(f"{len(rows)} stages; {len(trace)} packet markers")
 
 
