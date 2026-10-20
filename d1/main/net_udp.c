@@ -7557,12 +7557,14 @@ net_udp_do_join_game(ubyte join_as_obs)
 		return 0;
 	}
 
+	STARTUP_SYNC_TRACE("join_mission_begin");
 	if (!load_mission_by_name(Netgame.mission_name))
 	{
 		nm_messagebox(NULL, 1, TXT_OK, TXT_MISSION_NOT_FOUND);
 		return 0;
 	}
 
+	STARTUP_SYNC_TRACE("join_mission_end");
 	if (!net_udp_join_level_available())
 		return 0;
 

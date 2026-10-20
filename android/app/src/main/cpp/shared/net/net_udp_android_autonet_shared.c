@@ -117,6 +117,7 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		}
 
 		if (timer_query() >= last_req + F1_0) {
+			STARTUP_SYNC_TRACE("auto_info_request");
 			net_udp_request_game_info(host, 0);
 			req_count++;
 			if (req_count == 1 || req_count % 5 == 0)
@@ -134,6 +135,7 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		}
 
 		if (Netgame.protocol.udp.valid == 1) {
+			STARTUP_SYNC_TRACE("auto_info_received");
 			net_udp_android_mpdiag("auto_join: received game info after %d reqs", req_count);
 			/* net_udp_process_game_info overwrites the chosen host slot's
 			 * address with the GAME_INFO reply sender. Inside emulator and
@@ -175,10 +177,12 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
                       int player_spew_no_expire)
 {
 	/* Load the requested mission */
+	STARTUP_SYNC_TRACE("host_mission_begin");
 	if (mission == NULL || !load_mission_by_name((char *) mission)) {
 		net_udp_android_mpdiag("auto_host: mission '%s' not found", mission ? mission : "(null)");
 		return 0;
 	}
+	STARTUP_SYNC_TRACE("host_mission_end");
 	if (level_num < 1 || level_num > Last_level) {
 		net_udp_android_mpdiag("auto_host: level %d is outside mission '%s' range 1-%d",
 		                       level_num, mission, Last_level);
