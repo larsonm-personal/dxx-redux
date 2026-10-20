@@ -13,6 +13,7 @@ import json
 import re
 from pathlib import Path
 
+from chart_lan_parallel_load import read_log
 from chart_lan_startup import write_if_changed
 
 
@@ -22,9 +23,11 @@ def native_events(path):
         return result
     for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
         stamp = re.match(r"\s*(\d+\.\d+)\s", line)
-        if not stamp or "[STARTUP-" not in line:
+        if not stamp or ("[STARTUP-" not in line and "main_menu: ACTIVATED" not in line):
             continue
         fields = dict(re.findall(r"(\w+)=([^ ]+)", line))
+        if "main_menu: ACTIVATED" in line:
+            fields["event"] = "main_menu_activated"
         result.append({"time": float(stamp[1]), "source": f"{path.name}:{number}", "line": line.strip(), **fields})
     return result
 
@@ -43,6 +46,30 @@ def local_interval(events, begin, end):
         return None
     start = starts[-1]
     return {"seconds": round(final["time"] - start["time"], 3), "begin": start["source"], "end": final["source"]}
+
+
+def loaded_readiness(directory, case, passed, host_events):
+    """Match observed dual-peer readiness counters without aligning device clocks."""
+    if not passed or case.startswith(("three-player", "old-")) or not named(host_events, "sync_send_begin"):
+        return None
+    host, host_loads = read_log(directory / f"{directory.name}-emulator-5554-logcat.txt")
+    client, client_loads = read_log(directory / f"{directory.name}-emulator-5556-logcat.txt")
+    accepted = named(host, "request_ready_accepted")[0]
+    matching = [event for event in named(client, "readiness_send") if event.get("counter") == accepted.get("counter")]
+    assert host_loads and client_loads and matching, f"Missing loaded-readiness evidence: {directory}"
+    assert all(event["time"] >= client_loads[0]["end"] for event in matching), (
+        f"Premature client readiness: {directory}"
+    )
+    assert named(host, "sync_send_begin")[0]["time"] >= accepted["time"] >= host_loads[0]["end"], (
+        f"Premature host SYNC: {directory}"
+    )
+    return {
+        "verified": True,
+        "client_load": client_loads[0]["source"],
+        "readiness_send": matching[0]["source"],
+        "host_load": host_loads[0]["source"],
+        "readiness_accepted": accepted["source"],
+    }
 
 
 def summarize(root):
@@ -70,11 +97,14 @@ def summarize(root):
             named(controller, "host-loss.recovered")
             + named(controller, "three.loss.terminal")
             + named(controller, "host-failure.terminal")
+            + named(controller, "cancel.terminal")
         )
+        passed = bool(named(controller, "case.pass"))
         row = {
             "game": game,
             "case": case,
-            "case_pass_recorded": bool(named(controller, "case.pass")),
+            "case_pass_recorded": passed,
+            "loaded_readiness": loaded_readiness(directory, case, passed, host),
             "host_kill_recorded": bool(kill),
             "controller_host_loss_to_observed_menu_s": round(
                 (recovered[-1]["controller_ms"] - kill[-1]["controller_ms"]) / 1000, 3
@@ -82,6 +112,7 @@ def summarize(root):
             if kill and recovered
             else None,
             "client_local_sync_wait": local_interval(client, "level_sync_flush", "initial_sync_timeout"),
+            "client_timeout_to_main_menu": local_interval(client, "initial_sync_timeout", "main_menu_activated"),
             "host_local_loading_wait": local_interval(host, "wait_requests_flush", "initial_load_peer_lost"),
             "third_local_sync_wait": local_interval(third, "level_sync_flush", "initial_sync_timeout"),
             "positive_terminal_menu_observations": sum(
@@ -138,9 +169,11 @@ def main():
         "game",
         "case",
         "case_pass_recorded",
+        "loaded_readiness_verified",
         "host_kill_recorded",
         "controller_host_loss_to_observed_menu_s",
         "client_wait_s",
+        "client_timeout_to_menu_s",
         "host_wait_s",
         "third_wait_s",
         "positive_terminal_menu_observations",
@@ -154,8 +187,10 @@ def main():
     writer.writeheader()
     for case in result["cases"]:
         row = {key: case.get(key) for key in fields}
+        row["loaded_readiness_verified"] = (case["loaded_readiness"] or {}).get("verified")
         for column, key in (
             ("client_wait_s", "client_local_sync_wait"),
+            ("client_timeout_to_menu_s", "client_timeout_to_main_menu"),
             ("host_wait_s", "host_local_loading_wait"),
             ("third_wait_s", "third_local_sync_wait"),
         ):
