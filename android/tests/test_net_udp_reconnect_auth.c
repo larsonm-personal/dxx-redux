@@ -577,6 +577,10 @@ static int test_launch_admission_cannot_become_loaded_readiness(void)
 	CHECK(memcmp(ready_message, retagged_message, ready_size) == 0);
 	CHECK(admission_size != retagged_size || memcmp(admission_message, retagged_message, ready_size) != 0);
 	CHECK(android_net_udp_launch_admission_bind_purpose(UPID_LAUNCH_ADMISSION, payload, sizeof(payload), sizeof(payload)) == 0);
+	CHECK(android_net_udp_launch_load_timeout(1, 1, 15000, 1000) == 60000);
+	CHECK(android_net_udp_launch_load_timeout(0, 1, 15000, 1000) == 15000);
+	CHECK(android_net_udp_launch_load_timeout(1, 0, 15000, 1000) == 15000);
+	CHECK(android_net_udp_launch_load_timeout(1, 1, 90000, 1000) == 90000);
 	CHECK(android_net_udp_launch_admission_allowed(1, 1, 1, 1, 0, 1, 1));
 	CHECK(!android_net_udp_launch_admission_allowed(0, 1, 1, 1, 0, 1, 1));
 	CHECK(!android_net_udp_launch_admission_allowed(1, 0, 1, 1, 0, 1, 1));

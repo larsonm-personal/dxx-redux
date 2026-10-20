@@ -113,6 +113,12 @@ def check_pair(host_path, client_path, case):
         assert ignored.get("status") == "3", "Duplicate was not ignored in WAITING"
         assert ignored["time"] < accepted["time"]
         first(ce, "load_hold_end")
+    if case == "long-client":
+        hold = first(ce, "load_hold_begin")
+        end = first(ce, "load_hold_end")
+        assert end["time"] - hold["time"] >= 19.9
+        wait = first(he, "wait_requests_flush")
+        assert accepted["time"] - wait["time"] > 15, "Long load did not cross old timeout"
     if case == "slow-host":
         first(he, "load_hold_end")
     return row
@@ -139,7 +145,17 @@ def main():
         rows.append(row)
     assert rows, "No peer captures found"
     if not args.allow_incomplete:
-        cases = {"1", "2", "3", "slow-host", "slow-client-duplicate", "dropped-admission", "cancel-client", "retry"}
+        cases = {
+            "1",
+            "2",
+            "3",
+            "slow-host",
+            "slow-client-duplicate",
+            "long-client",
+            "dropped-admission",
+            "cancel-client",
+            "retry",
+        }
         assert {(r["game"], r["case"]) for r in rows} == {(g, c) for g in ("d1", "d2") for c in cases}, (
             "Incomplete experiment"
         )

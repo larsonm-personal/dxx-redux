@@ -47,3 +47,26 @@ Implementation checkpoint:
 - cmake rechecked at 66e5e27da9850a9f142ac5c13d9e65432d48f4e3;
   PR103 remains open/unmerged at 01401425aff549eefd8b5a9e9fd8a8458d01a9b8.
 - Runtime overlap and fault results pending CI; not yet established.
+
+Long-load boundary review:
+Early admission places client loading inside the host WAITING interval, unlike
+serialized loading. The old15s timeout could therefore disconnect a legitimate
+slow loader. Initial launcher host StartNewLevel now uses a bounded60s loading
+allowance while WAITING, without fabricating packet timestamps or readiness.
+The flag is reset after that initial call and at net_udp_init; other waits retain
+15s. An absent initial peer still expires; loads exceeding this60s post-host-load
+allowance require another attempt. Debug delay cap is30s and a20s client hold
+crosses the old boundary. Cancellation verification allows90s to observe the
+60s expiry. These deliberate holds are outside all matched timing samples.
+
+Coverage limits: retry means a fresh session after reset, not reconnecting into
+the same running session. Host-loss recovery is not exercised by these cases.
+Run39447586543 at5967495dc3bc0ed3461d0062e59da431ec6cebe8 stopped during APK
+preparation before emulator execution; build diagnostics are being recovered.
+
+Build diagnostics recovered via export39449195787: jni_main.c lacked auto_net.h,
+so the four new globals were undeclared. Added that shared header. This is a
+source compile failure, not an infrastructure outage despite the generic lane
+receipt's setup classification. No samples were executed in39447586543.
+Native policy/auth tests still pass3/3 for both engines after the loading grace
+change. Six fault cases per game now include the20s boundary case.

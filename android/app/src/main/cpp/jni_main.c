@@ -32,6 +32,7 @@
 #include "android_level_preview.h"
 #include "android_lifecycle_actions.h"
 #include "jni_string.h"
+#include "auto_net.h"
 #include "android_graphics_safety.h"
 #include "android_gpu_capabilities.h"
 #include "ogl_msaa_android.h"
@@ -1309,7 +1310,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetLanStartupAdmission(JNIEnv *env, job
 	(void) thiz;
 	auto_net_lan_startup = enabled ? 1 : 0;
 #ifndef NDEBUG
-	auto_net_startup_test_delay_ms = delay_ms >= 0 && delay_ms <= 8000 ? delay_ms : 0;
+	auto_net_startup_test_delay_ms = delay_ms >= 0 && delay_ms <= 30000 ? delay_ms : 0;
 	auto_net_startup_test_drop_admission = drop ? 1 : 0;
 	auto_net_startup_test_duplicates = duplicates >= 0 && duplicates <= 2 ? duplicates : 0;
 #else
