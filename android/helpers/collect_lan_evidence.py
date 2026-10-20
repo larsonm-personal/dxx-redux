@@ -69,7 +69,7 @@ def main():
         "export_run": args.export_run,
         "repository": args.repo,
         "gzip_sha256": hashlib.sha256(blob).hexdigest(),
-        "note": "Bounded text excerpts; observation state reduced; only selected small screenshots included. Original hashes refer to full CI source files.",
+        "note": "Bounded text excerpts; observation state reduced. Original hashes refer to full CI source files. Screenshots remain in the original artifact unless explicitly listed here.",
         "files": hashes,
     }
     (args.output / "export-provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")

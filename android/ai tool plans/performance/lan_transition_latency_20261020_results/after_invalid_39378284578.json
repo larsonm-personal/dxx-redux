@@ -1,0 +1,261 @@
+{
+  "run_id": 39378284578,
+  "artifact_id": 12244907274,
+  "revision": "9268919164a114b7b97130afbf35bc801479fc1f",
+  "status": "INVALID_EXPERIMENT",
+  "reason": "Native JSON parser rejected formatter-added trailing commas; no valid Skip/Exit automation ran. No completed sample. Excluded from speed comparison.",
+  "terminal_failure": "Timed out observing scores.ready on emulator-5554, emulator-5556",
+  "automation_results": {
+    "d1-1-emulator-5554-skip1-automation_result.json": {
+      "result": "FAIL",
+      "run_id": "",
+      "steps_completed": 0,
+      "total_steps": 0,
+      "reason": "Failed to load automation script",
+      "elapsed_ms": 16
+    },
+    "d1-1-emulator-5556-skip1-automation_result.json": {
+      "result": "FAIL",
+      "run_id": "",
+      "steps_completed": 0,
+      "total_steps": 0,
+      "reason": "Failed to load automation script",
+      "elapsed_ms": 12
+    }
+  },
+  "controller_events": [
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "launcher.request",
+      "controller_ms": 2021.5556,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "launcher.ready",
+      "controller_ms": 8117.8692,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "launcher.request",
+      "controller_ms": 8898.8135,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "launcher.ready",
+      "controller_ms": 14930.5704,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "lan_host_lobby.request",
+      "controller_ms": 14938.1595,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "lan_host_lobby.return",
+      "controller_ms": 15180.7732,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "lan_discover.request",
+      "controller_ms": 15181.6461,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "lan_discover.return",
+      "controller_ms": 15415.5336,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "both",
+      "event": "lobby.joined",
+      "controller_ms": 15984.3736,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "both",
+      "event": "lobby.ready",
+      "controller_ms": 16262.7714,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "lan_start_game.request",
+      "controller_ms": 16263.5152,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "lan_start_game.return",
+      "controller_ms": 16401.7471,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "launch_game.request",
+      "controller_ms": 16402.9768,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "launch_game.return",
+      "controller_ms": 16454.6003,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "launch_game.request",
+      "controller_ms": 16455.4254,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "launch_game.return",
+      "controller_ms": 16514.7516,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "briefing1.ready",
+      "controller_ms": 33810.1697,
+      "data": {
+        "request_ms": 32675.5688
+      }
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "briefing1.ready",
+      "controller_ms": 34963.7046,
+      "data": {
+        "request_ms": 33815.3157
+      }
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "skip.request",
+      "controller_ms": 38129.6709,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "skip.return",
+      "controller_ms": 38191.1493,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "skip.request",
+      "controller_ms": 38191.7881,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "skip.return",
+      "controller_ms": 38524.6396,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "level1.ready",
+      "controller_ms": 154323.9424,
+      "data": {
+        "request_ms": 153070.8593
+      }
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "level1.ready",
+      "controller_ms": 155292.641,
+      "data": {
+        "request_ms": 154324.6594
+      }
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "exit.request",
+      "controller_ms": 157073.8656,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5554",
+      "event": "exit.return",
+      "controller_ms": 157131.5314,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "exit.request",
+      "controller_ms": 157131.9482,
+      "data": null
+    },
+    {
+      "sample": 1,
+      "game": "d1",
+      "peer": "emulator-5556",
+      "event": "exit.return",
+      "controller_ms": 157169.5738,
+      "data": null
+    }
+  ],
+  "source_export_run": 39379882894
+}

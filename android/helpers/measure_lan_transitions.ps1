@@ -2,7 +2,7 @@
 # Controller durations include command/poll overhead. Native script logs are local clocks
 function Write-LatencyEvent([string]$Peer, [string]$Event, $Data = $null) {
     [ordered]@{ sample = $script:latencySample; game = $script:latencyGame; peer = $Peer
-        event = $Event; controller_ms = $script:latencyClock.Elapsed.TotalMilliseconds; data = $Data 
+        event = $Event; controller_ms = $script:latencyClock.Elapsed.TotalMilliseconds; data = $Data
     } |
         ConvertTo-Json -Depth 30 -Compress | Add-Content (Join-Path $outputDirectory 'events.jsonl') -Encoding utf8
 }
@@ -77,7 +77,7 @@ function Invoke-LanTransitionMeasurements {
         clock = 'controller Stopwatch; no device clock subtraction'; samples = 3
         polling = 'Get-GameIntrospection -Fresh includes 800 ms sleep per peer plus ADB; observations are upper bounds'
         cache = 'sample 1 app data cleared; samples 2/3 process cold with app assets/cache retained; level 2 process warm'
-        host = $hostSerial; client = $clientSerial 
+        host = $hostSerial; client = $clientSerial
     } | ConvertTo-Json | Set-Content (Join-Path $outputDirectory 'experiment.json')
     foreach ($serial in @($hostSerial, $clientSerial)) {
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'getprop') -Seconds 10 | Set-Content (Join-Path $outputDirectory "$serial-properties.txt")
