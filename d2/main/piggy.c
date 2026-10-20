@@ -91,6 +91,21 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define MAC_ICE_PIGSIZE         4923425
 #define MAC_WATER_PIGSIZE       4832403
 
+int piggy_is_mac_pigsize(PHYSFS_sint64 size)
+{
+	switch (size) {
+		case MAC_ALIEN1_PIGSIZE:
+		case MAC_ALIEN2_PIGSIZE:
+		case MAC_FIRE_PIGSIZE:
+		case MAC_GROUPA_PIGSIZE:
+		case MAC_ICE_PIGSIZE:
+		case MAC_WATER_PIGSIZE:
+			return 1;
+		default:
+			return 0;
+	}
+}
+
 ubyte *BitmapBits = NULL;
 ubyte *SoundBits = NULL;
 
@@ -1499,20 +1514,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 			//} 
 
 #ifndef MACDATA
-			switch (pigsize) {
-			default:
-				if (!GameArg.EdiMacData)
-					break;
-				// otherwise, fall through...
-			case MAC_ALIEN1_PIGSIZE:
-			case MAC_ALIEN2_PIGSIZE:
-			case MAC_FIRE_PIGSIZE:
-			case MAC_GROUPA_PIGSIZE:
-			case MAC_ICE_PIGSIZE:
-			case MAC_WATER_PIGSIZE:
+			if (piggy_is_mac_pigsize(pigsize) || GameArg.EdiMacData) {
 				rle_swap_0_255( bmp );
 				memcpy(&zsize, bmp->bm_data, 4);
-				break;
 			}
 #endif
 
@@ -1549,19 +1553,8 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 			Piggy_bitmap_cache_next+=bmp->bm_h*bmp->bm_w;
 
 #ifndef MACDATA
-			switch (pigsize) {
-			default:
-				if (!GameArg.EdiMacData)
-					break;
-				// otherwise, fall through...
-			case MAC_ALIEN1_PIGSIZE:
-			case MAC_ALIEN2_PIGSIZE:
-			case MAC_FIRE_PIGSIZE:
-			case MAC_GROUPA_PIGSIZE:
-			case MAC_ICE_PIGSIZE:
-			case MAC_WATER_PIGSIZE:
+			if (piggy_is_mac_pigsize(pigsize) || GameArg.EdiMacData) {
 				swap_0_255( bmp );
-				break;
 			}
 #endif
 		}

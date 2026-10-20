@@ -908,7 +908,7 @@ class SetupActivity : ComponentActivity() {
 
     private val commandReceiver =
         object : BroadcastReceiver() {
-            private fun runIo(block: () -> Unit) {
+            private fun runIo(block: suspend () -> Unit) {
                 val ordered = isOrderedBroadcast
                 val pendingResult = goAsync()
                 this@SetupActivity.lifecycleScope.launch(Dispatchers.IO) {
@@ -1256,6 +1256,33 @@ class SetupActivity : ComponentActivity() {
                             val fsm = FileSetManager(filesDir)
                             fsm.clearSet(name, this@SetupActivity)
                             Log.i("DXX-Setup", "clear_set '$name': ok")
+                            requestSetupRefresh()
+                        }
+                    }
+
+                    "audit_base_assets", "clear_base_assets" -> {
+                        val game = intent.getStringExtra("game") ?: return
+                        val confirmed = intent.getBooleanExtra("confirmed", false)
+                        runIo {
+                            require(game == "d1" || game == "d2")
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val reviewed = auditBaseGameAssets(setDir, game)
+                            if (cmd == "clear_base_assets") {
+                                check(confirmed) { "Game-file cleanup requires explicit confirmation" }
+                                clearBaseGameAssets(setDir, reviewed)
+                            }
+                            val after = auditBaseGameAssets(setDir, game)
+                            val result =
+                                org.json
+                                    .JSONObject()
+                                    .put("set", setDir.name)
+                                    .put("game", game)
+                                    .put("reasons", org.json.JSONArray(reviewed.reasons))
+                                    .put("before", org.json.JSONArray(reviewed.assets.map { it.name }))
+                                    .put("after", org.json.JSONArray(after.assets.map { it.name }))
+                                    .put("cleared", cmd == "clear_base_assets")
+                            AtomicFilePublication.writeUtf8(File(filesDir, "base_asset_audit.json"), result.toString(2))
                             requestSetupRefresh()
                         }
                     }
@@ -5838,6 +5865,13 @@ private fun SetupScreen(
                     }
 
                     // -- File sections --------------------
+                    BaseGameAssetWarning(
+                        setDir = setDir,
+                        refreshTrigger = refreshTrigger,
+                        importing =
+                            scanning || isHashing || zipExtracting || missionArchiveImporting || resultImporting,
+                        onCleared = onRefresh,
+                    )
                     var d2Expanded by remember { mutableStateOf(false) }
                     var d1Expanded by remember { mutableStateOf(false) }
 

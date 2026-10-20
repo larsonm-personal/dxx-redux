@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 #include "pstypes.h"
 #include "inferno.h"
+#include "args.h"
 #include "strutil.h"
 #include "gr.h"
 #include "grdef.h"
@@ -257,8 +258,24 @@ static int bitmap_read_d1(grs_bitmap *bitmap, PHYSFS_file *fp, int data_start,
 	int preserve_palette, ubyte *colormap)
 {
 	PHYSFS_sint64 size = PHYSFS_fileLength(fp);
-	return bitmap_read_source(bitmap, fp, data_start, header, next, end, palette,
-		preserve_palette, colormap, size == D1_MAC_PIGSIZE || size == D1_MAC_SHARE_PIGSIZE);
+	const int mac_data = size == D1_MAC_PIGSIZE || size == D1_MAC_SHARE_PIGSIZE;
+	DiskBitmapHeader decoded = *header;
+	/* Mac cockpit dimensions and wide RLE rows are implicit in the D1 header
+	 * Match native D1's high-resolution cockpit, status and rear-view decoding */
+	if (mac_data && (!d_strnicmp(header->name, "cockpit", 7) ||
+	                 !d_strnicmp(header->name, "status", 6) ||
+	                 !d_strnicmp(header->name, "rearview", 8))) {
+		decoded.width = 128;
+		decoded.wh_extra = (decoded.wh_extra & 0xf0) | 2;
+		if (decoded.flags & BM_FLAG_RLE)
+			decoded.flags |= BM_FLAG_RLE_BIG;
+		if (!d_strnicmp(header->name, "cockpit", 7) || !d_strnicmp(header->name, "rearview", 8)) {
+			decoded.height = 224;
+			decoded.wh_extra = (decoded.wh_extra & 0x0f) | 0x10;
+		}
+	}
+	return bitmap_read_source(bitmap, fp, data_start, &decoded, next, end, palette,
+		preserve_palette, colormap, mac_data);
 }
 
 #define D1_MAX_TEXTURES 800
@@ -444,7 +461,7 @@ d1_bitmap_generation *d1_in_d2_read_feature_bitmaps(const char *pig_name, const 
 		else
 			snprintf(generation->names[i], sizeof(generation->names[i]), "%s", name);
 		if (!name[0] || !bitmap_read_source(&generation->bitmaps[i], fp, (int)data_start, &header,
-			NULL, NULL, generation->palette, 1, identity, 0))
+			NULL, NULL, generation->palette, 1, identity, piggy_is_mac_pigsize(size) || GameArg.EdiMacData))
 			goto failed;
 	}
 	input_demo_assets_note_file("d2_pig", pig_name, fp);

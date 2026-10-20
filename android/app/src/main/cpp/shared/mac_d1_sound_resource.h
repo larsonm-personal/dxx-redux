@@ -35,8 +35,8 @@ static int mac_d1_range(size_t offset, size_t length, size_t size)
 /* Validate the whole bank before exposing samples or registering any sounds
  * Only standard mono 11025 Hz Sound Manager format-2 bufferCmd resources are
  * supported; compressed/extended sound headers must not be treated as PCM */
-static int mac_d1_parse_sound_resource(const unsigned char *bytes, size_t size,
-                                       struct mac_d1_sample samples[MAC_D1_SOUND_COUNT])
+static inline int mac_d1_parse_sound_resource(const unsigned char *bytes, size_t size,
+                                              struct mac_d1_sample samples[MAC_D1_SOUND_COUNT])
 {
 	if (!bytes || !samples || size < 16 || size > MAC_D1_RESOURCE_MAX_BYTES) return 0;
 	memset(samples, 0, sizeof(*samples) * MAC_D1_SOUND_COUNT);

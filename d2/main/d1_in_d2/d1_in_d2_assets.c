@@ -44,6 +44,7 @@
 #include "d1_in_d2_assets.h"
 #include "d1_pig_validation.h"
 #include "d1_shareware_sound.h"
+#include "mac_d1_sound_resource.h"
 #include "laser.h"
 #include "weapon.h"
 #include "android_log.h"
@@ -132,7 +133,6 @@ const char *d1_in_d2_source_edition_error(int64_t pig_size)
 	switch (pig_size) {
 		case D1_10_BIG_PIGSIZE:
 		case D1_10_PIGSIZE:
-		case D1_MAC_PIGSIZE:
 		case D1_MAC_SHARE_PIGSIZE:
 			return "This Descent 1 edition is not supported in the Descent 2 engine. Launch it with Descent 1";
 		default:
@@ -556,6 +556,70 @@ static int d1_pig_data_start(PHYSFS_file *fp, int pigsize, int *pig_data_start)
 	}
 }
 
+static int read_mac_sound_bank(const char *pig_name, const ubyte maps[2][D1_MAX_PIG_SOUNDS],
+                              d1_sound_generation *bank, const char **error)
+{
+	PHYSFS_file *file = NULL;
+	PHYSFS_sint64 length;
+	struct mac_d1_sample samples[MAC_D1_SOUND_COUNT];
+	ubyte *resource_bytes = NULL, *data = NULL;
+	char *path = d_malloc(strlen(pig_name) + sizeof(MAC_D1_RESOURCE_FILE));
+	char *leaf = path;
+	size_t bytes = 0;
+	int i, valid = 0;
+	*error = "Mac D1 sound resources missing: reimport the MacPlay disc";
+	if (!path)
+		goto done;
+	strcpy(path, pig_name);
+	for (char *p = path; *p; ++p)
+		if (*p == '/' || *p == '\\')
+			leaf = p + 1;
+	strcpy(leaf, MAC_D1_RESOURCE_FILE);
+	file = PHYSFSX_openReadBuffered(path);
+	if (!file)
+		goto done;
+	*error = "invalid Mac D1 sound resources";
+	length = PHYSFS_fileLength(file);
+	if (length < 16 || length > MAC_D1_RESOURCE_MAX_BYTES)
+		goto done;
+	resource_bytes = d_malloc((size_t)length);
+	if (!resource_bytes || PHYSFS_read(file, resource_bytes, 1, (PHYSFS_uint32)length) != length ||
+	    !mac_d1_parse_sound_resource(resource_bytes, (size_t)length, samples))
+		goto done;
+	*error = "Mac D1 sound map references";
+	if (!d1_pig_validate_sound_map(maps[0], D1_MAX_PIG_SOUNDS, MAC_D1_SOUND_COUNT) ||
+	    !d1_pig_validate_sound_map(maps[1], D1_MAX_PIG_SOUNDS, D1_MAX_PIG_SOUNDS))
+		goto done;
+	for (i = 0; i < MAC_D1_SOUND_COUNT; ++i)
+		bytes += samples[i].length;
+	data = d_malloc(bytes + 16);
+	if (!data)
+		goto done;
+	bank->data = data;
+	bank->bytes = bytes;
+	bank->count = MAC_D1_SOUND_COUNT;
+	for (i = 0; i < MAC_D1_SOUND_COUNT; ++i) {
+		digi_sound *sample = &bank->samples[i];
+		snprintf(bank->names[i], sizeof(bank->names[i]), "SND%04d", i);
+		sample->data = data;
+		sample->length = samples[i].length;
+		sample->bits = 8;
+		sample->freq = SAMPLE_RATE_11K;
+		memcpy(data, samples[i].data, samples[i].length);
+		data += samples[i].length;
+	}
+	input_demo_assets_note_file("d1_mac_sounds", path, file);
+	valid = 1;
+done:
+	if (file)
+		PHYSFS_close(file);
+	if (resource_bytes)
+		d_free(resource_bytes);
+	if (path)
+		d_free(path);
+	return valid;
+}
+
 int d1_in_d2_read_sound_bank(PHYSFS_file *fp, int pigsize,
                               const ubyte maps[2][D1_MAX_PIG_SOUNDS],
                               d1_sound_generation *bank, const char **error)
@@ -911,8 +975,11 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale
 		goto failed;
 	stage = "bitmap collection or palette";
 	generation->bitmap_data = d1_in_d2_read_bitmaps(pig_name, palette_name);
-	if (!generation->bitmap_data || !d1_in_d2_validate_asset_references(generation, &stage) ||
-	    !d1_in_d2_read_sound_bank(fp, (int)file_size, generation->sound_maps, &generation->sound_bank, &stage))
+	if (!generation->bitmap_data || !d1_in_d2_validate_asset_references(generation, &stage))
+		goto failed;
+	if (!(file_size == D1_MAC_PIGSIZE
+	          ? read_mac_sound_bank(pig_name, generation->sound_maps, &generation->sound_bank, &stage)
+	          : d1_in_d2_read_sound_bank(fp, (int)file_size, generation->sound_maps, &generation->sound_bank, &stage)))
 		goto failed;
 	stage = "base source identity";
 	{

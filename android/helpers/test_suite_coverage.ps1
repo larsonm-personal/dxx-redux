@@ -77,6 +77,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_gog_installer_d1_unified'
             'test_gog_installer_redbook_unified'
             'test_mac_extract_saf'
+            'test_mac_edition_assets'
             'test_saf_archiver'
             'test_saf_redbook'
         )

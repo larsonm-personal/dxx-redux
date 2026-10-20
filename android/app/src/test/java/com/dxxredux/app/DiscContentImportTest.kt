@@ -70,7 +70,7 @@ class DiscContentImportTest {
             disc.virtualPaths.toSet(),
         )
         assertFalse(entries.single { it.id == personal.id }.enabled)
-        assertTrue(File(setDir, "DESCENT2.HOG").isFile)
+        assertTrue(File(setDir, "descent2.hog").isFile)
         assertFalse(
             setDir.walkTopDown().any {
                 it.name in
@@ -98,7 +98,7 @@ class DiscContentImportTest {
                 .single()
                 .id,
         )
-        assertTrue(File(setDir, "DESCENT2.HOG").isFile)
+        assertTrue(File(setDir, "descent2.hog").isFile)
         assertFalse(File(manager.buildProjection("d2"), "missions/d2data/D2CHAOS.MN2").exists())
     }
 

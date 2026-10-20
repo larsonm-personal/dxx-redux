@@ -449,6 +449,7 @@ $testTimeouts = @{
     "test_android_pause_state" = 1200
     "test_audio_mix" = 900
     "test_macplay_audio" = 600
+    "test_mac_edition_assets" = 1500
     "test_store_asset_pipeline" = 7200
     # Run controller response checks in both engines with a 180s child timeout each
     "test_controller_response" = 600

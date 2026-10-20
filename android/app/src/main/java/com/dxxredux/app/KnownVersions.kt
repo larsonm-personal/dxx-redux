@@ -63,6 +63,17 @@ object KnownVersions {
         return entries.firstOrNull { it.sha256 == sha256.lowercase(Locale.ROOT) }?.versionName
     }
 
+    /** Shared bytes may have several recorded release labels; retain all matches */
+    fun matchingVersions(
+        filename: String,
+        sha256: String,
+    ): Set<String> =
+        table[portableGameFilenameIdentity(filename)]
+            .orEmpty()
+            .filter { it.sha256.equals(sha256, ignoreCase = true) }
+            .map { it.versionName }
+            .toSet()
+
     /**
      * Given a set of filename → sha256 pairs, identify the distribution package.
      * Returns the most common version name among matched files, or null if none match.

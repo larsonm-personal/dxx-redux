@@ -58,6 +58,8 @@ extern int Num_aliases;
 
 extern int Piggy_hamfile_version;
 
+int piggy_is_mac_pigsize(PHYSFS_sint64 size);
+
 // an index into the bitmap collection of the piggy file
 typedef struct bitmap_index {
 	ushort index;
