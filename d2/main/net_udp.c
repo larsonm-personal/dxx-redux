@@ -20,6 +20,7 @@
 #endif
 
 #include "pstypes.h"
+#include "../../android/app/src/main/cpp/shared/net/startup_sync_trace.h"
 #include "window.h"
 #include "strutil.h"
 #include "args.h"
@@ -2553,6 +2554,7 @@ static void net_udp_begin_reconnect_proof(
 	    timer_query(), challenge, sizeof(challenge));
 	if (!challenge_len)
 		return;
+	STARTUP_SYNC_TRACE("challenge_send");
 	if (is_proxy)
 		net_udp_send_to_player_proxy(
 		    challenge, challenge_len, player_num, through_player);
@@ -4442,6 +4444,7 @@ void net_udp_send_netgame_update()
 
 int net_udp_send_request(void)
 {
+	STARTUP_SYNC_TRACE("request_send");
 	// Send a request to join a game 'Netgame'.  Returns 0 if we can join this
 	// game, non-zero if there is some problem.
 	int i;
@@ -4992,6 +4995,7 @@ void net_udp_process_request(UDP_sequence_packet *their,
 #ifdef __ANDROID__
 	if (authenticated_player_num >= 0 &&
 	    authenticated_player_num < N_players) {
+		STARTUP_SYNC_TRACE("request_ready_accepted");
 		Players[authenticated_player_num].connected = CONNECT_PLAYING;
 		Netgame.players[authenticated_player_num].LastPacketTime =
 		    timer_query();
@@ -5133,6 +5137,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 
 		case UPID_REQUEST:
 			if (!net_udp_receive_sequence_packet(data, &their, sender_addr)) break;
+			STARTUP_SYNC_TRACE("request_received");
 #ifdef __ANDROID__
 			authenticated_player_num =
 			    android_net_udp_auth_validate_request(
@@ -5216,6 +5221,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			    sizeof(proof));
 			if (!proof_len)
 				break;
+			STARTUP_SYNC_TRACE("proof_send");
 			if (is_proxy)
 				through_player = find_player_by_address(sender_addr);
 			if (is_proxy && through_player < 0)
@@ -5234,6 +5240,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 
 		case UPID_RECONNECT_PROOF:
 		{
+			STARTUP_SYNC_TRACE("proof_received");
 			UDP_sequence_packet reconnect_request;
 			int reconnect_player_num;
 			fix64 reconnect_time = timer_query();
@@ -5307,7 +5314,9 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			if (join_payload && !net_udp_join_accept_sync()) break;
 			rejoin_diag_world("sync_before");
 #endif
+			STARTUP_SYNC_TRACE("sync_received");
 			net_udp_read_sync_packet(data, length, sender_addr);
+			STARTUP_SYNC_TRACE("sync_processed");
 #ifdef __ANDROID__
 			rejoin_diag_world("sync_after");
 			if (join_payload && Network_status == NETSTAT_PLAYING) {
@@ -6898,6 +6907,7 @@ int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sende
 
 int net_udp_send_sync(void)
 {
+	STARTUP_SYNC_TRACE("sync_send_begin");
 	int i, j, np;
 
 	// Check if there are enough starting positions
@@ -7390,7 +7400,9 @@ int net_udp_start_game(void)
 			        Netgame.levelnum, Current_level_num, N_players,
 			        Netgame.max_numplayers, Netgame.mission_name);
 #endif
+		STARTUP_SYNC_TRACE("start_level_begin");
 		StartNewLevel(Netgame.levelnum);
+		STARTUP_SYNC_TRACE("start_level_end");
 #ifdef __ANDROID__
 		if (Netgame.gamemode == NETGAME_COOPERATIVE) {
 			COOPLOG("host StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
@@ -7530,6 +7542,7 @@ int net_udp_wait_for_requests(void)
 
 	m[0].type=NM_TYPE_TEXT; m[0].text = TXT_NET_LEAVE;
 
+	STARTUP_SYNC_TRACE("wait_requests_flush");
 	net_udp_flush();
 
 	Players[Player_num].connected = CONNECT_PLAYING;
@@ -7632,6 +7645,7 @@ net_udp_level_sync(void)
 	}
 #endif
 
+	STARTUP_SYNC_TRACE("level_sync_flush");
 	net_udp_flush(); // Flush any old packets
 	if (N_players == 0)
 	{
@@ -7809,7 +7823,9 @@ int net_udp_do_join_game(ubyte join_as_obs)
 			N_players = 0;
 			Network_rejoined = 0;
 			if (!join_as_obs) change_playernum_to((multi_who_is_master() + 1) % MAX_PLAYERS);
+			STARTUP_SYNC_TRACE("start_level_begin");
 			StartNewLevel(Netgame.levelnum);
+			STARTUP_SYNC_TRACE("start_level_end");
 			if (!net_join_wait_restart()) break;
 			UDP_sequence_packet quit = UDP_Seq;
 			quit.type = UPID_QUIT_JOINING;
@@ -7828,7 +7844,11 @@ int net_udp_do_join_game(ubyte join_as_obs)
 		net_join_wait_end();
 	} else
 #endif
+	{
+		STARTUP_SYNC_TRACE("start_level_begin");
 		StartNewLevel(Netgame.levelnum);
+		STARTUP_SYNC_TRACE("start_level_end");
+	}
 #ifdef __ANDROID__
 	if (Netgame.gamemode == NETGAME_COOPERATIVE) {
 		COOPLOG("join StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
@@ -7893,11 +7913,26 @@ void net_udp_flush()
 	ubyte packet[UPID_MAX_SIZE];
 	struct _sockaddr sender_addr; 
 
+#ifdef __ANDROID__
+	unsigned counts[256] = {0};
+	for (int socket_index = 0; socket_index < 2; ++socket_index) {
+		if (UDP_Socket[socket_index] == -1) continue;
+		while (udp_receive_packet(socket_index, packet, UPID_MAX_SIZE, &sender_addr) > 0)
+			++counts[packet[0]];
+	}
+	for (int type = 0; type < 256; ++type) {
+		if (counts[type]) debug_log_force(DLOG_NETWORK,
+		    "[STARTUP-SYNC] flush_drop level=%d status=%d player=%d type=%d name=%s count=%u",
+		    Current_level_num, Network_status, Player_num, type, msg_name(type), counts[type]);
+	}
+	STARTUP_SYNC_TRACE("flush_end");
+#else
 	if (UDP_Socket[0] != -1)
 		while (udp_receive_packet( 0, packet, UPID_MAX_SIZE, &sender_addr) > 0);
 
 	if (UDP_Socket[1] != -1)
 		while (udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr) > 0);
+#endif
 }
 
 #ifdef __ANDROID__
