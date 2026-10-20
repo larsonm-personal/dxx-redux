@@ -11,6 +11,7 @@ import csv
 import json
 import io
 import re
+import statistics
 from pathlib import Path
 
 
@@ -201,10 +202,84 @@ def write_if_changed(path, content):
         path.write_bytes(content)
 
 
+def save_figure(fig, output, name):
+    for extension in ("svg", "png"):
+        buffer = io.BytesIO()
+        metadata = {"Date": None} if extension == "svg" else {"Software": "dxx-redux startup chart"}
+        fig.savefig(buffer, format=extension, dpi=160, bbox_inches="tight", metadata=metadata)
+        write_if_changed(output / f"{name}.{extension}", buffer.getvalue())
+
+
+def compare(control, candidate, output, plt):
+    def values(root, game, metric):
+        filename = "network_waits" if metric == "flush_to_sync_s" else "stages"
+        with (root / f"{filename}.csv").open() as file:
+            rows = [r for r in csv.DictReader(file) if r["game"] == game and r["peer"] == "5554"]
+        if metric == "flush_to_sync_s":
+            return [float(r[metric]) for r in rows]
+        if metric == "network_sync":
+            return [float(r["duration_s"]) for r in rows if r["stage"] == "native synchronization"]
+        return [
+            sum(float(r["duration_s"]) for r in rows if r["sample"] == sample)
+            for sample in dict.fromkeys(r["sample"] for r in rows)
+        ]
+
+    metrics = [
+        ("flush_to_sync_s", "Host final flush to SYNC"),
+        ("network_sync", "Host native synchronization"),
+        ("launch_ready", "Host launch to briefing protocol ready"),
+    ]
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4))
+    summary = []
+    for ax, (metric, title) in zip(axes, metrics):
+        for index, game in enumerate(("d1", "d2")):
+            before = values(control, game, metric)
+            after = values(candidate, game, metric)
+            summary.append(
+                dict(
+                    game=game,
+                    metric=metric,
+                    control_n=len(before),
+                    candidate_n=len(after),
+                    control_mean_s=statistics.mean(before),
+                    candidate_mean_s=statistics.mean(after),
+                    difference_s=statistics.mean(after) - statistics.mean(before),
+                    control_min_s=min(before),
+                    control_max_s=max(before),
+                    candidate_min_s=min(after),
+                    candidate_max_s=max(after),
+                )
+            )
+            for offset, data, color, label in (
+                (-0.18, before, "#1f77b4", "Original retry"),
+                (0.18, after, "#ff7f0e", "Candidate"),
+            ):
+                ax.bar(
+                    index + offset, statistics.mean(data), width=0.32, color=color, label=label if index == 0 else None
+                )
+                ax.scatter([index + offset] * len(data), data, color="black", s=15, zorder=4)
+        ax.set_xticks([0, 1], ["D1", "D2"])
+        ax.set_title(title, fontsize=10)
+        ax.set_ylabel("Seconds")
+        ax.grid(axis="y", alpha=0.2)
+    axes[0].legend(fontsize=8)
+    fig.suptitle(
+        "Matched emulator experiment: means and individual samples\nSame probes and harness; configuration-reset launches; n=3 per game"
+    )
+    fig.tight_layout()
+    save_figure(fig, output, "comparison")
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=list(summary[0]), lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(summary)
+    write_if_changed(output / "comparison.csv", buffer.getvalue().encode())
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("evidence", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--compare", type=Path, help="Previously generated matched control result directory")
     args = parser.parse_args()
     rows, trace, checkpoints, assets, auth = extract(args.evidence)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -246,16 +321,14 @@ def main():
     ax.invert_yaxis()
     ax.set_xlabel("Seconds since this device received launch_game")
     ax.set_title(
-        "Observed startup critical path on each device\nSample 1: cleared app data; samples 2-3: retained data, restarted process"
+        "Observed startup critical path on each device\nAll samples reset configs/process; sample 1 clears app data; 2-3 retain assets/pilots"
     )
     ax.legend(loc="upper left", bbox_to_anchor=(0, -0.13), ncol=3, fontsize=8)
     ax.grid(axis="x", alpha=0.2)
     fig.tight_layout()
-    for extension in ("svg", "png"):
-        buffer = io.BytesIO()
-        metadata = {"Date": None} if extension == "svg" else {"Software": "dxx-redux startup chart"}
-        fig.savefig(buffer, format=extension, dpi=160, bbox_inches="tight", metadata=metadata)
-        write_if_changed(args.output / f"startup.{extension}", buffer.getvalue())
+    save_figure(fig, args.output, "startup")
+    if args.compare:
+        compare(args.compare, args.output, args.output, plt)
     print(f"{len(rows)} stages; {len(trace)} packet markers")
 
 

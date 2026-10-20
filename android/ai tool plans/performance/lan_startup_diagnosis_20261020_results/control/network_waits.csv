@@ -1,0 +1,7 @@
+revision,game,sample,peer,idle_after_flush_s,authentication_s,flush_to_sync_s,dropped_requests,dropped_proofs,flush_source,request_source,accepted_source,sync_source
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,1.628,0.204,1.844,1,1,d1-1-emulator-5554-logcat.txt:292,d1-1-emulator-5554-logcat.txt:294,d1-1-emulator-5554-logcat.txt:304,d1-1-emulator-5554-logcat.txt:305
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,2.037,0.075,2.125,1,1,d1-2-emulator-5554-logcat.txt:218,d1-2-emulator-5554-logcat.txt:227,d1-2-emulator-5554-logcat.txt:230,d1-2-emulator-5554-logcat.txt:231
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,2.005,0.101,2.121,2,0,d1-3-emulator-5554-logcat.txt:200,d1-3-emulator-5554-logcat.txt:209,d1-3-emulator-5554-logcat.txt:212,d1-3-emulator-5554-logcat.txt:213
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,2.326,0.224,2.563,2,0,d2-1-emulator-5554-logcat.txt:318,d2-1-emulator-5554-logcat.txt:337,d2-1-emulator-5554-logcat.txt:340,d2-1-emulator-5554-logcat.txt:341
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,2.061,0.156,2.386,2,0,d2-2-emulator-5554-logcat.txt:325,d2-2-emulator-5554-logcat.txt:339,d2-2-emulator-5554-logcat.txt:346,d2-2-emulator-5554-logcat.txt:347
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,2.004,0.172,2.192,2,0,d2-3-emulator-5554-logcat.txt:311,d2-3-emulator-5554-logcat.txt:329,d2-3-emulator-5554-logcat.txt:332,d2-3-emulator-5554-logcat.txt:333

@@ -123,3 +123,86 @@ Scoped mixed code quality passed. Both desktop net_udp objects compile with the
 new hooks. D1 and D2 each pass the existing reconnect-auth, initial-sync-retry,
 and co-op-transition-policy CTests (3/3 per engine). Android execution status and
 any candidate fix results are recorded below when available.
+
+## Packet evidence: cause confirmed
+
+Diagnostic run [39437557537](https://github.com/larsonm-personal/dxx-redux/actions/runs/39437557537)
+passed all 42 native scripts with all nonzero steps complete. Artifact
+12275100237 contains the complete device captures; export 39440911594 recovered
+startup excerpts. `trace/network_waits.csv` records exact device-local endpoints:
+
+| Sample | Requests / proofs discarded | Final flush to next request | Final flush to SYNC |
+| --- | ---: | ---: | ---: |
+| D1 1 | 1 / 1 | 1.348 s | 1.456 s |
+| D1 2 | 1 / 1 | 1.994 s | 2.181 s |
+| D1 3 | 0 / 1 | 0.218 s | 0.314 s |
+| D2 1 | 2 / 0 | 1.702 s | 1.930 s |
+| D2 2 | 2 / 0 | 2.084 s | 2.222 s |
+| D2 3 | 2 / 0 | 1.911 s | 2.112 s |
+
+Mean idle wait is 1.543 s of a 1.703 s flush-to-SYNC interval. Authentication
+from next request to accepted proof takes 0.086-0.207 s. These are local host
+measurements, not cross-device inferred network latencies. Dropped proofs are
+not assumed valid after the host changes state; the fix retains the flushes,
+player reset, challenge context, authentication and synchronization barriers.
+
+## Candidate and matched control
+
+Candidate run 39442351189 uses `78252116cd1879a78a77d9f86e3d9ef1c1876fea`.
+For the initial co-op join only (zero local roster, no reconnect join-wait and
+no save restore), retry after 500 ms from the completed signed send. After
+answering a challenge, hold new requests for two seconds to avoid replacing an
+in-flight proof. Other paths retain their existing two-second cadence. A fresh
+monotonic clock is necessary because the engine's `timer_query` is frame-cached
+and signed sends can block. Added policy tests cover completed-send spacing,
+proof hold, inactive paths, reset, and request-rate bounds.
+
+The matched control branch `investigate/lan-startup-control-20261020` at
+`964ed12b747f615e379b6e708022d7eb36a85b72` keeps identical probes and disables
+only the new initial retry policy. Its run is 39442770798. Both use the unchanged
+six-sample harness, emulator setup and full transition correctness checks.
+The earlier candidate run 39441935908 was cancelled during provisioning after
+source review found a missing include in a new diagnostic helper. It produced
+no device timing result and is excluded.
+
+Additional probes record wall and thread-CPU time for asset SHA-256 hashing and
+request counter/signing operations. Each request obtains a durable replay
+counter via `UdpReconnectStore.nextCounter`, including file locking, identity
+read, atomic rewrite and `fd.sync`; faster retries must account for this work.
+These probes are present in both matched control and candidate.
+
+## Configuration reset caveat
+
+`measure_lan_transitions.ps1` calls `Reset-DeviceGameState` for *every* sample.
+`Reset-GameState` deletes all descent.cfg files, controller_config.json, launcher
+and engine preferences, and the file-set selection. Assets/pilots remain for
+samples 2-3, but configurations do not. Therefore these are repeated
+configuration-reset, process-cold launches, not ordinary retained-config warm
+launches. The earlier manifest's shorthand "app assets/cache retained" must be
+read with that qualification.
+
+Across the six peer captures per game in the saved after run, game_config
+preflight averages 1.155 s for D1 (0.610-2.495 s) and 1.366 s for D2
+(1.022-1.940 s). That stage includes graphics recovery, initial configuration
+creation/controller defaults and legacy-resolution checks. Reset-triggered
+work cannot be silently charged to every normal user launch, nor can the whole
+stage be claimed removable without a retained-config control. The native LAN
+path itself is the normal launcher's auto-host/join path; test policy sets
+max_players=2 and removes ordinary user selection/briefing dwell.
+
+## Separate retry experiment result
+
+Completed control run39442770798 (964ed12b747f615e379b6e708022d7eb36a85b72)
+and candidate39442351189 (78252116cd1879a78a77d9f86e3d9ef1c1876fea)
+each passed42 native automation scripts. Control export39446278295 and candidate
+export39444854886 preserve compact raw evidence and source hashes.
+Across six host samples, final flush to SYNC fell2.205 to0.544 seconds
+(mean reduction1.661 seconds; individual reductions1.50-1.77). Flush to next
+request fell2.010 to0.374 seconds; authentication stayed0.155 vs0.151 seconds.
+Whole startup18.755 to11.665 seconds is confounded: host loading before the
+retry window also changed2.368 to1.485 seconds. Do not attribute that7.09-second
+whole-startup difference to the retry change. CSV/chart outputs retain all samples.
+
+The user's next priority is parallel loading. That implementation is isolated
+on investigate/lan-parallel-load-20261020, based on the control revision with
+the accelerated retry disabled. No retry change has been merged.

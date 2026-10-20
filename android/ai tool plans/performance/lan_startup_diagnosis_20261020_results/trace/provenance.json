@@ -1,0 +1,61 @@
+{
+  "export_run": 39440911594,
+  "repository": "larsonm-personal/dxx-redux",
+  "gzip_sha256": "b38865d6448adee6b3bcd27e3555d56ee006a80214b099a6914d8243b8779b2f",
+  "note": "Bounded text excerpts; observation state reduced. Original hashes refer to full CI source files. Screenshots remain in the original artifact unless explicitly listed here.",
+  "files": {
+    "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-logcat.txt": {
+      "original_sha256": "78388099b55737523a3821e7f19790db91750576b9fe3674114043ef040b86f3",
+      "exported_sha256": "efc0ec1f66b629586a9a7f77422b3c73d3412da7697c9367baef004629359d39"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-logcat.txt": {
+      "original_sha256": "283c558a9c851f4c942846b04da8db8995dcfdf07ac5de82a5ec9d4b2a9f4932",
+      "exported_sha256": "cf5951289c45ebcc1e6759e07b9b7a0acf41afd1cb3b62e9b5e4161abb05399c"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-logcat.txt": {
+      "original_sha256": "f3b6f1d72c9820c7d27486c319767d799521b5baf378be7d9297f973d27c287f",
+      "exported_sha256": "03139ab5e892e26ad165a0f992ea7eeb11517e849e60d0b575835b9134dd2eb9"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-logcat.txt": {
+      "original_sha256": "c826f06121e5846ba406c618a83d4137301c8dbca5128bc5fd189f0d3cbbd0b8",
+      "exported_sha256": "59e09cce58973bd83c1ef0e6393a463cd2c38d43d65348ccb289aeb7b61da152"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-logcat.txt": {
+      "original_sha256": "23312520141cd8a4fa9c73c00f099eb89c48fa787804c8c3fe543311a75fc037",
+      "exported_sha256": "9efeb5807a0eb76a8e3e4533f2f69f3172748dbe2d9efeded81c0c1e60feb422"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-logcat.txt": {
+      "original_sha256": "3d65dbaff8231c721c09d6579cbae22a89a2b9f49b0b7126a32392461a57cc1f",
+      "exported_sha256": "f75da60796aedbda91656290f7d6f29bbb57d147c26a2a33519e47c8dfd993f3"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-logcat.txt": {
+      "original_sha256": "88c9b5ee884850e10761a35c5e7c95f3a94c067bb3495d7bcc9cc3e8dc986b7e",
+      "exported_sha256": "185290fc2f67a0cd9c6d5eeade465b799de50947a696bc997e57784a9e2e2942"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-logcat.txt": {
+      "original_sha256": "9dbce7ae28ccbe84b1388857d74b33dd386924be1434c1023ff5d0cd7da973f2",
+      "exported_sha256": "0f3b13078f3e6064b309d77a39ce776bc82e8a7e207723b9e0aa44b5490ca64d"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-logcat.txt": {
+      "original_sha256": "b0b6ea72a3b8ad817fa4d115d201a4e13c9407cde78f44eb6f81cea8bc14a1c9",
+      "exported_sha256": "155ae8cf35f8b09859049621e646b193b4c43a98142fecb8373d513da314409e"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-logcat.txt": {
+      "original_sha256": "490b3dbaec01177971d7370af1e688e46fa501a403101d30cec32225ba278f0b",
+      "exported_sha256": "310a3337f28c870f95c3a6263240f64ac0a5ddcb71917302d9e88dbf7a64170a"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-logcat.txt": {
+      "original_sha256": "cdf1e7d0ae192c169eef531c605e991d47c7deb8e3fb009463b4a0fbeee6f854",
+      "exported_sha256": "b200192d6423340681af6329029275bb8fd2b5ea82e9a81adf5bbecaf14703c3"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-logcat.txt": {
+      "original_sha256": "699cf2eba422b08e8a4d90211ba7d44decafc76a6e396024730f0b00b5b2dd70",
+      "exported_sha256": "5cb27dd0f4959afd82f251a4b8ba711b2074d25ec30ab94c326394a84083556f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/experiment.json": {
+      "original_sha256": "b38e686b6cbb2b4f49c1e2a038939c3e8b462dfff1de953cb4db83d1cf3dc3c0",
+      "exported_sha256": "b38e686b6cbb2b4f49c1e2a038939c3e8b462dfff1de953cb4db83d1cf3dc3c0"
+    }
+  },
+  "source_run": 39437557537
+}
