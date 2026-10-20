@@ -444,12 +444,38 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
         if ([bool]$NoEmulatorRecovery -ne ($Serial -ceq 'emulator-5558')) { throw 'Caller-owned third emulator must not enter reset recovery' }
     }
     function Write-LatencyEvent { param($Peer, $Event, $Data) }
-    function Invoke-LatencyCommand { param($Serial, $Command, $Extras) }
+    function Add-ControllerEvent {
+        param($Serial, $Event)
+        $script:controllerEvents.Add(@{ Case = "$script:latencyGame/$script:latencySample"; Serial = $Serial; Event = $Event })
+    }
+    function Invoke-LatencyCommand {
+        param($Serial, $Command, $Extras)
+        if ($Command -in @('lan_start_game', 'launch_game')) { Add-ControllerEvent $Serial $Command }
+        if ($Command -ceq 'launch_game') {
+            $mode = if ($Serial -ceq 'emulator-5558') { $script:gameLogFixture } else { 'correct' }
+            if ($mode -notin @('missing', 'wrong')) {
+                $script:peerLogs[$Serial].Add("  101.000  2000  2000 I MainActivity: Loaded native library: dxx-redux-$script:latencyGame")
+            }
+            if ($mode -in @('wrong', 'conflicting')) {
+                $otherEngine = if ($script:latencyGame -ceq 'd1') { 'd2' } else { 'd1' }
+                $script:peerLogs[$Serial].Add("  101.001  2000  2000 I MainActivity: Loaded native library: dxx-redux-$otherEngine")
+            }
+            foreach ($event in @('wait_requests_flush', 'load_hold_begin', 'initial_load_peer_lost', 'initial_sync_timeout')) {
+                $script:peerLogs[$Serial].Add("event=$event")
+            }
+        }
+    }
     function Invoke-LatencyAutomation { param($Phase) }
     function Save-LatencyAutomation { param($Phase) }
     function Assert-LanRecoveryMenu { param($Serial, $Event, $ErrorText) }
     function Test-EmulatorHealthy { param($Serial) return $true }
-    function Start-SetupActivity { param($Serial) return $true }
+    function Start-SetupActivity {
+        param($Serial)
+        Add-ControllerEvent $Serial 'setup'
+        # Launcher services load D2 even when the selected game is native D1
+        $script:peerLogs[$Serial].Add('  100.000  1000  1000 I SetupActivity: Loaded native library: dxx-redux-d2')
+        return $true
+    }
     function Send-MpCommand { param($Serial, $Command, $Extras) }
     function Read-LanPreparationLobby {
         param($Serial)
@@ -464,7 +490,13 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
         if ($AdbArgs[0] -ceq 'get-state') { return 'device' }
         if ($AdbArgs -contains 'getprop') { return '1' }
         if ($AdbArgs[0] -ceq 'logcat') {
-            return "Loaded native library: dxx-redux-$script:latencyGame`nevent=wait_requests_flush`nevent=load_hold_begin`nevent=initial_load_peer_lost`nevent=initial_sync_timeout"
+            if ($AdbArgs -contains '-c') {
+                Add-ControllerEvent $Serial 'logcat-clear'
+                $script:peerLogs[$Serial].Clear()
+                return ''
+            }
+            if ($AdbArgs -notcontains '-d') { throw 'Unexpected mocked logcat command' }
+            return ($script:peerLogs[$Serial] -join "`n")
         }
         if ($AdbArgs -contains 'pidof') { return '12345' }
         if ($AdbArgs -contains 'sh') { return 'STOPPED' }
@@ -472,7 +504,14 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
     }
     function Wait-ForCondition {
         param($Description, $TimeoutSec, $PollMs, $Condition)
-        return (& $Condition)
+        $ready = & $Condition
+        if ($ready -and $Description -ceq 'All three launcher players ready') {
+            Add-ControllerEvent 'all' 'ready'
+            foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) {
+                $script:peerLogs[$serial].Add('  100.500  1000  1000 I SetupActivity: event=launcher_ready')
+            }
+        }
+        return $ready
     }
     function Wait-LatencyPeers {
         param($Event, $Predicate, $Timeout)
@@ -481,10 +520,19 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
         }
     }
     try {
-        foreach ($failure in @($false, $true)) {
-            $script:failFirst = $failure
+        $expected = @('d1/three-player', 'd1/three-player-lost', 'd2/three-player', 'd2/three-player-lost')
+        foreach ($fixture in @('correct', 'first-case-failure', 'missing', 'wrong', 'conflicting')) {
+            $failure = $fixture -cne 'correct'
+            $script:failFirst = $fixture -ceq 'first-case-failure'
+            $script:gameLogFixture = $fixture
+            $expectedFailures = @(if ($script:failFirst) { 'd1/three-player' } elseif ($failure) { $expected })
             $script:stageCount = 0
-            $outputDirectory = Join-Path $fixtureRoot ([string]$failure)
+            $script:controllerEvents = [Collections.Generic.List[object]]::new()
+            $script:peerLogs = @{}
+            foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) {
+                $script:peerLogs[$serial] = [Collections.Generic.List[string]]::new()
+            }
+            $outputDirectory = Join-Path $fixtureRoot $fixture
             New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
             $caught = $false
             try { Invoke-LanThreePlayerStartupChecks } catch {
@@ -497,14 +545,40 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
                 $summary.revision -cne ('a' * 40) -or $summary.category -cne 'three_player_network') {
                 throw 'Controller summary did not retain four independent terminal results'
             }
-            $expected = @('d1/three-player', 'd1/three-player-lost', 'd2/three-player', 'd2/three-player-lost')
+            $failedCases = @($summary.results | Where-Object status -EQ 'FAIL')
             if (($summary.results.id -join ',') -cne ($expected -join ',') -or
-                @($summary.results | Where-Object status -EQ 'FAIL').Count -ne [int]$failure -or $script:stageCount -ne 6) {
+                (@($failedCases | ForEach-Object id) -join ',') -cne ($expectedFailures -join ',') -or $script:stageCount -ne 6) {
                 throw 'Controller repeated asset staging or omitted cases after a failure'
             }
+            foreach ($failed in $failedCases) {
+                $reason = if ($script:failFirst) { 'Intentional host-only first-case failure' }
+                else { "Expected native $($failed.id.Split('/')[0]) engine was not observed on emulator-5558" }
+                if ($failed.reason -cne $reason) { throw 'Controller failed for an unexpected reason' }
+            }
+            $expectedEvents = @(
+                foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) { "$serial/logcat-clear"; "$serial/setup" }
+                'all/ready'
+                "$hostSerial/lan_start_game"
+                foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) { "$serial/launch_game" }
+            )
             foreach ($case in $expected) {
+                $events = @($script:controllerEvents | Where-Object Case -CEQ $case | ForEach-Object { "$($_.Serial)/$($_.Event)" })
+                if (($events -join ',') -cne ($expectedEvents -join ',')) { throw "Fresh case capture must retain launcher and game evidence: $case" }
                 $casePath = Join-Path $outputDirectory ('parallel-startup-checks/' + $case.Replace('/', '-') + '/case-result.json')
                 if (-not (Test-Path -LiteralPath $casePath)) { throw "Missing independent case result: $case" }
+                $leaf = Get-Content -LiteralPath $casePath -Raw | ConvertFrom-Json
+                $result = @($summary.results | Where-Object id -CEQ $case)[0]
+                if ($leaf.id -cne $case -or $leaf.status -cne $result.status -or $leaf.reason -cne $result.reason) {
+                    throw "Independent case result disagrees with the summary: $case"
+                }
+                foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) {
+                    $logPath = Join-Path (Split-Path -Parent $casePath) ("$($case.Replace('/', '-'))-$serial-logcat.txt")
+                    $rawLog = Get-Content -LiteralPath $logPath -Raw
+                    if (-not $rawLog.Contains('I SetupActivity: Loaded native library: dxx-redux-d2') -or
+                        -not $rawLog.Contains('I SetupActivity: event=launcher_ready')) {
+                        throw "Native-engine filtering discarded raw launcher evidence: $case $serial"
+                    }
+                }
             }
         }
         $env:DXX_THIRD_EMULATOR_SERIAL = $clientSerial

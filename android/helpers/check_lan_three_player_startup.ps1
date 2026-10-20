@@ -107,7 +107,9 @@ function Invoke-LanThreePlayerStartupChecks {
                     }
                     foreach ($serial in $script:latencyPeerSerials) {
                         $log = (Adb-Dev-Timeout -Serial $serial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                        if (-not (Test-PublicLanEngineLog -Log $log -Engine $game)) { throw "Expected native $game engine was not observed on $serial" }
+                        # SetupActivity loads D2 for launcher services; MainActivity selects the game engine
+                        $gameEngineLog = ($log -split '\r?\n' | Where-Object { $_ -cmatch '(?:^|\s)MainActivity:\s+Loaded native library:' }) -join "`n"
+                        if (-not (Test-PublicLanEngineLog -Log $gameEngineLog -Engine $game)) { throw "Expected native $game engine was not observed on $serial" }
                     }
                     Write-LatencyEvent 'all' 'case.pass'
                     $result.status = 'PASS'
