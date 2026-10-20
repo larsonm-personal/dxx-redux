@@ -1,249 +1,220 @@
-# LAN transition latency experiment
+# LAN co-op transition latency — 2026-10-20
 
-Baseline: origin/cmake 66e5e27da9850a9f142ac5c13d9e65432d48f4e3,
-committed 2026-10-19T22:08:01-07:00, fetched 2026-10-20. Clean original
-`work` checkout preserved; experiments use a new branch.
+Publishing changed co-op phases immediately removed an artificial wait behind
+the host's 250 ms retransmission cadence. All ten game/peer/operation handshake
+means decreased by 0.188–0.652 s in this experiment. Every after sample for the
+initial briefing handshake was below every before sample in its corresponding
+game/peer group. Required acknowledgments, generation/participant validation,
+packet format, client ACK throttle, periodic retransmission and deadlines remain.
 
-Plan:
-1. Verify unchanged public dual-emulator smoke in existing GitHub CI (local
-   /dev/kvm and Android tools unavailable). Inspect PRs 99, 100 and 101.
-2. Add opt-in measurements to the existing public asset owner, enable briefing
-   automation, collect per-peer monotonic observation bounds plus native logs,
-   repeat native D1/D2 cold-process and warm-process transitions.
-3. Chart actual observations and audit fixed waits. Only change engine behavior
-   when measurements justify it; repeat identical experiments and check sync.
-4. Publish compact data/report and harness; keep bulky logs in CI artifacts.
+**This is not a universal loading speedup.** Next-level arrival was mixed, and
+launch-to-briefing protocol readiness still took 14.514–23.147 s after the change.
+Three sequential samples per game/peer on separate CI allocations are not a
+statistical guarantee for physical phones.
 
-Never subtract clocks between devices. Controller Stopwatch durations bound
-state observations; native automation elapsed_ms is local to each script.
-Observation latency includes ADB and polling and must not be called engine CPU
-or network time. Deliberate skip/score input and process setup are separate.
-`trigger_endlevel` is a controlled real-engine exit fixture, not a played mine;
-reactor seed is a test setup operation, not measured player combat.
+## Observed results
 
-## Source audit (hypotheses, not measured results)
+**Before → after seconds, n=3 per cell per variant.** Host is emulator-5554;
+client is emulator-5556. These are device-local native conditions/log timestamps,
+not the controller's 800 ms polling bounds. No invalid attempt is pooled here.
 
-- `coop_briefing.c`: host STATE retransmit cadence 250 ms; client ACK cadence
-  100 ms. Each acknowledged closing/loading/commit barrier can wait for the
-  next periodic transmission. Keep retries and all participant/generation
-  checks if accelerating changed state.
-- `net_udp.c` in both engines: join game-info retry 1 s; connection timeout
-  10 s; sync request retry 2 s; reliable packet retry about 333 ms; disconnect
-  timeout 15 s. A retry is not an unconditional minimum duration.
-- `LobbyService.kt`: initial discovery queries 500 ms, searching 2 s, idle
-  populated discovery 6 s; JOIN retries 1 s (three tries); joined lobby refresh
-  3 s; PREPARE/START sends immediately then twice more 200 ms apart.
-- `SetupActivity.kt`: orphan process shutdown polls at 50 ms up to 2 s. Launch
-  preflight records per-step durations and native level loading already emits
-  `loadprof_v=1` breakdowns, including network synchronization.
-- `gameseq.c`: a RELEASE-only loading-message hold calls `timer_delay(F1_0)`.
-  Do not infer it is enabled in the debug APK without build/log evidence.
-- Test infrastructure: Start-SetupActivity force-stops then sleeps 2 s before
-  `am start`; Get-GameIntrospection sleeps 800 ms per peer. The experiment's
-  launcher controller interval includes that configured 2 s harness hold.
-  Native script post_delay_ms is explicitly zero. Screenshot/file collection
-  and staging between briefing/scores and input are dwell/harness, not engine
-  transition work. `timer_delay2(5)` is a 5 FPS limiter, not a 5 ms delay.
+| Interval                        | D1 host       | D1 client     | D2 host       | D2 client     |
+| ------------------------------- | ------------- | ------------- | ------------- | ------------- |
+| Briefing 1 Skip → ready         | 1.976 → 1.627 | 1.905 → 1.073 | 2.433 → 1.641 | 2.331 → 1.502 |
+| Controlled exit → scores        | 2.849 → 2.636 | 2.554 → 2.349 | 3.035 → 2.372 | 2.705 → 2.154 |
+| Score advance → level 2 arrival | 2.003 → 1.917 | 1.854 → 1.936 | 2.671 → 3.044 | 3.034 → 2.779 |
+| Briefing 2 Skip → ready         | 2.453 → 1.726 | 2.307 → 1.508 | not present   | not present   |
+| Briefing 1 closing → settled    | 0.944 → 0.533 | 0.862 → 0.539 | 1.217 → 0.564 | 1.168 → 0.537 |
+| Exit closing → settled          | 1.170 → 0.805 | 0.809 → 0.621 | 1.245 → 0.592 | 0.858 → 0.609 |
+| Briefing 2 closing → settled    | 1.057 → 0.425 | 1.018 → 0.436 | not present   | not present   |
 
-## Initial unchanged-baseline run
+D1 client level-two arrival increased 0.082 s and D2 host arrival increased
+0.374 s. Individual samples also varied: cold D1 host exit was 3.716 s after
+versus 2.795 s before. Native level-two network synchronization remained variable;
+no improvement is claimed for all transitions or for next-level loading.
+No level-two briefing appeared in the D2 shareware samples.
 
-Run 39374851627 tested exact baseline 66e5e27 and failed before engine launch.
-Host received JOIN at 05:37:31.214, 32.215, 33.216 UTC and logged sending its
-responses. Client sent JOIN at 31.215, 32.217, 33.217, then reported no JOIN_ACK
-at 34.218. Actual-send intervals were 1.002 s then 1.000 s; the chart uses the preceding
-`joinLobby: attempt` events (1.001 s each). Total failed
-attempt 3.003 s. Discovery start 05:37:27.748 to first ANNOUNCE 30.737 took
-2.989 s on that client's clock. Host-only membership was therefore not proof
-that the client had joined. The owner waited 20 s for readiness, then failed.
-These are observed failure timings, not successful gameplay-transition data.
-Recovery then reported unavailable emulator acceleration; this happened after
-the test's handshake failure, not before the APK build or initial boot.
+Both variants completed six samples and **42 native scripts each**: 12 completed
+samples and 84 PASS receipts in total. Both peers were connected and unpaused at
+level-one and level-two readiness. Actual CI-staged after scripts parse as strict
+JSON and equal the before revision's complete native action data.
 
-Direct artifact and reusable-job log downloads returned HTTP 403 from the
-storage endpoint, including the permitted unrestricted execution attempt.
-A separate opt-in workflow job downloaded the public artifact inside GitHub
-and exported bounded text through the check annotations API. It does not
-change security settings, publish repository content, or need a merge.
-Source-file hashes and export hashes are retained by collect_lan_evidence.py;
-exported native logs are explicitly filtered excerpts, not complete originals.
+- [Comparison PNG](lan_transition_latency_20261020_results/after/comparison.png),
+  [SVG](lan_transition_latency_20261020_results/after/comparison.svg),
+  [summary CSV](lan_transition_latency_20261020_results/after/comparison.csv):
+  means, medians, ranges, counts and individual values.
+- [Before timing data](lan_transition_latency_20261020_results/before/timings.csv)
+  and [after timing data](lan_transition_latency_20261020_results/after/timings.csv):
+  **846 observed intervals each**, with sample, peer, revision, basis, local
+  start/end and source filename. Per-variant manifests/provenance preserve
+  configuration and original/exported source hashes. Missing phases are omitted.
+- Per-variant `overview.svg`/`timings.svg` include startup and profiling details.
+  `handshake_failure.csv`/`.svg` and `after_invalid_39378284578.json` retain failures.
 
-Reproduction:
+## Configuration and revisions
+
+| Variant                                                 | Exact revision                             | CI run                                                                                                 |
+| ------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Latest fetched cmake baseline                           | `66e5e27da9850a9f142ac5c13d9e65432d48f4e3` | [39374851627](https://github.com/larsonm-personal/dxx-redux/actions/runs/39374851627), failed JOIN     |
+| Instrumented before; synchronization behavior unchanged | `2eb278f486b62d603eb63b4a8cb94e48e83abb9d` | [39375337680](https://github.com/larsonm-personal/dxx-redux/actions/runs/39375337680), PASS            |
+| Immediate changed-phase publication                     | `9268919164a114b7b97130afbf35bc801479fc1f` | [39378284578](https://github.com/larsonm-personal/dxx-redux/actions/runs/39378284578), invalid scripts |
+| After, with corrected untimed script staging            | `04b6cf39e2d12b15d1514fd1343da62778155760` | [39380229137](https://github.com/larsonm-personal/dxx-redux/actions/runs/39380229137), PASS            |
+
+Baseline was fetched October 20 and includes PRs
+[#99](https://github.com/larsonm-personal/dxx-redux/pull/99) (public LAN smoke,
+launcher/lobby options and missing-level checks),
+[#100](https://github.com/larsonm-personal/dxx-redux/pull/100) (on-device fixes,
+background route-metadata scheduling), and #101 multi-device fuzz work.
+The existing public-shareware owner/reusable dual-emulator lane was extended.
+Original `work` checkout was clean and preserved; work is on a new topic branch.
+Nothing was merged or pushed to `cmake`.
+
+Both runs: GitHub `ubuntu-24.04`, API 34 Google APIs x86_64 AVDs
+`Nexus5X_Light_1`/`2`, 1536 MiB RAM and two configured cores each,
+1280x720 at 320 dpi, KVM, headless `swiftshader_indirect`, shared Wi-Fi LAN.
+Recorded emulator version matches: **37.2.12.0 build 16428233**. Debug x86_64 APKs
+use NDK r30, CMake 3.31.6, compile SDK/build tools 37 and Java 21. Physical CPU
+equivalence between runner allocations was not established. Public D1/D2 assets
+use the pinned verification path in `android/helpers/shareware_test_data.ps1`.
+
+Sample 1 clears app data before asset staging. Samples 2/3 restart the process,
+retain asset/pilot caches and reset configuration/preferences. Level 2 is
+process-warm. OS filesystem caches are not flushed: “cold” is not cold disk or
+fresh physical hardware. Individual samples remain in the CSVs.
+
+## Events and timing interpretation
+
+Never subtract host and client clocks. Native script elapsed_ms uses local
+SDL_GetTicks; phase/startup intervals use each device's `logcat -v monotonic`
+prefix. The diagnostic message's `ms=` uses frame-cached timer_query and is
+**not** an exact wall-clock timestamp. Controller Stopwatch intervals include
+ADB/polling and are upper bounds, not engine CPU or wire latency.
+
+| Interval                     | Start → end                                                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Launcher controller          | Before Start-SetupActivity → helper returns; includes its configured 2 s hold and ADB                                             |
+| Feedback publication         | Device launch_game command → preparation state published, then logged “Launcher game launch requested”; not first pixels          |
+| Window displayed             | Same command → Android Displayed MainActivity; window-draw proxy, not meaningful-content visibility                               |
+| Player selection complete    | Same command → host “closing select_players” after both players arrive                                                            |
+| Briefing protocol ready      | Same command → first armed phase 6 log; not first pixels                                                                          |
+| Start-to-briefing controller | Host lan_start_game request → each peer observed presenting phase 6; 800 ms per-peer polling plus ADB included                    |
+| Skip → ready                 | Native step 2 Skip starts → step 3 observes in-game, briefing inactive, unpaused                                                  |
+| Controlled exit → scores     | Native trigger_endlevel starts → postlevel_active after normal advance permission/request                                         |
+| Scores → level 2 arrival     | Native score advance starts → level number becomes 2; **not readiness**                                                           |
+| Level 2 controller ready     | Next advance or optional briefing Skip → level 2, in-game, unpaused, both peers connected                                         |
+| Handshake                    | Phase 7 log → phase 0 through phases 8/9, same device/level/generation                                                            |
+| Loading profiles             | Existing loadprof section durations in microseconds; nested sections must not all be summed                                       |
+| Dwell/harness                | Briefing/scores observation → subsequent script request; screenshots, staging and deliberate input delay excluded from comparison |
+
+All script post_delay_ms values are zero. Script staging precedes timed commands;
+broadcasts to the two peers are sequential. Native action durations include engine
+scheduling and the other peer's response, not just network transport. Pre-action
+wait_for permission durations are retained separately in the timing CSV.
+
+Player selection auto-starts at max_players=2; manual selection dwell was not
+exercised. Before host selection completed 11.968–16.375 s after launch in D1
+and 14.997–18.561 s in D2. Native auto-host start → selection completion was
+4.698–8.227 s / 5.110–6.063 s, including connection setup and waiting for the peer.
+There is no separate first-pixel timestamp for that menu. Screenshots were captured
+at briefing, gameplay and scores, but not visually inspected locally because of
+the transfer failure below. No exact time-to-visible-content claim is made.
+
+Reactor destruction uses the existing real-engine co-op countdown seed fixture,
+followed by trigger_endlevel and normal barriers. This is controlled exit, not
+human combat, traversal, or a measured full reactor countdown.
+
+## Fixed waits and remaining bottlenecks
+
+- Host STATE retry: 250 ms; client ACK throttle: 100 ms. The change sends a new
+  phase/generation immediately on the next network poll, while unchanged STATE
+  retries still wait 250 ms. Every closure/loading/commit acknowledgment remains.
+- Before preparation-state publication took 1–5 ms, window display 4.345–9.909 s,
+  and armed briefing phase 6 took 16.379–24.492 s. After: 1–3 ms,
+  3.961–8.933 s and 14.514–23.147 s. Startup differences between allocations
+  cannot be attributed to the small barrier change; the large delay remains.
+- D1 client first-level network-sync profiles were 4.630, 4.555, 4.506 s before:
+  unusually repeatable. After they were 4.505, 2.476, 4.306 s, so these data do
+  not establish an unconditional 4.5 s hold. Texture loading also takes roughly
+  1–2 s. Investigate actual sync request/reply timestamps before another change.
+- Source audit, not measured unconditional delays: game-info retry 1 s/timeout
+  10 s; sync retry 2 s; reliable retry about 333 ms; disconnect timeout 15 s;
+  connection timer_delay2(5) means 5 FPS, not 5 ms. Launcher discovery uses
+  500 ms/2 s/6 s cadences, JOIN 1 s x three attempts, PREPARE/START immediate
+  plus two 200 ms retries. Orphan shutdown polls 50 ms up to 2 s.
+- RELEASE-only loading-message timer_delay(F1_0) is not established as enabled
+  in this debug APK. No speculative timeout, loading hold or cache change is made.
+
+## Failures and evidence access
+
+1. Original unchanged smoke 39374851627 failed before native launch. Client
+   JOIN attempts were 1.001 s apart; no JOIN_ACK after 3.003 s, despite host
+   response logs. Discovery to first ANNOUNCE took 2.989 s on the client clock.
+   Host membership alone did not prove client join; readiness timed out at 20 s.
+   Later recovery's acceleration error occurred after this handshake failure.
+2. First after attempt 39378284578 built successfully but D1 sample 1 scripts
+   failed JSON parsing: line 7 column 9, unexpected closing brace. Formatting had
+   added trailing commas; the helper copied raw JSONC to the strict native loader.
+   Both Skip receipts show FAIL, zero steps. Roughly 116 s later the two-minute
+   briefing deadline allowed entry; scores subsequently timed out. Its 467/368 ms
+   timeout-driven closing handshake is **not a matched speed sample**. No sample
+   completed. Artifact **12244907274** and compact invalid-attempt JSON are retained.
+
+Repair: use existing ConvertFrom-JsoncText during untimed staging, validate strict
+JSON and require native PASS receipts. All three recovered staged payloads equal
+the successful before action data. The chart tool refuses failed/incomplete runs.
+A JSONC semantic comparison alone had missed the initial runtime incompatibility.
+
+Before artifact **12244470393** is 61,509,455 bytes; after artifact **12245932105**
+is 61,399,122 bytes, both named nightly-results-android-dual. Complete bounded-text
+exports are [39379623350](https://github.com/larsonm-personal/dxx-redux/actions/runs/39379623350)
+and [39382396706](https://github.com/larsonm-personal/dxx-redux/actions/runs/39382396706).
+Native logs in these exports are filtered excerpts; original/export hashes preserve
+provenance. Full logs/screenshots remain in the CI artifacts, not the repository.
+
+Followed `.github/TASK_RECOVERY.md` from PR #98: resumed the existing executor,
+verified topic ref/identity, inspected existing runs before retrying. CLI auth and
+GitHub connector decoded job logs worked. Connector ZIP retrieval returned a file,
+but local transfer returned HTTP 403, including supported materialization. This
+remains a **local file-transfer/visual-inspection limitation**, not a CI execution
+blocker; bounded CI text export supplied all timing evidence. No credential or
+security-setting changes, permission bypass, or duplicate competing experiment.
+Local /dev/kvm was absent; existing GitHub CI supplied accelerated emulators.
+
+## Validation and reproduction
+
+Targeted D1/D2 coop_transition_policy CTest passed (CMake 3.31.6/GCC 14.2.0):
+immediate changed phase/generation, unchanged-state retry boundaries and required
+remote ACKs. Corrected Android experiment passed six/42; before passed six/42.
+[Tooling checks 39375580457](https://github.com/larsonm-personal/dxx-redux/actions/runs/39375580457)
+passed Ubuntu and Windows catalog/workflow checks. Final scoped C, Kotlin,
+PowerShell, Python, YAML and script formatting/lint checks pass. Native JSON
+conversion, failed-receipt rejection, failed-chart refusal and comparison
+identity/missing-edge handling were exercised; no fixture timings enter results.
+
+Full local desktop builds were attempted and failed in unchanged newdemo.c calls:
+PHYSFS_sint64* versus int64_t* in classic_demo_backward_link_target under GCC 14.2.
+Those files match baseline; no unrelated demo fix is included. Local full catalog
+supervision could not read /proc/self/task/.../children; corresponding GitHub
+Linux/Windows tooling checks passed. These are explicit validation limitations.
 
 ```sh
+# Current after experiment; before engine revision is recorded above.
 gh workflow run public-lan-smoke.yml --ref experiment/lan-transition-latency-20261020 -f measure_transitions=true
-# If direct artifact download is unavailable, replace RUN with the completed measurement run:
+# Direct invocation needs two distinct verified disposable emulators:
+pwsh android/tests/test_lan_launch_preparation.ps1 -PublicShareware -MeasureTransitions
+# If direct artifact transfer is unavailable (this runs no emulator):
 gh workflow run public-lan-smoke.yml --ref experiment/lan-transition-latency-20261020 -f evidence_run_id=RUN
-python3 android/helpers/collect_lan_evidence.py EXPORT_RUN --output temp/lan-evidence
-python3 android/helpers/chart_lan_transitions.py temp/lan-evidence/first-play/lan-launch-preparation-public-shareware --output temp/lan-charts
+python3 android/helpers/collect_lan_evidence.py EXPORT_RUN --output EVIDENCE
+python3 android/helpers/chart_lan_transitions.py BEFORE/first-play/lan-launch-preparation-public-shareware --output results/before
+python3 android/helpers/chart_lan_transitions.py AFTER/first-play/lan-launch-preparation-public-shareware --output results/after --compare results/before/timings.csv --png
+cmake --build buildd1-test --target test_coop_transition_policy -j2
+cmake --build buildd2-test --target test_coop_transition_policy -j2
+ctest --test-dir buildd1-test -R coop_transition_policy --output-on-failure
+ctest --test-dir buildd2-test -R coop_transition_policy --output-on-failure
 ```
 
-The original smoke remains the default. Direct emulator invocation:
-`pwsh android/tests/test_lan_launch_preparation.ps1 -PublicShareware -MeasureTransitions`.
-The configured primary/secondary targets must be distinct disposable emulators.
-
-## Instrumented baseline observed before optimization
-
-Run 39375337680, target 2eb278f486b62d603eb63b4a8cb94e48e83abb9d, passed
-all six samples (D1/D2 x three) and all 42 native automation executions.
-The target adds diagnostics and an automation option for the already-supported
-co-op briefing setting; it does not change engine synchronization behavior.
-The failed original smoke above remains a separate result.
-
-`lan_transition_latency_20261020_results/before/overview.svg` and `timings.csv`
-were generated from this run. D1 host input-to-ready means were 1.976 s after
-first briefing Skip, 2.849 s from controlled exit to scores, 2.003 s from score
-advance to level number 2, and 2.453 s after next briefing Skip. D2 host means
-were 2.433 s, 3.035 s and 2.671 s respectively; no level-two briefing appeared
-in the D2 shareware samples. Client measurements are separate CSV rows.
-
-Closing/loading/commit phase residence totals averaged 1.057 s on the D1 host
-(n=9 operations) and 1.231 s on the D2 host (n=6). These use the timestamp from
-`logcat -v monotonic` on each individual device. The `ms=` field in the native
-phase diagnostic uses frame-cached timer_query and is NOT used as an exact
-wall-clock timestamp. Native automation elapsed_ms uses SDL_GetTicks directly.
-
-Decision: publish a changed generation/phase immediately instead of waiting
-for the next 250 ms periodic STATE send. Keep periodic retransmission, packet
-format, client ACK throttle, participant/generation validation, and every
-closure/loading/commit acknowledgement barrier. Add regression coverage for
-immediate changes, unchanged-state retry boundaries, and missing remote ACKs.
-
-Keep native automation actions/delays identical for comparison. A prospective
-reachability/failed-case continuation refinement is retained only in ignored
-temp, not applied. Do not shorten timeouts to hide the separate failed JOIN
-sample. The failed after attempt below required an untimed script-staging
-repair and explicit result validation.
-
-## Measurement definitions and configuration
-
-Both variants use GitHub `ubuntu-24.04`, two API 34 Google APIs x86_64
-AVDs (`Nexus5X_Light_1`/`2`, serials 5554 host and 5556 client), 1536 MiB
-RAM and two cores each, 1280x720 at 320 dpi, KVM, headless
-`swiftshader_indirect`, and the existing shared-WiFi LAN setup. Emulator
-37.2.12.0 (build 16428233) was recorded in the before artifact. These are
-software-rendered virtual devices sharing one runner, not physical-phone
-performance measurements. Public shareware assets come from the existing
-owner's pinned download/verification path.
-
-There are three sequential samples per game and peer per variant, not three
-independent machines. Sample 1 clears application data before asset staging;
-samples 2/3 restart the process while retaining assets/pilot caches and
-resetting preferences/configuration. Level 2 is process-warm. OS filesystem
-caches are not flushed: “cold” here does not mean cold disk or freshly booted
-hardware. Individual samples remain in CSV; an average is not a significance
-test, and run order is before then after, not randomized/interleaved.
-
-| Interval/basis | Start | End and limitation |
-| --- | --- | --- |
-| Launcher controller | Before `Start-SetupActivity` | Helper returns; includes its deliberate 2 s hold and ADB |
-| Launch feedback | Device-local `MP_COMMAND: launch_game` | `Launcher game launch requested` state publication; not a first-pixel observation |
-| Window displayed | Same launch command | Android `Displayed ... MainActivity`; window-draw proxy, not proof of meaningful progress |
-| Host player selection complete | Same launch command | `closing select_players` after both native players arrive; automatic selection, not manual input |
-| Briefing protocol ready | Same launch command | First armed phase 6 log; native protocol milestone |
-| Start-to-briefing controller | Host `lan_start_game` request | Each peer's fresh introspection observes presenting phase 6; includes ADB/800 ms per-peer polling |
-| Skip action-to-ready | Native script step 2 starts Skip | Step 3 observes in-game, briefing inactive, unpaused |
-| Exit action-to-scores | Native script step 2 starts `trigger_endlevel` | Step 5 observes postlevel active after normal advance permission/request |
-| Scores-to-level-2 arrival | Native score advance starts | Level number becomes 2; explicitly **not** readiness |
-| Level-2 controller ready | After arrival/optional briefing Skip | Level 2, in-game, unpaused, both peers connected; D1 also briefing inactive |
-| Closing-to-settled handshake | Phase 7 log | Phase 0 log through phases 8 and 9, same level/generation/device |
-| Native loading profile | Existing loadprof section entry | Existing microsecond section duration, e.g. textures or network sync |
-| Dwell/harness | Briefing/scores observed | Subsequent automation request; captures screenshots, copying and deliberate input delay separately |
-
-Script durations use local `SDL_GetTicks`, phase/startup durations use each
-device's `logcat -v monotonic` prefix, and controller intervals use Stopwatch.
-No host timestamp is subtracted from a client timestamp. Native condition
-timestamps include engine scheduling and the other peer's response; they
-are not pure wire latency. ADB broadcasts to the peers are sequential.
-The comparison chart excludes controller observation bounds entirely.
-All script `post_delay_ms` values are zero. Scores and briefings are not
-automatically charged their deliberate viewing/staging dwell.
-
-The two-player native player-selection flow auto-starts when both players
-arrive (`max_players=2`); manual selection dwell was not exercised. Host
-selection completion occurred 11.968–16.375 s after launch in D1 and
-14.997–18.561 s in D2. From native auto-host start to selection completion
-was 4.698–8.227 s in D1 and 5.110–6.063 s in D2; this includes connection
-setup and waiting for the other peer, not pure menu rendering. There is no
-separate measured first-pixel marker for that screen. Screenshots were
-captured at briefing, gameplay and scores
-in the original CI artifact; they were not visually inspected through the
-blocked local artifact endpoint. No claim of exact time-to-visible-content
-is made. Reactor destruction is seeded through the existing real-engine
-co-op countdown fixture, followed by controlled exit, not a complete played
-combat level or a measurement of player traversal.
-
-Before startup state publication took 1–5 ms, window display 4.345–9.909 s,
-and armed briefing phase 6 took 16.379–24.492 s. This is the largest observed
-delay and is not solved by the small handshake change. First-level native
-network-sync durations on the D1 client were 4.630, 4.555 and 4.506 s:
-an unusually repeatable wait worth investigating alongside the 2 s sync
-retry and 5 FPS connection polling. The source alone does not establish
-which wait caused those observations. Texture loading also took roughly
-1–2 s on these virtual devices. No speculative timeout, loading-message
-hold, or asset-cache change is included.
-
-## Validation and evidence access
-
-- Before runtime run: [39375337680](https://github.com/larsonm-personal/dxx-redux/actions/runs/39375337680),
-  `nightly-results-android-dual` artifact **12244470393**, 61,509,455 bytes.
-- Initial failed original-baseline smoke:
-  [39374851627](https://github.com/larsonm-personal/dxx-redux/actions/runs/39374851627).
-- Complete before text export:
-  [39379623350](https://github.com/larsonm-personal/dxx-redux/actions/runs/39379623350),
-  including existing player-selection completion diagnostics.
-  Earlier incomplete annotation-export attempts were rejected, not used as data.
-- Ubuntu and Windows tooling/catalog checks:
-  [39375580457](https://github.com/larsonm-personal/dxx-redux/actions/runs/39375580457), both passed.
-- Local D1/D2 `coop_transition_policy` CTest passed with the optimization.
-  Coverage checks immediate changed phase/generation, unchanged-state 250 ms
-  loss recovery, and that remote acknowledgment remains necessary.
-- Scoped mixed-language format/lint and automation catalog validation passed.
-  The comparison parser was checked against the observed before data using
-  identity comparison (all deltas zero, three samples in each comparable
-  group); that check creates no fabricated benchmark data.
-
-Full local desktop builds were attempted for both engines and failed in
-unchanged `newdemo.c` calls to `classic_demo_backward_link_target`:
-`PHYSFS_sint64 *` is incompatible with the helper's `int64_t *` on this
-Linux toolchain. Those three source files are unchanged from baseline.
-The targeted transition regression builds pass; Android runtime builds are
-separately checked in the dual-emulator runs. No unrelated demo fix is included.
-Local full catalog supervision could not read `/proc/self/task/.../children`;
-the same catalog checks passed in GitHub Linux and Windows tooling CI.
-
-## Invalid first after attempt and recovery
-
-Run [39378284578](https://github.com/larsonm-personal/dxx-redux/actions/runs/39378284578)
-at `9268919164a114b7b97130afbf35bc801479fc1f` built successfully but failed in
-D1 sample 1. Artifact **12244907274** preserves the evidence. Both peers'
-native script loaders reported JSON parse error line 7, column 9, then
-`Failed to load automation script`, zero steps executed. Formatter-added
-JSONC trailing commas had been copied directly to the strict native loader.
-The before revision's scripts were strict JSON. A JSONC semantic comparison
-alone had missed this runtime incompatibility.
-
-The roughly 116-second Skip-request-to-level-observation intervals were
-fallback timeout behavior, not successful Skip execution. The later scores
-observation timed out on both peers. Its 467 ms host / 368 ms client closing
-handshake followed that timeout and is **not** a matched speedup sample.
-No sample completed; none of this run is included in the A/B comparison.
-`after_invalid_39378284578.json` retains the compact controller events and
-failed automation receipts; the full logs remain in the artifact.
-
-Repair: use the repository's existing `ConvertFrom-JsoncText` before copying
-scripts, outside the timed command interval. Strict JSON parsing of all three
-staged payloads succeeds, and their complete action data equals the successful
-`2eb278f` baseline exactly. Actions, order, conditions and zero post-delays are
-unchanged. Result collection now requires native `PASS`; the chart generator
-refuses incomplete experiments or failed script receipts. A local injected
-failed receipt verified rejection. This is a harness repair, not evidence of
-an engine synchronization regression.
-
-The recovery procedure in `.github/TASK_RECOVERY.md` (PR #98) was followed:
-resumed the existing executor, verified the topic ref and commit identity,
-and checked the existing run before retrying. CLI authentication remained
-valid, and GitHub connector decoded job-log retrieval succeeded. The connector
-also returned an artifact ZIP reference, but transferring that file into this
-executor returned HTTP 403, including supported Library materialization.
-Bounded CI text export remains the working local evidence path. No login,
-credential transfer, network policy or security-setting change was made.
+SVG/CSV generation uses the standard library; optional PNG uses matplotlib.
+Controller bounds and dwell remain in underlying data but are excluded from the
+comparison chart. The default public smoke remains unchanged unless measurement
+is explicitly enabled. Before reproduction uses the recorded instrumented before
+revision on a separate topic checkout with the same direct emulator command.

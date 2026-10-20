@@ -1,0 +1,242 @@
+{
+    "export_run": 39382396706,
+    "repository": "larsonm-personal/dxx-redux",
+    "gzip_sha256": "b1ef2de96b1dc7defe3a0d49caadd9c6359c0f70279ddc01e4eafb7e20a4e28c",
+    "note": "Bounded text excerpts; observation state reduced. Original hashes refer to full CI source files. Screenshots remain in the original artifact unless explicitly listed here.",
+    "files": {
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-exit-automation_log.jsonl": {
+            "original_sha256": "98339e8bddf4187149564b5d11dcc7475bd6e830488f778fe9704f10f6a197e8",
+            "exported_sha256": "98339e8bddf4187149564b5d11dcc7475bd6e830488f778fe9704f10f6a197e8"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-logcat.txt": {
+            "original_sha256": "1d24061b7c3f1b946c89c8e7d1ea3afa77a23a2bd4d2418c0c3eb65d7983da67",
+            "exported_sha256": "59175da50dc6287d46f2ab11e796749aa4c59ec0dc6c04ca56389a7f982d69be"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-next-automation_log.jsonl": {
+            "original_sha256": "495446fdf657c2cfde17e38e57d462ee3ab6f3ad19ad19c381de11c8d73ae11d",
+            "exported_sha256": "495446fdf657c2cfde17e38e57d462ee3ab6f3ad19ad19c381de11c8d73ae11d"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-skip1-automation_log.jsonl": {
+            "original_sha256": "43864ee679dd2fce0366dfb5ac1512d8fb5f656987ee8351d504257c4ebe4a62",
+            "exported_sha256": "43864ee679dd2fce0366dfb5ac1512d8fb5f656987ee8351d504257c4ebe4a62"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-skip2-automation_log.jsonl": {
+            "original_sha256": "21dacf5af16b9adae9e1f03c8c50a2fa0d5eb23c1b5ac4f03c1e47b9fa94d76a",
+            "exported_sha256": "21dacf5af16b9adae9e1f03c8c50a2fa0d5eb23c1b5ac4f03c1e47b9fa94d76a"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-exit-automation_log.jsonl": {
+            "original_sha256": "a7d9612b4da5800542a2e4f929541a75ca27c307e3bf1af472fe6809b587d18e",
+            "exported_sha256": "a7d9612b4da5800542a2e4f929541a75ca27c307e3bf1af472fe6809b587d18e"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-logcat.txt": {
+            "original_sha256": "372e317a17e7e25af92f26a1fc39984831b18e40584d84e433b0c97f48ac85ae",
+            "exported_sha256": "98dcf59fdf1ddb6734cc83d3161339411aa4c173d4f7869327765c897a9088eb"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-next-automation_log.jsonl": {
+            "original_sha256": "b892a454298865a56f215a6a0684d82e15247f210b4d5974ae0bb115b50feb78",
+            "exported_sha256": "b892a454298865a56f215a6a0684d82e15247f210b4d5974ae0bb115b50feb78"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-skip1-automation_log.jsonl": {
+            "original_sha256": "0cd72d173605c3ebffaf0d6c80918f594b480330b618c559e79128d865b2f9e4",
+            "exported_sha256": "0cd72d173605c3ebffaf0d6c80918f594b480330b618c559e79128d865b2f9e4"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-skip2-automation_log.jsonl": {
+            "original_sha256": "cccb3507c3b065c858665c8543562ddf0cc331ae33be66948bf21414e1836afa",
+            "exported_sha256": "cccb3507c3b065c858665c8543562ddf0cc331ae33be66948bf21414e1836afa"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-exit-automation_log.jsonl": {
+            "original_sha256": "de473ae361387ac21427c9372bd70b510bbf9cd646ae830730cc6ef57804bb6d",
+            "exported_sha256": "de473ae361387ac21427c9372bd70b510bbf9cd646ae830730cc6ef57804bb6d"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-logcat.txt": {
+            "original_sha256": "37408dcc1d06a3f86af6b5945d2a772891f7c3b8d56c8f0be5ffd6df23e72614",
+            "exported_sha256": "d596b5d67a7366d64f261d96b63a1468311ddcee0766601f573d4ca164540b99"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-next-automation_log.jsonl": {
+            "original_sha256": "79b9528abeacc7665920f0af5d003b6504b96a36d3e72cbb25b301f8cd5aa7ec",
+            "exported_sha256": "79b9528abeacc7665920f0af5d003b6504b96a36d3e72cbb25b301f8cd5aa7ec"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-skip1-automation_log.jsonl": {
+            "original_sha256": "51f705a73bc0e25c33e913ef579d51c9475da9aac4eb8407f788502febe9bb2a",
+            "exported_sha256": "51f705a73bc0e25c33e913ef579d51c9475da9aac4eb8407f788502febe9bb2a"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-skip2-automation_log.jsonl": {
+            "original_sha256": "2bbe33fa038208accf674588daa4b347fa8f1325d55bcf5370a3c47973c743a2",
+            "exported_sha256": "2bbe33fa038208accf674588daa4b347fa8f1325d55bcf5370a3c47973c743a2"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-exit-automation_log.jsonl": {
+            "original_sha256": "78c229a3615569a4202a1d382e4b7e397183efe3785fc680330bab0ecfd1ce69",
+            "exported_sha256": "78c229a3615569a4202a1d382e4b7e397183efe3785fc680330bab0ecfd1ce69"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-logcat.txt": {
+            "original_sha256": "74959989bc2ea4d7b9bee185f4adeea60a0ebefc02495595827cd2a3dc9f70b3",
+            "exported_sha256": "72450c3c89d521ee7be1a5667d5793f082218e4ec345db06d34667413697bfdc"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-next-automation_log.jsonl": {
+            "original_sha256": "77e21936167bd4840b42bee985651646c3db44aab1ef9e3559ed03c5388357ae",
+            "exported_sha256": "77e21936167bd4840b42bee985651646c3db44aab1ef9e3559ed03c5388357ae"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-skip1-automation_log.jsonl": {
+            "original_sha256": "4c4eba09c1b32f4d1c6b87b4d6e01b69078b961f1ce4584d1fed2abada5c6794",
+            "exported_sha256": "4c4eba09c1b32f4d1c6b87b4d6e01b69078b961f1ce4584d1fed2abada5c6794"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-skip2-automation_log.jsonl": {
+            "original_sha256": "48bb712d5ce75c53333063f3b320e39b979e59a36d2495e40d3f5021ac91108a",
+            "exported_sha256": "48bb712d5ce75c53333063f3b320e39b979e59a36d2495e40d3f5021ac91108a"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-exit-automation_log.jsonl": {
+            "original_sha256": "b2b0186796da380e3a7c4f0c1ee9d71641ec93beec05c9af2ea2681b5d86ee57",
+            "exported_sha256": "b2b0186796da380e3a7c4f0c1ee9d71641ec93beec05c9af2ea2681b5d86ee57"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-logcat.txt": {
+            "original_sha256": "23566e6d3b72a27559dfd9c421abc022cc0a80ee5f93f05206a16934b01d6772",
+            "exported_sha256": "081ecde1a00456bf19d5c651d456513ae5db7e3f9e8fd868d00f19b882a03542"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-next-automation_log.jsonl": {
+            "original_sha256": "e6df2d7e6fc51079cb1e08d9e9f1554f56d0cd30e2e1287b16d2ad6265906240",
+            "exported_sha256": "e6df2d7e6fc51079cb1e08d9e9f1554f56d0cd30e2e1287b16d2ad6265906240"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-skip1-automation_log.jsonl": {
+            "original_sha256": "78504ccd3fcffa33bddab8aea3e756c3ec8978122a8a245ecdc3b1828116580e",
+            "exported_sha256": "78504ccd3fcffa33bddab8aea3e756c3ec8978122a8a245ecdc3b1828116580e"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-skip2-automation_log.jsonl": {
+            "original_sha256": "5f372e785e2e2b664d01856d7659464dd060c08344a85604754d938b3a4386ea",
+            "exported_sha256": "5f372e785e2e2b664d01856d7659464dd060c08344a85604754d938b3a4386ea"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-exit-automation_log.jsonl": {
+            "original_sha256": "a4bde60c4a443f99710e15500dc6b5015b0a71358bc45c6d50339909437efdb6",
+            "exported_sha256": "a4bde60c4a443f99710e15500dc6b5015b0a71358bc45c6d50339909437efdb6"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-logcat.txt": {
+            "original_sha256": "69bbbc377bd5f0695b849344047f2ee4f6dbb8c7156dbf698e4a6ed1cf6e2020",
+            "exported_sha256": "9aeeabbae8a0ef7ecbe8c0b535c91f8d4e1112bfd8b86d50a58ae11028e04ec4"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-next-automation_log.jsonl": {
+            "original_sha256": "676a29fc91321a0775edecccff17e8206728294e52b734608cbb85312aab35ff",
+            "exported_sha256": "676a29fc91321a0775edecccff17e8206728294e52b734608cbb85312aab35ff"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-skip1-automation_log.jsonl": {
+            "original_sha256": "7116212cf7a4ee85f764902433b7f07c360ea89d0ddaaceed2130d5f0ae335ec",
+            "exported_sha256": "7116212cf7a4ee85f764902433b7f07c360ea89d0ddaaceed2130d5f0ae335ec"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-skip2-automation_log.jsonl": {
+            "original_sha256": "080b7d12c762ee58594581af2bfdac10ac28e23d79136cbed51c38e7abccaa5e",
+            "exported_sha256": "080b7d12c762ee58594581af2bfdac10ac28e23d79136cbed51c38e7abccaa5e"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-exit-automation_log.jsonl": {
+            "original_sha256": "4f7e7bf45e23c6d018e70f275371897cf591f146d29fbe292dcf02917ca6aa8c",
+            "exported_sha256": "4f7e7bf45e23c6d018e70f275371897cf591f146d29fbe292dcf02917ca6aa8c"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-logcat.txt": {
+            "original_sha256": "ec84b407126b91c7b5474e7cf9038471b97bdc2c73ccfd3c5ac6a07e128d98dc",
+            "exported_sha256": "25ed41f71fff4ff99d4e00607908e552316a3c5444a75b53f5a0ed6b91421164"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-next-automation_log.jsonl": {
+            "original_sha256": "62dfab0b2a37fba31905c891d0f6698b9d6f09672847241686256f5d06cdf9f4",
+            "exported_sha256": "62dfab0b2a37fba31905c891d0f6698b9d6f09672847241686256f5d06cdf9f4"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-skip1-automation_log.jsonl": {
+            "original_sha256": "cc8c3bdd8c4c5577af9fa327d3199c81d75007aff95fc27d93738dae54dd1d12",
+            "exported_sha256": "cc8c3bdd8c4c5577af9fa327d3199c81d75007aff95fc27d93738dae54dd1d12"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-exit-automation_log.jsonl": {
+            "original_sha256": "6546e582c24f668cbae647538ffa0ce6b8e492d0f3d8be0479d035256d2437c0",
+            "exported_sha256": "6546e582c24f668cbae647538ffa0ce6b8e492d0f3d8be0479d035256d2437c0"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-logcat.txt": {
+            "original_sha256": "631936f4766d107ebd15c64a731f6e2a3787202e093ecc3610428876f4948f84",
+            "exported_sha256": "86245b0d8a087ef6f1c61674f1539f6be07532d063088cbc8bf22b40214c552f"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-next-automation_log.jsonl": {
+            "original_sha256": "8b3dc63f0f040d78e928d7352de0d18767dad54d48f99506c087dc4b27842d79",
+            "exported_sha256": "8b3dc63f0f040d78e928d7352de0d18767dad54d48f99506c087dc4b27842d79"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-skip1-automation_log.jsonl": {
+            "original_sha256": "1082c2bb49a380a7e549d891ec7360fe595945742cf604fda716e5365cb64c0d",
+            "exported_sha256": "1082c2bb49a380a7e549d891ec7360fe595945742cf604fda716e5365cb64c0d"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-exit-automation_log.jsonl": {
+            "original_sha256": "2e34e7a2493554dd805b16955f94244a641ee3b3c5e035c084e1cc04b0f633a4",
+            "exported_sha256": "2e34e7a2493554dd805b16955f94244a641ee3b3c5e035c084e1cc04b0f633a4"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-logcat.txt": {
+            "original_sha256": "7164bd0bd565791c527a8fd17d0fdde41c5232f5d36246e97d9d096515af59a6",
+            "exported_sha256": "acbbc6505d625ce0bd263c7fdd5136f1ce1ed4f3f825064a5eb20c06118687ab"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-next-automation_log.jsonl": {
+            "original_sha256": "641883be8a2c970b99e86c052bb9974d0910dfbae2b7d1051ca593c35e468b1e",
+            "exported_sha256": "641883be8a2c970b99e86c052bb9974d0910dfbae2b7d1051ca593c35e468b1e"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-skip1-automation_log.jsonl": {
+            "original_sha256": "788471f069de3e0b8af050d3d52441c780f2a986d3335c89db09f5df6b9b7d2a",
+            "exported_sha256": "788471f069de3e0b8af050d3d52441c780f2a986d3335c89db09f5df6b9b7d2a"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-exit-automation_log.jsonl": {
+            "original_sha256": "9adc9f735e318bb4dbadab32b8a50f7c3607c7db514b2815808fc71afd636f05",
+            "exported_sha256": "9adc9f735e318bb4dbadab32b8a50f7c3607c7db514b2815808fc71afd636f05"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-logcat.txt": {
+            "original_sha256": "f705f8dd12fa7380b5d0eeef1e6590c1b4a1016e36041297961eec51d3f8be1a",
+            "exported_sha256": "d9362299a9d360da1b45a43269c931b24293655056e5707e234f2f89ec2df63a"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-next-automation_log.jsonl": {
+            "original_sha256": "fa3a0a0cf3276cf51d6e3e6a97c757a6a4ff34b5e59967b1bd30c20a05355103",
+            "exported_sha256": "fa3a0a0cf3276cf51d6e3e6a97c757a6a4ff34b5e59967b1bd30c20a05355103"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-skip1-automation_log.jsonl": {
+            "original_sha256": "89b3b4fdc8bfbcdee114538a2456bc901ef78b0c1cfad49f1e281c3d322bfad2",
+            "exported_sha256": "89b3b4fdc8bfbcdee114538a2456bc901ef78b0c1cfad49f1e281c3d322bfad2"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-exit-automation_log.jsonl": {
+            "original_sha256": "11182b59f9f56262e7194b55232c5251498756bed9e6e183dfb45f82d5483dc2",
+            "exported_sha256": "11182b59f9f56262e7194b55232c5251498756bed9e6e183dfb45f82d5483dc2"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-logcat.txt": {
+            "original_sha256": "5037fc5ef10dabb5c8276388576b47fda9345c11d765dc3ed0c357e1759045dc",
+            "exported_sha256": "597d7d317864dd60d29d1879151bf72087d2c733c8ad1db11dc12f576f2986bd"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-next-automation_log.jsonl": {
+            "original_sha256": "b6191c030f460f9aadb894a6c9fbc7a01b2999dafdbc09e3ed15426e961745f1",
+            "exported_sha256": "b6191c030f460f9aadb894a6c9fbc7a01b2999dafdbc09e3ed15426e961745f1"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-skip1-automation_log.jsonl": {
+            "original_sha256": "6072a4625942959cbbf52e8d3e64440d68277cb471b92c7569105f61dbb79f32",
+            "exported_sha256": "6072a4625942959cbbf52e8d3e64440d68277cb471b92c7569105f61dbb79f32"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-exit-automation_log.jsonl": {
+            "original_sha256": "6411e317ef003d178517038d517a21207dca12a3329396e734418f7ab38eab04",
+            "exported_sha256": "6411e317ef003d178517038d517a21207dca12a3329396e734418f7ab38eab04"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-logcat.txt": {
+            "original_sha256": "e4b0178d477d9282c68426193840cfd8009b985e94f050b8077cb75cc9994ed6",
+            "exported_sha256": "ce3d956087fd2528ee8bff3b9a93c99d4b8ba77196add9417fecd8fd9fa8ac86"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-next-automation_log.jsonl": {
+            "original_sha256": "323112642eb772d6ef548e2388763c174348446f43de908f65a2220f98627953",
+            "exported_sha256": "323112642eb772d6ef548e2388763c174348446f43de908f65a2220f98627953"
+        },
+        "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-skip1-automation_log.jsonl": {
+            "original_sha256": "c5d166b509b4f551ebd130036025357ba5a02d77aabf64d4a34b7d2af7b235af",
+            "exported_sha256": "c5d166b509b4f551ebd130036025357ba5a02d77aabf64d4a34b7d2af7b235af"
+        },
+        "first-play/lan-launch-preparation-public-shareware/events.jsonl": {
+            "original_sha256": "1e3d91bbea0b810e70e2a104059d2b8c17cd883a26bd2cbd8f175372604b94b5",
+            "exported_sha256": "0b09cdc640c16dbadf327f0cdd7ec1982afa4210a5e6b20133242bfa9903d7a4"
+        },
+        "first-play/lan-launch-preparation-public-shareware/test_lan_latency_exit.jsonc": {
+            "original_sha256": "2e68757ef9d7988bb925ecd9dbafe6a22db7b7e0ea53d46698b6e9831856fe8f",
+            "exported_sha256": "2e68757ef9d7988bb925ecd9dbafe6a22db7b7e0ea53d46698b6e9831856fe8f"
+        },
+        "first-play/lan-launch-preparation-public-shareware/test_lan_latency_next.jsonc": {
+            "original_sha256": "981b0476e120b7e0091df050f41c2c53b86155e3b565617da2a6ad3f251efa98",
+            "exported_sha256": "981b0476e120b7e0091df050f41c2c53b86155e3b565617da2a6ad3f251efa98"
+        },
+        "first-play/lan-launch-preparation-public-shareware/test_lan_latency_skip.jsonc": {
+            "original_sha256": "f5eff9e55560224fc65f01a544ab417b63b0f00dedeb0ff8c42626112887e232",
+            "exported_sha256": "f5eff9e55560224fc65f01a544ab417b63b0f00dedeb0ff8c42626112887e232"
+        }
+    },
+    "source_run": 39380229137,
+    "source_artifact": 12245932105
+}
