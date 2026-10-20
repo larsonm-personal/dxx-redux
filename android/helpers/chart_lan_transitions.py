@@ -143,8 +143,17 @@ def extract(root):
                         path.name,
                     )
         previous = None
-        for match in phase_pattern.finditer(text):
-            tick, player, level, generation, phase, armed = map(int, match.groups())
+        for line in text.splitlines():
+            match = phase_pattern.search(line)
+            if not match:
+                continue
+            clock = re.match(r"\s*(\d+\.\d+)\s", line)
+            if not clock:
+                continue
+            # timer_query in the message is frame-cached; logcat -v monotonic
+            # records the actual logging instant on this one device
+            tick = float(clock.group(1)) * 1000
+            _, player, level, generation, phase, armed = map(int, match.groups())
             if previous:
                 old_tick, old_level, old_gen, old_phase, old_armed = previous
                 if generation == old_gen and level == old_level and old_armed and phase != old_phase:
@@ -201,7 +210,7 @@ def main():
     if not rows:
         raise SystemExit("No observed intervals; refusing to create a timing chart")
     with (args.output / "timings.csv").open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
