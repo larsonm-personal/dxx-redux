@@ -1,10 +1,12 @@
 # Owned by test_lan_launch_preparation; run only after its matched timing samples
 function Invoke-LanParallelStartupChecks {
+    param([string[]]$Games = @('d1', 'd2'),
+        [string[]]$Cases = @('slow-host', 'slow-client-duplicate', 'long-client', 'dropped-admission', 'cancel-client', 'retry'))
     $timingDirectory = $outputDirectory
-    foreach ($game in @('d1', 'd2')) {
+    foreach ($game in $Games) {
         $script:latencyGame = $game
         foreach ($serial in @($hostSerial, $clientSerial)) { Stage-PublicLanAssets -Serial $serial -Files @($publicFiles | Where-Object Game -CEQ $game) }
-        foreach ($case in @('slow-host', 'slow-client-duplicate', 'long-client', 'dropped-admission', 'cancel-client', 'retry')) {
+        foreach ($case in $Cases) {
             $script:latencySample = $case
             $outputDirectory = Join-Path $timingDirectory "parallel-startup-checks/$game-$case"
             New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
@@ -13,6 +15,8 @@ function Invoke-LanParallelStartupChecks {
                     Reset-DeviceGameState -Serial $serial
                     Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/lan_startup_test.json') -Seconds 5 | Out-Null
                     $fault = @{}
+                    if ($case -eq 'host-loss-loading' -and $serial -eq $hostSerial) { $fault.delay_ms = 20000 }
+                    if ($case -eq 'host-loss-waiting' -and $serial -eq $clientSerial) { $fault.delay_ms = 20000 }
                     if ($case -eq 'slow-host' -and $serial -eq $hostSerial) { $fault.delay_ms = 6000 }
                     if ($case -eq 'slow-client-duplicate' -and $serial -eq $clientSerial) { $fault.delay_ms = 6000; $fault.duplicates = 1 }
                     if ($case -eq 'long-client' -and $serial -eq $clientSerial) { $fault.delay_ms = 20000 }
@@ -39,7 +43,25 @@ function Invoke-LanParallelStartupChecks {
                 Invoke-LatencyCommand $hostSerial 'lan_start_game' @('--ei', 'level_num', '1', '--ez', 'coop_briefings', 'true')
                 Invoke-LatencyCommand $hostSerial 'launch_game'
                 Invoke-LatencyCommand $clientSerial 'launch_game'
-                if ($case -eq 'cancel-client') {
+                if ($case -like 'host-loss-*') {
+                    $hostMarker = if ($case -eq 'host-loss-loading') { 'event=load_hold_begin' } else { 'event=wait_requests_flush' }
+                    if (-not (Wait-ForCondition -Description 'Host loss injection boundary' -TimeoutSec 40 -PollMs 100 -Condition {
+                                $hostLog = (Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                                $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                                $hostLog -match $hostMarker -and $clientLog -match 'event=admission_send'
+                            })) { throw 'Host loss injection boundary not reached' }
+                    if ($hostLog -match 'event=sync_send_begin') { throw 'Host already synchronized before loss injection' }
+                    Write-LatencyEvent $hostSerial 'host-loss.request'
+                    Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
+                    if (-not (Wait-ForCondition -Description 'Client leaves initial sync after silent host loss' -TimeoutSec 85 -PollMs 1000 -Condition {
+                                $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                                $clientLog -match 'wait_for_sync FAILED'
+                            })) { throw 'Client stranded in initial synchronization after silent host loss (85s bound)' }
+                    if ($clientLog -match 'event=sync_received') { throw 'Unexpected sync after host loss' }
+                    $state = Get-GameIntrospection -Serial $clientSerial -Fresh
+                    Write-LatencyEvent $clientSerial 'host-loss.recovered' $state
+                    if ($state -and $state.in_game) { throw 'Client entered game after host loss' }
+                } elseif ($case -eq 'cancel-client') {
                     if (-not (Wait-ForCondition -Description 'Client admitted before cancellation' -TimeoutSec 30 -PollMs 100 -Condition {
                                 $script:cancelClientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                                 $hostLog = (Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
