@@ -6,6 +6,7 @@
 
 #include "pstypes.h"
 #include "game.h"
+#include "gameseq.h"
 #include "mission.h"
 #include "multi.h"
 #include "net_udp.h"
@@ -16,6 +17,7 @@
 #include "android_log.h"
 #endif
 #include "net_udp_android_autonet_shared.h"
+#include "startup_sync_trace.h"
 
 extern int udp_open_socket(int socknum, int port);
 extern int udp_dns_filladdr(char *pszAddress, int port, struct _sockaddr *addr);
