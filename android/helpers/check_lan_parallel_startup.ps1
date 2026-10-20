@@ -181,6 +181,11 @@ function Invoke-LanParallelStartupChecks {
                         }
                     }
                 }
+                if ($case -in @('cancel-client', 'missing-third', 'failed-level-load')) {
+                    $state = Get-GameIntrospection -Serial $hostSerial -Fresh
+                    Write-LatencyEvent $hostSerial 'host-failure.terminal' $state
+                    if (-not $state -or $state.in_game -or $state.screen_mode -ne 'menu') { throw 'No positive host terminal menu after failed start' }
+                }
                 Write-LatencyEvent 'both' 'case.pass'
             } finally {
                 foreach ($serial in @($hostSerial, $clientSerial)) {
