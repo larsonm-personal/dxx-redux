@@ -58,6 +58,10 @@ def check_pair(host_path, client_path, case):
         first(ce, "admission_send")
         first(he, "admission_received")
         first(ce, "load_hold_begin")
+        wait = first(he, "wait_requests_flush")
+        released = first(he, "sync_send_begin")
+        assert released["time"] - wait["time"] >= 59.5, "Canceled loader expired before loading allowance"
+        assert "timeout_check: player 1 timed out" in host_path.read_text(encoding="utf-8-sig")
         assert not any(e.get("event") == "load_hold_end" for e in ce)
         return dict(case=case, verified="canceled before load/readiness; inspect case.pass for timeout recovery")
     h, c = hl[0], cl[0]

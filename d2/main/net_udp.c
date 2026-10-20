@@ -7395,6 +7395,8 @@ int net_udp_start_game(void)
 	int i;
 
 #ifdef __ANDROID__
+	const int launcher_initial_load = auto_net_lan_startup && auto_host_pending &&
+	    Netgame.gamemode == NETGAME_COOPERATIVE && !Netgame.host_is_obs;
 	/* Native-menu hosting can follow a proxy-backed client in this process */
 	MPDIAG("host socket: port=%s previous_loopback=%d", UDP_MyPort, udp_bind_loopback);
 	udp_bind_loopback = 0;
@@ -7449,8 +7451,8 @@ int net_udp_start_game(void)
 			        Netgame.max_numplayers, Netgame.mission_name);
 #endif
 #ifdef __ANDROID__
-		net_launcher_initial_load = auto_net_lan_startup;
-		if (auto_net_lan_startup) auto_net_startup_test_hold("host");
+		net_launcher_initial_load = launcher_initial_load;
+		if (net_launcher_initial_load) auto_net_startup_test_hold("host");
 #endif
 		STARTUP_SYNC_TRACE("start_level_begin");
 		StartNewLevel(Netgame.levelnum);

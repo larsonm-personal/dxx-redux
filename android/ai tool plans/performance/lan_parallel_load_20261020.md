@@ -70,3 +70,9 @@ source compile failure, not an infrastructure outage despite the generic lane
 receipt's setup classification. No samples were executed in39447586543.
 Native policy/auth tests still pass3/3 for both engines after the loading grace
 change. Six fault cases per game now include the20s boundary case.
+
+Scope check: capture auto_host_pending at net_udp_start_game entry, before
+selection clears it, to restrict the loading allowance to this launcher call.
+A later classic native-menu host in the same process must keep its old timeout.
+The in-progress4dcc170d3 run is superseded before emulator execution to validate
+this final scope guard on the exact measured revision.
