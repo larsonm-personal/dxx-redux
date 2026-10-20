@@ -2,7 +2,7 @@
 """Export bounded public LAN diagnostics via check annotations when blob downloads fail.
 
 Only use with the public nightly-results-android-dual artifact. Native logs are
-filtered, most screenshots stay in the original artifact, and source hashes preserve
+filtered, screenshots stay in the original artifact, and source hashes preserve
 provenance. No network access or credentials are read by this helper.
 """
 
@@ -21,7 +21,7 @@ pattern = re.compile(
     re.I,
 )
 for path in sorted(root.rglob("*")):
-    if not path.is_file() or path.is_symlink() or path.suffix not in (".txt", ".log", ".json", ".jsonl"):
+    if not path.is_file() or path.is_symlink() or path.suffix not in (".txt", ".log", ".json", ".jsonl", ".jsonc"):
         continue
     if path.stat().st_size > 16 * 1024 * 1024:
         continue
@@ -54,6 +54,7 @@ for path in sorted(root.rglob("*")):
         (path.suffix == ".json" and len(raw) <= 512 * 1024)
         or (relative.startswith("master/") and len(raw) <= 512 * 1024)
         or "automation_" in path.name
+        or path.name.startswith("test_lan_latency_")
         or path.name.endswith(("-properties.txt", "-routes.txt", "-neighbors.txt"))
         or path.name == "emulator-version.log"
     ):

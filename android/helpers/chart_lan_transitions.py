@@ -161,6 +161,8 @@ def extract(root):
             "feedback_published": "Launcher game launch requested",
             "activity_displayed": "Displayed com.dxxredux.app/.MainActivity",
             "library_loaded": "Loaded native library:",
+            "native_autonet_started": "auto_net: starting auto-",
+            "host_selection_completed": "closing select_players",
             "briefing_protocol_ready": "phase=6 armed=1",
         }
         for line in text.splitlines():
@@ -287,7 +289,7 @@ def comparison_groups(rows):
         if row["basis"] in ("native_action_to_condition", "device_local_startup_milestone"):
             groups[(*key, row["phase"])].append(float(row["duration_ms"]))
         if row["basis"] == "native_phase_residence":
-            match = re.fullmatch(r"level(\d+)_gen(\d+)_phase([789])_to_(\d+)", row["phase"])
+            match = re.fullmatch(r"level(\d+)_gen(\d+)_phase(\d+)_to_(\d+)", row["phase"])
             if match:
                 level, generation, start, end = map(int, match.groups())
                 phases[(*key, int(row["sample"]), level, generation)].append(
@@ -297,12 +299,16 @@ def comparison_groups(rows):
     # be matched by numeric value across runs; their local start order is stable.
     operations = defaultdict(list)
     for (game, peer, sample, level, generation), values in phases.items():
-        values.sort()
-        if [(v[0], v[1]) for v in values] == [(7, 8), (8, 9), (9, 0)]:
-            operations[game, peer, sample, level].append((values[0][2], values[-1][3]))
+        closing = sorted(v for v in values if v[0] in (7, 8, 9))
+        duration = None
+        if [(v[0], v[1]) for v in closing] == [(7, 8), (8, 9), (9, 0)]:
+            duration = closing[-1][3] - closing[0][2]
+        # Preserve the operation ordinal even if a diagnostic edge is missing.
+        operations[game, peer, sample, level].append((min(v[2] for v in values), duration))
     for (game, peer, sample, level), values in operations.items():
-        for index, (start, end) in enumerate(sorted(values), 1):
-            groups[game, peer, f"level{level}_handshake{index}_closing_to_settled"].append(end - start)
+        for index, (start, duration) in enumerate(sorted(values), 1):
+            if duration is not None:
+                groups[game, peer, f"level{level}_handshake{index}_closing_to_settled"].append(duration)
     return groups
 
 
@@ -335,7 +341,7 @@ def write_comparison(before_rows, after_rows, output):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="{height}">',
         '<rect width="100%" height="100%" fill="white"/><g font-family="sans-serif" fill="#17233b">',
         '<text x="20" y="28" font-size="20">LAN co-op: matched before / after observations</text>',
-        '<text x="20" y="51" font-size="13">Gray: before. Green: immediate phase publication. Bars = means; dots = individual samples; n=3 per row/run.</text>',
+        '<text x="20" y="51" font-size="13">Gray: before. Green: immediate phase publication. Bars = means; dots = samples; target n=3 per row/run, actual n labeled.</text>',
         '<text x="20" y="72" font-size="13">Device-local native action conditions or closing→settled log timestamps. No controller polling bounds in this chart.</text>',
         '<text x="20" y="91" font-size="13">Small sequential emulator samples: variation is not proof of a speedup. Host=5554, client=5556.</text>',
     ]
@@ -368,6 +374,18 @@ def main():
     parser.add_argument("--compare", type=Path, help="Before timings.csv; compare against this evidence run")
     args = parser.parse_args()
     manifest, rows = extract(args.evidence)
+    events = read_jsonl(args.evidence / "events.jsonl")
+    passed = {(e["game"], e["sample"]) for e in events if e["event"] == "sample.pass"}
+    expected = {(game, sample) for game in ("d1", "d2") for sample in range(1, manifest["samples"] + 1)}
+    failed_scripts = [
+        p.name
+        for p in args.evidence.glob("*-automation_result.json")
+        if json.loads(p.read_text(encoding="utf-8-sig")).get("result") != "PASS"
+    ]
+    if passed != expected or failed_scripts:
+        raise SystemExit(
+            f"Incomplete/failed experiment; retain raw evidence, not a success chart: passed={sorted(passed)}, failed_scripts={failed_scripts}"
+        )
     args.output.mkdir(parents=True, exist_ok=True)
     if not rows:
         raise SystemExit("No observed intervals; refusing to create a timing chart")

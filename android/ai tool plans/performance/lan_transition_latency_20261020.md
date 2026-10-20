@@ -108,10 +108,11 @@ format, client ACK throttle, participant/generation validation, and every
 closure/loading/commit acknowledgement barrier. Add regression coverage for
 immediate changes, unchanged-state retry boundaries, and missing remote ACKs.
 
-For the matched after run, keep the successful measurement owner/helper and
-all automation actions/delays identical. A prospective reachability/failed-case
-continuation refinement is retained only in ignored temp, not applied to the
-comparison. Do not shorten timeouts to hide the separate failed JOIN sample.
+Keep native automation actions/delays identical for comparison. A prospective
+reachability/failed-case continuation refinement is retained only in ignored
+temp, not applied. Do not shorten timeouts to hide the separate failed JOIN
+sample. The failed after attempt below required an untimed script-staging
+repair and explicit result validation.
 
 ## Measurement definitions and configuration
 
@@ -137,6 +138,7 @@ test, and run order is before then after, not randomized/interleaved.
 | Launcher controller | Before `Start-SetupActivity` | Helper returns; includes its deliberate 2 s hold and ADB |
 | Launch feedback | Device-local `MP_COMMAND: launch_game` | `Launcher game launch requested` state publication; not a first-pixel observation |
 | Window displayed | Same launch command | Android `Displayed ... MainActivity`; window-draw proxy, not proof of meaningful progress |
+| Host player selection complete | Same launch command | `closing select_players` after both native players arrive; automatic selection, not manual input |
 | Briefing protocol ready | Same launch command | First armed phase 6 log; native protocol milestone |
 | Start-to-briefing controller | Host `lan_start_game` request | Each peer's fresh introspection observes presenting phase 6; includes ADB/800 ms per-peer polling |
 | Skip action-to-ready | Native script step 2 starts Skip | Step 3 observes in-game, briefing inactive, unpaused |
@@ -157,10 +159,13 @@ All script `post_delay_ms` values are zero. Scores and briefings are not
 automatically charged their deliberate viewing/staging dwell.
 
 The two-player native player-selection flow auto-starts when both players
-arrive (`max_players=2`); manual selection dwell was not exercised. Its
-connection work is included in launch-to-briefing and existing native
-network-sync profiles, but there is no separate measured first-pixel marker
-for that screen. Screenshots were captured at briefing, gameplay and scores
+arrive (`max_players=2`); manual selection dwell was not exercised. Host
+selection completion occurred 11.968–16.375 s after launch in D1 and
+14.997–18.561 s in D2. From native auto-host start to selection completion
+was 4.698–8.227 s in D1 and 5.110–6.063 s in D2; this includes connection
+setup and waiting for the other peer, not pure menu rendering. There is no
+separate measured first-pixel marker for that screen. Screenshots were
+captured at briefing, gameplay and scores
 in the original CI artifact; they were not visually inspected through the
 blocked local artifact endpoint. No claim of exact time-to-visible-content
 is made. Reactor destruction is seeded through the existing real-engine
@@ -184,7 +189,8 @@ hold, or asset-cache change is included.
 - Initial failed original-baseline smoke:
   [39374851627](https://github.com/larsonm-personal/dxx-redux/actions/runs/39374851627).
 - Complete before text export:
-  [39377769444](https://github.com/larsonm-personal/dxx-redux/actions/runs/39377769444).
+  [39379623350](https://github.com/larsonm-personal/dxx-redux/actions/runs/39379623350),
+  including existing player-selection completion diagnostics.
   Earlier incomplete annotation-export attempts were rejected, not used as data.
 - Ubuntu and Windows tooling/catalog checks:
   [39375580457](https://github.com/larsonm-personal/dxx-redux/actions/runs/39375580457), both passed.
@@ -204,3 +210,40 @@ The targeted transition regression builds pass; Android runtime builds are
 separately checked in the dual-emulator runs. No unrelated demo fix is included.
 Local full catalog supervision could not read `/proc/self/task/.../children`;
 the same catalog checks passed in GitHub Linux and Windows tooling CI.
+
+## Invalid first after attempt and recovery
+
+Run [39378284578](https://github.com/larsonm-personal/dxx-redux/actions/runs/39378284578)
+at `9268919164a114b7b97130afbf35bc801479fc1f` built successfully but failed in
+D1 sample 1. Artifact **12244907274** preserves the evidence. Both peers'
+native script loaders reported JSON parse error line 7, column 9, then
+`Failed to load automation script`, zero steps executed. Formatter-added
+JSONC trailing commas had been copied directly to the strict native loader.
+The before revision's scripts were strict JSON. A JSONC semantic comparison
+alone had missed this runtime incompatibility.
+
+The roughly 116-second Skip-request-to-level-observation intervals were
+fallback timeout behavior, not successful Skip execution. The later scores
+observation timed out on both peers. Its 467 ms host / 368 ms client closing
+handshake followed that timeout and is **not** a matched speedup sample.
+No sample completed; none of this run is included in the A/B comparison.
+`after_invalid_39378284578.json` retains the compact controller events and
+failed automation receipts; the full logs remain in the artifact.
+
+Repair: use the repository's existing `ConvertFrom-JsoncText` before copying
+scripts, outside the timed command interval. Strict JSON parsing of all three
+staged payloads succeeds, and their complete action data equals the successful
+`2eb278f` baseline exactly. Actions, order, conditions and zero post-delays are
+unchanged. Result collection now requires native `PASS`; the chart generator
+refuses incomplete experiments or failed script receipts. A local injected
+failed receipt verified rejection. This is a harness repair, not evidence of
+an engine synchronization regression.
+
+The recovery procedure in `.github/TASK_RECOVERY.md` (PR #98) was followed:
+resumed the existing executor, verified the topic ref and commit identity,
+and checked the existing run before retrying. CLI authentication remained
+valid, and GitHub connector decoded job-log retrieval succeeded. The connector
+also returned an artifact ZIP reference, but transferring that file into this
+executor returned HTTP 403, including supported Library materialization.
+Bounded CI text export remains the working local evidence path. No login,
+credential transfer, network policy or security-setting change was made.
