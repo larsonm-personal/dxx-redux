@@ -5,6 +5,7 @@ import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import java.io.File
+import java.io.IOException
 
 internal object RouteMetadataBackground {
     private const val TOTAL_TIMEOUT_MS = 10L * 60L * 1_000L
@@ -231,6 +232,10 @@ internal object RouteMetadataBackground {
         } catch (e: CancellationException) {
             reportCurrent(false, "cancelled")
             throw e
+        } catch (e: IOException) {
+            // Optional background caches must not terminate gameplay when storage becomes unavailable
+            Log.w("DXX-RouteMetadata", "Route metadata storage unavailable", e)
+            reportCurrent(false, "storage=${e.message.orEmpty()}")
         } catch (e: Exception) {
             reportCurrent(false, "exception=${e.javaClass.simpleName} message=${e.message.orEmpty()}")
             throw e

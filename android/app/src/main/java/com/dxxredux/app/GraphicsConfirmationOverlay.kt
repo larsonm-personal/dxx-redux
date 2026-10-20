@@ -200,7 +200,7 @@ internal class GraphicsConfirmationOverlay(
         cancel.minHeight = dp(if (compact) 48 else 56)
         panel.layoutParams.width =
             minOf(
-                dp(if (editing) 560 else 440),
+                dp(if (editing) 720 else 440),
                 (MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight).coerceAtLeast(0),
             )
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -268,7 +268,7 @@ internal class GraphicsConfirmationOverlay(
         choices.update(state, previewSelection)
         ok.text = if (editing) "Done" else "OK"
         if (editing) {
-            cancel.text = "Keep previous settings"
+            cancel.text = "Cancel"
         } else if (preparing) {
             cancel.text = "Cancel (5)"
         }

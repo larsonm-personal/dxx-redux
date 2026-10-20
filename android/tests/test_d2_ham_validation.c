@@ -189,6 +189,12 @@ int main(int argc, char **argv)
 	       "negative offset on an empty robot joint list is ignored");
 	expect(report.normalized_empty_joint_offsets == 1,
 	       "normalized empty robot joint-list offset is reported");
+	put16(joint_hxm, 16 + 298, 685);
+	expect(d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "nonnegative empty joint offsets remain valid HAM patch baselines");
+	expect(report.normalized_empty_joint_offsets == 0,
+	       "nonnegative empty joint offsets do not require normalization");
+	put16(joint_hxm, 16 + 298, -1);
 	put16(joint_hxm, 16 + 296, 1);
 	expect(!d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
 	       "negative offset on a nonempty robot joint list is rejected");

@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 
@@ -39,6 +42,7 @@ internal class NavigationRepeatChecks(
         var value by mutableFloatStateOf(50f)
         var dialog by mutableIntStateOf(0)
         var dialogView: View? = null
+        var dialogInputMode: InputModeManager? = null
         var dialogFocused = -1
         var dialogMoves = 0
         val rootFocus = FocusRequester()
@@ -50,6 +54,7 @@ internal class NavigationRepeatChecks(
             inDialog: Boolean,
             ordered: Boolean,
         ) {
+            if (inDialog) dialogInputMode = LocalInputModeManager.current
             val modifier = if (ordered) Modifier.repeatVerticalDpadFocus(useTraversalOrder = true) else Modifier
             Column(modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
                 repeat(20) { index ->
@@ -252,8 +257,19 @@ internal class NavigationRepeatChecks(
             focus(rootFocus)
             edge(KeyEvent.KEYCODE_DPAD_DOWN, true)
             onMain { dialog = kind }
-            Thread.sleep(350)
+            val focusDeadline = SystemClock.uptimeMillis() + 3000
+            while (!onMain { dialogView?.hasWindowFocus() == true }) {
+                check(SystemClock.uptimeMillis() < focusDeadline) { "Dialog $kind did not acquire window focus" }
+                Thread.sleep(20)
+            }
+            onMain {
+                val inputMode = checkNotNull(dialogInputMode)
+                Log.i("DXX-SliderTest", "Dialog $kind input mode before focus: ${inputMode.inputMode}")
+                // Direct View dispatch bypasses the platform's physical DPAD touch-mode transition
+                check(inputMode.requestInputMode(InputMode.Keyboard)) { "Dialog $kind could not enter keyboard mode" }
+            }
             focus(dialogFocus)
+            check(onMain { dialogFocused == 0 }) { "Dialog $kind did not focus its first row: $dialogFocused" }
             val target = onMain { checkNotNull(dialogView) }
             edge(KeyEvent.KEYCODE_DPAD_DOWN, true, target = target)
             holdTime { dialogFocused >= 4 }
