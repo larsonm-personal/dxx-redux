@@ -62,23 +62,12 @@ for path in sorted(root.rglob("*")):
         text = "\n".join(line for line in text.splitlines() if pattern.search(line))
     if text:
         selected[relative] = {"source_sha256": hashlib.sha256(raw).hexdigest(), "text": text}
-# Preserve a few small original UI snapshots without inflating check annotations
-image_bytes = 0
-for path in sorted(root.rglob("*-1-*-*.png")):
-    if path.is_symlink() or not path.name.endswith(("-briefing1.png", "-scores.png")):
-        continue
-    if path.stat().st_size > 64 * 1024 or image_bytes + path.stat().st_size > 128 * 1024:
-        continue
-    raw = path.read_bytes()
-    image_bytes += len(raw)
-    selected[str(path.relative_to(root))] = {
-        "source_sha256": hashlib.sha256(raw).hexdigest(),
-        "base64": base64.b64encode(raw).decode(),
-    }
 blob = gzip.compress(json.dumps(selected, separators=(",", ":")).encode(), mtime=0)
-if len(blob) > 256 * 1024:
-    raise SystemExit("Refusing annotation export over 256 KiB compressed")
+if len(blob) > 128 * 1024:
+    raise SystemExit("Refusing annotation export over 128 KiB compressed")
 encoded = base64.b64encode(blob).decode()
 print(f"Exported {len(selected)} public text files/excerpts; gzip sha256={hashlib.sha256(blob).hexdigest()}")
-for index, offset in enumerate(range(0, len(encoded), 60000)):
-    print(f"::notice title=LAN_EVIDENCE_{index:04d}::{encoded[offset : offset + 60000]}")
+group = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+for index, offset in enumerate(range(0, len(encoded), 4000)):
+    if index // 10 == group:
+        print(f"::notice title=LAN_EVIDENCE_{index:04d}::{encoded[offset : offset + 4000]}")
