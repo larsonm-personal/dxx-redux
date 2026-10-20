@@ -7,7 +7,7 @@ param(
     [ValidateRange(0, 300)][int]$LockWaitSeconds = 60,
     [ValidateRange(1, 7200)][int]$TimeoutSeconds = 3600,
     [switch]$Force,
-    [ValidateSet('', 'Nexus5X_Light_1', 'Nexus5X_Light_2')][string]$AvdName = ''
+    [ValidateSet('', 'Nexus5X_Light_1', 'Nexus5X_Light_2', 'Nexus5X_Light_3')][string]$AvdName = ''
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Get-DepPlatform.ps1')

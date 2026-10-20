@@ -55,6 +55,8 @@ for path in sorted(root.rglob("*")):
                 }
             events.append(event)
         text = "\n".join(json.dumps(e, separators=(",", ":")) for e in events)
+    elif relative == "setup/emulator-boot.log":
+        text = "\n".join(text.splitlines()[-120:])
     elif re.fullmatch(r"session-\d+-(host|client).json", path.name):
         state = json.loads(text)
         text = json.dumps(
@@ -89,7 +91,7 @@ for path in sorted(root.rglob("*")):
             # up to briefing readiness. This exports saved evidence, not a rerun
             if fault_case or re.fullmatch(r"session-\d+-emulator-\d+-logcat.txt", path.name):
                 if re.search(
-                    r"auto_net: starting auto-|STARTUP-FAULT|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
+                    r"auto_net: starting auto-|STARTUP-AUTH|STARTUP-FAULT|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
                     line,
                 ):
                     lines.append(line)

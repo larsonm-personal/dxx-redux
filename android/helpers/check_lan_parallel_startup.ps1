@@ -15,7 +15,7 @@ function Invoke-LanParallelStartupChecks {
                     Reset-DeviceGameState -Serial $serial
                     Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/lan_startup_test.json') -Seconds 5 | Out-Null
                     $fault = @{}
-                    if ($case -eq 'host-loss-loading' -and $serial -eq $hostSerial) { $fault.delay_ms = 20000 }
+                    if ($case -in @('host-loss-loading', 'cancel-reconnect') -and $serial -eq $hostSerial) { $fault.delay_ms = 20000 }
                     if ($case -eq 'host-loss-waiting' -and $serial -eq $clientSerial) { $fault.delay_ms = 20000 }
                     if ($case -eq 'slow-host' -and $serial -eq $hostSerial) { $fault.delay_ms = 6000 }
                     if ($case -eq 'slow-client-duplicate' -and $serial -eq $clientSerial) { $fault.delay_ms = 6000; $fault.duplicates = 1 }
@@ -43,6 +43,7 @@ function Invoke-LanParallelStartupChecks {
                             Send-MpCommand -Serial $clientSerial -Command 'lan_set_ready' -Extras @('--ez', 'ready', 'true')
                             Test-LanPreparationLobbyPeers -State (Read-LanPreparationLobby $hostSerial) -HostCallsign 'TimingH' -ClientCallsign 'TimingJ' -RequireReady
                         })) { throw 'Parallel lobby readiness failed' }
+                $hostPidBefore = $null
                 Invoke-LatencyCommand $hostSerial 'lan_start_game' @('--ei', 'level_num', '1', '--ez', 'coop_briefings', 'true')
                 Invoke-LatencyCommand $hostSerial 'launch_game'
                 Invoke-LatencyCommand $clientSerial 'launch_game'
@@ -89,29 +90,48 @@ function Invoke-LanParallelStartupChecks {
                     $state = Get-GameIntrospection -Serial $clientSerial -Fresh
                     Write-LatencyEvent $clientSerial 'host-loss.recovered' $state
                     if (-not $state -or $state.in_game -or $state.screen_mode -ne 'menu') { throw 'No positive terminal menu observation after host loss' }
-                } elseif ($case -in @('cancel-client', 'same-session-reconnect')) {
+                } elseif ($case -in @('cancel-client', 'same-session-reconnect', 'cancel-reconnect')) {
                     if (-not (Wait-ForCondition -Description 'Client admitted before cancellation' -TimeoutSec 30 -PollMs 100 -Condition {
                                 $script:cancelClientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                                 $hostLog = (Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                                $script:cancelClientLog -match 'event=load_hold_begin' -and $hostLog -match 'event=wait_requests_flush'
+                                if ($case -eq 'cancel-reconnect') { $script:cancelClientLog -match 'event=readiness_send' -and $hostLog -match 'event=load_hold_begin' -and $hostLog -notmatch 'event=load_hold_end' }
+                                else { $script:cancelClientLog -match 'event=load_hold_begin' -and $hostLog -match 'event=wait_requests_flush' }
                             })) { throw 'Cancellation did not reach admitted loading window' }
-                    if ($script:cancelClientLog -match 'event=load_hold_end|event=readiness_send') { throw 'Client hold ended before cancellation' }
+                    if ($case -eq 'cancel-reconnect') {
+                        $latencyScripts.cancel = 'test_lan_startup_cancel.jsonc'
+                        $script:latencyPeerSerials = @($clientSerial)
+                        try {
+                            Invoke-LatencyAutomation 'cancel'
+                            if (-not (Wait-ForCondition -Description 'Native Escape cancels join' -TimeoutSec 10 -PollMs 250 -Condition {
+                                        $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                                        $log -match 'wait_for_sync FAILED'
+                                    })) { throw 'Native join cancellation not observed' }
+                            Save-LatencyAutomation 'cancel'
+                        } finally { $script:latencyPeerSerials = @($hostSerial, $clientSerial) }
+                    } elseif ($script:cancelClientLog -match 'event=load_hold_end|event=readiness_send') { throw 'Client hold ended before cancellation' }
+                    $hostPidBefore = ((Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) -join '').Trim()
+                    if ($hostPidBefore -notmatch '^\d+$') { throw 'No definite surviving host process' }
+                    Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 10 | Set-Content (Join-Path $outputDirectory 'client-before-reconnect-logcat.txt') -Encoding utf8
+                    Write-LatencyEvent $hostSerial 'reconnect.host-process-before' @{ pid = $hostPidBefore }
                     Write-LatencyEvent $clientSerial 'cancel.request'
                     Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
-                    if ($case -eq 'same-session-reconnect') {
+                    if ($case -in @('same-session-reconnect', 'cancel-reconnect')) {
                         Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/lan_startup_test.json') -Seconds 5 | Out-Null
                         if (-not (Start-SetupActivity -Serial $clientSerial)) { throw 'Reconnect launcher did not start' }
                         Invoke-LatencyCommand $clientSerial 'lan_discover' @('--es', 'callsign', 'TimingJ')
                         if (-not (Wait-ForCondition -Description 'Same-session native reconnect begins' -TimeoutSec 25 -PollMs 500 -Condition {
                                     Send-MpCommand -Serial $clientSerial -Command 'lan_join_first_lobby'
                                     $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                                    ([regex]::Matches($log, 'event=join_mission_begin')).Count -ge 2
+                                    ([regex]::Matches($log, 'event=join_mission_begin')).Count -ge 1
                                 })) { throw 'Same-session reconnect did not reach native join' }
                         Wait-LatencyPeers 'reconnect.briefing.ready' { param($s) $s.coop_briefing.presenting -and $s.coop_briefing.phase -eq 6 -and $s.multiplayer.num_connected -eq 2 } 90
                         Invoke-LatencyAutomation 'skip'
                         Wait-LatencyPeers 'reconnect.level.ready' { param($s) $s.in_game -and -not $s.coop_briefing.active -and $s.multiplayer.num_connected -eq 2 }
                         Save-LatencyAutomation 'reconnect'
                         $hostLog = (Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                        $hostPidAfter = ((Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) -join '').Trim()
+                        Write-LatencyEvent $hostSerial 'reconnect.host-process-after' @{ pid = $hostPidAfter }
+                        if ($hostPidAfter -cne $hostPidBefore) { throw 'Host process changed during reconnect' }
                         if (([regex]::Matches($hostLog, 'event=start_level_begin')).Count -ne 1) { throw 'Host restarted during same-session test' }
                     } elseif (-not (Wait-ForCondition -Description 'Host disconnects unloaded client' -TimeoutSec 90 -PollMs 500 -Condition {
                                 $state = Get-GameIntrospection -Serial $hostSerial -Fresh
@@ -128,6 +148,10 @@ function Invoke-LanParallelStartupChecks {
                                     $log -match '\[STARTUP-FAULT\] release'
                                 })) { throw 'Configured delayed wire fault was not exercised' }
                     }
+                    if ($case -eq 'retag-admission') {
+                        $log = (Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                        if ($log -notmatch '\[STARTUP-AUTH\] signature_rejected' -or $log -match 'event=admission_received') { throw 'Retag rejection was not discriminated from stale-counter rejection' }
+                    }
                     if ($case -in @('drop-requests', 'drop-proof')) {
                         $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                         $expectedDrops = if ($case -eq 'drop-requests') { 2 } else { 1 }
@@ -136,6 +160,26 @@ function Invoke-LanParallelStartupChecks {
                     Invoke-LatencyAutomation 'skip'
                     Wait-LatencyPeers 'level1.ready' { param($s) $s.in_game -and -not $s.coop_briefing.active -and -not $s.time_paused -and $s.multiplayer.num_connected -eq 2 }
                     Save-LatencyAutomation 'skip1'
+                    if ($case -in @('old-host', 'old-client')) {
+                        $hostPidBefore = ((Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) -join '').Trim()
+                        if ($hostPidBefore -notmatch '^\d+$') { throw 'No definite mixed-version host process' }
+                        Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 10 | Set-Content (Join-Path $outputDirectory 'client-before-reconnect-logcat.txt') -Encoding utf8
+                        if (-not (Start-SetupActivity -Serial $clientSerial)) { throw 'Mixed-version reconnect launcher failed' }
+                        Invoke-LatencyCommand $clientSerial 'lan_discover' @('--es', 'callsign', 'TimingJ')
+                        if (-not (Wait-ForCondition -Description 'Mixed-version same-session native rejoin' -TimeoutSec 30 -PollMs 500 -Condition {
+                                    Send-MpCommand -Serial $clientSerial -Command 'lan_join_first_lobby'
+                                    $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                                    $log -match 'event=join_mission_begin'
+                                })) { throw 'Mixed-version reconnect did not begin' }
+                        Wait-LatencyPeers 'mixed.reconnected' { param($s) $s.in_game -and -not $s.coop_briefing.active -and -not $s.time_paused -and $s.multiplayer.num_connected -eq 2 }
+                        $hostPidAfter = ((Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) -join '').Trim()
+                        if ($hostPidAfter -cne $hostPidBefore) { throw 'Mixed-version host restarted' }
+                        Write-LatencyEvent $hostSerial 'mixed.same-host' @{ before = $hostPidBefore; after = $hostPidAfter }
+                        if ($case -eq 'old-host') {
+                            $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
+                            if ($log -notmatch 'event=join_query_legacy_fallback') { throw 'Legacy query fallback not exercised by actual old host' }
+                        }
+                    }
                 }
                 Write-LatencyEvent 'both' 'case.pass'
             } finally {

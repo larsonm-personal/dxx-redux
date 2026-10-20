@@ -7,7 +7,7 @@
 
 param(
     [switch]$Force,
-    [ValidateSet("Nexus5X_Light_1", "Nexus5X_Light_2")]
+    [ValidateSet("Nexus5X_Light_1", "Nexus5X_Light_2", "Nexus5X_Light_3")]
     [string]$AvdName
 )
 
@@ -40,6 +40,8 @@ $avds = @(
     @{ Name = "Nexus5X_Light_1"; Display = "Nexus 5X Light 1" },
     @{ Name = "Nexus5X_Light_2"; Display = "Nexus 5X Light 2" }
 )
+# Three-player LAN qualification opts in without changing normal dual provisioning
+if ($AvdName -eq 'Nexus5X_Light_3') { $avds += @{ Name = 'Nexus5X_Light_3'; Display = 'Nexus 5X Light 3' } }
 $selectedAvds = if ($AvdName) { @($avds | Where-Object { $_.Name -eq $AvdName }) } else { $avds }
 
 foreach ($avd in $selectedAvds) {

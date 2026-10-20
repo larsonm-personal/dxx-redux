@@ -62,7 +62,15 @@ int main(void)
 		memcpy(expected, wire, sizeof(wire));
 		if (mode == 2) expected[0] = UPID_REQUEST;
 		const int withheld = startup_fault_send(1, wire, sizeof(wire), 0, &addr, sizeof(addr));
-		CHECK(withheld == (mode == 3 || mode == 4 || mode == 5 || mode == 7));
+		CHECK(withheld == (mode == 2 || mode == 3 || mode == 4 || mode == 5 || mode == 7));
+		if (mode == 2) {
+			CHECK(deliveries == 1 && !memcmp(expected, delivered, sizeof(expected)));
+			wire[0] = UPID_REQUEST;
+			CHECK(startup_fault_send(1, wire, sizeof(wire), 0, &addr, sizeof(addr)));
+			now += 6 * F1_0;
+			CHECK(!startup_fault_send(1, wire, sizeof(wire), 0, &addr, sizeof(addr)));
+			continue;
+		}
 		if (mode == 3 || mode == 4) {
 			CHECK(startup_fault_send(1, wire, sizeof(wire), 0, &addr, sizeof(addr)) == (mode == 3));
 			CHECK(!startup_fault_send(1, wire, sizeof(wire), 0, &addr, sizeof(addr)));

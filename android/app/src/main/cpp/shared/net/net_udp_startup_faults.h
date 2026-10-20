@@ -7,7 +7,7 @@
 static struct {
 	int captured, dropped, sockfd, len;
 	unsigned flags;
-	fix64 due;
+	fix64 due, readiness_after;
 	struct sockaddr_storage address;
 	socklen_t address_len;
 	unsigned char bytes[4096];
@@ -40,6 +40,10 @@ static int startup_fault_send(int sockfd, const void *data, int len, unsigned fl
 	const int mode = auto_net_startup_test_packet_fault;
 	if (!mode || len <= 0) return 0;
 	const unsigned type = ((const unsigned char *) data)[0];
+	if (mode == 2 && type == UPID_REQUEST && timer_query() < startup_fault.readiness_after) {
+		debug_log_force(DLOG_NETWORK, "[STARTUP-FAULT] hold_readiness bytes=%d hash=%08x", len, startup_fault_hash(data, len));
+		return 1;
+	}
 	if (((mode == 3 && type == UPID_REQUEST && startup_fault.dropped < 2) ||
 	     (mode == 4 && type == UPID_RECONNECT_PROOF && !startup_fault.dropped))) {
 		++startup_fault.dropped;
@@ -61,6 +65,15 @@ static int startup_fault_send(int sockfd, const void *data, int len, unsigned fl
 	if (mode == 2) startup_fault.bytes[0] = UPID_REQUEST;
 	debug_log_force(DLOG_NETWORK, "[STARTUP-FAULT] capture mode=%d type=%u bytes=%d hash=%08x status=%d",
 	                mode, startup_fault.bytes[0], len, startup_fault_hash(startup_fault.bytes, len), Network_status);
+	if (mode == 2) {
+		/* Suppress the original admission. The retag now has an unseen counter,
+		 * so only signature/purpose validation can reject it. Hold normal
+		 * readiness for six seconds to make the rejection independently visible */
+		startup_fault.readiness_after = startup_fault.due;
+		startup_fault.due = timer_query();
+		startup_fault_pump();
+		return 1;
+	}
 	return mode == 5 || mode == 7;
 }
 #endif
