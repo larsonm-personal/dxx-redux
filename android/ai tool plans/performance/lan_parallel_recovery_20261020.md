@@ -41,10 +41,25 @@ All four cases stopped before host termination. This is NOT evidence of an
 engine failure. Control e7907ae8a corrects the scope and requires a positive
 terminal menu observation; its run is 39462987538.
 
+The corrected control completed with four genuine host-loss failures: D1 and D2,
+each with loss during host loading and during host readiness waiting. The host
+was force-stopped in every case; no SYNC occurred. Clients continued sending
+readiness requests beyond the 85-second controller observation bound and never
+logged `wait_for_sync FAILED`. This establishes unbounded initial synchronization
+over the observed interval, not a measured infinite duration. Raw evidence is
+artifact 12284523605; annotation export 39467100603 preserves the logs and
+controller events. The earlier harness failure is excluded from this result.
+
 Candidate 1928d2f5d built both the candidate and actual old PR103 APKs in run
 39462572572, but provisioning rejected Nexus5X_Light_3. No recovery case ran.
 The creator and SDK-writer allowlists, third-AVD definition and explicit 5558
 provisioning are addressed in the follow-up. Default provisioning remains dual.
+Full candidate run 39465992978 uses engine revision
+4a794c7c142b281a375846ab77fc2535199a3905. Follow-up c0ff3e61 changes only
+the mixed-version reconnect observation to the common native auto-join marker:
+the old APK has no newer `STARTUP-SYNC` instrumentation. A failure of that old
+marker assertion in the pinned full run is a harness failure, not proof that
+old-client reconnect failed. Targeted mixed-binary qualification is still needed.
 
 ### Candidate behavior under qualification
 
