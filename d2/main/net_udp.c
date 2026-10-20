@@ -104,6 +104,7 @@ static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
  * Kept separate from auto_host_pending to avoid re-entry when the
  * select-players window closes and the main menu re-activates. */
 static int net_auto_start_when_full = 0;
+static int net_launcher_initial_load = 0;
 static int android_resync_request_pending = 0;
 static fix64 android_resync_last_request_time = 0;
 static android_net_udp_initial_sync_retry_state android_initial_sync_retry;
@@ -2290,6 +2291,7 @@ void net_udp_init()
 	android_net_udp_auth_reset(
 	    Player_num, ANDROID_NET_UDP_RECONNECT_GAME_D2);
 	android_net_udp_initial_sync_retry_reset(&android_initial_sync_retry);
+	net_launcher_initial_load = 0;
 	android_net_udp_initial_request_begin(&android_initial_request_retry, 0);
 	net_udp_score_catchup_reset();
 #endif
@@ -7447,11 +7449,15 @@ int net_udp_start_game(void)
 			        Netgame.max_numplayers, Netgame.mission_name);
 #endif
 #ifdef __ANDROID__
+		net_launcher_initial_load = auto_net_lan_startup;
 		if (auto_net_lan_startup) auto_net_startup_test_hold("host");
 #endif
 		STARTUP_SYNC_TRACE("start_level_begin");
 		StartNewLevel(Netgame.levelnum);
 		STARTUP_SYNC_TRACE("start_level_end");
+#ifdef __ANDROID__
+		net_launcher_initial_load = 0;
+#endif
 #ifdef __ANDROID__
 		if (Netgame.gamemode == NETGAME_COOPERATIVE) {
 			COOPLOG("host StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
@@ -8227,7 +8233,13 @@ void net_udp_timeout_check(fix64 time)
 				{
 					Netgame.players[i].LastPacketTime = time;
 				}
+#ifdef __ANDROID__
+                else if ((time - Netgame.players[i].LastPacketTime) >
+                         android_net_udp_launch_load_timeout(net_launcher_initial_load,
+                             Network_status == NETSTAT_WAITING, UDP_TIMEOUT, F1_0))
+#else
 				else if ((time - Netgame.players[i].LastPacketTime) > UDP_TIMEOUT)
+#endif
 				{
 					MPDIAG("timeout_check: player %d timed out (%.1fs ago)\n", i, (float)(time - Netgame.players[i].LastPacketTime) / F1_0);
 					#ifdef __ANDROID__

@@ -4,7 +4,7 @@ function Invoke-LanParallelStartupChecks {
     foreach ($game in @('d1', 'd2')) {
         $script:latencyGame = $game
         foreach ($serial in @($hostSerial, $clientSerial)) { Stage-PublicLanAssets -Serial $serial -Files @($publicFiles | Where-Object Game -CEQ $game) }
-        foreach ($case in @('slow-host', 'slow-client-duplicate', 'dropped-admission', 'cancel-client', 'retry')) {
+        foreach ($case in @('slow-host', 'slow-client-duplicate', 'long-client', 'dropped-admission', 'cancel-client', 'retry')) {
             $script:latencySample = $case
             $outputDirectory = Join-Path $timingDirectory "parallel-startup-checks/$game-$case"
             New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
@@ -15,6 +15,7 @@ function Invoke-LanParallelStartupChecks {
                     $fault = @{}
                     if ($case -eq 'slow-host' -and $serial -eq $hostSerial) { $fault.delay_ms = 6000 }
                     if ($case -eq 'slow-client-duplicate' -and $serial -eq $clientSerial) { $fault.delay_ms = 6000; $fault.duplicates = 1 }
+                    if ($case -eq 'long-client' -and $serial -eq $clientSerial) { $fault.delay_ms = 20000 }
                     if ($case -eq 'dropped-admission' -and $serial -eq $clientSerial) { $fault.drop_admission = $true }
                     if ($case -eq 'cancel-client' -and $serial -eq $clientSerial) { $fault.delay_ms = 8000 }
                     $faultPath = Join-Path $outputDirectory "$serial-fault.json"
@@ -47,7 +48,7 @@ function Invoke-LanParallelStartupChecks {
                     if ($script:cancelClientLog -match 'event=load_hold_end|event=readiness_send') { throw 'Client hold ended before cancellation' }
                     Write-LatencyEvent $clientSerial 'cancel.request'
                     Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
-                    if (-not (Wait-ForCondition -Description 'Host disconnects unloaded client' -TimeoutSec 45 -PollMs 500 -Condition {
+                    if (-not (Wait-ForCondition -Description 'Host disconnects unloaded client' -TimeoutSec 90 -PollMs 500 -Condition {
                                 $state = Get-GameIntrospection -Serial $hostSerial -Fresh
                                 Write-LatencyEvent $hostSerial 'cancel.observation' $state
                                 $state -and $state.multiplayer.num_connected -eq 1 -and ($state.coop_briefing.phase -eq 6 -or $state.in_game)

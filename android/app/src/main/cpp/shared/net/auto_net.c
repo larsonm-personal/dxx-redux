@@ -52,7 +52,7 @@ void auto_net_startup_test_hold(const char *role)
 #ifndef NDEBUG
 	const int delay = auto_net_startup_test_delay_ms;
 	auto_net_startup_test_delay_ms = 0;
-	if (delay <= 0 || delay > 8000) return;
+	if (delay <= 0 || delay > 30000) return;
 	debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=load_hold_begin role=%s delay_ms=%d", role, delay);
 	SDL_Delay(delay);
 	debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=load_hold_end role=%s", role);

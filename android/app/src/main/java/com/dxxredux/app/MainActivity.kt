@@ -1232,7 +1232,7 @@ class MainActivity :
             }
         nativeSetLanStartupAdmission(
             mpMode != null && intent.getBooleanExtra("mp_parallel_level_load", false),
-            startupTest?.optInt("delay_ms", 0)?.coerceIn(0, 8000) ?: 0,
+            startupTest?.optInt("delay_ms", 0)?.coerceIn(0, 30000) ?: 0,
             startupTest?.optBoolean("drop_admission", false) ?: false,
             startupTest?.optInt("duplicates", 0)?.coerceIn(0, 2) ?: 0,
         )

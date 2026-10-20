@@ -13,6 +13,18 @@ static inline int android_net_udp_launch_admission_allowed(
 	       !observer && requested_level > 0 && requested_level == selected_level;
 }
 
+/* Early admission moves client disk/texture loading into the host wait.
+ * Give initial launcher loads a bounded 60s allowance instead of treating
+ * them as a missing 15s post-load response. Later level waits stay unchanged */
+static inline int64_t android_net_udp_launch_load_timeout(
+    int initial_launcher_load, int waiting, int64_t normal_timeout, int64_t units_per_second)
+{
+	const int64_t loading_timeout = 60 * units_per_second;
+	return initial_launcher_load && waiting && loading_timeout > normal_timeout
+	           ? loading_timeout
+	           : normal_timeout;
+}
+
 /* Existing REQUEST transcripts remain unchanged. The extra signed purpose
  * prevents an admission datagram being retagged into a readiness REQUEST */
 static inline size_t android_net_udp_launch_admission_bind_purpose(
