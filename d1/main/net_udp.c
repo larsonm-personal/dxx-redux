@@ -7416,6 +7416,7 @@ net_udp_wait_for_sync(void)
 		UDP_sequence_packet me;
 
 #ifdef __ANDROID__
+		STARTUP_SYNC_TRACE("sync_wait_aborted");
 		net_log_comment("[ANDROID] wait_for_sync FAILED: not in PLAYING status, sending quit");
 #endif
 		memset(&me, 0, sizeof(UDP_sequence_packet));

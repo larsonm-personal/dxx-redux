@@ -1,4 +1,28 @@
 # Owned by test_lan_launch_preparation; run only after its matched timing samples
+function Test-LanRecoveryMenu($State, [string]$ErrorText = '') {
+    if (-not $State -or $State.in_game -or $State.game_window_is_front -or $State.screen_mode -ne 'menu' -or -not $State.menu -or $State.menu.type -ne 'newmenu') { return $false }
+    # The ordinary synchronization Wait dialog is also a non-game menu
+    if ($State.menu.subtitle -match '^\s*Wait') { return $false }
+    $items = @($State.menu.items | ForEach-Object { ([string]$_.text).Trim() })
+    $text = (@($State.menu.title, $State.menu.subtitle) + $items) -join "`n"
+    if ($ErrorText -and $text -match [regex]::Escape($ErrorText)) { return $true }
+    return -not $State.is_network -and $items -contains 'New game' -and $items -contains 'Options' -and $items -contains 'Quit'
+}
+
+function Assert-LanRecoveryMenu([string]$Serial, [string]$Event, [string]$ErrorText = '') {
+    $deadline = $script:latencyClock.Elapsed.TotalSeconds + 10
+    do {
+        $state = Get-GameIntrospection -Serial $Serial -Fresh
+        if (Test-LanRecoveryMenu $state $ErrorText) {
+            Write-LatencyEvent $Serial $Event $state
+            return
+        }
+        Start-Sleep -Milliseconds 200
+    } while ($script:latencyClock.Elapsed.TotalSeconds -lt $deadline)
+    Write-LatencyEvent $Serial "$Event.failed" $state
+    throw "No main menu or expected recovery dialog on $Serial"
+}
+
 function Invoke-LanParallelStartupChecks {
     param([string[]]$Games = @('d1', 'd2'),
         [string[]]$Cases = @('slow-host', 'slow-client-duplicate', 'long-client', 'dropped-admission', 'cancel-client', 'retry'))
@@ -50,7 +74,7 @@ function Invoke-LanParallelStartupChecks {
                 if ($case -eq 'failed-level-load') {
                     if (-not (Wait-ForCondition -Description 'Real missing-level load failure' -TimeoutSec 40 -PollMs 500 -Condition {
                                 $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                                $log -match "Couldn't load level file"
+                                $log -match "Error:.*__missing_startup_test_level__"
                             })) { throw 'Expected level-loader failure not observed' }
                     $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                     if ($log -match 'event=readiness_send') { throw 'Failed loader asserted readiness' }
@@ -83,13 +107,11 @@ function Invoke-LanParallelStartupChecks {
                     Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
                     if (-not (Wait-ForCondition -Description 'Client leaves initial sync after silent host loss' -TimeoutSec 85 -PollMs 1000 -Condition {
                                 $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                                $clientLog -match 'wait_for_sync FAILED'
+                                $clientLog -match 'event=initial_sync_timeout' -and $clientLog -match 'event=sync_wait_aborted' -and $clientLog -match 'event=start_level_end'
                             })) { throw 'Client stranded in initial synchronization after silent host loss (85s bound)' }
                     $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                     if ($clientLog -match 'event=sync_received') { throw 'Unexpected sync after host loss' }
-                    $state = Get-GameIntrospection -Serial $clientSerial -Fresh
-                    Write-LatencyEvent $clientSerial 'host-loss.recovered' $state
-                    if (-not $state -or $state.in_game -or $state.screen_mode -ne 'menu') { throw 'No positive terminal menu observation after host loss' }
+                    Assert-LanRecoveryMenu $clientSerial 'host-loss.recovered' 'The host did not finish starting within 60 seconds'
                 } elseif ($case -in @('cancel-client', 'same-session-reconnect', 'cancel-reconnect')) {
                     if (-not (Wait-ForCondition -Description 'Client admitted before cancellation' -TimeoutSec 30 -PollMs 100 -Condition {
                                 $script:cancelClientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
@@ -104,9 +126,10 @@ function Invoke-LanParallelStartupChecks {
                             Invoke-LatencyAutomation 'cancel'
                             if (-not (Wait-ForCondition -Description 'Native Escape cancels join' -TimeoutSec 10 -PollMs 250 -Condition {
                                         $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                                        $log -match 'wait_for_sync FAILED'
+                                        $log -match 'event=sync_wait_aborted' -and $log -match 'event=start_level_end'
                                     })) { throw 'Native join cancellation not observed' }
                             Save-LatencyAutomation 'cancel'
+                            Assert-LanRecoveryMenu $clientSerial 'cancel.terminal'
                         } finally { $script:latencyPeerSerials = @($hostSerial, $clientSerial) }
                     } elseif ($script:cancelClientLog -match 'event=load_hold_end|event=readiness_send') { throw 'Client hold ended before cancellation' }
                     $hostPidBefore = ((Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) -join '').Trim()
@@ -182,9 +205,8 @@ function Invoke-LanParallelStartupChecks {
                     }
                 }
                 if ($case -in @('cancel-client', 'missing-third', 'failed-level-load')) {
-                    $state = Get-GameIntrospection -Serial $hostSerial -Fresh
-                    Write-LatencyEvent $hostSerial 'host-failure.terminal' $state
-                    if (-not $state -or $state.in_game -or $state.screen_mode -ne 'menu') { throw 'No positive host terminal menu after failed start' }
+                    $message = if ($case -eq 'missing-third') { 'Not all selected players connected within 60 seconds' } else { 'A selected player did not finish loading within 60 seconds' }
+                    Assert-LanRecoveryMenu $hostSerial 'host-failure.terminal' $message
                 }
                 Write-LatencyEvent 'both' 'case.pass'
             } finally {

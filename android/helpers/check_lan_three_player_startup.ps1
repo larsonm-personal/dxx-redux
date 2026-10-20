@@ -57,9 +57,8 @@ function Invoke-LanThreePlayerStartupChecks {
                                     $hostLog -match 'event=initial_load_peer_lost' -and $thirdLog -match 'event=initial_sync_timeout'
                                 })) { throw 'Three-player survivors stranded after loss' }
                         foreach ($serial in @($hostSerial, $third)) {
-                            $state = Get-GameIntrospection -Serial $serial -Fresh
-                            Write-LatencyEvent $serial 'three.loss.terminal' $state
-                            if (-not $state -or $state.in_game -or $state.screen_mode -ne 'menu') { throw "No positive terminal menu on $serial" }
+                            $message = if ($serial -eq $hostSerial) { 'A selected player did not finish loading within 60 seconds' } else { 'The host did not finish starting within 60 seconds' }
+                            Assert-LanRecoveryMenu $serial 'three.loss.terminal' $message
                         }
                     } else {
                         Wait-LatencyPeers 'three.briefing.ready' { param($s) $s.coop_briefing.phase -eq 6 -and $s.coop_briefing.presenting -and $s.multiplayer.num_connected -eq 3 }
