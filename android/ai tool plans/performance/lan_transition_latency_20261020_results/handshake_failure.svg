@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="230" viewBox="0 0 1200 230">
+<rect width="100%" height="100%" fill="white"/>
+<g font-family="sans-serif" fill="#17233b">
+<text x="20" y="28" font-size="20">Failed baseline handshake: observed client-local intervals</text>
+<text x="20" y="50" font-size="12">One failed D1 sample; same-device log timestamps. No engine launch or gameplay measurements.</text>
+<text x="20" y="90" font-size="12">d1 client discovery_to_first_announcement</text>
+<rect x="460" y="77" width="597.20" height="16" fill="#207b54"/>
+<circle cx="1057.20" cy="85" r="3" fill="#111"/>
+<text x="1080" y="90" font-size="12">2.989s n=1</text>
+<text x="20" y="120" font-size="12">d1 client first_join_to_failure</text>
+<rect x="460" y="107" width="600.00" height="16" fill="#207b54"/>
+<circle cx="1060.00" cy="115" r="3" fill="#111"/>
+<text x="1080" y="120" font-size="12">3.003s n=1</text>
+<text x="20" y="150" font-size="12">d1 client join_retry_1_to_2</text>
+<rect x="460" y="137" width="200.00" height="16" fill="#207b54"/>
+<circle cx="660.00" cy="145" r="3" fill="#111"/>
+<text x="1080" y="150" font-size="12">1.001s n=1</text>
+<text x="20" y="180" font-size="12">d1 client join_retry_2_to_3</text>
+<rect x="460" y="167" width="200.00" height="16" fill="#207b54"/>
+<circle cx="660.00" cy="175" r="3" fill="#111"/>
+<text x="1080" y="180" font-size="12">1.001s n=1</text>
+</g></svg>
