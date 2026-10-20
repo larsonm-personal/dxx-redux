@@ -17,7 +17,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 selected = {}
 pattern = re.compile(
-    r"STARTUP-SYNC|STARTUP-ASSET|STARTUP-AUTH|LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|auto_net:|select_players|initial sync retry:|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate",
+    r"STARTUP-FAULT|STARTUP-SYNC|STARTUP-ASSET|STARTUP-AUTH|LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|auto_net:|select_players|initial sync retry:|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate",
     re.I,
 )
 for path in sorted(root.rglob("*")):
@@ -89,7 +89,7 @@ for path in sorted(root.rglob("*")):
             # up to briefing readiness. This exports saved evidence, not a rerun
             if fault_case or re.fullmatch(r"session-\d+-emulator-\d+-logcat.txt", path.name):
                 if re.search(
-                    r"auto_net: starting auto-|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
+                    r"auto_net: starting auto-|STARTUP-FAULT|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
                     line,
                 ):
                     lines.append(line)

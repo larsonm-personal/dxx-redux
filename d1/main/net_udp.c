@@ -96,7 +96,11 @@ static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
  * Kept separate from auto_host_pending to avoid re-entry when the
  * select-players window closes and the main menu re-activates. */
 static int net_auto_start_when_full = 0;
+static fix64 net_launcher_selection_deadline = 0;
+static int net_launcher_selection_timed_out = 0;
 static int net_launcher_initial_load = 0;
+static fix64 net_launcher_sync_deadline = 0;
+static int net_launcher_sync_timed_out = 0;
 static int android_resync_request_pending = 0;
 static fix64 android_resync_last_request_time = 0;
 static android_net_udp_initial_sync_retry_state android_initial_sync_retry;
@@ -727,8 +731,13 @@ void net_log_comment(char* comment) {
 }
 
 /* General UDP functions - START */
+#include "../../android/app/src/main/cpp/shared/net/net_udp_startup_faults.h"
+
 ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, const struct sockaddr *to, socklen_t tolen)
 {
+#if defined(__ANDROID__) && !defined(NDEBUG)
+	if (startup_fault_send(sockfd, msg, len, flags, to, tolen)) return len;
+#endif
 	// Upstream loss simulator
 	//if(rand() % 100 < 10) { return 0; }
 
@@ -754,6 +763,9 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con
 
 ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct sockaddr *from, socklen_t *fromlen)
 {
+#if defined(__ANDROID__) && !defined(NDEBUG)
+	startup_fault_pump();
+#endif
 #ifdef __ANDROID__
 	struct android_network_stamp profile_start = android_profile_net_begin();
 #endif
@@ -2247,6 +2259,9 @@ int net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, struc
 
 void net_udp_init()
 {
+#if defined(__ANDROID__) && !defined(NDEBUG)
+	memset(&startup_fault, 0, sizeof(startup_fault));
+#endif
 	// So you want to play a netgame, eh?  Let's a get a few things straight
 
 #ifdef _WIN32
@@ -4870,6 +4885,7 @@ void net_udp_process_request(UDP_sequence_packet *their,
 
 	// Player is ready to receieve a sync packet
 #ifdef __ANDROID__
+	if (net_launcher_initial_load && (int) their->player.connected != Current_level_num) return;
 	if (authenticated_player_num >= 0 &&
 	    authenticated_player_num < N_players) {
 		debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=request_ready_accepted level=%d counter=%llu", Current_level_num, (unsigned long long) their->reconnect_identity.request_counter);
@@ -5442,6 +5458,13 @@ net_udp_sync_poll( newmenu *menu, d_event *event, void *userdata )
 	
 	net_udp_listen();
 #ifdef __ANDROID__
+	if (android_net_udp_launch_wait_expired(net_launcher_sync_deadline,
+	        Network_status == NETSTAT_WAITING, timer_query())) {
+		net_launcher_sync_timed_out = 1;
+		Network_status = NETSTAT_MENU;
+		STARTUP_SYNC_TRACE("initial_sync_timeout");
+		return -2;
+	}
 	net_join_wait_frame();
 	if (net_join_wait_restart()) return -2;
 #endif
@@ -5528,6 +5551,14 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 	userdata = userdata;
 	
 	Assert(Network_status == NETSTAT_STARTING);
+#ifdef __ANDROID__
+	if (net_launcher_selection_deadline && timer_query() >= net_launcher_selection_deadline &&
+	    net_auto_start_when_full && N_players < Netgame.max_numplayers) {
+		net_launcher_selection_timed_out = 1;
+		STARTUP_SYNC_TRACE("initial_selection_timeout");
+		return -2;
+	}
+#endif
 
 	for (i=1; i<nitems; i++ ) {
 		if ( (i>= N_players) && (menus[i].value) ) {
@@ -7077,6 +7108,9 @@ GetPlayersAgain:
 		g_host_selecting_players = 1;
 		if (auto_host_pending) {
 			net_auto_start_when_full = 1;
+			net_launcher_selection_timed_out = 0;
+			net_launcher_selection_deadline = auto_net_lan_startup &&
+			    Netgame.gamemode == NETGAME_COOPERATIVE ? timer_query() + 60 * F1_0 : 0;
 			auto_host_pending = 0;
 		}
 	}
@@ -7103,6 +7137,11 @@ GetPlayersAgain:
 		g_host_selecting_players = 0;
 		g_host_start_game_requested = 0;
 		net_auto_start_when_full = 0;
+		net_launcher_selection_deadline = 0;
+		if (net_launcher_selection_timed_out) {
+			nm_messagebox(TXT_ERROR, 1, TXT_OK,
+			              "Not all selected players connected within 60 seconds.\nThe game was not started. Return to the launcher and try again.");
+		}
 	}
 #endif
 
@@ -7315,6 +7354,9 @@ net_udp_wait_for_sync(void)
 	
 	Network_status = NETSTAT_WAITING;
 #ifdef __ANDROID__
+	net_launcher_sync_timed_out = 0;
+	net_launcher_sync_deadline = auto_net_lan_startup && auto_net_launcher_join_active &&
+	    N_players == 0 && !net_join_wait_active() ? timer_query() + 60 * F1_0 : 0;
 	net_join_wait_sync_begin();
 	/* Experiment control: retain the original retry cadence with identical probes */
 	android_net_udp_initial_request_begin(&android_initial_request_retry, 0);
@@ -7343,6 +7385,7 @@ net_udp_wait_for_sync(void)
 
 #ifdef __ANDROID__
 	android_initial_request_retry.active = 0;
+	net_launcher_sync_deadline = 0;
 #endif
 	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
 #ifdef __ANDROID__
@@ -7409,6 +7452,10 @@ int net_udp_request_poll( newmenu *menu, d_event *event, void *userdata )
 
 	for (i = 0; i < N_players; i++)
 	{
+#ifdef __ANDROID__
+		if (net_launcher_initial_load && i != Player_num && Players[i].connected == CONNECT_DISCONNECTED)
+			return -2;
+#endif
 		if ((Players[i].connected == CONNECT_PLAYING) || (Players[i].connected == CONNECT_DISCONNECTED))
 			num_ready++;
 	}
@@ -7461,6 +7508,17 @@ int net_udp_wait_for_requests(void)
 menu:
 	choice = newmenu_do2(NULL, TXT_WAIT, 1, m, net_udp_request_poll, NULL, 0, Menu_pcx_name);
 #ifdef __ANDROID__
+	if (net_launcher_initial_load) {
+		for (i = 0; i < N_players; ++i) {
+			if (i == Player_num || Players[i].connected != CONNECT_DISCONNECTED) continue;
+			STARTUP_SYNC_TRACE("initial_load_peer_lost");
+			Network_status = NETSTAT_MENU;
+			nm_messagebox(TXT_ERROR, 1, TXT_OK,
+			              "A selected player did not finish loading within 60 seconds.\nThe game was not started. Return to the launcher and try again.");
+			return -1;
+		}
+	}
+
 	if (multi_save_transfer_sync_poll(0)) return -1;
 #endif
 
@@ -7671,6 +7729,12 @@ net_udp_do_join_game(ubyte join_as_obs)
 			if (!net_udp_join_level_available())
 				break;
 			coop_world_visit_sync(net_join_wait_visit());
+			if (net_join_wait_initial_load()) {
+				/* No live world exists yet. Keep the level/visit selected above,
+				 * then require ordinary post-load REQUEST plus fresh route proof */
+				STARTUP_SYNC_TRACE("initial_load_reconnect");
+				net_join_wait_end();
+			}
 			N_players = 0;
 			Network_rejoined = 0;
 			if (!join_as_obs) change_playernum_to((multi_who_is_master() + 1) % MAX_PLAYERS);
@@ -7685,6 +7749,10 @@ net_udp_do_join_game(ubyte join_as_obs)
 			net_udp_join_wait_reset();
 		}
 		const char *failure = net_join_wait_failure();
+		if (net_launcher_sync_timed_out) {
+			net_launcher_sync_timed_out = 0;
+			failure = "The host did not finish starting within 60 seconds. Return to the launcher and try again.";
+		}
 		if (Network_status != NETSTAT_PLAYING) {
 			Game_mode = GM_GAME_OVER;
 			net_udp_close();
@@ -7722,6 +7790,17 @@ net_udp_do_join_game(ubyte join_as_obs)
 		COOPLOG("join StartNewLevel done: game=d1 net_level=%d current_level=%d player_num=%d n_players=%d",
 		        Netgame.levelnum, Current_level_num, Player_num, N_players);
 		coop_indicator_diag_trigger();
+	}
+#endif
+
+#ifdef __ANDROID__
+	if (net_launcher_sync_timed_out) {
+		net_launcher_sync_timed_out = 0;
+		Game_mode = GM_GAME_OVER;
+		net_udp_close();
+		nm_messagebox(TXT_ERROR, 1, TXT_OK,
+		              "The host did not finish starting within 60 seconds.\nReturn to the launcher and try joining again.");
+		return 0;
 	}
 #endif
 
