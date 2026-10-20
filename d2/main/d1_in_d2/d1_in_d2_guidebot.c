@@ -33,9 +33,18 @@ void d1_in_d2_prepare_available_guidebot(d1_asset_generation *base)
 		"descent2.ham", "groupa.pig", "groupa.256", sound,
 		!strcmp(sound, "descent2.s22") ? SAMPLE_RATE_22K : SAMPLE_RATE_11K
 	};
-	if (!PHYSFSX_exists(source.ham_path, 1) || !PHYSFSX_exists(source.pig_path, 1) ||
-	    !PHYSFSX_exists(source.palette_path, 1) || !PHYSFSX_exists(source.sound_path, 1))
+	const char *paths[] = { source.ham_path, source.pig_path, source.palette_path, source.sound_path };
+	int missing = 0;
+	for (int i = 0; i < 4; ++i) {
+		const int size = PHYSFSX_fsize(paths[i]);
+		con_printf(CON_NORMAL, "Optional D1 Guide-Bot source: %s (%d bytes)\n", paths[i], size);
+		if (size < 0)
+			missing = 1;
+	}
+	if (missing) {
+		con_printf(CON_URGENT, "Optional D1 Guide-Bot unavailable: missing D2 source files\n");
 		return;
+	}
 	if (!d1_in_d2_prepare_guidebot_extension(base, &source, &error))
 		con_printf(CON_URGENT, "Optional D1 Guide-Bot unavailable: %s\n", error ? error : "invalid D2 assets");
 }

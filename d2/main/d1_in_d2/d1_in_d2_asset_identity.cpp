@@ -1,6 +1,8 @@
 /* Source identity belongs to the published asset generation */
 #include <cstdint>
 #include <cstring>
+#include <string>
+#include "mac_d1_sound_resource.h"
 #include "picosha2.h"
 
 extern "C" {
@@ -58,6 +60,12 @@ int d1_in_d2_hash_base_source(const char *pig, const char *palette, ubyte digest
 	hash.process(schema, schema + sizeof(schema) - 1);
 	if (!hash_source(hash, pig) || !hash_source(hash, palette)) return 0;
  const int size = PHYSFSX_fsize(pig);
+	if (size == D1_MAC_PIGSIZE) {
+		const std::string path(pig);
+		const auto separator = path.find_last_of("/\\");
+		const std::string resource = (separator == std::string::npos ? "" : path.substr(0, separator + 1)) + MAC_D1_RESOURCE_FILE;
+		if (!hash_source(hash, resource.c_str())) return 0;
+	}
  if ((size == D1_SHARE_BIG_PIGSIZE || size == D1_SHARE_10_PIGSIZE || size == D1_SHARE_PIGSIZE) &&
      !hash_source(hash, "descent.hog")) return 0;
 	hash.finish();

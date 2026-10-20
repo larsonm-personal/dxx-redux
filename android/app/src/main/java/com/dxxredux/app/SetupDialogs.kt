@@ -314,7 +314,20 @@ internal suspend fun setupDownloadFile(
 internal fun publishStagedArchiveFiles(
     stagingDir: File,
     setDir: File,
-) {
+) = AtomicFilePublication.transaction {
+    check(
+        stagingDir
+            .listFiles()
+            .orEmpty()
+            .filter {
+                it.isFile &&
+                    portableGameFilenameIdentity(it.name) in ALL_GAME_FILENAMES
+            }.groupBy { portableGameFilenameIdentity(it.name) }
+            .values
+            .none { it.size > 1 },
+    ) {
+        "Import contains duplicate base-game filenames"
+    }
     check(setDir.isDirectory || setDir.mkdirs()) { "Could not create ${setDir.absolutePath}" }
     val backupDir = File(setDir.parentFile, ".archive-backup-${System.nanoTime()}")
     val published = mutableListOf<File>()
@@ -325,17 +338,29 @@ internal fun publishStagedArchiveFiles(
             .walkTopDown()
             .filter { it.isFile }
             .forEach { source ->
-                val destination = File(setDir, source.relativeTo(stagingDir).path)
+                val baseName = portableGameFilenameIdentity(source.name)
+                val baseGameFile = source.parentFile == stagingDir && baseName in ALL_GAME_FILENAMES
+                val destination =
+                    File(setDir, if (baseGameFile) baseName else source.relativeTo(stagingDir).path)
                 destination.parentFile?.let { parent ->
                     check(parent.isDirectory || parent.mkdirs()) { "Could not create ${parent.absolutePath}" }
                 }
-                if (destination.exists()) {
-                    val backup = File(backupDir, destination.relativeTo(setDir).path)
-                    val backupParent = checkNotNull(backup.parentFile)
-                    check((backupParent.isDirectory || backupParent.mkdirs()) && destination.renameTo(backup)) {
-                        "Could not stage existing ${destination.absolutePath}"
+                // Android permits GROUPA.PIG and groupa.pig to coexist. Retire every
+                // spelling so the previous edition cannot mask the imported file
+                val replaced =
+                    if (baseGameFile) {
+                        setDir.listFiles().orEmpty().filter { portableGameFilenameIdentity(it.name) == baseName }
+                    } else {
+                        listOfNotNull(destination.takeIf { it.exists() })
                     }
-                    backups += backup to destination
+                for (existing in replaced) {
+                    check(existing.isFile) { "Cannot replace directory ${existing.name} with a game file" }
+                    val backup = File(backupDir, existing.relativeTo(setDir).path)
+                    val backupParent = checkNotNull(backup.parentFile)
+                    check((backupParent.isDirectory || backupParent.mkdirs()) && existing.renameTo(backup)) {
+                        "Could not stage existing ${existing.absolutePath}"
+                    }
+                    backups += backup to existing
                 }
                 // Staging shares the set volume; avoid allocating a second disc image
                 if (!source.renameTo(destination)) LauncherFileCopy.copyFileToFile(source, destination)
@@ -344,10 +369,12 @@ internal fun publishStagedArchiveFiles(
     } catch (error: Exception) {
         published.forEach { it.delete() }
         val restored =
-            backups.asReversed().all { (backup, destination) ->
-                destination.parentFile?.mkdirs()
-                backup.renameTo(destination)
-            }
+            backups
+                .asReversed()
+                .map { (backup, destination) ->
+                    destination.parentFile?.mkdirs()
+                    backup.renameTo(destination)
+                }.all { it }
         if (!restored) {
             preserveBackup = true
             throw IllegalStateException("Archive publication rollback remains in ${backupDir.absolutePath}", error)

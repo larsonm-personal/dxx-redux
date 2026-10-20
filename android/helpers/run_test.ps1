@@ -114,7 +114,7 @@ $scriptPath = if ([IO.Path]::IsPathRooted($ScriptName)) {
 $mediaIndependentName = [IO.Path]::GetFileNameWithoutExtension($scriptPath)
 $mediaIndependentPath = [IO.Path]::GetFullPath((Join-RegressionPath $scriptDir 'game_scripts' "$mediaIndependentName.jsonc"))
 $mediaIndependentLauncher = $scriptPath -ceq $mediaIndependentPath -and $Params.Count -eq 0 -and
-    $DataEdition -eq 'default' -and (Test-SuiteMediaIndependentTest -Test @{
+$DataEdition -eq 'default' -and (Test-SuiteMediaIndependentTest -Test @{
         Name = $mediaIndependentName; BaseName = $mediaIndependentName; Type = 'jsonc'; Requires = 'emulator'
     })
 $script:resolvedDataEdition = Get-TestScriptDataEdition -ScriptPath $scriptPath -DataEdition $DataEdition
@@ -374,9 +374,11 @@ try {
                 exit 1
             }
 
-            Write-Status "Clearing save files for clean launcher state"
-            Send-SetupCommand -Command "clear_save_files"
-            Start-Sleep -Milliseconds 250
+            if (-not $PreserveState) {
+                Write-Status "Clearing save files for clean launcher state"
+                Send-SetupCommand -Command "clear_save_files"
+                Start-Sleep -Milliseconds 250
+            }
 
             if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
                 $allPassed = $false

@@ -210,6 +210,7 @@ void ogl_smash_texture_list_internal(void);
 #include "d1_in_d2/d1_save_translate.h"
 #include "input_demo_start_shared.h"
 #include "d1_in_d2/d1_in_d2_assets.h"
+#include "mac_d1_sound_resource.h"
 #include "d1_in_d2/d1_custom.h"
 #include "d1_in_d2/d1_in_d2_bitmaps.h"
 #include "d1_in_d2/d1_in_d2_presentation.h"
@@ -6044,6 +6045,24 @@ static void test_guidebot_source()
 	        "selective bitmap preparation retains source pixels, transparency, RLE and palette without consulting the live palette");
 	d1_in_d2_free_bitmaps(images);
 
+	// Mac PIGs store black and transparent pixels at opposite indices
+	bytes mac_pig = pig;
+	mac_pig.resize(4929684); // Original Mac groupa.pig, also used by Mac shareware
+	mac_pig[66] = 0;
+	mac_pig[67] = 255;
+	mac_pig[80] = 0; // First pixel in the RLE bitmap's first row
+	write_fixture(source.pig_path, mac_pig);
+	images = d1_in_d2_read_feature_bitmaps(source.pig_path, source.palette_path, selected, MAX_BITMAP_FILES);
+	require(images && images->bitmaps[1].bm_data[0] == 255 && images->bitmaps[1].bm_data[1] == 0 &&
+	            images->bitmaps[1].bm_data[2] == 254 && images->bitmaps[1].bm_data[3] == 0,
+	        "Mac optional images normalize black and transparency before D1 palette conversion");
+	ubyte mac_row[2] = {};
+	gr_rle_decode(images->bitmaps[3].bm_data + 6, mac_row);
+	require(mac_row[0] == 255 && mac_row[1] == 12,
+	        "Mac optional RLE images normalize transparency while retaining row boundaries");
+	d1_in_d2_free_bitmaps(images);
+	write_fixture(source.pig_path, pig);
+
 	int rejected = 0;
 	auto reject = [&](const char *path, const bytes &bad) {
 		write_fixture(path, bad);
@@ -6216,6 +6235,53 @@ static void test_guidebot_publication(const char *pig_path, const char *palette_
 	GameArg.SndDisableSdlMixer = saved_mixer;
 #endif
 	std::fprintf(stderr, "Companion extension publication, native invariance, sound translation and retirement passed\n");
+}
+
+static void test_mac_d1_resources()
+{
+	const char *pig = "native-d1/descent.pig", *palette = "native-d1/palette.256";
+	if (PHYSFSX_fsize(pig) != D1_MAC_PIGSIZE)
+		return;
+	const bytes original = read_fixture("native-d1/descent.rsrc");
+	mac_d1_sample samples[MAC_D1_SOUND_COUNT];
+	require(mac_d1_parse_sound_resource(original.data(), original.size(), samples), "parse the authentic MacPlay sound bank");
+	const char *error = nullptr;
+	d1_asset_generation *base = d1_in_d2_read_assets(pig, palette, &error);
+	require(base && base->sound_bank.count == MAC_D1_SOUND_COUNT, error ? error : "prepare Mac D1 sounds");
+	for (int i = 0; i < MAC_D1_SOUND_COUNT; ++i) {
+		const digi_sound &sound = base->sound_bank.samples[i];
+		require(sound.freq == SAMPLE_RATE_11K && sound.bits == 8 &&
+		            sound.length == samples[i].length && !std::memcmp(sound.data, samples[i].data, sound.length),
+		        "every imported Mac sample matches its original PCM bytes and playback rate");
+	}
+	int cockpits = 0;
+	for (int i = 1; i <= base->bitmap_data->bitmap_count; ++i) {
+		const char *name = base->bitmap_data->names[i];
+		if (!std::strncmp(name, "cockpit", 7) || !std::strncmp(name, "rearview", 8)) {
+			const grs_bitmap &bitmap = base->bitmap_data->bitmaps[i];
+			require(bitmap.bm_w == 640 && bitmap.bm_h == 480 &&
+			            (!(bitmap.bm_flags & BM_FLAG_RLE) || (bitmap.bm_flags & BM_FLAG_RLE_BIG)),
+			        "Mac cockpit images retain native high-resolution dimensions and row encoding");
+			++cockpits;
+		}
+	}
+	require(cockpits >= 2, "authentic Mac cockpit and rear-view artwork are present");
+	const std::string override_dir = std::string(PHYSFS_getWriteDir()) + "/mac-sound-override";
+	require(PHYSFS_mkdir("mac-sound-override") && PHYSFS_mount(override_dir.c_str(), "native-d1", 0),
+	        "isolate Mac resource overrides without modifying original media");
+	bytes changed = original;
+	changed[static_cast<size_t>(samples[0].data - original.data())] ^= 1;
+	write_fixture("mac-sound-override/descent.rsrc", changed);
+	d1_asset_generation *modified = d1_in_d2_read_assets(pig, palette, &error);
+	require(modified && std::memcmp(base->base_identity, modified->base_identity, 32) != 0 &&
+	            modified->sound_bank.samples[0].data[0] != base->sound_bank.samples[0].data[0],
+	        "changing Mac PCM changes the save identity as well as the owned sound data");
+	d1_in_d2_free_assets(modified);
+	write_fixture("mac-sound-override/descent.rsrc", bytes(16));
+	require(!d1_in_d2_read_assets(pig, palette, &error) && error, "malformed Mac resources cannot publish a partial generation");
+	require(PHYSFS_unmount(override_dir.c_str()), "retire the isolated Mac resource override");
+	d1_in_d2_free_assets(base);
+	std::puts("Authentic Mac D1 PCM, cockpit layout, source identity and malformed-bank checks passed");
 }
 
 static d1_guidebot_asset_stats test_registered_guidebot_source(const char *directory)
@@ -8569,7 +8635,8 @@ static void test_guidebot_save_assets(const char *directory, const char *d2_dire
 	bytes save(static_cast<size_t>(PHYSFS_fileLength(file)));
 	require(PHYSFS_readBytes(file, save.data(), save.size()) == static_cast<PHYSFS_sint64>(save.size()) && PHYSFS_close(file),
 	        "copy the complete companion save");
-	const size_t identity_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12 + sizeof(player_rw) + 2 + 16 + 4;
+	// Current saves include the full-width epoch after the legacy clock
+	const size_t identity_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12 + sizeof(fix64) + sizeof(player_rw) + 2 + 16 + 4;
 	bytes identity(save.begin() + identity_offset, save.begin() + identity_offset + 68);
 	std::reverse(identity.begin(), identity.begin() + 4);
 	write_fixture("asset-identity-swapped.bin", identity);
@@ -8606,7 +8673,7 @@ static void test_guidebot_save_assets(const char *directory, const char *d2_dire
 	require(state_save_all_sub(filename, description) && state_restore_all_sub(filename, 0), "prepare a companion save with populated routing state");
 	test_complete_save_endian(filename, "companion-endian");
 	char d2_mission[] = "d2";
-	require(load_mission_by_name(d2_mission), "select ordinary D2 for legacy persistence controls");
+	require(load_mission_by_name(d2_mission), "select ordinary D2 for persistence controls");
 	input_demo_set_skip_level_intro(1);
 	StartNewGame(1);
 	GameArg.SysInputDemoNoRender = 1;
@@ -8614,22 +8681,13 @@ static void test_guidebot_save_assets(const char *directory, const char *d2_dire
 	guidebot_routing_set_default(GUIDEBOT_ROUTING_ORIGINAL);
 	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
 	require(state_save_all_sub(d2_save, description), "save an actual ordinary D2 world");
-	file = PHYSFS_openRead(d2_save);
-	require(file != nullptr, "read ordinary D2 save for earlier supported versions");
-	bytes d2_saved(static_cast<size_t>(PHYSFS_fileLength(file)));
-	require(PHYSFS_readBytes(file, d2_saved.data(), d2_saved.size()) == static_cast<PHYSFS_sint64>(d2_saved.size()) && PHYSFS_close(file),
-	        "copy the ordinary D2 record");
 	const int d2_objects = Highest_object_index;
-	for (int version : { 38, 37, 36 }) {
-		bytes older = d2_saved;
-		if (version < 38) older.resize(older.size() - 4);
-		if (version < 37) older.resize(older.size() - CADENCE_RUNTIME_DISK_BYTES);
-		set_int(older, 4, version);
-		write_fixture(d2_save, older);
-		require(state_restore_all_sub(d2_save, 0) && !d1_in_d2_use_d1_gameplay() && Highest_object_index == d2_objects &&
-		            guidebot_routing_mode() == (version == 38 ? GUIDEBOT_ROUTING_ENHANCED : GUIDEBOT_ROUTING_ORIGINAL),
-		        "ordinary D2 retains current and legacy save framing and routing defaults");
-	}
+	// A current save contains an epoch and newer runtime records; relabeling it
+	// as version 36-38 does not produce a historical compatibility fixture
+	const int d2_restored = state_restore_all_sub(d2_save, 0);
+	require(d2_restored && !d1_in_d2_use_d1_gameplay() && Highest_object_index == d2_objects &&
+	            guidebot_routing_mode() == GUIDEBOT_ROUTING_ORIGINAL,
+	        "ordinary D2 retains its current save framing and resumes with the current routing preference");
 	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
 	Last_fired_upon_player_pos = { -F1_0 / 4, F1_0 / 2, -3 * F1_0 };
 	require(state_save_all_sub(d2_save, description) && state_restore_all_sub(d2_save, 0), "prepare an ordinary D2 endian control");
@@ -12728,6 +12786,18 @@ int main(int argc, char **argv)
 		test_guidebot_save_assets(argv[2], argv[3]);
 		return 0;
 	}
+	if (argc == 4 && std::strcmp(argv[1], "--guidebot-source-assets") == 0) {
+		GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+		GameArg.SysInputDemoNoRender = 1;
+		digi_select_system(SDLAUDIO_SYSTEM);
+		const std::string hog = std::string(argv[2]) + "/DESCENT.HOG";
+		require(PHYSFS_mount(argv[2], "native-d1", 0) && PHYSFS_mount(hog.c_str(), "native-d1", 0),
+		        "mount original D1 assets for optional companion publication");
+		test_mac_d1_resources();
+		test_registered_guidebot_source(argv[3]);
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 5 && std::strcmp(argv[1], "--legacy-guidebot-save-assets") == 0) {
 		test_guidebot_save_assets(argv[2], argv[3], argv[4]);
 		return 0;
@@ -12838,10 +12908,10 @@ int main(int argc, char **argv)
 	test_ai_diagnostic_profiles();
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_ai_object_encoding();
-	for (const int size : { D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
+	for (const int size : { D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
 		require(d1_in_d2_source_edition_error(size) != nullptr, "unsupported native source layouts have explicit imported admission errors");
 	for (const int size : { D1_SHARE_BIG_PIGSIZE, D1_SHARE_10_PIGSIZE, D1_SHARE_PIGSIZE,
-	                        D1_PIGSIZE, D1_OEM_PIGSIZE, 123456 })
+	                        D1_PIGSIZE, D1_OEM_PIGSIZE, D1_MAC_PIGSIZE, 123456 })
 		require(d1_in_d2_source_edition_error(size) == nullptr, "PC shareware, registered and unknown layouts continue through full source validation");
 #endif
 #ifdef DXX_BUILD_DESCENT_II

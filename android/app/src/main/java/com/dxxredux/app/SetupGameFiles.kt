@@ -329,19 +329,19 @@ internal val D2_FILES =
             "intro-h.mvl",
             "Intro movie",
             required = false,
-            alternatives = listOf("intro-l.mvl"),
+            alternatives = listOf("intro-l.mvl", "intro.mvl"),
         ),
         GameFileInfo(
             "other-h.mvl",
             "Cutscene movies",
             required = false,
-            alternatives = listOf("other-l.mvl"),
+            alternatives = listOf("other-l.mvl", "other.mvl"),
         ),
         GameFileInfo(
             "robots-h.mvl",
             "Robot movies",
             required = false,
-            alternatives = listOf("robots-l.mvl"),
+            alternatives = listOf("robots-l.mvl", "robots.mvl"),
         ),
         GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
     )

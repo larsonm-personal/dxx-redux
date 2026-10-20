@@ -21,27 +21,43 @@ foreach ($count in @(1024, 1025, 1761, [int]::MaxValue)) {
 }
 
 $powershell = (Get-Process -Id $PID).Path
+$gateDirectory = Join-Path $repoRoot ("temp/headless-pool-gate-" + [guid]::NewGuid().ToString('N'))
+$null = New-Item -ItemType Directory -Path $gateDirectory -Force
+$releaseFile = Join-Path $gateDirectory 'release'
+# Release the first worker only after the parent retires the second worker
+# Process startup and scheduling delays must not determine the expected order
 $tasks = @(
-    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'Start-Sleep -Milliseconds 250; Write-Output slow'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'slow' }
+    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'while (-not (Test-Path -LiteralPath release)) { Start-Sleep -Milliseconds 50 }; Write-Output slow'); TimeoutSeconds = 30; WorkingDirectory = $gateDirectory; Id = 'slow' }
     [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'Write-Output fast'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'fast' }
     [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', '[Console]::Error.Write("failure detail"); exit 7'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'failed' }
-    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'Start-Sleep -Seconds 5'); TimeoutSeconds = 1; WorkingDirectory = ''; Id = 'timeout' }
+    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'while ($true) { Start-Sleep -Seconds 60 }'); TimeoutSeconds = 1; WorkingDirectory = ''; Id = 'timeout' }
     [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', '[Console]::Out.Write("o" * 131072); [Console]::Error.Write("e" * 131072)'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'large-output' }
 )
 $testState = @{ Active = 0; Peak = 0; Results = [Collections.Generic.List[object]]::new() }
-Invoke-HeadlessProcessPool -Tasks $tasks -MaxParallel 2 -OnStarted {
-    $testState.Active++
-    $testState.Peak = [Math]::Max($testState.Peak, $testState.Active)
-} -OnCompleted {
-    param($task, $result)
-    $testState.Active--
-    $testState.Results.Add([pscustomobject]@{ Id = $task.Id; Result = $result })
+try {
+    Invoke-HeadlessProcessPool -Tasks $tasks -MaxParallel 2 -OnStarted {
+        $testState.Active++
+        $testState.Peak = [Math]::Max($testState.Peak, $testState.Active)
+    } -OnCompleted {
+        param($task, $result)
+        $testState.Active--
+        $testState.Results.Add([pscustomobject]@{ Id = $task.Id; Result = $result })
+        if ($task.Id -eq 'fast') { [IO.File]::WriteAllText($releaseFile, 'released') }
+    }
+} finally {
+    # The pool stops remaining workers before returning or propagating an error
+    if (Test-Path -LiteralPath $releaseFile) { Remove-Item -LiteralPath $releaseFile }
+    Remove-Item -LiteralPath $gateDirectory
 }
 
 Assert-Equal 2 $testState.Peak 'parallelism cap'
 Assert-Equal 0 $testState.Active 'active process balance'
 Assert-Equal 5 $testState.Results.Count 'completion count'
 Assert-Equal 'fast' $testState.Results[0].Id 'retirement order'
+$slow = @($testState.Results | Where-Object Id -eq 'slow')[0].Result
+Assert-Equal 0 $slow.ExitCode 'released worker exit code'
+Assert-Equal $false $slow.TimedOut 'released worker timeout flag'
+Assert-Equal 'slow' $slow.StandardOutput.Trim() 'released worker stdout'
 Assert-Equal 7 @($testState.Results | Where-Object Id -eq 'failed')[0].Result.ExitCode 'exit code'
 Assert-Equal $true @($testState.Results | Where-Object Id -eq 'timeout')[0].Result.TimedOut 'timeout flag'
 Assert-Equal 'fast' @($testState.Results | Where-Object Id -eq 'fast')[0].Result.StandardOutput.Trim() 'stdout capture'
