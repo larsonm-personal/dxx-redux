@@ -50,7 +50,8 @@ reactor seed is a test setup operation, not measured player combat.
 Run 39374851627 tested exact baseline 66e5e27 and failed before engine launch.
 Host received JOIN at 05:37:31.214, 32.215, 33.216 UTC and logged sending its
 responses. Client sent JOIN at 31.215, 32.217, 33.217, then reported no JOIN_ACK
-at 34.218. Client-side retry interval was 1.002 s then 1.000 s; total failed
+at 34.218. Actual-send intervals were 1.002 s then 1.000 s; the chart uses the preceding
+`joinLobby: attempt` events (1.001 s each). Total failed
 attempt 3.003 s. Discovery start 05:37:27.748 to first ANNOUNCE 30.737 took
 2.989 s on that client's clock. Host-only membership was therefore not proof
 that the client had joined. The owner waited 20 s for readiness, then failed.
@@ -79,3 +80,35 @@ python3 android/helpers/chart_lan_transitions.py temp/lan-evidence/first-play/la
 The original smoke remains the default. Direct emulator invocation:
 `pwsh android/tests/test_lan_launch_preparation.ps1 -PublicShareware -MeasureTransitions`.
 The configured primary/secondary targets must be distinct disposable emulators.
+
+## Instrumented baseline observed before optimization
+
+Run 39375337680, target 2eb278f486b62d603eb63b4a8cb94e48e83abb9d, passed
+all six samples (D1/D2 x three) and all 42 native automation executions.
+The target adds diagnostics and an automation option for the already-supported
+co-op briefing setting; it does not change engine synchronization behavior.
+The failed original smoke above remains a separate result.
+
+`lan_transition_latency_20261020_results/before/overview.svg` and `timings.csv`
+were generated from this run. D1 host input-to-ready means were 1.976 s after
+first briefing Skip, 2.849 s from controlled exit to scores, 2.003 s from score
+advance to level number 2, and 2.453 s after next briefing Skip. D2 host means
+were 2.433 s, 3.035 s and 2.671 s respectively; no level-two briefing appeared
+in the D2 shareware samples. Client measurements are separate CSV rows.
+
+Closing/loading/commit phase residence totals averaged 1.057 s on the D1 host
+(n=9 operations) and 1.231 s on the D2 host (n=6). These use the timestamp from
+`logcat -v monotonic` on each individual device. The `ms=` field in the native
+phase diagnostic uses frame-cached timer_query and is NOT used as an exact
+wall-clock timestamp. Native automation elapsed_ms uses SDL_GetTicks directly.
+
+Decision: publish a changed generation/phase immediately instead of waiting
+for the next 250 ms periodic STATE send. Keep periodic retransmission, packet
+format, client ACK throttle, participant/generation validation, and every
+closure/loading/commit acknowledgement barrier. Add regression coverage for
+immediate changes, unchanged-state retry boundaries, and missing remote ACKs.
+
+For the matched after run, keep the successful measurement owner/helper and
+all automation actions/delays identical. A prospective reachability/failed-case
+continuation refinement is retained only in ignored temp, not applied to the
+comparison. Do not shorten timeouts to hide the separate failed JOIN sample.
