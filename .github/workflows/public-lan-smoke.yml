@@ -151,5 +151,14 @@ jobs:
           run-id: ${{ inputs.evidence_run_id }}
           github-token: ${{ github.token }}
           path: evidence
-      - name: Export bounded diagnostics through check annotations
-        run: python3 android/helpers/export_lan_evidence.py evidence
+      # GitHub caps annotation messages at 4096 characters and notices per step
+      - name: Export bounded diagnostics through check annotations (1/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 0
+      - name: Export bounded diagnostics through check annotations (2/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 1
+      - name: Export bounded diagnostics through check annotations (3/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 2
+      - name: Export bounded diagnostics through check annotations (4/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 3
+      - name: Export bounded diagnostics through check annotations (5/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 4
