@@ -17,6 +17,17 @@
 #include "game.h"
 
 #ifdef __ANDROID__
+int android_net_udp_secure_token(void)
+{
+	/* Keep zero reserved for absent session/attempt state */
+	for (int i = 0; i < 4; ++i) {
+		int token = 0;
+		if (!android_net_udp_reconnect_random((uint8_t *) &token, sizeof(token))) return 0;
+		if (token) return token;
+	}
+	return 0;
+}
+
 /* Reliable retry expiry can precede the once-per-second liveness check */
 int android_net_udp_handle_silent_host_timeout(fix64 now, fix64 timeout)
 {
@@ -44,6 +55,24 @@ typedef struct android_net_udp_pending_reconnect {
 static android_net_udp_reconnect_identity
     android_net_udp_player_identities[MAX_PLAYERS + 4];
 static android_net_udp_reconnect_identity android_net_udp_local_identity;
+static uint64_t android_net_udp_request_floor, android_net_udp_request_visit;
+static uint32_t android_net_udp_request_attempt;
+
+void android_net_udp_auth_retire_request(void)
+{
+	android_net_udp_request_floor = 0;
+}
+
+int android_net_udp_auth_accept_dump(uint64_t counter)
+{
+	return android_net_udp_reconnect_counter_in_window(counter, android_net_udp_request_floor,
+	                                                   android_net_udp_local_identity.request_counter);
+}
+
+uint64_t android_net_udp_auth_player_counter(int player)
+{
+	return player >= 0 && player < MAX_PLAYERS + 4 ? android_net_udp_player_identities[player].request_counter : 0;
+}
 static android_net_udp_pending_reconnect
     android_net_udp_pending_reconnects[MAX_PLAYERS];
 static int android_net_udp_local_player_num = -1;
@@ -127,6 +156,7 @@ void android_net_udp_write_u64_le(ubyte *destination,
 void android_net_udp_auth_reset(int local_player_num, int game_kind)
 {
 	int key_len;
+	android_net_udp_auth_retire_request();
 
 	memset(android_net_udp_player_identities, 0,
 	       sizeof(android_net_udp_player_identities));
@@ -372,6 +402,12 @@ int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
 		return 0;
 	request->reconnect_identity.request_signature_len =
 	    (ubyte) signature_len;
+	if (!android_net_udp_request_floor || request->join_attempt != android_net_udp_request_attempt ||
+	    request->join_visit != android_net_udp_request_visit) {
+		android_net_udp_request_floor = request->reconnect_identity.request_counter;
+		android_net_udp_request_attempt = request->join_attempt;
+		android_net_udp_request_visit = request->join_visit;
+	}
 	android_net_udp_local_identity.request_counter =
 	    request->reconnect_identity.request_counter;
 	return 1;
@@ -432,6 +468,9 @@ void android_net_udp_auth_store_player(
 {
 	if (!request || player_num < 0 || player_num >= MAX_PLAYERS + 4)
 		return;
+	debug_log(DLOG_NETWORK, "[REJOIN] identity_store slot=%d old_counter=%llu new_counter=%llu",
+	          player_num, (unsigned long long) android_net_udp_player_identities[player_num].request_counter,
+	          (unsigned long long) request->reconnect_identity.request_counter);
 	android_net_udp_player_identities[player_num] =
 	    request->reconnect_identity;
 	android_net_udp_player_identities[player_num].request_signature_len = 0;
@@ -503,6 +542,14 @@ int android_net_udp_auth_read_player(const unsigned char *source,
 			memset(identity, 0, sizeof(*identity));
 			return result;
 		}
+	}
+	if (identity->request_counter != decoded.request_counter ||
+	    identity->public_key_len != decoded.public_key_len ||
+	    (decoded.public_key_len && !android_net_udp_reconnect_public_key_equal(identity, &decoded))) {
+		debug_log(DLOG_NETWORK, "[REJOIN] identity_receive slot=%d old_counter=%llu new_counter=%llu same_key=%d",
+		          player_num, (unsigned long long) identity->request_counter,
+		          (unsigned long long) decoded.request_counter,
+		          android_net_udp_reconnect_public_key_equal(identity, &decoded));
 	}
 	*identity = decoded;
 	return result;

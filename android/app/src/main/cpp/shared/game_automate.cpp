@@ -6443,12 +6443,49 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("coop_retained_restore: retained checkpoint unavailable");
 				}
 			} else if (s.field == "join_wait_test") {
-				if (s.value == "hold_transfer") {
+				if (s.value == "allocation_owned_object") {
+					if (!net_udp_join_wait_test_owned_object()) stop_script_fail("Owned-object fixture requires a solo cooperative host with a powerup");
+				} else if (s.value == "allocation_once") {
+					if (!net_udp_join_wait_test_allocation()) stop_script_fail("Allocation fault requires an active joining client");
+				} else if (s.value == "hold_transfer") {
 					if (!net_udp_join_wait_test_hold()) stop_script_fail("Join hold requires a cooperative host");
 				} else if (s.value == "early_sync") {
 					if (!net_udp_join_wait_test_early_sync()) stop_script_fail("Early join SYNC requires a cooperative host");
 				} else if (s.value == "early_end") {
 					if (!net_udp_join_wait_test_early_end()) stop_script_fail("Early object end requires a cooperative host");
+				} else if (s.value == "drop_end_persistent" || s.value == "clear_fault") {
+					if (!net_udp_join_wait_test_fault(s.value == "clear_fault" ? 0 : NET_JOIN_DROP_END_PERSISTENT))
+						stop_script_fail("Join fault requires an idle cooperative host");
+				} else if (s.value == "stale_dump_retry") {
+					if (!net_udp_join_wait_test_fault(NET_JOIN_STALE_DUMP_RETRY)) stop_script_fail("Join fault requires an idle cooperative host");
+				} else if (s.value == "kick_last_joiner") {
+					if (!net_udp_join_wait_test_kick()) stop_script_fail("Kick requires a connected joining player");
+				} else if (s.value == "drop_second_and_quit" || s.value == "drop_all_objects") {
+					if (!net_udp_join_wait_test_fault(s.value == "drop_second_and_quit" ? NET_JOIN_DROP_SECOND_AND_QUIT : NET_JOIN_DROP_ALL_OBJECTS))
+						stop_script_fail("Join packet fault requires an idle cooperative host");
+				} else if (s.value == "drop_first" || s.value == "drop_second" || s.value == "drop_tail" || s.value == "drop_end" || s.value == "drop_sync" ||
+				           s.value == "duplicate_first" || s.value == "duplicate_second" || s.value == "duplicate_tail" || s.value == "duplicate_end" || s.value == "duplicate_sync" ||
+				           s.value == "reorder_second" || s.value == "reorder_tail" || s.value == "reorder_end" ||
+				           s.value == "stale_attempt_second" || s.value == "stale_visit_second" || s.value == "wrong_session_second" ||
+				           s.value == "delay_second_to_end" || s.value == "delay_second_to_sync") {
+					const int mode = s.value == "drop_first" ? NET_JOIN_DROP_FIRST : s.value == "drop_second"        ? NET_JOIN_DROP_SECOND
+					                                                             : s.value == "drop_tail"            ? NET_JOIN_DROP_TAIL
+					                                                             : s.value == "drop_end"             ? NET_JOIN_DROP_END
+					                                                             : s.value == "drop_sync"            ? NET_JOIN_DROP_SYNC
+					                                                             : s.value == "duplicate_first"      ? NET_JOIN_DUPLICATE_FIRST
+					                                                             : s.value == "duplicate_second"     ? NET_JOIN_DUPLICATE_SECOND
+					                                                             : s.value == "duplicate_tail"       ? NET_JOIN_DUPLICATE_TAIL
+					                                                             : s.value == "duplicate_end"        ? NET_JOIN_DUPLICATE_END
+					                                                             : s.value == "duplicate_sync"       ? NET_JOIN_DUPLICATE_SYNC
+					                                                             : s.value == "reorder_second"       ? NET_JOIN_REORDER_SECOND
+					                                                             : s.value == "reorder_tail"         ? NET_JOIN_REORDER_TAIL
+					                                                             : s.value == "reorder_end"          ? NET_JOIN_REORDER_END
+					                                                             : s.value == "stale_attempt_second" ? NET_JOIN_STALE_ATTEMPT_SECOND
+					                                                             : s.value == "stale_visit_second"   ? NET_JOIN_STALE_VISIT_SECOND
+					                                                             : s.value == "wrong_session_second" ? NET_JOIN_WRONG_SESSION_SECOND
+					                                                             : s.value == "delay_second_to_end"  ? NET_JOIN_DELAY_SECOND_TO_END
+					                                                                                                 : NET_JOIN_DELAY_SECOND_TO_SYNC;
+					if (!net_udp_join_wait_test_fault(mode)) stop_script_fail("Join packet fault requires an idle cooperative host");
 				} else if (s.value == "cancel") {
 					net_join_status status;
 					unsigned started;

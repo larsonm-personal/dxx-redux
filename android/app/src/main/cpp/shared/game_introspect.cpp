@@ -1854,6 +1854,7 @@ extern "C" char *game_introspect_get_state(void)
 		unsigned join_presentations;
 		net_join_wait_get_state(&join, &join_presentations);
 		j["join_wait"] = {
+			{ "test_drops", net_udp_join_test_drops() },
 			{ "early_ends", net_udp_join_early_ends() },
 			{ "excluded_spew", net_udp_join_excluded_spew() },
 			{ "objects_complete", (bool) net_udp_join_objects_complete() },

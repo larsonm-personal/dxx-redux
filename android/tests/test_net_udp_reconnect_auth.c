@@ -538,9 +538,26 @@ static int test_verification_admission_expires_and_resets(void)
 	return 1;
 }
 
+static int test_removal_request_window(void)
+{
+	/* A retired request accepts no removal, even before a replacement is sent */
+	CHECK(!android_net_udp_reconnect_counter_in_window(12, 0, 12));
+	CHECK(!android_net_udp_reconnect_counter_in_window(0, 10, 12));
+	CHECK(!android_net_udp_reconnect_counter_in_window(9, 10, 12));
+	CHECK(android_net_udp_reconnect_counter_in_window(10, 10, 12));
+	CHECK(android_net_udp_reconnect_counter_in_window(12, 10, 12));
+	CHECK(!android_net_udp_reconnect_counter_in_window(13, 10, 12));
+	/* Resends stay valid, but a fresh attempt retires the entire old range */
+	CHECK(!android_net_udp_reconnect_counter_in_window(12, 13, 15));
+	CHECK(android_net_udp_reconnect_counter_in_window(14, 13, 15));
+	CHECK(android_net_udp_reconnect_counter_in_window(UINT64_MAX, UINT64_MAX, UINT64_MAX));
+	return 1;
+}
+
 int main(void)
 {
 	int passed = 1;
+	passed &= test_removal_request_window();
 
 	passed &= test_request_binds_generation_counter_key_and_player_payload();
 	passed &= test_request_rejects_invalid_identity_and_short_output();

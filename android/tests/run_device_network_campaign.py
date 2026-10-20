@@ -111,6 +111,54 @@ def cases():
             scenarios["saved-level-transition"] = ["-SavedLateJoin", "-D1LevelTransition"]
         for name, flags in scenarios.items():
             result.append({"id": f"{content}-{name}", "kind": "suite", "args": base + flags})
+        result.append(
+            {"id": f"{content}-join-allocation-once", "kind": "join-allocation", "game": game, "mission": mission}
+        )
+        for loss in (
+            "control",
+            "first",
+            "second",
+            "tail",
+            "end",
+            "sync",
+            "duplicate_first",
+            "duplicate_second",
+            "duplicate_tail",
+            "duplicate_end",
+            "duplicate_sync",
+            "reorder_second",
+            "reorder_tail",
+            "reorder_end",
+            "stale_attempt_second",
+            "stale_visit_second",
+            "wrong_session_second",
+            "delay_second_to_end",
+            "delay_second_to_sync",
+            "second_and_quit",
+            "all_objects",
+            "stale_dump_retry",
+            "end_persistent",
+        ):
+            result.append(
+                {
+                    "id": f"{content}-join-loss-{loss}",
+                    "kind": "join-loss",
+                    "game": game,
+                    "mission": mission,
+                    "loss": loss,
+                }
+            )
+        for fault in ("control", "tail", "duplicate_second", "delay_second_to_sync"):
+            result.append(
+                {
+                    "id": f"{content}-join-shape-level5-{fault}",
+                    "kind": "join-loss",
+                    "game": game,
+                    "mission": mission,
+                    "level_num": 5,
+                    "loss": fault,
+                }
+            )
         if content != "d1d2":
             result.append(
                 {"id": f"{content}-loading-background", "kind": "loading-background", "game": game, "mission": mission}
@@ -535,7 +583,7 @@ class Device:
             "mode": "coop",
             "max_players": 2,
             "difficulty": 0,
-            "level_num": 1,
+            "level_num": case.get("level_num", 1),
             "callsign": callsign or ("ChaosRP" if host else "ChaosS21"),
             "coop_briefings": case.get("briefings", False),
         }
@@ -707,6 +755,8 @@ def start_pair(case, devices):
     host, client = devices
     for device in devices:
         device.start_setup()
+        if case["kind"] == "join-loss":
+            device.broadcast("SETUP_COMMAND", command="write_bool_pref", key="dlog_network_enabled", value=True)
     host.launch(case)
     wait_for(
         "host network lobby",
@@ -770,6 +820,162 @@ def lifecycle(case, devices):
     verify_controls(devices)
 
 
+def join_loss_sample(state):
+    if not state:
+        return None
+    mp = state.get("multiplayer", {})
+    return {
+        "in_game": state.get("in_game"),
+        "time_paused": state.get("time_paused"),
+        "network_status": mp.get("network_status"),
+        "num_connected": mp.get("num_connected"),
+        "join_request_pending": mp.get("join_request_pending"),
+        "join_wait": state.get("join_wait"),
+        "world_visit": state.get("coop_world_visit"),
+        "menu_subtitle": state.get("menu", {}).get("subtitle", ""),
+    }
+
+
+def verify_join_recovery_evidence(fault, samples, host_log):
+    """Require the intended recovery path, not just eventual gameplay."""
+    if fault not in ("second_and_quit", "all_objects"):
+        return
+    waits = [(sample["peers"][1] or {}).get("join_wait") or {} for sample in samples]
+    if not waits or waits[-1].get("retries") != 1:
+        raise RuntimeError("Recovery fault must complete through exactly one fresh attempt")
+    if fault == "second_and_quit":
+        if "test_drop_quit attempt=" not in host_log or "transfer_replace old=" not in host_log:
+            raise RuntimeError("Missing proof of lost cancellation and authenticated transfer replacement")
+    elif not any(
+        wait.get("early_syncs", 0) > 0 and wait.get("object_packets") == 0 and wait.get("retries") == 0
+        for wait in waits
+    ):
+        raise RuntimeError("Missing proof of SYNC-only admission before recovery")
+
+
+def verify_join_exhaustion(samples):
+    client = samples[-1]["peers"][1] if samples else None
+    if not client:
+        raise RuntimeError("Missing terminal exhaustion state")
+    wait = client.get("join_wait") or {}
+    if wait.get("retries") != 3 or wait.get("active") is not False or wait.get("objects_complete") is not False:
+        raise RuntimeError("Persistent loss did not stop after exactly three retries")
+    if "after three retries" not in client.get("menu_subtitle", "") or client.get("network_status") == 1:
+        raise RuntimeError("Missing terminal retry-limit dialog or networking still PLAYING")
+    for sample in samples:
+        peer = sample["peers"][1] or {}
+        if peer.get("network_status") == 1:
+            raise RuntimeError("Persistently incomplete transfer reached PLAYING")
+
+
+def join_loss(case, devices):
+    """Inject transfer faults and observe beyond the ordinary removal timeout."""
+    start_pair(case, devices)
+    host, client = devices
+    exit_to_launcher(client)
+    solo_host(host)
+    if case["loss"] != "control":
+        fault = (
+            case["loss"]
+            if case["loss"].startswith(("duplicate_", "reorder_", "stale_", "wrong_", "delay_"))
+            else f"drop_{case['loss']}"
+        )
+        host.automate([{"action": "set_debug", "field": "join_wait_test", "value": fault}])
+    join_from_launcher(client, host, "ChaosS21")
+    started = time.monotonic()
+    observation_end = started + 40 if case["loss"] == "control" else None
+    samples = []
+    injected = 0
+    removal_seen = False
+    split_seen = False
+    states = [None, None]
+    try:
+        # Admission has its own bound; after injection always keep the full window,
+        # including after a dump dialog, so a late protocol success stays visible
+        while time.monotonic() < (observation_end or started + 60):
+            states = pair_states(devices)
+            samples.append(
+                {"seconds": round(time.monotonic() - started, 3), "peers": [join_loss_sample(s) for s in states]}
+            )
+            host_state, client_state = states
+            if host_state:
+                injected = host_state.get("join_wait", {}).get("test_drops", 0)
+                if injected and observation_end is None:
+                    observation_end = time.monotonic() + 40
+                    print(f"{utc()} injected {case['loss']} loss; observing for 40s", flush=True)
+                if host_state.get("multiplayer", {}).get("join_request_pending"):
+                    host.automate([{"action": "key", "key": "f6", "post_delay_ms": 200}])
+            if client_state:
+                removed = "removed from the game" in client_state.get("menu", {}).get("subtitle", "")
+                removal_seen |= removed
+                split_seen |= removed and client_state.get("multiplayer", {}).get("network_status") == 1
+            time.sleep(0.5)
+    finally:
+        write_json(
+            host.output / "join-loss-observation.json",
+            {
+                "loss": case["loss"],
+                "injected_packets": injected,
+                "removal_dialog_seen": removal_seen,
+                "playing_under_removal_dialog_seen": split_seen,
+                "healthy_at_end": healthy_pair(states),
+                "samples": samples,
+            },
+        )
+    expected = {"control": 0, "second_and_quit": 2, "stale_dump_retry": 3, "end_persistent": 4}.get(case["loss"], 1)
+    if injected != expected:
+        raise RuntimeError(f"Invalid loss experiment: expected {expected} injected packet, observed {injected}")
+    if case["loss"] == "end_persistent":
+        verify_join_exhaustion(samples)
+        solo_host(host)
+        client.automate([{"action": "key", "key": "enter", "post_delay_ms": 200}])
+        exit_to_launcher(client)
+        host.automate([{"action": "set_debug", "field": "join_wait_test", "value": "clear_fault"}])
+        join_from_launcher(client, host, "ChaosS21")
+        verify_traffic(devices)
+        verify_controls(devices)
+        recovered = pair_states(devices)
+        write_json(host.output / "post-exhaustion-rejoin.json", recovered)
+        for state in recovered:
+            verify_object_allocator(state)
+        return
+    if case["loss"] in ("second_and_quit", "all_objects"):
+        verify_join_recovery_evidence(
+            case["loss"], samples, (host.output / f"{host.serial}-logcat.txt").read_text(encoding="utf-8")
+        )
+    if removal_seen or not healthy_pair(states):
+        raise RuntimeError(
+            f"Join loss did not recover: removal={removal_seen}, playing_under_dialog={split_seen}, "
+            f"healthy_at_end={healthy_pair(states)}; see join-loss-observation.json"
+        )
+    verify_traffic(devices)
+    verify_controls(devices)
+
+    recovered = pair_states(devices)
+    write_json(host.output / "join-recovery.json", recovered)
+    for state in recovered:
+        verify_object_allocator(state)
+
+    if case["loss"] == "stale_dump_retry":
+        client_log = (client.output / f"{client.serial}-logcat.txt").read_text(encoding="utf-8")
+        if client_log.count("dump_reject reason=request_lifetime") < 2:
+            raise RuntimeError("Missing old removal rejection during retry and after completion")
+        host.automate([{"action": "set_debug", "field": "join_wait_test", "value": "kick_last_joiner"}])
+        kicked = wait_for(
+            "current host kick is still accepted",
+            lambda: (
+                state
+                if (state := client.snapshot()) and "kicked" in state.get("menu", {}).get("subtitle", "").lower()
+                else None
+            ),
+            15,
+        )
+        write_json(host.output / "current-kick.json", kicked)
+        if kicked.get("multiplayer", {}).get("network_status") == 1:
+            raise RuntimeError("Current kick left the protocol PLAYING underneath its dialog")
+        solo_host(host)
+
+
 def churn(case, devices):
     start_pair(case, devices)
     host, client = devices
@@ -815,9 +1021,17 @@ def exit_to_launcher(device):
         lambda: not device.shell("pidof", f"{PACKAGE}:game", check=False),
         25,
     )
-    state = wait_for("launcher returns", lambda: device.snapshot(setup=True, full_setup=True), 25)
-    if state.get("game_running") is not False or state.get("has_returnable_game_activity") is not False:
-        raise RuntimeError("Exited game still marked as returnable")
+
+    def launcher_idle():
+        state = device.snapshot(setup=True, full_setup=True)
+        return (
+            state
+            if state and state.get("game_running") is False and state.get("has_returnable_game_activity") is False
+            else None
+        )
+
+    # Process exit can precede the launcher's activity teardown notification
+    wait_for("launcher clears exited game and returnable activity", launcher_idle, 25)
 
 
 def offline_recovery(case, devices):
@@ -854,6 +1068,76 @@ def assert_process(device, expected):
     actual = device.shell("pidof", f"{PACKAGE}:game", check=False)
     if actual != expected:
         raise RuntimeError(f"Surviving engine was replaced: {device.serial} {expected} -> {actual}")
+
+
+def verify_object_allocator(state):
+    mp = state.get("multiplayer", {}) if state else {}
+    active = mp.get("active_object_count")
+    allocated = mp.get("allocated_object_count")
+    unowned = mp.get("unowned_object_count")
+    owners = mp.get("object_owner_counts")
+    if (
+        type(active) is not int
+        or active < 1
+        or type(allocated) is not int
+        or allocated != active
+        or type(unowned) is not int
+        or unowned < 0
+        or not isinstance(owners, list)
+        or not owners
+        or any(type(count) is not int or count < 0 for count in owners)
+        or sum(owners) + unowned != active
+    ):
+        raise RuntimeError("Object allocator/live/ownership counts are missing or inconsistent")
+
+
+def verify_allocation_owner(state):
+    mp = state.get("multiplayer", {}) if state else {}
+    slot = mp.get("my_player_num")
+    owners = mp.get("synchronized_object_owner_counts", [])
+    if not isinstance(slot, int) or slot < 0 or slot >= len(owners) or owners[slot] < 1:
+        raise RuntimeError("Allocation fixture lacks a synchronized host-owned object")
+
+
+def verify_allocation_recovery(state, log):
+    wait = state.get("join_wait", {}) if state else {}
+    if log.count("test_allocation_failed") != 1 or log.count("objects_allocation_failed") != 1:
+        raise RuntimeError("Missing exactly one injected and handled allocation failure")
+    if wait.get("retries") != 1 or wait.get("objects_complete") is not True or wait.get("active") is not False:
+        raise RuntimeError("Allocation failure did not complete through exactly one fresh attempt")
+
+
+def allocation_failure(case, devices):
+    host, client = devices
+    for device in devices:
+        device.start_setup()
+    host.launch(case)
+    solo_host(host)
+    host.automate(ROOT / "android/game_scripts/test_coop_late_join_start.jsonc")
+    host_pid = host.shell("pidof", f"{PACKAGE}:game")
+    host.automate([{"action": "set_debug", "field": "join_wait_test", "value": "allocation_owned_object"}])
+    owned = host.snapshot()
+    write_json(host.output / "allocation-owned-object.json", owned)
+    verify_allocation_owner(owned)
+    client.launch(case, host=False, address=host.ip(), callsign="AllocTest")
+
+    def pending():
+        state = host.snapshot()
+        return state if state and state.get("multiplayer", {}).get("join_request_pending") else None
+
+    write_json(
+        host.output / "allocation-approval-pending.json", wait_for("allocation probe awaits approval", pending, 35)
+    )
+    client.automate([{"action": "set_debug", "field": "join_wait_test", "value": "allocation_once"}])
+    host.automate([{"action": "key", "key": "f6", "post_delay_ms": 200}])
+    verify_traffic(devices)
+    verify_controls(devices)
+    states = pair_states(devices)
+    write_json(host.output / "allocation-recovery.json", states)
+    for state in states:
+        verify_object_allocator(state)
+    verify_allocation_recovery(states[1], (client.output / f"{client.serial}-logcat.txt").read_text(encoding="utf-8"))
+    assert_process(host, host_pid)
 
 
 def admission(case, devices):
@@ -1823,6 +2107,10 @@ def main():
                         lobby_role_turnover(case, devices)
                     elif case["kind"] == "churn":
                         churn(case, devices)
+                    elif case["kind"] == "join-loss":
+                        join_loss(case, devices)
+                    elif case["kind"] == "join-allocation":
+                        allocation_failure(case, devices)
                     elif case["kind"] == "admission":
                         admission(case, devices)
                     elif case["kind"] == "offline-recovery":
