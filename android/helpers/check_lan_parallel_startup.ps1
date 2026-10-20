@@ -169,7 +169,7 @@ function Invoke-LanParallelStartupChecks {
                         if (-not (Wait-ForCondition -Description 'Mixed-version same-session native rejoin' -TimeoutSec 30 -PollMs 500 -Condition {
                                     Send-MpCommand -Serial $clientSerial -Command 'lan_join_first_lobby'
                                     $log = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
-                                    $log -match 'event=join_mission_begin'
+                                    $log -match 'auto_net: starting auto-join'
                                 })) { throw 'Mixed-version reconnect did not begin' }
                         Wait-LatencyPeers 'mixed.reconnected' { param($s) $s.in_game -and -not $s.coop_briefing.active -and -not $s.time_paused -and $s.multiplayer.num_connected -eq 2 }
                         $hostPidAfter = ((Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) -join '').Trim()
