@@ -76,3 +76,10 @@ selection clears it, to restrict the loading allowance to this launcher call.
 A later classic native-menu host in the same process must keep its old timeout.
 The in-progress4dcc170d3 run is superseded before emulator execution to validate
 this final scope guard on the exact measured revision.
+
+Observer guard review: Netgame.host_is_obs is finalized after selection, so
+also check the already-known auto_host_observer and launcher info.hostObserver.
+This excludes observer hosts before early admission. The measured non-observer
+path is unchanged. Keep the full experiment ata673dfd8e running, and validate
+this additional excluded-path guard with the normal dual-emulator smoke on a
+separate validation branch; record both exact revisions/results.

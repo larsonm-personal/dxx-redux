@@ -5168,7 +5168,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 				if (!android_net_udp_launch_admission_allowed(auto_net_lan_startup,
 				        net_auto_start_when_full, Netgame.gamemode == NETGAME_COOPERATIVE,
 				        Network_status == NETSTAT_STARTING,
-				        their.player.observer || Netgame.host_is_obs,
+				        their.player.observer || Netgame.host_is_obs || auto_host_observer,
 				        (int) their.player.connected, Netgame.levelnum) ||
 				    their.join_attempt || their.join_visit || coop_travel_active() || multi_save_transfer_busy()) {
 					STARTUP_SYNC_TRACE("admission_ignored");
@@ -7396,7 +7396,7 @@ int net_udp_start_game(void)
 
 #ifdef __ANDROID__
 	const int launcher_initial_load = auto_net_lan_startup && auto_host_pending &&
-	    Netgame.gamemode == NETGAME_COOPERATIVE && !Netgame.host_is_obs;
+	    Netgame.gamemode == NETGAME_COOPERATIVE && !Netgame.host_is_obs && !auto_host_observer;
 	/* Native-menu hosting can follow a proxy-backed client in this process */
 	MPDIAG("host socket: port=%s previous_loopback=%d", UDP_MyPort, udp_bind_loopback);
 	udp_bind_loopback = 0;
