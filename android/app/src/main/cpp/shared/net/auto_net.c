@@ -26,6 +26,7 @@ const char *auto_net_config_last_player(const char *current, const char *saved)
 #ifdef __ANDROID__
 
 #include <limits.h>
+#include <SDL.h>
 
 #include "android_log.h"
 #include "args.h"
@@ -41,6 +42,24 @@ const char *auto_net_config_last_player(const char *current, const char *saved)
 /* --- globals, set by JNI before the main menu opens --- */
 
 int auto_join_pending = 0;
+int auto_net_lan_startup = 0;
+int auto_net_launcher_join_active = 0;
+int auto_net_startup_test_delay_ms = 0;
+int auto_net_startup_test_drop_admission = 0;
+int auto_net_startup_test_duplicates = 0;
+void auto_net_startup_test_hold(const char *role)
+{
+#ifndef NDEBUG
+	const int delay = auto_net_startup_test_delay_ms;
+	auto_net_startup_test_delay_ms = 0;
+	if (delay <= 0 || delay > 8000) return;
+	debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=load_hold_begin role=%s delay_ms=%d", role, delay);
+	SDL_Delay(delay);
+	debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=load_hold_end role=%s", role);
+#else
+	(void) role;
+#endif
+}
 char auto_join_host_addr[AUTO_NET_ADDR_LEN] = "127.0.0.1";
 int auto_join_host_port = 42430;
 int auto_join_my_port = 42424;
@@ -192,8 +211,10 @@ int check_auto_net(void)
 		auto_join_pending = 0;
 		con_printf(CON_NORMAL, "auto_net: starting auto-join to %s:%d (my port %d)\n",
 		           auto_join_host_addr, auto_join_host_port, auto_join_my_port);
+		auto_net_launcher_join_active = 1;
 		net_udp_auto_join(auto_join_host_addr, auto_join_host_port,
 		                  auto_join_my_port);
+		auto_net_launcher_join_active = 0;
 		return 1;
 	}
 

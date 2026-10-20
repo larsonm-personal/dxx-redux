@@ -2843,6 +2843,8 @@ class SetupActivity : ComponentActivity() {
             } else {
                 -1
             }
+        // Initial LAN co-op only; a host restoring a save retains serialized admission
+        mpIntent.putExtra("mp_parallel_level_load", info.isLan && info.mode == "coop" && coopRestoreSlot < 0)
         val mpRole = if (info.isHost) "host" else "join"
         val mpTransport = if (info.isLan) "lan" else "matchmaking"
         CoopDesyncLog.log(
