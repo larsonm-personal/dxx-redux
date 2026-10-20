@@ -161,6 +161,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_OBSQUIT 30
 #define UPID_OBSQUIT_SIZE (1 + 4 + 4)
 #ifdef __ANDROID__
+#include "../../android/app/src/main/cpp/shared/net/net_udp_launch_admission.h"
 #define UPID_RECONNECT_CHALLENGE 31
 #define UPID_RECONNECT_PROOF     32
 #endif

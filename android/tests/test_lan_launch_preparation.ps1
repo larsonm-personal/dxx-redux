@@ -336,6 +336,8 @@ if ($MeasureTransitions) {
         next = 'test_lan_latency_next.jsonc'
     }
     Invoke-LanTransitionMeasurements
+    . "$PSScriptRoot/../helpers/check_lan_parallel_startup.ps1"
+    Invoke-LanParallelStartupChecks
     return
 }
 if ($PublicShareware) {

@@ -1,4 +1,5 @@
 #include "net_udp_reconnect_auth.h"
+#include "net_udp_launch_admission.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -554,9 +555,44 @@ static int test_removal_request_window(void)
 	return 1;
 }
 
+static int test_launch_admission_cannot_become_loaded_readiness(void)
+{
+	android_net_udp_reconnect_identity identity = make_identity(3, 41);
+	uint8_t payload[32] = { 'p', 0, 1 };
+	uint8_t ready_message[192], admission_message[192], retagged_message[192];
+	size_t ready_payload = android_net_udp_launch_admission_bind_purpose(8, payload, 3, sizeof(payload));
+	CHECK(ready_payload == 3);
+	size_t ready_size = android_net_udp_reconnect_build_request_message(42, &identity,
+	                                                                    payload, ready_payload, ready_message, sizeof(ready_message));
+	size_t admission_payload = android_net_udp_launch_admission_bind_purpose(UPID_LAUNCH_ADMISSION,
+	                                                                         payload, 3, sizeof(payload));
+	CHECK(admission_payload == 4);
+	size_t admission_size = android_net_udp_reconnect_build_request_message(42, &identity,
+	                                                                        payload, admission_payload, admission_message, sizeof(admission_message));
+	/* Retagging a datagram recomputes the old readiness transcript, not the signed admission transcript */
+	size_t retagged_size = android_net_udp_reconnect_build_request_message(42, &identity,
+	                                                                       payload, android_net_udp_launch_admission_bind_purpose(8, payload, 3, sizeof(payload)),
+	                                                                       retagged_message, sizeof(retagged_message));
+	CHECK(ready_size && admission_size && retagged_size == ready_size);
+	CHECK(memcmp(ready_message, retagged_message, ready_size) == 0);
+	CHECK(admission_size != retagged_size || memcmp(admission_message, retagged_message, ready_size) != 0);
+	CHECK(android_net_udp_launch_admission_bind_purpose(UPID_LAUNCH_ADMISSION, payload, sizeof(payload), sizeof(payload)) == 0);
+	CHECK(android_net_udp_launch_admission_allowed(1, 1, 1, 1, 0, 1, 1));
+	CHECK(!android_net_udp_launch_admission_allowed(0, 1, 1, 1, 0, 1, 1));
+	CHECK(!android_net_udp_launch_admission_allowed(1, 0, 1, 1, 0, 1, 1));
+	CHECK(!android_net_udp_launch_admission_allowed(1, 1, 0, 1, 0, 1, 1));
+	/* WAITING and PLAYING are both non-STARTING, even for a valid signed duplicate */
+	CHECK(!android_net_udp_launch_admission_allowed(1, 1, 1, 0, 0, 1, 1));
+	CHECK(!android_net_udp_launch_admission_allowed(1, 1, 1, 1, 1, 1, 1));
+	CHECK(!android_net_udp_launch_admission_allowed(1, 1, 1, 1, 0, 2, 1));
+	CHECK(!android_net_udp_launch_admission_allowed(1, 1, 1, 1, 0, 0, 0));
+	return 1;
+}
+
 int main(void)
 {
 	int passed = 1;
+	passed &= test_launch_admission_cannot_become_loaded_readiness();
 	passed &= test_removal_request_window();
 
 	passed &= test_request_binds_generation_counter_key_and_player_payload();

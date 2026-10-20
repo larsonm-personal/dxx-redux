@@ -1,4 +1,5 @@
 #include "net_udp_android.h"
+#include "net_udp_launch_admission.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,7 +116,7 @@ static size_t android_net_udp_auth_build_request_message(
     const UDP_sequence_packet *request, unsigned int game_token,
     ubyte *message, size_t message_size)
 {
-	ubyte payload[CALLSIGN_LEN + 1 + 5 + 12];
+	ubyte payload[CALLSIGN_LEN + 1 + 5 + 12 + 1];
 	size_t offset = 0;
 
 	if (!request)
@@ -130,6 +131,8 @@ static size_t android_net_udp_auth_build_request_message(
 	PUT_INTEL_INT(payload + offset, request->join_attempt);
 	offset += 4;
 	for (unsigned i = 0; i < 8; ++i) payload[offset++] = (ubyte) (request->join_visit >> (8 * i));
+	offset = android_net_udp_launch_admission_bind_purpose(request->type, payload, offset, sizeof(payload));
+	if (!offset) return 0;
 	return android_net_udp_reconnect_build_request_message(
 	    game_token, &request->reconnect_identity, payload, offset,
 	    message, message_size);
