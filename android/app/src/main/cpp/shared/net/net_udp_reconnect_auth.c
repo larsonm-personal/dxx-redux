@@ -167,6 +167,11 @@ int android_net_udp_reconnect_find_public_key(
 	return -1;
 }
 
+int android_net_udp_reconnect_counter_in_window(uint64_t candidate, uint64_t first, uint64_t latest)
+{
+	return first && candidate >= first && candidate <= latest;
+}
+
 int android_net_udp_reconnect_counter_is_newer(uint64_t candidate,
                                                uint64_t previous)
 {

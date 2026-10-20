@@ -587,7 +587,7 @@ directory and resets the diagnostic app processes between cases.
 
 ### Implemented diagnostic coverage
 
-The existing device campaign now offers 15 explicit cases: control, first
+At this stage, the device campaign offered 15 explicit cases: control, first
 object packet, second object packet, end marker, and first SYNC loss for each
 of D1, D2, and D1-in-D2. The shared native hook drops one selected outgoing
 join payload before socket transmission, logs its attempt, type, size and
@@ -642,13 +642,13 @@ no-loss and first-SYNC-loss controls passed; all eight object-transfer-loss
 experiments failed. Both diagnostic apps were stopped by cleanup and both
 physical devices remained ADB-connected.
 
-| Fault | Tested combinations | Result |
-| --- | --- | --- |
-| No loss | D2, Retroid host | PASS, healthy traffic and controls |
-| First object packet | D1, D2, D1-in-D2 with Retroid host; D2 with Samsung host | FAIL in all four: busy-rejected retries, removal, then PLAYING underneath the removal dialog |
-| Second object packet | D1, D2, D1-in-D2 with Retroid host | FAIL in all three: start marker received, no subsequent transfer retry, removal |
-| End marker | D2, Retroid host | FAIL: all 106 objects received, completion never verified, no subsequent transfer retry, removal |
-| First SYNC | D2, Retroid host | PASS, later SYNC completed the join |
+| Fault                | Tested combinations                                      | Result                                                                                           |
+| -------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| No loss              | D2, Retroid host                                         | PASS, healthy traffic and controls                                                               |
+| First object packet  | D1, D2, D1-in-D2 with Retroid host; D2 with Samsung host | FAIL in all four: busy-rejected retries, removal, then PLAYING underneath the removal dialog     |
+| Second object packet | D1, D2, D1-in-D2 with Retroid host                       | FAIL in all three: start marker received, no subsequent transfer retry, removal                  |
+| End marker           | D2, Retroid host                                         | FAIL: all 106 objects received, completion never verified, no subsequent transfer retry, removal |
+| First SYNC           | D2, Retroid host                                         | PASS, later SYNC completed the join                                                              |
 
 Evidence directories under `android/temp/join-loss-20261019`:
 
@@ -678,3 +678,104 @@ the start marker sets `Network_rejoined`, before completion is verified.
 The fix must address progress-based restart on both sides, as well as making
 failure terminal before opening a dialog or disabling the attempt guard.
 Recovery behavior remains unchanged in this diagnostic/test-only work.
+
+## Expanded deterministic join-fault survey, 2026-10-19
+
+The physical-device survey expanded the one-shot sender hook from loss-only
+coverage to duplication, deterministic reordering/delay, and envelope identity
+faults. The reusable campaign catalog now contains 57 level-1 boundary cases
+(19 for each of D1, D2, and D1-in-D2) plus 12 level-5 stream-shape variants.
+Every non-control case requires introspection proof that exactly one fault was
+injected. Passing cases additionally require healthy two-player gameplay,
+advancing bidirectional PDATA, responsive controls, and matching world visit.
+
+The added fault classes are:
+
+- duplicate first, second, tail, end, or SYNC payload;
+- swap the second object packet with its successor, move the tail behind the
+  end marker, or move the end marker behind SYNC;
+- hold the second object packet until the end marker or until SYNC;
+- inject a forged second-packet copy with the wrong join attempt, world visit,
+  or session token immediately before the valid packet;
+- repeat control, tail loss, interior duplication, and delay-through-SYNC on
+  level 5 instead of level 1.
+
+### Results and boundary established
+
+The valid executions in `android/temp/join-fault-survey-20261019` establish a
+clear protocol boundary:
+
+This expanded phase completed 27 valid physical-device experiments: 16 passed
+their strict recovery oracle and 11 reproduced product defects. Two additional
+setup-only attempts were excluded as described below.
+
+| Class                                          | Result                    | Evidence                                                                                           |
+| ---------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------- |
+| Adjacent object-packet reorder                 | PASS in D1 and D2         | Complete streams and healthy traffic/controls                                                      |
+| Tail after end marker                          | PASS in D1 and D2         | End deferred, tail completed exact count, allocator rebuilt once                                   |
+| End marker after SYNC                          | PASS in D1 and D2         | SYNC deferred until end, then normal completion                                                    |
+| Second packet delayed until end                | PASS in D2                | 92/106 deferred, then 106/106 and accepted SYNC                                                    |
+| Second packet delayed until SYNC               | PASS in D2 levels 1 and 5 | 92/106 or 222/236 deferred, then exact completion and later accepted SYNC                          |
+| Stale attempt, stale visit, wrong session copy | PASS in D2                | Intended envelope gate rejected each forged copy; valid stream remained 106/106                    |
+| Duplicate first/clear packet                   | PASS in D2                | Clear operation is effectively idempotent                                                          |
+| Duplicate end marker or SYNC                   | PASS in D2                | Gameplay remained healthy; duplicate end rebuilt the allocator twice and remains a regression risk |
+| Duplicate second or tail data packet           | FAIL                      | 120/106 or 114/106, removal, then late success under the removal dialog                            |
+| Tail loss                                      | FAIL                      | 98/106 on level 1 and 224/236 on level 5, 16 deferred SYNCs, removal, no recovery                  |
+
+Tail loss and interior duplication reproduced in D1, D2, and D1-in-D2 where
+tested. Both also reproduced after reversing the physical devices so the
+Samsung hosted and the Retroid joined. Level-5 control passed at 236 objects;
+level-5 tail loss and interior duplication reproduced the same failure classes
+as the 106-object level-1 stream. These are engine-, device-, role-, and
+object-stream-shape independent.
+
+The envelope checks are correctly ordered before parser side effects. Logs
+showed exactly one rejection with `attempt_match=0`, `visit_match=0`, or
+`session_match=0`, followed by `objects_end expected=106 received=106`.
+This reduces the priority of attempt-generation filtering as the source of the
+observed bug, while retaining the cases as regressions.
+
+The receiver can reconcile severe but finite reordering, including an object
+arriving after both the end marker and initial SYNC. Therefore the defect is
+not general packet ordering. The broken classes are:
+
+1. permanent loss, because no object-stream retransmission or progress-based
+   restart occurs after the start marker;
+2. duplicate object data, because receipt accounting counts datagrams rather
+   than unique object identities and the parser mutates the world before the
+   end count mismatch is known;
+3. failure/UI finalization, because a later clean retry can enter gameplay
+   while the earlier attempt's removal dialog remains authoritative.
+
+The implementation boundary should now include duplicate-safe object receipt
+in addition to progress-based restart and attempt-scoped failure retirement.
+Do not merely relax the final count check: duplicated packets have already
+replayed object writes and allocator-rebuild-adjacent state. Either deduplicate
+by attempt plus object identity/range before mutation, or make each attempt
+transactional and commit only after exact validated completion. The host must
+also restart or resume an unconfirmed transfer after missing progress, and an
+old attempt must not be able to show removal after a replacement attempt wins.
+
+Evidence groups:
+
+- `chunk1-d2-rp-host`, `chunk1-tail-rerun2`, and `chunk1-parity`: duplicate
+  boundaries and loss parity;
+- `chunk2-reorder-d2` and `chunk2-reorder-d1`: D2/D1 ordering matrix;
+- `chunk3-envelope-d2`: attempt, visit, and session rejection gates;
+- `chunk4-reverse-d2`: reversed physical roles for tail loss and duplication;
+- `chunk5-tail-delay-shape-d2`: tail duplication, long delay, and level-5
+  shape variation.
+
+Two setup-only runs are excluded from protocol conclusions. The first tail
+selector did not inject because its ownership-pass condition was wrong. A
+later rerun accidentally installed the stale APK under
+`app/build/outputs/apk/debug`; Gradle's fresh ABI-filtered package was actually
+under `app/build/intermediates/apk/debug`. Both were detected by the mandatory
+injection oracle. The final tested APK SHA-256 was
+`16def27fbdc8832db3360b133e27e360900a0a7c539c7c44f1c0bd0301eff8d1`.
+
+Closing validation passed: Android arm64 compilation for both engines, scoped
+format/lint, the 11-test campaign CLI fixture, the automation catalog (95 JSON,
+426 support, 260 PowerShell), the master catalog (364 top-level, 426 support),
+and `git diff --check`. Both physical phones remained ADB-connected and neither
+had a diagnostic game process running after cleanup.

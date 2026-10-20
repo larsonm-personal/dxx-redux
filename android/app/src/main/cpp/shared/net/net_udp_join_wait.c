@@ -25,6 +25,9 @@ static uint64_t target_visit;
 static net_join_status current;
 static uint64_t received_at, contact_since, deadline, shown_briefing;
 static unsigned presentations, object_packets, retries;
+static uint64_t transfer_progress;
+static unsigned transfer_retries;
+static int transfer_started;
 static const char *failure;
 static pthread_mutex_t ui_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct {
@@ -84,6 +87,9 @@ void net_join_wait_begin(void)
 	prepared = target_valid = restart = 0;
 	deadline = shown_briefing = 0;
 	presentations = object_packets = retries = 0;
+	transfer_started = 0;
+	transfer_progress = 0;
+	transfer_retries = 0;
 	failure = NULL;
 	pthread_mutex_lock(&ui_lock);
 	ui.cancel = 0;
@@ -117,6 +123,15 @@ const char *net_join_wait_failure(void)
 	return failure;
 }
 
+void net_join_wait_fail(const char *message)
+{
+	/* Keep the attempt guard until the outer join loop closes networking */
+	if (!active) return;
+	if (!failure) failure = message;
+	restart = 0;
+	Network_status = NETSTAT_MENU;
+}
+
 void net_join_wait_receive(const net_join_status *status, unsigned transit_ms)
 {
 	if (!active || status->phase >= NET_JOIN_PHASE_COUNT || status->level < -127 || status->level > 127 ||
@@ -140,7 +155,7 @@ void net_join_wait_receive(const net_join_status *status, unsigned transit_ms)
 
 int net_join_wait_can_request(void)
 {
-	return !active || (prepared && !restart && current.phase == NET_JOIN_READY);
+	return !active || (!failure && Network_status != NETSTAT_MENU && prepared && !restart && current.phase == NET_JOIN_READY);
 }
 
 int net_join_wait_reader_cancelled(void)
@@ -163,6 +178,8 @@ static void reader_pump(void)
 	if (now_ms() > received_at + 30000 && now_ms() > contact_since + 30000) failure = "The host stopped responding while you were joining";
 	else if (current.phase == NET_JOIN_COMPLETE) failure = "The mission has finished. There is no next level to join";
 	if (cancelled || failure) Network_status = NETSTAT_MENU;
+	else if (transfer_started && !restart && Network_status == NETSTAT_WAITING &&
+	         now_ms() >= transfer_progress + 5000) net_join_wait_transfer_failed();
 	publish();
 }
 
@@ -239,6 +256,8 @@ void net_join_wait_interrupt(void)
 void net_join_wait_retry(void)
 {
 	++retries;
+	transfer_started = 0;
+	transfer_progress = 0;
 	prepared = target_valid = restart = 0;
 	Network_rejoined = 0;
 	current.phase = NET_JOIN_CONTACT;
@@ -274,6 +293,34 @@ void net_join_wait_get_state(net_join_status *status, unsigned *started)
 void net_join_wait_note_objects(void)
 {
 	++object_packets;
+	net_join_wait_note_transfer();
+}
+
+void net_join_wait_note_transfer(void)
+{
+	/* The first enveloped payload proves admission, even if clear was lost */
+	if (!transfer_started) {
+		transfer_started = 1;
+		transfer_progress = now_ms();
+	}
+}
+
+void net_join_wait_note_progress(void)
+{
+	if (!active || failure || restart) return;
+	transfer_started = 1;
+	transfer_progress = now_ms();
+}
+
+void net_join_wait_transfer_failed(void)
+{
+	if (!active || failure || restart) return;
+	if (++transfer_retries > 3) {
+		net_join_wait_fail("Unable to synchronize the game after three retries");
+		return;
+	}
+	debug_log(DLOG_NETWORK, "Join transfer stalled: retry=%u", transfer_retries);
+	restart = 1;
 }
 unsigned net_join_wait_object_packets(void)
 {

@@ -20,6 +20,107 @@ spec.loader.exec_module(campaign)
 
 
 class CampaignCliTest(unittest.TestCase):
+    def test_object_allocator_requires_consistent_live_and_owned_counts(self):
+        mp = {
+            "active_object_count": 3,
+            "allocated_object_count": 3,
+            "unowned_object_count": 2,
+            "object_owner_counts": [1, 0],
+        }
+        campaign.verify_object_allocator({"multiplayer": mp})
+        for field, value in (
+            ("allocated_object_count", 4),
+            ("allocated_object_count", 2),
+            ("active_object_count", 0),
+            ("unowned_object_count", 3),
+            ("object_owner_counts", [-1, 2]),
+            ("object_owner_counts", []),
+            ("active_object_count", None),
+        ):
+            with self.assertRaises(RuntimeError):
+                campaign.verify_object_allocator({"multiplayer": {**mp, field: value}})
+        for field in mp:
+            with self.assertRaises(RuntimeError):
+                campaign.verify_object_allocator({"multiplayer": {k: v for k, v in mp.items() if k != field}})
+        with self.assertRaises(RuntimeError):
+            campaign.verify_object_allocator(None)
+
+    def test_allocation_fixture_requires_host_owned_transfer_object(self):
+        campaign.verify_allocation_owner(
+            {"multiplayer": {"my_player_num": 0, "synchronized_object_owner_counts": [1, 0]}}
+        )
+        for invalid in (
+            None,
+            {},
+            {"my_player_num": 0},
+            {"my_player_num": 0, "synchronized_object_owner_counts": [0, 1]},
+            {"my_player_num": -1, "synchronized_object_owner_counts": [1, 1]},
+        ):
+            with self.assertRaises(RuntimeError):
+                campaign.verify_allocation_owner({"multiplayer": invalid} if invalid else None)
+
+    def test_allocation_recovery_requires_injection_and_fresh_completion(self):
+        state = {"join_wait": {"retries": 1, "active": False, "objects_complete": True}}
+        log = "test_allocation_failed\nobjects_allocation_failed sender=7"
+        campaign.verify_allocation_recovery(state, log)
+        for invalid_log in ("", "test_allocation_failed", "objects_allocation_failed", log + log):
+            with self.assertRaises(RuntimeError):
+                campaign.verify_allocation_recovery(state, invalid_log)
+        for key, value in (("retries", 0), ("retries", 2), ("active", True), ("objects_complete", False)):
+            invalid = {"join_wait": {**state["join_wait"], key: value}}
+            with self.assertRaises(RuntimeError):
+                campaign.verify_allocation_recovery(invalid, log)
+        with self.assertRaises(RuntimeError):
+            campaign.verify_allocation_recovery(None, log)
+        self.assertEqual(len([case for case in campaign.cases() if case["kind"] == "join-allocation"]), 3)
+
+    def test_exhaustion_requires_bounded_terminal_failure(self):
+        def sample(retries=3, active=False, complete=False, status=None, message="after three retries"):
+            return {
+                "peers": [
+                    None,
+                    {
+                        "join_wait": {"retries": retries, "active": active, "objects_complete": complete},
+                        "network_status": status,
+                        "menu_subtitle": message,
+                    },
+                ]
+            }
+
+        campaign.verify_join_exhaustion([sample()])
+        for invalid in (
+            sample(retries=2),
+            sample(retries=4),
+            sample(active=True),
+            sample(complete=True),
+            sample(status=1),
+            sample(message=""),
+        ):
+            with self.assertRaises(RuntimeError):
+                campaign.verify_join_exhaustion([invalid])
+        with self.assertRaises(RuntimeError):
+            campaign.verify_join_exhaustion([sample(status=1), sample()])
+        with self.assertRaises(RuntimeError):
+            campaign.verify_join_exhaustion([])
+
+    def test_recovery_evidence_requires_actual_path(self):
+        def sample(**wait):
+            return {"peers": [None, {"join_wait": wait}]}
+
+        recovered = sample(retries=1, object_packets=8, early_syncs=2)
+        logs = "test_drop_quit attempt=1\ntransfer_replace old=1 new=2"
+        campaign.verify_join_recovery_evidence("second_and_quit", [recovered], logs)
+        for missing in ("", "test_drop_quit attempt=1", "transfer_replace old=1 new=2"):
+            with self.assertRaises(RuntimeError):
+                campaign.verify_join_recovery_evidence("second_and_quit", [recovered], missing)
+        with self.assertRaises(RuntimeError):
+            campaign.verify_join_recovery_evidence("second_and_quit", [sample(retries=0)], logs)
+        campaign.verify_join_recovery_evidence(
+            "all_objects", [sample(retries=0, object_packets=0, early_syncs=2), recovered], ""
+        )
+        with self.assertRaises(RuntimeError):
+            campaign.verify_join_recovery_evidence("all_objects", [recovered], "")
+
     def setUp(self):
         self.directory = WORKSPACE / self._testMethodName
         self.directory.mkdir()
@@ -84,14 +185,41 @@ class CampaignCliTest(unittest.TestCase):
                 self.assertIn("distinct --host and --client plus --output are required", result.stderr)
                 self.assertNotIn("--repeat must", result.stderr)
 
-    def test_join_loss_catalog_has_control_and_four_boundaries_per_engine(self):
+    def test_join_loss_catalog_has_control_and_twenty_two_faults_per_engine(self):
         result = self.cli("--list", "--case", "*-join-loss-*")
         self.assertEqual(result.returncode, 0, result.stderr)
         rows = json.loads(result.stdout)
-        self.assertEqual(len(rows), 15)
+        self.assertEqual(len(rows), 69)
         for content in ("d1", "d2", "d1d2"):
             selected = [row for row in rows if row["id"].startswith(content + "-")]
-            self.assertEqual([row["loss"] for row in selected], ["control", "first", "second", "end", "sync"])
+            self.assertEqual(
+                [row["loss"] for row in selected],
+                [
+                    "control",
+                    "first",
+                    "second",
+                    "tail",
+                    "end",
+                    "sync",
+                    "duplicate_first",
+                    "duplicate_second",
+                    "duplicate_tail",
+                    "duplicate_end",
+                    "duplicate_sync",
+                    "reorder_second",
+                    "reorder_tail",
+                    "reorder_end",
+                    "stale_attempt_second",
+                    "stale_visit_second",
+                    "wrong_session_second",
+                    "delay_second_to_end",
+                    "delay_second_to_sync",
+                    "second_and_quit",
+                    "all_objects",
+                    "stale_dump_retry",
+                    "end_persistent",
+                ],
+            )
             self.assertTrue(all(row["kind"] == "join-loss" for row in selected))
 
     def test_exit_waits_for_launcher_teardown_after_process_exit(self):

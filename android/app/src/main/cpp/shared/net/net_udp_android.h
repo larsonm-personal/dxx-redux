@@ -17,6 +17,11 @@ typedef void (*android_net_udp_log_connection_status_fn)(int pnum, int old_type)
 #define ANDROID_NET_UDP_AUTH_INVALID                   -2
 
 #ifdef __ANDROID__
+/* Zero means entropy acquisition failed; callers must not open a session */
+int android_net_udp_secure_token(void);
+void android_net_udp_auth_retire_request(void);
+int android_net_udp_auth_accept_dump(uint64_t counter);
+uint64_t android_net_udp_auth_player_counter(int player);
 void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int len);
 int android_net_udp_handle_silent_host_timeout(fix64 now, fix64 timeout);
 #endif

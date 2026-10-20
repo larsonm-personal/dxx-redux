@@ -94,6 +94,7 @@ int android_net_udp_reconnect_find_public_key(
     const android_net_udp_reconnect_identity *candidate);
 int android_net_udp_reconnect_counter_is_newer(uint64_t candidate,
                                                uint64_t previous);
+int android_net_udp_reconnect_counter_in_window(uint64_t candidate, uint64_t first, uint64_t latest);
 int android_net_udp_reconnect_context_valid(
     const android_net_udp_reconnect_identity *identity);
 int android_net_udp_reconnect_context_equal(

@@ -87,7 +87,12 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_GAME_INFO_LITE			  5 // Packet containing lite netgame info.
 #define UPID_GAME_INFO_LITE_SIZE		 (31 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1))
 #define UPID_DUMP				  6 // Packet containing why player cannot join this game.
+#ifdef __ANDROID__
+#define UPID_DUMP_SIZE (2 + 4 + 8) /* Recipient's signed request counter */
+#else
 #define UPID_DUMP_SIZE				  (2 + 4)
+#define net_udp_dump_join_request(request, why) net_udp_dump_player((request)->player.protocol.udp.addr, (request)->token, why)
+#endif
 #define UPID_ADDPLAYER				  7 // Packet from Host containing info about a new player.
 #define UPID_REQUEST				  8 // New player says: "I want to be inside of you!" (haha, sorry I could not resist) / Packet containing request to join the game actually.
 #define UPID_QUIT_JOINING			  9 // Packet from a player who suddenly quits joining.
