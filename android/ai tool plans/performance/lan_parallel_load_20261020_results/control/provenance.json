@@ -1,0 +1,57 @@
+{
+  "export_run": 39446278295,
+  "repository": "larsonm-personal/dxx-redux",
+  "gzip_sha256": "3f55cfd99db97976b3305f16ae02e0a0288d8ec042c2e63bdc8665c9df4946c1",
+  "note": "Bounded text excerpts; observation state reduced. Original hashes refer to full CI source files. Screenshots remain in the original artifact unless explicitly listed here.",
+  "files": {
+    "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-logcat.txt": {
+      "original_sha256": "757fed0aad8ff5188cb9157617017cc1cc896bd3753b3f6672afb2034621964a",
+      "exported_sha256": "de3712d1891a9a960123b3b390edcc0016e13cb249817f67d9a85147b4dbc631"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-logcat.txt": {
+      "original_sha256": "2acfef94d20fd1c56d06e331a4396dc1ac30b9ebe15a10442130b49336a6ad55",
+      "exported_sha256": "e35af8ef5f51ae6769943cfea440a088e8e5828060c2a40f2df39509b430a33b"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-logcat.txt": {
+      "original_sha256": "686f8a2525cae93130b29c4538dcb0d941e82062e84f7d98968aca9d1e1f7939",
+      "exported_sha256": "5a62cb8efd9701413748f75d3e1e382089e94bafcd6348cde540a594979b3076"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-logcat.txt": {
+      "original_sha256": "5ddc8825fcab72c211d5da9b0bcbc1edb8eb9bcf58d0c39bbb0ee38d98e80480",
+      "exported_sha256": "33b306cbc4f19d44c241637413937572e079b6cffa98f86b1b13be4a5792fe36"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-logcat.txt": {
+      "original_sha256": "690e8cf23db6d112746e8a3eca3094a69828873846e762f45bfb59bcd005e1c7",
+      "exported_sha256": "64a740609cd126ebaae9c365a7be488dddd363e068d488fa84cbc3825f0abde7"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-logcat.txt": {
+      "original_sha256": "d205c5d5e4d981ffd4bc1910d43a5ebf096760978dba48da26641f5f4f706a58",
+      "exported_sha256": "67cb84966389802f6d38c0550d9da286c45414565224e2dcdf94f3c466f5998e"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-logcat.txt": {
+      "original_sha256": "11f540f059bfdb2aacb1f698cf3051e8e66d767494ca01c83299294354dfc5db",
+      "exported_sha256": "f6c3f781ed2bb34905287e2e549456273c3fbcdcc3816bf96453d4c75796e725"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-logcat.txt": {
+      "original_sha256": "599f9ed0cae33c8c24bc3aeb0700dcf4afd3cfd2214a718628e3857e8c356c33",
+      "exported_sha256": "cbb8493d3ccf66ecd44a7bb427822d9d635435191abfc06a9ac6ff4938a52567"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-logcat.txt": {
+      "original_sha256": "a0bc0580c7c5ac0206de1a1142b3ec9a89bf9ba9805b600aef27be01d9cf3ae6",
+      "exported_sha256": "7b5b1e5763ff57be54d9b53748ec132668ca4630e75520d2f5ede9d072174255"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-logcat.txt": {
+      "original_sha256": "642e8864d090d32d61a247333d3b526b909c82171017bc752d957897b88c704a",
+      "exported_sha256": "b9a7201578bec5f575bffef1ed8822c467b00e2fedd431821f8d6ef932b802b6"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-logcat.txt": {
+      "original_sha256": "32e340fb00e42b30063aa027858dc06d396061a5eefda5fc21d9118828af0dbf",
+      "exported_sha256": "3143c45111341c0acfe7e6a992654480f45805b261f1250b002cd2ab33240760"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-logcat.txt": {
+      "original_sha256": "451d95c60cd55978c60581b89c4811499a312ca62eb03c296aaef4ad633244c5",
+      "exported_sha256": "d96357d358116f06456528cbe90d5918f8e665d331c5791bf9f38c2836864e04"
+    }
+  },
+  "source_run": 39442770798
+}

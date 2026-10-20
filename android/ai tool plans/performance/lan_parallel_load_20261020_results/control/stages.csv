@@ -1,0 +1,109 @@
+revision,game,sample,peer,stage,start_s,end_s,duration_s,offset_s,source_start,source_end
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,launcher preparation,304.694,306.276,1.582,0.0,d1-1-emulator-5554-logcat.txt:116,d1-1-emulator-5554-logcat.txt:144
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,Activity/process startup,306.276,308.583,2.307,1.582,d1-1-emulator-5554-logcat.txt:144,d1-1-emulator-5554-logcat.txt:174
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,Activity setup + library,308.583,308.606,0.023,3.889,d1-1-emulator-5554-logcat.txt:174,d1-1-emulator-5554-logcat.txt:176
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,library to JNI entry,308.606,309.05,0.444,3.912,d1-1-emulator-5554-logcat.txt:176,d1-1-emulator-5554-logcat.txt:188
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,native initialization,309.05,312.871,3.821,4.356,d1-1-emulator-5554-logcat.txt:188,d1-1-emulator-5554-logcat.txt:230
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,LAN admission / selection,312.871,320.531338,7.660338,8.177,d1-1-emulator-5554-logcat.txt:230,d1-1-emulator-5554-logcat.txt:307
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,level loading,320.531338,322.972092,2.440754,15.837338,d1-1-emulator-5554-logcat.txt:307,d1-1-emulator-5554-logcat.txt:307
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,native synchronization,322.972092,324.832047,1.859955,18.278092,d1-1-emulator-5554-logcat.txt:307,d1-1-emulator-5554-logcat.txt:307
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5554,post-sync to briefing ready,324.832047,325.191,0.358953,20.138047,d1-1-emulator-5554-logcat.txt:307,d1-1-emulator-5554-logcat.txt:310
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,launcher preparation,230.99,233.261,2.271,0.0,d1-1-emulator-5556-logcat.txt:83,d1-1-emulator-5556-logcat.txt:141
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,Activity/process startup,233.261,235.866,2.605,2.271,d1-1-emulator-5556-logcat.txt:141,d1-1-emulator-5556-logcat.txt:203
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,Activity setup + library,235.866,235.939,0.073,4.876,d1-1-emulator-5556-logcat.txt:203,d1-1-emulator-5556-logcat.txt:205
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,library to JNI entry,235.939,236.921,0.982,4.949,d1-1-emulator-5556-logcat.txt:205,d1-1-emulator-5556-logcat.txt:218
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,native initialization,236.921,241.463,4.542,5.931,d1-1-emulator-5556-logcat.txt:218,d1-1-emulator-5556-logcat.txt:269
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,LAN admission / selection,241.463,243.997318,2.534318,10.473,d1-1-emulator-5556-logcat.txt:269,d1-1-emulator-5556-logcat.txt:330
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,level loading,243.997318,246.516709,2.519391,13.007318,d1-1-emulator-5556-logcat.txt:330,d1-1-emulator-5556-logcat.txt:330
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,native synchronization,246.516709,251.211025,4.694316,15.526709,d1-1-emulator-5556-logcat.txt:330,d1-1-emulator-5556-logcat.txt:330
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,1,5556,post-sync to briefing ready,251.211025,251.495,0.283975,20.221025,d1-1-emulator-5556-logcat.txt:330,d1-1-emulator-5556-logcat.txt:333
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,launcher preparation,385.689,386.689,1.0,0.0,d1-2-emulator-5554-logcat.txt:73,d1-2-emulator-5554-logcat.txt:99
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,Activity/process startup,386.689,388.329,1.64,1.0,d1-2-emulator-5554-logcat.txt:99,d1-2-emulator-5554-logcat.txt:118
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,Activity setup + library,388.329,388.367,0.038,2.64,d1-2-emulator-5554-logcat.txt:118,d1-2-emulator-5554-logcat.txt:120
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,library to JNI entry,388.367,388.685,0.318,2.678,d1-2-emulator-5554-logcat.txt:120,d1-2-emulator-5554-logcat.txt:132
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,native initialization,388.685,391.904,3.219,2.996,d1-2-emulator-5554-logcat.txt:132,d1-2-emulator-5554-logcat.txt:165
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,LAN admission / selection,391.904,396.69069,4.78669,6.215,d1-2-emulator-5554-logcat.txt:165,d1-2-emulator-5554-logcat.txt:233
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,level loading,396.69069,398.633631,1.942941,11.00169,d1-2-emulator-5554-logcat.txt:233,d1-2-emulator-5554-logcat.txt:233
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,native synchronization,398.633631,400.769574,2.135943,12.944631,d1-2-emulator-5554-logcat.txt:233,d1-2-emulator-5554-logcat.txt:233
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5554,post-sync to briefing ready,400.769574,400.896,0.126426,15.080574,d1-2-emulator-5554-logcat.txt:233,d1-2-emulator-5554-logcat.txt:236
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,launcher preparation,311.962,313.596,1.634,0.0,d1-2-emulator-5556-logcat.txt:72,d1-2-emulator-5556-logcat.txt:110
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,Activity/process startup,313.596,314.955,1.359,1.634,d1-2-emulator-5556-logcat.txt:110,d1-2-emulator-5556-logcat.txt:122
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,Activity setup + library,314.955,314.977,0.022,2.993,d1-2-emulator-5556-logcat.txt:122,d1-2-emulator-5556-logcat.txt:124
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,library to JNI entry,314.977,315.441,0.464,3.015,d1-2-emulator-5556-logcat.txt:124,d1-2-emulator-5556-logcat.txt:135
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,native initialization,315.441,318.623,3.182,3.479,d1-2-emulator-5556-logcat.txt:135,d1-2-emulator-5556-logcat.txt:161
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,LAN admission / selection,318.623,320.813713,2.190713,6.661,d1-2-emulator-5556-logcat.txt:161,d1-2-emulator-5556-logcat.txt:210
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,level loading,320.813713,322.76131,1.947597,8.851713,d1-2-emulator-5556-logcat.txt:210,d1-2-emulator-5556-logcat.txt:210
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,native synchronization,322.76131,327.035443,4.274133,10.79931,d1-2-emulator-5556-logcat.txt:210,d1-2-emulator-5556-logcat.txt:210
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,2,5556,post-sync to briefing ready,327.035443,327.137,0.101557,15.073443,d1-2-emulator-5556-logcat.txt:210,d1-2-emulator-5556-logcat.txt:212
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,launcher preparation,451.809,453.043,1.234,0.0,d1-3-emulator-5554-logcat.txt:57,d1-3-emulator-5554-logcat.txt:83
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,Activity/process startup,453.043,455.064,2.021,1.234,d1-3-emulator-5554-logcat.txt:83,d1-3-emulator-5554-logcat.txt:102
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,Activity setup + library,455.064,455.101,0.037,3.255,d1-3-emulator-5554-logcat.txt:102,d1-3-emulator-5554-logcat.txt:104
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,library to JNI entry,455.101,455.527,0.426,3.292,d1-3-emulator-5554-logcat.txt:104,d1-3-emulator-5554-logcat.txt:117
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,native initialization,455.527,458.607,3.08,3.718,d1-3-emulator-5554-logcat.txt:117,d1-3-emulator-5554-logcat.txt:150
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,LAN admission / selection,458.607,463.270431,4.663431,6.798,d1-3-emulator-5554-logcat.txt:150,d1-3-emulator-5554-logcat.txt:215
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,level loading,463.270431,465.298683,2.028252,11.461431,d1-3-emulator-5554-logcat.txt:215,d1-3-emulator-5554-logcat.txt:215
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,native synchronization,465.298683,467.426033,2.12735,13.489683,d1-3-emulator-5554-logcat.txt:215,d1-3-emulator-5554-logcat.txt:215
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5554,post-sync to briefing ready,467.426033,467.558,0.131967,15.617033,d1-3-emulator-5554-logcat.txt:215,d1-3-emulator-5554-logcat.txt:218
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,launcher preparation,378.073,380.326,2.253,0.0,d1-3-emulator-5556-logcat.txt:62,d1-3-emulator-5556-logcat.txt:100
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,Activity/process startup,380.326,381.752,1.426,2.253,d1-3-emulator-5556-logcat.txt:100,d1-3-emulator-5556-logcat.txt:119
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,Activity setup + library,381.752,381.784,0.032,3.679,d1-3-emulator-5556-logcat.txt:119,d1-3-emulator-5556-logcat.txt:121
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,library to JNI entry,381.784,382.338,0.554,3.711,d1-3-emulator-5556-logcat.txt:121,d1-3-emulator-5556-logcat.txt:133
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,native initialization,382.338,385.182,2.844,4.265,d1-3-emulator-5556-logcat.txt:133,d1-3-emulator-5556-logcat.txt:156
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,LAN admission / selection,385.182,387.409742,2.227742,7.109,d1-3-emulator-5556-logcat.txt:156,d1-3-emulator-5556-logcat.txt:205
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,level loading,387.409742,389.43993,2.030188,9.336742,d1-3-emulator-5556-logcat.txt:205,d1-3-emulator-5556-logcat.txt:205
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,native synchronization,389.43993,393.697284,4.257354,11.36693,d1-3-emulator-5556-logcat.txt:205,d1-3-emulator-5556-logcat.txt:205
+964ed12b747f615e379b6e708022d7eb36a85b72,d1,3,5556,post-sync to briefing ready,393.697284,393.815,0.117716,15.624284,d1-3-emulator-5556-logcat.txt:205,d1-3-emulator-5556-logcat.txt:207
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,launcher preparation,516.604,520.105,3.501,0.0,d2-1-emulator-5554-logcat.txt:77,d2-1-emulator-5554-logcat.txt:127
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,Activity/process startup,520.105,521.749,1.644,3.501,d2-1-emulator-5554-logcat.txt:127,d2-1-emulator-5554-logcat.txt:138
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,Activity setup + library,521.749,521.765,0.016,5.145,d2-1-emulator-5554-logcat.txt:138,d2-1-emulator-5554-logcat.txt:140
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,library to JNI entry,521.765,522.176,0.411,5.161,d2-1-emulator-5554-logcat.txt:140,d2-1-emulator-5554-logcat.txt:160
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,native initialization,522.176,526.12,3.944,5.572,d2-1-emulator-5554-logcat.txt:160,d2-1-emulator-5554-logcat.txt:223
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,LAN admission / selection,526.12,531.137135,5.017135,9.516,d2-1-emulator-5554-logcat.txt:223,d2-1-emulator-5554-logcat.txt:347
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,level loading,531.137135,533.531243,2.394108,14.533135,d2-1-emulator-5554-logcat.txt:347,d2-1-emulator-5554-logcat.txt:347
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,native synchronization,533.531243,536.129948,2.598705,16.927243,d2-1-emulator-5554-logcat.txt:347,d2-1-emulator-5554-logcat.txt:347
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5554,post-sync to briefing ready,536.129948,536.786,0.656052,19.525948,d2-1-emulator-5554-logcat.txt:347,d2-1-emulator-5554-logcat.txt:350
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,launcher preparation,442.88,446.735,3.855,0.0,d2-1-emulator-5556-logcat.txt:70,d2-1-emulator-5556-logcat.txt:122
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,Activity/process startup,446.735,448.201,1.466,3.855,d2-1-emulator-5556-logcat.txt:122,d2-1-emulator-5556-logcat.txt:136
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,Activity setup + library,448.201,448.219,0.018,5.321,d2-1-emulator-5556-logcat.txt:136,d2-1-emulator-5556-logcat.txt:138
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,library to JNI entry,448.219,448.792,0.573,5.339,d2-1-emulator-5556-logcat.txt:138,d2-1-emulator-5556-logcat.txt:151
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,native initialization,448.792,452.571,3.779,5.912,d2-1-emulator-5556-logcat.txt:151,d2-1-emulator-5556-logcat.txt:207
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,LAN admission / selection,452.571,454.806113,2.235113,9.691,d2-1-emulator-5556-logcat.txt:207,d2-1-emulator-5556-logcat.txt:313
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,level loading,454.806113,457.135747,2.329634,11.926113,d2-1-emulator-5556-logcat.txt:313,d2-1-emulator-5556-logcat.txt:313
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,native synchronization,457.135747,462.429172,5.293425,14.255747,d2-1-emulator-5556-logcat.txt:313,d2-1-emulator-5556-logcat.txt:313
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,1,5556,post-sync to briefing ready,462.429172,463.022,0.592828,19.549172,d2-1-emulator-5556-logcat.txt:313,d2-1-emulator-5556-logcat.txt:316
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,launcher preparation,587.737,591.574,3.837,0.0,d2-2-emulator-5554-logcat.txt:78,d2-2-emulator-5554-logcat.txt:125
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,Activity/process startup,591.574,593.532,1.958,3.837,d2-2-emulator-5554-logcat.txt:125,d2-2-emulator-5554-logcat.txt:144
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,Activity setup + library,593.532,593.568,0.036,5.795,d2-2-emulator-5554-logcat.txt:144,d2-2-emulator-5554-logcat.txt:146
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,library to JNI entry,593.568,593.934,0.366,5.831,d2-2-emulator-5554-logcat.txt:146,d2-2-emulator-5554-logcat.txt:159
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,native initialization,593.934,598.088,4.154,6.197,d2-2-emulator-5554-logcat.txt:159,d2-2-emulator-5554-logcat.txt:221
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,LAN admission / selection,598.088,603.541739,5.453739,10.351,d2-2-emulator-5554-logcat.txt:221,d2-2-emulator-5554-logcat.txt:352
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,level loading,603.541739,606.031378,2.489639,15.804739,d2-2-emulator-5554-logcat.txt:352,d2-2-emulator-5554-logcat.txt:352
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,native synchronization,606.031378,608.573698,2.54232,18.294378,d2-2-emulator-5554-logcat.txt:352,d2-2-emulator-5554-logcat.txt:352
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5554,post-sync to briefing ready,608.573698,608.909,0.335302,20.836698,d2-2-emulator-5554-logcat.txt:352,d2-2-emulator-5554-logcat.txt:356
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,launcher preparation,514.007,518.526,4.519,0.0,d2-2-emulator-5556-logcat.txt:70,d2-2-emulator-5556-logcat.txt:125
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,Activity/process startup,518.526,520.009,1.483,4.519,d2-2-emulator-5556-logcat.txt:125,d2-2-emulator-5556-logcat.txt:138
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,Activity setup + library,520.009,520.03,0.021,6.002,d2-2-emulator-5556-logcat.txt:138,d2-2-emulator-5556-logcat.txt:140
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,library to JNI entry,520.03,520.702,0.672,6.023,d2-2-emulator-5556-logcat.txt:140,d2-2-emulator-5556-logcat.txt:152
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,native initialization,520.702,524.751,4.049,6.695,d2-2-emulator-5556-logcat.txt:152,d2-2-emulator-5556-logcat.txt:207
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,LAN admission / selection,524.751,527.592031,2.841031,10.744,d2-2-emulator-5556-logcat.txt:207,d2-2-emulator-5556-logcat.txt:321
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,level loading,527.592031,529.688566,2.096535,13.585031,d2-2-emulator-5556-logcat.txt:321,d2-2-emulator-5556-logcat.txt:321
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,native synchronization,529.688566,534.868068,5.179502,15.681566,d2-2-emulator-5556-logcat.txt:321,d2-2-emulator-5556-logcat.txt:321
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,2,5556,post-sync to briefing ready,534.868068,535.167,0.298932,20.861068,d2-2-emulator-5556-logcat.txt:321,d2-2-emulator-5556-logcat.txt:324
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,launcher preparation,657.302,659.499,2.197,0.0,d2-3-emulator-5554-logcat.txt:75,d2-3-emulator-5554-logcat.txt:101
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,Activity/process startup,659.499,661.185,1.686,2.197,d2-3-emulator-5554-logcat.txt:101,d2-3-emulator-5554-logcat.txt:133
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,Activity setup + library,661.185,661.229,0.044,3.883,d2-3-emulator-5554-logcat.txt:133,d2-3-emulator-5554-logcat.txt:135
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,library to JNI entry,661.229,662.005,0.776,3.927,d2-3-emulator-5554-logcat.txt:135,d2-3-emulator-5554-logcat.txt:148
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,native initialization,662.005,665.85,3.845,4.703,d2-3-emulator-5554-logcat.txt:148,d2-3-emulator-5554-logcat.txt:208
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,LAN admission / selection,665.85,671.636561,5.786561,8.548,d2-3-emulator-5554-logcat.txt:208,d2-3-emulator-5554-logcat.txt:339
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,level loading,671.636561,674.353378,2.716817,14.334561,d2-3-emulator-5554-logcat.txt:339,d2-3-emulator-5554-logcat.txt:339
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,native synchronization,674.353378,676.572237,2.218859,17.051378,d2-3-emulator-5554-logcat.txt:339,d2-3-emulator-5554-logcat.txt:339
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5554,post-sync to briefing ready,676.572237,677.063,0.490763,19.270237,d2-3-emulator-5554-logcat.txt:339,d2-3-emulator-5554-logcat.txt:342
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,launcher preparation,583.564,587.425,3.861,0.0,d2-3-emulator-5556-logcat.txt:79,d2-3-emulator-5556-logcat.txt:132
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,Activity/process startup,587.425,589.055,1.63,3.861,d2-3-emulator-5556-logcat.txt:132,d2-3-emulator-5556-logcat.txt:146
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,Activity setup + library,589.055,589.084,0.029,5.491,d2-3-emulator-5556-logcat.txt:146,d2-3-emulator-5556-logcat.txt:148
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,library to JNI entry,589.084,589.868,0.784,5.52,d2-3-emulator-5556-logcat.txt:148,d2-3-emulator-5556-logcat.txt:161
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,native initialization,589.868,593.531,3.663,6.304,d2-3-emulator-5556-logcat.txt:161,d2-3-emulator-5556-logcat.txt:214
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,LAN admission / selection,593.531,595.677294,2.146294,9.967,d2-3-emulator-5556-logcat.txt:214,d2-3-emulator-5556-logcat.txt:321
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,level loading,595.677294,597.768288,2.090994,12.113294,d2-3-emulator-5556-logcat.txt:321,d2-3-emulator-5556-logcat.txt:321
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,native synchronization,597.768288,602.865916,5.097628,14.204288,d2-3-emulator-5556-logcat.txt:321,d2-3-emulator-5556-logcat.txt:321
+964ed12b747f615e379b6e708022d7eb36a85b72,d2,3,5556,post-sync to briefing ready,602.865916,603.327,0.461084,19.301916,d2-3-emulator-5556-logcat.txt:321,d2-3-emulator-5556-logcat.txt:324
