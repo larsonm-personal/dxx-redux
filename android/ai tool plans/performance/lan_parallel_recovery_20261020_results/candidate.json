@@ -1,0 +1,1067 @@
+{
+    "cases": [
+        {
+            "case": "cancel-client",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 8000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": {
+                "begin": "d1-cancel-client-emulator-5554-logcat.txt:20",
+                "end": "d1-cancel-client-emulator-5554-logcat.txt:23",
+                "seconds": 60.421
+            },
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "cancel-reconnect",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "delay-admission",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 7
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [
+                {
+                    "event": "admission_ignored",
+                    "level": "1",
+                    "line": "954.908 11735 11783 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=admission_ignored level=1 status=1 player=0 players=2",
+                    "player": "0",
+                    "players": "2",
+                    "source": "d1-delay-admission-emulator-5554-logcat.txt:32",
+                    "status": "1",
+                    "time": 954.908
+                }
+            ],
+            "loaded_readiness": {
+                "client_load": "d1-delay-admission-emulator-5556-logcat.txt:17",
+                "host_load": "d1-delay-admission-emulator-5554-logcat.txt:15",
+                "readiness_accepted": "d1-delay-admission-emulator-5554-logcat.txt:25",
+                "readiness_send": "d1-delay-admission-emulator-5556-logcat.txt:31",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "220",
+                    "hash": "4a4a8dca",
+                    "line": "877.945 12075 12109 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=7 type=36 bytes=220 hash=4a4a8dca status=0",
+                    "mode": "7",
+                    "source": "d1-delay-admission-emulator-5556-logcat.txt:14",
+                    "status": "0",
+                    "time": 877.945,
+                    "type": "36"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "220",
+                    "hash": "4a4a8dca",
+                    "line": "882.969 12075 12109 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=36 bytes=220 hash=4a4a8dca sent=220 status=1",
+                    "sent": "220",
+                    "source": "d1-delay-admission-emulator-5556-logcat.txt:39",
+                    "status": "1",
+                    "time": 882.969,
+                    "type": "36"
+                }
+            ]
+        },
+        {
+            "case": "delay-proof",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 5
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-delay-proof-emulator-5556-logcat.txt:16",
+                "host_load": "d1-delay-proof-emulator-5554-logcat.txt:17",
+                "readiness_accepted": "d1-delay-proof-emulator-5554-logcat.txt:28",
+                "readiness_send": "d1-delay-proof-emulator-5556-logcat.txt:26",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [
+                {
+                    "event": "proof_received",
+                    "level": "1",
+                    "line": "881.264 10826 10900 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=proof_received level=1 status=1 player=0 players=2",
+                    "player": "0",
+                    "players": "2",
+                    "source": "d1-delay-proof-emulator-5554-logcat.txt:34",
+                    "status": "1",
+                    "time": 881.264
+                }
+            ],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "119",
+                    "hash": "20b4fbc9",
+                    "line": "803.170 11208 11242 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=5 type=32 bytes=119 hash=20b4fbc9 status=3",
+                    "mode": "5",
+                    "source": "d1-delay-proof-emulator-5556-logcat.txt:29",
+                    "status": "3",
+                    "time": 803.17,
+                    "type": "32"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "119",
+                    "hash": "20b4fbc9",
+                    "line": "809.267 11208 11242 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=32 bytes=119 hash=20b4fbc9 sent=119 status=1",
+                    "sent": "119",
+                    "source": "d1-delay-proof-emulator-5556-logcat.txt:36",
+                    "status": "1",
+                    "time": 809.267,
+                    "type": "32"
+                }
+            ]
+        },
+        {
+            "case": "drop-proof",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 4
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-drop-proof-emulator-5556-logcat.txt:16",
+                "host_load": "d1-drop-proof-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d1-drop-proof-emulator-5554-logcat.txt:25",
+                "readiness_send": "d1-drop-proof-emulator-5556-logcat.txt:26",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "drop-requests",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 3
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-drop-requests-emulator-5556-logcat.txt:16",
+                "host_load": "d1-drop-requests-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d1-drop-requests-emulator-5554-logcat.txt:23",
+                "readiness_send": "d1-drop-requests-emulator-5556-logcat.txt:32",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "failed-level-load",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 8
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-loading",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": {
+                "begin": "d1-host-loss-loading-emulator-5556-logcat.txt:18",
+                "end": "d1-host-loss-loading-emulator-5556-logcat.txt:149",
+                "seconds": 59.445
+            },
+            "client_timeout_to_main_menu": {
+                "begin": "d1-host-loss-loading-emulator-5556-logcat.txt:149",
+                "end": "d1-host-loss-loading-emulator-5556-logcat.txt:150",
+                "seconds": 0.01
+            },
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-waiting",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": {
+                "begin": "d1-host-loss-waiting-emulator-5556-logcat.txt:19",
+                "end": "d1-host-loss-waiting-emulator-5556-logcat.txt:156",
+                "seconds": 59.597
+            },
+            "client_timeout_to_main_menu": {
+                "begin": "d1-host-loss-waiting-emulator-5556-logcat.txt:156",
+                "end": "d1-host-loss-waiting-emulator-5556-logcat.txt:157",
+                "seconds": 0.009
+            },
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "long-client",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-long-client-emulator-5556-logcat.txt:22",
+                "host_load": "d1-long-client-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d1-long-client-emulator-5554-logcat.txt:26",
+                "readiness_send": "d1-long-client-emulator-5556-logcat.txt:32",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "missing-third",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "replay-admission",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 1
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 2,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [
+                {
+                    "event": "admission_ignored",
+                    "level": "1",
+                    "line": "730.744  8969  9019 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=admission_ignored level=1 status=1 player=0 players=2",
+                    "player": "0",
+                    "players": "2",
+                    "source": "d1-replay-admission-emulator-5554-logcat.txt:33",
+                    "status": "1",
+                    "time": 730.744
+                }
+            ],
+            "loaded_readiness": {
+                "client_load": "d1-replay-admission-emulator-5556-logcat.txt:17",
+                "host_load": "d1-replay-admission-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d1-replay-admission-emulator-5554-logcat.txt:26",
+                "readiness_send": "d1-replay-admission-emulator-5556-logcat.txt:27",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "220",
+                    "hash": "9b9315be",
+                    "line": "653.665  9514  9548 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=1 type=36 bytes=220 hash=9b9315be status=0",
+                    "mode": "1",
+                    "source": "d1-replay-admission-emulator-5556-logcat.txt:14",
+                    "status": "0",
+                    "time": 653.665,
+                    "type": "36"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "220",
+                    "hash": "9b9315be",
+                    "line": "658.775  9514  9548 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=36 bytes=220 hash=9b9315be sent=220 status=1",
+                    "sent": "220",
+                    "source": "d1-replay-admission-emulator-5556-logcat.txt:36",
+                    "status": "1",
+                    "time": 658.775,
+                    "type": "36"
+                }
+            ]
+        },
+        {
+            "case": "replay-proof",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 6
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-replay-proof-emulator-5556-logcat.txt:16",
+                "host_load": "d1-replay-proof-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d1-replay-proof-emulator-5554-logcat.txt:26",
+                "readiness_send": "d1-replay-proof-emulator-5556-logcat.txt:26",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [
+                {
+                    "event": "proof_received",
+                    "level": "1",
+                    "line": "919.884 11303 11351 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=proof_received level=1 status=1 player=0 players=2",
+                    "player": "0",
+                    "players": "2",
+                    "source": "d1-replay-proof-emulator-5554-logcat.txt:32",
+                    "status": "1",
+                    "time": 919.884
+                }
+            ],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "119",
+                    "hash": "2a0f34b1",
+                    "line": "841.561 11636 11671 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=6 type=32 bytes=119 hash=2a0f34b1 status=3",
+                    "mode": "6",
+                    "source": "d1-replay-proof-emulator-5556-logcat.txt:29",
+                    "status": "3",
+                    "time": 841.561,
+                    "type": "32"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "119",
+                    "hash": "2a0f34b1",
+                    "line": "847.798 11636 11671 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=32 bytes=119 hash=2a0f34b1 sent=119 status=1",
+                    "sent": "119",
+                    "source": "d1-replay-proof-emulator-5556-logcat.txt:36",
+                    "status": "1",
+                    "time": 847.798,
+                    "type": "32"
+                }
+            ]
+        },
+        {
+            "case": "retag-admission",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 2
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 0,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 1,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-retag-admission-emulator-5556-logcat.txt:19",
+                "host_load": "d1-retag-admission-emulator-5554-logcat.txt:15",
+                "readiness_accepted": "d1-retag-admission-emulator-5554-logcat.txt:25",
+                "readiness_send": "d1-retag-admission-emulator-5556-logcat.txt:43",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "220",
+                    "hash": "4623f3e7",
+                    "line": "688.545  9926  9960 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=2 type=8 bytes=220 hash=4623f3e7 status=0",
+                    "mode": "2",
+                    "source": "d1-retag-admission-emulator-5556-logcat.txt:15",
+                    "status": "0",
+                    "time": 688.545,
+                    "type": "8"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "220",
+                    "hash": "4623f3e7",
+                    "line": "688.546  9926  9960 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=8 bytes=220 hash=4623f3e7 sent=220 status=0",
+                    "sent": "220",
+                    "source": "d1-retag-admission-emulator-5556-logcat.txt:16",
+                    "status": "0",
+                    "time": 688.546,
+                    "type": "8"
+                }
+            ]
+        },
+        {
+            "case": "same-session-reconnect",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 8000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [
+                {
+                    "changed": "1",
+                    "counter": "3",
+                    "event": "initial_route_proven",
+                    "line": "656.606  7862  7920 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=initial_route_proven player=1 changed=1 counter=3",
+                    "player": "1",
+                    "source": "d1-same-session-reconnect-emulator-5554-logcat.txt:25",
+                    "time": 656.606
+                }
+            ],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d1-same-session-reconnect-emulator-5556-logcat.txt:16",
+                "host_load": "d1-same-session-reconnect-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d1-same-session-reconnect-emulator-5554-logcat.txt:26",
+                "readiness_send": "d1-same-session-reconnect-emulator-5556-logcat.txt:26",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "cancel-reconnect",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "drop-proof",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 4
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 0,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "drop-requests",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 3
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d2-drop-requests-emulator-5556-logcat.txt:16",
+                "host_load": "d2-drop-requests-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d2-drop-requests-emulator-5554-logcat.txt:23",
+                "readiness_send": "d2-drop-requests-emulator-5556-logcat.txt:32",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-loading",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": {
+                "begin": "d2-host-loss-loading-emulator-5556-logcat.txt:17",
+                "end": "d2-host-loss-loading-emulator-5556-logcat.txt:144",
+                "seconds": 60.016
+            },
+            "client_timeout_to_main_menu": {
+                "begin": "d2-host-loss-loading-emulator-5556-logcat.txt:144",
+                "end": "d2-host-loss-loading-emulator-5556-logcat.txt:145",
+                "seconds": 0.01
+            },
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-waiting",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": {
+                "begin": "d2-host-loss-waiting-emulator-5556-logcat.txt:19",
+                "end": "d2-host-loss-waiting-emulator-5556-logcat.txt:146",
+                "seconds": 60.051
+            },
+            "client_timeout_to_main_menu": {
+                "begin": "d2-host-loss-waiting-emulator-5556-logcat.txt:146",
+                "end": "d2-host-loss-waiting-emulator-5556-logcat.txt:147",
+                "seconds": 0.008
+            },
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "replay-admission",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 1
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 2,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [
+                {
+                    "event": "admission_ignored",
+                    "level": "1",
+                    "line": "1592.819 17165 17214 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=admission_ignored level=1 status=1 player=0 players=2",
+                    "player": "0",
+                    "players": "2",
+                    "source": "d2-replay-admission-emulator-5554-logcat.txt:33",
+                    "status": "1",
+                    "time": 1592.819
+                }
+            ],
+            "loaded_readiness": {
+                "client_load": "d2-replay-admission-emulator-5556-logcat.txt:17",
+                "host_load": "d2-replay-admission-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d2-replay-admission-emulator-5554-logcat.txt:26",
+                "readiness_send": "d2-replay-admission-emulator-5556-logcat.txt:27",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "220",
+                    "hash": "593334a2",
+                    "line": "1515.620 17854 17889 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=1 type=36 bytes=220 hash=593334a2 status=2",
+                    "mode": "1",
+                    "source": "d2-replay-admission-emulator-5556-logcat.txt:14",
+                    "status": "2",
+                    "time": 1515.62,
+                    "type": "36"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "220",
+                    "hash": "593334a2",
+                    "line": "1520.864 17854 17889 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=36 bytes=220 hash=593334a2 sent=220 status=1",
+                    "sent": "220",
+                    "source": "d2-replay-admission-emulator-5556-logcat.txt:37",
+                    "status": "1",
+                    "time": 1520.864,
+                    "type": "36"
+                }
+            ]
+        },
+        {
+            "case": "retag-admission",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "packet_fault": 2
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 0,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 1,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d2-retag-admission-emulator-5556-logcat.txt:18",
+                "host_load": "d2-retag-admission-emulator-5554-logcat.txt:15",
+                "readiness_accepted": "d2-retag-admission-emulator-5554-logcat.txt:24",
+                "readiness_send": "d2-retag-admission-emulator-5556-logcat.txt:42",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [
+                {
+                    "bytes": "220",
+                    "hash": "1e678969",
+                    "line": "1555.149 18313 18348 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] capture mode=2 type=8 bytes=220 hash=1e678969 status=2",
+                    "mode": "2",
+                    "source": "d2-retag-admission-emulator-5556-logcat.txt:14",
+                    "status": "2",
+                    "time": 1555.149,
+                    "type": "8"
+                }
+            ],
+            "wire_hashes_match_captures": true,
+            "wire_releases": [
+                {
+                    "bytes": "220",
+                    "hash": "1e678969",
+                    "line": "1555.154 18313 18348 D DXX-DLOG: [NETWORK] [STARTUP-FAULT] release type=8 bytes=220 hash=1e678969 sent=220 status=2",
+                    "sent": "220",
+                    "source": "d2-retag-admission-emulator-5556-logcat.txt:15",
+                    "status": "2",
+                    "time": 1555.154,
+                    "type": "8"
+                }
+            ]
+        },
+        {
+            "case": "same-session-reconnect",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 8000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [
+                {
+                    "changed": "1",
+                    "counter": "2",
+                    "event": "initial_route_proven",
+                    "line": "1514.783 16048 16103 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=initial_route_proven player=1 changed=1 counter=2",
+                    "player": "1",
+                    "source": "d2-same-session-reconnect-emulator-5554-logcat.txt:22",
+                    "time": 1514.783
+                }
+            ],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 1,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": {
+                "client_load": "d2-same-session-reconnect-emulator-5556-logcat.txt:16",
+                "host_load": "d2-same-session-reconnect-emulator-5554-logcat.txt:14",
+                "readiness_accepted": "d2-same-session-reconnect-emulator-5554-logcat.txt:23",
+                "readiness_send": "d2-same-session-reconnect-emulator-5556-logcat.txt:22",
+                "verified": true
+            },
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [
+                {
+                    "event": "proof_received",
+                    "level": "1",
+                    "line": "1515.398 16048 16103 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=proof_received level=1 status=1 player=0 players=2",
+                    "player": "0",
+                    "players": "2",
+                    "source": "d2-same-session-reconnect-emulator-5554-logcat.txt:30",
+                    "status": "1",
+                    "time": 1515.398
+                }
+            ],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        }
+    ],
+    "source_summary": {
+        "failures": [
+            "d1/host-loss-loading: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d1/host-loss-waiting: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d1/cancel-reconnect: Native join cancellation not observed",
+            "d1/failed-level-load: Expected level-loader failure not observed",
+            "d2/host-loss-loading: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d2/host-loss-waiting: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d2/cancel-reconnect: Native join cancellation not observed",
+            "d2/drop-proof: Timed out observing briefing1.ready on emulator-5554, emulator-5556",
+            "d2/delay-proof: Could not clear disposable emulator app state on emulator-5554",
+            "d2/replay-proof: Could not clear disposable emulator app state on emulator-5554",
+            "d2/delay-admission: Could not clear disposable emulator app state on emulator-5554",
+            "d2/long-client: Could not clear disposable emulator app state on emulator-5554",
+            "d2/cancel-client: Could not clear disposable emulator app state on emulator-5554",
+            "d2/missing-third: Could not clear disposable emulator app state on emulator-5554",
+            "d2/failed-level-load: Could not clear disposable emulator app state on emulator-5554",
+            "three-player: Refusing to reset unverified emulator emulator-5554",
+            "mixed-binaries: Mixed binary install failed: emulator-5556"
+        ],
+        "passed": false,
+        "requested": [
+            "host-loss-loading",
+            "host-loss-waiting",
+            "same-session-reconnect",
+            "cancel-reconnect",
+            "replay-admission",
+            "retag-admission",
+            "drop-requests",
+            "drop-proof",
+            "delay-proof",
+            "replay-proof",
+            "delay-admission",
+            "long-client",
+            "cancel-client",
+            "missing-third",
+            "failed-level-load",
+            "three-player",
+            "three-player-lost",
+            "mixed-binaries"
+        ],
+        "revision": "4a794c7c142b281a375846ab77fc2535199a3905"
+    },
+    "timing_note": "Summarize observed LAN fault evidence without inventing timings or passes.\n\nController recovery intervals include adb/polling overhead and deliberate holds.\nNative wait intervals use one device's monotonic log only. Absent events remain\nabsent; a failing harness is not classified as an engine failure.\n"
+}

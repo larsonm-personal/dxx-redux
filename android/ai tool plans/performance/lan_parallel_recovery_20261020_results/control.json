@@ -1,0 +1,123 @@
+{
+    "cases": [
+        {
+            "case": "host-loss-loading",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-waiting",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-loading",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5556-fault.json": {}
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "host-loss-waiting",
+            "case_pass_recorded": false,
+            "client_local_sync_wait": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {},
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 1,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": true,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 0,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        }
+    ],
+    "source_summary": {
+        "failures": [
+            "d1/host-loss-loading: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d1/host-loss-waiting: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d2/host-loss-loading: Client stranded in initial synchronization after silent host loss (85s bound)",
+            "d2/host-loss-waiting: Client stranded in initial synchronization after silent host loss (85s bound)"
+        ],
+        "passed": false,
+        "revision": "e7907ae8abb129598133af8eb6a8ce7825a56885"
+    },
+    "timing_note": "Summarize observed LAN fault evidence without inventing timings or passes.\n\nController recovery intervals include adb/polling overhead and deliberate holds.\nNative wait intervals use one device's monotonic log only. Absent events remain\nabsent; a failing harness is not classified as an engine failure.\n"
+}

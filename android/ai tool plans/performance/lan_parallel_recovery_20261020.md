@@ -178,3 +178,72 @@ gh workflow run public-lan-smoke.yml --ref TOPIC_BRANCH -f recovery_checks=true
 gh workflow run public-lan-smoke.yml --ref TOPIC_BRANCH -f recovery_checks=true \
   -f recovery_cases=same-session-reconnect,cancel-reconnect,retag-admission
 ```
+
+## Focused qualification evidence
+
+The semantic recovery predicate is fixed at 89167429c70c0a23a3fb0274e10d29ebbfb09464.
+It requires the expected native timeout/cancel/failure transition, followed by a
+fresh non-game-front error dialog with the expected message or a disconnected
+main menu containing New game, Options..., and Quit. A normal Wait... dialog,
+missing introspection, unrelated menu, or network-active main-menu fixture is
+rejected. The actual Options... label is covered by the host regression fixture.
+
+The follow-up engine at 8186a3e6f1ec2ae2fdbd155a169732c407167000 adds only the
+forced abort diagnostic to the previously exercised 4a794c7c behavior. Later
+changes affect evidence analysis and the recovery-menu assertion, not the network
+protocol. The timing experiment remains separate and has not been rerun here.
+
+| Run         | Scope                                                                    | Verified evidence                                                                              |
+| ----------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 39462987538 | Original engine control                                                  | Four real host kills; clients still waiting beyond the 85s controller bound                    |
+| 39465992978 | First candidate                                                          | 15 explicit case passes; four native host-loss timeouts; incomplete matrix after emulator loss |
+| 39476028085 | Remaining D2 packet faults and slow client                               | Five of five cases pass; all five post-load readiness counter audits pass                      |
+| 39476033731 | Three players, healthy and lost loader, both games                       | Four of four cases pass; both survivors show expected errors after loss, without SYNC          |
+| 39476039590 | Actual old/new binaries, both directions and games                       | Workflow success; raw case artifact verification pending transfer                              |
+| 39477395971 | Host loss, Escape/reconnect, failed load, canceled loader, missing third | Running at this checkpoint; no pass claim yet                                                  |
+
+D2 packet follow-up artifact: 12290241358, SHA256
+`dcaff58143abc553be0b1b98573a65955a6ec88f5d34c3777a179902b72263bb`.
+Three-player artifact: 12290337464, SHA256
+`ecb6ef2eb0964e3eb58673a5619f23f824ec8bbd8d55224787bf2b7dff08dd2b`;
+bounded annotation export 39479774546 was read locally. Normal three-player
+receipts require all three peers in briefing phase 6 and then in a running level
+with three connected players. Clients have deliberate 20s and 6s load holds.
+The lost-loader cases kill the held client, require no host SYNC and no survivor
+SYNC receipt, then inspect both survivors' explicit 60-second error dialogs.
+These waits do not depend on acknowledging the host's modal dialog.
+
+Across the first candidate and D2 packet follow-up, 18 synchronized dual-peer
+cases have independently matched host acceptance counters to actual post-load
+client readiness. This is not a claim of 18 distinct protocol scenarios. The
+three-peer audit uses its separate three-peer runtime predicates; the dual-peer
+counter analyzer intentionally does not misassociate its two clients.
+
+The D1/D2 deliberate long-client holds lasted 20.001/20.022 seconds; accepted
+readiness followed 21.681/22.154 seconds after the host entered its wait. This
+verifies operation beyond the former 15-second limit, not arbitrary loading time.
+The four initial candidate host-loss native waits were 59.445, 59.597, 60.016,
+and 60.051 seconds. Native main-menu activation followed in 8-10ms; this is a
+native breadcrumb, not a measured time-to-pixel. The strengthened UI assertions
+are qualified separately by the targeted recovery run.
+
+The missing-third fixture has two launcher peers and native capacity three; it
+does not simulate a committed third launcher participant who never launches.
+Packet fixtures cover two lost readiness requests and one lost/delayed proof,
+not sustained outages. Replays observed in PLAYING do not cover every state
+interleaving. Fatal missing-level loading remains a client process exit, not a
+graceful recovery menu. Immediate authenticated cancel propagation is not added;
+the surviving host uses the bounded loading allowance.
+
+Compact source-referenced JSON and CSV evidence are in
+[lan_parallel_recovery_20261020_results](lan_parallel_recovery_20261020_results/).
+Regenerate each file pair from its extracted artifact using:
+
+```sh
+python3 android/helpers/summarize_lan_recovery.py   ARTIFACT/first-play/lan-launch-preparation-public-shareware --output OUTPUT
+```
+
+The Ubuntu and Windows tooling owners both passed at 8186a3e6 in run39476045054,
+including the negative semantic-menu fixtures. The corrected Options... fixture
+also passed locally at 89167429c. Full native authentication/deadline and wire
+fixture tests and both Linux engine object builds passed earlier in this phase.
