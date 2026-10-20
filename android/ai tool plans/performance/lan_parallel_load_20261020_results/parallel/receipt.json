@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "target_sha": "a673dfd8e86a6315f9c557cb051340efe529c2da",
+  "catalog_hash": "76dae8d29d0644d74ceb06fe65db53eb4392f59899d8456d830d6abf54453bc9",
+  "batch_id": "ddf4b63f29c929a9ef07c45616b5acf6484dab116c29670b4416779b4ebe62f4",
+  "lane": "android-dual",
+  "results": [
+    {
+      "id": "master:test_lan_launch_preparation_public_shareware",
+      "status": "PASS",
+      "reason": "",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39450006075",
+      "exclusions": [],
+      "cases": [],
+      "coverage_complete": false,
+      "comparison_only": false,
+      "runtime_outcome": "",
+      "attempted_tests": true,
+      "phase": "tests",
+      "retryable": false,
+      "blocker_kind": ""
+    }
+  ]
+}

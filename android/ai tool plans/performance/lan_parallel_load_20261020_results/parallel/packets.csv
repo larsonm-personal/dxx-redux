@@ -1,0 +1,231 @@
+revision,game,sample,peer,timestamp_s,source,event
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,253.109,d1-1-emulator-5554-logcat.txt:199,event=host_mission_begin level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,253.73,d1-1-emulator-5554-logcat.txt:208,event=host_mission_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,253.738,d1-1-emulator-5554-logcat.txt:209,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,255.566,d1-1-emulator-5554-logcat.txt:214,event=admission_received level=1 counter=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,255.568,d1-1-emulator-5554-logcat.txt:215,event=request_received level=0 status=4 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,255.57,d1-1-emulator-5554-logcat.txt:217,event=start_level_begin level=0 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.737,d1-1-emulator-5554-logcat.txt:229,event=level_sync_flush level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.738,d1-1-emulator-5554-logcat.txt:230,event=flush_end level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.738,d1-1-emulator-5554-logcat.txt:231,event=wait_requests_flush level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.739,d1-1-emulator-5554-logcat.txt:232,event=flush_end level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.829,d1-1-emulator-5554-logcat.txt:233,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.831,d1-1-emulator-5554-logcat.txt:234,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.886,d1-1-emulator-5554-logcat.txt:235,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,256.888,d1-1-emulator-5554-logcat.txt:236,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,257.232,d1-1-emulator-5554-logcat.txt:237,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,257.233,d1-1-emulator-5554-logcat.txt:238,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,257.239,d1-1-emulator-5554-logcat.txt:239,event=request_ready_accepted level=1 counter=3
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5554,257.254,d1-1-emulator-5554-logcat.txt:240,event=sync_send_begin level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,192.887,d1-1-emulator-5556-logcat.txt:211,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,193.896,d1-1-emulator-5556-logcat.txt:213,event=auto_info_request level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,194.096,d1-1-emulator-5556-logcat.txt:214,event=auto_info_received level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,194.097,d1-1-emulator-5556-logcat.txt:215,event=join_mission_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,194.952,d1-1-emulator-5556-logcat.txt:217,event=join_mission_end level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,194.964,d1-1-emulator-5556-logcat.txt:219,event=admission_send level=1 counter=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,194.965,d1-1-emulator-5556-logcat.txt:220,event=start_level_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.322,d1-1-emulator-5556-logcat.txt:227,event=level_sync_flush level=1 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.323,d1-1-emulator-5556-logcat.txt:228,flush_drop level=1 status=0 player=1 type=3 name=UPID_GAME_INFO count=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.324,d1-1-emulator-5556-logcat.txt:229,event=flush_end level=1 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.325,d1-1-emulator-5556-logcat.txt:230,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.329,d1-1-emulator-5556-logcat.txt:232,event=readiness_send level=1 counter=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.329,d1-1-emulator-5556-logcat.txt:233,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.336,d1-1-emulator-5556-logcat.txt:235,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.342,d1-1-emulator-5556-logcat.txt:237,event=readiness_send level=1 counter=3
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.343,d1-1-emulator-5556-logcat.txt:238,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.691,d1-1-emulator-5556-logcat.txt:239,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.692,d1-1-emulator-5556-logcat.txt:240,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.781,d1-1-emulator-5556-logcat.txt:241,event=sync_received level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,1,5556,196.794,d1-1-emulator-5556-logcat.txt:242,event=sync_processed level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,313.555,d1-2-emulator-5554-logcat.txt:131,event=host_mission_begin level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,314.122,d1-2-emulator-5554-logcat.txt:134,event=host_mission_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,314.127,d1-2-emulator-5554-logcat.txt:135,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,316.125,d1-2-emulator-5554-logcat.txt:147,event=admission_received level=1 counter=6
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,316.127,d1-2-emulator-5554-logcat.txt:148,event=request_received level=0 status=4 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,316.131,d1-2-emulator-5554-logcat.txt:150,event=start_level_begin level=0 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.298,d1-2-emulator-5554-logcat.txt:154,event=level_sync_flush level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.299,d1-2-emulator-5554-logcat.txt:155,event=flush_end level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.299,d1-2-emulator-5554-logcat.txt:156,event=wait_requests_flush level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.3,d1-2-emulator-5554-logcat.txt:157,event=flush_end level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.511,d1-2-emulator-5554-logcat.txt:158,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.513,d1-2-emulator-5554-logcat.txt:159,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.514,d1-2-emulator-5554-logcat.txt:160,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.515,d1-2-emulator-5554-logcat.txt:161,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.755,d1-2-emulator-5554-logcat.txt:162,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.849,d1-2-emulator-5554-logcat.txt:163,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.852,d1-2-emulator-5554-logcat.txt:164,event=request_ready_accepted level=1 counter=8
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5554,317.863,d1-2-emulator-5554-logcat.txt:165,event=sync_send_begin level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,253.603,d1-2-emulator-5556-logcat.txt:134,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,254.61,d1-2-emulator-5556-logcat.txt:135,event=auto_info_request level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,254.813,d1-2-emulator-5556-logcat.txt:136,event=auto_info_received level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,254.814,d1-2-emulator-5556-logcat.txt:137,event=join_mission_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,255.602,d1-2-emulator-5556-logcat.txt:140,event=join_mission_end level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,255.607,d1-2-emulator-5556-logcat.txt:142,event=admission_send level=1 counter=6
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,255.607,d1-2-emulator-5556-logcat.txt:143,event=start_level_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.973,d1-2-emulator-5556-logcat.txt:148,event=level_sync_flush level=1 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.974,d1-2-emulator-5556-logcat.txt:149,flush_drop level=1 status=0 player=1 type=3 name=UPID_GAME_INFO count=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.975,d1-2-emulator-5556-logcat.txt:150,event=flush_end level=1 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.976,d1-2-emulator-5556-logcat.txt:151,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.988,d1-2-emulator-5556-logcat.txt:153,event=readiness_send level=1 counter=7
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.988,d1-2-emulator-5556-logcat.txt:154,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,256.996,d1-2-emulator-5556-logcat.txt:156,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,257.002,d1-2-emulator-5556-logcat.txt:158,event=readiness_send level=1 counter=8
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,257.002,d1-2-emulator-5556-logcat.txt:159,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,257.247,d1-2-emulator-5556-logcat.txt:160,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,257.248,d1-2-emulator-5556-logcat.txt:161,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,257.448,d1-2-emulator-5556-logcat.txt:162,event=sync_received level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,2,5556,257.458,d1-2-emulator-5556-logcat.txt:163,event=sync_processed level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,368.203,d1-3-emulator-5554-logcat.txt:129,event=host_mission_begin level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,368.79,d1-3-emulator-5554-logcat.txt:131,event=host_mission_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,368.796,d1-3-emulator-5554-logcat.txt:132,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,370.475,d1-3-emulator-5554-logcat.txt:137,event=admission_received level=1 counter=11
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,370.476,d1-3-emulator-5554-logcat.txt:138,event=request_received level=0 status=4 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,370.48,d1-3-emulator-5554-logcat.txt:140,event=start_level_begin level=0 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.619,d1-3-emulator-5554-logcat.txt:151,event=level_sync_flush level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.62,d1-3-emulator-5554-logcat.txt:152,event=flush_end level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.62,d1-3-emulator-5554-logcat.txt:153,event=wait_requests_flush level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.621,d1-3-emulator-5554-logcat.txt:154,event=flush_end level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.926,d1-3-emulator-5554-logcat.txt:156,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.931,d1-3-emulator-5554-logcat.txt:157,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.932,d1-3-emulator-5554-logcat.txt:158,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,371.934,d1-3-emulator-5554-logcat.txt:159,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,372.319,d1-3-emulator-5554-logcat.txt:160,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,372.32,d1-3-emulator-5554-logcat.txt:161,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,372.322,d1-3-emulator-5554-logcat.txt:162,event=request_ready_accepted level=1 counter=13
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5554,372.328,d1-3-emulator-5554-logcat.txt:163,event=sync_send_begin level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,308.012,d1-3-emulator-5556-logcat.txt:137,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,309.021,d1-3-emulator-5556-logcat.txt:139,event=auto_info_request level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,309.224,d1-3-emulator-5556-logcat.txt:140,event=auto_info_received level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,309.225,d1-3-emulator-5556-logcat.txt:141,event=join_mission_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,309.95,d1-3-emulator-5556-logcat.txt:143,event=join_mission_end level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,309.956,d1-3-emulator-5556-logcat.txt:145,event=admission_send level=1 counter=11
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,309.957,d1-3-emulator-5556-logcat.txt:146,event=start_level_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.4,d1-3-emulator-5556-logcat.txt:152,event=level_sync_flush level=1 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.4,d1-3-emulator-5556-logcat.txt:153,flush_drop level=1 status=0 player=1 type=3 name=UPID_GAME_INFO count=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.401,d1-3-emulator-5556-logcat.txt:154,event=flush_end level=1 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.402,d1-3-emulator-5556-logcat.txt:155,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.406,d1-3-emulator-5556-logcat.txt:157,event=readiness_send level=1 counter=12
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.407,d1-3-emulator-5556-logcat.txt:158,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.417,d1-3-emulator-5556-logcat.txt:160,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.428,d1-3-emulator-5556-logcat.txt:162,event=readiness_send level=1 counter=13
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.429,d1-3-emulator-5556-logcat.txt:163,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.776,d1-3-emulator-5556-logcat.txt:164,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.777,d1-3-emulator-5556-logcat.txt:165,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.888,d1-3-emulator-5556-logcat.txt:166,event=sync_received level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d1,3,5556,311.89,d1-3-emulator-5556-logcat.txt:167,event=sync_processed level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,425.905,d2-1-emulator-5554-logcat.txt:196,event=host_mission_begin level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,426.434,d2-1-emulator-5554-logcat.txt:206,event=host_mission_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,426.442,d2-1-emulator-5554-logcat.txt:207,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,428.491,d2-1-emulator-5554-logcat.txt:212,event=admission_received level=1 counter=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,428.493,d2-1-emulator-5554-logcat.txt:213,event=request_received level=0 status=4 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,428.523,d2-1-emulator-5554-logcat.txt:215,event=start_level_begin level=0 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,430.305,d2-1-emulator-5554-logcat.txt:233,event=level_sync_flush level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,430.306,d2-1-emulator-5554-logcat.txt:234,event=flush_end level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,430.307,d2-1-emulator-5554-logcat.txt:235,event=wait_requests_flush level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,430.308,d2-1-emulator-5554-logcat.txt:236,event=flush_end level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.049,d2-1-emulator-5554-logcat.txt:237,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.058,d2-1-emulator-5554-logcat.txt:238,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.235,d2-1-emulator-5554-logcat.txt:240,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.241,d2-1-emulator-5554-logcat.txt:241,event=request_ready_accepted level=1 counter=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.246,d2-1-emulator-5554-logcat.txt:242,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.257,d2-1-emulator-5554-logcat.txt:243,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,431.281,d2-1-emulator-5554-logcat.txt:244,event=sync_send_begin level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5554,433.035,d2-1-emulator-5554-logcat.txt:258,event=proof_received level=1 status=1 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,365.69,d2-1-emulator-5556-logcat.txt:183,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,366.699,d2-1-emulator-5556-logcat.txt:184,event=auto_info_request level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,366.901,d2-1-emulator-5556-logcat.txt:185,event=auto_info_received level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,366.902,d2-1-emulator-5556-logcat.txt:186,event=join_mission_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,367.716,d2-1-emulator-5556-logcat.txt:190,event=join_mission_end level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,367.734,d2-1-emulator-5556-logcat.txt:192,event=admission_send level=1 counter=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,367.737,d2-1-emulator-5556-logcat.txt:193,event=start_level_begin level=0 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.476,d2-1-emulator-5556-logcat.txt:203,event=level_sync_flush level=1 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.477,d2-1-emulator-5556-logcat.txt:204,flush_drop level=1 status=2 player=1 type=3 name=UPID_GAME_INFO count=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.478,d2-1-emulator-5556-logcat.txt:205,event=flush_end level=1 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.479,d2-1-emulator-5556-logcat.txt:206,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.51,d2-1-emulator-5556-logcat.txt:208,event=readiness_send level=1 counter=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.511,d2-1-emulator-5556-logcat.txt:209,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.681,d2-1-emulator-5556-logcat.txt:212,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.687,d2-1-emulator-5556-logcat.txt:214,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.714,d2-1-emulator-5556-logcat.txt:216,event=readiness_send level=1 counter=3
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,370.743,d2-1-emulator-5556-logcat.txt:217,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,372.498,d2-1-emulator-5556-logcat.txt:220,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,372.528,d2-1-emulator-5556-logcat.txt:221,event=sync_received level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,1,5556,372.563,d2-1-emulator-5556-logcat.txt:222,event=sync_processed level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,485.55,d2-2-emulator-5554-logcat.txt:177,event=host_mission_begin level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,486.072,d2-2-emulator-5554-logcat.txt:180,event=host_mission_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,486.079,d2-2-emulator-5554-logcat.txt:181,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,487.954,d2-2-emulator-5554-logcat.txt:193,event=admission_received level=1 counter=6
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,487.956,d2-2-emulator-5554-logcat.txt:194,event=request_received level=0 status=4 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,487.974,d2-2-emulator-5554-logcat.txt:196,event=start_level_begin level=0 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.02,d2-2-emulator-5554-logcat.txt:214,event=level_sync_flush level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.021,d2-2-emulator-5554-logcat.txt:215,event=flush_end level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.022,d2-2-emulator-5554-logcat.txt:216,event=wait_requests_flush level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.023,d2-2-emulator-5554-logcat.txt:217,event=flush_end level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.797,d2-2-emulator-5554-logcat.txt:219,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.802,d2-2-emulator-5554-logcat.txt:220,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.955,d2-2-emulator-5554-logcat.txt:221,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,490.958,d2-2-emulator-5554-logcat.txt:222,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,491.435,d2-2-emulator-5554-logcat.txt:225,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,491.436,d2-2-emulator-5554-logcat.txt:226,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,491.438,d2-2-emulator-5554-logcat.txt:227,event=request_ready_accepted level=1 counter=8
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5554,491.449,d2-2-emulator-5554-logcat.txt:228,event=sync_send_begin level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,425.419,d2-2-emulator-5556-logcat.txt:204,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,426.427,d2-2-emulator-5556-logcat.txt:205,event=auto_info_request level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,426.629,d2-2-emulator-5556-logcat.txt:206,event=auto_info_received level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,426.631,d2-2-emulator-5556-logcat.txt:207,event=join_mission_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,427.322,d2-2-emulator-5556-logcat.txt:211,event=join_mission_end level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,427.349,d2-2-emulator-5556-logcat.txt:213,event=admission_send level=1 counter=6
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,427.352,d2-2-emulator-5556-logcat.txt:214,event=start_level_begin level=0 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,429.833,d2-2-emulator-5556-logcat.txt:224,event=level_sync_flush level=1 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,429.834,d2-2-emulator-5556-logcat.txt:225,flush_drop level=1 status=2 player=1 type=3 name=UPID_GAME_INFO count=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,429.834,d2-2-emulator-5556-logcat.txt:226,event=flush_end level=1 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,429.835,d2-2-emulator-5556-logcat.txt:227,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,429.94,d2-2-emulator-5556-logcat.txt:231,event=readiness_send level=1 counter=7
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,429.943,d2-2-emulator-5556-logcat.txt:232,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,430.241,d2-2-emulator-5556-logcat.txt:234,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,430.396,d2-2-emulator-5556-logcat.txt:236,event=readiness_send level=1 counter=8
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,430.431,d2-2-emulator-5556-logcat.txt:237,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,430.892,d2-2-emulator-5556-logcat.txt:240,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,430.894,d2-2-emulator-5556-logcat.txt:241,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,431.009,d2-2-emulator-5556-logcat.txt:242,event=sync_received level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,2,5556,431.01,d2-2-emulator-5556-logcat.txt:243,event=sync_processed level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,539.995,d2-3-emulator-5554-logcat.txt:164,event=host_mission_begin level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,540.737,d2-3-emulator-5554-logcat.txt:167,event=host_mission_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,540.744,d2-3-emulator-5554-logcat.txt:168,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,543.225,d2-3-emulator-5554-logcat.txt:180,event=admission_received level=1 counter=11
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,543.227,d2-3-emulator-5554-logcat.txt:181,event=request_received level=0 status=4 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,543.234,d2-3-emulator-5554-logcat.txt:183,event=start_level_begin level=0 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,544.765,d2-3-emulator-5554-logcat.txt:196,event=level_sync_flush level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,544.766,d2-3-emulator-5554-logcat.txt:197,event=flush_end level=1 status=4 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,544.767,d2-3-emulator-5554-logcat.txt:198,event=wait_requests_flush level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,544.768,d2-3-emulator-5554-logcat.txt:199,event=flush_end level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.481,d2-3-emulator-5554-logcat.txt:200,event=request_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.482,d2-3-emulator-5554-logcat.txt:201,event=challenge_send level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.584,d2-3-emulator-5554-logcat.txt:202,event=proof_received level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.586,d2-3-emulator-5554-logcat.txt:203,event=request_ready_accepted level=1 counter=12
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.608,d2-3-emulator-5554-logcat.txt:204,event=sync_send_begin level=1 status=3 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.798,d2-3-emulator-5554-logcat.txt:207,event=request_received level=1 status=1 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,545.861,d2-3-emulator-5554-logcat.txt:208,event=challenge_send level=1 status=1 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5554,546.466,d2-3-emulator-5554-logcat.txt:212,event=proof_received level=1 status=1 player=0 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,480.294,d2-3-emulator-5556-logcat.txt:172,event=flush_end level=0 status=0 player=0 players=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,481.302,d2-3-emulator-5556-logcat.txt:173,event=auto_info_request level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,481.504,d2-3-emulator-5556-logcat.txt:174,event=auto_info_received level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,481.506,d2-3-emulator-5556-logcat.txt:175,event=join_mission_begin level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,482.624,d2-3-emulator-5556-logcat.txt:179,event=join_mission_end level=0 status=0 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,482.634,d2-3-emulator-5556-logcat.txt:181,event=admission_send level=1 counter=11
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,482.635,d2-3-emulator-5556-logcat.txt:182,event=start_level_begin level=0 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,484.955,d2-3-emulator-5556-logcat.txt:194,event=level_sync_flush level=1 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,484.956,d2-3-emulator-5556-logcat.txt:195,flush_drop level=1 status=2 player=1 type=3 name=UPID_GAME_INFO count=1
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,484.958,d2-3-emulator-5556-logcat.txt:196,event=flush_end level=1 status=2 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,484.963,d2-3-emulator-5556-logcat.txt:197,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,484.977,d2-3-emulator-5556-logcat.txt:199,event=readiness_send level=1 counter=12
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,484.979,d2-3-emulator-5556-logcat.txt:200,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.065,d2-3-emulator-5556-logcat.txt:202,event=proof_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.102,d2-3-emulator-5556-logcat.txt:203,event=request_send level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.22,d2-3-emulator-5556-logcat.txt:205,event=readiness_send level=1 counter=13
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.226,d2-3-emulator-5556-logcat.txt:206,event=request_send_complete level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.941,d2-3-emulator-5556-logcat.txt:208,event=sync_received level=1 status=3 player=1 players=0
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.951,d2-3-emulator-5556-logcat.txt:210,event=sync_processed level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,485.952,d2-3-emulator-5556-logcat.txt:211,event=proof_send level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,486.043,d2-3-emulator-5556-logcat.txt:212,event=sync_received level=1 status=1 player=1 players=2
+a673dfd8e86a6315f9c557cb051340efe529c2da,d2,3,5556,486.044,d2-3-emulator-5556-logcat.txt:213,event=sync_processed level=1 status=1 player=1 players=2

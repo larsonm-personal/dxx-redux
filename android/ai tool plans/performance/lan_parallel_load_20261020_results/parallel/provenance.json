@@ -1,0 +1,214 @@
+{
+  "export_run": 39455234856,
+  "repository": "larsonm-personal/dxx-redux",
+  "gzip_sha256": "78f5ccbb6b1ce724c34ffbe0a82ecbf093a53cd04bd38c6b5b64ba6bba28d1a7",
+  "note": "Bounded text excerpts; observation state reduced. Original hashes refer to full CI source files. Screenshots remain in the original artifact unless explicitly listed here.",
+  "files": {
+    "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5554-logcat.txt": {
+      "original_sha256": "2b9b8bb5cb7d00ced555f7bd0913b4fd483c0df02e8816c59ff2acecf3157d6b",
+      "exported_sha256": "32d1737440b6c723b18a84a893b457c4ee0ce20dfcd7be091a663de804a89e49"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-1-emulator-5556-logcat.txt": {
+      "original_sha256": "6b3b25b5726ae5abf6a6369fd22bd0c7937f70cbbd4c97cdad434230a04dbf9b",
+      "exported_sha256": "3921e55b9c61e6632429286a856a6a0766343e058d509b872f7069874752fb0e"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5554-logcat.txt": {
+      "original_sha256": "c7138e76ee18174595fc88e613b09ef96b2018cbfa69202e06d0df04193aea90",
+      "exported_sha256": "28ad48a0c956e4fe4e3051ed3cb3bb245ccbbe6cbca4747ad37af3803c7bcf12"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-2-emulator-5556-logcat.txt": {
+      "original_sha256": "d8024b048d4b37a731c3c76a30c8df89c8c461392c28a8d2f291b8a1caf771a9",
+      "exported_sha256": "46662c4ff8bc19f3aedc1ed595f3e695c55263d5ee99a0da94f07c403cf1e24d"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5554-logcat.txt": {
+      "original_sha256": "7fdb21a6b949da01e1c0099d1e5d6351092b467ca7972d62fbd5a39d09642c47",
+      "exported_sha256": "00062ec2932adf25e8a64170be9a22fd5b0876841a89a015f0280c524be46b20"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d1-3-emulator-5556-logcat.txt": {
+      "original_sha256": "8ab297ec1a9e8dc287522791d68478bd39510b3cf60722831e9f91689de5e8ee",
+      "exported_sha256": "6ff2422f5c0da8dd3f7c55920e462beb7a359264b56cce15e02022902ab8b60a"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5554-logcat.txt": {
+      "original_sha256": "d82c5c465940c83bcc3f877c3b2577cddabcce8ce89e856e82bb690ca1dd9479",
+      "exported_sha256": "33704913b7b3239321d2744ca86331927796fedd2d4a9bb14eb44b9b90ff222f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-1-emulator-5556-logcat.txt": {
+      "original_sha256": "aeab087b2576b1a3ee5aaef5013be710d8df78920547d121a5107783bf9e6b27",
+      "exported_sha256": "adf6f46c836a18341c79e07fdab0922ead73daaf390c50536ca54127ba01da7f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5554-logcat.txt": {
+      "original_sha256": "ff1cd17dc899665b1b7acbd794961244a48faa395d97defa701f94c66a1e0255",
+      "exported_sha256": "83bed969788302e2693ddfb0708d9b3bafb09b34bc31b2c86b4f6836199cb6e5"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-2-emulator-5556-logcat.txt": {
+      "original_sha256": "c6a57bc4b490013193d3d6b265d82ddbed7fcd595227fe9d3114add014e256fc",
+      "exported_sha256": "3f468002696531f3454dbe91c5575436fae020a40306350dcea14414c629cc88"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5554-logcat.txt": {
+      "original_sha256": "79514d591d52a877ca7b9e3cca7d9bd55286d813b7a242e0958aad58e73406be",
+      "exported_sha256": "40796735795d5fee6ebfb50a2b52620fa2e8c5ac13a5301cf05abaeac57589d0"
+    },
+    "first-play/lan-launch-preparation-public-shareware/d2-3-emulator-5556-logcat.txt": {
+      "original_sha256": "3400a69c7c2bdd9ed35914b6463e09dc77a241bee4dc91b2509753e1b2310228",
+      "exported_sha256": "e2a8c4aa22403155ae7e24372d719e0ad3ee6c832b2522e614d27b5fb3365689"
+    },
+    "first-play/lan-launch-preparation-public-shareware/events.jsonl": {
+      "original_sha256": "5a5f7c64342a7ccd5ad309b632412b872a6f89f941ecea17e2ca83e5e3e0fe95",
+      "exported_sha256": "334d8510781671e3ef5a3f183259efef2a7be13fa4402facb63a652b7d3e8c4e"
+    },
+    "first-play/lan-launch-preparation-public-shareware/experiment.json": {
+      "original_sha256": "abffdbba6ca0366c6f8a58fb1a8cd5f95b00d9324283a7342fb0ffd33200bf90",
+      "exported_sha256": "abffdbba6ca0366c6f8a58fb1a8cd5f95b00d9324283a7342fb0ffd33200bf90"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-cancel-client/d1-cancel-client-emulator-5554-logcat.txt": {
+      "original_sha256": "7baca355a577133427c505be239acdff3abffdc3e1ab963fd6854f763e4fac78",
+      "exported_sha256": "eb86f622b07ce0ef527238afe6fa1a2fa8cd4909684220ab466fc3e7c2b96536"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-cancel-client/d1-cancel-client-emulator-5556-logcat.txt": {
+      "original_sha256": "70b4881df5dfd68a2f47a941819ef04211d40c0c8ffe21ca0d32ccf0aa2c8a70",
+      "exported_sha256": "1cbd711bfe2be9fd96769039df6186b73b509765c3eb59f285b4509ba723fd40"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-cancel-client/events.jsonl": {
+      "original_sha256": "c0aa2bd1a4cebbf7a31f7fe0cad57ad64eb013afb47390871b901ea306f0a04f",
+      "exported_sha256": "99e3f305df547722400e1d79b3d27524b57638ff64cced8d8b42846c104c2b5d"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-dropped-admission/d1-dropped-admission-emulator-5554-logcat.txt": {
+      "original_sha256": "0b57a66238d2685fc16b65e56600da933279511e64fac7dc0e55dd6fa19b4ba0",
+      "exported_sha256": "b0d1e5e6f64f3a4f2da429f7a8fe284308637fceb42cb2658a3ca1ef5de86d61"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-dropped-admission/d1-dropped-admission-emulator-5556-logcat.txt": {
+      "original_sha256": "9e9e54454a22b493f1b1849c7a73440223d4332eeebd2218e116cc9c00c18a14",
+      "exported_sha256": "1cccbc6dce5d0fe2eda5d686883e0dfb85453d265917d009e787e169c0eccb3d"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-dropped-admission/events.jsonl": {
+      "original_sha256": "02dbd9d745e70d5b8880fc79051f9d754ac76d8bd4ea9b268d199ecee6864d49",
+      "exported_sha256": "f9d40deaab7ddf12755183011b6f6a58048d7e0d67337bfe063e29af36f51c90"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-long-client/d1-long-client-emulator-5554-logcat.txt": {
+      "original_sha256": "ebf9baf71166cd01a072adf9ed27a24f7b00344acf48100c9bc5e54d57af98d1",
+      "exported_sha256": "d6a26d27409bf80483ac438417afb9523a71fdd17bedf472e011e0a1d5ada911"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-long-client/d1-long-client-emulator-5556-logcat.txt": {
+      "original_sha256": "194661fec0cec2a36ab77517566ad8f313835b53d98c6713343581f27010d7b1",
+      "exported_sha256": "279e851d635fd0e6ed365e54d777fa27ee064cbd287b0c439b14bbb0a07351b0"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-long-client/events.jsonl": {
+      "original_sha256": "46cb48c82b752010937846ffae65d5fe94ad2db4389a129baf7b24dd77f18ff9",
+      "exported_sha256": "a729f2b5e68613af96a6654988b8f504b8c0a98614185b2acc48f6ccd1861986"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-retry/d1-retry-emulator-5554-logcat.txt": {
+      "original_sha256": "055336b6506b5d689eb0772da3dc3d5eed20568baa7c0eda1e13de6a595baeb5",
+      "exported_sha256": "443671fbb38e9361afc0c0a6fc0801b9cf9b2873f5dd296bda61f78ebd2827b6"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-retry/d1-retry-emulator-5556-logcat.txt": {
+      "original_sha256": "5c8c7160c91f64e026bc2ca4cd34c4062e68902b28791090dcaf9d898eb602e0",
+      "exported_sha256": "3cfa0a83af6647b165ee8b0c86af49d8b5e11bc10b1c1c2cea6ba06d73a1e78d"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-retry/events.jsonl": {
+      "original_sha256": "403036267cca388f49d5bb5f72ab4c3114d7c5abedf2920224b225025d504ea0",
+      "exported_sha256": "68a0ab8a32cb5da4d1ac7fd8931718880567a4a0ef7aa4027ac49be28ae53b1e"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-slow-client-duplicate/d1-slow-client-duplicate-emulator-5554-logcat.txt": {
+      "original_sha256": "388822820071e88f744230456b17e2e89caf6d39634e5f872c674a0711339111",
+      "exported_sha256": "a1e53f6b8e20e30b8042b825801fce23fbba4c8d232d9d1fee90a7b0b707c4e6"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-slow-client-duplicate/d1-slow-client-duplicate-emulator-5556-logcat.txt": {
+      "original_sha256": "78b6415d3f216d090e031da8ef745f1565c4d312460762851c06af534f7ff4ac",
+      "exported_sha256": "0051d1757b39b355dbf428eb69c810f3b9bddcfe81a14ecc5ddc0492caa5760c"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-slow-client-duplicate/events.jsonl": {
+      "original_sha256": "0730132bb37fdad8a1c3b8ff23dd6f26ded2ea05bf935cff283b8ff736d27158",
+      "exported_sha256": "b71d569fd639f8e4bccd78fefd03a7ddec0fec86e22f9b0e34bd991ae0f4b5f5"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-slow-host/d1-slow-host-emulator-5554-logcat.txt": {
+      "original_sha256": "06fbc56cceebbdbf2161727d3841a4aa3ed43e404d6b8b0316fe86b3c4dfbc7c",
+      "exported_sha256": "5cce204b0f18dc74e738c293033dd8a0a67b9d62cd5b3c0e5c9568113651356f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-slow-host/d1-slow-host-emulator-5556-logcat.txt": {
+      "original_sha256": "f813d603147c57bc4f7eab4fc1721299967f6e3052ed127fbcccf6c06c6f5757",
+      "exported_sha256": "9a21845b718a8a05dbbb0c7cc945e7cf70f51dc7cf348e29a346dc3318f93a96"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d1-slow-host/events.jsonl": {
+      "original_sha256": "7aadc438975649534ed460c950b8ceb592723c07289da8c01ef6b6973e87e3ed",
+      "exported_sha256": "b4fe13063cc496588d71f90f5d84b08bea45e4911375fa86c7864b29b13e39e8"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-cancel-client/d2-cancel-client-emulator-5554-logcat.txt": {
+      "original_sha256": "dfdb27aea0af006f162a61aba37dcf6812e86a76ef4449be5bcdaf375465d512",
+      "exported_sha256": "907099bf69dd861f6d27f5be84f17dd8dddc6bca52c15cdcddf4c9a753e25e93"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-cancel-client/d2-cancel-client-emulator-5556-logcat.txt": {
+      "original_sha256": "16567e88cb4e4987fb62246db83ab9a1fd3a9644afe5fef4859f302ed6e09948",
+      "exported_sha256": "5efd31d13ebce211b070c8f131103c9d0a713f772127ca01a736eaf26b15c49b"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-cancel-client/events.jsonl": {
+      "original_sha256": "4e81e63767d045aca393c60d4c65d6250bb7f698f5d9cb019ef193cae0f1e68e",
+      "exported_sha256": "5d5c902567489006dfe47f477830457a03573873f31c5574afdce306ac65a91e"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-dropped-admission/d2-dropped-admission-emulator-5554-logcat.txt": {
+      "original_sha256": "9c1eed403f397e5a4b961d44ed31e3a48e8c9c27a363e5b8c6c8cab5f79d25e1",
+      "exported_sha256": "a0e13f3248ec20dfb11614b48318e8b040c1c38ae9ec023bc04ece04e4ed1ae9"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-dropped-admission/d2-dropped-admission-emulator-5556-logcat.txt": {
+      "original_sha256": "bf139d90a8816d0f7383df35a1607abcb09991aed8780522147393b3291411b7",
+      "exported_sha256": "7044f29eab52a6336959f2b52b497c35354554d573ff1cd679885f215f803d5f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-dropped-admission/events.jsonl": {
+      "original_sha256": "29336a9efb24194281bba7615a07cdbd89a1a0fe4296556f9776fc1b8ddccd78",
+      "exported_sha256": "b9e3decbe201650dd7efc56d5415cc3239737599565e9d2f0da701dfb562cc28"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-long-client/d2-long-client-emulator-5554-logcat.txt": {
+      "original_sha256": "07f9f3ecb7d2285c9a967b6b5d2c8f340b301e466ca81aa954e7adcd16ff2cf6",
+      "exported_sha256": "4015c08f4ec5336871d281129f983674540217aced7537903e340b0242048dde"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-long-client/d2-long-client-emulator-5556-logcat.txt": {
+      "original_sha256": "b7c08644bbffaa1aa4a9e0c38f97f5ec1bdf68caac32023dc55f76a4156c6268",
+      "exported_sha256": "2c41ed3346bdc233d421d30749c780be13543bdfea856bc9eb3ccd7ca0228e88"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-long-client/events.jsonl": {
+      "original_sha256": "d45d483cc8129e88940c3c86079aff491d6d4c9a4a847ac2dda36145913aaeeb",
+      "exported_sha256": "1a0ec4745aafdd5407439a0f7c26f8ce7d5aa7f0b086d76769e920791c90e27f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-retry/d2-retry-emulator-5554-logcat.txt": {
+      "original_sha256": "6368c8195e3cf573bc1a9aa40678524df4e2c33eebb89358991801f5fb962992",
+      "exported_sha256": "4bade5f56c01979d871496f555d77a1999f3796a4fc4b0d43c2f7fe9e68d29ca"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-retry/d2-retry-emulator-5556-logcat.txt": {
+      "original_sha256": "6d49ff3826957ebef9ac5256f93e5942f396daff61cb827f328b41a92e78262f",
+      "exported_sha256": "9140a37537fc566e93706e4a91ee7f426ffdc88b02b0eae6c6a506e9e00e8269"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-retry/events.jsonl": {
+      "original_sha256": "c53d3fd526751a1e92600fa7443a9cc726322d39a536cf81af38d68f544fa4d7",
+      "exported_sha256": "5cb451108c41c4f123a4b1e99bf56fd7f07ac33dc1ecc21b06b9d450cfad1655"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-slow-client-duplicate/d2-slow-client-duplicate-emulator-5554-logcat.txt": {
+      "original_sha256": "0ba568ade99500202baf8ef7fc400976db10b18de1ec16698c682997b9c89122",
+      "exported_sha256": "f70862c9216ac639e7ca7b4634168b9e331e7a9de530bd22b8d3dcc8026e066f"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-slow-client-duplicate/d2-slow-client-duplicate-emulator-5556-logcat.txt": {
+      "original_sha256": "59037b02bcdad11a1da6617cb63e73186619884337620cbb3092749663d13072",
+      "exported_sha256": "c38735a48ac2ea23fc8f94d6e52a31b4b39509c45e94d6dd4655c02daa6e12ea"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-slow-client-duplicate/events.jsonl": {
+      "original_sha256": "61768a7d933f89e0d989cee27809450f604cecec0d140231a7d079eff84bd46a",
+      "exported_sha256": "cf4bf2cdede4dc6089821c286b6c7cb2f70f0b4799c7cbee8a9ddb3bcaf7fb18"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-slow-host/d2-slow-host-emulator-5554-logcat.txt": {
+      "original_sha256": "2026c9c690cb01e67a1cf2704c869e4effdec08ce9b50c170abb3f4dc97e7f77",
+      "exported_sha256": "c3327877e622cc4753acb054c3438b2425eb6dc7f23c17335cbb5e16987827ee"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-slow-host/d2-slow-host-emulator-5556-logcat.txt": {
+      "original_sha256": "760ea44223e300598cc2233900f94e8324df7d525352b1c8cecbba69e7bd136a",
+      "exported_sha256": "fd84afeeef3b258bfaa95ec5f5c141595c49c39bf5d998a5fb41ca9ebfeb0ad4"
+    },
+    "first-play/lan-launch-preparation-public-shareware/parallel-startup-checks/d2-slow-host/events.jsonl": {
+      "original_sha256": "0fec48fb6060d385d5ef1d5ba45f830ceaf1094bf1ba0a1601a551a5dba954f1",
+      "exported_sha256": "d973afa56c96aa2d64febb876ce2764c617eda262b27430071dd45114642e47a"
+    },
+    "results.json": {
+      "original_sha256": "f6cbfa447584e4cb8c0c8dea3f4c317710725e23c10de295067f8a9cb847abac",
+      "exported_sha256": "f6cbfa447584e4cb8c0c8dea3f4c317710725e23c10de295067f8a9cb847abac"
+    }
+  },
+  "source_run": 39450006075,
+  "artifact_id": 12279926343
+}

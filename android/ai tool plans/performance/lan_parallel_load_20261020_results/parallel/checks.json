@@ -1,0 +1,23 @@
+{
+  "all_receipts_pass_and_complete_nonzero_steps": true,
+  "coverage": "Targeted experiment; owner receipt coverage_complete is false, not exhaustive LAN coverage",
+  "fault_cases": {
+    "d1-cancel-client": "PASS",
+    "d1-dropped-admission": "PASS",
+    "d1-long-client": "PASS",
+    "d1-retry": "PASS",
+    "d1-slow-client-duplicate": "PASS",
+    "d1-slow-host": "PASS",
+    "d2-cancel-client": "PASS",
+    "d2-dropped-admission": "PASS",
+    "d2-long-client": "PASS",
+    "d2-retry": "PASS",
+    "d2-slow-client-duplicate": "PASS",
+    "d2-slow-host": "PASS"
+  },
+  "measured_revision": "a673dfd8e86a6315f9c557cb051340efe529c2da",
+  "native_automation_receipts": 62,
+  "normal_samples": 6,
+  "peer_pair_verification_count": 18,
+  "source_run": 39450006075
+}

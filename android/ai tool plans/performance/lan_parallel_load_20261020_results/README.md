@@ -37,3 +37,15 @@ a 20s slow-client hold, dropped admission, client process cancellation, then a
 fresh session. Cancellation must not produce loaded readiness; its bounded 60s
 host loading allowance is checked separately. No claim of same-session reconnect
 or host-loss recovery coverage is made.
+
+Saved evidence can be reanalyzed without new emulator execution: use export
+39455234856 for measured run39450006075, and export39454455784 for the final
+guard smoke39451088229. `parallel/checks.json` records the62 complete native
+receipts and12 fault-case passes; `parallel/verification.json` contains all18
+peer-pair checks. `smoke/` retains the three explicit two-player session receipts.
+
+The measured engine revision is a673dfd8e86a6315f9c557cb051340efe529c2da;
+the observer-exclusion guard is7bc1593d1915be6d6986d8bd87a25d6f8910a207.
+Later commits only adjust analysis, evidence export, documentation and cache
+labeling. The experiment predates cmake84387ccdf (PR102); it does not measure
+that later Mac-asset/import change.
