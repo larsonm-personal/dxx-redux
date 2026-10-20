@@ -66,7 +66,11 @@ def summarize(root):
         releases = [event for event in client if "[STARTUP-FAULT] release" in event["line"]]
         kill = named(controller, "host-loss.request")
         recovered = named(controller, "host-loss.recovered")
-        terminal = named(controller, "host-loss.recovered") + named(controller, "three.loss.terminal")
+        terminal = (
+            named(controller, "host-loss.recovered")
+            + named(controller, "three.loss.terminal")
+            + named(controller, "host-failure.terminal")
+        )
         row = {
             "game": game,
             "case": case,
