@@ -80,5 +80,5 @@ if len(blob) > 256 * 1024:
     raise SystemExit("Refusing annotation export over 256 KiB compressed")
 encoded = base64.b64encode(blob).decode()
 print(f"Exported {len(selected)} public text files/excerpts; gzip sha256={hashlib.sha256(blob).hexdigest()}")
-for index, offset in enumerate(range(0, len(encoded), 4000)):
-    print(f"::notice title=LAN_EVIDENCE_{index:04d}::{encoded[offset : offset + 4000]}")
+for index, offset in enumerate(range(0, len(encoded), 60000)):
+    print(f"::notice title=LAN_EVIDENCE_{index:04d}::{encoded[offset : offset + 60000]}")
