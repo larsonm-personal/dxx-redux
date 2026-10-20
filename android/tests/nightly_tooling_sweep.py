@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import shutil
 import subprocess
 import sys
 import time
@@ -23,6 +24,8 @@ VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_o
                   'shareware:test_auto_level_cheats#d2'}
 
 PUBLIC_LAN_IDS = {'master:test_lan_launch_preparation_public_shareware'}
+THREE_PLAYER_IDS = {'master:test_lan_three_player_startup'}
+THREE_PLAYER_CASES = {'d1/three-player', 'd1/three-player-lost', 'd2/three-player', 'd2/three-player-lost'}
 BASIC_USE_IDS = {'master:test_demo_import_public_basic_use', 'master:test_lan_launch_preparation_public_shareware'}
 
 FIRST_PLAY_IDS = {
@@ -92,6 +95,14 @@ def policy_entries(policy):
             raise ValueError('Invalid public gameplay lane/game')
         if entry.get('fixture') not in (None, 'retail-base', 'retail-missions', 'retail-demos', 'retail-corpus'):
             raise ValueError('Unknown fixture requirement')
+        if entry.get('requires') not in (None, 'three_emulators'):
+            raise ValueError('Unknown explicit resource requirement')
+        if entry.get('requires') == 'three_emulators' and entry['lane'] != 'android-dual':
+            raise ValueError('Three-emulator owners require the multi-device lane')
+        if ident in THREE_PLAYER_IDS and (entry.get('requires') != 'three_emulators'
+                or entry.get('category') != 'three_player_network' or entry['owner'] != 'master'
+                or entry['args']['suite'] != 'test_lan_three_player_startup' or entry['estimated_seconds'] > 900):
+            raise ValueError('Invalid bounded three-player owner contract')
         entries[ident] = entry
     return entries
 
@@ -181,6 +192,11 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
             continue
         if ident in state['records'] or ident in state.get('excluded', {}):
             continue
+        # Named public leaf evidence must not enter a retail-redacted lane receipt
+        # Defer the other group without retiring it; normal retry/ring ordering remains fair
+        if ((ident in THREE_PLAYER_IDS and retail.lane_requires_retail({'tests': selected}, entry['lane']))
+                or (entry.get('fixture') and any(e['id'] in THREE_PLAYER_IDS and e['lane'] == entry['lane'] for e in selected))):
+            continue
         if used[entry['lane']] + entry['estimated_seconds'] <= budget:
             selected.append(entry)
             used[entry['lane']] += entry['estimated_seconds']
@@ -198,7 +214,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
 
 def select_public_campaign(plan, policy, catalog, campaign):
     """A fixed asset-free sample; never inherits rotating retail selections or progress."""
-    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS, 'basic-use': BASIC_USE_IDS, 'lan-smoke': PUBLIC_LAN_IDS}[campaign]
+    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS, 'basic-use': BASIC_USE_IDS, 'lan-smoke': PUBLIC_LAN_IDS, 'lan-three-player': THREE_PLAYER_IDS}[campaign]
     entries = policy_entries(policy)
     if not campaign_ids <= entries.keys():
         raise ValueError(f'Missing {campaign} campaign suites')
@@ -256,6 +272,8 @@ def validate_plan(plan, policy):
         if entry.get('unavailable_reason'):
             raise ValueError('Selected owner requires an unavailable target capability')
         seen.add(ident)
+    if any(e['id'] in THREE_PLAYER_IDS and retail.lane_requires_retail(plan, e['lane']) for e in selected):
+        raise ValueError('Three-player evidence requires an asset-free lane batch')
     if plan.get('budget_scope') != 'per-lane' or not 1 <= plan.get('budget_seconds', 0) <= 2700:
         raise ValueError('Invalid per-lane budget')
     if any(sum(e['estimated_seconds'] for e in selected if e['lane'] == lane) > plan['budget_seconds'] for lane in LANES):
@@ -267,7 +285,7 @@ def validate_plan(plan, policy):
         raise ValueError('Plan batch identity mismatch')
 
 
-def normalize_result(row):
+def normalize_result(row, entry=None):
     """Never certify a PASS contradicted by the owner's structured evidence."""
     row = dict(row)
     if row.get('status') != 'PASS':
@@ -282,8 +300,32 @@ def normalize_result(row):
         row.update(status='BLOCKED', reason='PASS receipt does not attest to test execution', retryable=True)
     elif counts.get('passed') == 0 or (cases and not any(case.get('status') == 'PASS' for case in cases)):
         row.update(status='BLOCKED', reason='No structured leaf case passed', attempted_tests=False, retryable=True)
+    if entry and entry['id'] in THREE_PLAYER_IDS and row['status'] == 'PASS':
+        if (len(cases) != len(THREE_PLAYER_CASES) or {case.get('id') for case in cases} != THREE_PLAYER_CASES
+                or any(case.get('status') != 'PASS' for case in cases) or row.get('coverage_complete') is not True):
+            row.update(status='FAIL', reason='Three-player coverage requires all four named leaf cases to pass')
     if row['status'] != 'PASS':
         row['coverage_complete'] = False
+    return row
+
+
+def three_player_result(row, output, sha):
+    """Bind the fixed owner's public leaf evidence to this exact execution attempt."""
+    row = dict(row)
+    path = Path(output) / 'three-player' / 'three-player-summary.json'
+    try:
+        summary = read(path)
+        if (not isinstance(summary, dict) or summary.get('schema') != 1 or summary.get('owner') != 'test_lan_three_player_startup'
+                or summary.get('revision') != sha or summary.get('category') != 'three_player_network'
+                or not isinstance(summary.get('results'), list)
+                or any(not isinstance(case, dict) for case in summary['results'])):
+            raise ValueError('Three-player summary provenance mismatch')
+        row.update(cases=summary['results'], coverage_complete=summary.get('coverage_complete') is True)
+        if row.get('status') == 'PASS' and summary.get('passed') is not True:
+            row.update(status='FAIL', reason='Three-player summary does not attest to a complete pass')
+    except (OSError, ValueError, TypeError) as error:
+        if row.get('status') == 'PASS':
+            row.update(status='FAIL', reason='Missing or invalid three-player evidence: ' + str(error), coverage_complete=False)
     return row
 
 
@@ -325,7 +367,7 @@ def reconcile(plan, policy, state, receipts):
         lane = receipt.get('lane')
         if receipt.get('retail_assets') != plan.get('retail_assets'):
             raise ValueError('Receipt retail asset identity mismatch')
-        receipt = {**receipt, 'results': [normalize_result(row) for row in receipt.get('results', [])]}
+        receipt = {**receipt, 'results': [normalize_result(row, allowed.get(row.get('id'))) for row in receipt.get('results', [])]}
         if retail.lane_requires_retail(plan, lane):
             receipt = retail.public_receipt(receipt)
         for row in receipt.get('results', []):
@@ -423,7 +465,10 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         if status == 'PASS' and exit_code not in (None, 0):
             row = {**row, 'status': 'FAIL', 'reason': f'Owner process exited {exit_code} despite PASS receipt', 'coverage_complete': False}
             status = 'FAIL'
-        row = normalize_result({**row, 'status': status})
+        row = {**row, 'status': status}
+        if entry['id'] in THREE_PLAYER_IDS:
+            row = three_player_result(row, output, plan['target_sha'])
+        row = normalize_result(row, entry)
         status = row['status']
         if row.get('blocker_kind') == 'interrupted':
             status = 'NOT_RUN'
@@ -510,6 +555,11 @@ def execute(plan, policy, lane, repo, output):
     for entry in selected:
         if entry['owner'] != 'master':
             (output / (entry['id'].replace(':', '_') + '.json')).unlink(missing_ok=True)
+    three_player_source = repo / 'android/temp/lan-three-player-startup/three-player-summary.json'
+    three_player_destination = output / 'three-player/three-player-summary.json'
+    if any(e['id'] in THREE_PLAYER_IDS for e in selected):
+        three_player_source.unlink(missing_ok=True)
+        three_player_destination.unlink(missing_ok=True)
     attempt = {**attempt_identity(plan, lane), 'processes': {}}
     write(output / 'attempt.json', attempt)
     def process_evidence(owner, completed=False, exit_code=None):
@@ -534,8 +584,13 @@ def execute(plan, policy, lane, repo, output):
             command.append('-HostOnly')
         # Master owns setup/cleanup and per-test timeout; outer hosted cancellation remains pending.
         process_evidence('master')
-        with (output / 'master.log').open('w') as log:
-            process = run_command(command, repo, log)
+        try:
+            with (output / 'master.log').open('w') as log:
+                process = run_command(command, repo, log)
+        finally:
+            if any(e['id'] in THREE_PLAYER_IDS for e in masters) and three_player_source.is_file():
+                three_player_destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(three_player_source, three_player_destination)
         process_evidence('master', True, process.returncode)
         receipt['runner_failed'] = process.returncode != 0
         if receipt['runner_failed']:
@@ -546,6 +601,9 @@ def execute(plan, policy, lane, repo, output):
             status = row.get('status', 'NOT_RUN')
             if status == 'SKIP':
                 status = 'BLOCKED'
+            if entry['id'] in THREE_PLAYER_IDS:
+                row = normalize_result(three_player_result({**row, 'status': status}, output, actual), entry)
+                status = row['status']
             save(entry, status, row.get('reason', ''), exit_code=row.get('exit_code'))
     elapsed = 0.0
     for entry in selected:
@@ -685,7 +743,7 @@ def main():
         p.add_argument('--' + option, required=True)
     p.add_argument('--state')
     p.add_argument('--validation', action='store_true')
-    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities', 'basic-use', 'lan-smoke'))
+    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities', 'basic-use', 'lan-smoke', 'lan-three-player'))
     p.add_argument('--omit-pr-public-lan', action='store_true')
     p = sub.add_parser('retail-check')
     for option in ('plan', 'policy', 'lane'):

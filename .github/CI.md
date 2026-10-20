@@ -90,3 +90,32 @@ and separation from ordinary builds without compiling games or downloading asset
 
 For interrupted coding tasks or GitHub access failures, see the
 [task recovery runbook](TASK_RECOVERY.md).
+
+## Extended three-player network category
+
+The scheduled tooling sweep admits `test_lan_three_player_startup` in the
+`three_player_network` category. It reuses the Android multi-device lane's APK
+and public fixtures and provisions a third disposable emulator only when selected.
+Its 900-second owner budget covers exactly four separate results: native D1/D2
+healthy uneven-load starts and selected-loader process loss. Both surviving peers
+must recover without silently starting; missing or skipped results never pass.
+The wider packet-fault and actual mixed-version experiments remain opt-in.
+
+Ordinary PR checks retain the two-player public smoke. To qualify just the new
+category through the normal catalog, master runner and durable receipts, dispatch
+`public-lan-smoke.yml` with campaign `lan-three-player`, or apply the explicit
+`test-three-player-network` PR label. Reapply the label after a later commit to
+request another focused run; ordinary synchronization events remain two-player.
+
+For local reproduction, provision three disposable emulators on the same shared
+network, with the third running as `emulator-5558` (or set
+`DXX_THIRD_EMULATOR_SERIAL`). Prepare the verified public D1 and D2 fixtures, then:
+
+```powershell
+pwsh -NoProfile -File android/run_all_tests.ps1 -Filter test_lan_three_player_startup
+```
+
+The normal master preflights/provisions the pair and validates the third before
+mutating any target. It does not stop a caller-owned third emulator. Evidence is
+in `android/temp/lan-three-player-startup/`, including the four case receipts
+and `three-player-summary.json`. CI retains it separately under `three-player/`.

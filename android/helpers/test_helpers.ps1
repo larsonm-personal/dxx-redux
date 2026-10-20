@@ -892,6 +892,8 @@ function Start-EmulatorIfNeeded {
 }
 
 function Reset-GameState {
+    param([switch]$NoEmulatorRecovery)
+
     # Ordinary automation starts after onboarding; first-run fixtures explicitly clear this marker
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', 'no_backup') | Out-Null
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'touch', 'no_backup/graphics-first-run-offered') | Out-Null
@@ -923,6 +925,7 @@ function Reset-GameState {
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/file_sets.json") | Out-Null
     if (-not (Publish-DefaultActiveFileSet)) {
+        if ($NoEmulatorRecovery) { throw 'Default active game-data publication failed; caller-owned emulator was not recycled' }
         Write-Status "Default active game-data publication failed, recovering emulator before retry..." "Yellow"
         Ensure-EmulatorHealthy | Out-Null
         if (-not (Publish-DefaultActiveFileSet)) {
@@ -1017,13 +1020,13 @@ function Test-StandardGameDataFailureReason {
 }
 
 function Reset-DeviceGameState {
-    param([Parameter(Mandatory)][string]$Serial)
+    param([Parameter(Mandatory)][string]$Serial, [switch]$NoEmulatorRecovery)
 
     $previousSerial = $env:ANDROID_SERIAL
     try {
         $env:ANDROID_SERIAL = $Serial
         Stop-AppAndWait
-        Reset-GameState
+        Reset-GameState -NoEmulatorRecovery:$NoEmulatorRecovery
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial }
         else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }

@@ -315,21 +315,27 @@ try {
         $failures.Add('Suite scenario selection is not reproducible')
     }
     $visited = [Collections.Generic.HashSet[string]]::new()
-    $rotationLength = ($policy.Keys | Where-Object { $_ -notin @('core', 'explicit', 'extended_graphics') } |
+    $rotationLength = ($policy.Keys | Where-Object { $_ -notin @('core', 'explicit', 'extended_graphics', 'three_player_network') } |
             ForEach-Object { $policy[$_].Count } | Measure-Object -Maximum).Maximum
     foreach ($seed in 1..$rotationLength) {
         foreach ($test in @(Select-TestSuiteCoverage -Tests $coverageTests -Seed $seed)) { [void]$visited.Add($test.Name) }
     }
-    foreach ($name in $policyNames | Where-Object { $_ -notin $policy.explicit }) {
+    $exactOnlyNames = @($policy.explicit) + @($policy.three_player_network)
+    foreach ($name in $policyNames | Where-Object { $_ -notin $exactOnlyNames }) {
         if (-not $visited.Contains($name)) { $failures.Add("Suite rotation cannot reach $name") }
     }
     foreach ($name in $policy.core) {
         if ($name -notin $coverageSample.Name) { $failures.Add("Suite sampling omitted mandatory owner $name") }
     }
-    $expectedUnattendedNames = @($coverageTests | Where-Object Name -notin $policy.explicit | ForEach-Object Name | Sort-Object)
+    if ('test_lan_three_player_startup' -notin $policy.three_player_network -or
+        'test_lan_three_player_startup' -in $coverageSample.Name -or
+        'test_lan_three_player_startup' -in $allCoverage.Name) {
+        $failures.Add('Three-player coverage must retain a distinct category selected only explicitly or by the scheduled plan')
+    }
+    $expectedUnattendedNames = @($coverageTests | Where-Object Name -notin $exactOnlyNames | ForEach-Object Name | Sort-Object)
     $allCoverageNames = @($allCoverage | ForEach-Object Name | Sort-Object)
     if (Compare-Object $expectedUnattendedNames $allCoverageNames) {
-        $failures.Add('Exhaustive unattended suite must retain all supported scenarios and exclude explicit probes')
+        $failures.Add('Exhaustive unattended suite must retain ordinary scenarios and exclude explicit or scheduled-only probes')
     }
 } catch { $failures.Add("Suite coverage policy: $_") }
 

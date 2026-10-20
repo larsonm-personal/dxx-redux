@@ -1,6 +1,7 @@
 param(
     [string]$Mission = 'descent',
     [switch]$PublicShareware,
+    [switch]$ThreePlayerStartup,
     [switch]$RecoveryChecks = ($env:DXX_RECOVERY_CHECKS -eq 'true'),
     [switch]$MeasureTransitions = ($env:DXX_MEASURE_TRANSITIONS -eq 'true'),
     [string]$D1DataDirectory,
@@ -304,6 +305,7 @@ function Invoke-LanPreparationSession {
 }
 
 if (($D1DataDirectory -or $D2DataDirectory) -and -not $PublicShareware) { throw 'Data directory overrides require -PublicShareware' }
+if ($ThreePlayerStartup -and (-not $PublicShareware -or $RecoveryChecks -or $MeasureTransitions)) { throw 'Three-player startup is a separate public suite, not a timing or recovery matrix' }
 if ($PublicShareware -and $Mission -cne 'descent') { throw 'The public LAN variant requires mission descent' }
 # Reject phone overrides before the first reset, including when either target is invalid
 Assert-LanPreparationTargets -HostSerial $hostSerial -ClientSerial $clientSerial
@@ -324,17 +326,25 @@ if ($PublicShareware) {
             }
         })
 }
-$outputDirectory = Join-Path $PSScriptRoot "../temp/lan-launch-preparation-$(if ($PublicShareware) { 'public-shareware' } else { 'retail' })"
+$evidenceName = if ($ThreePlayerStartup) { 'lan-three-player-startup' } else { "lan-launch-preparation-$(if ($PublicShareware) { 'public-shareware' } else { 'retail' })" }
+$outputDirectory = Join-Path $PSScriptRoot "../temp/$evidenceName"
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $outputDirectory
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 Write-Output "LAN launch evidence: $outputDirectory"
-if ($MeasureTransitions -or $RecoveryChecks) {
+if ($ThreePlayerStartup -or $MeasureTransitions -or $RecoveryChecks) {
     if (-not $PublicShareware) { throw 'Transition measurements require public disposable fixtures' }
     . "$PSScriptRoot/../helpers/measure_lan_transitions.ps1"
     $latencyScripts = @{
         skip = 'test_lan_latency_skip.jsonc'
         exit = 'test_lan_latency_exit.jsonc'
         next = 'test_lan_latency_next.jsonc'
+    }
+    if ($ThreePlayerStartup) {
+        $script:latencyClock = [Diagnostics.Stopwatch]::StartNew()
+        . "$PSScriptRoot/../helpers/check_lan_parallel_startup.ps1"
+        . "$PSScriptRoot/../helpers/check_lan_three_player_startup.ps1"
+        Invoke-LanThreePlayerStartupChecks
+        return
     }
     if ($RecoveryChecks) {
         $script:latencyClock = [Diagnostics.Stopwatch]::StartNew()

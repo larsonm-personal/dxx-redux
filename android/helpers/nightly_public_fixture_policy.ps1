@@ -64,6 +64,8 @@ function Test-SuiteMediaIndependentTest {
                 'test_lan_transport_recovery')
         }
         'ps1:two_emulators' { @('test_lan_lobby_discovery', 'test_lan_broadcast') }
+        # This no-argument owner stages pinned public D1/D2 assets for all four cases
+        'ps1:three_emulators' { @('test_lan_three_player_startup') }
         'jsonc:emulator' {
             @('test_public_first_play_empty', 'test_public_first_play_d1',
                 'test_public_first_play_d1_in_d2', 'test_public_first_play_d2', 'test_public_first_play_mission',
@@ -92,7 +94,7 @@ function Test-SuiteNeedsStandardGameData {
     param([AllowEmptyCollection()][object[]]$Tests = @())
 
     foreach ($test in $Tests) {
-        if ($test.Requires -in @('emulator', 'two_emulators') -and
+        if ($test.Requires -in @('emulator', 'two_emulators', 'three_emulators') -and
             -not (Test-SuiteMediaIndependentTest -Test $test)) { return $true }
     }
     return $false

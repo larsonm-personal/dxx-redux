@@ -1,9 +1,15 @@
-name: Public two-player LAN smoke
+name: Public LAN smoke
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
+      campaign:
+        description: Bounded public LAN coverage through the normal test entrypoint
+        type: choice
+        options: [lan-smoke, lan-three-player]
+        default: lan-smoke
       evidence_run_id:
         description: Export compact public evidence from an existing run (no emulator execution)
         type: string
@@ -25,15 +31,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: public-lan-${{ github.event.pull_request.number || github.ref }}-${{ inputs.evidence_run_id }}
+  # A labeled three-player run must not cancel the ordinary two-player PR check
+  group: public-lan-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && (github.event.label.name == 'test-three-player-network' && 'lan-three-player' || 'ignored-label') || inputs.campaign || 'lan-smoke' }}-${{ inputs.evidence_run_id }}
   cancel-in-progress: true
 
 jobs:
   plan:
     name: Select public LAN smoke
-    if: ${{ !inputs.evidence_run_id }}
+    if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'test-three-player-network') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    outputs:
+      campaign: ${{ steps.select.outputs.campaign }}
     steps:
       - name: Check out trusted controller
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -57,13 +66,16 @@ jobs:
           New-Item -ItemType Directory -Path plan -Force | Out-Null
           & ./target/android/run_all_tests.ps1 -ListTests -ExtendedGraphics | Set-Content plan/catalog.json -Encoding utf8
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-      - name: Select the public two-player smoke
+      - name: Select the bounded public LAN campaign
+        id: select
         env:
           TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CAMPAIGN: ${{ github.event.action == 'labeled' && github.event.label.name == 'test-three-player-network' && 'lan-three-player' || inputs.campaign || 'lan-smoke' }}
         run: |
+          echo "campaign=$CAMPAIGN" >> "$GITHUB_OUTPUT"
           python3 control/android/tests/nightly_tooling_sweep.py plan \
             --target-sha "$TARGET_SHA" --catalog plan/catalog.json \
-            --policy control/android/tests/nightly_tooling_policy.json --campaign lan-smoke \
+            --policy control/android/tests/nightly_tooling_policy.json --campaign "$CAMPAIGN" \
             --output plan/plan.json --state-output plan/state.json
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -72,7 +84,7 @@ jobs:
           retention-days: 30
 
   android:
-    name: Two-player lobby to game
+    name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Three-player startup and selected-player loss' || 'Two-player lobby to game' }}
     needs: plan
     uses: ./.github/workflows/android-nightly-tooling.yml
     with:
@@ -80,14 +92,14 @@ jobs:
       plan_artifact: nightly-plan
       lane: android-dual
       retail_assets: false
-      measure_transitions: ${{ inputs.measure_transitions == true }}
-      recovery_checks: ${{ inputs.recovery_checks == true }}
+      measure_transitions: ${{ needs.plan.outputs.campaign != 'lan-three-player' && inputs.measure_transitions == true }}
+      recovery_checks: ${{ needs.plan.outputs.campaign != 'lan-three-player' && inputs.recovery_checks == true }}
       recovery_cases: ${{ inputs.recovery_cases }}
 
   finish:
-    name: Require public LAN pass
+    name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Require three-player LAN pass' || 'Require public LAN pass' }}
     needs: [plan, android]
-    if: ${{ always() && !inputs.evidence_run_id }}
+    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -110,6 +122,7 @@ jobs:
           TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           PLAN_RESULT: ${{ needs.plan.result }}
           ANDROID_RESULT: ${{ needs.android.result }}
+          CAMPAIGN: ${{ needs.plan.outputs.campaign }}
         run: |
           status=0
           [[ "$PLAN_RESULT" == success && "$ANDROID_RESULT" == success ]] || status=$?
@@ -117,7 +130,9 @@ jobs:
           python3 - <<'PYTHON' || status=$?
           import json, os
           p = json.load(open('plan/plan.json'))
-          assert [e['id'] for e in p['tests']] == ['master:test_lan_launch_preparation_public_shareware']
+          expected = {'lan-smoke': ['master:test_lan_launch_preparation_public_shareware'],
+                      'lan-three-player': ['master:test_lan_three_player_startup']}
+          assert [e['id'] for e in p['tests']] == expected[os.environ['CAMPAIGN']]
           assert p['lanes'] == ['android-dual']
           assert p['target_sha'] == os.environ['TARGET_SHA']
           PYTHON
@@ -126,12 +141,12 @@ jobs:
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --state plan/state.json --output summary-state.json --require-selected --receipts "${receipts[@]}" > summary.json || status=$?
           {
-            echo '## Public two-player LAN smoke'
+            echo "## Public LAN: $CAMPAIGN"
             echo 'Exact target, completed owners, unresolved failures, blocked suites and exclusions:'
             echo '```json'
             cat summary.json
             echo '```'
-            echo 'Both peers must reach in-game through the launcher lobby flow; missing or skipped results fail this check.'
+            echo 'The exact selected owner must pass; three-player coverage additionally requires all four named leaf results. Missing or skipped results fail this check.'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$status"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
