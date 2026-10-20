@@ -6,7 +6,7 @@ function Test-LanRecoveryMenu($State, [string]$ErrorText = '') {
     $items = @($State.menu.items | ForEach-Object { ([string]$_.text).Trim() })
     $text = (@($State.menu.title, $State.menu.subtitle) + $items) -join "`n"
     if ($ErrorText -and $text -match [regex]::Escape($ErrorText)) { return $true }
-    return -not $State.is_network -and $items -contains 'New game' -and $items -contains 'Options' -and $items -contains 'Quit'
+    return -not $State.is_network -and $items -contains 'New game' -and @($items -match '^Options(?:\.\.\.)?$').Count -eq 1 -and $items -contains 'Quit'
 }
 
 function Assert-LanRecoveryMenu([string]$Serial, [string]$Event, [string]$ErrorText = '') {

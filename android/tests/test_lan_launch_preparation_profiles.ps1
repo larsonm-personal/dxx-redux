@@ -355,7 +355,7 @@ if (-not (Test-LanRecoveryMenu $errorDialog $message)) { throw 'Explicit expecte
 if (Test-LanRecoveryMenu $errorDialog 'Different failure') { throw 'Unrelated dialog passed as expected recovery' }
 $mainMenu = $waiting.Clone()
 $mainMenu.is_network = $false
-$mainMenu.menu = @{ type = 'newmenu'; title = ''; subtitle = ''; items = @(@{ text = 'New game' }, @{ text = 'Options' }, @{ text = 'Quit' }) }
+$mainMenu.menu = @{ type = 'newmenu'; title = ''; subtitle = ''; items = @(@{ text = 'New game' }, @{ text = 'Options...' }, @{ text = 'Quit' }) }
 if (-not (Test-LanRecoveryMenu $mainMenu)) { throw 'Disconnected main menu was rejected' }
 $mainMenu.is_network = $true
 if (Test-LanRecoveryMenu $mainMenu) { throw 'Network-active menu passed as disconnected main menu' }
