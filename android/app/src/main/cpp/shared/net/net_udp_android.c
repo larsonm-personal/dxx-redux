@@ -5,6 +5,7 @@
 #include <string.h>
 
 #ifdef __ANDROID__
+#include <time.h>
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "net_udp_reconnect_auth.h"
@@ -373,6 +374,13 @@ const char *android_net_udp_game_info_preflight(
 	return NULL;
 }
 
+static long long startup_auth_clock_us(clockid_t clock)
+{
+	struct timespec now;
+	clock_gettime(clock, &now);
+	return (long long) now.tv_sec * 1000000 + now.tv_nsec / 1000;
+}
+
 int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
                                          unsigned int game_token)
 {
@@ -382,7 +390,11 @@ int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
 
 	if (!request || !android_net_udp_local_identity.public_key_len)
 		return 0;
+	const long long wall_begin = startup_auth_clock_us(CLOCK_MONOTONIC);
+	const long long cpu_begin = startup_auth_clock_us(CLOCK_THREAD_CPUTIME_ID);
 	android_net_udp_local_identity.request_counter = android_net_udp_reconnect_next_counter();
+	const long long wall_counter = startup_auth_clock_us(CLOCK_MONOTONIC);
+	const long long cpu_counter = startup_auth_clock_us(CLOCK_THREAD_CPUTIME_ID);
 	if (!android_net_udp_local_identity.request_counter)
 		return 0;
 	request->reconnect_identity = android_net_udp_local_identity;
@@ -397,6 +409,11 @@ int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
 	    message, message_len,
 	    request->reconnect_identity.request_signature,
 	    sizeof(request->reconnect_identity.request_signature));
+	debug_log_force(DLOG_NETWORK,
+	                "[STARTUP-AUTH] counter_wall_us=%lld counter_cpu_us=%lld sign_wall_us=%lld sign_cpu_us=%lld",
+	                wall_counter - wall_begin, cpu_counter - cpu_begin,
+	                startup_auth_clock_us(CLOCK_MONOTONIC) - wall_counter,
+	                startup_auth_clock_us(CLOCK_THREAD_CPUTIME_ID) - cpu_counter);
 	if (signature_len <= 0 ||
 	    signature_len > ANDROID_NET_UDP_RECONNECT_SIGNATURE_MAX)
 		return 0;

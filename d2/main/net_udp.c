@@ -107,6 +107,7 @@ static int net_auto_start_when_full = 0;
 static int android_resync_request_pending = 0;
 static fix64 android_resync_last_request_time = 0;
 static android_net_udp_initial_sync_retry_state android_initial_sync_retry;
+static android_net_udp_initial_request_retry_state android_initial_request_retry;
 
 static void net_udp_android_show_dump_message(const char *message)
 {
@@ -2276,6 +2277,7 @@ void net_udp_init()
 	android_net_udp_auth_reset(
 	    Player_num, ANDROID_NET_UDP_RECONNECT_GAME_D2);
 	android_net_udp_initial_sync_retry_reset(&android_initial_sync_retry);
+	android_net_udp_initial_request_begin(&android_initial_request_retry, 0);
 	net_udp_score_catchup_reset();
 #endif
 	net_udp_flush();
@@ -4462,6 +4464,11 @@ int net_udp_send_request(void)
 	UDP_Seq.player.connected = Current_level_num;
 
 	net_udp_send_sequence_packet(UDP_Seq, Netgame.players[multi_who_is_master()].protocol.udp.addr);
+#ifdef __ANDROID__
+	if (android_initial_request_retry.active)
+		android_net_udp_initial_request_sent(&android_initial_request_retry, android_net_udp_initial_request_now(), 1000);
+	STARTUP_SYNC_TRACE("request_send_complete");
+#endif
 
 	return i;
 }
@@ -5222,6 +5229,8 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			if (!proof_len)
 				break;
 			STARTUP_SYNC_TRACE("proof_send");
+			if (android_initial_request_retry.active)
+				android_net_udp_initial_request_proof_sent(&android_initial_request_retry, android_net_udp_initial_request_now(), 1000);
 			if (is_proxy)
 				through_player = find_player_by_address(sender_addr);
 			if (is_proxy && through_player < 0)
@@ -5580,7 +5589,14 @@ int net_udp_sync_poll( newmenu *menu, d_event *event, void *userdata )
 #ifdef __ANDROID__
 	    net_join_wait_can_request() &&
 #endif
+#ifdef __ANDROID__
+	    (android_initial_request_retry.active
+	         ? (Network_status == NETSTAT_WAITING &&
+	            android_net_udp_initial_request_due(&android_initial_request_retry, android_net_udp_initial_request_now()))
+	         : (timer_query() > t1+F1_0*2)))
+#else
 	    (timer_query() > t1+F1_0*2))
+#endif
 	{
 		int i;
 
@@ -7430,6 +7446,9 @@ int net_udp_wait_for_sync(void)
 	Network_status = NETSTAT_WAITING;
 #ifdef __ANDROID__
 	net_join_wait_sync_begin();
+	android_net_udp_initial_request_begin(&android_initial_request_retry,
+	    N_players == 0 && (Game_mode & GM_MULTI_COOP) &&
+	    !net_join_wait_active() && !multi_save_transfer_restoring());
 #endif
 	con_printf(CON_DEBUG, "wait_for_sync: entering, master=%d\n", multi_i_am_master());
 	m[0].type=NM_TYPE_TEXT; m[0].text = text;
@@ -7452,6 +7471,9 @@ int net_udp_wait_for_sync(void)
 		choice=newmenu_do2( NULL, TXT_WAIT, 2, m, net_udp_sync_poll, NULL, 0, Menu_pcx_name );
 	}
 
+#ifdef __ANDROID__
+	android_initial_request_retry.active = 0;
+#endif
 	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
 #ifdef __ANDROID__
 	/* Let the restore wrapper unwind before closing the game window */
