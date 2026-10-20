@@ -419,7 +419,8 @@ class SweepTests(unittest.TestCase):
     def run_three_player_control(self, summary, journal_status='PASS', exit_code=0, stale=False):
         policy, plan, state = self.three_player_plan()
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            # Match the executor's canonical root, including Windows short-name temp paths
+            root = Path(directory).resolve()
             output = root / 'out'
             source = root / 'android/temp/lan-three-player-startup/three-player-summary.json'
             destination = output / 'three-player/three-player-summary.json'
