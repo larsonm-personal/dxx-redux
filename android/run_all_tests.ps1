@@ -882,7 +882,7 @@ $allTests += @{
     Type = 'ps1'
     Path = (Join-Path $testsDir 'test_lan_launch_preparation.ps1')
     Requires = 'two_emulators'
-    TimeoutSeconds = 1500
+    TimeoutSeconds = $(if ($env:DXX_RECOVERY_CHECKS -eq 'true') { 2400 } else { 1500 })
     Arguments = @('-PublicShareware')
 }
 $allTests += @{

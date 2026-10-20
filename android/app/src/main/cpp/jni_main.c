@@ -1304,7 +1304,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetClientId(JNIEnv *env, jobject thiz,
 }
 
 JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeSetLanStartupAdmission(JNIEnv *env, jobject thiz, jboolean enabled, jint delay_ms, jboolean drop, jint duplicates)
+Java_com_dxxredux_app_MainActivity_nativeSetLanStartupAdmission(JNIEnv *env, jobject thiz, jboolean enabled, jint delay_ms, jboolean drop, jint duplicates, jint packet_fault)
 {
 	(void) env;
 	(void) thiz;
@@ -1313,10 +1313,12 @@ Java_com_dxxredux_app_MainActivity_nativeSetLanStartupAdmission(JNIEnv *env, job
 	auto_net_startup_test_delay_ms = delay_ms >= 0 && delay_ms <= 30000 ? delay_ms : 0;
 	auto_net_startup_test_drop_admission = drop ? 1 : 0;
 	auto_net_startup_test_duplicates = duplicates >= 0 && duplicates <= 2 ? duplicates : 0;
+	auto_net_startup_test_packet_fault = packet_fault >= 0 && packet_fault <= 8 ? packet_fault : 0;
 #else
 	(void) delay_ms;
 	(void) drop;
 	(void) duplicates;
+	(void) packet_fault;
 #endif
 }
 

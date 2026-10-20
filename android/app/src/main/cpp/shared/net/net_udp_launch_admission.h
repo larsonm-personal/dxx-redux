@@ -25,6 +25,13 @@ static inline int64_t android_net_udp_launch_load_timeout(
 	           : normal_timeout;
 }
 
+/* A silent host cannot send a DUMP. Bound only the initial launcher client's
+ * post-load synchronization; later joins have the status-query watchdog */
+static inline int android_net_udp_launch_wait_expired(int64_t deadline, int waiting, int64_t now)
+{
+	return deadline > 0 && waiting && now >= deadline;
+}
+
 /* Existing REQUEST transcripts remain unchanged. The extra signed purpose
  * prevents an admission datagram being retagged into a readiness REQUEST */
 static inline size_t android_net_udp_launch_admission_bind_purpose(

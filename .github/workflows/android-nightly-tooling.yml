@@ -311,6 +311,31 @@ jobs:
           bash android/gradlew -p android assembleDebug assembleDebugAndroidTest \
             -PciApk=false -PgithubRelease=false -PlegacyRelease=false -PnsdDiagnosticApp=false \
             --console=plain --no-daemon --max-workers=2 2>&1 | tee ../results/setup/apk-build.log
+      - name: Check out pre-admission compatibility peer
+        if: inputs.recovery_checks
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: 01401425aff549eefd8b5a9e9fd8a8458d01a9b8
+          path: compatibility-peer
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build actual old peer binary
+        if: inputs.recovery_checks
+        timeout-minutes: 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp target/dependency_base.txt compatibility-peer/dependency_base.txt
+          if [[ -f target/android/local.properties ]]; then cp target/android/local.properties compatibility-peer/android/local.properties; fi
+          bash compatibility-peer/android/get_deps/helpers/get_gradle_wrapper.sh
+          bash compatibility-peer/android/gradlew -p compatibility-peer/android assembleDebug \
+            -PciApk=false -PgithubRelease=false -PlegacyRelease=false -PnsdDiagnosticApp=false \
+            --console=plain --no-daemon --max-workers=2 2>&1 | tee results/setup/compatibility-build.log
+          old_apk=$(find compatibility-peer/android/app/build/outputs/apk/debug -name app-debug.apk -print -quit)
+          test -n "$old_apk"
+          sha256sum "$old_apk" | tee results/setup/compatibility-apk.sha256
+          git -C compatibility-peer rev-parse HEAD > results/setup/compatibility-revision.txt
+          echo "DXX_COMPAT_APK=$GITHUB_WORKSPACE/$old_apk" >> "$GITHUB_ENV"
       - name: Provision verified public fixtures
         if: steps.selection.outputs.public_fixtures == 'true'
         id: fixtures
@@ -384,6 +409,7 @@ jobs:
           . ./android/helpers/test_helpers.ps1
           $avds = @(@{ Name = 'Nexus5X_Light_1'; Serial = 'emulator-5554' })
           if ($env:SWEEP_LANE -eq 'android-dual') { $avds += @{ Name = 'Nexus5X_Light_2'; Serial = 'emulator-5556' } }
+          if ($env:DXX_RECOVERY_CHECKS -eq 'true') { $avds += @{ Name = 'Nexus5X_Light_3'; Serial = 'emulator-5558' } }
           foreach ($avd in $avds) {
             & ./android/get_deps/helpers/create_light_avds.ps1 -AvdName $avd.Name
             if ($LASTEXITCODE -ne 0) { throw 'AVD provisioning failed' }
@@ -406,7 +432,7 @@ jobs:
           if ($env:SWEEP_LANE -eq 'android-dual') {
             $addresses = @($avds | ForEach-Object { Get-DeviceWlanIp -Serial $_.Serial })
             Write-Host "Shared Wi-Fi addresses: $($addresses -join ', ')"
-            if ($addresses.Count -ne 2 -or @($addresses | Where-Object { $_ }).Count -ne 2 -or $addresses[0] -eq $addresses[1]) {
+            if ($addresses.Count -ne $avds.Count -or @($addresses | Where-Object { $_ } | Sort-Object -Unique).Count -ne $avds.Count) {
               throw 'Dual LAN topology unavailable: two distinct wlan0 addresses are required'
             }
           }
@@ -454,7 +480,7 @@ jobs:
           { id; stat -c '%F %a %U:%G' /dev/kvm; getfacl -p -n /dev/kvm; } > results/setup/kvm-before-cleanup.log 2>&1 || true
           if command -v adb >/dev/null; then
             timeout 15 adb devices -l > results/setup/adb-devices.log 2>&1 || true
-            for serial in emulator-5554 emulator-5556; do
+            for serial in emulator-5554 emulator-5556 emulator-5558; do
               timeout 15 adb -s "$serial" logcat -d -t 2000 > "results/setup/$serial-logcat.log" 2>&1 || true
               timeout 15 adb -s "$serial" emu kill >/dev/null 2>&1 || true
             done

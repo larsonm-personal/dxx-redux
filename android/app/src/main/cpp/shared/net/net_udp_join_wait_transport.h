@@ -386,6 +386,10 @@ static void net_udp_join_status(ubyte *request, struct _sockaddr address)
 		}
 	} else if (coop_travel_active()) status.phase = NET_JOIN_TRAVEL;
 	else if (Network_status == NETSTAT_WAITING || Network_status == NETSTAT_STARTING) status.phase = NET_JOIN_PREPARING;
+	/* Informational capability only: a restarted selected client must still
+	 * load and prove its existing identity through the ordinary ready path */
+	if (net_launcher_initial_load && Network_status == NETSTAT_WAITING)
+		status.phase = NET_JOIN_INITIAL_LOAD;
 	ubyte response[UPID_JOIN_STATUS_SIZE] = { UPID_JOIN_STATUS };
 	PUT_INTEL_INT(response + 1, GET_INTEL_INT(request + 5));
 	PUT_INTEL_INT(response + 5, GET_INTEL_INT(request + 9));

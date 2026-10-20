@@ -28,6 +28,7 @@ typedef enum net_join_phase {
 	NET_JOIN_TRAVEL,
 	NET_JOIN_RESTORE,
 	NET_JOIN_COMPLETE,
+	NET_JOIN_INITIAL_LOAD, /* New host capability: initial roster is loading, not a live-world join */
 	NET_JOIN_PHASE_COUNT
 } net_join_phase;
 
@@ -47,6 +48,7 @@ void net_join_wait_fail(const char *message);
 void net_join_wait_receive(const net_join_status *status, unsigned transit_ms);
 void net_join_wait_frame(void);
 int net_join_wait_prepare(void);
+int net_join_wait_initial_load(void);
 void net_join_wait_sync_begin(void);
 int net_join_wait_restart(void);
 void net_join_wait_retry(void);
