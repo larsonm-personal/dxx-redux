@@ -84,6 +84,22 @@ old-client reconnect failed. Targeted mixed-binary qualification is still needed
   menus without SYNC. Healthy clients may use their own watchdog; immediate
   authenticated cancellation propagation is not implemented.
 
+The 60-second allowance is a liveness policy, not a way to identify CPU work
+versus a dead process. A legitimate load exceeding the allowance can fail and
+require retry. Client timing starts after its own load; the host's selected-peer
+timer starts when it enters the readiness wait. Their deadlines therefore need
+not expire together. The 20-second loader fixture crosses the former 15-second
+timeout without claiming unlimited slow-loader support. No unauthenticated
+heartbeat or legacy cancellation packet extends or releases a reservation.
+
+The full candidate's planned matrix is 15 dual-peer cases per game, two
+three-peer cases per game, and both actual mixed-binary directions per game.
+This is an intended matrix, not a pass count. A case failure can prevent later
+cases within a grouped helper from running; final claims must come from recorded
+case receipts and logs. Follow-up 6ebeeb3aa also requires a positive host terminal
+menu after canceled, missing-third, and failed-load starts. Those strengthened
+assertions are absent from the pinned full run and need focused qualification.
+
 Local native authentication/deadline and wire-fixture tests pass in both engine
 build trees. Linux engine objects compile. The SDK-writer regression and master
 catalog execution cannot run on this local host: its child supervisor cannot
