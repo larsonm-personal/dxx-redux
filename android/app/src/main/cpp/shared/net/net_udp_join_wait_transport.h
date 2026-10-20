@@ -6,7 +6,8 @@
 #include "coop/coop_endgame.h"
 
 static uint32_t join_query_token, join_query_sent, join_query_received;
-static fix64 join_query_times[16], join_query_last;
+static fix64 join_query_times[16], join_query_last, join_query_first;
+static int join_query_legacy;
 static int join_transfer_committed, join_previous_connected, join_previous_net_connected;
 static fix64 join_test_hold_until;
 static int join_test_early_sync, join_objects_complete;
@@ -334,7 +335,8 @@ static void net_udp_join_wait_reset(void)
 	join_query_token = (uint32_t) generate_token();
 	if (!join_query_token) join_query_token = 1; /* Zero denotes an ordinary participant request */
 	join_query_sent = join_query_received = 0;
-	join_query_last = 0;
+	join_query_last = join_query_first = 0;
+	join_query_legacy = 0;
 	memset(join_query_times, 0, sizeof(join_query_times));
 }
 
@@ -351,8 +353,9 @@ static void net_udp_dump_join_request(const UDP_sequence_packet *request, int wh
 
 static void net_udp_join_status(ubyte *request, struct _sockaddr address)
 {
+	const uint32_t requested_version = (uint32_t) GET_INTEL_INT(request + 13);
 	if (!(Game_mode & GM_MULTI_COOP) || (uint32_t) GET_INTEL_INT(request + 1) != netgame_token ||
-	    GET_INTEL_INT(request + 13) != MULTI_PROTO_VERSION) return;
+	    (requested_version & ~NET_JOIN_INITIAL_LOAD_CAPABILITY) != MULTI_PROTO_VERSION) return;
 	net_join_status status = { 0 };
 	coop_transition_policy briefing;
 	coop_presentation_progress local;
@@ -388,7 +391,8 @@ static void net_udp_join_status(ubyte *request, struct _sockaddr address)
 	else if (Network_status == NETSTAT_WAITING || Network_status == NETSTAT_STARTING) status.phase = NET_JOIN_PREPARING;
 	/* Informational capability only: a restarted selected client must still
 	 * load and prove its existing identity through the ordinary ready path */
-	if (net_launcher_initial_load && Network_status == NETSTAT_WAITING)
+	if (net_launcher_initial_load && Network_status == NETSTAT_WAITING &&
+	    (requested_version & NET_JOIN_INITIAL_LOAD_CAPABILITY))
 		status.phase = NET_JOIN_INITIAL_LOAD;
 	ubyte response[UPID_JOIN_STATUS_SIZE] = { UPID_JOIN_STATUS };
 	PUT_INTEL_INT(response + 1, GET_INTEL_INT(request + 5));
@@ -438,7 +442,18 @@ void net_udp_join_wait_poll(void)
 		PUT_INTEL_INT(request + 1, netgame_token);
 		PUT_INTEL_INT(request + 5, join_query_token);
 		PUT_INTEL_INT(request + 9, ++join_query_sent);
-		PUT_INTEL_INT(request + 13, MULTI_PROTO_VERSION);
+		if (join_query_sent == 1) join_query_first = now;
+		/* Old hosts reject capability-bearing queries. After one second with
+		 * no reply, send legacy queries too; retain periodic capability probes
+		 * so transient packet loss cannot strand an initial reconnect */
+		if (!join_query_legacy && !join_query_received && now >= join_query_first + F1_0) {
+			join_query_legacy = 1;
+			STARTUP_SYNC_TRACE("join_query_legacy_fallback");
+		}
+		const uint32_t capability = !join_query_legacy || !(join_query_sent % 4)
+		                                ? NET_JOIN_INITIAL_LOAD_CAPABILITY
+		                                : 0;
+		PUT_INTEL_INT(request + 13, MULTI_PROTO_VERSION | capability);
 		join_query_times[join_query_sent % 16] = join_query_last = now;
 		struct _sockaddr address = Netgame.players[multi_who_is_master()].protocol.udp.addr;
 		dxx_sendto(UDP_Socket[0], request, sizeof(request), 0, (struct sockaddr *) &address, sizeof(address));

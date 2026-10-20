@@ -2307,6 +2307,8 @@ void net_udp_init()
 	    Player_num, ANDROID_NET_UDP_RECONNECT_GAME_D2);
 	android_net_udp_initial_sync_retry_reset(&android_initial_sync_retry);
 	net_launcher_initial_load = 0;
+	net_launcher_selection_deadline = net_launcher_sync_deadline = 0;
+	net_launcher_selection_timed_out = net_launcher_sync_timed_out = 0;
 	android_net_udp_initial_request_begin(&android_initial_request_retry, 0);
 	net_udp_score_catchup_reset();
 #endif
@@ -5311,9 +5313,22 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 				if (Network_status == NETSTAT_STARTING)
 					net_udp_add_player(
 					    &reconnect_request, reconnect_player_num);
-				else if (Network_status == NETSTAT_WAITING)
-					net_udp_process_request(
-					    &reconnect_request, reconnect_player_num);
+				else if (Network_status == NETSTAT_WAITING) {
+					if (net_launcher_initial_load && reconnect_player_num >= 0 && reconnect_player_num < N_players &&
+					    (int) reconnect_request.player.connected == Current_level_num) {
+						const int changed_route = !is_proxy && memcmp(&Netgame.players[reconnect_player_num].protocol.udp.addr,
+						    &reconnect_request.player.protocol.udp.addr, sizeof(struct _sockaddr));
+						/* A restarted launcher proxy can use a new UDP endpoint.
+						 * Commit it only after the fresh, state-bound route proof */
+						android_net_udp_prepare_reconnect_player(
+						    reconnect_player_num, &reconnect_request.player.protocol.udp.addr,
+						    is_proxy, is_proxy ? find_player_by_address(reconnect_request.player.protocol.udp.addr) : -1,
+						    multi_i_am_master(), connection_statuses, update_address_for_player);
+						debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=initial_route_proven player=%d changed=%d counter=%llu",
+						                reconnect_player_num, !!changed_route, (unsigned long long) reconnect_request.reconnect_identity.request_counter);
+					}
+					net_udp_process_request(&reconnect_request, reconnect_player_num);
+				}
 				else if (Network_status == NETSTAT_PLAYING) {
 					if (android_net_udp_initial_sync_retry_should_resend(
 					        &android_initial_sync_retry,

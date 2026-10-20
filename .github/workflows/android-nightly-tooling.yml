@@ -11,6 +11,10 @@ on:
         description: Same-run artifact containing plan.json
         required: true
         type: string
+      recovery_cases:
+        required: false
+        type: string
+        default: ""
       recovery_checks:
         required: false
         type: boolean
@@ -50,6 +54,7 @@ jobs:
       RETAIL_CHECKOUT_COMMIT: ${{ inputs.retail_commit }}
       TARGET_SHA: ${{ inputs.target_sha }}
       SWEEP_LANE: ${{ inputs.lane }}
+      DXX_RECOVERY_CASES: ${{ inputs.recovery_cases }}
       DXX_RECOVERY_CHECKS: ${{ inputs.recovery_checks }}
       DXX_MEASURE_TRANSITIONS: ${{ inputs.measure_transitions }}
       RETAIL_REQUESTED: ${{ inputs.retail_assets }}
@@ -312,7 +317,7 @@ jobs:
             -PciApk=false -PgithubRelease=false -PlegacyRelease=false -PnsdDiagnosticApp=false \
             --console=plain --no-daemon --max-workers=2 2>&1 | tee ../results/setup/apk-build.log
       - name: Check out pre-admission compatibility peer
-        if: inputs.recovery_checks
+        if: inputs.recovery_checks && (inputs.recovery_cases == '' || contains(inputs.recovery_cases, 'mixed-binaries'))
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: 01401425aff549eefd8b5a9e9fd8a8458d01a9b8
@@ -320,7 +325,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Build actual old peer binary
-        if: inputs.recovery_checks
+        if: inputs.recovery_checks && (inputs.recovery_cases == '' || contains(inputs.recovery_cases, 'mixed-binaries'))
         timeout-minutes: 35
         shell: bash
         run: |
@@ -409,7 +414,7 @@ jobs:
           . ./android/helpers/test_helpers.ps1
           $avds = @(@{ Name = 'Nexus5X_Light_1'; Serial = 'emulator-5554' })
           if ($env:SWEEP_LANE -eq 'android-dual') { $avds += @{ Name = 'Nexus5X_Light_2'; Serial = 'emulator-5556' } }
-          if ($env:DXX_RECOVERY_CHECKS -eq 'true') { $avds += @{ Name = 'Nexus5X_Light_3'; Serial = 'emulator-5558' } }
+          if ($env:DXX_RECOVERY_CHECKS -eq 'true' -and (-not $env:DXX_RECOVERY_CASES -or $env:DXX_RECOVERY_CASES -match '(^|,)three-player(-lost)?(,|$)')) { $avds += @{ Name = 'Nexus5X_Light_3'; Serial = 'emulator-5558' } }
           foreach ($avd in $avds) {
             & ./android/get_deps/helpers/create_light_avds.ps1 -AvdName $avd.Name
             if ($LASTEXITCODE -ne 0) { throw 'AVD provisioning failed' }
