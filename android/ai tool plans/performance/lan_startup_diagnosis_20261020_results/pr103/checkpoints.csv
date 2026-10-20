@@ -1,0 +1,139 @@
+revision,game,sample,peer,start_event,end_event,start_s,end_s,duration_s,source_start,source_end
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,main() entered,mem_init done,532.062,532.063,0.001,d2-1-emulator-5554-logcat.txt:154,d2-1-emulator-5554-logcat.txt:155
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,mem_init done,error_init done,532.063,532.064,0.001,d2-1-emulator-5554-logcat.txt:155,d2-1-emulator-5554-logcat.txt:156
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,error_init done,fp environment configured,532.064,532.064,0.0,d2-1-emulator-5554-logcat.txt:156,d2-1-emulator-5554-logcat.txt:157
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,fp environment configured,PHYSFSX_init done,532.064,532.085,0.021,d2-1-emulator-5554-logcat.txt:157,d2-1-emulator-5554-logcat.txt:159
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,PHYSFSX_init done,con_init done,532.085,532.085,0.0,d2-1-emulator-5554-logcat.txt:159,d2-1-emulator-5554-logcat.txt:160
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,con_init done,searching for hog files,532.085,532.086,0.001,d2-1-emulator-5554-logcat.txt:160,d2-1-emulator-5554-logcat.txt:161
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,searching for hog files,hog files loaded,532.086,533.7,1.614,d2-1-emulator-5554-logcat.txt:161,d2-1-emulator-5554-logcat.txt:172
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,hog files loaded,config read,533.7,533.728,0.028,d2-1-emulator-5554-logcat.txt:172,d2-1-emulator-5554-logcat.txt:179
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,config read,calling arch_init,533.728,533.729,0.001,d2-1-emulator-5554-logcat.txt:179,d2-1-emulator-5554-logcat.txt:180
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,calling arch_init,arch_init done,533.729,533.892,0.163,d2-1-emulator-5554-logcat.txt:180,d2-1-emulator-5554-logcat.txt:184
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,arch_init done,calling gr_set_mode,533.892,533.896,0.004,d2-1-emulator-5554-logcat.txt:184,d2-1-emulator-5554-logcat.txt:185
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,calling gr_set_mode,gr_set_mode done,533.896,534.266,0.37,d2-1-emulator-5554-logcat.txt:185,d2-1-emulator-5554-logcat.txt:187
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,gr_set_mode done,palette loaded,534.266,534.267,0.001,d2-1-emulator-5554-logcat.txt:187,d2-1-emulator-5554-logcat.txt:188
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,palette loaded,fonts loaded,534.267,534.317,0.05,d2-1-emulator-5554-logcat.txt:188,d2-1-emulator-5554-logcat.txt:189
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,fonts loaded,movies init done,534.317,534.335,0.018,d2-1-emulator-5554-logcat.txt:189,d2-1-emulator-5554-logcat.txt:193
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,movies init done,titles shown,534.335,534.591,0.256,d2-1-emulator-5554-logcat.txt:193,d2-1-emulator-5554-logcat.txt:196
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,titles shown,screen mode set to menu,534.591,534.591,0.0,d2-1-emulator-5554-logcat.txt:196,d2-1-emulator-5554-logcat.txt:197
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,screen mode set to menu,gamedata_init done,534.591,535.438,0.847,d2-1-emulator-5554-logcat.txt:197,d2-1-emulator-5554-logcat.txt:207
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,gamedata_init done,piggy_init_pigfile start,535.438,535.438,0.0,d2-1-emulator-5554-logcat.txt:207,d2-1-emulator-5554-logcat.txt:208
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,piggy_init_pigfile start,piggy_init_pigfile done,535.438,535.93,0.492,d2-1-emulator-5554-logcat.txt:208,d2-1-emulator-5554-logcat.txt:212
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,piggy_init_pigfile done,init_game start,535.93,535.93,0.0,d2-1-emulator-5554-logcat.txt:212,d2-1-emulator-5554-logcat.txt:213
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,init_game start,init_game done,535.93,535.932,0.002,d2-1-emulator-5554-logcat.txt:213,d2-1-emulator-5554-logcat.txt:214
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5554,init_game done,entering DoMenu,535.932,535.932,0.0,d2-1-emulator-5554-logcat.txt:214,d2-1-emulator-5554-logcat.txt:215
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,main() entered,mem_init done,459.93,459.931,0.001,d2-1-emulator-5556-logcat.txt:152,d2-1-emulator-5556-logcat.txt:153
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,mem_init done,error_init done,459.931,459.931,0.0,d2-1-emulator-5556-logcat.txt:153,d2-1-emulator-5556-logcat.txt:154
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,error_init done,fp environment configured,459.931,459.931,0.0,d2-1-emulator-5556-logcat.txt:154,d2-1-emulator-5556-logcat.txt:155
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,fp environment configured,PHYSFSX_init done,459.931,460.013,0.082,d2-1-emulator-5556-logcat.txt:155,d2-1-emulator-5556-logcat.txt:157
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,PHYSFSX_init done,con_init done,460.013,460.016,0.003,d2-1-emulator-5556-logcat.txt:157,d2-1-emulator-5556-logcat.txt:158
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,con_init done,searching for hog files,460.016,460.016,0.0,d2-1-emulator-5556-logcat.txt:158,d2-1-emulator-5556-logcat.txt:159
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,searching for hog files,hog files loaded,460.016,461.247,1.231,d2-1-emulator-5556-logcat.txt:159,d2-1-emulator-5556-logcat.txt:161
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,hog files loaded,config read,461.247,461.29,0.043,d2-1-emulator-5556-logcat.txt:161,d2-1-emulator-5556-logcat.txt:168
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,config read,calling arch_init,461.29,461.297,0.007,d2-1-emulator-5556-logcat.txt:168,d2-1-emulator-5556-logcat.txt:169
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,calling arch_init,arch_init done,461.297,461.345,0.048,d2-1-emulator-5556-logcat.txt:169,d2-1-emulator-5556-logcat.txt:173
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,arch_init done,calling gr_set_mode,461.345,461.349,0.004,d2-1-emulator-5556-logcat.txt:173,d2-1-emulator-5556-logcat.txt:174
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,calling gr_set_mode,gr_set_mode done,461.349,461.854,0.505,d2-1-emulator-5556-logcat.txt:174,d2-1-emulator-5556-logcat.txt:178
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,gr_set_mode done,palette loaded,461.854,461.855,0.001,d2-1-emulator-5556-logcat.txt:178,d2-1-emulator-5556-logcat.txt:179
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,palette loaded,fonts loaded,461.855,461.865,0.01,d2-1-emulator-5556-logcat.txt:179,d2-1-emulator-5556-logcat.txt:180
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,fonts loaded,movies init done,461.865,461.873,0.008,d2-1-emulator-5556-logcat.txt:180,d2-1-emulator-5556-logcat.txt:184
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,movies init done,titles shown,461.873,462.447,0.574,d2-1-emulator-5556-logcat.txt:184,d2-1-emulator-5556-logcat.txt:187
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,titles shown,screen mode set to menu,462.447,462.447,0.0,d2-1-emulator-5556-logcat.txt:187,d2-1-emulator-5556-logcat.txt:188
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,screen mode set to menu,gamedata_init done,462.447,463.127,0.68,d2-1-emulator-5556-logcat.txt:188,d2-1-emulator-5556-logcat.txt:191
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,gamedata_init done,piggy_init_pigfile start,463.127,463.127,0.0,d2-1-emulator-5556-logcat.txt:191,d2-1-emulator-5556-logcat.txt:192
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,piggy_init_pigfile start,piggy_init_pigfile done,463.127,463.486,0.359,d2-1-emulator-5556-logcat.txt:192,d2-1-emulator-5556-logcat.txt:196
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,piggy_init_pigfile done,init_game start,463.486,463.487,0.001,d2-1-emulator-5556-logcat.txt:196,d2-1-emulator-5556-logcat.txt:197
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,init_game start,init_game done,463.487,463.489,0.002,d2-1-emulator-5556-logcat.txt:197,d2-1-emulator-5556-logcat.txt:198
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,1,5556,init_game done,entering DoMenu,463.489,463.491,0.002,d2-1-emulator-5556-logcat.txt:198,d2-1-emulator-5556-logcat.txt:199
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,main() entered,mem_init done,599.29,599.291,0.001,d2-2-emulator-5554-logcat.txt:150,d2-2-emulator-5554-logcat.txt:151
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,mem_init done,error_init done,599.291,599.292,0.001,d2-2-emulator-5554-logcat.txt:151,d2-2-emulator-5554-logcat.txt:152
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,error_init done,fp environment configured,599.292,599.292,0.0,d2-2-emulator-5554-logcat.txt:152,d2-2-emulator-5554-logcat.txt:153
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,fp environment configured,PHYSFSX_init done,599.292,599.355,0.063,d2-2-emulator-5554-logcat.txt:153,d2-2-emulator-5554-logcat.txt:162
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,PHYSFSX_init done,con_init done,599.355,599.356,0.001,d2-2-emulator-5554-logcat.txt:162,d2-2-emulator-5554-logcat.txt:163
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,con_init done,searching for hog files,599.356,599.357,0.001,d2-2-emulator-5554-logcat.txt:163,d2-2-emulator-5554-logcat.txt:164
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,searching for hog files,hog files loaded,599.357,600.104,0.747,d2-2-emulator-5554-logcat.txt:164,d2-2-emulator-5554-logcat.txt:166
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,hog files loaded,config read,600.104,600.108,0.004,d2-2-emulator-5554-logcat.txt:166,d2-2-emulator-5554-logcat.txt:173
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,config read,calling arch_init,600.108,600.108,0.0,d2-2-emulator-5554-logcat.txt:173,d2-2-emulator-5554-logcat.txt:174
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,calling arch_init,arch_init done,600.108,600.434,0.326,d2-2-emulator-5554-logcat.txt:174,d2-2-emulator-5554-logcat.txt:178
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,arch_init done,calling gr_set_mode,600.434,600.434,0.0,d2-2-emulator-5554-logcat.txt:178,d2-2-emulator-5554-logcat.txt:179
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,calling gr_set_mode,gr_set_mode done,600.434,600.796,0.362,d2-2-emulator-5554-logcat.txt:179,d2-2-emulator-5554-logcat.txt:181
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,gr_set_mode done,palette loaded,600.796,600.802,0.006,d2-2-emulator-5554-logcat.txt:181,d2-2-emulator-5554-logcat.txt:182
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,palette loaded,fonts loaded,600.802,600.859,0.057,d2-2-emulator-5554-logcat.txt:182,d2-2-emulator-5554-logcat.txt:183
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,fonts loaded,movies init done,600.859,600.871,0.012,d2-2-emulator-5554-logcat.txt:183,d2-2-emulator-5554-logcat.txt:187
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,movies init done,titles shown,600.871,601.185,0.314,d2-2-emulator-5554-logcat.txt:187,d2-2-emulator-5554-logcat.txt:190
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,titles shown,screen mode set to menu,601.185,601.185,0.0,d2-2-emulator-5554-logcat.txt:190,d2-2-emulator-5554-logcat.txt:191
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,screen mode set to menu,gamedata_init done,601.185,602.147,0.962,d2-2-emulator-5554-logcat.txt:191,d2-2-emulator-5554-logcat.txt:194
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,gamedata_init done,piggy_init_pigfile start,602.147,602.147,0.0,d2-2-emulator-5554-logcat.txt:194,d2-2-emulator-5554-logcat.txt:195
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,piggy_init_pigfile start,piggy_init_pigfile done,602.147,602.743,0.596,d2-2-emulator-5554-logcat.txt:195,d2-2-emulator-5554-logcat.txt:206
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,piggy_init_pigfile done,init_game start,602.743,602.744,0.001,d2-2-emulator-5554-logcat.txt:206,d2-2-emulator-5554-logcat.txt:207
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,init_game start,init_game done,602.744,602.75,0.006,d2-2-emulator-5554-logcat.txt:207,d2-2-emulator-5554-logcat.txt:208
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5554,init_game done,entering DoMenu,602.75,602.767,0.017,d2-2-emulator-5554-logcat.txt:208,d2-2-emulator-5554-logcat.txt:209
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,main() entered,mem_init done,527.778,527.781,0.003,d2-2-emulator-5556-logcat.txt:150,d2-2-emulator-5556-logcat.txt:151
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,mem_init done,error_init done,527.781,527.781,0.0,d2-2-emulator-5556-logcat.txt:151,d2-2-emulator-5556-logcat.txt:152
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,error_init done,fp environment configured,527.781,527.782,0.001,d2-2-emulator-5556-logcat.txt:152,d2-2-emulator-5556-logcat.txt:153
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,fp environment configured,PHYSFSX_init done,527.782,527.806,0.024,d2-2-emulator-5556-logcat.txt:153,d2-2-emulator-5556-logcat.txt:155
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,PHYSFSX_init done,con_init done,527.806,527.807,0.001,d2-2-emulator-5556-logcat.txt:155,d2-2-emulator-5556-logcat.txt:156
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,con_init done,searching for hog files,527.807,527.808,0.001,d2-2-emulator-5556-logcat.txt:156,d2-2-emulator-5556-logcat.txt:157
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,searching for hog files,hog files loaded,527.808,528.385,0.577,d2-2-emulator-5556-logcat.txt:157,d2-2-emulator-5556-logcat.txt:158
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,hog files loaded,config read,528.385,528.394,0.009,d2-2-emulator-5556-logcat.txt:158,d2-2-emulator-5556-logcat.txt:165
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,config read,calling arch_init,528.394,528.394,0.0,d2-2-emulator-5556-logcat.txt:165,d2-2-emulator-5556-logcat.txt:166
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,calling arch_init,arch_init done,528.394,528.44,0.046,d2-2-emulator-5556-logcat.txt:166,d2-2-emulator-5556-logcat.txt:170
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,arch_init done,calling gr_set_mode,528.44,528.441,0.001,d2-2-emulator-5556-logcat.txt:170,d2-2-emulator-5556-logcat.txt:171
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,calling gr_set_mode,gr_set_mode done,528.441,529.485,1.044,d2-2-emulator-5556-logcat.txt:171,d2-2-emulator-5556-logcat.txt:174
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,gr_set_mode done,palette loaded,529.485,529.485,0.0,d2-2-emulator-5556-logcat.txt:174,d2-2-emulator-5556-logcat.txt:175
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,palette loaded,fonts loaded,529.485,529.653,0.168,d2-2-emulator-5556-logcat.txt:175,d2-2-emulator-5556-logcat.txt:176
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,fonts loaded,movies init done,529.653,529.655,0.002,d2-2-emulator-5556-logcat.txt:176,d2-2-emulator-5556-logcat.txt:180
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,movies init done,titles shown,529.655,530.204,0.549,d2-2-emulator-5556-logcat.txt:180,d2-2-emulator-5556-logcat.txt:185
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,titles shown,screen mode set to menu,530.204,530.204,0.0,d2-2-emulator-5556-logcat.txt:185,d2-2-emulator-5556-logcat.txt:186
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,screen mode set to menu,gamedata_init done,530.204,530.896,0.692,d2-2-emulator-5556-logcat.txt:186,d2-2-emulator-5556-logcat.txt:190
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,gamedata_init done,piggy_init_pigfile start,530.896,530.896,0.0,d2-2-emulator-5556-logcat.txt:190,d2-2-emulator-5556-logcat.txt:191
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,piggy_init_pigfile start,piggy_init_pigfile done,530.896,531.206,0.31,d2-2-emulator-5556-logcat.txt:191,d2-2-emulator-5556-logcat.txt:194
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,piggy_init_pigfile done,init_game start,531.206,531.206,0.0,d2-2-emulator-5556-logcat.txt:194,d2-2-emulator-5556-logcat.txt:195
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,init_game start,init_game done,531.206,531.209,0.003,d2-2-emulator-5556-logcat.txt:195,d2-2-emulator-5556-logcat.txt:196
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,2,5556,init_game done,entering DoMenu,531.209,531.212,0.003,d2-2-emulator-5556-logcat.txt:196,d2-2-emulator-5556-logcat.txt:197
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,main() entered,mem_init done,666.828,666.828,0.0,d2-3-emulator-5554-logcat.txt:151,d2-3-emulator-5554-logcat.txt:152
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,mem_init done,error_init done,666.828,666.828,0.0,d2-3-emulator-5554-logcat.txt:152,d2-3-emulator-5554-logcat.txt:153
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,error_init done,fp environment configured,666.828,666.828,0.0,d2-3-emulator-5554-logcat.txt:153,d2-3-emulator-5554-logcat.txt:154
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,fp environment configured,PHYSFSX_init done,666.828,666.881,0.053,d2-3-emulator-5554-logcat.txt:154,d2-3-emulator-5554-logcat.txt:156
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,PHYSFSX_init done,con_init done,666.881,666.882,0.001,d2-3-emulator-5554-logcat.txt:156,d2-3-emulator-5554-logcat.txt:157
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,con_init done,searching for hog files,666.882,666.882,0.0,d2-3-emulator-5554-logcat.txt:157,d2-3-emulator-5554-logcat.txt:158
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,searching for hog files,hog files loaded,666.882,668.078,1.196,d2-3-emulator-5554-logcat.txt:158,d2-3-emulator-5554-logcat.txt:160
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,hog files loaded,config read,668.078,668.084,0.006,d2-3-emulator-5554-logcat.txt:160,d2-3-emulator-5554-logcat.txt:167
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,config read,calling arch_init,668.084,668.085,0.001,d2-3-emulator-5554-logcat.txt:167,d2-3-emulator-5554-logcat.txt:168
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,calling arch_init,arch_init done,668.085,668.189,0.104,d2-3-emulator-5554-logcat.txt:168,d2-3-emulator-5554-logcat.txt:172
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,arch_init done,calling gr_set_mode,668.189,668.19,0.001,d2-3-emulator-5554-logcat.txt:172,d2-3-emulator-5554-logcat.txt:173
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,calling gr_set_mode,gr_set_mode done,668.19,668.706,0.516,d2-3-emulator-5554-logcat.txt:173,d2-3-emulator-5554-logcat.txt:177
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,gr_set_mode done,palette loaded,668.706,668.706,0.0,d2-3-emulator-5554-logcat.txt:177,d2-3-emulator-5554-logcat.txt:178
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,palette loaded,fonts loaded,668.706,668.806,0.1,d2-3-emulator-5554-logcat.txt:178,d2-3-emulator-5554-logcat.txt:179
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,fonts loaded,movies init done,668.806,668.813,0.007,d2-3-emulator-5554-logcat.txt:179,d2-3-emulator-5554-logcat.txt:183
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,movies init done,titles shown,668.813,669.024,0.211,d2-3-emulator-5554-logcat.txt:183,d2-3-emulator-5554-logcat.txt:186
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,titles shown,screen mode set to menu,669.024,669.024,0.0,d2-3-emulator-5554-logcat.txt:186,d2-3-emulator-5554-logcat.txt:187
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,screen mode set to menu,gamedata_init done,669.024,670.144,1.12,d2-3-emulator-5554-logcat.txt:187,d2-3-emulator-5554-logcat.txt:198
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,gamedata_init done,piggy_init_pigfile start,670.144,670.144,0.0,d2-3-emulator-5554-logcat.txt:198,d2-3-emulator-5554-logcat.txt:199
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,piggy_init_pigfile start,piggy_init_pigfile done,670.144,670.502,0.358,d2-3-emulator-5554-logcat.txt:199,d2-3-emulator-5554-logcat.txt:202
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,piggy_init_pigfile done,init_game start,670.502,670.502,0.0,d2-3-emulator-5554-logcat.txt:202,d2-3-emulator-5554-logcat.txt:203
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,init_game start,init_game done,670.502,670.504,0.002,d2-3-emulator-5554-logcat.txt:203,d2-3-emulator-5554-logcat.txt:204
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5554,init_game done,entering DoMenu,670.504,670.507,0.003,d2-3-emulator-5554-logcat.txt:204,d2-3-emulator-5554-logcat.txt:205
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,main() entered,mem_init done,594.278,594.302,0.024,d2-3-emulator-5556-logcat.txt:155,d2-3-emulator-5556-logcat.txt:156
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,mem_init done,error_init done,594.302,594.304,0.002,d2-3-emulator-5556-logcat.txt:156,d2-3-emulator-5556-logcat.txt:157
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,error_init done,fp environment configured,594.304,594.305,0.001,d2-3-emulator-5556-logcat.txt:157,d2-3-emulator-5556-logcat.txt:158
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,fp environment configured,PHYSFSX_init done,594.305,594.389,0.084,d2-3-emulator-5556-logcat.txt:158,d2-3-emulator-5556-logcat.txt:160
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,PHYSFSX_init done,con_init done,594.389,594.389,0.0,d2-3-emulator-5556-logcat.txt:160,d2-3-emulator-5556-logcat.txt:161
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,con_init done,searching for hog files,594.389,594.39,0.001,d2-3-emulator-5556-logcat.txt:161,d2-3-emulator-5556-logcat.txt:162
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,searching for hog files,hog files loaded,594.39,595.849,1.459,d2-3-emulator-5556-logcat.txt:162,d2-3-emulator-5556-logcat.txt:164
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,hog files loaded,config read,595.849,595.859,0.01,d2-3-emulator-5556-logcat.txt:164,d2-3-emulator-5556-logcat.txt:171
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,config read,calling arch_init,595.859,595.859,0.0,d2-3-emulator-5556-logcat.txt:171,d2-3-emulator-5556-logcat.txt:172
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,calling arch_init,arch_init done,595.859,596.036,0.177,d2-3-emulator-5556-logcat.txt:172,d2-3-emulator-5556-logcat.txt:176
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,arch_init done,calling gr_set_mode,596.036,596.048,0.012,d2-3-emulator-5556-logcat.txt:176,d2-3-emulator-5556-logcat.txt:177
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,calling gr_set_mode,gr_set_mode done,596.048,596.404,0.356,d2-3-emulator-5556-logcat.txt:177,d2-3-emulator-5556-logcat.txt:181
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,gr_set_mode done,palette loaded,596.404,596.404,0.0,d2-3-emulator-5556-logcat.txt:181,d2-3-emulator-5556-logcat.txt:182
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,palette loaded,fonts loaded,596.404,596.49,0.086,d2-3-emulator-5556-logcat.txt:182,d2-3-emulator-5556-logcat.txt:183
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,fonts loaded,movies init done,596.49,596.497,0.007,d2-3-emulator-5556-logcat.txt:183,d2-3-emulator-5556-logcat.txt:187
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,movies init done,titles shown,596.497,596.916,0.419,d2-3-emulator-5556-logcat.txt:187,d2-3-emulator-5556-logcat.txt:190
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,titles shown,screen mode set to menu,596.916,596.916,0.0,d2-3-emulator-5556-logcat.txt:190,d2-3-emulator-5556-logcat.txt:191
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,screen mode set to menu,gamedata_init done,596.916,597.629,0.713,d2-3-emulator-5556-logcat.txt:191,d2-3-emulator-5556-logcat.txt:194
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,gamedata_init done,piggy_init_pigfile start,597.629,597.629,0.0,d2-3-emulator-5556-logcat.txt:194,d2-3-emulator-5556-logcat.txt:195
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,piggy_init_pigfile start,piggy_init_pigfile done,597.629,597.95,0.321,d2-3-emulator-5556-logcat.txt:195,d2-3-emulator-5556-logcat.txt:199
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,piggy_init_pigfile done,init_game start,597.95,597.95,0.0,d2-3-emulator-5556-logcat.txt:199,d2-3-emulator-5556-logcat.txt:200
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,init_game start,init_game done,597.95,597.953,0.003,d2-3-emulator-5556-logcat.txt:200,d2-3-emulator-5556-logcat.txt:201
+04b6cf39e2d12b15d1514fd1343da62778155760,d2,3,5556,init_game done,entering DoMenu,597.953,597.956,0.003,d2-3-emulator-5556-logcat.txt:201,d2-3-emulator-5556-logcat.txt:202
