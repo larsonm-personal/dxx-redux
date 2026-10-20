@@ -1,6 +1,7 @@
 param(
     [string]$Mission = 'descent',
     [switch]$PublicShareware,
+    [switch]$MeasureTransitions = ($env:DXX_MEASURE_TRANSITIONS -eq 'true'),
     [string]$D1DataDirectory,
     [string]$D2DataDirectory
 )
@@ -326,6 +327,17 @@ $outputDirectory = Join-Path $PSScriptRoot "../temp/lan-launch-preparation-$(if 
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $outputDirectory
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 Write-Output "LAN launch evidence: $outputDirectory"
+if ($MeasureTransitions) {
+    if (-not $PublicShareware) { throw 'Transition measurements require public disposable fixtures' }
+    . "$PSScriptRoot/../helpers/measure_lan_transitions.ps1"
+    $latencyScripts = @{
+        skip = 'test_lan_latency_skip.jsonc'
+        exit = 'test_lan_latency_exit.jsonc'
+        next = 'test_lan_latency_next.jsonc'
+    }
+    Invoke-LanTransitionMeasurements
+    return
+}
 if ($PublicShareware) {
     Invoke-D1OnlyLanDiagnostic
     # Restore D1-only host assets before the native D1 session

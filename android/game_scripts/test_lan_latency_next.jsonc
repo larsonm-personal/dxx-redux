@@ -1,0 +1,33 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan_launch_preparation"
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "screen_advance_can_activate": true
+        },
+        "post_delay_ms": 0
+    },
+    {
+        "action": "request_screen_advance",
+        "generation": "current",
+        "post_delay_ms": 0
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 60000,
+        "expect": {
+            "current_level_num": 2
+        },
+        "post_delay_ms": 0
+    }
+]

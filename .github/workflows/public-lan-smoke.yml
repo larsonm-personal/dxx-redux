@@ -3,6 +3,11 @@ name: Public two-player LAN smoke
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      measure_transitions:
+        description: Repeat public LAN transition timing experiment
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,6 +67,7 @@ jobs:
       plan_artifact: nightly-plan
       lane: android-dual
       retail_assets: false
+      measure_transitions: ${{ inputs.measure_transitions == true }}
 
   finish:
     name: Require public LAN pass
