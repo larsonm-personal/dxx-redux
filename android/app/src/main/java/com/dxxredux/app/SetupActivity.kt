@@ -2047,7 +2047,11 @@ class SetupActivity : ComponentActivity() {
                         val difficulty = intent.getIntExtra("difficulty", 1)
                         val levelNum = intent.getIntExtra("level_num", 1)
                         com.dxxredux.app.lobby.LobbyService
-                            .startGame(difficulty, levelNum, coopBriefings = intent.getBooleanExtra("coop_briefings", false))
+                            .startGame(
+                                difficulty,
+                                levelNum,
+                                coopBriefings = intent.getBooleanExtra("coop_briefings", false),
+                            )
                         Log.i("DXX-MP", "lan_start_game: level=$levelNum difficulty=$difficulty")
                     }
 
