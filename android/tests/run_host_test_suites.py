@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import unittest
+import uuid
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
@@ -510,12 +511,18 @@ def run_suite(suite, repo, build_root, output, timeout):
     work.mkdir(parents=True, exist_ok=True)
     temporary_root = work / "tmp"
     temporary_root.mkdir(parents=True, exist_ok=True)
+    worker_directory = work / ("metadata-workers-" + uuid.uuid4().hex)
+    if suite.get("kind") == "retail-corpus":
+        result["worker_diagnostics_id"] = worker_directory.name.removeprefix("metadata-workers-")
     log = work / "suite.log"
     result["log"] = str(log)
 
     setup_seconds = 0.0
 
     def finish(status, reason, code=None, *, retryable=None, blocker_kind=None):
+        if suite.get("kind") == "retail-corpus":
+            from nightly_regression_corpus import metadata_worker_diagnostics
+            result["workers"] = metadata_worker_diagnostics(worker_directory)
         if retryable is None:
             retryable = status == "BLOCKED" and result["phase"] != "tests"
         result.update(
@@ -562,6 +569,8 @@ def run_suite(suite, repo, build_root, output, timeout):
                 stderr=errors,
                 env={
                     **os.environ,
+                    **({"DXX_METADATA_WORKER_DIAGNOSTICS_DIR": str(worker_directory)}
+                       if suite["kind"] == "retail-corpus" else {}),
                     "TMPDIR": str(temporary_root),
                     "TEMP": str(temporary_root),
                     "TMP": str(temporary_root),
@@ -628,7 +637,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
-        if suite["kind"] == "retail-corpus":
+        if suite.get("kind") == "retail-corpus":
             from nightly_regression_catalog import CORPUS_COMMIT
             from nightly_regression_corpus import compare_metadata, compare_route, freeze_oracles, require_unchanged_oracles
             if os.environ.get("RETAIL_CHECKOUT_COMMIT") != CORPUS_COMMIT:
@@ -699,6 +708,10 @@ def run_suite(suite, repo, build_root, output, timeout):
                 else:
                     argv += ["-ArchivePaths", str(archive), "-CdSourceIds", "__none__"]
                 code = run_corpus(argv)
+                result["assets"].update(metadata_summary=(destination / "summary.json").is_file(),
+                    metadata_output=(destination / "metadata" / (("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "") + baseline.name)).is_file())
+                from nightly_regression_corpus import metadata_owner_failure
+                result["owner_failure"] = metadata_owner_failure(document(destination / "summary.json"), archive.name if archive else baseline.stem)
                 checked = compare_metadata(expected_metadata, document(destination / "metadata" / (("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "") + baseline.name)),
                                            document(destination / "summary.json"), archive.name if archive else baseline.stem)
             else:

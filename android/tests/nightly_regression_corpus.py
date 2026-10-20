@@ -9,6 +9,8 @@ previously loaded levels.
 """
 
 import copy
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -87,6 +89,103 @@ def metadata_differences(expected, actual, path=()):
 
     visit(expected, actual, path)
     return differences
+
+
+WORKER_CATEGORIES = frozenset(('assertion', 'address-sanitizer', 'undefined-behavior',
+    'segmentation-fault', 'cpp-exception', 'worker-timeout', 'unexpected-eof',
+    'worker-shutdown', 'archive-extraction', 'descriptor-invalid', 'variant-selection',
+    'projection-worker', 'unclassified-owner-failure'))
+
+
+def worker_failure_categories(text):
+    # Match source-defined signatures; never return captured text from a log.
+    patterns = (
+        ("assertion", r"(?i)assertion[^\n]{0,2048}failed|assert failed"),
+        ("address-sanitizer", r"AddressSanitizer:"),
+        ("undefined-behavior", r"UndefinedBehaviorSanitizer:|runtime error:"),
+        ("segmentation-fault", r"(?i)segmentation fault"),
+        ("cpp-exception", r"terminate called after throwing"),
+        ("worker-timeout", r"metadata (?:archive )?worker timed out"),
+        ("unexpected-eof", r"metadata worker closed its output unexpectedly"),
+        ("worker-shutdown", r"Metadata worker shutdown failed"),
+        ("archive-extraction", r"7z extract failed"),
+        ("descriptor-invalid", r"Invalid mission descriptor"),
+        ("variant-selection", r"Shared mission archive variant selection"),
+        ("projection-worker", r"Kotlin metadata worker (?:exited|closed)"),
+    )
+    return [name for name, pattern in patterns if re.search(pattern, text)]
+
+
+def metadata_owner_failure(summary, archive_name):
+    if not isinstance(summary, list):
+        return {}
+    records = [row for row in summary if isinstance(row, dict) and row.get("name") == archive_name]
+    if len(records) != 1 or records[0].get("status") != "failed":
+        return {}
+    reason = str(records[0].get("reason", ""))[:16384]
+    result = {"categories": worker_failure_categories(reason) or ["unclassified-owner-failure"]}
+    exit_match = re.search(
+        r"metadata (?:archive )?worker (?:closed its output unexpectedly with exit code|exited) (-?\d{1,10})", reason
+    )
+    if exit_match:
+        result["exit_code"] = int(exit_match[1])
+    return result
+
+
+def metadata_worker_diagnostics(root):
+    root = Path(root)
+    if not root.is_dir() or root.is_symlink():
+        return []
+
+    def tail(path):
+        if not path.is_file() or path.is_symlink():
+            return ""
+        with path.open("rb") as stream:
+            stream.seek(max(0, path.stat().st_size - 131072))
+            return stream.read(131072).decode("utf-8", errors="replace")
+
+    rows = []
+    prefixes = sorted(
+        {path.name.rsplit(".", 2)[0] for pattern in ("*.start.json", "*.shutdown.json") for path in root.glob(pattern)}
+    )
+    roles = {"dxx-redux-d1-metadata-worker": "d1-metadata", "dxx-redux-d2-metadata-worker": "d2-metadata"}
+    for prefix in prefixes[:16]:
+        path = root / (prefix + ".shutdown.json")
+        row = {"shutdown_missing": not path.is_file()}
+        data = {}
+        if path.is_file():
+            if path.is_symlink() or path.stat().st_size > 16384:
+                continue
+            try:
+                data = json.loads(path.read_text(encoding="utf-8-sig"))
+                if not isinstance(data, dict):
+                    raise ValueError("Invalid shutdown record")
+            except (ValueError, OSError):
+                rows.append({"categories": ["unclassified-owner-failure"]})
+                continue
+        row.update({key: data[key] for key in ("exit_code", "shutdown_ms") if type(data.get(key)) is int})
+        row.update(
+            {
+                key: data[key]
+                for key in ("timed_out", "stdout_complete", "stderr_complete")
+                if type(data.get(key)) is bool
+            }
+        )
+        row["worker"] = roles.get(Path(str(data.get("executable", ""))).name, "other")
+        categories = set()
+        for stream in ("stdout", "stderr"):
+            output = root / (prefix + "." + stream + ".log")
+            row[stream + "_categories"] = worker_failure_categories(tail(output))
+            categories.update(row[stream + "_categories"])
+            if output.is_file() and not output.is_symlink():
+                row[stream + "_bytes"] = output.stat().st_size
+        if data.get("timed_out") is True:
+            categories.add("worker-timeout")
+        if data.get("exit_code") not in (None, 0) and not categories:
+            categories.add("unclassified-owner-failure")
+        row["categories"] = sorted(categories)
+        rows.append(row)
+    return rows
 
 
 def compare_metadata(baseline, generated, summary, archive_name):

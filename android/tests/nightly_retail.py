@@ -98,7 +98,33 @@ def public_diagnostics(value):
             row["duration_seconds"] = round(duration, 3)
         row["phase"] = "setup" if command.get("phase") == "setup" else "tests"
         clean["commands"].append(row)
-    from nightly_regression_corpus import DIAGNOSTIC_FIELDS
+    from nightly_regression_corpus import DIAGNOSTIC_FIELDS, WORKER_CATEGORIES
+
+    def worker_row(value):
+        row = {
+            key: value[key]
+            for key in ("exit_code", "shutdown_ms", "stdout_bytes", "stderr_bytes")
+            if type(value.get(key)) is int
+        }
+        row.update(
+            {
+                key: value[key]
+                for key in ("timed_out", "stdout_complete", "stderr_complete", "shutdown_missing")
+                if type(value.get(key)) is bool
+            }
+        )
+        for stream in ("categories", "stdout_categories", "stderr_categories"):
+            row[stream] = [
+                category
+                for category in value.get(stream, [])[:16]
+                if isinstance(category, str) and category in WORKER_CATEGORIES
+            ]
+        if value.get("worker") in ("d1-metadata", "d2-metadata", "other"):
+            row["worker"] = value["worker"]
+        return row
+    clean['workers'] = [worker_row(row) for row in value.get('workers', [])[:16] if isinstance(row, dict)]
+    if isinstance(value.get('owner_failure'), dict):
+        clean['owner_failure'] = worker_row(value['owner_failure'])
 
     clean["mismatches"] = []
     for mismatch in value.get("mismatches", [])[:16]:
@@ -121,7 +147,7 @@ def public_diagnostics(value):
         )
     clean["assets"] = {
         key: value["assets"][key]
-        for key in ("archive", "baseline", "route_oracle", "retail_stage_verified")
+        for key in ("archive", "baseline", "route_oracle", "retail_stage_verified", "metadata_summary", "metadata_output")
         if type(value.get("assets", {}).get(key)) is bool
     }
     return clean

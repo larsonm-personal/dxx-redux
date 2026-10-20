@@ -705,6 +705,47 @@ class SweepTests(unittest.TestCase):
                 if not completed:
                     self.assertEqual(sweep.reconcile(plan, policy, state, [receipt])["records"], {})
 
+    def test_failure_summary_preserves_inner_worker_categories(self):
+        receipt = self.receipt()
+        row = receipt['results'][0]
+        row.update(status='FAIL', workers=[{'categories': ['assertion'], 'exit_code': -6}])
+        state = sweep.reconcile(self.plan, self.policy, self.state, [receipt])
+        self.assertEqual(state['records'][row['id']]['failure_categories'], ['assertion'])
+        self.assertEqual(state['records'][row['id']]['worker_exit_codes'], [-6])
+
+    def test_interrupted_inner_worker_records_are_collected_without_coverage(self):
+        entry = {
+            "id": "corpus:metadata:fixture",
+            "owner": "host-adapter",
+            "lane": "host",
+            "args": {"suite": "corpus:metadata:fixture"},
+            "estimated_seconds": 10,
+        }
+        policy = {"schema": 1, "suites": [entry]}
+        plan, state = sweep.plan_batch(SHA, {"schema": 1, "tests": []}, policy)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            worker_id = "a" * 32
+            sweep.write(
+                output / "attempt.json",
+                {
+                    **sweep.attempt_identity(plan, "host"),
+                    "processes": {entry["id"]: {"completed": False, "exit_code": None}},
+                },
+            )
+            sweep.write(
+                output / "corpus_metadata_fixture.json",
+                {"schema": 1, "suite": entry["id"], "status": "BLOCKED", "worker_diagnostics_id": worker_id},
+            )
+            workers = output / "corpus_metadata_fixture.artifacts" / ("metadata-workers-" + worker_id)
+            sweep.write(workers / "123.start.json", {"executable": "PRIVATE_PATH"})
+            receipt = sweep.collect(plan, policy, "host", output)
+            row = receipt["results"][0]
+            self.assertEqual(row["status"], "NOT_RUN")
+            self.assertTrue(row["workers"][0]["shutdown_missing"])
+            self.assertNotIn("PRIVATE", json.dumps(receipt))
+            self.assertEqual(sweep.reconcile(plan, policy, state, [receipt])["records"], {})
+
     def test_failed_master_without_receipts_is_pending_with_diagnostic(self):
         with tempfile.TemporaryDirectory() as d:
             self.attempt(d, 1)

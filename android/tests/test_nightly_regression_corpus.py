@@ -1,4 +1,5 @@
 import copy
+import json
 import unittest
 from pathlib import Path
 import tempfile
@@ -74,6 +75,65 @@ class CorpusComparisons(unittest.TestCase):
         self.assertNotIn("PRIVATE", str(differences))
         self.assertNotIn("OTHER_SECRET", str(differences))
         self.assertEqual(len(metadata_differences(list(range(100)), [-1] * 100)), 16)
+
+    def test_inner_worker_failure_diagnostics_are_typed_and_private(self):
+        from nightly_regression_corpus import metadata_worker_diagnostics, metadata_owner_failure
+        import nightly_retail
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "123.shutdown.json").write_text(
+                json.dumps(
+                    {
+                        "exit_code": -6,
+                        "timed_out": False,
+                        "stdout_complete": True,
+                        "stderr_complete": True,
+                        "shutdown_ms": 5,
+                        "executable": "PRIVATE_PATH",
+                    }
+                )
+            )
+            (root / "123.stderr.log").write_text("Assertion 'PRIVATE_ASSERTION' failed\nPRIVATE_BYTES")
+            (root / "123.stdout.log").write_text("PRIVATE_BYTES")
+            workers = metadata_worker_diagnostics(root)
+            self.assertEqual(workers[0]["exit_code"], -6)
+            self.assertEqual(workers[0]["categories"], ["assertion"])
+            owner = metadata_owner_failure(
+                [
+                    {
+                        "name": "fixture.zip",
+                        "status": "failed",
+                        "reason": "metadata worker closed its output unexpectedly with exit code -6; log=PRIVATE_PATH",
+                    }
+                ],
+                "fixture.zip",
+            )
+            self.assertEqual(owner, {"categories": ["unexpected-eof"], "exit_code": -6})
+            self.assertEqual(metadata_owner_failure([], "fixture.zip"), {})
+            clean = nightly_retail.public_diagnostics({"workers": workers, "owner_failure": owner})
+            self.assertNotIn("PRIVATE", json.dumps(clean))
+            self.assertEqual(clean["workers"], workers)
+            self.assertEqual(clean["owner_failure"]["categories"], owner["categories"])
+            self.assertEqual(clean["owner_failure"]["exit_code"], -6)
+            (root / "123.shutdown.json").write_text("invalid PRIVATE_BYTES")
+            self.assertEqual(metadata_worker_diagnostics(root)[0]["categories"], ["unclassified-owner-failure"])
+
+    def test_inner_worker_known_signatures_never_return_captured_strings(self):
+        from nightly_regression_corpus import worker_failure_categories
+
+        cases = {
+            "metadata worker timed out after 3 seconds; log=PRIVATE_PATH": "worker-timeout",
+            "AddressSanitizer: heap-use-after-free PRIVATE_BYTES": "address-sanitizer",
+            "runtime error: PRIVATE_BYTES": "undefined-behavior",
+            "7z extract failed for PRIVATE_PATH": "archive-extraction",
+            "Invalid mission descriptor PRIVATE_PATH": "descriptor-invalid",
+            "Kotlin metadata worker closed its output unexpectedly": "projection-worker",
+        }
+        for message, category in cases.items():
+            with self.subTest(category=category):
+                expected = ["unexpected-eof", category] if category == "projection-worker" else [category]
+                self.assertEqual(worker_failure_categories(message), expected)
 
     def test_mutated_oracle_cannot_be_its_own_expected_output(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -15,9 +15,23 @@ Evidence: Linux job 118555674132 writes owner logs but uploads only results.json
 - Preserve allowlisted causes, bounded metadata mismatch paths, command outcome/exit/duration, stream byte counts and fixture availability through collection and retail projection
 - Persist command progress before launch and after completion/timeout; interrupted owners retain diagnostics without gaining coverage
 - Nested variants remain explicitly unavailable in planning; the runner guard remains intact
-- 124 nightly Python tests and 67 adapter tests passed, including real nonzero stdout/stderr execution and timeout/cancellation contracts
+- 128 nightly Python tests and 68 adapter tests passed, including real nonzero stdout/stderr execution and timeout/cancellation contracts
 - Automation catalog validation passed: 95 standalone JSON, 426 support and 261 standalone PowerShell tests
 - Master catalog check blocked by this executor's missing /proc child-supervision interface, exit 125
 - Scoped quality runner passed with pinned Ruff 0.16.10; unrelated existing formatting churn was removed
 - Targeted Lostlvls/Vela1 attempts are BLOCKED before execution: committed baseline and route oracle present, private mission archive absent
 - Protected retail runs require the existing trusted cmake workflow; no trust gate or schedule was changed
+
+## Inner worker qualification
+
+Enable the existing native/Kotlin worker diagnostic directory for each unique
+owner attempt. Project only shutdown exit/duration/completion flags, stream byte
+counts and recognized assertion/sanitizer/timeout/EOF categories. Raw logs and
+exception details stay local. Interrupted collection reports missing shutdown
+proof without granting coverage. Unknown inner messages remain unclassified.
+
+A real synthetic Python child launched through the PowerShell metadata helper
+wrote a private assertion marker and exited 7. The projection retained exit 7,
+complete stderr (47 bytes) and the assertion category without exposing the marker.
+The authorized private asset app exposes metadata but cannot transfer the required
+binary ZIP through its available readers; no private assets were staged locally.

@@ -364,6 +364,15 @@ def reconcile(plan, policy, state, receipts):
                     compact.update(comparison_only=True, runtime_outcome=row.get('runtime_outcome', ''))
                 if cases:
                     compact['case_counts'] = {status: sum(c.get('status') == status for c in cases) for status in ('PASS', 'FAIL') if any(c.get('status') == status for c in cases)}
+            if row['status'] in ('FAIL', 'TIMEOUT'):
+                details = retail.public_diagnostics(row)
+                workers = details.get('workers', []) + [details.get('owner_failure', {})]
+                categories = sorted({category for worker in workers for category in worker.get('categories', [])})
+                if categories:
+                    compact['failure_categories'] = categories
+                exits = [worker['exit_code'] for worker in workers if worker.get('exit_code') not in (None, 0)]
+                if exits:
+                    compact['worker_exit_codes'] = exits
             prior = result['records'].get(ident)
             if prior and prior != compact:
                 raise ValueError('Conflicting completed receipt')
@@ -401,6 +410,10 @@ def collect(plan, policy, lane, output, blocked_reason=""):
             path = output / (entry['id'].replace(':', '_') + '.json')
             process = processes.get(entry['id'], {})
             row = read(path) if process and path.exists() else {}
+            worker_id = row.get('worker_diagnostics_id')
+            if isinstance(worker_id, str) and re.fullmatch('[0-9a-f]{32}', worker_id):
+                from nightly_regression_corpus import metadata_worker_diagnostics
+                row['workers'] = metadata_worker_diagnostics(path.with_suffix('.artifacts') / ('metadata-workers-' + worker_id))
             if row and not process.get('completed'):
                 row.update(status='NOT_RUN', coverage_complete=False)
             exit_code = process.get('exit_code')
@@ -733,7 +746,7 @@ def main():
         state = reconcile(plan, policy, read(args.state), [read(p) for p in args.receipts])
         write(args.output, state)
         summary = {'target_sha': state['target_sha'], 'terminal_owner_attempts': sum(r['status'] in COVERED for r in state['records'].values()), 'fully_covered_owners': sum(r.get('coverage_complete') is True for r in state['records'].values()), 'passed_leaf_cases': sum(r.get('case_counts', {}).get('PASS', 0) for r in state['records'].values()), 'incomplete_owners': [k for k, r in state['records'].items() if r.get('coverage_complete') is not True], 'failures': [k for k, r in state['records'].items() if r['status'] in ('FAIL', 'TIMEOUT')], 'retryable_infrastructure': state.get('retryable', {}), 'excluded': plan['exclusions'], 'target_capability_exclusions': state.get('excluded', {}), 'unavailable_pending': plan.get('unavailable', [])}
-        summary['failure_details'] = {key: {'status': row['status'], 'reason': row.get('reason', '')}
+        summary['failure_details'] = {key: {field: row[field] for field in ('status', 'reason', 'failure_categories', 'worker_exit_codes') if field in row}
                                       for key, row in state['records'].items() if row['status'] in ('FAIL', 'TIMEOUT')}
         pending = set(policy_entries(policy)) - set(state['records']) - set(state.get('excluded', {})) - {e['id'] for e in plan['exclusions']}
         summary['matching_unconfirmed_routes'] = {key: row['runtime_outcome'] for key, row in state['records'].items() if row.get('comparison_only')}
