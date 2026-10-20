@@ -17,7 +17,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 selected = {}
 pattern = re.compile(
-    r"LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate",
+    r"LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|auto_net:|select_players|initial sync retry:|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate",
     re.I,
 )
 for path in sorted(root.rglob("*")):
