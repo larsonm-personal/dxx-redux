@@ -50,6 +50,7 @@ function Invoke-LanParallelStartupChecks {
                                 $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                                 $hostLog -match $hostMarker -and $clientLog -match 'event=admission_send'
                             })) { throw 'Host loss injection boundary not reached' }
+                    $hostLog = (Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                     if ($hostLog -match 'event=sync_send_begin') { throw 'Host already synchronized before loss injection' }
                     Write-LatencyEvent $hostSerial 'host-loss.request'
                     Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
@@ -57,10 +58,11 @@ function Invoke-LanParallelStartupChecks {
                                 $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                                 $clientLog -match 'wait_for_sync FAILED'
                             })) { throw 'Client stranded in initial synchronization after silent host loss (85s bound)' }
+                    $clientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
                     if ($clientLog -match 'event=sync_received') { throw 'Unexpected sync after host loss' }
                     $state = Get-GameIntrospection -Serial $clientSerial -Fresh
                     Write-LatencyEvent $clientSerial 'host-loss.recovered' $state
-                    if ($state -and $state.in_game) { throw 'Client entered game after host loss' }
+                    if (-not $state -or $state.in_game -or $state.screen_mode -ne 'menu') { throw 'No positive terminal menu observation after host loss' }
                 } elseif ($case -eq 'cancel-client') {
                     if (-not (Wait-ForCondition -Description 'Client admitted before cancellation' -TimeoutSec 30 -PollMs 100 -Condition {
                                 $script:cancelClientLog = (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 5) -join "`n"
