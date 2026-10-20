@@ -1539,6 +1539,9 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 def wait(self, **kwargs):
                     self.calls += 1
                     if self.calls == 1:
+                        durable = json.loads((root / "out.json").read_text())
+                        if not durable["attempted_tests"]:
+                            raise AssertionError("Running test launch was not persisted")
                         raise subprocess.TimeoutExpired("fixture", 1)
                     return 0
 

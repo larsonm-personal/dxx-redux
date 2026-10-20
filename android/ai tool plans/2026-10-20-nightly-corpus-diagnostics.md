@@ -19,7 +19,7 @@ Evidence: Linux job 118555674132 writes owner logs but uploads only results.json
 - Automation catalog validation passed: 95 standalone JSON, 426 support and 261 standalone PowerShell tests
 - Master catalog check blocked by this executor's missing /proc child-supervision interface, exit 125
 - Scoped quality runner passed with pinned Ruff 0.16.10; unrelated existing formatting churn was removed
-- Targeted Lostlvls/Vela1 attempts are BLOCKED before execution: committed baseline and route oracle present, private mission archive absent
+- Initial targeted attempts were blocked before execution; later targeted reproduction reached both owners
 - Protected retail runs require the existing trusted cmake workflow; no trust gate or schedule was changed
 
 ## Inner worker qualification
@@ -33,5 +33,22 @@ proof without granting coverage. Unknown inner messages remain unclassified.
 A real synthetic Python child launched through the PowerShell metadata helper
 wrote a private assertion marker and exited 7. The projection retained exit 7,
 complete stderr (47 bytes) and the assertion category without exposing the marker.
-The authorized private asset app exposes metadata but cannot transfer the required
-binary ZIP through its available readers; no private assets were staged locally.
+
+## Targeted reproduction
+
+- Lostlvls completed with worker exit 0 and failed strict comparison only on 24
+  data_warnings entries. PR #100 intentionally stopped reporting nonnegative
+  empty joint offsets as normalized; the baseline still contained the old warning
+- Vela1 initially exited 139. A native debugger traced the crash to the debug
+  connectivity message box in load_level, then gr_get_string_size without a
+  font canvas. Apply the existing no-render guard on hosts as well as Android
+  in both games; connectivity validation and the interactive dialog remain
+- With the dialog fix, Vela1 completes with worker exit 0 and differs only on
+  the same obsolete warning in its two levels
+- Correct only those 26 warning clauses. Full generated JSON equality was
+  verified after that exact substitution; no other metadata or oracle changed
+- Add data_warnings to the safe schema field vocabulary, retaining no warning
+  values, and persist attempted_tests immediately after successful launch
+- Final strict targeted reruns passed: Lostlvls 42.817 seconds, Vela1 6.107
+  seconds; both worker commands exited 0. Both D1 and D2 metadata workers rebuilt
+- Repeated Python qualification: 128 nightly tests and 68 adapter tests passed

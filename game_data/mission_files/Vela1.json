@@ -921,7 +921,7 @@
           }
         ],
         "data_warnings": [
-          "Level HXM legacy handling: 10 unused joint offsets normalized; 4 trailer bytes ignored"
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
@@ -1281,7 +1281,7 @@
           }
         ],
         "data_warnings": [
-          "Level HXM legacy handling: 10 unused joint offsets normalized; 4 trailer bytes ignored"
+          "Level HXM legacy handling: 4 trailer bytes ignored"
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [

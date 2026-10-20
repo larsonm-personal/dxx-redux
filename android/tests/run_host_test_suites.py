@@ -585,6 +585,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             )
             if not setup:
                 result["attempted_tests"] = True
+                write_json(output, result)
             try:
                 code = process.wait(timeout=remaining)
                 command_record.update(outcome="completed", exit_code=code)

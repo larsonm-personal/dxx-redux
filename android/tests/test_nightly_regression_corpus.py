@@ -75,6 +75,8 @@ class CorpusComparisons(unittest.TestCase):
         self.assertNotIn("PRIVATE", str(differences))
         self.assertNotIn("OTHER_SECRET", str(differences))
         self.assertEqual(len(metadata_differences(list(range(100)), [-1] * 100)), 16)
+        warnings = metadata_differences({"data_warnings": ["PRIVATE"]}, {"data_warnings": ["SECRET"]})
+        self.assertEqual(warnings, [{"path": ["data_warnings", 0], "kind": "value"}])
 
     def test_inner_worker_failure_diagnostics_are_typed_and_private(self):
         from nightly_regression_corpus import metadata_worker_diagnostics, metadata_owner_failure

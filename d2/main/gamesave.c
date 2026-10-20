@@ -1764,10 +1764,12 @@ int load_level(const char * filename_passed)
 
 	#if !defined(NDEBUG) && !defined(COMPACT_SEGS)
 	if (check_segment_connections())
+		/* Headless scans and read-only previews have no gameplay dialog UI */
+		if (!GameArg.SysInputDemoNoRender
 #ifdef __ANDROID__
-		/* Read-only previews have no gameplay UI to dismiss this debug warning */
-		if (!GameArg.SysInputDemoNoRender && !android_level_preview_request_path())
+		    && !android_level_preview_request_path()
 #endif
+		)
 		nm_messagebox( "ERROR", 1, "Ok", 
 				"Connectivity errors detected in\n"
 				"mine.  See monochrome screen for\n"

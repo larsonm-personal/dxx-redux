@@ -59,7 +59,7 @@ def _missions(value):
 # Field names are fixed schema vocabulary, never mission values or arbitrary keys.
 DIAGNOSTIC_FIELDS = frozenset(('levels', 'status', 'segment_count', 'level_num', 'level_file',
     'matcen_regression', 'capture_status', 'admission', 'robots', 'models', 'objects',
-    'vertices', 'segments', 'walls', 'triggers', 'game', 'target_index', 'mission_path',
+    'vertices', 'segments', 'walls', 'triggers', 'data_warnings', 'game', 'target_index', 'mission_path',
     'mission_filename', 'robot_count', 'object_count', 'version', 'reactor', 'secret_exit'))
 
 
