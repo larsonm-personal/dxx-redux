@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,6 +83,40 @@ class CampaignCliTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 2)
                 self.assertIn("distinct --host and --client plus --output are required", result.stderr)
                 self.assertNotIn("--repeat must", result.stderr)
+
+    def test_join_loss_catalog_has_control_and_four_boundaries_per_engine(self):
+        result = self.cli("--list", "--case", "*-join-loss-*")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = json.loads(result.stdout)
+        self.assertEqual(len(rows), 15)
+        for content in ("d1", "d2", "d1d2"):
+            selected = [row for row in rows if row["id"].startswith(content + "-")]
+            self.assertEqual([row["loss"] for row in selected], ["control", "first", "second", "end", "sync"])
+            self.assertTrue(all(row["kind"] == "join-loss" for row in selected))
+
+    def test_exit_waits_for_launcher_teardown_after_process_exit(self):
+        device = Mock()
+        device.shell.return_value = ""
+        device.snapshot.side_effect = [
+            {"game_running": True, "has_returnable_game_activity": True},
+            {"game_running": False, "has_returnable_game_activity": True},
+            {"game_running": False, "has_returnable_game_activity": False},
+        ]
+        with patch.object(campaign.time, "sleep"):
+            campaign.exit_to_launcher(device)
+        self.assertEqual(device.snapshot.call_count, 3)
+        device.automate.assert_called_once_with([{"action": "enter_launcher"}], wait=False)
+
+    def test_exit_rejects_a_persistently_returnable_activity(self):
+        device = Mock()
+        device.shell.return_value = ""
+        device.snapshot.return_value = {"game_running": False, "has_returnable_game_activity": True}
+        with (
+            patch.object(campaign.time, "sleep"),
+            patch.object(campaign.time, "monotonic", side_effect=range(100)),
+            self.assertRaisesRegex(TimeoutError, "launcher clears exited game"),
+        ):
+            campaign.exit_to_launcher(device)
 
     def test_invalid_repeats_never_retain_artifacts_or_construct_devices(self):
         for repeat in (0, -1, 101):

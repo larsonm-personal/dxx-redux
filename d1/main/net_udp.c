@@ -2907,6 +2907,7 @@ static void net_udp_send_sync_payload(ubyte *data, int len,
 			return;
 		}
 		envelope[0] = UPID_JOIN_DATA;
+		if (net_udp_join_test_drop_payload(data, len)) return;
 		PUT_INTEL_INT(envelope + 1, netgame_token);
 		PUT_INTEL_INT(envelope + 5, UDP_sync_player.join_attempt);
 		coop_world_visit_write(envelope + 9, UDP_sync_player.join_visit);

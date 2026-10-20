@@ -62,6 +62,13 @@ void net_udp_join_wait_poll(void);
 int net_udp_join_wait_test_hold(void);
 int net_udp_join_wait_test_early_sync(void);
 int net_udp_join_wait_test_early_end(void);
+/* One-shot loss on the next cooperative join, for device integration tests */
+enum { NET_JOIN_DROP_FIRST = 1,
+	   NET_JOIN_DROP_SECOND,
+	   NET_JOIN_DROP_END,
+	   NET_JOIN_DROP_SYNC };
+int net_udp_join_wait_test_drop(int mode);
+unsigned net_udp_join_test_drops(void);
 unsigned net_udp_join_early_ends(void);
 unsigned net_udp_join_excluded_spew(void);
 int net_udp_join_objects_complete(void);

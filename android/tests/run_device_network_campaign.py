@@ -111,6 +111,16 @@ def cases():
             scenarios["saved-level-transition"] = ["-SavedLateJoin", "-D1LevelTransition"]
         for name, flags in scenarios.items():
             result.append({"id": f"{content}-{name}", "kind": "suite", "args": base + flags})
+        for loss in ("control", "first", "second", "end", "sync"):
+            result.append(
+                {
+                    "id": f"{content}-join-loss-{loss}",
+                    "kind": "join-loss",
+                    "game": game,
+                    "mission": mission,
+                    "loss": loss,
+                }
+            )
         if content != "d1d2":
             result.append(
                 {"id": f"{content}-loading-background", "kind": "loading-background", "game": game, "mission": mission}
@@ -707,6 +717,8 @@ def start_pair(case, devices):
     host, client = devices
     for device in devices:
         device.start_setup()
+        if case["kind"] == "join-loss":
+            device.broadcast("SETUP_COMMAND", command="write_bool_pref", key="dlog_network_enabled", value=True)
     host.launch(case)
     wait_for(
         "host network lobby",
@@ -770,6 +782,83 @@ def lifecycle(case, devices):
     verify_controls(devices)
 
 
+def join_loss_sample(state):
+    if not state:
+        return None
+    mp = state.get("multiplayer", {})
+    return {
+        "in_game": state.get("in_game"),
+        "time_paused": state.get("time_paused"),
+        "network_status": mp.get("network_status"),
+        "num_connected": mp.get("num_connected"),
+        "join_request_pending": mp.get("join_request_pending"),
+        "join_wait": state.get("join_wait"),
+        "world_visit": state.get("coop_world_visit"),
+        "menu_subtitle": state.get("menu", {}).get("subtitle", ""),
+    }
+
+
+def join_loss(case, devices):
+    """Drop one transfer packet and observe beyond the ordinary removal timeout."""
+    start_pair(case, devices)
+    host, client = devices
+    exit_to_launcher(client)
+    solo_host(host)
+    if case["loss"] != "control":
+        host.automate([{"action": "set_debug", "field": "join_wait_test", "value": f"drop_{case['loss']}"}])
+    join_from_launcher(client, host, "ChaosS21")
+    started = time.monotonic()
+    observation_end = started + 40 if case["loss"] == "control" else None
+    samples = []
+    injected = 0
+    removal_seen = False
+    split_seen = False
+    states = [None, None]
+    try:
+        # Admission has its own bound; after injection always keep the full window,
+        # including after a dump dialog, so a late protocol success stays visible
+        while time.monotonic() < (observation_end or started + 60):
+            states = pair_states(devices)
+            samples.append(
+                {"seconds": round(time.monotonic() - started, 3), "peers": [join_loss_sample(s) for s in states]}
+            )
+            host_state, client_state = states
+            if host_state:
+                injected = host_state.get("join_wait", {}).get("test_drops", 0)
+                if injected and observation_end is None:
+                    observation_end = time.monotonic() + 40
+                    print(f"{utc()} injected {case['loss']} loss; observing for 40s", flush=True)
+                if host_state.get("multiplayer", {}).get("join_request_pending"):
+                    host.automate([{"action": "key", "key": "f6", "post_delay_ms": 200}])
+            if client_state:
+                removed = "removed from the game" in client_state.get("menu", {}).get("subtitle", "")
+                removal_seen |= removed
+                split_seen |= removed and client_state.get("multiplayer", {}).get("network_status") == 1
+            time.sleep(0.5)
+    finally:
+        write_json(
+            host.output / "join-loss-observation.json",
+            {
+                "loss": case["loss"],
+                "injected_packets": injected,
+                "removal_dialog_seen": removal_seen,
+                "playing_under_removal_dialog_seen": split_seen,
+                "healthy_at_end": healthy_pair(states),
+                "samples": samples,
+            },
+        )
+    expected = 0 if case["loss"] == "control" else 1
+    if injected != expected:
+        raise RuntimeError(f"Invalid loss experiment: expected {expected} injected packet, observed {injected}")
+    if removal_seen or not healthy_pair(states):
+        raise RuntimeError(
+            f"Join loss did not recover: removal={removal_seen}, playing_under_dialog={split_seen}, "
+            f"healthy_at_end={healthy_pair(states)}; see join-loss-observation.json"
+        )
+    verify_traffic(devices)
+    verify_controls(devices)
+
+
 def churn(case, devices):
     start_pair(case, devices)
     host, client = devices
@@ -815,9 +904,17 @@ def exit_to_launcher(device):
         lambda: not device.shell("pidof", f"{PACKAGE}:game", check=False),
         25,
     )
-    state = wait_for("launcher returns", lambda: device.snapshot(setup=True, full_setup=True), 25)
-    if state.get("game_running") is not False or state.get("has_returnable_game_activity") is not False:
-        raise RuntimeError("Exited game still marked as returnable")
+
+    def launcher_idle():
+        state = device.snapshot(setup=True, full_setup=True)
+        return (
+            state
+            if state and state.get("game_running") is False and state.get("has_returnable_game_activity") is False
+            else None
+        )
+
+    # Process exit can precede the launcher's activity teardown notification
+    wait_for("launcher clears exited game and returnable activity", launcher_idle, 25)
 
 
 def offline_recovery(case, devices):
@@ -1823,6 +1920,8 @@ def main():
                         lobby_role_turnover(case, devices)
                     elif case["kind"] == "churn":
                         churn(case, devices)
+                    elif case["kind"] == "join-loss":
+                        join_loss(case, devices)
                     elif case["kind"] == "admission":
                         admission(case, devices)
                     elif case["kind"] == "offline-recovery":

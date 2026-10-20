@@ -6449,6 +6449,11 @@ extern "C" void game_automate_tick(void)
 					if (!net_udp_join_wait_test_early_sync()) stop_script_fail("Early join SYNC requires a cooperative host");
 				} else if (s.value == "early_end") {
 					if (!net_udp_join_wait_test_early_end()) stop_script_fail("Early object end requires a cooperative host");
+				} else if (s.value == "drop_first" || s.value == "drop_second" || s.value == "drop_end" || s.value == "drop_sync") {
+					const int mode = s.value == "drop_first" ? NET_JOIN_DROP_FIRST : s.value == "drop_second" ? NET_JOIN_DROP_SECOND
+					                                                             : s.value == "drop_end"      ? NET_JOIN_DROP_END
+					                                                                                          : NET_JOIN_DROP_SYNC;
+					if (!net_udp_join_wait_test_drop(mode)) stop_script_fail("Join packet loss requires an idle cooperative host");
 				} else if (s.value == "cancel") {
 					net_join_status status;
 					unsigned started;

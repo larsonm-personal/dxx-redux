@@ -16,6 +16,46 @@ static int join_pending_end_size, join_expected_objects;
 static unsigned join_early_ends;
 static int join_test_early_end;
 static unsigned join_excluded_spew;
+static int join_test_drop_mode;
+static unsigned join_test_drop_packets, join_test_drop_count;
+
+int net_udp_join_wait_test_drop(int mode)
+{
+	if (!multi_i_am_master() || !(Game_mode & GM_MULTI_COOP) || Network_send_objects ||
+	    mode < NET_JOIN_DROP_FIRST || mode > NET_JOIN_DROP_SYNC) return 0;
+	join_test_drop_mode = mode;
+	join_test_drop_packets = join_test_drop_count = 0;
+	REJOIN_LOG("test_drop_armed mode=%d", mode);
+	return 1;
+}
+
+unsigned net_udp_join_test_drops(void)
+{
+	return join_test_drop_count;
+}
+
+/* Android diagnostic only: called for the selected joiner's enveloped payload */
+static int net_udp_join_test_drop_payload(const ubyte *data, int length)
+{
+	if (!join_test_drop_mode) return 0;
+	int first = 0, drop = 0;
+	if (data[0] == UPID_OBJECT_DATA && length >= UPID_OBJECT_HEADER_SIZE + 9) {
+		first = GET_INTEL_INT(data + UPID_OBJECT_HEADER_SIZE);
+		if (first != -2) ++join_test_drop_packets;
+		drop = (join_test_drop_mode == NET_JOIN_DROP_FIRST && first == -1) ||
+		       (join_test_drop_mode == NET_JOIN_DROP_SECOND && first >= 0 && join_test_drop_packets == 2) ||
+		       (join_test_drop_mode == NET_JOIN_DROP_END && first == -2);
+	} else if (data[0] == UPID_SYNC) {
+		drop = join_test_drop_mode == NET_JOIN_DROP_SYNC;
+	}
+	if (!drop) return 0;
+	REJOIN_LOG("test_drop mode=%d attempt=%u visit=%llu type=%d bytes=%d packet=%u first=%d",
+	           join_test_drop_mode, (unsigned) UDP_sync_player.join_attempt,
+	           (unsigned long long) UDP_sync_player.join_visit, data[0], length, join_test_drop_packets, first);
+	join_test_drop_mode = 0;
+	++join_test_drop_count;
+	return 1;
+}
 
 unsigned net_udp_join_excluded_spew(void)
 {
