@@ -106,6 +106,14 @@ catalog execution cannot run on this local host: its child supervisor cannot
 read /proc/self/task/PID/children. Automation catalog validation passes. Runtime
 and compatibility claims remain pending actual successful CI evidence.
 
+The equivalent existing CI tooling owner subsequently passed on Ubuntu 24.04
+and Windows 2022 in run 39471168051 at
+71c38cfe258a317b525d60e7e2be1bcc547a0ce5. Its bounded tooling suite includes
+`test_sdk_writer_lock`, `test_run_all_tests_catalog`, and
+`test_validate_automation_catalog`; workflow validation and planner/ledger checks
+also passed. The local supervisor limitation remains local and is not an
+outstanding qualification blocker for those checks.
+
 Focused reproduction uses the existing workflow, not a new unmerged workflow:
 
 ```sh
