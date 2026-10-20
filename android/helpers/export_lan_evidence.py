@@ -25,7 +25,7 @@ for path in sorted(root.rglob("*")):
         continue
     if path.stat().st_size > 16 * 1024 * 1024:
         continue
-    if path.parent.name == "setup" and path.name.endswith("-logcat.log"):
+    if path.parent.name == "setup" and path.name.endswith("-logcat.log") and path.stat().st_size > 4096:
         continue
     raw = path.read_bytes()
     text = raw.decode("utf-8-sig", errors="replace")
@@ -55,6 +55,8 @@ for path in sorted(root.rglob("*")):
                 }
             events.append(event)
         text = "\n".join(json.dumps(e, separators=(",", ":")) for e in events)
+    elif relative == "setup/adb-devices.log" or (path.parent.name == "setup" and path.name.endswith("-logcat.log")):
+        pass
     elif relative == "setup/emulator-boot.log":
         text = "\n".join(text.splitlines()[-120:])
     elif re.fullmatch(r"session-\d+-(host|client).json", path.name):
@@ -91,7 +93,7 @@ for path in sorted(root.rglob("*")):
             # up to briefing readiness. This exports saved evidence, not a rerun
             if fault_case or re.fullmatch(r"session-\d+-emulator-\d+-logcat.txt", path.name):
                 if re.search(
-                    r"auto_net: starting auto-|STARTUP-AUTH|STARTUP-FAULT|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
+                    r"auto_net: starting auto-|main_menu: ACTIVATED|STARTUP-AUTH|STARTUP-FAULT|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
                     line,
                 ):
                     lines.append(line)

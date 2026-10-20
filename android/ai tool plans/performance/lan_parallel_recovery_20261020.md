@@ -100,6 +100,14 @@ case receipts and logs. Follow-up 6ebeeb3aa also requires a positive host termin
 menu after canceled, missing-third, and failed-load starts. Those strengthened
 assertions are absent from the pinned full run and need focused qualification.
 
+Mixed-binary coverage checks initial startup and reconnect after both peers have
+entered the running level. It does not qualify reconnect during initial loading
+with an old peer. The new initial-loading query phase is advertised only to a
+capable client; that recovery path requires both new endpoints. Older binaries
+retain serialized initial startup and their existing live-game join protocol.
+This compatibility scope is distinct from the all-new same-session loading
+reconnect test and must not be generalized to every mixed-version interruption.
+
 Local native authentication/deadline and wire-fixture tests pass in both engine
 build trees. Linux engine objects compile. The SDK-writer regression and master
 catalog execution cannot run on this local host: its child supervisor cannot
@@ -113,6 +121,54 @@ and Windows 2022 in run 39471168051 at
 `test_validate_automation_catalog`; workflow validation and planner/ledger checks
 also passed. The local supervisor limitation remains local and is not an
 outstanding qualification blocker for those checks.
+
+## First candidate runtime evidence
+
+Run 39465992978 completed its owner in 34:35, before the 40-minute owner
+timeout. Raw artifact 12287219949 and annotation export 39473966888 preserve
+the evidence. There are 23 observed case directories and 15 explicit passes:
+11 D1 and four D2. These are case receipts, not a complete matrix pass.
+
+- Same-session process restart/reconnect passed in both engines. Each host
+  retained its process and single initial level start; fresh authentication
+  proved a changed route (`initial_route_proven changed=1`) before readiness.
+- Both engines passed admission replay, the discriminating retag/signature
+  rejection test, and two dropped readiness requests.
+- D1 additionally passed proof loss/delay/replay, delayed admission, the
+  20-second client hold, canceled-loader timeout, and missing-third timeout.
+- All four host-loss cases logged `initial_sync_timeout` and returned from
+  `StartNewLevel`, but the harness waited for category-gated `net_log_comment`
+  output. Therefore its terminal-menu assertion was never reached. This is
+  evidence that network waiting stopped, not yet a complete observed-UI pass.
+- Escape likewise returned from initial loading in both games, but the same
+  gated marker prevented the cancellation/reconnect check from continuing.
+- The D1 missing-file fixture reached the real fatal error
+  `Can't open file <missions/__missing_startup_test_level__>`; the harness
+  expected different loader wording and stopped before checking host recovery.
+- During D2 proof-loss testing, emulator operations stopped succeeding and no
+  final native logs were captured. Later D2 resets, three-player verification,
+  and mixed installs could not execute reliably. The cause of the emulator
+  connection failure is not established; these are unqualified cases, not
+  demonstrated packet-protocol failures.
+
+The follow-up adds a forced `sync_wait_aborted` diagnostic, matches the actual
+loader error, and still requires positive terminal-menu observations. It also
+stops a matrix when emulator health is lost and reports remaining cases as
+blocked instead of producing cascading reset failures. Authentication, readiness
+and timeout behavior are unchanged by these follow-up diagnostics.
+
+The UI assertion rejects the ordinary `Wait...` dialog, even though it reports
+`screen_mode=menu` and `in_game=false`. After the native transition it requires
+either the specific failure text in a non-game-front dialog, or main-menu items
+with `is_network=false`. Host-only negative controls exercise that distinction;
+an error dialog awaiting acknowledgement is reported separately from a resumed
+game. Raw menu-activation breadcrumbs are retained in subsequent evidence exports.
+
+Focused runs may qualify a dual case by game, for example
+`-f recovery_cases=d2/drop-proof,d2/delay-proof`. This preserves earlier valid D1
+results while finishing the D2 cases that lost their emulator. Three-player and
+actual mixed-binary qualification run on separate fresh runners; no KVM
+permission change or attempt to revive the unavailable prior runner is needed.
 
 Focused reproduction uses the existing workflow, not a new unmerged workflow:
 
