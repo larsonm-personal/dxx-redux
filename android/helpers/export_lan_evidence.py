@@ -25,6 +25,8 @@ for path in sorted(root.rglob("*")):
         continue
     if path.stat().st_size > 16 * 1024 * 1024:
         continue
+    if path.parent.name == "setup" and path.name.endswith("-logcat.log"):
+        continue
     raw = path.read_bytes()
     text = raw.decode("utf-8-sig", errors="replace")
     relative = str(path.relative_to(root))
@@ -97,7 +99,11 @@ for path in sorted(root.rglob("*")):
                     lines.append(line)
                 continue
             if pattern.search(line) or (
-                startup and re.search(r"\sDXX(?:-DLOG|-Init|-Lifecycle|-Redux)?\s*:|SDL", line)
+                startup
+                and re.search(
+                    r"CHECKPOINT:|Starting D2X-Redux game engine|Loaded native library:|DXX-Lifecycle|GL_RENDERER|GL_VERSION|invalid reconnect",
+                    line,
+                )
             ):
                 lines.append(line)
             if startup and "[LAN-TIMING]" in line and "phase=6 armed=1" in line:
