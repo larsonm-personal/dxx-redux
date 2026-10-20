@@ -65,7 +65,7 @@ for path in sorted(root.rglob("*")):
         for line in text.splitlines():
             # Preserve native startup diagnostics, including packet/retry events,
             # up to briefing readiness. This exports saved evidence, not a rerun
-            if pattern.search(line) or (startup and re.search(r"\sDXX(?:-DLOG)?\s*:|SDL", line)):
+            if pattern.search(line) or (startup and re.search(r"\sDXX(?:-DLOG|-Init|-Lifecycle)?\s*:|SDL", line)):
                 lines.append(line)
             if startup and "[LAN-TIMING]" in line and "phase=6 armed=1" in line:
                 break
