@@ -16,7 +16,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 selected = {}
-pattern = re.compile(r"LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:", re.I)
+pattern = re.compile(r"LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate", re.I)
 for path in sorted(root.rglob("*")):
     if not path.is_file() or path.is_symlink() or path.suffix not in (".txt", ".log", ".json", ".jsonl"):
         continue
@@ -35,7 +35,7 @@ for path in sorted(root.rglob("*")):
                 data["state"] = {k: state.get(k) for k in ("in_game", "current_level_num", "screen_mode", "time_paused", "postlevel_active", "coop_briefing", "multiplayer", "menu")}
             events.append(event)
         text = "\n".join(json.dumps(e, separators=(",", ":")) for e in events)
-    elif path.name in ("experiment.json", "results.json", "lifecycle.json") or "automation_" in path.name or path.name.endswith("summary.json"):
+    elif (path.suffix == ".json" and len(raw) <= 512 * 1024) or (relative.startswith("master/") and len(raw) <= 512 * 1024) or "automation_" in path.name:
         pass
     else:
         text = "\n".join(line for line in text.splitlines() if pattern.search(line))
