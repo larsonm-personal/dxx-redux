@@ -28,10 +28,13 @@ for path in sorted(root.rglob("*")):
     raw = path.read_bytes()
     text = raw.decode("utf-8-sig", errors="replace")
     relative = str(path.relative_to(root))
+    fault_case = "parallel-startup-checks/" in relative
     if path.name == "events.jsonl":
         events = []
         for line in text.splitlines():
             event = json.loads(line)
+            if fault_case and event["event"] in ("observation", "cancel.observation"):
+                continue
             data = event.get("data")
             if event["event"] == "observation" and isinstance(data, dict):
                 state = data.get("state") or {}
@@ -65,6 +68,13 @@ for path in sorted(root.rglob("*")):
         for line in text.splitlines():
             # Preserve native startup diagnostics, including packet/retry events,
             # up to briefing readiness. This exports saved evidence, not a rerun
+            if fault_case:
+                if re.search(
+                    r"auto_net: starting auto-|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
+                    line,
+                ):
+                    lines.append(line)
+                continue
             if pattern.search(line) or (
                 startup and re.search(r"\sDXX(?:-DLOG|-Init|-Lifecycle|-Redux)?\s*:|SDL", line)
             ):
