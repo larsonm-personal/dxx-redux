@@ -605,6 +605,19 @@ static void acknowledge_local(void)
 
 void coop_briefing_network_frame(void)
 {
+#ifdef __ANDROID__
+	/* Android transition diagnostics use one local monotonic clock per process */
+	static uint64_t logged_generation;
+	static int logged_phase = -1, logged_armed = -1;
+	if (logged_generation != policy.generation || logged_phase != (int) policy.phase || logged_armed != armed) {
+		logged_generation = policy.generation;
+		logged_phase = policy.phase;
+		logged_armed = armed;
+		debug_log_force(DLOG_NETWORK, "[LAN-TIMING] ms=%llu player=%d level=%d generation=%llu phase=%d armed=%d presenting=%d",
+		                (unsigned long long) now_ms(), Player_num, Current_level_num,
+		                (unsigned long long) policy.generation, (int) policy.phase, armed, presenting);
+	}
+#endif
 	if (armed && have_state && policy.phase == COOP_PHASE_SETTLED) {
 		acknowledge_local();
 		/* Do not relinquish operation ownership until each participant has
