@@ -1,0 +1,5 @@
+game,case,case_pass_recorded,loaded_readiness_verified,host_kill_recorded,controller_host_loss_to_observed_menu_s,client_wait_s,client_timeout_to_menu_s,host_wait_s,third_wait_s,positive_terminal_menu_observations,host_sync_count,host_ready_acceptances,host_signature_rejections,host_admissions_received,wire_hashes_match_captures
+d1,three-player,True,,False,,,,,,0,1,8,0,2,
+d1,three-player-lost,True,,False,,,,59.691,59.195,2,0,26,0,2,
+d2,three-player,True,,False,,,,,,0,1,8,0,2,
+d2,three-player-lost,True,,False,,,,60.298,60.066,2,0,27,0,2,

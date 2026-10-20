@@ -1,0 +1,5 @@
+game,case,case_pass_recorded,host_kill_recorded,controller_host_loss_to_observed_menu_s,client_wait_s,host_wait_s,third_wait_s,positive_terminal_menu_observations,host_sync_count,host_ready_acceptances,host_signature_rejections,host_admissions_received,wire_hashes_match_captures
+d1,host-loss-loading,False,True,,,,,0,0,0,0,1,
+d1,host-loss-waiting,False,True,,,,,0,0,0,0,1,
+d2,host-loss-loading,False,True,,,,,0,0,0,0,1,
+d2,host-loss-waiting,False,True,,,,,0,0,0,0,1,

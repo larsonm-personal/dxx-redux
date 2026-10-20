@@ -1,0 +1,176 @@
+{
+    "cases": [
+        {
+            "case": "three-player",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 0
+                },
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5558-fault.json": {
+                    "delay_ms": 6000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 2,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 8,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "three-player-lost",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 0
+                },
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5558-fault.json": {
+                    "delay_ms": 6000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d1",
+            "host_admissions_received": 2,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": {
+                "begin": "d1-three-player-lost-emulator-5554-logcat.txt:19",
+                "end": "d1-three-player-lost-emulator-5554-logcat.txt:155",
+                "seconds": 59.691
+            },
+            "host_ready_acceptances": 26,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 2,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": {
+                "begin": "d1-three-player-lost-emulator-5558-logcat.txt:25",
+                "end": "d1-three-player-lost-emulator-5558-logcat.txt:175",
+                "seconds": 59.195
+            },
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "three-player",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 0
+                },
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5558-fault.json": {
+                    "delay_ms": 6000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 2,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": null,
+            "host_ready_acceptances": 8,
+            "host_signature_rejections": 0,
+            "host_sync_count": 1,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 0,
+            "proofs_received_while_playing": [
+                {
+                    "event": "proof_received",
+                    "level": "1",
+                    "line": "701.813  8042  8096 D DXX-DLOG: [NETWORK] [STARTUP-SYNC] event=proof_received level=1 status=1 player=0 players=3",
+                    "player": "0",
+                    "players": "3",
+                    "source": "d2-three-player-emulator-5554-logcat.txt:71",
+                    "status": "1",
+                    "time": 701.813
+                }
+            ],
+            "third_local_sync_wait": null,
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        },
+        {
+            "case": "three-player-lost",
+            "case_pass_recorded": true,
+            "client_local_sync_wait": null,
+            "client_timeout_to_main_menu": null,
+            "configured_faults": {
+                "emulator-5554-fault.json": {
+                    "delay_ms": 0
+                },
+                "emulator-5556-fault.json": {
+                    "delay_ms": 20000
+                },
+                "emulator-5558-fault.json": {
+                    "delay_ms": 6000
+                }
+            },
+            "controller_host_loss_to_observed_menu_s": null,
+            "game": "d2",
+            "host_admissions_received": 2,
+            "host_initial_reconnect_routes": [],
+            "host_kill_recorded": false,
+            "host_local_loading_wait": {
+                "begin": "d2-three-player-lost-emulator-5554-logcat.txt:19",
+                "end": "d2-three-player-lost-emulator-5554-logcat.txt:164",
+                "seconds": 60.298
+            },
+            "host_ready_acceptances": 27,
+            "host_signature_rejections": 0,
+            "host_sync_count": 0,
+            "late_admissions_ignored": [],
+            "loaded_readiness": null,
+            "positive_terminal_menu_observations": 2,
+            "proofs_received_while_playing": [],
+            "third_local_sync_wait": {
+                "begin": "d2-three-player-lost-emulator-5558-logcat.txt:19",
+                "end": "d2-three-player-lost-emulator-5558-logcat.txt:170",
+                "seconds": 60.066
+            },
+            "wire_captures": [],
+            "wire_hashes_match_captures": null,
+            "wire_releases": []
+        }
+    ],
+    "source_summary": {
+        "attempted_dual_cases": [],
+        "blocked": [],
+        "failures": [],
+        "passed": true,
+        "requested": ["three-player", "three-player-lost"],
+        "revision": "8186a3e6f1ec2ae2fdbd155a169732c407167000"
+    },
+    "timing_note": "Summarize observed LAN fault evidence without inventing timings or passes.\n\nController recovery intervals include adb/polling overhead and deliberate holds.\nNative wait intervals use one device's monotonic log only. Absent events remain\nabsent; a failing harness is not classified as an engine failure.\n"
+}
