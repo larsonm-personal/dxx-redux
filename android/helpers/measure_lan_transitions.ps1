@@ -2,7 +2,8 @@
 # Controller durations include command/poll overhead. Native script logs are local clocks
 function Write-LatencyEvent([string]$Peer, [string]$Event, $Data = $null) {
     [ordered]@{ sample = $script:latencySample; game = $script:latencyGame; peer = $Peer
-        event = $Event; controller_ms = $script:latencyClock.Elapsed.TotalMilliseconds; data = $Data } |
+        event = $Event; controller_ms = $script:latencyClock.Elapsed.TotalMilliseconds; data = $Data 
+    } |
         ConvertTo-Json -Depth 30 -Compress | Add-Content (Join-Path $outputDirectory 'events.jsonl') -Encoding utf8
 }
 
@@ -35,14 +36,24 @@ function Save-LatencyAutomation([string]$Phase) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "files/$name") -Seconds 10 |
                 Set-Content (Join-Path $outputDirectory "$($script:latencyGame)-$($script:latencySample)-$serial-$Phase-$name") -Encoding utf8
         }
+        $resultPath = Join-Path $outputDirectory "$($script:latencyGame)-$($script:latencySample)-$serial-$Phase-automation_result.json"
+        $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json -ErrorAction Stop
+        if ($result.result -ne 'PASS') { throw "Timing automation $Phase failed on ${serial}: $($result.reason)" }
     }
 }
 
 function Invoke-LatencyAutomation([string]$Phase) {
     $name = $latencyScripts[$Phase]
+    $sourcePath = Join-Path $script:REPO_ROOT "android/game_scripts/$name"
+    # The native loader accepts JSON, whereas the repository formatter emits
+    # JSONC trailing commas. Match the normal automation owner's staging path
+    $payload = ConvertFrom-JsoncText -Text ([IO.File]::ReadAllText($sourcePath)) -SourceName $sourcePath
+    $null = $payload | ConvertFrom-Json -ErrorAction Stop
+    $stagedPath = Join-Path $outputDirectory $name
+    [IO.File]::WriteAllText($stagedPath, $payload, [Text.UTF8Encoding]::new($false))
     # Stage on both peers before the timed command; file-copy time is not an engine wait
     foreach ($serial in @($hostSerial, $clientSerial)) {
-        Adb-Dev-Timeout -Serial $serial -AdbArgs @('push', (Join-Path $script:REPO_ROOT "android/game_scripts/$name"), "/data/local/tmp/$name") -Seconds 30 | Out-Null
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('push', $stagedPath, "/data/local/tmp/$name") -Seconds 30 | Out-Null
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', "/data/local/tmp/$name", "files/$name") -Seconds 10 | Out-Null
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/automation_result.json', 'files/automation_log.jsonl') -Seconds 5 | Out-Null
     }
@@ -66,7 +77,8 @@ function Invoke-LanTransitionMeasurements {
         clock = 'controller Stopwatch; no device clock subtraction'; samples = 3
         polling = 'Get-GameIntrospection -Fresh includes 800 ms sleep per peer plus ADB; observations are upper bounds'
         cache = 'sample 1 app data cleared; samples 2/3 process cold with app assets/cache retained; level 2 process warm'
-        host = $hostSerial; client = $clientSerial } | ConvertTo-Json | Set-Content (Join-Path $outputDirectory 'experiment.json')
+        host = $hostSerial; client = $clientSerial 
+    } | ConvertTo-Json | Set-Content (Join-Path $outputDirectory 'experiment.json')
     foreach ($serial in @($hostSerial, $clientSerial)) {
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'getprop') -Seconds 10 | Set-Content (Join-Path $outputDirectory "$serial-properties.txt")
     }
