@@ -54,6 +54,41 @@ def _missions(value):
     return None
 
 
+# Field names are fixed schema vocabulary, never mission values or arbitrary keys.
+DIAGNOSTIC_FIELDS = frozenset(('levels', 'status', 'segment_count', 'level_num', 'level_file',
+    'matcen_regression', 'capture_status', 'admission', 'robots', 'models', 'objects',
+    'vertices', 'segments', 'walls', 'triggers', 'game', 'target_index', 'mission_path',
+    'mission_filename', 'robot_count', 'object_count', 'version', 'reactor', 'secret_exit'))
+
+
+def metadata_differences(expected, actual, path=()):
+    differences = []
+
+    def visit(left, right, at):
+        if len(differences) >= 16 or left == right:
+            return
+        if type(left) is not type(right):
+            differences.append({"path": list(at), "kind": "type"})
+        elif isinstance(left, dict):
+            for key in sorted(left.keys() | right.keys()):
+                child = at + (key if key in DIAGNOSTIC_FIELDS else "field",)
+                if key not in left or key not in right:
+                    if len(differences) < 16:
+                        differences.append({"path": list(child), "kind": "missing-field"})
+                else:
+                    visit(left[key], right[key], child)
+        elif isinstance(left, list):
+            if len(left) != len(right):
+                differences.append({"path": list(at), "kind": "length"})
+            for index, (a, b) in enumerate(zip(left, right)):
+                visit(a, b, at + (index,))
+        else:
+            differences.append({"path": list(at), "kind": "value"})
+
+    visit(expected, actual, path)
+    return differences
+
+
 def compare_metadata(baseline, generated, summary, archive_name):
     """Compare full projected archive JSON and its mandatory owner receipt.
 
@@ -86,11 +121,13 @@ def compare_metadata(baseline, generated, summary, archive_name):
         return _receipt("BLOCKED", "Baseline mission metadata is not an ok oracle")
     # Preserve shape and semantic values/order; unbound robot masks are observations.
     try:
-        matches = _metadata_baseline(baseline) == _metadata_baseline(generated)
+        expected_projection, actual_projection = _metadata_baseline(baseline), _metadata_baseline(generated)
+        matches = expected_projection == actual_projection
     except (MatcenMismatch, KeyError, TypeError, ValueError) as error:
-        return _receipt("FAIL", "Invalid matcen comparison evidence: " + str(error))
+        return _receipt("FAIL", "Invalid matcen comparison evidence", private_error=str(error))
     if not matches:
-        return _receipt("FAIL", "Full projected metadata differs from committed baseline")
+        return _receipt("FAIL", "Full projected metadata differs from committed baseline",
+                        mismatches=metadata_differences(expected_projection, actual_projection))
     return _receipt("PASS", "Projected metadata semantics match committed baseline", missions=len(actual))
 
 

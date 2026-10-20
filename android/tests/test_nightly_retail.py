@@ -88,6 +88,38 @@ class RetailBoundaryTests(unittest.TestCase):
         self.assertNotEqual(plan['catalog_hash'], other['catalog_hash'])
         self.assertEqual(reset['records'], {})
 
+    def test_typed_failure_evidence_survives_projection_without_raw_output(self):
+        row = {
+            "id": "corpus:metadata:abc",
+            "status": "FAIL",
+            "phase": "tests",
+            "reason": "Full projected metadata differs from committed baseline",
+            "exit_code": 7,
+            "elapsed_seconds": 1.25,
+            "commands": [
+                {
+                    "command": "pwsh",
+                    "outcome": "timeout",
+                    "phase": "tests",
+                    "duration_seconds": 1.25,
+                    "stdout_bytes": 20,
+                    "stderr_bytes": 9,
+                    "argv": ["PRIVATE_MARKER"],
+                    "stderr": "PRIVATE_MARKER",
+                }
+            ],
+            "assets": {"archive": True, "retail_stage_verified": True, "private_path": "PRIVATE_MARKER"},
+        }
+        receipt = dict(schema=1, target_sha=SHA, catalog_hash="c", batch_id="b", lane="host", results=[row])
+        clean = retail.public_receipt(receipt)
+        self.assertEqual(clean["results"][0]["reason"], row["reason"])
+        self.assertEqual(clean["results"][0]["exit_code"], 7)
+        self.assertEqual(clean["results"][0]["commands"][0]["outcome"], "timeout")
+        self.assertEqual(clean, retail.public_receipt(clean))
+        self.assertNotIn("PRIVATE_MARKER", json.dumps(clean))
+        row["reason"] += " PRIVATE_MARKER"
+        self.assertEqual(retail.public_receipt(receipt)["results"][0]["reason"], "tests: FAIL")
+
     def test_projection_removes_all_arbitrary_test_strings(self):
         marker = 'ASSET_BYTES_MUST_NOT_ESCAPE'
         plan, state = self.plan(self.identity)

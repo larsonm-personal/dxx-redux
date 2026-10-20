@@ -43,6 +43,8 @@ class HostAdapterTests(unittest.TestCase):
                 self.assertEqual(receipt["blocker_kind"], "target-capability")
                 self.assertFalse(receipt["retryable"])
                 self.assertFalse(receipt["attempted_tests"])
+                self.assertTrue(receipt["assets"]["archive"])
+                self.assertTrue(receipt["assets"]["route_oracle"])
                 launch.assert_not_called()
 
     def test_corpus_setup_uses_host_jvm_and_reports_static_failure_stage(self):
@@ -76,11 +78,51 @@ class HostAdapterTests(unittest.TestCase):
                     self.assertEqual(code, 2)
                     self.assertEqual(receipt["phase"], "setup")
                     self.assertEqual(receipt["blocker_kind"], kind)
+                    self.assertEqual(receipt["commands"][-1]["exit_code"], 9)
+                    self.assertEqual(receipt["commands"][-1]["outcome"], "completed")
+                    self.assertIn("stdout_bytes", receipt["commands"][-1])
+                    self.assertIn("stderr_bytes", receipt["commands"][-1])
                     self.assertEqual(receipt["exit_code"], 9)
                     self.assertTrue(receipt["retryable"])
                     self.assertFalse(receipt["attempted_tests"])
                     self.assertFalse(receipt["coverage_complete"])
                     self.assertEqual(receipt["cases"], [])
+
+    def test_real_nonzero_process_retains_both_streams_and_typed_receipt(self):
+        suite = {"id": "fixture", "kind": "python-script", "path": "fixture.py", "coverage_scope": "fixture"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            (root / "fixture.py").write_text(
+                "import sys; print('stdout-marker'); print('stderr-marker', file=sys.stderr); sys.exit(7)"
+            )
+            code = adapter.run_suite(suite, root, root / "build", root / "out.json", 30)
+            row = json.loads((root / "out.json").read_text())
+            self.assertEqual(code, 1)
+            self.assertEqual(row["commands"][-1]["exit_code"], 7)
+            self.assertGreater(row["commands"][-1]["stdout_bytes"], 0)
+            self.assertGreater(row["commands"][-1]["stderr_bytes"], 0)
+            self.assertIn("stdout-marker", Path(row["log"]).read_text())
+            self.assertIn("stderr-marker", Path(row["log"]).read_text())
+
+    def test_launch_exception_survives_private_projection(self):
+        import nightly_retail
+
+        suite = adapter.load_suites()["python:test_music_spectra.py"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source = root / suite["path"]
+            source.parent.mkdir(parents=True)
+            source.write_text("")
+            with (
+                patch.object(adapter.importlib.util, "find_spec", return_value=object()),
+                patch.object(adapter.subprocess, "Popen", side_effect=OSError("PRIVATE_MARKER")),
+            ):
+                adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+            row = json.loads((root / "receipt.json").read_text())
+            self.assertEqual(row["commands"][-1]["outcome"], "exception")
+            clean = nightly_retail.public_diagnostics(row)
+            self.assertNotIn("PRIVATE_MARKER", json.dumps(clean))
+            self.assertEqual(clean["commands"][-1]["outcome"], "exception")
 
     def test_spectral_suite_blocks_missing_matplotlib_before_tests(self):
         suite = adapter.load_suites()["python:test_music_spectra.py"]
@@ -1551,6 +1593,11 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 self.assertFalse(data["attempted_tests"])
                 self.assertFalse(data["coverage_complete"])
                 self.assertEqual(data["cases"], [])
+                command = data['commands'][-1]
+                self.assertEqual(command['outcome'], 'timeout' if isinstance(interruption, subprocess.TimeoutExpired) else 'cancelled')
+                self.assertIn('duration_seconds', command)
+                self.assertIn('stdout_bytes', command)
+                self.assertIn('stderr_bytes', command)
 
 
 class FingerprintPortableCliTests(unittest.TestCase):

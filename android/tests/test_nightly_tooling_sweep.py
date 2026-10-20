@@ -664,6 +664,47 @@ class SweepTests(unittest.TestCase):
             result = sweep.collect(self.plan, self.policy, 'host', d)
             self.assertTrue(all(r['status'] == 'NOT_RUN' for r in result['results']))
 
+    def test_adapter_diagnostics_survive_collection_and_interruption(self):
+        entry = {
+            "id": "corpus:metadata:fixture",
+            "owner": "host-adapter",
+            "lane": "host",
+            "args": {"suite": "corpus:metadata:fixture"},
+            "estimated_seconds": 10,
+        }
+        policy = {"schema": 1, "suites": [entry]}
+        plan, state = sweep.plan_batch(SHA, {"schema": 1, "tests": []}, policy)
+        for completed in (True, False):
+            with self.subTest(completed=completed), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory)
+                sweep.write(
+                    output / "attempt.json",
+                    {
+                        **sweep.attempt_identity(plan, "host"),
+                        "processes": {entry["id"]: {"completed": completed, "exit_code": 1 if completed else None}},
+                    },
+                )
+                sweep.write(
+                    output / "corpus_metadata_fixture.json",
+                    {
+                        "schema": 1,
+                        "suite": entry["id"],
+                        "status": "FAIL",
+                        "exit_code": 7,
+                        "reason": "Full projected metadata differs from committed baseline",
+                        "commands": [{"command": "pwsh", "outcome": "completed", "exit_code": 7}],
+                        "mismatches": [{"path": [0, "levels", 1, "segment_count"], "kind": "value"}],
+                    },
+                )
+                receipt = sweep.collect(plan, policy, "host", output)
+                row = receipt["results"][0]
+                self.assertEqual(row["exit_code"], 7)
+                self.assertEqual(row["commands"][0]["exit_code"], 7)
+                self.assertEqual(row["mismatches"][0]["path"], [0, "levels", 1, "segment_count"])
+                self.assertEqual(row["status"], "FAIL" if completed else "NOT_RUN")
+                if not completed:
+                    self.assertEqual(sweep.reconcile(plan, policy, state, [receipt])["records"], {})
+
     def test_failed_master_without_receipts_is_pending_with_diagnostic(self):
         with tempfile.TemporaryDirectory() as d:
             self.attempt(d, 1)

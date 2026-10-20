@@ -64,6 +64,17 @@ class CorpusComparisons(unittest.TestCase):
             "mission.json",
         )["status"]
 
+    def test_metadata_difference_paths_are_bounded_and_do_not_expose_values(self):
+        from nightly_regression_corpus import metadata_differences
+
+        left = [{"levels": [{"segment_count": 2, "PRIVATE_KEY": "PRIVATE_VALUE"}]}]
+        right = [{"levels": [{"segment_count": 3, "PRIVATE_KEY": "OTHER_SECRET"}]}]
+        differences = metadata_differences(left, right)
+        self.assertIn({"path": [0, "levels", 0, "segment_count"], "kind": "value"}, differences)
+        self.assertNotIn("PRIVATE", str(differences))
+        self.assertNotIn("OTHER_SECRET", str(differences))
+        self.assertEqual(len(metadata_differences(list(range(100)), [-1] * 100)), 16)
+
     def test_mutated_oracle_cannot_be_its_own_expected_output(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "baseline.json"
