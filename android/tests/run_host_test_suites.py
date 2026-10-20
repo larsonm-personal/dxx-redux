@@ -602,6 +602,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             finally:
                 stream.flush()
                 errors.flush()
+                if type(getattr(process, "returncode", None)) is int:
+                    command_record["exit_code"] = process.returncode
                 command_record.update(duration_seconds=round(time.monotonic() - command_started, 3),
                                       stdout_bytes=max(0, log.stat().st_size - stream_start),
                                       stderr_bytes=stderr_path.stat().st_size)

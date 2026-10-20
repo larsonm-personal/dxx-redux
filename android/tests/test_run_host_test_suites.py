@@ -104,6 +104,20 @@ class HostAdapterTests(unittest.TestCase):
             self.assertIn("stdout-marker", Path(row["log"]).read_text())
             self.assertIn("stderr-marker", Path(row["log"]).read_text())
 
+    @unittest.skipUnless(sys.platform == "linux", "Real process-group timeout requires Linux")
+    def test_real_timeout_retains_partial_output_and_signal_exit(self):
+        suite = {"id": "fixture", "kind": "python-script", "path": "fixture.py", "coverage_scope": "fixture"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            (root / "fixture.py").write_text("import time; print('before-timeout', flush=True); time.sleep(30)")
+            self.assertEqual(adapter.run_suite(suite, root, root / "build", root / "out.json", 1), 1)
+            row = json.loads((root / "out.json").read_text())
+            command = row["commands"][-1]
+            self.assertEqual(command["outcome"], "timeout")
+            self.assertLess(command["exit_code"], 0)
+            self.assertGreater(command["stdout_bytes"], 0)
+            self.assertFalse(row["coverage_complete"])
+
     def test_launch_exception_survives_private_projection(self):
         import nightly_retail
 
