@@ -16,7 +16,7 @@ from pathlib import Path
 
 def extract(root):
     revision = json.loads((root / "experiment.json").read_text(encoding="utf-8-sig"))["revision"]
-    rows, trace, checkpoints, assets = [], [], [], []
+    rows, trace, checkpoints, assets, auth = [], [], [], [], []
     for path in sorted(root.glob("d?-*-emulator-*-logcat.txt")):
         game, sample, _, port, _ = path.name.split("-", 4)
         lines = path.read_text(encoding="utf-8-sig").splitlines()
@@ -65,6 +65,19 @@ def extract(root):
                         )
                     )
                 previous_checkpoint = (stamp, checkpoint, number)
+            if is_game and "[STARTUP-AUTH]" in line and "launch" in points:
+                fields = dict(re.findall(r"(\w+)=([^ ]+)", line.split("[STARTUP-AUTH]", 1)[1]))
+                auth.append(
+                    dict(
+                        revision=revision,
+                        game=game,
+                        sample=sample,
+                        peer=port,
+                        timestamp_s=stamp,
+                        source=f"{path.name}:{number}",
+                        **fields,
+                    )
+                )
             if is_game and "[STARTUP-ASSET]" in line and "launch" in points:
                 fields = dict(re.findall(r"(\w+)=([^ ]+)", line.split("[STARTUP-ASSET]", 1)[1]))
                 assets.append(
@@ -133,7 +146,54 @@ def extract(root):
                     source_end=f"{path.name}:{b}",
                 )
             )
-    return rows, trace, checkpoints, assets
+    return rows, trace, checkpoints, assets, auth
+
+
+def network_waits(trace):
+    rows = []
+    groups = list(dict.fromkeys((r["game"], r["sample"], r["peer"]) for r in trace if r["peer"] == "5554"))
+    for game, sample, peer in groups:
+        events = [r for r in trace if (r["game"], r["sample"], r["peer"]) == (game, sample, peer)]
+        waiting = False
+        points = {}
+        drops = {"UPID_REQUEST": 0, "UPID_RECONNECT_PROOF": 0}
+        for row in events:
+            fields = dict(re.findall(r"(\w+)=([^ ]+)", row["event"]))
+            event = fields.get("event")
+            if "flush_drop" in row["event"] and fields.get("name") in drops:
+                drops[fields["name"]] += int(fields["count"])
+            if event == "wait_requests_flush":
+                waiting = True
+            if not waiting:
+                continue
+            if event in ("flush_end", "request_received", "request_ready_accepted", "sync_send_begin"):
+                points.setdefault(event, row)
+        if not points:
+            continue
+        if len(points) != 4:
+            raise ValueError(f"Incomplete sync trace for {game} {sample}")
+        flush = points["flush_end"]
+        request = points["request_received"]
+        accepted = points["request_ready_accepted"]
+        sync = points["sync_send_begin"]
+        rows.append(
+            dict(
+                revision=flush["revision"],
+                game=game,
+                sample=sample,
+                peer=peer,
+                idle_after_flush_s=round(request["timestamp_s"] - flush["timestamp_s"], 6),
+                authentication_s=round(accepted["timestamp_s"] - request["timestamp_s"], 6),
+                flush_to_sync_s=round(sync["timestamp_s"] - flush["timestamp_s"], 6),
+                dropped_requests=drops["UPID_REQUEST"],
+                dropped_proofs=drops["UPID_RECONNECT_PROOF"],
+                flush_source=flush["source"],
+                request_source=request["source"],
+                accepted_source=accepted["source"],
+                sync_source=sync["source"],
+            )
+        )
+    return rows
 
 
 def write_if_changed(path, content):
@@ -146,12 +206,19 @@ def main():
     parser.add_argument("evidence", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    rows, trace, checkpoints, assets = extract(args.evidence)
+    rows, trace, checkpoints, assets, auth = extract(args.evidence)
     args.output.mkdir(parents=True, exist_ok=True)
-    for name, data in [("stages", rows), ("packets", trace), ("checkpoints", checkpoints), ("assets", assets)]:
+    for name, data in [
+        ("stages", rows),
+        ("packets", trace),
+        ("checkpoints", checkpoints),
+        ("assets", assets),
+        ("auth", auth),
+        ("network_waits", network_waits(trace)),
+    ]:
         if data:
             f = io.StringIO(newline="")
-            writer = csv.DictWriter(f, fieldnames=list(data[0]))
+            writer = csv.DictWriter(f, fieldnames=list(data[0]), lineterminator="\n")
             writer.writeheader()
             writer.writerows(data)
             write_if_changed(args.output / f"{name}.csv", f.getvalue().encode())
