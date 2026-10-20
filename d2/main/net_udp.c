@@ -7446,9 +7446,8 @@ int net_udp_wait_for_sync(void)
 	Network_status = NETSTAT_WAITING;
 #ifdef __ANDROID__
 	net_join_wait_sync_begin();
-	android_net_udp_initial_request_begin(&android_initial_request_retry,
-	    N_players == 0 && (Game_mode & GM_MULTI_COOP) &&
-	    !net_join_wait_active() && !multi_save_transfer_restoring());
+	/* Experiment control: retain the original retry cadence with identical probes */
+	android_net_udp_initial_request_begin(&android_initial_request_retry, 0);
 #endif
 	con_printf(CON_DEBUG, "wait_for_sync: entering, master=%d\n", multi_i_am_master());
 	m[0].type=NM_TYPE_TEXT; m[0].text = text;
