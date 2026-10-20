@@ -44,6 +44,10 @@ def extract(root):
             stamp = float(clock[1])
             is_game = line.split()[1] == game_pid
             for key, marker in markers.items():
+                if key not in ("launch", "activity_intent") and not is_game:
+                    continue
+                if key != "launch" and "launch" not in points:
+                    continue
                 if marker in line and key not in points:
                     points[key] = (stamp, number)
             if is_game and "CHECKPOINT:" in line and "launch" in points:
@@ -271,7 +275,9 @@ def compare(control, candidate, output, plt):
     buffer = io.StringIO(newline="")
     writer = csv.DictWriter(buffer, fieldnames=list(summary[0]), lineterminator="\n")
     writer.writeheader()
-    writer.writerows(summary)
+    writer.writerows(
+        {key: round(value, 6) if isinstance(value, float) else value for key, value in row.items()} for row in summary
+    )
     write_if_changed(output / "comparison.csv", buffer.getvalue().encode())
 
 

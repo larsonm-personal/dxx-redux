@@ -1,0 +1,7 @@
+game,metric,control_n,candidate_n,control_mean_s,candidate_mean_s,difference_s,control_min_s,control_max_s,candidate_min_s,candidate_max_s
+d1,flush_to_sync_s,3,3,2.03,0.595,-1.435,1.844,2.125,0.515,0.707
+d2,flush_to_sync_s,3,3,2.380333,1.079667,-1.300667,2.192,2.563,0.84,1.426
+d1,network_sync,3,3,2.041083,0.598725,-1.442358,1.859955,2.135943,0.518638,0.711286
+d2,network_sync,3,3,2.453295,1.084776,-1.368519,2.218859,2.598705,0.845111,1.431145
+d1,launch_ready,3,3,17.151,10.794333,-6.356667,15.207,20.497,9.824,12.115
+d2,launch_ready,3,3,20.371667,14.226,-6.145667,19.761,21.172,13.629,14.903

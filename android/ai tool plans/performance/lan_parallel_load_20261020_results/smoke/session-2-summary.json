@@ -1,0 +1,14 @@
+{
+  "result": "PASS",
+  "session": 2,
+  "engine": "d2",
+  "content": "d2",
+  "mission": "d2demo",
+  "level": 1,
+  "host": "emulator-5556",
+  "client": "emulator-5554",
+  "host_callsign": "PrepH2",
+  "client_callsign": "PrepJ2",
+  "connected_players_per_peer": 2,
+  "engine_identity": "fresh native-library log and fresh gameplay introspection"
+}

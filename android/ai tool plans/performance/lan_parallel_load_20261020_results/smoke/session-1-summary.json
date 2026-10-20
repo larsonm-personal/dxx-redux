@@ -1,0 +1,14 @@
+{
+  "result": "PASS",
+  "session": 1,
+  "engine": "d1",
+  "content": "d1",
+  "mission": "",
+  "level": 1,
+  "host": "emulator-5554",
+  "client": "emulator-5556",
+  "host_callsign": "PrepH1",
+  "client_callsign": "PrepJ1",
+  "connected_players_per_peer": 2,
+  "engine_identity": "fresh native-library log and fresh gameplay introspection"
+}
