@@ -18,9 +18,13 @@ from chart_lan_startup import write_if_changed
 def read_log(path):
     events = []
     loads = []
-    for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    pids = {line.split()[1] for line in lines if "auto_net: starting auto-" in line}
+    assert len(pids) == 1, f"Expected one native game process in {path}"
+    game_pid = pids.pop()
+    for number, line in enumerate(lines, 1):
         clock = re.match(r"\s*(\d+\.\d+)\s", line)
-        if not clock:
+        if not clock or line.split()[1] != game_pid:
             continue
         stamp = float(clock[1])
         fields = dict(re.findall(r"(\w+)=([^ ]+)", line))
@@ -118,6 +122,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("evidence", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-incomplete", action="store_true", help="Explicitly analyze a partial failed run")
     args = parser.parse_args()
     rows = []
     for host in sorted(args.evidence.rglob("d*-emulator-5554-logcat.txt")):
@@ -125,9 +130,19 @@ def main():
         game, case = host.name.split("-", 1)
         case = case.removesuffix("-emulator-5554-logcat.txt")
         row = check_pair(host, client, case)
+        if not case.isdigit():
+            events = [
+                json.loads(line) for line in (host.parent / "events.jsonl").read_text(encoding="utf-8-sig").splitlines()
+            ]
+            assert any(e["event"] == "case.pass" for e in events), f"Fault case {game}/{case} did not pass"
         row.update(game=game, directory=str(host.parent.relative_to(args.evidence)))
         rows.append(row)
     assert rows, "No peer captures found"
+    if not args.allow_incomplete:
+        cases = {"1", "2", "3", "slow-host", "slow-client-duplicate", "dropped-admission", "cancel-client", "retry"}
+        assert {(r["game"], r["case"]) for r in rows} == {(g, c) for g in ("d1", "d2") for c in cases}, (
+            "Incomplete experiment"
+        )
     args.output.mkdir(parents=True, exist_ok=True)
     columns = list(dict.fromkeys(k for row in rows for k in row))
     output = io.StringIO(newline="")
