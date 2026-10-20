@@ -60,7 +60,16 @@ for path in sorted(root.rglob("*")):
     ):
         pass
     else:
-        text = "\n".join(line for line in text.splitlines() if pattern.search(line))
+        lines = []
+        startup = bool(re.fullmatch(r"d[12]-\d+-emulator-\d+-logcat.txt", path.name))
+        for line in text.splitlines():
+            # Preserve native startup diagnostics, including packet/retry events,
+            # up to briefing readiness. This exports saved evidence, not a rerun
+            if pattern.search(line) or (startup and re.search(r"DXX|MainActivity|SDL", line)):
+                lines.append(line)
+            if "[LAN-TIMING]" in line and "phase=6 armed=1" in line:
+                startup = False
+        text = "\n".join(lines)
     if text:
         selected[relative] = {"source_sha256": hashlib.sha256(raw).hexdigest(), "text": text}
 blob = gzip.compress(json.dumps(selected, separators=(",", ":")).encode(), mtime=0)
