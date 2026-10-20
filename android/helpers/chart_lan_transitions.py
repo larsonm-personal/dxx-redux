@@ -10,6 +10,7 @@ import csv
 import html
 import json
 import re
+import statistics
 from collections import defaultdict
 from pathlib import Path
 
@@ -77,6 +78,27 @@ def extract(root):
                     ends[0]["controller_ms"],
                     "events.jsonl",
                 )
+            arrived = [e for e in local if e["event"] == "level2.arrived"]
+            ready = [e for e in local if e["event"] == "level2.ready"]
+            if arrived and ready:
+                skips = [
+                    e
+                    for e in local
+                    if e["event"] == "skip.request" and e["controller_ms"] > arrived[0]["controller_ms"]
+                ]
+                advances = [e for e in local if e["event"] == "next.request"]
+                inputs = skips or advances
+                if inputs:
+                    row(
+                        game,
+                        sample,
+                        peer,
+                        "second_level_entry",
+                        "controller_upper_bound",
+                        inputs[0]["controller_ms"],
+                        ready[0]["controller_ms"],
+                        "events.jsonl",
+                    )
             for phase in ("skip1", "exit", "next", "skip2"):
                 path = root / f"{game}-{sample}-{peer}-{phase}-automation_log.jsonl"
                 if not path.exists():
@@ -93,7 +115,7 @@ def extract(root):
                         game,
                         sample,
                         peer,
-                        f"{phase}_action_to_ready",
+                        "next_action_to_level2_arrived" if phase == "next" else f"{phase}_action_to_ready",
                         "native_action_to_condition",
                         actions[0]["elapsed_ms"],
                         completions[0]["elapsed_ms"],
@@ -123,6 +145,63 @@ def extract(root):
     for path in sorted(root.glob("d?-*-emulator-*-logcat.txt")):
         game, sample, emulator, port, _ = path.name.split("-", 4)
         text = path.read_text(encoding="utf-8-sig")
+        startup = {}
+        lobby = {}
+        lobby_markers = {
+            "host_request": "MP_COMMAND: lan_host_lobby",
+            "host_created": "Hosting LAN lobby ",
+            "host_peer_joined": "Player joined: TimingJ ",
+            "discover_request": "MP_COMMAND: lan_discover",
+            "discovered": "recv: ANNOUNCE ",
+            "join_request": "joinLobby: lobbyId=",
+            "joined": "JOIN_ACK received for lobby ",
+        }
+        milestones = {
+            "request": "MP_COMMAND: launch_game",
+            "feedback_published": "Launcher game launch requested",
+            "activity_displayed": "Displayed com.dxxredux.app/.MainActivity",
+            "library_loaded": "Loaded native library:",
+            "briefing_protocol_ready": "phase=6 armed=1",
+        }
+        for line in text.splitlines():
+            clock = re.match(r"\s*(\d+\.\d+)\s", line)
+            if clock:
+                for key, marker in lobby_markers.items():
+                    if marker in line and key not in lobby:
+                        lobby[key] = float(clock.group(1)) * 1000
+                for key, marker in milestones.items():
+                    if marker in line and key not in startup:
+                        startup[key] = float(clock.group(1)) * 1000
+        for label, start, end in (
+            ("host_lobby_create", "host_request", "host_created"),
+            ("host_lobby_to_peer_joined", "host_created", "host_peer_joined"),
+            ("client_discovery", "discover_request", "discovered"),
+            ("client_join_ack", "join_request", "joined"),
+        ):
+            if start in lobby and end in lobby:
+                row(
+                    game,
+                    int(sample),
+                    f"{emulator}-{port}",
+                    label,
+                    "device_local_lobby_milestone",
+                    lobby[start],
+                    lobby[end],
+                    path.name,
+                )
+        if "request" in startup:
+            for key, stamp in startup.items():
+                if key != "request":
+                    row(
+                        game,
+                        int(sample),
+                        f"{emulator}-{port}",
+                        f"launch_to_{key}",
+                        "device_local_startup_milestone",
+                        startup["request"],
+                        stamp,
+                        path.name,
+                    )
         for line in text.splitlines():
             if "loadprof_v=1" not in line:
                 continue
@@ -184,12 +263,12 @@ def write_chart(rows, output):
         '<rect width="100%" height="100%" fill="white"/>',
         '<g font-family="sans-serif" fill="#17233b">',
         '<text x="20" y="28" font-size="20">Observed LAN transitions: individual samples and mean</text>',
-        '<text x="20" y="50" font-size="12">Blue = controller upper bound (ADB/poll included); green = native local duration. Missing phases omitted.</text>',
+        '<text x="20" y="50" font-size="12">Blue = controller upper bound (ADB/poll included); green = device-local duration. Missing phases omitted.</text>',
     ]
     for index, ((game, peer, phase, basis), values) in enumerate(sorted(groups.items())):
         y = 85 + index * 30
         mean = sum(values) / len(values)
-        color = "#207b54" if basis.startswith("native_") else "#386cb0"
+        color = "#386cb0" if basis == "controller_upper_bound" else "#207b54"
         label = html.escape(f"{game} {peer} {phase}")
         parts.append(f'<text x="20" y="{y + 5}" font-size="12">{label}</text>')
         parts.append(f'<rect x="460" y="{y - 8}" width="{mean / maximum * 600:.2f}" height="16" fill="{color}"/>')
@@ -200,10 +279,93 @@ def write_chart(rows, output):
     output.write_text("\n".join(parts) + "\n", encoding="utf-8")
 
 
+def comparison_groups(rows):
+    groups = defaultdict(list)
+    phases = defaultdict(list)
+    for row in rows:
+        key = row["game"], row["peer"]
+        if row["basis"] in ("native_action_to_condition", "device_local_startup_milestone"):
+            groups[(*key, row["phase"])].append(float(row["duration_ms"]))
+        if row["basis"] == "native_phase_residence":
+            match = re.fullmatch(r"level(\d+)_gen(\d+)_phase([789])_to_(\d+)", row["phase"])
+            if match:
+                level, generation, start, end = map(int, match.groups())
+                phases[(*key, int(row["sample"]), level, generation)].append(
+                    (start, end, float(row["start_ms"]), float(row["end_ms"]))
+                )
+    # Compare each operation separately. Generations are time-derived and cannot
+    # be matched by numeric value across runs; their local start order is stable.
+    operations = defaultdict(list)
+    for (game, peer, sample, level, generation), values in phases.items():
+        values.sort()
+        if [(v[0], v[1]) for v in values] == [(7, 8), (8, 9), (9, 0)]:
+            operations[game, peer, sample, level].append((values[0][2], values[-1][3]))
+    for (game, peer, sample, level), values in operations.items():
+        for index, (start, end) in enumerate(sorted(values), 1):
+            groups[game, peer, f"level{level}_handshake{index}_closing_to_settled"].append(end - start)
+    return groups
+
+
+def write_comparison(before_rows, after_rows, output):
+    before, after = comparison_groups(before_rows), comparison_groups(after_rows)
+    summary = []
+    for key in sorted(before.keys() | after.keys()):
+        old, new = before.get(key, []), after.get(key, [])
+        row = dict(zip(("game", "peer", "metric"), key))
+        for label, values in (("before", old), ("after", new)):
+            row[f"{label}_n"] = len(values)
+            for stat, function in (
+                ("mean", statistics.mean),
+                ("median", statistics.median),
+                ("min", min),
+                ("max", max),
+            ):
+                row[f"{label}_{stat}_ms"] = round(function(values), 3) if values else ""
+            row[f"{label}_samples_ms"] = ";".join(str(round(v, 3)) for v in values)
+        row["mean_delta_ms"] = round(statistics.mean(new) - statistics.mean(old), 3) if old and new else ""
+        summary.append(row)
+    with (output / "comparison.csv").open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(summary[0]), lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(summary)
+    selected = [r for r in summary if "handshake" in r["metric"] or "_action_to_" in r["metric"]]
+    height = 125 + 45 * len(selected)
+    maximum = max(float(r[f"{label}_max_ms"] or 0) for r in selected for label in ("before", "after")) or 1
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="{height}">',
+        '<rect width="100%" height="100%" fill="white"/><g font-family="sans-serif" fill="#17233b">',
+        '<text x="20" y="28" font-size="20">LAN co-op: matched before / after observations</text>',
+        '<text x="20" y="51" font-size="13">Gray: before. Green: immediate phase publication. Bars = means; dots = individual samples; n=3 per row/run.</text>',
+        '<text x="20" y="72" font-size="13">Device-local native action conditions or closing→settled log timestamps. No controller polling bounds in this chart.</text>',
+        '<text x="20" y="91" font-size="13">Small sequential emulator samples: variation is not proof of a speedup. Host=5554, client=5556.</text>',
+    ]
+    for index, row in enumerate(selected):
+        y = 120 + 45 * index
+        label = html.escape(f"{row['game']} {row['peer']} {row['metric']}")
+        parts.append(f'<text x="20" y="{y + 5}" font-size="11">{label}</text>')
+        for offset, variant, color in ((0, "before", "#8290a3"), (16, "after", "#207b54")):
+            if not row[f"{variant}_n"]:
+                continue
+            mean = row[f"{variant}_mean_ms"]
+            parts.append(
+                f'<rect x="505" y="{y + offset - 6}" width="{mean / maximum * 570:.2f}" height="11" fill="{color}"/>'
+            )
+            for value in row[f"{variant}_samples_ms"].split(";"):
+                parts.append(
+                    f'<circle cx="{505 + float(value) / maximum * 570:.2f}" cy="{y + offset}" r="2.5" fill="#111"/>'
+                )
+            parts.append(
+                f'<text x="1090" y="{y + offset + 4}" font-size="11">{mean / 1000:.3f}s n={row[f"{variant}_n"]}</text>'
+            )
+    parts.append("</g></svg>")
+    (output / "comparison.svg").write_text("\n".join(parts) + "\n", encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("evidence", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--compare", type=Path, help="Before timings.csv; compare against this evidence run")
     args = parser.parse_args()
     manifest, rows = extract(args.evidence)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -218,6 +380,9 @@ def main():
     overview = [r for r in rows if r["basis"] == "native_action_to_condition" or r["phase"] == "start_to_briefing1"]
     if overview:
         write_chart(overview, args.output / "overview.svg")
+    if args.compare:
+        with args.compare.open(newline="", encoding="utf-8") as stream:
+            write_comparison(list(csv.DictReader(stream)), rows, args.output)
     print(f"Wrote {len(rows)} observed intervals to {args.output}")
 
 

@@ -2,14 +2,14 @@
 <rect width="100%" height="100%" fill="white"/>
 <g font-family="sans-serif" fill="#17233b">
 <text x="20" y="28" font-size="20">Observed LAN transitions: individual samples and mean</text>
-<text x="20" y="50" font-size="12">Blue = controller upper bound (ADB/poll included); green = native local duration. Missing phases omitted.</text>
+<text x="20" y="50" font-size="12">Blue = controller upper bound (ADB/poll included); green = device-local duration. Missing phases omitted.</text>
 <text x="20" y="90" font-size="12">d1 emulator-5554 exit_action_to_ready</text>
 <rect x="460" y="77" width="60.44" height="16" fill="#207b54"/>
 <circle cx="519.29" cy="85" r="3" fill="#111"/>
 <circle cx="522.64" cy="85" r="3" fill="#111"/>
 <circle cx="519.38" cy="85" r="3" fill="#111"/>
 <text x="1080" y="90" font-size="12">2.849s n=3</text>
-<text x="20" y="120" font-size="12">d1 emulator-5554 next_action_to_ready</text>
+<text x="20" y="120" font-size="12">d1 emulator-5554 next_action_to_level2_arrived</text>
 <rect x="460" y="107" width="42.50" height="16" fill="#207b54"/>
 <circle cx="509.62" cy="115" r="3" fill="#111"/>
 <circle cx="499.33" cy="115" r="3" fill="#111"/>
@@ -39,7 +39,7 @@
 <circle cx="513.97" cy="235" r="3" fill="#111"/>
 <circle cx="515.56" cy="235" r="3" fill="#111"/>
 <text x="1080" y="240" font-size="12">2.554s n=3</text>
-<text x="20" y="270" font-size="12">d1 emulator-5556 next_action_to_ready</text>
+<text x="20" y="270" font-size="12">d1 emulator-5556 next_action_to_level2_arrived</text>
 <rect x="460" y="257" width="39.33" height="16" fill="#207b54"/>
 <circle cx="504.99" cy="265" r="3" fill="#111"/>
 <circle cx="494.54" cy="265" r="3" fill="#111"/>
@@ -69,7 +69,7 @@
 <circle cx="525.32" cy="385" r="3" fill="#111"/>
 <circle cx="523.79" cy="385" r="3" fill="#111"/>
 <text x="1080" y="390" font-size="12">3.035s n=3</text>
-<text x="20" y="420" font-size="12">d2 emulator-5554 next_action_to_ready</text>
+<text x="20" y="420" font-size="12">d2 emulator-5554 next_action_to_level2_arrived</text>
 <rect x="460" y="407" width="56.65" height="16" fill="#207b54"/>
 <circle cx="525.12" cy="415" r="3" fill="#111"/>
 <circle cx="513.44" cy="415" r="3" fill="#111"/>
@@ -93,7 +93,7 @@
 <circle cx="517.89" cy="505" r="3" fill="#111"/>
 <circle cx="519.25" cy="505" r="3" fill="#111"/>
 <text x="1080" y="510" font-size="12">2.705s n=3</text>
-<text x="20" y="540" font-size="12">d2 emulator-5556 next_action_to_ready</text>
+<text x="20" y="540" font-size="12">d2 emulator-5556 next_action_to_level2_arrived</text>
 <rect x="460" y="527" width="64.37" height="16" fill="#207b54"/>
 <circle cx="526.72" cy="535" r="3" fill="#111"/>
 <circle cx="521.62" cy="535" r="3" fill="#111"/>
