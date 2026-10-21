@@ -221,6 +221,26 @@ class RelayTransportTest {
                             keyB,
                         ),
                     )
+                    // Make the timeout worker yield after closing the engine socket,
+                    // so its sibling observes closure before coroutineScope selects a cause
+                    val peersField = LocalhostProxy::class.java.getDeclaredField("peerProxies")
+                    peersField.isAccessible = true
+                    val peer = (peersField.get(proxy) as List<*>).single()!!
+                    val localField = peer.javaClass.getDeclaredField("localSocket")
+                    localField.isAccessible = true
+                    (localField.get(peer) as DatagramSocket).close()
+                    val delayedClose =
+                        object : DatagramSocket(port, loopback) {
+                            private val firstClose =
+                                java.util.concurrent.atomic
+                                    .AtomicBoolean(true)
+
+                            override fun close() {
+                                super.close()
+                                if (firstClose.compareAndSet(true, false)) Thread.sleep(200)
+                            }
+                        }
+                    localField.set(peer, delayedClose)
                     proxy.start()
                     val remote = RelayTransport(42u, 2, 0, keyB, keyA)
                     val request = receive(server)
@@ -232,7 +252,7 @@ class RelayTransportTest {
                     send(server, address, remote.encode(RelayTransport.BOUND, byteArrayOf()))
                     // Simulate a dead/restarted relay by withholding further acknowledgements
                     val message = withTimeout(12_000) { failed.await() }
-                    assertTrue(message.contains("within 10 seconds"))
+                    assertTrue("Unexpected proxy failure: $message", message.contains("within 10 seconds"))
                     withTimeout(2000) { owner.children.toList().forEach { it.join() } }
                     assertTrue(network.isClosed)
                     DatagramSocket(port, loopback).use { assertTrue(it.isBound) }

@@ -512,32 +512,43 @@ private class PeerProxy(
         )
 
     suspend fun run() {
-        kotlinx.coroutines.coroutineScope {
-            suspend fun forward(
-                name: String,
-                block: suspend () -> Unit,
-            ) {
-                try {
-                    block()
-                    throw IOException("Peer ${config.peerSlot} forwarding loop stopped")
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    diagnostics.failure("worker $name", realSocket, e)
-                    throw e
-                } finally {
-                    // Unblock sibling receivers before coroutineScope waits for them
-                    close("worker $name finished")
+        val firstFailure =
+            java.util.concurrent.atomic
+                .AtomicReference<Exception>()
+        try {
+            kotlinx.coroutines.coroutineScope {
+                suspend fun forward(
+                    name: String,
+                    block: suspend () -> Unit,
+                ) {
+                    try {
+                        block()
+                        throw IOException("Peer ${config.peerSlot} forwarding loop stopped")
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // Record the cause before socket closure can fail a sibling worker
+                        firstFailure.compareAndSet(null, e)
+                        diagnostics.failure("worker $name", realSocket, e)
+                        throw e
+                    } finally {
+                        // Unblock sibling receivers before coroutineScope waits for them
+                        close("worker $name finished")
+                    }
                 }
+                // local -> real: engine sends to our local port, we forward to peer
+                launch { forward("local-to-real") { forwardLocalToReal() } }
+                // real -> local: only when we own the socket (non-shared mode)
+                if (ownsRealSocket) {
+                    launch { forward("real-to-local") { forwardRealToLocal() } }
+                }
+                // NAT keepalive (direct and relay)
+                launch { forward("keepalive") { keepalive() } }
             }
-            // local -> real: engine sends to our local port, we forward to peer
-            launch { forward("local-to-real") { forwardLocalToReal() } }
-            // real -> local: only when we own the socket (non-shared mode)
-            if (ownsRealSocket) {
-                launch { forward("real-to-local") { forwardRealToLocal() } }
-            }
-            // NAT keepalive (direct and relay)
-            launch { forward("keepalive") { keepalive() } }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw firstFailure.get() ?: e
         }
     }
 
