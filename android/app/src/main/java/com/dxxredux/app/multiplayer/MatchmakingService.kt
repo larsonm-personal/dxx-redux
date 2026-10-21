@@ -94,7 +94,8 @@ private fun isPrivateAddress(host: String): Boolean =
     }
 
 object MatchmakingService {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Host integration tests replace this private scope to advance reconnect time deterministically
+    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val state get() = MatchmakingStateHolder
 
     private val client =
@@ -1063,7 +1064,6 @@ object MatchmakingService {
         ) {
             withConnection(webSocket) {
                 Log.i(TAG, "WebSocket open")
-                reconnectAttempt = 0
                 state.update { it.copy(status = ConnectionStatus.AUTHENTICATING) }
                 state.appendLog("Connected. Authenticating as '$callsign'...")
                 NetLog.log("CONNECT", "WebSocket open")
@@ -1322,6 +1322,8 @@ object MatchmakingService {
         try {
             when (val msg = MatchmakingDiagnostics.parse(text) ?: return) {
                 is ServerMessage.AuthOkMsg -> {
+                    // An accepted socket is not a recovered authenticated session
+                    reconnectAttempt = 0
                     state.update {
                         it.copy(
                             status = ConnectionStatus.CONNECTED,
