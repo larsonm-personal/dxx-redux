@@ -93,6 +93,7 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
     let mut cleanup_interval = tokio::time::interval(Duration::from_secs(600));
     let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(15));
     let mut lobby_cleanup_interval = tokio::time::interval(Duration::from_secs(60));
+    let mut late_join_interval = tokio::time::interval(Duration::from_secs(1));
 
     loop {
         tokio::select! {
@@ -113,6 +114,9 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
             }
             _ = relay_cleanup_interval.tick() => {
                 crate::relay::cleanup_stale_sessions(&state);
+            }
+            _ = late_join_interval.tick() => {
+                crate::ws_handler::expire_pending_late_joins(&state, std::time::Instant::now());
             }
             _ = lobby_cleanup_interval.tick() => {
                 cleanup_stale_lobbies(&state);

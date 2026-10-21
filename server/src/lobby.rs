@@ -1,6 +1,6 @@
 use serde::Serialize;
 use serde_json::Value as JsonValue;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -113,8 +113,8 @@ pub struct Lobby {
     pub runtime_game_status: Option<u8>,
     /// Last time the host sent an UPDATE_GAME_STATE.
     pub last_state_update: Option<Instant>,
-    /// Players currently going through late-join ICE (joiner player_ids).
-    pub pending_late_joiners: HashSet<Uuid>,
+    /// Late joiners awaiting launch, with fixed admission deadlines.
+    pub pending_late_joiners: HashMap<Uuid, Instant>,
 }
 
 impl Lobby {
@@ -158,7 +158,7 @@ impl Lobby {
             runtime_level: None,
             runtime_game_status: None,
             last_state_update: None,
-            pending_late_joiners: HashSet::new(),
+            pending_late_joiners: HashMap::new(),
         }
     }
 
@@ -208,6 +208,9 @@ impl Lobby {
         else {
             return false;
         };
+        if self.state == LobbyState::InGame {
+            self.pending_late_joiners.insert(player_id, Instant::now());
+        }
         self.players.push(LobbyPlayer {
             slot,
             player_id,
