@@ -1,0 +1,121 @@
+#!/usr/bin/env pwsh
+# Device-free controls for the registered online owner's explicit consent boundary
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Owned test stubs simulate readiness and elapsed time without devices or network')]
+param()
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$errors = $null
+$owner = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'test_mp.ps1'), [ref]$null, [ref]$errors)
+if ($errors.Count) { throw 'Online owner parse failed' }
+foreach ($name in @('Test-ExpectedOnlineAdmission', 'Assert-OnlineAdmissionCancelled')) {
+    $definition = $owner.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+        }, $true)
+    if (-not $definition) { throw "Missing online function $name" }
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
+foreach ($case in @('valid', 'wrong-call', 'wrong-id', 'wrong-slot', 'expired', 'negative-age', 'nonhost', 'not-pending', 'missing-field')) {
+    $game = [pscustomobject]@{ in_game = $true; is_network = $true; multiplayer = [pscustomobject]@{
+            i_am_master = $true; join_request_pending = $true; join_request_callsign = 'LatePlt'; join_request_age_ms = 100
+        }
+    }
+    $control = [pscustomobject]@{ lobby = [pscustomobject]@{ players = @(
+                [pscustomobject]@{ player_id = 'fixture-player'; callsign = 'LatePlt'; slot = 2 }
+            )
+        }
+    }
+    switch ($case) {
+        'wrong-call' { $game.multiplayer.join_request_callsign = 'Unrelated' }
+        'wrong-id' { $control.lobby.players[0].player_id = 'another-player' }
+        'wrong-slot' { $control.lobby.players[0].slot = 1 }
+        'expired' { $game.multiplayer.join_request_age_ms = 6000 }
+        'negative-age' { $game.multiplayer.join_request_age_ms = -1 }
+        'nonhost' { $game.multiplayer.i_am_master = $false }
+        'not-pending' { $game.multiplayer.join_request_pending = $false }
+        'missing-field' { $game.multiplayer.PSObject.Properties.Remove('join_request_callsign') }
+    }
+    $accepted = Test-ExpectedOnlineAdmission -GameState $game -Control $control -PlayerId 'fixture-player' -Callsign 'LatePlt' -Slot 2
+    if ($accepted -ne ($case -eq 'valid')) { throw "Consent guard result: $case" }
+}
+$fixture = Get-Content (Join-Path $PSScriptRoot '../game_scripts/test_online_late_join_accept.jsonc') -Raw | ConvertFrom-Json
+if ($fixture.Count -ne 2 -or $fixture[0]._info._owner -cne 'test_mp' -or $fixture[0]._info._standalone -ne $false -or
+    $fixture[1].action -cne 'key' -or $fixture[1].key -cne 'f6') { throw 'Online consent must use the real F6 producer' }
+. "$PSScriptRoot/../helpers/test_suite_coverage.ps1"
+if ('test_mp' -notin (Get-TestSuiteInstrumentationOwners)) { throw 'Online owner must provision device work instrumentation' }
+
+$EMU1 = 'emulator-5554'; $EMU2 = 'emulator-5556'
+$CALLSIGN1 = 'HostPlt'; $CALLSIGN2 = 'JoinPlt'; $PACKAGE = 'com.dxxredux.app'
+function Send-MpCommand { param($Serial, $Command) if ($Command -ne 'disconnect') { throw 'Cancellation sent an approval' } }
+function Wait-ForCondition { param($Description, $TimeoutSec, $PollMs, $Condition) return (& $Condition) }
+function Invoke-RestMethod {
+    param($Uri, $TimeoutSec)
+    return [pscustomobject]@{ rooms = 1; relay_sessions = $(if ($script:leak) { 3 } else { 1 }); pending_and_authenticated_sockets = 2 }
+}
+function Get-MpIntrospection {
+    param($Serial)
+    return [pscustomobject]@{ online_resources = [pscustomobject]@{
+            proxy_workers = 0; background_jobs = 0; candidate_socket = $false; upnp_mapping = $false; peers = @()
+        }
+    }
+}
+function Get-GameIntrospection { param($Serial) return [pscustomobject]@{ multiplayer = [pscustomobject]@{ join_request_pending = $false } } }
+function Start-Sleep { param($Seconds) if ($Seconds -ne 12) { throw 'Survival dwell changed' } }
+function Assert-OnlinePeerMatrix {
+    param($Serials, $Callsigns, $Slots, $Phase)
+    if (($Slots -join ',') -cne '0,1' -or $Serials.Count -ne 2) { throw 'Cancellation changed survivor matrix' }
+    $script:survivors++
+}
+function Adb-Dev-Timeout { param($Serial, $AdbArgs, $Seconds) $script:stops++ }
+function Write-Status { param($Message, $Color) }
+foreach ($leak in @($false, $true)) {
+    $script:leak = $leak; $script:survivors = 0; $script:stops = 0; $failed = $false
+    try { Assert-OnlineAdmissionCancelled -Serial 'emulator-5558' } catch { $failed = $true }
+    if ($failed -ne $leak) { throw 'Cancellation failed to enforce remaining server resource counts' }
+    if ($leak -and ($script:stops -ne 0 -or $script:survivors -ne 0)) { throw 'Cleanup masked an orphan relay pair' }
+    if (-not $leak -and ($script:stops -ne 1 -or $script:survivors -ne 1)) { throw 'Cancellation skipped surviving gameplay oracle' }
+}
+Write-Host 'PASS: explicit online fixture consent, stale/unrelated rejection, cancellation isolation and instrumentation ownership'
+# The failure observer must inspect every client, even when the first roster is wrong
+foreach ($name in @('Get-OnlinePeerSample', 'Assert-OnlinePeerMatrix')) {
+    $definition = $owner.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+        }, $true)
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
+$allTargets = @($EMU1, $EMU2, 'emulator-5558')
+$labels = @('HostPlt', 'JoinPlt', 'LatePlt')
+function Get-GameIntrospection {
+    param($Serial)
+    $script:tick++
+    $roster = @($labels)
+    if ($script:wrongRoster -and $Serial -eq $EMU1) { $roster = @($labels[0], $labels[1]) }
+    return [pscustomobject]@{
+        in_game = $true; is_network = $true; multiplayer = [pscustomobject]@{
+            join_request_pending = $false; players = @($roster | ForEach-Object { [pscustomobject]@{ connected = 1; callsign = $_ } })
+        }
+    }
+}
+function Get-MpIntrospection {
+    param($Serial)
+    $slot = [array]::IndexOf($allTargets, $Serial)
+    $peers = @(0..2 | Where-Object { $_ -ne $slot } | ForEach-Object {
+            [pscustomobject]@{ slot = $_; bound = $true; sent = $script:tick * 10; gameplay_received = $script:tick * 10 }
+        })
+    return [pscustomobject]@{
+        player_id = 'self'; lobby = [pscustomobject]@{ players = @([pscustomobject]@{ player_id = 'self'; slot = $slot }) }
+        online_resources = [pscustomobject]@{ peers = $peers }
+    }
+}
+function Wait-ForCondition {
+    param($Description, $TimeoutSec, $PollMs, $Condition)
+    $null = & $Condition
+    return (& $Condition)
+}
+function Write-Status { param($Message, $Color) $script:snapshots += $Message }
+foreach ($wrong in @($false, $true)) {
+    $script:wrongRoster = $wrong; $script:tick = 0; $script:snapshots = @(); $failed = $false
+    try { Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns $labels -Slots @(0, 1, 2) -Phase 'fixture' } catch { $failed = $true }
+    if ($failed -ne $wrong) { throw 'Peer oracle acceptance changed' }
+    if (@($script:snapshots | Where-Object { $_ -like 'ONLINE_STATE *' }).Count -ne 6) { throw 'First-client failure hid other clients' }
+}
+Write-Host 'PASS: every client is observed while native roster and gameplay checks remain strict'

@@ -186,64 +186,106 @@ function Test-AllLobbyPlayersReady {
     return $true
 }
 
+function Get-OnlinePeerSample {
+    param([string[]]$Serials, [string[]]$Callsigns, [int[]]$Slots, [string]$Phase, [hashtable]$Baseline)
+    $allValid = $true
+    foreach ($serial in $Serials) {
+        $game = Get-GameIntrospection -Serial $serial
+        $control = Get-MpIntrospection -Serial $serial
+        $nativeReady = $game -and $game.in_game -and $game.is_network
+        $roomReady = $control -and $control.PSObject.Properties['lobby']
+        $peers = @(if ($control) { $control.online_resources.peers })
+        $connected = @(if ($game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer) {
+                $game.multiplayer.players | Where-Object { $_.connected -eq 1 } | ForEach-Object { $_.callsign.ToLowerInvariant() } | Sort-Object
+            })
+        $pending = $game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer -and
+        $game.multiplayer.PSObject.Properties['join_request_pending'] -and $game.multiplayer.join_request_pending
+        $nativeSlot = -1
+        $networkStatus = -1
+        $pendingFixture = -1
+        if ($game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer) {
+            if ($game.multiplayer.PSObject.Properties['my_player_num']) { $nativeSlot = [int]$game.multiplayer.my_player_num }
+            if ($game.multiplayer.PSObject.Properties['network_status']) { $networkStatus = [int]$game.multiplayer.network_status }
+            if ($pending -and $game.multiplayer.PSObject.Properties['join_request_callsign']) {
+                for ($fixture = 0; $fixture -lt $Callsigns.Count; $fixture++) {
+                    if ($game.multiplayer.join_request_callsign -ieq $Callsigns[$fixture]) { $pendingFixture = $fixture }
+                }
+            }
+        }
+        $expected = @($Callsigns | ForEach-Object { $_.ToLowerInvariant() } | Sort-Object)
+        $rosterReady = ($connected -join ',') -ceq ($expected -join ',')
+        $peerSummary = (@($peers | ForEach-Object { "$([int]$_.slot):$([bool]$_.bound):$([long]$_.sent):$([long]$_.gameplay_received)" })) -join ','
+        Write-Status "ONLINE_STATE $Phase $serial native=$([bool]$nativeReady) room=$([bool]$roomReady) roster_ok=$rosterReady pending_approval=$([bool]$pending) pending_fixture=$pendingFixture native_slot=$nativeSlot network_status=$networkStatus connected=$($connected.Count) peers=$peerSummary" 'Gray'
+        if (-not $nativeReady -or -not $roomReady -or -not $rosterReady) { $allValid = $false; continue }
+        $self = @($control.lobby.players | Where-Object { $_.player_id -eq $control.player_id })
+        if ($self.Count -ne 1) { $allValid = $false; continue }
+        $ownSlot = $self[0].slot
+        Write-Status "ONLINE_SAMPLE $Phase $serial connected=$($connected -join ',') own=$ownSlot peers=$((@($peers | ForEach-Object { "$($_.slot):$($_.gameplay_received)" })) -join ',')" 'Gray'
+        $expectedPeers = @($Slots | Where-Object { $_ -ne $ownSlot } | Sort-Object)
+        if ((@($peers.slot | Sort-Object) -join ',') -ne ($expectedPeers -join ',')) { $allValid = $false; continue }
+        foreach ($peer in $peers) {
+            if (-not $peer.bound -or $peer.sent -le 0 -or $peer.gameplay_received -le 0) { $allValid = $false; continue }
+            $key = "$serial/$($peer.slot)"
+            if (-not $baseline.ContainsKey($key)) {
+                $baseline[$key] = @{ Sent = $peer.sent; Received = $peer.gameplay_received }
+                $allValid = $false
+                continue
+            }
+            if ($peer.sent -le $baseline[$key].Sent -or $peer.gameplay_received -le $baseline[$key].Received) { $allValid = $false }
+        }
+    }
+    return $allValid
+}
+
 function Assert-OnlinePeerMatrix {
     param([string[]]$Serials, [string[]]$Callsigns, [int[]]$Slots, [string]$Phase)
     $baseline = @{}
     $valid = Wait-ForCondition -Description $Phase -TimeoutSec 45 -PollMs 1000 -Condition {
-        $allValid = $true
-        foreach ($serial in $Serials) {
-            $game = Get-GameIntrospection -Serial $serial
-            $control = Get-MpIntrospection -Serial $serial
-            $nativeReady = $game -and $game.in_game -and $game.is_network
-            $roomReady = $control -and $control.PSObject.Properties['lobby']
-            $peers = @(if ($control) { $control.online_resources.peers })
-            $connected = @(if ($game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer) {
-                    $game.multiplayer.players | Where-Object { $_.connected -eq 1 } | ForEach-Object { $_.callsign.ToLowerInvariant() } | Sort-Object
-                })
-            $pending = $game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer -and
-            $game.multiplayer.PSObject.Properties['join_request_pending'] -and $game.multiplayer.join_request_pending
-            $nativeSlot = -1
-            $networkStatus = -1
-            $pendingFixture = -1
-            if ($game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer) {
-                if ($game.multiplayer.PSObject.Properties['my_player_num']) { $nativeSlot = [int]$game.multiplayer.my_player_num }
-                if ($game.multiplayer.PSObject.Properties['network_status']) { $networkStatus = [int]$game.multiplayer.network_status }
-                if ($pending -and $game.multiplayer.PSObject.Properties['join_request_callsign']) {
-                    for ($fixture = 0; $fixture -lt $Callsigns.Count; $fixture++) {
-                        if ($game.multiplayer.join_request_callsign -ieq $Callsigns[$fixture]) { $pendingFixture = $fixture }
-                    }
-                }
-            }
-            $expected = @($Callsigns | ForEach-Object { $_.ToLowerInvariant() } | Sort-Object)
-            $rosterReady = ($connected -join ',') -ceq ($expected -join ',')
-            $peerSummary = (@($peers | ForEach-Object { "$([int]$_.slot):$([bool]$_.bound):$([long]$_.sent):$([long]$_.gameplay_received)" })) -join ','
-            Write-Status "ONLINE_STATE $Phase $serial native=$([bool]$nativeReady) room=$([bool]$roomReady) roster_ok=$rosterReady pending_approval=$([bool]$pending) pending_fixture=$pendingFixture native_slot=$nativeSlot network_status=$networkStatus connected=$($connected.Count) peers=$peerSummary" 'Gray'
-            if (-not $nativeReady -or -not $roomReady -or -not $rosterReady) { $allValid = $false; continue }
-            $self = @($control.lobby.players | Where-Object { $_.player_id -eq $control.player_id })
-            if ($self.Count -ne 1) { $allValid = $false; continue }
-            $ownSlot = $self[0].slot
-            Write-Status "ONLINE_SAMPLE $Phase $serial connected=$($connected -join ',') own=$ownSlot peers=$((@($peers | ForEach-Object { "$($_.slot):$($_.gameplay_received)" })) -join ',')" 'Gray'
-            $expectedPeers = @($Slots | Where-Object { $_ -ne $ownSlot } | Sort-Object)
-            if ((@($peers.slot | Sort-Object) -join ',') -ne ($expectedPeers -join ',')) { $allValid = $false; continue }
-            foreach ($peer in $peers) {
-                if (-not $peer.bound -or $peer.sent -le 0 -or $peer.gameplay_received -le 0) { $allValid = $false; continue }
-                $key = "$serial/$($peer.slot)"
-                if (-not $baseline.ContainsKey($key)) {
-                    $baseline[$key] = @{ Sent = $peer.sent; Received = $peer.gameplay_received }
-                    $allValid = $false
-                    continue
-                }
-                if ($peer.sent -le $baseline[$key].Sent -or $peer.gameplay_received -le $baseline[$key].Received) { $allValid = $false }
-            }
-        }
-        return $allValid
+        Get-OnlinePeerSample -Serials $Serials -Callsigns $Callsigns -Slots $Slots -Phase $Phase -Baseline $baseline
     }
     if (-not $valid) { throw "Native online peer matrix failed: $Phase" }
     Write-Status "ONLINE_EVIDENCE $Phase clients=$($Serials.Count) slots=$($Slots -join ',') every peer gameplay counter advanced" 'Green'
 }
 
+function Test-ExpectedOnlineAdmission {
+    param($GameState, $Control, [string]$PlayerId, [string]$Callsign, [int]$Slot)
+    if (-not $GameState -or -not $GameState.PSObject.Properties['multiplayer'] -or -not $GameState.multiplayer -or
+        -not $Control -or -not $Control.PSObject.Properties['lobby']) { return $false }
+    $native = $GameState.multiplayer
+    if ([string]::IsNullOrWhiteSpace($PlayerId) -or $Slot -lt 1) { return $false }
+    foreach ($field in @('i_am_master', 'join_request_pending', 'join_request_callsign', 'join_request_age_ms')) {
+        if (-not $native.PSObject.Properties[$field]) { return $false }
+    }
+    $member = @($Control.lobby.players | Where-Object { $_.player_id -ceq $PlayerId -and $_.callsign -ieq $Callsign -and $_.slot -eq $Slot })
+    return $GameState.in_game -and $GameState.is_network -and $native.i_am_master -and
+    $native.join_request_pending -and $native.join_request_callsign -ieq $Callsign -and
+    $native.join_request_age_ms -ge 0 -and $native.join_request_age_ms -lt 6000 -and $member.Count -eq 1
+}
+
+function Assert-OnlineAdmissionCancelled {
+    param([string]$Serial)
+    Send-MpCommand -Serial $Serial -Command 'disconnect'
+    if (-not (Wait-ForCondition -Description 'Unapproved join cancellation retires only joining client' -TimeoutSec 15 -PollMs 500 -Condition {
+                $ready = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+                $control = Get-MpIntrospection -Serial $Serial
+                if (-not $control) { return $false }
+                $r = $control.online_resources
+                return $ready.rooms -eq 1 -and $ready.relay_sessions -eq 1 -and $ready.pending_and_authenticated_sockets -eq 2 -and
+                -not $control.PSObject.Properties['lobby'] -and $r.proxy_workers -eq 0 -and $r.background_jobs -eq 0 -and
+                -not $r.candidate_socket -and -not $r.upnp_mapping -and @($r.peers).Count -eq 0
+            })) { throw 'Unapproved join cancellation left membership, routes or workers' }
+    # Let the native consent prompt and retired-peer relay timeout expire without approval
+    Start-Sleep -Seconds 12
+    $hostState = Get-GameIntrospection -Serial $EMU1
+    if (-not $hostState -or $hostState.multiplayer.join_request_pending) { throw 'Cancelled admission left a pending native request' }
+    Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'unapproved join cancellation preserves original pair'
+    # Cleanup is already proved; stopping the unused native join screen cannot mask a leak
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    Write-Status 'ONLINE_EVIDENCE expected native request cancelled without F6; original pair and room preserved' 'Green'
+}
+
 function Join-RunningOnlineGame {
-    param([string]$Serial, [string]$Callsign)
+    param([string]$Serial, [string]$Callsign, [switch]$CancelAdmission, [switch]$AllowKnownRejoin)
     if (-not (Start-SetupActivity -Serial $Serial)) { throw "Late join launcher failed on $Serial" }
     Send-MpCommand -Serial $Serial -Command 'set_callsign' -Extras @('--es', 'callsign', $Callsign)
     Send-MpCommand -Serial $Serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
@@ -261,7 +303,58 @@ function Join-RunningOnlineGame {
                 $control = Get-MpIntrospection -Serial $Serial
                 return $control -and $control.game_launch_pending
             })) { throw 'Late join did not receive launch assignment' }
+    $joining = Get-MpIntrospection -Serial $Serial
+    $playerId = $joining.player_id
+    $self = @($joining.lobby.players | Where-Object { $_.player_id -ceq $playerId })
+    if ($self.Count -ne 1) { throw 'Joining identity has no unique stable room slot' }
+    $slot = [int]$self[0].slot
+    # The existing LAN approval producer is a real F6 key; this fixture has the online owner
+    $scriptName = 'test_online_late_join_accept.jsonc'
+    $scriptPath = Join-Path $REPO_ROOT "android/game_scripts/$scriptName"
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('push', $scriptPath, "/data/local/tmp/$scriptName") -Seconds 10 | Out-Null
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp', "/data/local/tmp/$scriptName", "files/$scriptName") -Seconds 10 | Out-Null
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_result.json') -Seconds 10 | Out-Null
     Send-MpCommand -Serial $Serial -Command 'launch_game'
+    $script:onlineKnownRejoin = $false
+    $observed = Wait-ForCondition -Description 'Expected native host consent request or authenticated known rejoin' -TimeoutSec 35 -PollMs 500 -Condition {
+        $hostState = Get-GameIntrospection -Serial $EMU1
+        $hostControl = Get-MpIntrospection -Serial $EMU1
+        $expected = Test-ExpectedOnlineAdmission -GameState $hostState -Control $hostControl -PlayerId $playerId -Callsign $Callsign -Slot $slot
+        $pending = $hostState -and $hostState.PSObject.Properties['multiplayer'] -and $hostState.multiplayer -and $hostState.multiplayer.join_request_pending
+        Write-Status "ONLINE_ADMISSION native_pending=$([bool]$pending) expected_request=$expected slot=$slot" 'Gray'
+        if ($expected) { return $true }
+        $member = @()
+        if ($hostControl -and $hostControl.PSObject.Properties['lobby']) {
+            $member = @($hostControl.lobby.players | Where-Object { $_.player_id -ceq $playerId -and $_.callsign -ieq $Callsign -and $_.slot -eq $slot })
+        }
+        if ($AllowKnownRejoin -and $member.Count -eq 1 -and -not $CancelAdmission -and $hostState -and $hostState.in_game -and $hostState.is_network -and
+            $hostState.multiplayer.i_am_master -and @($hostState.multiplayer.players | Where-Object { $_.connected -eq 1 -and $_.callsign -ieq $Callsign }).Count -eq 1) {
+            $script:onlineKnownRejoin = $true
+            return $true
+        }
+        return $false
+    }
+    if (-not $observed) {
+        Get-OnlinePeerSample -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'admission observation failure' -Baseline @{} | Out-Null
+        throw 'Expected native consent or known rejoin was not observed'
+    }
+    if ($CancelAdmission) { Assert-OnlineAdmissionCancelled -Serial $Serial; return }
+    if ($script:onlineKnownRejoin) { Write-Status 'ONLINE_EVIDENCE known native identity rejoined without a new consent prompt' 'Green'; return }
+    # Recheck immediately before sending the key; never approve an unrelated or expired request
+    $hostControl = Get-MpIntrospection -Serial $EMU1
+    $hostState = Get-GameIntrospection -Serial $EMU1
+    if (-not (Test-ExpectedOnlineAdmission -GameState $hostState -Control $hostControl -PlayerId $playerId -Callsign $Callsign -Slot $slot)) {
+        Get-OnlinePeerSample -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'admission recheck failure' -Baseline @{} | Out-Null
+        throw 'Expected native consent changed before approval'
+    }
+    $runId = [guid]::NewGuid().ToString('N')
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $scriptName, '--es', 'run_id', $runId) -Seconds 5 | Out-Null
+    if (-not (Wait-ForCondition -Description 'Host F6 approval producer completed' -TimeoutSec 10 -PollMs 250 -Condition {
+                $json = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/automation_result.json') -Seconds 3
+                try { $result = $json | ConvertFrom-Json } catch { return $false }
+                return (Test-AutomationResultRunId -Result $result -ExpectedRunId $runId) -and (Test-AutomationResultComplete -Result $result)
+            })) { throw 'Host approval action did not complete' }
+    Write-Status 'ONLINE_EVIDENCE expected authenticated fixture received explicit native F6 approval' 'Green'
 }
 
 function Set-OnlineFault {
@@ -1076,6 +1169,7 @@ try {
             }
         }
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
+        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
         Send-MpCommand -Serial $EMU2 -Command 'disconnect'
@@ -1083,7 +1177,7 @@ try {
         # Surviving native gameplay must outlive the departed peer's bind timeout
         Start-Sleep -Seconds 12
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU3) -Callsigns @($CALLSIGN1, $CALLSIGN3) -Slots @(0, 2) -Phase 'middle-slot departure preserves survivors'
-        Join-RunningOnlineGame -Serial $EMU2 -Callsign $CALLSIGN2
+        Join-RunningOnlineGame -Serial $EMU2 -Callsign $CALLSIGN2 -AllowKnownRejoin
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'middle-slot reconnect with fresh routes'
         Send-MpCommand -Serial $EMU1 -Command 'disconnect'
         foreach ($emu in @($EMU2, $EMU3)) {

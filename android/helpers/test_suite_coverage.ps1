@@ -15,7 +15,7 @@ function Get-TestSuiteExtendedSample {
 function Get-TestSuiteInstrumentationOwners {
     @('test_package_documents', 'test_enemy_within_import', 'test_demo_import', 'test_controller_overlay',
         'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery',
-        'test_lan_qr', 'test_slider_navigation', 'test_lobby_latency', 'test_manual_ip_engine')
+        'test_lan_qr', 'test_slider_navigation', 'test_lobby_latency', 'test_manual_ip_engine', 'test_mp')
 }
 
 function Get-TestSuiteCoveragePolicy {
@@ -203,6 +203,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_shareware_automation_profiles'
             'test_lan_launch_preparation_profiles'
             'test_lan_public_profiles'
+            'test_online_admission_profiles'
             'test_demo_import_first_play_profiles'
             'test_secret_area_data_profiles'
             'test_server_integration'

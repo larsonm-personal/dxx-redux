@@ -765,6 +765,7 @@ $noInfraTests = @(
     "test_shareware_automation_profiles",
     "test_lan_launch_preparation_profiles",
     "test_lan_public_profiles",
+    "test_online_admission_profiles",
     "test_demo_import_first_play_profiles",
     "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",
