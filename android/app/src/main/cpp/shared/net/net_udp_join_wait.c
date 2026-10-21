@@ -130,7 +130,7 @@ void net_join_wait_fail(const char *message)
 	if (!active) return;
 	if (!failure) {
 		failure = message;
-		debug_log_force(DLOG_NETWORK, "Join wait: native terminal failure");
+		debug_log_force(DLOG_NETWORK, "ONLINE_ADMISSION event=join_wait_failure");
 	}
 	restart = 0;
 	Network_status = NETSTAT_MENU;

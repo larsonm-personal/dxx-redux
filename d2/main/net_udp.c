@@ -3690,6 +3690,13 @@ void net_udp_send_rejoin_sync(int player_num)
 	net_udp_send_game_info_to_player(
 	    player_num, UDP_sync_player.player.protocol.udp.addr, UPID_SYNC, 1,
 	    UDP_sync_player.token);
+#ifdef __ANDROID__
+	if (multi_i_am_master() && !UDP_sync_player.player.observer &&
+	    online_admission_present(UDP_sync_player.online_admission))
+		android_lifecycle_actions_online_admitted(UDP_sync_player.online_admission, UDP_sync_player.online_slot);
+#endif
+
+
 
 	return;
 }
@@ -4961,7 +4968,7 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 
 #ifdef __ANDROID__
 	if (data[5] == DUMP_DORK)
-		debug_log_force(DLOG_NETWORK, "Join wait: native terminal failure");
+		debug_log_force(DLOG_NETWORK, "ONLINE_ADMISSION event=host_refusal");
 	if (net_join_wait_active() && (data[5] == DUMP_ENDLEVEL || data[5] == DUMP_LEVEL)) {
 		net_join_wait_interrupt();
 		return;
@@ -5039,6 +5046,8 @@ void net_udp_process_request(UDP_sequence_packet *their,
 	    authenticated_player_num < N_players) {
 		debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=request_ready_accepted level=%d counter=%llu", Current_level_num, (unsigned long long) their->reconnect_identity.request_counter);
 		Players[authenticated_player_num].connected = CONNECT_PLAYING;
+		if (multi_i_am_master() && online_admission_present(their->online_admission))
+			android_lifecycle_actions_online_admitted(their->online_admission, their->online_slot);
 		Netgame.players[authenticated_player_num].LastPacketTime =
 		    timer_query();
 	}
@@ -5073,6 +5082,15 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		REJOIN_LOG("terminal_reject type=%d bytes=%d", data[0], length);
 		return;
 	}
+	unsigned char online_id[16] = {0}, online_slot = 0;
+	const struct sockaddr_in *online_source = (const struct sockaddr_in *)&sender_addr;
+	const int online_header = online_admission_unwrap(data, length,
+	    !is_proxy && multi_i_am_master() && online_source->sin_family == AF_INET &&
+	    online_source->sin_addr.s_addr == htonl(INADDR_LOOPBACK),
+	    ntohs(online_source->sin_port), online_id, &online_slot);
+	if (online_header < 0) return;
+	data += online_header;
+	length -= online_header;
 	int join_payload = 0;
 	if (data[0] == UPID_JOIN_DATA) {
 		if (length <= UPID_JOIN_DATA_HEADER || !net_join_wait_active() || !is_master_ip(sender_addr) ||
@@ -5182,6 +5200,10 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 #endif
 		case UPID_REQUEST:
 			if (!net_udp_receive_sequence_packet(data, &their, sender_addr)) break;
+#ifdef __ANDROID__
+			memcpy(their.online_admission, online_id, sizeof(online_id));
+			their.online_slot = online_slot;
+#endif
 #ifdef __ANDROID__
 			if (their.type == UPID_LAUNCH_ADMISSION) {
 				debug_log_force(DLOG_NETWORK, "[STARTUP-SYNC] event=admission_received level=%d counter=%llu", (int) their.player.connected, (unsigned long long) their.reconnect_identity.request_counter);
@@ -10350,6 +10372,7 @@ void net_udp_do_refuse_stuff(UDP_sequence_packet *their,
 
 		if ((timer_query()) > RefuseTimeLimit+REFUSE_INTERVAL)
 		{
+			debug_log_force(DLOG_NETWORK, "ONLINE_ADMISSION event=host_consent_timeout");
 			MPDIAG("refuse_stuff: TIMEOUT for '%s', dumping\n",
 			       their->player.callsign);
 			RefuseTimeLimit=0;

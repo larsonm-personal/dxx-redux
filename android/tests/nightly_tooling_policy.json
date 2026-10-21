@@ -3065,6 +3065,14 @@
             "coverage_scope": "Three disposable Android emulators, pinned D1 shareware and owned loopback server; production installation proofs, native all-peer relay traffic, late join, middle-slot departure/rejoin, host/nonhost background/resume, controlled UDP/WS faults, cancellation, server restart and resource cleanup; not GPGS provider or internet qualification."
         },
         {
+            "id": "master:test_mp_public_shareware_d2",
+            "owner": "master",
+            "lane": "android-dual",
+            "args": { "suite": "test_mp_public_shareware_d2" },
+            "estimated_seconds": 2100,
+            "coverage_scope": "Three owned Android emulators with pinned D2 demo, production installation authentication, native direct admission and control-loss recovery, then relay fault recovery; no WAN or physical-device claim."
+        },
+        {
             "id": "master:test_mp",
             "owner": "master",
             "lane": "android-dual",

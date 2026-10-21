@@ -203,6 +203,31 @@ object MatchmakingService {
     internal fun currentProxy(): LocalhostProxy? = localhostProxy
 
     private var runtimeAttempt: String? = null
+    private var gameEpoch: String? = null
+    private val pendingAdmissions = mutableMapOf<Int, String>()
+
+    @Synchronized
+    internal fun hostNativeAdmitted(
+        attempt: String,
+        admissionId: String,
+        slot: Int,
+    ) {
+        if (!ownsRuntimeAttempt(attempt) || pendingAdmissions[slot] != admissionId) return
+        val room = state.state.value.currentLobby ?: return
+        val epoch = gameEpoch ?: return
+        if (!room.isHost) return
+        send(
+            kotlinx.serialization.json
+                .buildJsonObject {
+                    put("type", kotlinx.serialization.json.JsonPrimitive("HOST_NATIVE_ADMITTED"))
+                    put("lobby_id", kotlinx.serialization.json.JsonPrimitive(room.lobbyId))
+                    put("game_epoch", kotlinx.serialization.json.JsonPrimitive(epoch))
+                    put("admission_id", kotlinx.serialization.json.JsonPrimitive(admissionId))
+                    put("slot", kotlinx.serialization.json.JsonPrimitive(slot))
+                }.toString(),
+        )
+        pendingAdmissions.remove(slot)
+    }
 
     @Synchronized
     internal fun ownsRuntimeAttempt(attempt: String): Boolean = runtimeAttempt == attempt
@@ -811,6 +836,8 @@ object MatchmakingService {
     private fun retireNetworkWork() {
         networkGeneration++
         runtimeAttempt = null
+        gameEpoch = null
+        pendingAdmissions.clear()
         installationAuthJob?.cancel()
         installationAuthJob = null
         installationAuth = null
@@ -1274,6 +1301,8 @@ object MatchmakingService {
             java.util.UUID
                 .randomUUID()
                 .toString()
+        gameEpoch = gs.gameEpoch
+        pendingAdmissions.clear()
         val launchInfo =
             GameLaunchInfo(
                 runtimeAttempt = runtimeAttempt,
@@ -1597,6 +1626,12 @@ object MatchmakingService {
 
                 is ServerMessage.LateJoinApprovedReceived -> {
                     val peer = msg.data.peer
+                    val admission =
+                        msg.data.admissionId.takeIf {
+                            state.state.value.currentLobby
+                                ?.isHost == true
+                        }
+                    if (admission != null) pendingAdmissions[peer.slot] = admission
                     state.appendLog("Late-join approved: slot ${peer.slot} -> ${peer.addr}")
                     NetLog.log("LATEJOIN", "Approved: slot=${peer.slot} addr=${peer.addr} relay=${peer.isRelay}")
                     // Add the new peer to the existing proxy
@@ -1608,6 +1643,7 @@ object MatchmakingService {
                             localhostProxy?.addPeer(
                                 PeerProxyConfig(
                                     peerSlot = peer.slot,
+                                    admissionId = admission,
                                     localPort = NetworkConstants.PROXY_PORT_BASE + peer.slot,
                                     realAddr = addr,
                                     isRelay = peer.isRelay,

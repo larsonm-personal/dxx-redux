@@ -274,6 +274,7 @@ data class ActiveGameInfo(
 data class GameStartingMsg(
     @SerialName("host_addr") val hostAddr: String,
     val game: String,
+    @SerialName("game_epoch") val gameEpoch: String? = null,
     @SerialName("your_slot") val yourSlot: Int = 0,
     @SerialName("max_players") val maxPlayers: Int = 4,
     @SerialName("current_level") val currentLevel: Int? = null,
@@ -446,6 +447,7 @@ data class LateJoinProbeMsg(
 @Serializable
 data class LateJoinApprovedMsg(
     val peer: PeerAssignment,
+    @SerialName("admission_id") val admissionId: String? = null,
 )
 
 // Sealed class representing any server message, dispatched by "type" field

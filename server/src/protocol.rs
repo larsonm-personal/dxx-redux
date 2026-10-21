@@ -7,8 +7,8 @@ use uuid::Uuid;
 // message schema. Keep MIN_CLIENT_PROTOCOL at the oldest version the
 // server still accepts. Both values must stay in sync with the client
 // constant in NetworkConstants.kt.
-pub const CURRENT_PROTOCOL: u32 = 3;
-pub const MIN_CLIENT_PROTOCOL: u32 = 3;
+pub const CURRENT_PROTOCOL: u32 = 4;
+pub const MIN_CLIENT_PROTOCOL: u32 = 4;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
@@ -75,6 +75,14 @@ pub enum ClientMessage {
 
     /// Host signals that the game engine has exited and the lobby should
     /// return to the Waiting state so players can re-ready and start again.
+    #[serde(rename = "HOST_NATIVE_ADMITTED")]
+    HostNativeAdmitted {
+        lobby_id: Uuid,
+        game_epoch: Uuid,
+        admission_id: Uuid,
+        slot: u8,
+    },
+
     #[serde(rename = "END_GAME")]
     EndGame {},
 
@@ -261,6 +269,7 @@ pub enum ServerMessage {
 
     #[serde(rename = "GAME_STARTING")]
     GameStarting {
+        game_epoch: Uuid,
         host_addr: String,
         game: String,
         your_slot: u8,
@@ -365,7 +374,11 @@ pub enum ServerMessage {
 
     /// Sent to host after late-join ICE completes. Host adds joiner to proxy.
     #[serde(rename = "LATE_JOIN_APPROVED")]
-    LateJoinApproved { peer: PeerAssignment },
+    LateJoinApproved {
+        peer: PeerAssignment,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        admission_id: Option<Uuid>,
+    },
 }
 
 // -- Supporting types --

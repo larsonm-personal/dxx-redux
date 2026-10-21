@@ -333,7 +333,8 @@ async fn ready(State(state): State<Arc<ServerState>>) -> (StatusCode, Json<serde
         Json(
             serde_json::json!({ "ready": ready, "protocol_version": CURRENT_PROTOCOL,
             "pending_and_authenticated_sockets": state.connected_sockets.load(std::sync::atomic::Ordering::SeqCst),
-            "relay_sessions": state.relay_sessions.len(), "rooms": state.lobbies.len() }),
+            "relay_sessions": state.relay_sessions.len(), "rooms": state.lobbies.len(),
+            "pending_native_admissions": state.lobbies.iter().map(|r| r.assigned_late_joiners.len()).sum::<usize>() }),
         ),
     )
 }

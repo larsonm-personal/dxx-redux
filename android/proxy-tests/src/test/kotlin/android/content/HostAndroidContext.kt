@@ -12,7 +12,16 @@ open class Context {
         mode: Int,
     ): HostPreferences = error("Android preferences outside host test scope")
 
+    open fun bindService(
+        intent: Intent,
+        connection: ServiceConnection,
+        flags: Int,
+    ): Boolean = error("Unconfigured binding")
+
+    open fun unbindService(connection: ServiceConnection) = Unit
+
     companion object {
+        const val BIND_AUTO_CREATE = 1
         const val MODE_PRIVATE = 0
     }
 }
@@ -51,4 +60,24 @@ class HostPreferences {
     ): HostPreferences = this
 
     fun apply() = Unit
+}
+
+class ComponentName
+
+class Intent(
+    context: Context,
+    type: Class<*>,
+)
+
+interface ServiceConnection {
+    fun onServiceConnected(
+        name: ComponentName,
+        binder: android.os.IBinder,
+    )
+
+    fun onServiceDisconnected(name: ComponentName)
+
+    fun onBindingDied(name: ComponentName) = Unit
+
+    fun onNullBinding(name: ComponentName) = Unit
 }

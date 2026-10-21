@@ -1172,6 +1172,7 @@ class MainActivity :
         com.dxxredux.app.multiplayer.UdpReconnectIdentity
             .initialize(noBackupFilesDir)
         super.onCreate(savedInstanceState)
+        RuntimeGameStateBridge.claimActivity(this, intent.getStringExtra("mp_runtime_attempt"))
 
         refreshTransientLaunchState(intent)
         if (shouldRedirectConsumedTransientLaunch()) {
@@ -2519,6 +2520,7 @@ class MainActivity :
     }
 
     private fun startMultiplayerRuntime(host: Boolean) {
+        if (!RuntimeGameStateBridge.ownsActivity(this, intent.getStringExtra("mp_runtime_attempt"))) return
         if (multiplayerRuntimeStarted) {
             RuntimeGameStateBridge.updateHost(host, intent.getStringExtra("mp_runtime_attempt"))
             return
@@ -2539,13 +2541,15 @@ class MainActivity :
                 .stop(this)
             return
         }
-        RuntimeGameStateBridge.connect(
-            context = this,
-            host = host,
-            attempt = intent.getStringExtra("mp_runtime_attempt"),
-            stateProvider = { nativeGetNetgameState() },
-            onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
-        )
+        val connected =
+            RuntimeGameStateBridge.connect(
+                context = this,
+                host = host,
+                attempt = intent.getStringExtra("mp_runtime_attempt"),
+                stateProvider = { nativeGetNetgameState() },
+                onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
+            )
+        if (!connected) return
         RuntimeGameStateBridge.noteActivityVisibility(background = !isActivityResumed)
         multiplayerRuntimeStarted = true
     }
@@ -2560,11 +2564,30 @@ class MainActivity :
         multiplayerRuntimeStarted = false
     }
 
+    fun onNativeOnlineAdmitted(
+        admissionId: String,
+        slot: Int,
+    ) {
+        val attempt = intent.getStringExtra("mp_runtime_attempt")
+        runOnUiThread {
+            if (RuntimeGameStateBridge.ownsActivity(this, attempt)) {
+                RuntimeGameStateBridge.nativeAdmitted(attempt, admissionId, slot)
+            }
+        }
+    }
+
     fun onNativeMultiplayerStateChanged(
         active: Boolean,
         host: Boolean,
     ) {
         runOnUiThread {
+            if (!RuntimeGameStateBridge.ownsActivity(
+                    this,
+                    intent.getStringExtra("mp_runtime_attempt"),
+                )
+            ) {
+                return@runOnUiThread
+            }
             DebugLog.log(DebugLogCategory.DORMANCY, "native multiplayer state: active=$active host=$host")
             nativeMultiplayerActive = active
             nativeMultiplayerHost = host

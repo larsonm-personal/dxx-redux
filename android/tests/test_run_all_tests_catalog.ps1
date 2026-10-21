@@ -49,6 +49,7 @@ foreach ($name in $generatedJsoncOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
 }
 foreach ($variant in @(
+        @{ Name = 'test_mp_public_shareware_d2'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-PublicDirect') },
         @{ Name = 'test_mp_public_shareware'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware') },
         @{ Name = 'test_lan_host_migration_public_shareware'; BaseName = 'test_lan'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-Game', 'd1', '-HostMigration') },
         @{ Name = 'test_lan_launch_preparation_public_shareware'; BaseName = 'test_lan_launch_preparation'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware') },

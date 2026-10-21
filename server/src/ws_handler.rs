@@ -1074,6 +1074,8 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
 }
 
 const LATE_JOIN_TIMEOUT: Duration = Duration::from_secs(30);
+// Startup and native consent/synchronization each have a 60-second allowance
+const NATIVE_ADMISSION_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Retire only expired, unlaunched memberships; established peer routes stay owned
 pub fn expire_pending_late_joins(state: &ServerState, now: Instant) {
@@ -1087,6 +1089,15 @@ pub fn expire_pending_late_joins(state: &ServerState, now: Instant) {
                 .filter_map(|(pid, started)| {
                     (now.saturating_duration_since(*started) >= LATE_JOIN_TIMEOUT).then_some(*pid)
                 })
+                .chain(
+                    room.assigned_late_joiners
+                        .iter()
+                        .filter_map(|(pid, lease)| {
+                            (now.saturating_duration_since(lease.assigned)
+                                >= NATIVE_ADMISSION_TIMEOUT)
+                                .then_some(*pid)
+                        }),
+                )
                 .collect::<Vec<_>>()
         })
         .collect();
@@ -1761,6 +1772,10 @@ fn complete_late_join(
         return;
     }
     let host_id = lobby.host_player_id;
+    let Some(host_connection) = state.sessions.get(&host_id).map(|s| s.connection_id) else {
+        return;
+    };
+    let admission_id = Uuid::new_v4();
     let joiner = lobby
         .players
         .iter()
@@ -1829,6 +1844,7 @@ fn complete_late_join(
             approvals.push((
                 existing.player_id,
                 ServerMessage::LateJoinApproved {
+                    admission_id: (existing.player_id == host_id).then_some(admission_id),
                     peer: PeerAssignment {
                         slot: joiner.slot,
                         addr: if is_relay {
@@ -1854,7 +1870,17 @@ fn complete_late_join(
             });
             return;
         }
+        lobby.assigned_late_joiners.insert(
+            player_id,
+            crate::lobby::AssignedAdmission {
+                id: admission_id,
+                host_connection,
+                assigned: Instant::now(),
+                slot: joiner.slot,
+            },
+        );
         let message = ServerMessage::GameStarting {
+            game_epoch: lobby.game_epoch,
             host_addr,
             game: lobby.game.clone(),
             your_slot: joiner.slot,
@@ -2052,6 +2078,40 @@ fn handle_authenticated_message(
             }
         }
 
+        ClientMessage::HostNativeAdmitted {
+            lobby_id,
+            game_epoch,
+            admission_id,
+            slot,
+        } => {
+            let Some(host_connection) = state
+                .sessions
+                .get(&player_id)
+                .filter(|s| s.lobby_id == Some(lobby_id))
+                .map(|s| s.connection_id)
+            else {
+                return;
+            };
+            if let Some(mut room) = state.lobbies.get_mut(&lobby_id) {
+                if room.host_player_id != player_id
+                    || room.state != LobbyState::InGame
+                    || room.game_epoch != game_epoch
+                {
+                    return;
+                }
+                let accepted = room.assigned_late_joiners.iter().find_map(|(pid, lease)| {
+                    (lease.id == admission_id
+                        && lease.slot == slot
+                        && lease.host_connection == host_connection
+                        && lease.assigned.elapsed() < NATIVE_ADMISSION_TIMEOUT)
+                        .then_some(*pid)
+                });
+                if let Some(pid) = accepted {
+                    room.assigned_late_joiners.remove(&pid);
+                }
+            }
+        }
+
         ClientMessage::EndGame {} => {
             let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
             if let Some(lobby_id) = lobby_id {
@@ -2064,6 +2124,8 @@ fn handle_authenticated_message(
                         state.stats.game_ended();
                         lobby.state = LobbyState::Waiting;
                         lobby.pending_late_joiners.clear();
+                        lobby.assigned_late_joiners.clear();
+                        lobby.game_epoch = Uuid::nil();
                         lobby.runtime_player_count = None;
                         lobby.runtime_level = None;
                         lobby.runtime_game_status = None;
@@ -2298,6 +2360,7 @@ fn handle_authenticated_message(
                         return;
                     }
                     lobby.state = LobbyState::Starting;
+                    lobby.game_epoch = Uuid::new_v4();
                     state.stats.game_started();
                     info!(%lobby_id, "game starting");
 
@@ -2443,6 +2506,7 @@ fn handle_authenticated_message(
                         per_player_msgs.push((
                             my_pid,
                             ServerMessage::GameStarting {
+                                game_epoch: lobby.game_epoch,
                                 host_addr: host_addr.clone(),
                                 game: game.clone(),
                                 your_slot: lobby.players[my_slot].slot,

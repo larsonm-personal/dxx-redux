@@ -37,6 +37,7 @@ class MultiplayerForegroundService : Service() {
     private val shutdownHandler = Handler(Looper.getMainLooper())
     private var runtimeClient: Messenger? = null
     private var runtimeAttempt: String? = null
+    private var runtimeBinding = 0L
     private var runtimeDeath: IBinder.DeathRecipient? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val messenger =
@@ -132,19 +133,22 @@ class MultiplayerForegroundService : Service() {
             return
         }
         val attempt = message.data.getString(RUNTIME_IPC_KEY_ATTEMPT)
+        val binding = message.data.getLong(RUNTIME_IPC_KEY_BINDING)
         if (attempt != null && !MatchmakingService.ownsRuntimeAttempt(attempt)) return
         if (message.what != RUNTIME_IPC_REGISTER &&
-            (attempt != runtimeAttempt || message.replyTo?.binder != runtimeClient?.binder)
+            (attempt != runtimeAttempt || binding != runtimeBinding || message.replyTo?.binder != runtimeClient?.binder)
         ) {
             return
         }
         when (message.what) {
             RUNTIME_IPC_REGISTER -> {
+                if (attempt == runtimeAttempt && binding < runtimeBinding) return
                 // A LAN registration cannot replace an owned online runtime
                 if (attempt == null && runtimeAttempt?.let(MatchmakingService::ownsRuntimeAttempt) == true) return
                 val client = message.replyTo ?: return
                 clearRuntimeDeath()
                 runtimeAttempt = attempt
+                runtimeBinding = binding
                 runtimeSession.register(message.data.getBoolean(RUNTIME_IPC_KEY_HOST))
                 runtimeClient = client
                 val death =
@@ -165,6 +169,14 @@ class MultiplayerForegroundService : Service() {
                     return
                 }
                 sendDiagnostics(message)
+            }
+
+            RUNTIME_IPC_NATIVE_ADMITTED -> {
+                if (attempt != null && runtimeSession.acceptsGameState()) {
+                    message.data.getString("admission_id")?.let {
+                        MatchmakingService.hostNativeAdmitted(attempt, it, message.data.getInt("slot"))
+                    }
+                }
             }
 
             RUNTIME_IPC_GAME_STATE -> {
@@ -282,6 +294,7 @@ class MultiplayerForegroundService : Service() {
         runtimeAttempt?.let { MatchmakingService.runtimeGameProcessDisconnected(it, wasHost) }
         clearRuntimeDeath()
         runtimeAttempt = null
+        runtimeBinding = 0L
         deadline.foreground()
         deadlineHandler.removeCallbacksAndMessages(null)
         shutdownHandler.removeCallbacksAndMessages(null)

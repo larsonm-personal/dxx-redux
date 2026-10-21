@@ -9,15 +9,7 @@ object PlayGamesAuth {
     suspend fun getServerAuthCode(activity: android.app.Activity): String? = error("GPGS requires device qualification")
 }
 
-object RuntimeGameStateCodec {
-    fun encode(state: IntArray): String? = error("Native runtime IPC requires device qualification")
-}
-
-fun shouldEndHostedGame(
-    wasHost: Boolean,
-    updates: Boolean,
-    inHostedRoom: Boolean,
-) = wasHost && updates && inHostedRoom
+class MultiplayerForegroundService
 
 object CoopSaveCompatibility {
     fun hostWarning(

@@ -25,6 +25,7 @@ object Log {
     fun w(
         tag: String,
         message: String,
+        error: Throwable? = null,
     ): Int {
         entries.add(message)
         return 0

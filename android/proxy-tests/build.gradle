@@ -16,6 +16,7 @@ sourceSets.test.kotlin {
     srcDir '../app/src/androidTest/java'
     include 'com/dxxredux/app/OnlineInstallationWorkChecks.kt'
     include 'com/dxxredux/app/multiplayer/LocalhostProxy.kt'
+    include 'com/dxxredux/app/multiplayer/OnlineAdmissionEnvelope.kt'
     include 'com/dxxredux/app/multiplayer/ProxyDiagnostics.kt'
     include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'
     include '**/ProxyFailureTest.kt'
@@ -32,6 +33,8 @@ sourceSets.test.kotlin {
     include 'android/widget/Toast.kt'
     include 'com/dxxredux/app/BuildConfig.kt'
     include '**/MatchmakingServiceFlowTest.kt'
+    include '**/RuntimeBridgeOwnershipTest.kt'
+    include 'com/dxxredux/app/multiplayer/RuntimeGameStateBridge.kt'
     include '**/OnlineInstallationAuthTest.kt'
     include 'com/dxxredux/app/multiplayer/OnlineInstallationAuth.kt'
     include 'com/dxxredux/app/multiplayer/UdpReconnectStore.kt'
@@ -76,6 +79,7 @@ fun createHistoricalProxy(scope: CoroutineScope, socket: DatagramSocket, localPo
 if (compareHistory) tasks.named('compileTestKotlin') { dependsOn 'prepareHistoricalProxy' }
 
 dependencies {
+    testImplementation "org.json:json:${toolVersions['ORG_JSON_VERSION']}"
     testImplementation "com.squareup.okhttp3:okhttp:${toolVersions['OKHTTP_VERSION']}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"

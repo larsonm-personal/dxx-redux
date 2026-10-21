@@ -115,6 +115,17 @@ pub struct Lobby {
     pub last_state_update: Option<Instant>,
     /// Late joiners awaiting launch, with fixed admission deadlines.
     pub pending_late_joiners: HashMap<Uuid, Instant>,
+    pub game_epoch: Uuid,
+    /// Assignment remains pending until the current host confirms native acceptance
+    pub assigned_late_joiners: HashMap<Uuid, AssignedAdmission>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AssignedAdmission {
+    pub id: Uuid,
+    pub host_connection: Uuid,
+    pub assigned: Instant,
+    pub slot: u8,
 }
 
 impl Lobby {
@@ -159,6 +170,8 @@ impl Lobby {
             runtime_game_status: None,
             last_state_update: None,
             pending_late_joiners: HashMap::new(),
+            game_epoch: Uuid::nil(),
+            assigned_late_joiners: HashMap::new(),
         }
     }
 
@@ -228,6 +241,7 @@ impl Lobby {
     pub fn remove_player(&mut self, player_id: &Uuid) {
         self.players.retain(|p| &p.player_id != player_id);
         self.pending_late_joiners.remove(player_id);
+        self.assigned_late_joiners.remove(player_id);
     }
 
     pub fn player_count(&self) -> u8 {

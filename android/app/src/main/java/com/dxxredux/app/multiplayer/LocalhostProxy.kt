@@ -433,6 +433,7 @@ data class PeerProxyConfig(
     val relayOwnSlot: Int = -1,
     val relaySendKey: String? = null,
     val relayReceiveKey: String? = null,
+    val admissionId: String? = null,
 )
 
 /**
@@ -594,10 +595,11 @@ private class PeerProxy(
                 payload = data.copyOfRange(0, length)
             }
             if (isTransportKeepalive(payload, payloadLen)) return
+            val delivered = OnlineAdmissionEnvelope.wrap(payload, config.admissionId, config.peerSlot)
             diagnostics.send(
                 "engine-delivery-send",
                 localSocket,
-                DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)),
+                DatagramPacket(delivered, delivered.size, InetSocketAddress(loopback, ENGINE_PORT)),
             )
             packetsReceived++
             bytesReceived += payloadLen

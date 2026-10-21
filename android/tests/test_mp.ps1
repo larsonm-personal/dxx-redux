@@ -27,6 +27,8 @@ param(
     [string]$Mode = "anarchy",
     [switch]$SkipBuild,
     [switch]$PublicShareware,
+    [ValidateSet("d1", "d2")][string]$PublicGame = "d1",
+    [switch]$PublicDirect,
     [switch]$Tls,
     [int]$TimeoutSeconds = 180,
     [ValidateRange(0, 3600)]
@@ -59,12 +61,12 @@ $allTargets = @($EMU1, $EMU2)
 if ($PublicShareware) { $allTargets += $EMU3 }
 
 if ($PublicShareware) {
-    $Game = 'd1'
+    $Game = $PublicGame
     $Mode = 'anarchy'
     $SoakSeconds = 15
     . "$PSScriptRoot/../helpers/shareware_test_data.ps1"
-    $publicConfig = Get-SharewareTestGameConfig -RepoRoot $REPO_ROOT -Game d1
-    $publicDirectory = Resolve-SharewareTestData -RepoRoot $REPO_ROOT -Game d1 -DataDir ''
+    $publicConfig = Get-SharewareTestGameConfig -RepoRoot $REPO_ROOT -Game $Game
+    $publicDirectory = Resolve-SharewareTestData -RepoRoot $REPO_ROOT -Game $Game -DataDir ''
 }
 $MISSION = if ($Game -eq "d1") { "descent" } else { "d2" }
 if ($PublicShareware) { $MISSION = "''" }
@@ -270,18 +272,22 @@ function Assert-OnlineAdmissionCancelled {
     # Native timeout must clean membership with the authenticated control socket alive
     if (-not $NativeTimeout) { Send-MpCommand -Serial $Serial -Command 'disconnect' }
     $expectedSockets = if ($NativeTimeout) { 3 } else { 2 }
+    $expectedPairs = if ($PublicDirect) { 0 } else { 1 }
     if (-not (Wait-ForCondition -Description 'Unapproved join terminal retires only joining client' -TimeoutSec 25 -PollMs 500 -Condition {
                 $ready = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
                 $control = Get-MpIntrospection -Serial $Serial
                 if (-not $control) { return $false }
                 $r = $control.online_resources
-                return $ready.rooms -eq 1 -and $ready.relay_sessions -eq 1 -and $ready.pending_and_authenticated_sockets -eq $expectedSockets -and
+                return $ready.rooms -eq 1 -and $ready.relay_sessions -eq $expectedPairs -and $ready.pending_and_authenticated_sockets -eq $expectedSockets -and
                 -not $control.PSObject.Properties['lobby'] -and $r.proxy_workers -eq 0 -and $r.background_jobs -eq 0 -and
                 -not $r.candidate_socket -and -not $r.upnp_mapping -and @($r.peers).Count -eq 0
             })) { throw 'Unapproved join cancellation left membership, routes or workers' }
     if ($NativeTimeout) {
         $nativeLog = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-d') -Seconds 10
-        if ($nativeLog -notmatch 'Join wait: native terminal failure') { throw 'Missing real native refusal/timeout producer receipt' }
+        if ($nativeLog -notmatch 'ONLINE_ADMISSION event=host_refusal') { throw 'Missing real native refusal/timeout producer receipt' }
+        $hostLog = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d') -Seconds 10
+        $hostTimeouts = [regex]::Matches(($hostLog -join "`n"), 'ONLINE_ADMISSION event=host_consent_timeout').Count
+        if ($hostTimeouts -le $script:onlineHostTimeoutCount) { throw 'No new native host consent timeout receipt' }
         Write-Status 'ONLINE_EVIDENCE native refusal/timeout cleaned assigned join without client cancel or F6' 'Green'
     }
     # Let the native consent prompt and retired-peer relay timeout expire without approval
@@ -296,8 +302,12 @@ function Assert-OnlineAdmissionCancelled {
 }
 
 function Join-RunningOnlineGame {
-    param([string]$Serial, [string]$Callsign, [switch]$CancelAdmission, [switch]$AllowKnownRejoin, [switch]$NativeTimeout)
-    if ($NativeTimeout) { Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-c') -Seconds 10 | Out-Null }
+    param([string]$Serial, [string]$Callsign, [switch]$CancelAdmission, [switch]$AllowKnownRejoin, [switch]$NativeTimeout, [ValidateRange(0, 45)][int]$DelayLaunchSeconds = 0)
+    if ($NativeTimeout) {
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-c') -Seconds 10 | Out-Null
+        $hostLog = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d') -Seconds 10
+        $script:onlineHostTimeoutCount = [regex]::Matches(($hostLog -join "`n"), 'ONLINE_ADMISSION event=host_consent_timeout').Count
+    }
     if (-not (Start-SetupActivity -Serial $Serial)) { throw "Late join launcher failed on $Serial" }
     Send-MpCommand -Serial $Serial -Command 'set_callsign' -Extras @('--es', 'callsign', $Callsign)
     Send-MpCommand -Serial $Serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
@@ -326,6 +336,11 @@ function Join-RunningOnlineGame {
     Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('push', $scriptPath, "/data/local/tmp/$scriptName") -Seconds 10 | Out-Null
     Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp', "/data/local/tmp/$scriptName", "files/$scriptName") -Seconds 10 | Out-Null
     Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_result.json') -Seconds 10 | Out-Null
+    if ($DelayLaunchSeconds -gt 0) {
+        Start-Sleep -Seconds $DelayLaunchSeconds
+        $pending = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+        if ($pending.pending_native_admissions -ne 1) { throw 'Delayed unlaunched admission was not retained' }
+    }
     Send-MpCommand -Serial $Serial -Command 'launch_game'
     $script:onlineKnownRejoin = $false
     $observed = Wait-ForCondition -Description 'Expected native host consent request or authenticated known rejoin' -TimeoutSec 35 -PollMs 500 -Condition {
@@ -623,7 +638,7 @@ try {
     $env:RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
     # Force relay for all connections -- two emulators on the same host share
     # a NAT gateway and cannot reach each other's 10.0.2.x addresses directly.
-    $env:FORCE_RELAY = "true"
+    $env:FORCE_RELAY = if ($PublicDirect) { "false" } else { "true" }
     $env:LOG_DIR = (Join-Path $REPO_ROOT "temp")
     if ($Tls) {
         $tlsDir = Join-Path $REPO_ROOT "temp\tls"
@@ -1171,21 +1186,32 @@ try {
             }
             $mp = $snapshot.multiplayer
             $players = @($mp.players)
-            if ($mp.num_players -ne 2 -or $mp.level_num -ne 1 -or $mp.mission_title -cne 'Descent Demo' -or
+            if ($mp.num_players -ne 2 -or $mp.level_num -ne 1 -or $mp.mission_title -cne $publicConfig.MissionTitle -or
                 @($players | Where-Object { $_.callsign -ieq $entry.Local -and $_.is_me -eq $true -and $_.connected -eq 1 }).Count -ne 1 -or
                 @($players | Where-Object { $_.callsign -ieq $entry.Remote -and $_.is_me -eq $false -and $_.connected -eq 1 }).Count -ne 1) {
-                throw 'Public online roster, mission or level differs from pinned native D1 fixture'
+                throw 'Public online roster, mission or level differs from pinned native fixture'
             }
             $nativeLog = Adb-Dev-Timeout -Serial $entry.Serial -AdbArgs @('logcat', '-d', '-s', 'MainActivity:I', '*:S') -Seconds 10
-            if ($nativeLog -notmatch 'Loaded native library: dxx-redux-d1' -or $nativeLog -match 'Loaded native library: dxx-redux-d2') {
-                throw 'Public online fixture did not prove native D1 engine selection'
+            $otherGame = if ($Game -eq 'd1') { 'd2' } else { 'd1' }
+            if ($nativeLog -notmatch "Loaded native library: dxx-redux-$Game" -or $nativeLog -match "Loaded native library: dxx-redux-$otherGame") {
+                throw "Public online fixture did not prove native $Game engine selection"
             }
         }
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
+        if ($PublicDirect) {
+            $direct = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+            if ($direct.relay_sessions -ne 0) { throw 'Requested native direct-path qualification fell back to relay' }
+            Write-Status 'ONLINE_EVIDENCE native direct pair advanced with zero relay leases' 'Green'
+        }
+
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -NativeTimeout
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
-        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3
+        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -DelayLaunchSeconds 30
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
+        $admitted = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+        if ($admitted.pending_native_admissions -ne 0) { throw 'Native host acceptance did not retire the delayed admission lease' }
+        Write-Status 'ONLINE_EVIDENCE delayed assignment, real host consent and native synchronization completed host-owned lease' 'Green'
+
         Send-MpCommand -Serial $EMU2 -Command 'disconnect'
         Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
         # Surviving native gameplay must outlive the departed peer's bind timeout
@@ -1218,6 +1244,31 @@ try {
             if (-not $retired) { throw 'Client resources did not return to baseline' }
         }
         Write-Status 'ONLINE_EVIDENCE zero rooms, relay leases, control sockets and client network workers' 'Green'
+        if ($PublicDirect) {
+            Start-OnlineRecoveryGame
+            Invoke-OnlineBackgroundResume
+            $direct = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+            if ($direct.relay_sessions -ne 0) { throw 'Direct recovery unexpectedly used relay' }
+            Set-OnlineFault -Ws 'drop'
+            foreach ($serial in @($EMU1, $EMU2)) {
+                if (-not (Wait-ForCondition -Description 'Direct control loss retires routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                            $control = Get-MpIntrospection -Serial $serial
+                            return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
+                        })) { throw 'Direct control loss retained native routes' }
+            }
+            Assert-OnlineClean
+            Set-OnlineFault
+            $serverProcess.Kill()
+            if (-not $serverProcess.WaitForExit(5000)) { throw 'Direct fixture server did not stop' }
+            $env:FORCE_RELAY = 'true'
+            $PublicDirect = $false
+            $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir -NoNewWindow -PassThru -RedirectStandardError (Join-Path $REPO_ROOT 'temp/server-relay-error.log') -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/server-relay.log')
+            if (-not (Wait-ForCondition -Description 'Relay fixture readiness' -TimeoutSec 15 -PollMs 250 -Condition {
+                        if ($serverProcess.HasExited) { throw 'Relay fixture exited' }
+                        try { return (Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 1).ready } catch { return $false }
+                    })) { throw 'Relay fixture did not become ready' }
+            Write-Status 'ONLINE_EVIDENCE direct background and control-loss recovery completed before separate relay fault qualification' 'Green'
+        }
         Start-OnlineRecoveryGame
         Invoke-OnlineBackgroundResume
         Set-OnlineFault -Udp 'impair'

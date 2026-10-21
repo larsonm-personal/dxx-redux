@@ -34,6 +34,7 @@ VALIDATION_IDS = {
 }
 
 PUBLIC_ONLINE_IDS = {"master:test_mp_public_shareware"}
+PUBLIC_ONLINE_D2_IDS = {"master:test_mp_public_shareware_d2"}
 PUBLIC_LAN_IDS = {"master:test_lan_launch_preparation_public_shareware"}
 THREE_PLAYER_IDS = {"master:test_lan_three_player_startup"}
 THREE_PLAYER_CASES = {"d1/three-player", "d1/three-player-lost", "d2/three-player", "d2/three-player-lost"}
@@ -303,6 +304,7 @@ def select_public_campaign(plan, policy, catalog, campaign):
         "lan-smoke": PUBLIC_LAN_IDS,
         "lan-three-player": THREE_PLAYER_IDS,
         "online-preview": PUBLIC_ONLINE_IDS,
+        "online-preview-d2": PUBLIC_ONLINE_D2_IDS,
     }[campaign]
     entries = policy_entries(policy)
     if not campaign_ids <= entries.keys():
@@ -668,7 +670,11 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         if status == "NOT_RUN" and blocked_reason:
             status = "BLOCKED"
             row = {"reason": blocked_reason}
-        if entry["id"] == "master:test_mp_public_shareware" and status in ("FAIL", "TIMEOUT") and not row.get("reason"):
+        if (
+            entry["id"] in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS
+            and status in ("FAIL", "TIMEOUT")
+            and not row.get("reason")
+        ):
             row = {**row, "reason": online_failure_summary(output)}
         if status not in TERMINAL | {"RUNNING", "NOT_RUN", "BLOCKED"}:
             raise ValueError("Invalid collected status")
@@ -1060,7 +1066,15 @@ def main():
     p.add_argument("--validation", action="store_true")
     p.add_argument(
         "--campaign",
-        choices=("first-play", "graphics-capabilities", "basic-use", "lan-smoke", "lan-three-player", "online-preview"),
+        choices=(
+            "first-play",
+            "graphics-capabilities",
+            "basic-use",
+            "lan-smoke",
+            "lan-three-player",
+            "online-preview",
+            "online-preview-d2",
+        ),
     )
     p.add_argument("--omit-pr-public-lan", action="store_true")
     p = sub.add_parser("retail-check")

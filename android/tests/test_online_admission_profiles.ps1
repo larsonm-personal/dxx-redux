@@ -43,6 +43,7 @@ if ($fixture.Count -ne 2 -or $fixture[0]._info._owner -cne 'test_mp' -or $fixtur
 . "$PSScriptRoot/../helpers/test_suite_coverage.ps1"
 if ('test_mp' -notin (Get-TestSuiteInstrumentationOwners)) { throw 'Online owner must provision device work instrumentation' }
 
+$PublicDirect = $false; $script:onlineHostTimeoutCount = 0
 $EMU1 = 'emulator-5554'; $EMU2 = 'emulator-5556'
 $CALLSIGN1 = 'HostPlt'; $CALLSIGN2 = 'JoinPlt'; $PACKAGE = 'com.dxxredux.app'
 function Send-MpCommand { param($Serial, $Command) if ($Command -ne 'disconnect') { throw 'Cancellation sent an approval' } }
@@ -83,7 +84,7 @@ function Invoke-RestMethod {
 function Adb-Dev-Timeout {
     param($Serial, $AdbArgs, $Seconds)
     if ($AdbArgs[0] -eq 'logcat') {
-        if ($script:nativeReceipt) { return 'Join wait: native terminal failure' }
+        if ($script:nativeReceipt) { return $(if ($Serial -eq $EMU1) { 'ONLINE_ADMISSION event=host_consent_timeout' } else { 'ONLINE_ADMISSION event=host_refusal' }) }
         return 'unrelated log line'
     }
     if (($AdbArgs -join ' ') -notmatch 'force-stop') { throw 'Unexpected terminal control' }

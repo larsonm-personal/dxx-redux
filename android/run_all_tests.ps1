@@ -935,6 +935,16 @@ $allTests += @{
     Arguments = @('-PublicShareware')
 }
 
+$allTests += @{
+    Name = 'test_mp_public_shareware_d2'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 2100
+    Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-PublicDirect')
+}
+
 # Exact public variants keep the original retail owners unchanged
 $allTests += @{
     Name = 'test_lan_launch_preparation_public_shareware'

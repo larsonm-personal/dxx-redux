@@ -382,6 +382,8 @@ add_executable(
                                 "${DXX_TEST_SHARED_SOURCE_DIR}/net/net_udp_reconnect_auth.c")
 target_include_directories(test_net_udp_reconnect_auth PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
 
+add_executable(test_online_admission test_online_admission.c)
+target_include_directories(test_online_admission PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
 add_executable(test_net_udp_startup_faults test_net_udp_startup_faults.c)
 target_include_directories(test_net_udp_startup_faults PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
 
@@ -618,6 +620,7 @@ set(DXX_HOST_TEST_TARGETS
     test_android_slowdown_detector
     test_net_udp_reconnect_auth
     test_net_udp_startup_faults
+    test_online_admission
     test_net_udp_initial_sync_retry
     test_coop_host_migration_policy
     test_coop_player_session
