@@ -456,6 +456,107 @@ function Start-OnlineRecoveryGame {
     Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'explicit fresh-game recovery'
 }
 
+function Test-OnlineOutageTerminal {
+    param([string]$Serial)
+    $control = Get-MpIntrospection -Serial $Serial
+    $device = 'device'
+    if (-not $control) {
+        $device = (Adb-Dev-Timeout -Serial $Serial -AdbArgs @('get-state') -Seconds 2 | Out-String).Trim()
+        if ($device -notin @('device', 'offline', 'unauthorized')) { $device = 'unavailable' }
+    }
+    $hasError = $control -and $control.PSObject.Properties['error'] -and [bool]$control.error
+    $hasRoom = $control -and [bool]$control.PSObject.Properties['lobby']
+    $workers = -1
+    if ($control -and $control.PSObject.Properties['online_resources'] -and
+        $control.online_resources.PSObject.Properties['proxy_workers']) {
+        $workers = [int]$control.online_resources.proxy_workers
+    }
+    $terminal = [bool]($control -and $hasError -and -not $hasRoom -and $workers -eq 0)
+    Write-Status "ONLINE_OUTAGE client=$Serial adb=$device control=$([bool]$control) error=$([bool]$hasError) room=$([bool]$hasRoom) proxy_workers=$workers terminal=$terminal" 'Gray'
+    return $terminal
+}
+
+function Test-OnlineOutageHostSurvival {
+    param($Control, $Native, [string]$Room, [string]$Player, [long]$Attempt, [string]$Callsign)
+    if (-not $Control -or -not $Native -or $Attempt -le 0) { return $false }
+    foreach ($field in @('lobby', 'online_resources', 'player_id')) {
+        if (-not $Control.PSObject.Properties[$field]) { return $false }
+    }
+    if ($Control.PSObject.Properties['error'] -and $Control.error) { return $false }
+    $lobby = $Control.lobby; $resources = $Control.online_resources
+    if (-not $lobby -or -not $resources) { return $false }
+    foreach ($field in @('lobby_id', 'is_host', 'players')) {
+        if (-not $lobby.PSObject.Properties[$field]) { return $false }
+    }
+    foreach ($field in @('runtime_attempt_epoch', 'peers', 'proxy_workers')) {
+        if (-not $resources.PSObject.Properties[$field]) { return $false }
+    }
+    $players = @($lobby.players)
+    if ($lobby.lobby_id -cne $Room -or -not $lobby.is_host -or $Control.player_id -cne $Player -or
+        $players.Count -ne 1 -or $players[0].player_id -cne $Player -or $players[0].slot -ne 0 -or
+        $resources.runtime_attempt_epoch -ne $Attempt -or @($resources.peers).Count -ne 0 -or
+        $resources.proxy_workers -lt 0 -or $resources.proxy_workers -gt 1) { return $false }
+    foreach ($field in @('in_game', 'is_network', 'game_window_is_front', 'multiplayer')) {
+        if (-not $Native.PSObject.Properties[$field]) { return $false }
+    }
+    $mp = $Native.multiplayer
+    if (-not $mp) { return $false }
+    foreach ($field in @('i_am_master', 'my_player_num', 'players', 'join_request_pending')) {
+        if (-not $mp.PSObject.Properties[$field]) { return $false }
+    }
+    $connected = @($mp.players | Where-Object { $_.connected -eq 1 })
+    return $Native.in_game -and $Native.is_network -and $Native.game_window_is_front -and
+    $mp.i_am_master -and $mp.my_player_num -eq 0 -and -not $mp.join_request_pending -and
+    $connected.Count -eq 1 -and $connected[0].callsign -ieq $Callsign
+}
+
+function Assert-OnlineUdpOutage {
+    $before = Get-MpIntrospection -Serial $EMU1
+    if (-not $before -or -not $before.PSObject.Properties['lobby'] -or
+        $before.online_resources.runtime_attempt_epoch -le 0) { throw 'UDP outage requires a live owned host attempt' }
+    $room = $before.lobby.lobby_id; $player = $before.player_id; $attempt = $before.online_resources.runtime_attempt_epoch
+    Set-OnlineFault -Udp 'drop'
+    $bounded = Wait-ForCondition -Description 'UDP outage visible terminal or live host-only state' -TimeoutSec 25 -PollMs 500 -Condition {
+        $joinerStopped = Test-OnlineOutageTerminal -Serial $EMU2
+        $hostStopped = Test-OnlineOutageTerminal -Serial $EMU1
+        if (-not $joinerStopped) { return $false }
+        try { $status = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2 } catch { return $false }
+        if ($status.relay_sessions -ne 0 -or $status.pending_native_admissions -ne 0 -or
+            $status.pending_and_authenticated_sockets -ne 2) { return $false }
+        if ($hostStopped) { return $status.rooms -eq 0 }
+        $hostControl = Get-MpIntrospection -Serial $EMU1
+        $native = Get-GameIntrospection -Serial $EMU1 -Fresh
+        $survived = Test-OnlineOutageHostSurvival -Control $hostControl -Native $native -Room $room -Player $player -Attempt $attempt -Callsign $CALLSIGN1
+        Write-Status "ONLINE_OUTAGE client=$EMU1 live_host_only=$survived rooms=$($status.rooms) relay_sessions=$($status.relay_sessions)" 'Gray'
+        return $survived -and $status.rooms -eq 1
+    }
+    if (-not $bounded) {
+        Write-OnlineOutageDiagnostics
+        throw 'Long UDP loss did not produce bounded visible cleanup or a verified live host-only room'
+    }
+}
+
+function Write-OnlineOutageDiagnostics {
+    foreach ($target in @($EMU1, $EMU2)) {
+        # Capture before Cleanup force-stops the applications; diagnostic failure cannot qualify the gate
+        try { Test-OnlineOutageTerminal -Serial $target | Out-Null } catch { Write-Status "ONLINE_OUTAGE client=$target control_probe=unavailable" 'Yellow' }
+        try {
+            $processes = @(Get-ManagedEmulatorProcesses -Serial $target)
+            Write-Status "ONLINE_OUTAGE client=$target emulator_processes=$($processes.Count)" 'Yellow'
+            $logs = Get-ManagedEmulatorLaunchLogPaths -AvdName $AVD_MAP[$target]
+            foreach ($stream in @('Stdout', 'Stderr')) {
+                if (Test-Path -LiteralPath $logs[$stream] -PathType Leaf) {
+                    Write-Status "ONLINE_OUTAGE client=$target emulator_log=$stream tail_begin" 'Yellow'
+                    Get-Content -LiteralPath $logs[$stream] -Tail 40 | ForEach-Object {
+                        $line = [string]$_
+                        Write-Status $line.Substring(0, [Math]::Min(500, $line.Length)) 'Gray'
+                    }
+                }
+            }
+        } catch { Write-Status "ONLINE_OUTAGE client=$target process_diagnostics=unavailable" 'Yellow' }
+    }
+}
+
 function Invoke-OnlineReturnToGame {
     $gamePid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 10).Trim()
     $controlPid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', $PACKAGE) -Seconds 10).Trim()
@@ -1306,15 +1407,9 @@ try {
         Start-Sleep -Seconds 2
         Set-OnlineFault
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'short UDP-only loss recovery'
-        Set-OnlineFault -Udp 'drop'
-        foreach ($serial in @($EMU1, $EMU2)) {
-            if (-not (Wait-ForCondition -Description 'UDP outage visible terminal state' -TimeoutSec 25 -PollMs 500 -Condition {
-                        $control = Get-MpIntrospection -Serial $serial
-                        return $control -and $control.error -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
-                    })) { throw 'Long UDP loss did not produce visible bounded cleanup' }
-        }
+        Assert-OnlineUdpOutage
         Set-OnlineFault
-        Write-Status 'ONLINE_EVIDENCE long UDP-only outage bounded visible terminal state' 'Green'
+        Write-Status 'ONLINE_EVIDENCE long UDP-only outage bounded visible joiner cleanup and terminal or verified live host-only state' 'Green'
         Start-OnlineRecoveryGame
         Set-OnlineFault -Ws 'drop'
         foreach ($serial in @($EMU1, $EMU2)) {

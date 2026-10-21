@@ -36,6 +36,7 @@ sourceSets.test.kotlin {
     include '**/RuntimeBridgeOwnershipTest.kt'
     include 'com/dxxredux/app/multiplayer/RuntimeGameStateBridge.kt'
     include '**/OnlineInstallationAuthTest.kt'
+    include '**/OnlineOutageOrderingTest.kt'
     include 'com/dxxredux/app/multiplayer/OnlineInstallationAuth.kt'
     include 'com/dxxredux/app/multiplayer/UdpReconnectStore.kt'
     include 'com/dxxredux/app/multiplayer/NetworkProtocol.kt'

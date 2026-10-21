@@ -221,3 +221,111 @@ $script:returnCase = 'preserved'; $script:returnStarted = $false; $failed = $fal
 try { Invoke-OnlineReturnToGame } catch { $failed = $true }
 if (-not $failed) { throw 'Cached-native-evidence negative control passed unexpectedly' }
 Write-Host 'PASS: Return to Game preserves owner lifetimes and requires fresh native and survivor evidence'
+
+
+$outageDefinition = $owner.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-OnlineOutageTerminal'
+    }, $true)
+if (-not $outageDefinition) { throw 'Missing bounded outage predicate' }
+. ([scriptblock]::Create($outageDefinition.Extent.Text))
+function Get-MpIntrospection {
+    param($Serial)
+    if ($script:outageCase -eq 'missing-control') { return $null }
+    $snapshot = [pscustomobject]@{ error = 'Network forwarding stopped'; online_resources = [pscustomobject]@{ proxy_workers = 0 } }
+    if ($script:outageCase -eq 'missing-error') { $snapshot.error = $null }
+    if ($script:outageCase -eq 'room-retained') { $snapshot | Add-Member lobby ([pscustomobject]@{}) }
+    if ($script:outageCase -eq 'workers-retained') { $snapshot.online_resources.proxy_workers = 1 }
+    if ($script:outageCase -eq 'missing-workers') { $snapshot.online_resources.PSObject.Properties.Remove('proxy_workers') }
+    return $snapshot
+}
+function Adb-Dev-Timeout {
+    param($Serial, $AdbArgs, $Seconds)
+    if (($AdbArgs -join ' ') -cne 'get-state' -or $Seconds -ne 2) { throw 'Outage probe mutated device or lost its bound' }
+    return 'offline'
+}
+function Write-Status { param($Message, $Color) $script:outageReceipt = $Message }
+foreach ($case in @('terminal', 'missing-error', 'room-retained', 'workers-retained', 'missing-workers', 'missing-control')) {
+    $script:outageCase = $case; $script:outageReceipt = ''
+    $accepted = Test-OnlineOutageTerminal -Serial 'emulator-5554'
+    if ($accepted -ne ($case -eq 'terminal')) { throw "Outage terminal predicate failed: $case" }
+    if ($script:outageReceipt -notmatch '^ONLINE_OUTAGE client=emulator-5554 adb=') { throw 'Missing outage timing receipt' }
+    if ($case -eq 'missing-control' -and $script:outageReceipt -notmatch 'adb=offline control=False') { throw 'Device loss was not distinguished from control state' }
+}
+Write-Host 'PASS: bounded outage retains strict visible-error, room and worker cleanup; device absence never qualifies'
+
+foreach ($name in @('Test-OnlineOutageHostSurvival', 'Assert-OnlineUdpOutage')) {
+    $definition = $owner.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+        }, $true)
+    if (-not $definition) { throw "Missing outage owner function $name" }
+    . ([scriptblock]::Create($definition.Extent.Text))
+    if ($name -eq 'Assert-OnlineUdpOutage') { $outageOwnerDefinition = $definition }
+}
+function Get-MpIntrospection {
+    param($Serial)
+    if ($script:outageDropped -and $Serial -eq $EMU1 -and $script:outageCase -eq 'missing-host') { return $null }
+    if ($script:outageDropped -and ($Serial -eq $EMU2 -or $script:outageCase -eq 'both-terminal')) {
+        $failureMessage = if ($script:outageCase -eq 'joiner-no-error') { $null } else { 'Visible network failure' }
+        return [pscustomobject]@{ error = $failureMessage; online_resources = [pscustomobject]@{ proxy_workers = 0 } }
+    }
+    $result = [pscustomobject]@{ player_id = 'host-id'; lobby = [pscustomobject]@{
+            lobby_id = 'owned-room'; is_host = $true; players = @([pscustomobject]@{ player_id = 'host-id'; slot = 0 })
+        }; online_resources = [pscustomobject]@{ runtime_attempt_epoch = 1; peers = @(); proxy_workers = 1 }
+    }
+    if ($script:outageDropped) {
+        switch ($script:outageCase) {
+            'replacement-attempt' { $result.online_resources.runtime_attempt_epoch = 2 }
+            'replacement-room' { $result.lobby.lobby_id = 'other-room' }
+            'retained-peer' { $result.online_resources.peers = @([pscustomobject]@{ slot = 1 }) }
+            'retained-workers' { $result.online_resources.proxy_workers = 2 }
+            'nonhost-control' { $result.lobby.is_host = $false }
+            'extra-member' { $result.lobby.players += [pscustomobject]@{ player_id = 'old-peer'; slot = 1 } }
+        }
+    }
+    return $result
+}
+function Get-GameIntrospection {
+    param($Serial, [switch]$Fresh)
+    if (-not $Fresh) { throw 'Outage host survival used cached native state' }
+    $result = [pscustomobject]@{ in_game = $true; is_network = $true; game_window_is_front = $true; multiplayer = [pscustomobject]@{
+            i_am_master = $true; my_player_num = 0; join_request_pending = $false
+            players = @([pscustomobject]@{ callsign = 'HostPlt'; connected = 1 })
+        }
+    }
+    switch ($script:outageCase) {
+        'native-menu' { $result.in_game = $false }
+        'native-modal' { $result.game_window_is_front = $false }
+        'native-nonhost' { $result.multiplayer.i_am_master = $false }
+        'native-extra-peer' { $result.multiplayer.players += [pscustomobject]@{ callsign = 'JoinPlt'; connected = 1 } }
+    }
+    return $result
+}
+function Invoke-RestMethod {
+    param($Uri, $TimeoutSec)
+    return [pscustomobject]@{
+        rooms = $(if ($script:outageCase -eq 'both-terminal') { 0 } else { 1 })
+        relay_sessions = $(if ($script:outageCase -eq 'server-relay-leak') { 1 } else { 0 })
+        pending_native_admissions = 0; pending_and_authenticated_sockets = 2
+    }
+}
+function Set-OnlineFault { param($Udp) if ($Udp -cne 'drop') { throw 'Unexpected outage action' }; $script:outageDropped = $true }
+function Wait-ForCondition {
+    param($Description, $TimeoutSec, $PollMs, $Condition)
+    if ($TimeoutSec -ne 25 -or $PollMs -ne 500) { throw 'Outage bound changed' }
+    return (& $Condition)
+}
+function Write-OnlineOutageDiagnostics { $script:outageDiagnostic = $true }
+foreach ($case in @('both-terminal', 'live-host-only', 'missing-host', 'joiner-no-error', 'replacement-attempt',
+        'replacement-room', 'retained-peer', 'retained-workers', 'nonhost-control', 'extra-member',
+        'native-menu', 'native-modal', 'native-nonhost', 'native-extra-peer', 'server-relay-leak')) {
+    $script:outageCase = $case; $script:outageDropped = $false; $script:outageDiagnostic = $false; $failed = $false
+    try { Assert-OnlineUdpOutage } catch { $failed = $true }
+    $expectedFailure = $case -notin @('both-terminal', 'live-host-only')
+    if ($failed -ne $expectedFailure) { throw "Outage ownership/cleanup control failed: $case" }
+    if ($expectedFailure -and -not $script:outageDiagnostic) { throw "Outage failure lost pre-cleanup evidence: $case" }
+}
+. ([scriptblock]::Create($outageOwnerDefinition.Extent.Text.Replace(' -Fresh', '')))
+$script:outageCase = 'live-host-only'; $script:outageDropped = $false; $failed = $false
+try { Assert-OnlineUdpOutage } catch { $failed = $true }
+if (-not $failed) { throw 'Outage accepted cached host evidence' }
+Write-Host 'PASS: real outage owner keeps 25-second bound, requires affected-peer error/cleanup and fresh exact-owner native host survival'
