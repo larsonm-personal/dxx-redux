@@ -185,9 +185,10 @@ class SweepTests(unittest.TestCase):
             workflow,
         )
         self.assertIn(
-            "if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'",
+            "if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}",
             workflow,
         )
+        self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.evidence_run_id != ''", workflow)
         self.assertIn("types: [opened, synchronize, reopened, labeled]", workflow)
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         catalog = {
