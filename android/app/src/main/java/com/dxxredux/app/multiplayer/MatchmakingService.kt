@@ -334,6 +334,65 @@ object MatchmakingService {
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
     private var installationAuth: OnlineInstallationAuth? = null
     private var installationAuthJob: Job? = null
+    private var installationDeadlineJob: Job? = null
+    private var installationAttempts = 0
+    private var installationBudgetGeneration = 0L
+    private var installationDeadlineNanos = 0L
+
+    private fun clearInstallationBudget() {
+        installationBudgetGeneration++
+        installationDeadlineJob?.cancel()
+        installationDeadlineJob = null
+        installationAttempts = 0
+        installationDeadlineNanos = 0L
+    }
+
+    private fun installationTimeRemaining(): Boolean {
+        if (installationDeadlineJob != null && System.nanoTime() - installationDeadlineNanos >= 0) {
+            authenticationUnavailable("Installation authentication could not complete (TOTAL_DEADLINE)")
+            return false
+        }
+        return true
+    }
+
+    // This budget survives socket replacement; only explicit connect or AUTH_OK resets it
+    private fun beginInstallationWork(): Boolean {
+        if (!installationTimeRemaining()) return false
+        if (installationAttempts >= 3) {
+            authenticationUnavailable("Installation authentication could not complete (WORK_DEADLINE)")
+            return false
+        }
+        installationAttempts++
+        if (installationDeadlineJob == null) {
+            val budgetGeneration = installationBudgetGeneration
+            installationDeadlineNanos = System.nanoTime() + 45_000_000_000L
+            installationDeadlineJob =
+                scope.launch {
+                    delay(((installationDeadlineNanos - System.nanoTime()) / 1_000_000L).coerceAtLeast(0L))
+                    synchronized(this@MatchmakingService) {
+                        if (budgetGeneration == installationBudgetGeneration) {
+                            authenticationUnavailable("Installation authentication could not complete (TOTAL_DEADLINE)")
+                        }
+                    }
+                }
+        }
+        return true
+    }
+
+    private fun retryInstallationWork() {
+        if (!installationTimeRemaining()) return
+        if (installationAttempts >= 3) {
+            authenticationUnavailable("Installation authentication could not complete (WORK_DEADLINE)")
+            return
+        }
+        // A new socket obtains a new single-use challenge and a fresh server preauth deadline
+        val previous = webSocket
+        webSocket = null
+        previous?.cancel()
+        retireNetworkWork()
+        state.appendLog("Installation work expired; requesting a fresh challenge")
+        scheduleReconnect()
+    }
 
     @Volatile private var installationWork: Map<String, Any> = emptyMap()
 
@@ -351,6 +410,7 @@ object MatchmakingService {
         callsign: String,
     ) {
         reconnectAttempt = 0
+        clearInstallationBudget()
         installationWork = emptyMap()
         lastLobbyId = null
         state.update {
@@ -412,6 +472,7 @@ object MatchmakingService {
 
     @Synchronized
     fun disconnect() {
+        clearInstallationBudget()
         lobbyPageJob?.cancel()
         lobbyPageRequest = null
         lobbyListingId = null
@@ -487,6 +548,7 @@ object MatchmakingService {
     }
 
     private fun authenticationUnavailable(message: String) {
+        clearInstallationBudget()
         manualDisconnect = true
         lastLobbyId = null
         reconnectJob?.cancel()
@@ -1406,6 +1468,7 @@ object MatchmakingService {
                 is ServerMessage.AuthOkMsg -> {
                     // An accepted socket is not a recovered authenticated session
                     reconnectAttempt = 0
+                    clearInstallationBudget()
                     lobbyPageJob?.cancel()
                     lobbyListingId = null
                     lobbyPageRequest = ListLobbiesMsg()
@@ -1444,6 +1507,7 @@ object MatchmakingService {
                         authenticationUnavailable("Unexpected installation challenge")
                         return
                     }
+                    if (!beginInstallationWork()) return
                     installationAuth = null
                     installationAuthJob?.cancel()
                     installationAuthJob =
@@ -1454,6 +1518,7 @@ object MatchmakingService {
                                         withConnection(connection) {
                                             installationWork =
                                                 mapOf(
+                                                    "attempt" to installationAttempts,
                                                     "difficulty" to work.difficulty,
                                                     "hashes" to work.hashes,
                                                     "elapsed_ms" to work.elapsedMs,
@@ -1463,7 +1528,11 @@ object MatchmakingService {
                                     }
                                 withConnection(
                                     connection,
-                                ) { send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof)) }
+                                ) {
+                                    if (installationTimeRemaining()) {
+                                        send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof))
+                                    }
+                                }
                             } catch (e: kotlinx.coroutines.CancellationException) {
                                 throw e
                             } catch (e: Exception) {
@@ -1471,9 +1540,13 @@ object MatchmakingService {
                                     connection,
                                 ) {
                                     val code = OnlineInstallationAuth.failureCode(e)
-                                    authenticationUnavailable(
-                                        "Installation authentication could not complete ($code)",
-                                    )
+                                    if (e is OnlineInstallationAuth.WorkDeadlineExceeded) {
+                                        retryInstallationWork()
+                                    } else {
+                                        authenticationUnavailable(
+                                            "Installation authentication could not complete ($code)",
+                                        )
+                                    }
                                 }
                             }
                         }

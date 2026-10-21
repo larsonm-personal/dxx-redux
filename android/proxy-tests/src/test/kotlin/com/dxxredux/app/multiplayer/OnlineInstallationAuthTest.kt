@@ -48,16 +48,19 @@ class OnlineInstallationAuthTest {
                 OnlineInstallationAuth.failureCode(IllegalArgumentException("secret-canary")),
             )
             assertEquals("PROOF_PROVIDER_FAILURE", OnlineInstallationAuth.failureCode(Exception("secret-canary")))
-            var checks = 0
-            val suspended =
-                OnlineInstallationAuth(fixtureKey(), "Fixture", "https://fixture.invalid:443", "test") {
-                    if (++checks >= 3) 12_000_000_000L else 0L
+            // Check both a late hash and a signature that finishes after the deadline
+            for (expiredRead in listOf(3, 4)) {
+                var checks = 0
+                val suspended =
+                    OnlineInstallationAuth(fixtureKey(), "Fixture", "https://fixture.invalid:443", "test") {
+                        if (++checks >= expiredRead) 12_000_000_000L else 0L
+                    }
+                try {
+                    suspended.proof("ab".repeat(32), 0)
+                    fail("Solution completed after the work deadline")
+                } catch (_: OnlineInstallationAuth.WorkDeadlineExceeded) {
+                    // Even the first valid hash cannot bypass an elapsed deadline
                 }
-            try {
-                suspended.proof("ab".repeat(32), 0)
-                fail("Solution completed after the work deadline")
-            } catch (_: OnlineInstallationAuth.WorkDeadlineExceeded) {
-                // Even the first valid hash cannot bypass an elapsed deadline after yielding
             }
 
             for ((error, expected) in listOf(
@@ -146,7 +149,9 @@ class OnlineInstallationAuthTest {
             com.dxxredux.app.OnlineInstallationWorkChecks.run { line ->
                 assertTrue(
                     line.matches(
-                        Regex("ONLINE_WORK_VECTOR difficulty=20 hashes=4243438 elapsed_ms=[0-9]+ solved=true"),
+                        Regex(
+                            "ONLINE_WORK_VECTOR difficulty=20 hashes=4243438 elapsed_ms=[0-9]+ solved=true|ONLINE_WORK_(EXHAUSTED|CANCELLED) hashes=512 solved=false",
+                        ),
                     ),
                 )
                 println(line)

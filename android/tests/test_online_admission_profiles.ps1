@@ -165,7 +165,7 @@ function Send-MpCommand { param($Serial, $Command, $Extras) if ($Command -eq 'co
 function Get-MpIntrospection {
     param($Serial)
     return [pscustomobject]@{ status = 'CONNECTED'; error = $null; online_resources = [pscustomobject]@{
-            installation_work = [pscustomobject]@{ difficulty = 20; hashes = 100; elapsed_ms = 1; solved = $true }
+            installation_work = [pscustomobject]@{ attempt = 1; difficulty = 20; hashes = 100; elapsed_ms = 1; solved = $true }
         }
     }
 }

@@ -9,6 +9,237 @@ import org.junit.Test
 
 /** Runs the actual service's completed-join consumer; Android storage/GPGS/IPC are not simulated */
 class MatchmakingServiceFlowTest {
+    @Test(timeout = 10000)
+    fun staleInstallationCallbacksCannotSubmitOrRetryOnReplacement() {
+        val service = MatchmakingService
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        val sent = java.util.concurrent.CopyOnWriteArrayList<String>()
+
+        fun socket() =
+            object : WebSocket {
+                override fun request() = Request.Builder().url("http://127.0.0.1/ws").build()
+
+                override fun queueSize() = 0L
+
+                override fun send(text: String): Boolean {
+                    sent += text
+                    return true
+                }
+
+                override fun send(bytes: ByteString) = false
+
+                override fun close(
+                    code: Int,
+                    reason: String?,
+                ) = true
+
+                override fun cancel() = Unit
+            }
+        val oldSocket = socket()
+        val freshSocket = socket()
+        val listener =
+            service.javaClass.declaredClasses
+                .first { it.simpleName == "Listener" }
+                .getDeclaredConstructor(String::class.java)
+                .apply { isAccessible = true }
+                .newInstance("Fixture") as okhttp3.WebSocketListener
+        val entered = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        val pair =
+            java.security.KeyPairGenerator
+                .getInstance("EC")
+                .apply {
+                    initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
+                }.generateKeyPair()
+        service.disconnect()
+        try {
+            field("webSocket").set(service, oldSocket)
+            field("manualDisconnect").set(service, false)
+            var reads = 0
+            field("installationAuth").set(
+                service,
+                OnlineInstallationAuth(pair, "Fixture", "http://127.0.0.1:80", "test") {
+                    if (++reads == 3) {
+                        entered.countDown()
+                        check(release.await(3, java.util.concurrent.TimeUnit.SECONDS))
+                    }
+                    0L
+                },
+            )
+            listener.onMessage(
+                oldSocket,
+                """{"type":"INSTALLATION_CHALLENGE","challenge":"${"ab".repeat(32)}","difficulty":0}""",
+            )
+            assertTrue(entered.await(3, java.util.concurrent.TimeUnit.SECONDS))
+            val oldJob = field("installationAuthJob").get(service) as kotlinx.coroutines.Job
+            service.disconnect()
+            field("webSocket").set(service, freshSocket)
+            field("manualDisconnect").set(service, false)
+            field(
+                "installationAuth",
+            ).set(service, OnlineInstallationAuth(pair, "Fixture", "http://127.0.0.1:80", "test"))
+            release.countDown()
+            kotlinx.coroutines.runBlocking { oldJob.join() }
+            assertTrue(sent.isEmpty())
+            val freshChallenge = "cd".repeat(32)
+            val message = """{"type":"INSTALLATION_CHALLENGE","challenge":"$freshChallenge","difficulty":0}"""
+            listener.onMessage(oldSocket, message)
+            listener.onFailure(oldSocket, java.io.IOException("stale"), null)
+            assertEquals(0, field("installationAttempts").get(service))
+            listener.onMessage(freshSocket, message)
+            val deadline = System.nanoTime() + 3_000_000_000L
+            while (sent.isEmpty()) {
+                check(System.nanoTime() < deadline)
+                Thread.sleep(5)
+            }
+            assertEquals(1, sent.size)
+            assertTrue(sent.single().contains(freshChallenge))
+            assertEquals(1, field("installationAttempts").get(service))
+        } finally {
+            release.countDown()
+            service.disconnect()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test(timeout = 15000)
+    fun exhaustedProofsRetryFreshSocketsAndStopAtThree() {
+        val service = MatchmakingService
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        val scheduler = kotlinx.coroutines.test.TestCoroutineScheduler()
+        val owner = kotlinx.coroutines.SupervisorJob()
+        val originalScope = field("scope").get(service)
+        service.disconnect()
+        field("scope").set(
+            service,
+            kotlinx.coroutines.CoroutineScope(owner + kotlinx.coroutines.test.StandardTestDispatcher(scheduler)),
+        )
+        val consume =
+            service.javaClass.getDeclaredMethod("handleMessage", String::class.java).apply {
+                isAccessible =
+                    true
+            }
+        val pair =
+            java.security.KeyPairGenerator
+                .getInstance("EC")
+                .apply {
+                    initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
+                }.generateKeyPair()
+        try {
+            repeat(3) { attempt ->
+                var cancelled = false
+                val sent = mutableListOf<String>()
+                val socket =
+                    object : WebSocket {
+                        override fun request() = Request.Builder().url("http://127.0.0.1/ws").build()
+
+                        override fun queueSize() = 0L
+
+                        override fun send(text: String): Boolean {
+                            sent += text
+                            return true
+                        }
+
+                        override fun send(bytes: ByteString) = false
+
+                        override fun close(
+                            code: Int,
+                            reason: String?,
+                        ) = true
+
+                        override fun cancel() {
+                            cancelled = true
+                        }
+                    }
+                // Simulate the next socket opening without resetting the real service budget
+                (field("reconnectJob").get(service) as? kotlinx.coroutines.Job)?.cancel()
+                field("webSocket").set(service, socket)
+                field("manualDisconnect").set(service, false)
+                var clock = 0L
+                field("installationAuth").set(
+                    service,
+                    OnlineInstallationAuth(pair, "Fixture", "http://127.0.0.1:80", "test") {
+                        clock.also { clock += 12_000_000_000L }
+                    },
+                )
+                consume.invoke(
+                    service,
+                    """{"type":"INSTALLATION_CHALLENGE","challenge":"${("a" + attempt).repeat(32)}","difficulty":20}""",
+                )
+                val deadline = System.nanoTime() + 3_000_000_000L
+                while (field("webSocket").get(service) != null) {
+                    check(System.nanoTime() < deadline) { "Expired producer did not retire socket" }
+                    Thread.sleep(5)
+                }
+                scheduler.runCurrent()
+                assertTrue(cancelled)
+                assertTrue("Unsolved proof was submitted", sent.isEmpty())
+                assertEquals(attempt + 1, (service.resourceDiagnostics()["installation_work"] as Map<*, *>)["attempt"])
+                assertEquals(
+                    if (attempt < 2) ConnectionStatus.RECONNECTING else ConnectionStatus.DISCONNECTED,
+                    MatchmakingStateHolder.state.value.status,
+                )
+            }
+            assertTrue(
+                MatchmakingStateHolder.state.value.errorMessage!!
+                    .contains("WORK_DEADLINE"),
+            )
+            scheduler.advanceTimeBy(300000)
+            scheduler.runCurrent()
+            assertEquals(null, field("webSocket").get(service))
+            assertEquals(0, service.resourceDiagnostics()["background_jobs"])
+        } finally {
+            service.disconnect()
+            owner.cancel()
+            scheduler.runCurrent()
+            field("scope").set(service, originalScope)
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun installationOverallDeadlineAndCancellationSurviveSocketReplacement() {
+        val service = MatchmakingService
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        val scheduler = kotlinx.coroutines.test.TestCoroutineScheduler()
+        val owner = kotlinx.coroutines.SupervisorJob()
+        val originalScope = field("scope").get(service)
+        val begin = service.javaClass.getDeclaredMethod("beginInstallationWork").apply { isAccessible = true }
+        service.disconnect()
+        field("scope").set(
+            service,
+            kotlinx.coroutines.CoroutineScope(owner + kotlinx.coroutines.test.StandardTestDispatcher(scheduler)),
+        )
+        try {
+            assertEquals(true, begin.invoke(service))
+            scheduler.runCurrent()
+            scheduler.advanceTimeBy(44000)
+            assertEquals(true, begin.invoke(service))
+            scheduler.advanceTimeBy(1000)
+            scheduler.runCurrent()
+            assertTrue(
+                MatchmakingStateHolder.state.value.errorMessage!!
+                    .contains("TOTAL_DEADLINE"),
+            )
+            assertEquals(0, service.resourceDiagnostics()["background_jobs"])
+            assertEquals(true, begin.invoke(service))
+            scheduler.runCurrent()
+            service.disconnect()
+            scheduler.advanceTimeBy(45000)
+            scheduler.runCurrent()
+            assertEquals(0, service.resourceDiagnostics()["background_jobs"])
+            assertEquals(0, field("installationAttempts").get(service))
+        } finally {
+            service.disconnect()
+            owner.cancel()
+            scheduler.runCurrent()
+            field("scope").set(service, originalScope)
+        }
+    }
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test(timeout = 30000)
     fun repeatedUpgradeWithoutAuthenticationExhaustsReconnectBudget() {

@@ -88,7 +88,6 @@ internal class OnlineInstallationAuth(
                 if (bits >= difficulty) {
                     coroutineContext.ensureActive()
                     if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
-                    solved = true
                     val solution = String(input, prefix.size, digits, Charsets.UTF_8)
                     // Keep this canonical transcript synchronized with server/src/pow.rs
                     val transcript =
@@ -101,6 +100,9 @@ internal class OnlineInstallationAuth(
                                 initSign(pair.private)
                                 update(transcript.toByteArray(Charsets.UTF_8))
                             }.sign()
+                    coroutineContext.ensureActive()
+                    if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
+                    solved = true
                     return InstallationProofMsg(challenge = challenge, solution = solution, signature = signature.hex())
                 }
                 nonce++

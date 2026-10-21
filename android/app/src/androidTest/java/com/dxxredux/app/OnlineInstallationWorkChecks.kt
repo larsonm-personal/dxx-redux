@@ -51,6 +51,37 @@ internal object OnlineInstallationWorkChecks {
                         update(transcript.toByteArray(Charsets.UTF_8))
                     }.verify(signature),
             ) { "Installation work fixture signature mismatch" }
+            // Deterministic exhaustion after real hashes, independent of device speed or random luck
+            var clockReads = 0
+            var exhaustedWork: OnlineInstallationAuth.WorkMeasurement? = null
+            val exhausted =
+                OnlineInstallationAuth(pair, "Fixture", "https://fixture.invalid:443", "test") {
+                    if (++clockReads >= 3) 12_000_000_000L else 0L
+                }
+            try {
+                exhausted.proof(challenge, 20) { exhaustedWork = it }
+                error("Unsolved installation work was accepted")
+            } catch (_: OnlineInstallationAuth.WorkDeadlineExceeded) {
+                check(exhaustedWork?.hashes == 512L && exhaustedWork.solved == false)
+                report("ONLINE_WORK_EXHAUSTED hashes=512 solved=false")
+            }
+            var cancellationReads = 0
+            var cancelledWork: OnlineInstallationAuth.WorkMeasurement? = null
+            lateinit var active: kotlinx.coroutines.Job
+            val interrupted =
+                OnlineInstallationAuth(pair, "Fixture", "https://fixture.invalid:443", "test") {
+                    if (++cancellationReads == 3) active.cancel()
+                    0L
+                }
+            active =
+                launch(start = CoroutineStart.LAZY) {
+                    interrupted.proof(challenge, 20) { cancelledWork = it }
+                    error("Cancelled installation proof returned")
+                }
+            active.start()
+            active.join()
+            check(active.isCancelled && cancelledWork?.hashes == 512L && cancelledWork.solved == false)
+            report("ONLINE_WORK_CANCELLED hashes=512 solved=false")
             val cancelled = launch(start = CoroutineStart.UNDISPATCHED) { producer.proof(challenge, 22) }
             cancelled.cancelAndJoin()
             check(cancelled.isCancelled) { "Installation work ignored cancellation" }

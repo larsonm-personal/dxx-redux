@@ -119,7 +119,7 @@ function Measure-InstallationWork {
             if (-not (Start-SetupActivity -Serial $serial)) { throw 'Work measurement launcher unavailable' }
             Send-MpCommand -Serial $serial -Command 'set_callsign' -Extras @('--es', 'callsign', 'WorkProbe')
             Send-MpCommand -Serial $serial -Command 'connect' -Extras @('--es', 'url', $ServerUrl)
-            $done = Wait-ForCondition -Description "Installation work sample $sample" -TimeoutSec 20 -PollMs 500 -Condition {
+            $done = Wait-ForCondition -Description "Installation work sample $sample" -TimeoutSec 50 -PollMs 500 -Condition {
                 $snapshot = Get-MpIntrospection -Serial $serial
                 return $snapshot -and ($snapshot.status -eq 'CONNECTED' -or $snapshot.error)
             }
@@ -127,10 +127,11 @@ function Measure-InstallationWork {
             $work = if ($snapshot) { $snapshot.online_resources.installation_work } else { $null }
             $valid = $done -and $snapshot.status -eq 'CONNECTED' -and $work -and
             $work.PSObject.Properties['difficulty'] -and $work.difficulty -eq 20 -and
+            $work.PSObject.Properties['attempt'] -and $work.attempt -ge 1 -and $work.attempt -le 3 -and
             $work.hashes -gt 0 -and $work.solved
             if (-not $valid) { $failed++ }
             if ($work -and $work.PSObject.Properties['difficulty']) {
-                Write-Status "ONLINE_WORK sample=$sample difficulty=$([int]$work.difficulty) hashes=$([long]$work.hashes) elapsed_ms=$([long]$work.elapsed_ms) solved=$([bool]$work.solved) authenticated=$([bool]$valid)" 'Gray'
+                Write-Status "ONLINE_WORK sample=$sample difficulty=$([int]$work.difficulty) hashes=$([long]$work.hashes) elapsed_ms=$([long]$work.elapsed_ms) solved=$([bool]$work.solved) authenticated=$([bool]$valid) attempts=$([int]$work.attempt)" 'Gray'
             } else {
                 Write-Status "ONLINE_WORK sample=$sample category=missing-measurement authenticated=False" 'Gray'
             }
@@ -145,7 +146,7 @@ function Measure-InstallationWork {
     foreach ($serial in $allTargets) {
         $output = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'instrument', '-w', '-r', '-e', 'suite', 'installation_work', "$PACKAGE.test/com.dxxredux.app.RecoveryInstrumentation") -Seconds 35
         foreach ($line in @($output -split "`n")) {
-            if ($line -match 'ONLINE_WORK_VECTOR difficulty=20 hashes=[0-9]+ elapsed_ms=[0-9]+ solved=(true|false)') {
+            if ($line -match 'ONLINE_WORK_VECTOR difficulty=20 hashes=[0-9]+ elapsed_ms=[0-9]+ solved=(true|false)|ONLINE_WORK_(EXHAUSTED|CANCELLED) hashes=512 solved=false') {
                 Write-Status "$($Matches[0])" 'Gray'
             }
         }
@@ -311,7 +312,7 @@ function Join-RunningOnlineGame {
     if (-not (Start-SetupActivity -Serial $Serial)) { throw "Late join launcher failed on $Serial" }
     Send-MpCommand -Serial $Serial -Command 'set_callsign' -Extras @('--es', 'callsign', $Callsign)
     Send-MpCommand -Serial $Serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
-    if (-not (Wait-ForCondition -Description 'Late join authenticated' -TimeoutSec 20 -PollMs 500 -Condition {
+    if (-not (Wait-ForCondition -Description 'Late join authenticated' -TimeoutSec 50 -PollMs 500 -Condition {
                 $control = Get-MpIntrospection -Serial $Serial
                 return $control -and $control.status -eq 'CONNECTED'
             })) { throw 'Late join authentication failed' }
@@ -421,7 +422,7 @@ function Start-OnlineRecoveryGame {
         $callsign = if ($serial -eq $EMU1) { $CALLSIGN1 } else { $CALLSIGN2 }
         Send-MpCommand -Serial $serial -Command 'set_callsign' -Extras @('--es', 'callsign', $callsign)
         Send-MpCommand -Serial $serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
-        if (-not (Wait-ForCondition -Description 'Recovery authentication' -TimeoutSec 20 -PollMs 500 -Condition {
+        if (-not (Wait-ForCondition -Description 'Recovery authentication' -TimeoutSec 50 -PollMs 500 -Condition {
                     $control = Get-MpIntrospection -Serial $serial
                     return $control -and $control.status -eq 'CONNECTED'
                 })) { throw 'Recovery authentication failed' }
@@ -861,7 +862,7 @@ try {
     Send-MpCommand -Serial $EMU1 -Command "connect" -Extras @("--es", "url", $testServerUrl)
     Send-MpCommand -Serial $EMU2 -Command "connect" -Extras @("--es", "url", $testServerUrl)
 
-    $conn1 = Wait-ForCondition -Description "Player 1 connected" -TimeoutSec 15 -PollMs 750 -Condition {
+    $conn1 = Wait-ForCondition -Description "Player 1 connected" -TimeoutSec 50 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU1
         return ($mp -and $mp.status -eq "CONNECTED")
     }
@@ -871,7 +872,7 @@ try {
         if ($mp1) { Write-Status "  Status: $($mp1.status), Error: $($mp1.error)" "Yellow" }
         Cleanup; exit 1
     }
-    $conn2 = Wait-ForCondition -Description "Player 2 connected" -TimeoutSec 15 -PollMs 750 -Condition {
+    $conn2 = Wait-ForCondition -Description "Player 2 connected" -TimeoutSec 50 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU2
         return ($mp -and $mp.status -eq "CONNECTED")
     }
