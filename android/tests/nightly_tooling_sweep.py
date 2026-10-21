@@ -492,8 +492,8 @@ def print_public_jvm_failure(plan, lane, output):
             stream.seek(0, os.SEEK_END)
             stream.seek(max(0, stream.tell() - 65536))
             tail = stream.read(65536).decode("utf-8", errors="replace").splitlines()[-200:]
-        # JSON keeps untrusted log text from becoming GitHub workflow commands
-        print(json.dumps({"file": path.name, "tail": tail}, ensure_ascii=True))
+        # JSON quotes modern commands; escape hashes for the legacy ##[ parser
+        print(json.dumps({"file": path.name, "tail": tail}, ensure_ascii=True).replace("#", "\\u0023"))
 
 
 def execute(plan, policy, lane, repo, output):

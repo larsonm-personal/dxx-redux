@@ -22,7 +22,7 @@ class SweepTests(unittest.TestCase):
             (root / "master").mkdir()
             (root / "master.log").write_text("owner failed")
             (root / "master/test_gradle_unit_tests_1.log").write_text(
-                "old line\n" * 10000 + "ExampleTest > assertion FAILED\n::error::untrusted\n"
+                "old line\n" * 10000 + "ExampleTest > assertion FAILED\n::error::untrusted\n##[error]legacy\n"
             )
             (root / "master/private.log").write_text("unrelated private output")
             output = io.StringIO()
@@ -33,6 +33,9 @@ class SweepTests(unittest.TestCase):
             payload = json.loads(lines[-1])
             self.assertEqual(len(payload["tail"]), 200)
             self.assertIn("ExampleTest > assertion FAILED", payload["tail"])
+            self.assertIn("##[error]legacy", payload["tail"])
+            self.assertNotIn("##[", output.getvalue())
+            self.assertIn(r"\u0023\u0023[error]legacy", output.getvalue())
             self.assertNotIn("unrelated private output", output.getvalue())
             for lane, private_plan in [("host", plan), ("jvm", {**plan, "retail_assets": {"commit": SHA}})]:
                 with patch("sys.stdout", io.StringIO()) as hidden:
