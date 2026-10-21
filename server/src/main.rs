@@ -84,84 +84,73 @@ async fn main() {
             }
         };
 
-    // Spawn the HTTP API server
-    let http_state = Arc::clone(&state);
-    let http_addr = state.config.http_listen_addr;
-    let http_handle = tokio::spawn(async move {
-        if let Err(e) = http_api::run(http_addr, http_state).await {
-            error!(%e, "HTTP API server failed");
-        }
+    // Own every listener; any unexpected exit terminates the whole service
+    let mut tasks = tokio::task::JoinSet::new();
+    let http = Arc::clone(&state);
+    tasks.spawn(async move {
+        (
+            "http",
+            http_api::run(http.config.http_listen_addr, http).await,
+        )
     });
-
-    // Spawn admin HTTP server on a separate port (if configured)
-    let admin_handle = if let Some(admin_addr) = state.config.admin_http_listen_addr {
-        let admin_state = Arc::clone(&state);
-        Some(tokio::spawn(async move {
-            if let Err(e) = http_api::run_admin(admin_addr, admin_state).await {
-                error!(%e, "Admin HTTP API server failed");
-            }
-        }))
-    } else {
-        None
-    };
-
-    // Spawn the UDP relay listener
-    let relay_state = Arc::clone(&state);
-    let relay_addr = state.config.relay_listen_addr;
-    let relay_handle = tokio::spawn(async move {
-        if let Err(e) = relay::run(relay_addr, relay_state).await {
-            error!(%e, "UDP relay failed");
-        }
-    });
-
-    // Spawn STUN listeners (only if public addresses are configured)
-    let stun_handles = if !state.config.stun_public_addrs.is_empty() {
-        let addr1 = state.config.stun_listen_addr;
-        let addr2 = state.config.stun_listen_addr_alt;
-        let al1 = Arc::clone(&state.stun_allowlist);
-        let al2 = Arc::clone(&state.stun_allowlist);
-        let h1 = tokio::spawn(async move {
-            if let Err(e) = stun::run(addr1, al1).await {
-                error!(%e, "STUN listener 1 failed");
-            }
-        });
-        let h2 = tokio::spawn(async move {
-            if let Err(e) = stun::run(addr2, al2).await {
-                error!(%e, "STUN listener 2 failed");
-            }
-        });
-        info!(
-            listen1 = %addr1, listen2 = %addr2,
-            public = %state.config.stun_public_addrs,
-            "STUN listeners started"
-        );
-        vec![h1, h2]
-    } else {
-        info!("STUN listeners disabled (STUN_PUBLIC_ADDRS not set)");
-        vec![]
-    };
-
-    // Spawn periodic tasks (stats snapshots, cleanup)
-    let periodic_state = Arc::clone(&state);
-    let periodic_handle = tokio::spawn(async move {
-        stats::periodic_tasks(periodic_state).await;
-    });
-
-    // Run the WebSocket server (blocks on the main task)
-    let ws_state = Arc::clone(&state);
-    let ws_addr = state.config.ws_listen_addr;
-    if let Err(e) = ws_handler::run(ws_addr, ws_state, tls_config).await {
-        error!(%e, "WebSocket server failed");
+    if let Some(addr) = state.config.admin_http_listen_addr {
+        let admin = Arc::clone(&state);
+        tasks.spawn(async move { ("admin", http_api::run_admin(addr, admin).await) });
     }
-
-    // If the WS server exits, shut down everything
-    http_handle.abort();
-    if let Some(h) = admin_handle {
-        h.abort();
+    let udp = Arc::clone(&state);
+    tasks.spawn(async move { ("relay", relay::run(udp.config.relay_listen_addr, udp).await) });
+    if !state.config.stun_public_addrs.is_empty() {
+        for (addr, bit) in [
+            (
+                state.config.stun_listen_addr,
+                dxx_matchmaking::ListenerReady::STUN1,
+            ),
+            (
+                state.config.stun_listen_addr_alt,
+                dxx_matchmaking::ListenerReady::STUN2,
+            ),
+        ] {
+            let stun_state = Arc::clone(&state);
+            tasks.spawn(async move {
+                let result: Result<(), Box<dyn std::error::Error + Send + Sync>> = async {
+                    let socket = tokio::net::UdpSocket::bind(addr).await?;
+                    let _ready = dxx_matchmaking::ListenerReady::new(Arc::clone(&stun_state), bit);
+                    stun::stun_loop(&socket, &stun_state.stun_allowlist).await;
+                    Ok(())
+                }
+                .await;
+                ("stun", result)
+            });
+        }
     }
-    relay_handle.abort();
-    periodic_handle.abort();
-    for h in stun_handles {
-        h.abort();
+    let periodic = Arc::clone(&state);
+    tasks.spawn(async move {
+        stats::periodic_tasks(periodic).await;
+        ("periodic", Ok(()))
+    });
+    let ws = Arc::clone(&state);
+    tasks.spawn(async move {
+        (
+            "websocket",
+            ws_handler::run(ws.config.ws_listen_addr, ws, tls_config).await,
+        )
+    });
+    let failed = tokio::select! {
+        result = tasks.join_next() => {
+            match result {
+                Some(Ok((service, result))) => error!(service, error = ?result.err(), "required service stopped"),
+                other => error!(?other, "required service task failed"),
+            }
+            true
+        }
+        result = tokio::signal::ctrl_c() => {
+            if let Err(e) = result { error!(%e, "shutdown signal listener failed"); }
+            false
+        }
+    };
+    tasks.abort_all();
+    while tasks.join_next().await.is_some() {}
+    if failed {
+        std::process::exit(1);
     }
 }

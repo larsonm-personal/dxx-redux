@@ -331,9 +331,10 @@ pub async fn run(
     state: Arc<ServerState>,
     tls_config: Option<Arc<rustls::ServerConfig>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = ws_router(state);
+    let app = ws_router(Arc::clone(&state));
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    let _ready = crate::ListenerReady::new(state, crate::ListenerReady::WS);
 
     if let Some(tls_cfg) = tls_config {
         let tls_acceptor = tokio_rustls::TlsAcceptor::from(tls_cfg);
@@ -615,6 +616,16 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     });
                     break;
                 }
+                // The current keypair producer is local-test-only until challenge-bound
+                // authentication and the matching release client are qualified
+                if auth_method == "keypair"
+                    && (!state.config.skip_gpgs_verify || !addr.ip().is_loopback())
+                {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Keypair authentication is unavailable for this preview".into(),
+                    });
+                    break;
+                }
                 if auth_method != "keypair"
                     && ((state.config.skip_gpgs_verify && !addr.ip().is_loopback())
                         || (!state.config.skip_gpgs_verify
@@ -733,6 +744,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         match tokio::time::timeout_at(
                             auth_deadline,
                             identity::verify_gpgs_token(
+                                auth_deadline,
                                 &state.config.google_client_id,
                                 &state.config.google_client_secret,
                                 &token,

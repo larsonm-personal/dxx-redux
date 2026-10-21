@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 /// Shared server state accessible from all tasks.
 pub struct ServerState {
+    pub ready_listeners: std::sync::atomic::AtomicU8,
     pub connected_sockets: std::sync::atomic::AtomicUsize,
     /// Serializes short control-plane transitions; never held across network awaits
     pub control: std::sync::Mutex<()>,
@@ -37,6 +38,7 @@ pub struct ServerState {
 pub fn build_state(config: config::ServerConfig) -> Result<Arc<ServerState>, rusqlite::Error> {
     let db = db::Database::open(&config.db_path)?;
     Ok(Arc::new(ServerState {
+        ready_listeners: std::sync::atomic::AtomicU8::new(0),
         connected_sockets: std::sync::atomic::AtomicUsize::new(0),
         control: std::sync::Mutex::new(()),
         config,
@@ -49,4 +51,46 @@ pub fn build_state(config: config::ServerConfig) -> Result<Arc<ServerState>, rus
         stun_allowlist: Arc::new(dashmap::DashMap::new()),
         started_at: std::time::Instant::now(),
     }))
+}
+
+/// Listener lifetime marker, cleared on failure, cancellation or normal exit
+pub struct ListenerReady {
+    state: Arc<ServerState>,
+    bit: u8,
+}
+impl ListenerReady {
+    pub const HTTP: u8 = 1;
+    pub const WS: u8 = 2;
+    pub const RELAY: u8 = 4;
+    pub const STUN1: u8 = 8;
+    pub const STUN2: u8 = 16;
+    pub const ADMIN: u8 = 32;
+    pub fn new(state: Arc<ServerState>, bit: u8) -> Self {
+        state
+            .ready_listeners
+            .fetch_or(bit, std::sync::atomic::Ordering::SeqCst);
+        Self { state, bit }
+    }
+    pub fn required(state: &ServerState) -> u8 {
+        Self::HTTP
+            | Self::WS
+            | Self::RELAY
+            | if state.config.stun_public_addrs.is_empty() {
+                0
+            } else {
+                Self::STUN1 | Self::STUN2
+            }
+            | if state.config.admin_http_listen_addr.is_some() {
+                Self::ADMIN
+            } else {
+                0
+            }
+    }
+}
+impl Drop for ListenerReady {
+    fn drop(&mut self) {
+        self.state
+            .ready_listeners
+            .fetch_and(!self.bit, std::sync::atomic::Ordering::SeqCst);
+    }
 }

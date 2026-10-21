@@ -20,6 +20,7 @@ pub fn public_router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/status", get(status))
         .route("/api/v1/status/simple", get(status_simple))
         .route("/api/v1/health", get(health))
+        .route("/api/v1/ready", get(ready))
         .route("/api/v1/leaderboard", get(leaderboard_stub))
         .with_state(state)
 }
@@ -30,6 +31,7 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/status", get(status))
         .route("/api/v1/status/simple", get(status_simple))
         .route("/api/v1/health", get(health))
+        .route("/api/v1/ready", get(ready))
         .route("/api/v1/leaderboard", get(leaderboard_stub))
         .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
@@ -44,6 +46,7 @@ pub fn admin_router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
         .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
         .route("/api/v1/health", get(health))
+        .route("/api/v1/ready", get(ready))
         .with_state(state)
 }
 
@@ -54,12 +57,13 @@ pub async fn run(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let use_public_only = state.config.admin_http_listen_addr.is_some();
     let app = if use_public_only {
-        public_router(state)
+        public_router(Arc::clone(&state))
     } else {
-        router(state)
+        router(Arc::clone(&state))
     };
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    let _ready = crate::ListenerReady::new(state, crate::ListenerReady::HTTP);
     tracing::info!(%addr, public_only = use_public_only, "HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
@@ -70,8 +74,9 @@ pub async fn run_admin(
     addr: SocketAddr,
     state: Arc<ServerState>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = admin_router(state);
+    let app = admin_router(Arc::clone(&state));
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    let _ready = crate::ListenerReady::new(state, crate::ListenerReady::ADMIN);
     tracing::info!(%addr, "Admin HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
@@ -309,5 +314,26 @@ async fn admin_motd_stub() -> (StatusCode, &'static str) {
     (
         StatusCode::NOT_IMPLEMENTED,
         "MOTD update not yet implemented",
+    )
+}
+
+/// Readiness is separate from process liveness; it never exposes addresses or keys
+async fn ready(State(state): State<Arc<ServerState>>) -> (StatusCode, Json<serde_json::Value>) {
+    let active = state
+        .ready_listeners
+        .load(std::sync::atomic::Ordering::SeqCst);
+    let required = crate::ListenerReady::required(&state);
+    let ready = active & required == required;
+    (
+        if ready {
+            StatusCode::OK
+        } else {
+            StatusCode::SERVICE_UNAVAILABLE
+        },
+        Json(
+            serde_json::json!({ "ready": ready, "protocol_version": CURRENT_PROTOCOL,
+            "pending_and_authenticated_sockets": state.connected_sockets.load(std::sync::atomic::Ordering::SeqCst),
+            "relay_sessions": state.relay_sessions.len(), "rooms": state.lobbies.len() }),
+        ),
     )
 }

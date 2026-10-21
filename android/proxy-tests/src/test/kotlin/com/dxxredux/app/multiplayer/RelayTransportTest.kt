@@ -147,4 +147,54 @@ class RelayTransportTest {
             }
         }
     }
+
+    @Test(timeout = 15_000)
+    fun relayAcknowledgementLossTerminatesAndReleasesResources() =
+        runBlocking {
+            val owner = SupervisorJob()
+            val scope = CoroutineScope(owner + Dispatchers.IO)
+            val network = DatagramSocket(0, loopback)
+            val failed = kotlinx.coroutines.CompletableDeferred<String>()
+            val proxy = LocalhostProxy(scope, network, onFailure = { failed.complete(it) })
+            val port = DatagramSocket(0, loopback).use { it.localPort }
+            try {
+                DatagramSocket(0, loopback).use { server ->
+                    server.soTimeout = 2000
+                    proxy.addPeer(
+                        PeerProxyConfig(
+                            2,
+                            port,
+                            InetSocketAddress(loopback, server.localPort),
+                            true,
+                            42u,
+                            2,
+                            0,
+                            keyA,
+                            keyB,
+                        ),
+                    )
+                    proxy.start()
+                    val remote = RelayTransport(42u, 2, 0, keyB, keyA)
+                    val request = receive(server)
+                    val address = InetSocketAddress(request.address, request.port)
+                    assertEquals(RelayTransport.BIND, remote.decode(request.data, request.length)!!.kind)
+                    send(server, address, remote.encode(RelayTransport.CHALLENGE, ByteArray(16) { 7 }))
+                    val proof = receive(server)
+                    assertEquals(RelayTransport.PROOF, remote.decode(proof.data, proof.length)!!.kind)
+                    send(server, address, remote.encode(RelayTransport.BOUND, byteArrayOf()))
+                    // Simulate a dead/restarted relay by withholding further acknowledgements
+                    val message = withTimeout(12_000) { failed.await() }
+                    assertTrue(message.contains("within 10 seconds"))
+                    withTimeout(2000) { owner.children.toList().forEach { it.join() } }
+                    assertTrue(network.isClosed)
+                    DatagramSocket(port, loopback).use { assertTrue(it.isBound) }
+                    assertTrue(proxy.getStats().isEmpty())
+                }
+            } finally {
+                proxy.shutdown()
+                scope.cancel()
+                network.close()
+                withTimeout(2000) { owner.join() }
+            }
+        }
 }

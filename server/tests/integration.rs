@@ -3367,8 +3367,8 @@ async fn online_unconfigured_production_auth_is_rejected() {
 }
 
 #[tokio::test]
-async fn online_keypair_works_without_google_configuration() {
-    let server = TestServer::with_config(|c| c.skip_gpgs_verify = false).await;
+async fn online_local_keypair_fixture_works_without_google_configuration() {
+    let server = TestServer::start().await;
     let mut ws = connect_ws(&server).await;
     let (response, _) = authenticate_keypair_new(&mut ws, "Keypair").await;
     assert_eq!(response["type"], "AUTH_OK");
@@ -3756,4 +3756,27 @@ async fn online_three_client_relay_pairs_and_departure_cleanup() {
     }
     wait_for_state(|| server.state.sessions.is_empty() && server.state.stun_allowlist.is_empty())
         .await;
+}
+
+#[tokio::test]
+async fn online_production_preview_rejects_unqualified_keypair_producer() {
+    let server = TestServer::with_config(|config| config.skip_gpgs_verify = false).await;
+    let mut client = connect_ws(&server).await;
+    let key = ed25519_dalek::SigningKey::generate(&mut rand::rng());
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let response = send_recv(
+        &mut client,
+        json!({"type":"AUTHENTICATE",
+        "protocol_version":CURRENT_PROTOCOL, "client_version":"test", "callsign":"Preview",
+        "platform":"test", "auth_method":"keypair",
+        "public_key":hex::encode(key.verifying_key().as_bytes()),
+        "auth_timestamp":timestamp, "auth_signature":sign_with_key(&key,"Preview",timestamp)}),
+    )
+    .await;
+    assert_eq!(response["type"], "AUTH_FAIL");
+    assert!(response["reason"].as_str().unwrap().contains("unavailable"));
+    wait_for_state(|| server.state.sessions.is_empty()).await;
 }

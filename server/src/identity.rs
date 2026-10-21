@@ -28,11 +28,13 @@ struct PlayersResponse {
 /// 2. GET /games/v1/players/me with the access_token to retrieve the
 ///    stable GPGS player ID (distinct from the Google account sub claim)
 pub async fn verify_gpgs_token(
+    deadline: tokio::time::Instant,
     client_id: &str,
     client_secret: &str,
     auth_code: &str,
 ) -> VerifyResult {
     verify_gpgs_at(
+        deadline,
         client_id,
         client_secret,
         auth_code,
@@ -56,6 +58,27 @@ async fn bounded_json<T: serde::de::DeserializeOwned>(
 }
 
 async fn verify_gpgs_at(
+    deadline: tokio::time::Instant,
+    client_id: &str,
+    client_secret: &str,
+    auth_code: &str,
+    token_url: &str,
+    player_url: &str,
+) -> VerifyResult {
+    match tokio::time::timeout_at(
+        deadline,
+        verify_gpgs_exchange(client_id, client_secret, auth_code, token_url, player_url),
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(_) => VerifyResult::Failed {
+            reason: "Authentication deadline exceeded".into(),
+        },
+    }
+}
+
+async fn verify_gpgs_exchange(
     client_id: &str,
     client_secret: &str,
     auth_code: &str,
@@ -196,6 +219,13 @@ mod tests {
                 "/denied",
                 get(|| async { axum::http::StatusCode::UNAUTHORIZED }),
             )
+            .route(
+                "/delayed",
+                get(|| async {
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    axum::Json(serde_json::json!({"playerId":"too-late"}))
+                }),
+            )
             .route("/oversize", get(|| async { "x".repeat(20 * 1024) }));
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -203,13 +233,14 @@ mod tests {
         let verify = |path: &str| (format!("{base}/token"), format!("{base}/{path}"));
         let (token, player) = verify("player");
         assert!(
-            matches!(verify_gpgs_at("fixture-client", "fixture-secret", "fixture-code", &token, &player).await,
+            matches!(verify_gpgs_at(tokio::time::Instant::now() + std::time::Duration::from_secs(2), "fixture-client", "fixture-secret", "fixture-code", &token, &player).await,
             VerifyResult::Ok { gpgs_player_id } if gpgs_player_id == "verified-fixture-player")
         );
         for path in ["denied", "oversize"] {
             let (token, player) = verify(path);
             assert!(matches!(
                 verify_gpgs_at(
+                    tokio::time::Instant::now() + std::time::Duration::from_secs(2),
                     "fixture-client",
                     "fixture-secret",
                     "fixture-code",
@@ -220,6 +251,22 @@ mod tests {
                 VerifyResult::Failed { .. }
             ));
         }
+        // A valid exchange started late must not extend the connection deadline
+        let (token, player) = verify("delayed");
+        let start = tokio::time::Instant::now();
+        let result = verify_gpgs_at(
+            start + std::time::Duration::from_millis(100),
+            "fixture-client",
+            "fixture-secret",
+            "fixture-code",
+            &token,
+            &player,
+        )
+        .await;
+        assert!(
+            matches!(result, VerifyResult::Failed { reason } if reason == "Authentication deadline exceeded")
+        );
+        assert!(start.elapsed() < std::time::Duration::from_millis(500));
         task.abort();
         let _ = task.await;
     }

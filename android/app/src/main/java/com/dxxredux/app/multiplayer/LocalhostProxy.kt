@@ -582,6 +582,9 @@ private class PeerProxy(
     private suspend fun keepalive() {
         var keepaliveCount = 0L
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
+            if (relay != null && System.nanoTime() - relay.lastAcknowledgementNanos > 10_000_000_000L) {
+                throw IOException("Relay did not acknowledge the route within 10 seconds")
+            }
             try {
                 if (relay == null) kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
                 val ping = relay?.encode(RelayTransport.BIND, ByteArray(16)) ?: byteArrayOf(0)

@@ -50,8 +50,8 @@ of silently dropping state transitions. Existing native/game behavior is unchang
 ### Authentication and admission slice
 
 Production GPGS now requires explicit configuration and rejects dev/unknown auth
-methods. Local test dev authentication is restricted to loopback. Known server
-keypair authentication remains available; release Android currently requires
+methods. Local test dev authentication is restricted to loopback. Existing server
+keypair authentication is restricted to loopback tests; release Android currently requires
 configured Play Games for the online preview and reports unavailable authentication
 explicitly on direct-install builds. This is a visible preview restriction, not
 completion of Android keypair support. Release WS requires TLS and normal trust.
@@ -122,3 +122,33 @@ proxy cases. Scoped mixed formatting and `test_validate_automation_catalog.ps1`
 passed. `test_run_all_tests_catalog.ps1` is blocked on this host: its Linux child
 supervisor exits 125 because `/proc/self/task/<pid>/children` is unavailable.
 No other task's CI run was dispatched or changed.
+
+### Readiness and bounded terminal recovery
+
+The real binary now owns all required listener tasks. Bind/task failure exits with
+status 1; `/api/v1/ready` returns 503 until the configured WS, HTTP, relay, STUN and
+optional admin listeners are present. `/api/v1/health` remains process liveness.
+Two process tests run with an empty inherited environment and synthetic database:
+UDP port conflicts must terminate the binary, and stop/restart must restore
+readiness with zero rooms/leases. See `server/PREVIEW_REHEARSAL.md` for staging
+prerequisites, lifecycle matrix, observability and matched-artifact rollback gates.
+
+The OAuth fixture now proves that a valid exchange delayed beyond the remaining
+absolute authentication budget is rejected. The production preview accepts GPGS
+only: the existing keypair producer is local-test-only until challenge-bound
+identity and the matching release client are implemented and qualified. This is
+an explicit temporary restriction, not completion of direct-install support.
+
+Relay acknowledgement loss has a ten-second terminal bound. The actual JVM proxy
+test establishes a route, withholds further acknowledgements, observes the failure
+callback and proves socket closure, port reuse and worker termination. Online
+proxy failure leaves its room; authentication/version rejection retires network
+work, and host closure retires the proxy. MatchmakingService changes still need
+full APK/device qualification; host JVM tests compile the proxy, not that service.
+
+Latest local receipt: the full locked Rust domain passes 41 module, 79 integration,
+13 NAT and two real-process tests; Clippy passes with warnings denied. The pinned
+host-JVM suite passes six active proxy tests, including the ten-second terminal
+case. Scoped formatting passes. Catalog validation passes; the master catalog
+execution remains blocked by this host's unavailable `/proc/.../children` support.
+No APK/device, external staging/live or full native gameplay result is claimed.

@@ -222,7 +222,7 @@ object MatchmakingService {
             LocalhostProxy(scope, sharedSocket, dynamic) { message ->
                 synchronized(this) {
                     if (localhostProxy === proxy) {
-                        shutdownProxy()
+                        if (state.state.value.currentLobby != null) leaveLobby() else shutdownProxy()
                         state.update { it.copy(errorMessage = message, gameLaunchInfo = null) }
                         state.appendLog(message)
                         NetLog.log("ERROR", message)
@@ -442,11 +442,22 @@ object MatchmakingService {
 
     private fun authenticationUnavailable(message: String) {
         manualDisconnect = true
+        lastLobbyId = null
         reconnectJob?.cancel()
         retireNetworkWork()
         webSocket?.cancel()
         webSocket = null
-        state.update { it.copy(status = ConnectionStatus.DISCONNECTED, errorMessage = message) }
+        state.update {
+            it.copy(
+                status = ConnectionStatus.DISCONNECTED,
+                errorMessage = message,
+                playerId = null,
+                sessionToken = null,
+                currentLobby = null,
+                gameLaunchInfo = null,
+                nav = MultiplayerNav.BROWSER,
+            )
+        }
     }
 
     private fun sendDevAuthenticate(callsign: String) {
@@ -497,6 +508,7 @@ object MatchmakingService {
 
     @Synchronized
     fun leaveLobby() {
+        lastLobbyId = null
         send(protocolJson.encodeToString(LeaveLobbyMsg.serializer(), LeaveLobbyMsg()))
         retireNetworkWork()
         state.update {
@@ -1296,15 +1308,7 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.AuthFailMsg -> {
-                    state.update {
-                        it.copy(
-                            status = ConnectionStatus.DISCONNECTED,
-                            errorMessage = "Auth failed: ${msg.data.reason}",
-                        )
-                    }
-                    state.appendLog("Auth failed: ${msg.data.reason}")
-                    NetLog.log("AUTH", "Auth failed: ${msg.data.reason}")
-                    manualDisconnect = true // don't auto-reconnect on auth failure
+                    authenticationUnavailable("Auth failed: ${msg.data.reason}")
                 }
 
                 is ServerMessage.PowChallengeMsg -> {
@@ -1316,9 +1320,12 @@ object MatchmakingService {
                     state.appendLog("Server error: ${msg.data.code} - ${msg.data.message}")
                     NetLog.log("ERROR", "Server: ${msg.data.code} - ${msg.data.message}")
                     // Kicked from lobby -- return to browser
-                    if (msg.data.code.contains("KICKED", ignoreCase = true) ||
+                    if (msg.data.code == "HOST_DISCONNECTED" ||
+                        msg.data.code.contains("KICKED", ignoreCase = true) ||
                         msg.data.code.contains("LOBBY", ignoreCase = true)
                     ) {
+                        lastLobbyId = null
+                        retireNetworkWork()
                         state.update {
                             it.copy(
                                 currentLobby = null,
@@ -1401,7 +1408,7 @@ object MatchmakingService {
                     }
                     state.appendLog("Version rejected: ${msg.data.reason}")
                     NetLog.log("ERROR", "Version rejected: ${msg.data.reason}")
-                    manualDisconnect = true
+                    authenticationUnavailable("Version rejected: ${msg.data.reason}")
                 }
 
                 is ServerMessage.MessageReceived -> {

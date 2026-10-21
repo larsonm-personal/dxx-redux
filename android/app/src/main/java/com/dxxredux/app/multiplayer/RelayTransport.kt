@@ -24,6 +24,9 @@ internal class RelayTransport(
     private var highest = 0L
     private var seen = 0uL
 
+    @Volatile var lastAcknowledgementNanos = System.nanoTime()
+        private set
+
     @Volatile var bound = false
         private set
 
@@ -92,7 +95,10 @@ internal class RelayTransport(
             if (delta >= 64 || seen and (1uL shl delta.toInt()) != 0uL) return null
             seen = seen or (1uL shl delta.toInt())
         }
-        if (kind == BOUND && plain.isEmpty()) bound = true
+        if (kind == BOUND && plain.isEmpty()) {
+            bound = true
+            lastAcknowledgementNanos = System.nanoTime()
+        }
         return Packet(kind, plain)
     }
 

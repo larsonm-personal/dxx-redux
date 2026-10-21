@@ -344,6 +344,7 @@ pub async fn run(
     Ok(())
 }
 pub async fn run_socket(socket: UdpSocket, state: Arc<ServerState>) -> std::io::Result<()> {
+    let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::RELAY);
     let mut buf = vec![0u8; MAX_PACKET + 1];
     loop {
         let (len, source) = socket.recv_from(&mut buf).await?;
