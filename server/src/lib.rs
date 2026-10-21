@@ -9,6 +9,7 @@ pub mod pow;
 pub mod protocol;
 pub mod rate_limit;
 pub mod relay;
+pub mod resource_budget;
 pub mod stats;
 pub mod stun;
 pub mod tls;
@@ -19,6 +20,13 @@ use std::sync::Arc;
 
 /// Shared server state accessible from all tasks.
 pub struct ServerState {
+    pub control_queue_bytes: Arc<tokio::sync::Semaphore>,
+    pub control_egress: Arc<std::sync::Mutex<resource_budget::RelayBudget>>,
+    pub relay_budget: std::sync::Mutex<resource_budget::RelayBudget>,
+    pub auth_work: std::sync::Mutex<resource_budget::WorkBudget>,
+    pub auth_slots: tokio::sync::Semaphore,
+    pub public_work: std::sync::Mutex<resource_budget::WorkBudget>,
+    pub allocation_work: std::sync::Mutex<resource_budget::AllocationBudget>,
     pub ready_listeners: std::sync::atomic::AtomicU8,
     pub connected_sockets: std::sync::atomic::AtomicUsize,
     /// Serializes short control-plane transitions; never held across network awaits
@@ -35,9 +43,30 @@ pub struct ServerState {
 }
 
 /// Build a `ServerState` from a config. Useful for tests.
-pub fn build_state(config: config::ServerConfig) -> Result<Arc<ServerState>, rusqlite::Error> {
+pub fn build_state(
+    config: config::ServerConfig,
+) -> Result<Arc<ServerState>, Box<dyn std::error::Error + Send + Sync>> {
+    if !config.skip_gpgs_verify
+        && (config.max_connections == 0
+            || config.max_connections > 2000
+            || config.max_relay_sessions == 0
+            || config.max_relay_sessions > 1000)
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Production service capacities must be finite and within supported bounds",
+        )
+        .into());
+    }
     let db = db::Database::open(&config.db_path)?;
     Ok(Arc::new(ServerState {
+        control_queue_bytes: Arc::new(tokio::sync::Semaphore::new(32 * 1024 * 1024)),
+        control_egress: Arc::new(std::sync::Mutex::new(resource_budget::RelayBudget::new())),
+        relay_budget: std::sync::Mutex::new(resource_budget::RelayBudget::new()),
+        auth_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(64, 1)),
+        auth_slots: tokio::sync::Semaphore::new(8),
+        public_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(120, 1)),
+        allocation_work: std::sync::Mutex::new(resource_budget::AllocationBudget::new()),
         ready_listeners: std::sync::atomic::AtomicU8::new(0),
         connected_sockets: std::sync::atomic::AtomicUsize::new(0),
         control: std::sync::Mutex::new(()),

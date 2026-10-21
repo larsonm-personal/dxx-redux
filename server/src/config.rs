@@ -45,9 +45,9 @@ pub struct ServerConfig {
     /// Proof-of-work difficulty (leading zero bits) for keypair registration.
     /// Default 20 (~200ms on phone, <1us to verify).
     pub pow_difficulty: u8,
-    /// Maximum number of concurrent relay sessions. 0 = unlimited.
+    /// Maximum concurrent relay pairs (production 1..=1000; 0 unlimited only in dev mode).
     pub max_relay_sessions: usize,
-    /// Maximum concurrent WebSocket connections. 0 = unlimited.
+    /// Maximum concurrent WebSocket connections (production 1..=2000; 0 unlimited only in dev mode).
     pub max_connections: usize,
     /// Optional separate listen address for admin-only HTTP endpoints.
     /// When set, admin routes are served on this port and the main HTTP port

@@ -228,12 +228,40 @@ impl RelaySession {
             payload,
         )
     }
+    // Cheap routing checks are filters only; every admitted packet still needs AEAD
+    fn plausible_source(&self, packet: &[u8], source: SocketAddr) -> bool {
+        let state = self.inner.lock().unwrap();
+        let Some(peer) = state.peers.get(&packet[9]) else {
+            return false;
+        };
+        if packet[9] == packet[10] || !state.peers.contains_key(&packet[10]) {
+            return false;
+        }
+        match packet[8] {
+            DATA => peer.endpoint == Some(source),
+            BIND => packet.len() == HEADER_LEN + 32,
+            PROOF => {
+                packet.len() == HEADER_LEN + 32
+                    && peer.pending.as_ref().is_some_and(|p| p.address == source)
+            }
+            _ => false,
+        }
+    }
     /// No I/O under the lock; unproved or stale packets cannot mutate a route
     pub fn process(
         &self,
         packet: &[u8],
         source: SocketAddr,
         now: Instant,
+    ) -> Option<(SocketAddr, Vec<u8>)> {
+        self.process_bounded(packet, source, now, None)
+    }
+    fn process_bounded(
+        &self,
+        packet: &[u8],
+        source: SocketAddr,
+        now: Instant,
+        budget: Option<&Mutex<crate::resource_budget::RelayBudget>>,
     ) -> Option<(SocketAddr, Vec<u8>)> {
         if packet.len() < HEADER_LEN + 16 || packet.len() > MAX_PACKET || &packet[..4] != MAGIC {
             return None;
@@ -250,6 +278,15 @@ impl RelaySession {
         let payload = open(&sender.uplink, packet)?;
         if !sender.replay.accept(seq) {
             return None;
+        }
+        if let Some(budget) = budget {
+            if !budget
+                .lock()
+                .unwrap()
+                .accept(sender.player, self.room_id, packet.len(), now)
+            {
+                return None;
+            }
         }
         if now.duration_since(sender.budget_start) >= Duration::from_secs(1) {
             sender.budget_start = now;
@@ -345,23 +382,48 @@ pub async fn run(
 }
 // Separate untrusted source/global work budget, independent of claimed slot identity
 struct CryptoAdmission {
+    handshake_start: Instant,
+    handshake_pairs: HashMap<u32, usize>,
+    handshakes: crate::resource_budget::SourceBudget,
     started: Instant,
     packets: usize,
     sources: HashMap<IpAddr, usize>,
+    pairs: HashMap<u32, usize>,
 }
 impl CryptoAdmission {
     fn new() -> Self {
         Self {
+            handshake_start: Instant::now(),
+            handshake_pairs: HashMap::new(),
+            handshakes: crate::resource_budget::SourceBudget::new(2048, 256),
             started: Instant::now(),
             packets: 0,
             sources: HashMap::new(),
+            pairs: HashMap::new(),
         }
     }
-    fn accept(&mut self, source: IpAddr, now: Instant) -> bool {
+    fn accept_handshake(&mut self, source: IpAddr, token: u32, now: Instant) -> bool {
+        if now.duration_since(self.handshake_start) >= Duration::from_secs(1) {
+            self.handshake_start = now;
+            self.handshake_pairs.clear();
+        }
+        if self.handshake_pairs.get(&token).copied().unwrap_or(0) >= 32
+            || !self.handshakes.accept(source, now)
+        {
+            return false;
+        }
+        *self.handshake_pairs.entry(token).or_default() += 1;
+        true
+    }
+    fn accept(&mut self, source: IpAddr, token: u32, now: Instant) -> bool {
         if now.duration_since(self.started) >= Duration::from_secs(1) {
             self.started = now;
             self.packets = 0;
             self.sources.clear();
+            self.pairs.clear();
+        }
+        if self.pairs.get(&token).copied().unwrap_or(0) >= 1024 {
+            return false;
         }
         if self.packets >= 16_384
             || (!self.sources.contains_key(&source) && self.sources.len() >= 1024)
@@ -374,8 +436,37 @@ impl CryptoAdmission {
         }
         *count += 1;
         self.packets += 1;
+        *self.pairs.entry(token).or_default() += 1;
         true
     }
+}
+
+fn dispatch_packet(
+    sessions: &dashmap::DashMap<u32, RelaySession>,
+    budget: &Mutex<crate::resource_budget::RelayBudget>,
+    admission: &mut CryptoAdmission,
+    packet: &[u8],
+    source: SocketAddr,
+    now: Instant,
+) -> Option<(SocketAddr, Vec<u8>)> {
+    if !(HEADER_LEN + 16..=MAX_PACKET).contains(&packet.len()) || &packet[..4] != MAGIC {
+        return None;
+    }
+    let token = u32::from_le_bytes(packet[4..8].try_into().ok()?);
+    sessions.get(&token).and_then(|session| {
+        if !session.plausible_source(packet, source) {
+            return None;
+        }
+        let allowed = if packet[8] == DATA {
+            admission.accept(source.ip(), token, now)
+        } else {
+            admission.accept_handshake(source.ip(), token, now)
+        };
+        if !allowed {
+            return None;
+        }
+        session.process_bounded(packet, source, now, Some(budget))
+    })
 }
 
 pub async fn run_socket(socket: UdpSocket, state: Arc<ServerState>) -> std::io::Result<()> {
@@ -387,14 +478,14 @@ pub async fn run_socket(socket: UdpSocket, state: Arc<ServerState>) -> std::io::
         if !(HEADER_LEN + 16..=MAX_PACKET).contains(&len) || &buf[..4] != MAGIC {
             continue;
         }
-        if !admission.accept(source.ip(), Instant::now()) {
-            continue;
-        }
-        let token = u32::from_le_bytes(buf[4..8].try_into().unwrap());
-        let forward = state
-            .relay_sessions
-            .get(&token)
-            .and_then(|s| s.process(&buf[..len], source, Instant::now()));
+        let forward = dispatch_packet(
+            &state.relay_sessions,
+            &state.relay_budget,
+            &mut admission,
+            &buf[..len],
+            source,
+            Instant::now(),
+        );
         if let Some((address, packet)) = forward {
             socket.send_to(&packet, address).await?;
         }
@@ -444,6 +535,113 @@ mod tests {
         let (_, reply) = session.process(&packet, addr, now).unwrap();
         assert_eq!(reply[8], BOUND);
     }
+    #[test]
+    fn authenticated_arbitrary_payload_cost_is_shared_across_pairs() {
+        let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
+        let now = Instant::now();
+        let identity = Uuid::new_v4();
+        let room = Uuid::new_v4();
+        let a = "127.0.0.1:10001".parse().unwrap();
+        let b = "127.0.0.1:10002".parse().unwrap();
+        let payload = vec![0x5a; MAX_PAYLOAD];
+        let mut forwarded = 0;
+        for token in [42, 43] {
+            let session = RelaySession::new(room, [(0, identity), (1, Uuid::new_v4())], now);
+            let mut sa = 0;
+            let mut sb = 0;
+            bind(&session, token, 0, 1, a, &mut sa, now);
+            bind(&session, token, 1, 0, b, &mut sb, now);
+            let ca = session.credentials(0).unwrap();
+            let cb = session.credentials(1).unwrap();
+            let forged = seal(&[0; 32], token, DATA, 0, 1, sa + 1, &payload).unwrap();
+            for _ in 0..32 {
+                assert!(session
+                    .process_bounded(&forged, a, now, Some(&budget))
+                    .is_none());
+            }
+            for _ in 0..250 {
+                sa += 1;
+                let packet = seal(&key(&ca.send_key), token, DATA, 0, 1, sa, &payload).unwrap();
+                if let Some((_, reply)) = session.process_bounded(&packet, a, now, Some(&budget)) {
+                    assert_eq!(open(&key(&cb.receive_key), &reply).unwrap(), payload);
+                    forwarded += reply.len();
+                }
+            }
+        }
+        assert!(forwarded <= 1024 * 1024);
+        assert!(forwarded > 1024 * 1024 - MAX_PACKET);
+    }
+
+    #[test]
+    fn mixed_unknown_and_invalid_pair_traffic_preserves_other_authenticated_pair() {
+        let mut admission = CryptoAdmission::new();
+        let now = admission.started;
+        let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
+        let sessions = dashmap::DashMap::new();
+        let a = "127.0.0.1:10001".parse().unwrap();
+        let b = "127.0.0.1:10002".parse().unwrap();
+        for token in [42, 43] {
+            sessions.insert(
+                token,
+                RelaySession::new(
+                    Uuid::new_v4(),
+                    [(0, Uuid::new_v4()), (1, Uuid::new_v4())],
+                    now,
+                ),
+            );
+        }
+        let session = sessions.get(&42).unwrap();
+        let mut sa = 0;
+        let mut sb = 0;
+        bind(&session, 42, 0, 1, a, &mut sa, now);
+        bind(&session, 42, 1, 0, b, &mut sb, now);
+        let ca = session.credentials(0).unwrap();
+        let cb = session.credentials(1).unwrap();
+        drop(session);
+        let unknown = seal(&[0; 32], 99, DATA, 0, 1, 1, b"invalid").unwrap();
+        for _ in 0..20000 {
+            assert!(
+                dispatch_packet(&sessions, &budget, &mut admission, &unknown, a, now).is_none()
+            );
+        }
+        assert_eq!(admission.packets, 0);
+        let other = sessions.get(&43).unwrap();
+        let mut oa = 0;
+        let mut ob = 0;
+        bind(&other, 43, 0, 1, a, &mut oa, now);
+        bind(&other, 43, 1, 0, b, &mut ob, now);
+        drop(other);
+        let bind_flood = seal(&[0; 32], 42, BIND, 0, 1, 1, &[0; 16]).unwrap();
+        for _ in 0..20000 {
+            assert!(
+                dispatch_packet(&sessions, &budget, &mut admission, &bind_flood, a, now).is_none()
+            );
+        }
+        assert_eq!(admission.packets, 0);
+        let forged = seal(&[0; 32], 43, DATA, 0, 1, 1, b"invalid").unwrap();
+        for _ in 0..20000 {
+            assert!(dispatch_packet(&sessions, &budget, &mut admission, &forged, a, now).is_none());
+        }
+        assert_eq!(admission.packets, 1024);
+        let valid = seal(
+            &key(&ca.send_key),
+            42,
+            DATA,
+            0,
+            1,
+            sa + 1,
+            b"survives mixed traffic",
+        )
+        .unwrap();
+        let (address, reply) =
+            dispatch_packet(&sessions, &budget, &mut admission, &valid, a, now).unwrap();
+        assert_eq!(address, b);
+        assert_eq!(
+            open(&key(&cb.receive_key), &reply).unwrap(),
+            b"survives mixed traffic"
+        );
+    }
+
     #[test]
     fn cross_language_aes_gcm_fixture() {
         let key: [u8; 32] = std::array::from_fn(|i| i as u8);
@@ -553,15 +751,15 @@ mod tests {
         let a: IpAddr = "127.0.0.1".parse().unwrap();
         let b: IpAddr = "127.0.0.2".parse().unwrap();
         for _ in 0..4096 {
-            assert!(budget.accept(a, now));
+            assert!(budget.accept(a, budget.packets as u32, now));
         }
-        assert!(!budget.accept(a, now));
-        assert!(budget.accept(b, now));
+        assert!(!budget.accept(a, budget.packets as u32, now));
+        assert!(budget.accept(b, budget.packets as u32, now));
         for i in 3..1026 {
-            let _ = budget.accept(IpAddr::V4(std::net::Ipv4Addr::from(i)), now);
+            let _ = budget.accept(IpAddr::V4(std::net::Ipv4Addr::from(i)), i, now);
         }
         assert_eq!(budget.sources.len(), 1024);
-        assert!(budget.accept(a, now + Duration::from_secs(1)));
+        assert!(budget.accept(a, 42, now + Duration::from_secs(1)));
         assert_eq!(budget.sources.len(), 1);
     }
 }

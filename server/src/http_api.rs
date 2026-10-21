@@ -22,6 +22,10 @@ pub fn public_router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/health", get(health))
         .route("/api/v1/ready", get(ready))
         .route("/api/v1/leaderboard", get(leaderboard_stub))
+        .route_layer(axum::middleware::from_fn_with_state(
+            Arc::clone(&state),
+            public_budget,
+        ))
         .with_state(state)
 }
 
@@ -33,6 +37,10 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/health", get(health))
         .route("/api/v1/ready", get(ready))
         .route("/api/v1/leaderboard", get(leaderboard_stub))
+        .route_layer(axum::middleware::from_fn_with_state(
+            Arc::clone(&state),
+            public_budget,
+        ))
         .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
         .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
@@ -113,6 +121,22 @@ struct LobbySection {
 struct AggregateStats {
     total_unique_players: u64,
     total_games_played: u64,
+}
+
+async fn public_budget(
+    State(state): State<Arc<ServerState>>,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    if !state
+        .public_work
+        .lock()
+        .unwrap()
+        .accept(std::time::Instant::now())
+    {
+        return StatusCode::TOO_MANY_REQUESTS.into_response();
+    }
+    next.run(request).await
 }
 
 async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {

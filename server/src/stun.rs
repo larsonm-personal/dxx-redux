@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use tokio::net::UdpSocket;
-use tracing::{debug, info, trace, warn};
+use tracing::{debug, info, warn};
 
 // STUN constants (RFC 5389)
 const STUN_MAGIC: u32 = 0x2112_A442;
@@ -40,6 +40,7 @@ pub async fn run(
 
 pub async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
     let mut buf = [0u8; 512];
+    let mut budget = crate::resource_budget::SourceBudget::new(512, 32);
     loop {
         let (len, src) = match socket.recv_from(&mut buf).await {
             Ok(r) => r,
@@ -50,7 +51,6 @@ pub async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
         };
 
         if !allowlist.contains_key(&src.ip()) {
-            trace!(%src, "STUN: dropped (not in allowlist)");
             continue;
         }
 
@@ -66,6 +66,9 @@ pub async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
         }
         let magic = u32::from_be_bytes([buf[4], buf[5], buf[6], buf[7]]);
         if magic != STUN_MAGIC {
+            continue;
+        }
+        if !budget.accept(src.ip(), std::time::Instant::now()) {
             continue;
         }
         let txn_id = &buf[8..20];

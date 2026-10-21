@@ -70,7 +70,7 @@ impl TestServer {
             skip_gpgs_verify: true,
             pow_difficulty: 8, // low difficulty for fast tests
             max_relay_sessions: 100,
-            max_connections: 0, // unlimited for tests
+            max_connections: 500, // production-safe default
             admin_http_listen_addr: None,
             force_relay: false,
             trusted_proxy_ips: vec![],
@@ -5017,5 +5017,289 @@ async fn online_overlapping_admission_is_serialized_and_retry_builds_all_pairs()
             .unwrap(),
             b"survivor remains live"
         );
+    }
+}
+
+#[tokio::test]
+async fn online_resource_overload_rejects_work_and_recovers() {
+    let server = TestServer::start().await;
+    let client = reqwest::Client::new();
+    assert!(client
+        .get(format!("http://{}/api/v1/status", server.http_addr))
+        .send()
+        .await
+        .unwrap()
+        .status()
+        .is_success());
+    {
+        let mut budget = server.state.public_work.lock().unwrap();
+        let now = std::time::Instant::now();
+        for _ in 0..120 {
+            budget.accept(now);
+        }
+    }
+    assert_eq!(
+        client
+            .get(format!("http://{}/api/v1/status", server.http_addr))
+            .send()
+            .await
+            .unwrap()
+            .status(),
+        429
+    );
+    let held = server.state.auth_slots.acquire_many(8).await.unwrap();
+    let mut rejected = connect_ws(&server).await;
+    assert_eq!(send_recv(&mut rejected,json!({"type":"AUTHENTICATE","protocol_version":CURRENT_PROTOCOL,"client_version":"1.0.0","play_games_token":"budget","callsign":"Busy","platform":"android","auth_method":"dev"})).await["type"],"AUTH_FAIL");
+    assert!(server.state.sessions.is_empty());
+    drop(held);
+    let mut valid = connect_ws(&server).await;
+    authenticate(&mut valid, "AfterBusy").await;
+    assert_eq!(server.state.sessions.len(), 1);
+    tokio::time::sleep(std::time::Duration::from_millis(1050)).await;
+    assert!(client
+        .get(format!("http://{}/api/v1/status", server.http_addr))
+        .send()
+        .await
+        .unwrap()
+        .status()
+        .is_success());
+    for (connections, pairs) in [(0, 100), (500, 0), (2001, 100), (500, 1001)] {
+        let mut config = server.state.config.clone();
+        config.skip_gpgs_verify = false;
+        config.max_connections = connections;
+        config.max_relay_sessions = pairs;
+        assert!(build_state(config).is_err());
+    }
+}
+
+#[tokio::test]
+async fn online_local_mixed_datagrams_preserve_live_pair_and_revocation() {
+    let server = TestServer::with_config(|c| c.force_relay = true).await;
+    let mut clients = Vec::new();
+    for slot in 0..2 {
+        let mut ws = connect_ws(&server).await;
+        authenticate(&mut ws, &format!("Roster{slot}")).await;
+        clients.push(ws);
+    }
+    let created = send_recv(
+        &mut clients[0],
+        json!({"type":"CREATE_LOBBY","game":"d2","max_players":8}),
+    )
+    .await;
+    let room = created["lobby_id"].as_str().unwrap();
+    for i in 1..2 {
+        send_only(
+            &mut clients[i],
+            json!({"type":"JOIN_LOBBY","lobby_id":room}),
+        )
+        .await;
+        for client in clients.iter_mut().take(i + 1) {
+            assert_eq!(recv(client).await["type"], "LOBBY_UPDATE");
+        }
+    }
+    send_only(&mut clients[0], json!({"type":"START_GAME"})).await;
+    let mut assignments = Vec::new();
+    for client in &mut clients {
+        assert_eq!(recv(client).await["type"], "CONNECTION_INFO");
+        let start = recv(client).await;
+        assert_eq!(start["type"], "GAME_STARTING");
+        assignments.push(start);
+    }
+    assert_eq!(server.state.relay_sessions.len(), 1);
+
+    let left = &assignments[0]["peers"][0];
+    let right = &assignments[1]["peers"][0];
+    let token = left["relay_token"].as_u64().unwrap() as u32;
+    let lc = &left["relay_credentials"];
+    let rc = &right["relay_credentials"];
+    let a = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let b = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let mut sa = 0;
+    let mut sb = 0;
+    bind_udp(&a, server.relay_addr, token, 0, 1, lc, &mut sa).await;
+    bind_udp(&b, server.relay_addr, token, 1, 0, rc, &mut sb).await;
+    let unknown_token = token.wrapping_add(1);
+    assert!(!server.state.relay_sessions.contains_key(&unknown_token));
+    let unknown =
+        dxx_matchmaking::relay::seal(&[0; 32], unknown_token, 0, 0, 1, 1, b"unknown").unwrap();
+    for _ in 0..160 {
+        for _ in 0..32 {
+            a.send_to(&unknown, server.relay_addr).await.unwrap();
+        }
+        sa += 1;
+        let packet = dxx_matchmaking::relay::seal(
+            &relay_key(lc, "send_key"),
+            token,
+            0,
+            0,
+            1,
+            sa,
+            b"live alongside unknown",
+        )
+        .unwrap();
+        a.send_to(&packet, server.relay_addr).await.unwrap();
+        assert_eq!(
+            dxx_matchmaking::relay::open(&relay_key(rc, "receive_key"), &recv_udp(&b).await)
+                .unwrap(),
+            b"live alongside unknown"
+        );
+    }
+    send_only(&mut clients[0], json!({"type":"LEAVE_LOBBY"})).await;
+    send_recv(&mut clients[0], json!({"type":"LIST_LOBBIES"})).await;
+    assert!(server.state.relay_sessions.is_empty());
+    let packet = dxx_matchmaking::relay::seal(
+        &relay_key(lc, "send_key"),
+        token,
+        0,
+        0,
+        1,
+        sa + 1,
+        b"revoked",
+    )
+    .unwrap();
+    a.send_to(&packet, server.relay_addr).await.unwrap();
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(100), b.recv(&mut [0; 256]))
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
+async fn online_assigned_admission_host_replacement_and_expiry_race_are_owned() {
+    for replace_host in [false, true] {
+        let server = TestServer::with_config(|c| c.force_relay = true).await;
+        let mut host = connect_ws(&server).await;
+        authenticate(&mut host, "Host").await;
+        let room = create_test_room(&mut host).await;
+        let mut survivor = connect_ws(&server).await;
+        authenticate(&mut survivor, "Survivor").await;
+        send_only(
+            &mut survivor,
+            json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+        )
+        .await;
+        recv(&mut host).await;
+        recv(&mut survivor).await;
+        for ready_host in [true, false] {
+            send_only(
+                if ready_host { &mut host } else { &mut survivor },
+                json!({"type":"READY","ready":true}),
+            )
+            .await;
+            recv(&mut host).await;
+            recv(&mut survivor).await;
+        }
+        send_only(&mut host, json!({"type":"START_GAME"})).await;
+        assert_eq!(recv(&mut host).await["type"], "CONNECTION_INFO");
+        let initial = recv(&mut host).await;
+        assert_eq!(initial["type"], "GAME_STARTING");
+        let existing_token = initial["peers"][0]["relay_token"].as_u64().unwrap() as u32;
+        assert_eq!(recv(&mut survivor).await["type"], "CONNECTION_INFO");
+        let survivor_start = recv(&mut survivor).await;
+        assert_eq!(survivor_start["type"], "GAME_STARTING");
+        let host_udp = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let survivor_udp = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let mut host_seq = 0;
+        let mut survivor_seq = 0;
+        bind_udp(
+            &host_udp,
+            server.relay_addr,
+            existing_token,
+            0,
+            1,
+            &initial["peers"][0]["relay_credentials"],
+            &mut host_seq,
+        )
+        .await;
+        bind_udp(
+            &survivor_udp,
+            server.relay_addr,
+            existing_token,
+            1,
+            0,
+            &survivor_start["peers"][0]["relay_credentials"],
+            &mut survivor_seq,
+        )
+        .await;
+        send_only(&mut host, json!({"type":"UPDATE_GAME_STATE","player_count":2,"max_players":4,"current_level":1,"game_status":1})).await;
+        send_recv(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+
+        let mut joining = connect_ws(&server).await;
+        let identity = authenticate(&mut joining, "LeaseRace").await;
+        let pid = uuid::Uuid::parse_str(identity["player_id"].as_str().unwrap()).unwrap();
+        send_only(
+            &mut joining,
+            json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+        )
+        .await;
+        for ws in [&mut host, &mut survivor, &mut joining] {
+            assert_eq!(recv(ws).await["type"], "LOBBY_UPDATE");
+        }
+        send_only(
+            &mut joining,
+            json!({"type":"STUN_RESULT","nat_type":"unknown","candidates":[]}),
+        )
+        .await;
+        assert_eq!(recv(&mut joining).await["type"], "GAME_STARTING");
+        assert_eq!(recv(&mut host).await["type"], "PEER_CANDIDATES");
+        let receipt = recv(&mut host).await;
+        assert_eq!(recv(&mut survivor).await["type"], "PEER_CANDIDATES");
+        assert_eq!(recv(&mut survivor).await["type"], "LATE_JOIN_APPROVED");
+        let confirmation = json!({"type":"HOST_NATIVE_ADMITTED","lobby_id":room,"game_epoch":initial["game_epoch"],"admission_id":receipt["admission_id"],"slot":2});
+        if replace_host {
+            let mut replacement = connect_ws(&server).await;
+            authenticate(&mut replacement, "Host").await;
+            assert!(!server.state.lobbies.contains_key(&room));
+            assert!(server.state.relay_sessions.is_empty());
+            // Respect the existing per-identity room creation interval after replacement
+            tokio::time::sleep(std::time::Duration::from_millis(10_100)).await;
+            let replacement_room = create_test_room(&mut replacement).await;
+            let _ = host
+                .send(Message::Text(confirmation.to_string().into()))
+                .await;
+            send_recv(&mut replacement, json!({"type":"LIST_LOBBIES"})).await;
+            assert!(server.state.lobbies.contains_key(&replacement_room));
+            assert_eq!(server.state.sessions.get(&pid).unwrap().lobby_id, None);
+        } else {
+            let lease = server
+                .state
+                .lobbies
+                .get(&room)
+                .unwrap()
+                .assigned_late_joiners[&pid]
+                .clone();
+            let state = server.state.clone();
+            let expire = tokio::task::spawn_blocking(move || {
+                dxx_matchmaking::ws_handler::expire_pending_late_joins(
+                    &state,
+                    lease.assigned + std::time::Duration::from_secs(120),
+                )
+            });
+            send_only(&mut host, confirmation).await;
+            expire.await.unwrap();
+            // This barrier may follow an expiry LOBBY_UPDATE
+            send_only(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+            loop {
+                let message = recv(&mut host).await;
+                if message["type"] == "LOBBY_LIST" {
+                    break;
+                }
+                assert_eq!(message["type"], "LOBBY_UPDATE");
+            }
+            let lobby = server.state.lobbies.get(&room).unwrap();
+            assert!(lobby.assigned_late_joiners.is_empty());
+            let retained = lobby.players.iter().any(|p| p.player_id == pid);
+            drop(lobby);
+            assert_eq!(
+                server.state.relay_sessions.len(),
+                if retained { 3 } else { 1 }
+            );
+            assert_eq!(
+                server.state.sessions.get(&pid).unwrap().lobby_id,
+                if retained { Some(room) } else { None }
+            );
+            assert!(server.state.relay_sessions.contains_key(&existing_token));
+        }
     }
 }

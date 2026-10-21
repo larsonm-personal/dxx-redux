@@ -23,17 +23,60 @@ use crate::ServerState;
 
 /// Wrapper around bounded mpsc::Sender that provides fire-and-forget send.
 /// Retires a slow connection rather than silently losing state transitions.
-#[derive(Debug, Clone)]
-pub struct BoundedSender(mpsc::Sender<ServerMessage>, Arc<tokio::sync::Notify>);
-
+#[derive(Debug)]
+struct QueuedControl {
+    text: String,
+    _global: tokio::sync::OwnedSemaphorePermit,
+    _connection: tokio::sync::OwnedSemaphorePermit,
+}
+#[derive(Clone)]
+pub struct BoundedSender {
+    tx: mpsc::Sender<QueuedControl>,
+    retired: Arc<tokio::sync::Notify>,
+    global_bytes: Arc<tokio::sync::Semaphore>,
+    connection_bytes: Arc<tokio::sync::Semaphore>,
+    egress: Arc<std::sync::Mutex<crate::resource_budget::RelayBudget>>,
+    connection: Uuid,
+}
+impl std::fmt::Debug for BoundedSender {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BoundedSender").finish_non_exhaustive()
+    }
+}
 impl BoundedSender {
     #[allow(clippy::result_large_err)]
     pub fn send(&self, msg: ServerMessage) -> Result<(), mpsc::error::TrySendError<ServerMessage>> {
-        let result = self.0.try_send(msg);
-        if result.is_err() {
-            self.1.notify_one();
+        let queued = (|| {
+            let text = serde_json::to_string(&msg).ok()?;
+            if text.len() > 1024 * 1024
+                || !self.egress.lock().unwrap().accept(
+                    self.connection,
+                    self.connection,
+                    text.len(),
+                    Instant::now(),
+                )
+            {
+                return None;
+            }
+            let global = Arc::clone(&self.global_bytes)
+                .try_acquire_many_owned(text.len() as u32)
+                .ok()?;
+            let connection = Arc::clone(&self.connection_bytes)
+                .try_acquire_many_owned(text.len() as u32)
+                .ok()?;
+            self.tx
+                .try_send(QueuedControl {
+                    text,
+                    _global: global,
+                    _connection: connection,
+                })
+                .ok()
+        })();
+        if queued.is_none() {
+            self.retired.notify_one();
+            return Err(mpsc::error::TrySendError::Full(msg));
         }
-        result
+        Ok(())
     }
 }
 
@@ -473,24 +516,24 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
 
     // Bounded channel for sending messages back to this client.
     // Backpressure: if the client falls 256 messages behind, we drop it.
-    let (raw_tx, mut rx) = mpsc::channel::<ServerMessage>(256);
+    let (raw_tx, mut rx) = mpsc::channel::<QueuedControl>(256);
     let retired = Arc::new(tokio::sync::Notify::new());
-    let tx = BoundedSender(raw_tx, Arc::clone(&retired));
+    let tx = BoundedSender {
+        tx: raw_tx,
+        retired: Arc::clone(&retired),
+        global_bytes: Arc::clone(&state.control_queue_bytes),
+        connection_bytes: Arc::new(tokio::sync::Semaphore::new(2 * 1024 * 1024)),
+        egress: Arc::clone(&state.control_egress),
+        connection: Uuid::new_v4(),
+    };
 
     // Task: drain the outbound channel and send to the WebSocket
     let mut send_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
-            let text = match serde_json::to_string(&msg) {
-                Ok(t) => t,
-                Err(e) => {
-                    warn!(%e, "failed to serialize server message");
-                    continue;
-                }
-            };
             // Timeout on send: if the client's TCP window is full for 10s, disconnect
             match tokio::time::timeout(
                 Duration::from_secs(10),
-                ws_tx.send(Message::Text(text.into())),
+                ws_tx.send(Message::Text(msg.text.into())),
             )
             .await
             {
@@ -570,6 +613,32 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 });
                 continue;
             }
+        };
+
+        let auth_message = matches!(
+            &client_msg,
+            ClientMessage::Authenticate { .. }
+                | ClientMessage::InstallationProof { .. }
+                | ClientMessage::PowSolution { .. }
+        );
+        let _auth_slot = if auth_message {
+            if !state.auth_work.lock().unwrap().accept(Instant::now()) {
+                let _ = tx.send(ServerMessage::AuthFail {
+                    reason: "Authentication busy; retry later".into(),
+                });
+                break;
+            }
+            match state.auth_slots.try_acquire() {
+                Ok(permit) => Some(permit),
+                Err(_) => {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Authentication busy; retry later".into(),
+                    });
+                    break;
+                }
+            }
+        } else {
+            None
         };
 
         match client_msg {
@@ -1174,7 +1243,7 @@ fn close_room(state: &ServerState, room_id: Uuid, requester: Uuid, code: &str, m
 fn remove_session(state: &ServerState, pid: Uuid) {
     leave_room(state, pid);
     if let Some((_, old)) = state.sessions.remove(&pid) {
-        old.tx.1.notify_one();
+        old.tx.retired.notify_one();
         state.stats.player_disconnected();
         // Atomic ref-count transition for multiple clients behind the same NAT
         if let dashmap::mapref::entry::Entry::Occupied(mut entry) =
@@ -1628,6 +1697,14 @@ fn allocate_relay_session(
     }
     let max = state.config.max_relay_sessions;
     if max > 0 && state.relay_sessions.len() >= max {
+        return None;
+    }
+    if !state.allocation_work.lock().unwrap().accept(
+        pair.pid_a,
+        pair.pid_b,
+        room_id,
+        Instant::now(),
+    ) {
         return None;
     }
     let token = (0..16)
@@ -3258,6 +3335,42 @@ fn handle_authenticated_message(
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn outbound_byte_reservations_release_on_drain_or_receiver_drop() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(256);
+        let global = std::sync::Arc::new(tokio::sync::Semaphore::new(80));
+        let connection = std::sync::Arc::new(tokio::sync::Semaphore::new(80));
+        let retired = std::sync::Arc::new(tokio::sync::Notify::new());
+        let sender = super::BoundedSender {
+            tx,
+            retired: retired.clone(),
+            global_bytes: global.clone(),
+            connection_bytes: connection.clone(),
+            egress: std::sync::Arc::new(std::sync::Mutex::new(
+                crate::resource_budget::RelayBudget::new(),
+            )),
+            connection: uuid::Uuid::new_v4(),
+        };
+        let message = crate::protocol::ServerMessage::RateLimited {
+            retry_after_ms: 1000,
+        };
+        let size = serde_json::to_string(&message).unwrap().len();
+        assert!(size > 40 && size <= 80);
+        sender.send(message.clone()).unwrap();
+        assert_eq!(global.available_permits(), 80 - size);
+        assert!(sender.send(message.clone()).is_err());
+        tokio::time::timeout(std::time::Duration::from_millis(100), retired.notified())
+            .await
+            .unwrap();
+        drop(rx.recv().await);
+        assert_eq!(global.available_permits(), 80);
+        assert_eq!(connection.available_permits(), 80);
+        sender.send(message).unwrap();
+        drop(rx);
+        assert_eq!(global.available_permits(), 80);
+        assert_eq!(connection.available_permits(), 80);
+    }
+
     use super::*;
     use crate::lobby::{ConnectionType, LobbyPlayer};
     use crate::protocol::ConnectionCandidate;

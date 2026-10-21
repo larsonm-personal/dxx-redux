@@ -88,6 +88,10 @@ impl RateLimiter {
         max_count: usize,
         window_secs: u64,
     ) -> bool {
+        // The socket ceiling also bounds concurrent new-key races
+        if map.len() >= 4096 && !map.contains_key(&key) {
+            return false;
+        }
         let now = Instant::now();
         let window = std::time::Duration::from_secs(window_secs);
         let mut entry = map.entry(key).or_default();
