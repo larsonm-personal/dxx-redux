@@ -1051,6 +1051,25 @@ class SweepTests(unittest.TestCase):
                 else:
                     self.assertTrue(all(r['status'] == 'PASS' for r in receipt['results']))
 
+    def test_master_child_exit_is_not_replaced_by_failing_sibling_exit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.attempt(directory, 1)
+            Path(directory, "journal.jsonl").write_text(
+                "\n".join(
+                    json.dumps(row)
+                    for row in (
+                        {"name": "first", "commit": SHA, "status": "PASS", "exit_code": 0},
+                        {"name": "second", "commit": SHA, "status": "FAIL", "exit_code": 7},
+                    )
+                )
+            )
+            rows = sweep.collect(self.plan, self.policy, "host", directory)["results"]
+            self.assertEqual([(r["status"], r["exit_code"]) for r in rows], [("PASS", 0), ("FAIL", 7)])
+            with patch.object(sweep.retail, 'master_failure_diagnostics', side_effect=OSError('private path')):
+                failed_read = sweep.collect(self.plan, self.policy, 'host', directory)['results']
+            self.assertEqual([(r['status'], r['exit_code']) for r in failed_read], [('PASS', 0), ('FAIL', 7)])
+            self.assertNotIn('private path', str(failed_read))
+
     def test_nonzero_master_exit_fails_lane_even_without_test_failures(self):
         argv = ['sweep', 'execute', '--plan', 'plan', '--policy', 'policy', '--repo', 'repo', '--output', 'out', '--lane', 'host']
         with patch.object(sys, 'argv', argv), patch.object(sweep, 'read', return_value={}), patch.object(sweep, 'execute', return_value={'runner_failed': True, 'results': []}):
