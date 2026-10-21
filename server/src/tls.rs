@@ -4,13 +4,16 @@ use std::sync::Arc;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 
 /// Load TLS certificate chain and private key from PEM files.
-/// Returns `Ok(None)` if either path is empty (TLS not configured).
+/// Returns `Ok(None)` only when both paths are empty (TLS not configured).
 pub fn load_rustls_config(
     cert_path: &str,
     key_path: &str,
 ) -> Result<Option<Arc<rustls::ServerConfig>>, Box<dyn std::error::Error>> {
-    if cert_path.is_empty() || key_path.is_empty() {
+    if cert_path.is_empty() && key_path.is_empty() {
         return Ok(None);
+    }
+    if cert_path.is_empty() || key_path.is_empty() {
+        return Err("TLS requires both certificate and private key paths".into());
     }
 
     let cert_data = std::fs::read(cert_path)
@@ -36,4 +39,14 @@ pub fn load_rustls_config(
         .map_err(|e| format!("failed to build TLS config: {e}"))?;
 
     Ok(Some(Arc::new(config)))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn incomplete_tls_configuration_cannot_select_plaintext() {
+        assert!(super::load_rustls_config("", "").unwrap().is_none());
+        assert!(super::load_rustls_config("synthetic-cert.pem", "").is_err());
+        assert!(super::load_rustls_config("", "synthetic-key.pem").is_err());
+    }
 }

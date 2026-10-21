@@ -109,3 +109,25 @@ async fn process_readiness_and_restart_with_synthetic_database() {
             .is_err());
     }
 }
+
+#[test]
+fn process_rejects_partial_tls_configuration_before_listening() {
+    for field in ["tls_cert_path", "tls_key_path"] {
+        let root = tempfile::tempdir().unwrap();
+        let mut cfg = config();
+        cfg[field] = "synthetic-missing.pem".into();
+        let mut process = start(&cfg, root.path());
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            if let Some(status) = process.0.try_wait().unwrap() {
+                assert_eq!(status.code(), Some(1));
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "partial TLS configuration stayed alive"
+            );
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    }
+}
