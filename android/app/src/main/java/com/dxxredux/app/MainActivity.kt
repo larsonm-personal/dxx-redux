@@ -717,6 +717,13 @@ class MainActivity :
 
     external fun nativeSetClientId(clientId: String)
 
+    external fun nativeSetLanStartupAdmission(
+        enabled: Boolean,
+        delayMs: Int,
+        dropAdmission: Boolean,
+        duplicates: Int,
+    )
+
     external fun nativeGetMultiplayerPings(): IntArray
 
     external fun nativeGetMultiplayerPacketStats(): IntArray
@@ -1215,6 +1222,20 @@ class MainActivity :
             }
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
+        val startupTest =
+            if (BuildConfig.DEBUG) {
+                runCatching {
+                    org.json.JSONObject(File(filesDir, "lan_startup_test.json").readText())
+                }.getOrNull()
+            } else {
+                null
+            }
+        nativeSetLanStartupAdmission(
+            mpMode != null && intent.getBooleanExtra("mp_parallel_level_load", false),
+            startupTest?.optInt("delay_ms", 0)?.coerceIn(0, 30000) ?: 0,
+            startupTest?.optBoolean("drop_admission", false) ?: false,
+            startupTest?.optInt("duplicates", 0)?.coerceIn(0, 2) ?: 0,
+        )
         isLanQrHost = mpMode == "host" && intent.getBooleanExtra("mp_is_lan", false)
         isMultiplayerGame = mpMode != null
         resetSinglePlayerNetEventsIfNeeded()

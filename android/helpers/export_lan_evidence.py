@@ -17,7 +17,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 selected = {}
 pattern = re.compile(
-    r"LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|auto_net:|select_players|initial sync retry:|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate",
+    r"STARTUP-SYNC|STARTUP-ASSET|STARTUP-AUTH|LAN-TIMING|loadprof_v=1|mp preparation|Launcher game launch|preflight|sync_poll|auto.host|auto_net:|select_players|initial sync retry:|NETEXIT|SCRIPT_RESULT|Condition met|Exception|FAIL|BLOCKED|LAN final peer evidence|Timed out|Error:|DXX-MP|LobbyService|DXX-Launcher|DXX-RouteMetadata|MainActivity|DXX-Automate",
     re.I,
 )
 for path in sorted(root.rglob("*")):
@@ -25,13 +25,18 @@ for path in sorted(root.rglob("*")):
         continue
     if path.stat().st_size > 16 * 1024 * 1024:
         continue
+    if path.parent.name == "setup" and path.name.endswith("-logcat.log"):
+        continue
     raw = path.read_bytes()
     text = raw.decode("utf-8-sig", errors="replace")
     relative = str(path.relative_to(root))
+    fault_case = "parallel-startup-checks/" in relative
     if path.name == "events.jsonl":
         events = []
         for line in text.splitlines():
             event = json.loads(line)
+            if fault_case and event["event"] in ("observation", "cancel.observation"):
+                continue
             data = event.get("data")
             if event["event"] == "observation" and isinstance(data, dict):
                 state = data.get("state") or {}
@@ -50,6 +55,23 @@ for path in sorted(root.rglob("*")):
                 }
             events.append(event)
         text = "\n".join(json.dumps(e, separators=(",", ":")) for e in events)
+    elif re.fullmatch(r"session-\d+-(host|client).json", path.name):
+        state = json.loads(text)
+        text = json.dumps(
+            {
+                key: state.get(key)
+                for key in (
+                    "in_game",
+                    "current_level_num",
+                    "screen_mode",
+                    "time_paused",
+                    "multiplayer",
+                    "coop_briefing",
+                    "menu",
+                )
+            },
+            separators=(",", ":"),
+        )
     elif (
         (path.suffix == ".json" and len(raw) <= 512 * 1024)
         or (relative.startswith("master/") and len(raw) <= 512 * 1024)
@@ -60,11 +82,41 @@ for path in sorted(root.rglob("*")):
     ):
         pass
     else:
-        text = "\n".join(line for line in text.splitlines() if pattern.search(line))
+        lines = []
+        startup = bool(re.fullmatch(r"d[12]-\d+-emulator-\d+-logcat.txt", path.name))
+        for line in text.splitlines():
+            # Preserve native startup diagnostics, including packet/retry events,
+            # up to briefing readiness. This exports saved evidence, not a rerun
+            if fault_case or re.fullmatch(r"session-\d+-emulator-\d+-logcat.txt", path.name):
+                if re.search(
+                    r"auto_net: starting auto-|STARTUP-SYNC|loadprof_v=1|LAN-TIMING|timeout_check|Exception|FAIL|Error:",
+                    line,
+                ):
+                    lines.append(line)
+                continue
+            if re.fullmatch(r"session-\d+-emulator-\d+.log", path.name):
+                if re.search(r"preflight|mp preparation|Launcher game launch|Exception|FAIL|Error:", line):
+                    lines.append(line)
+                continue
+            if pattern.search(line) or (
+                startup
+                and re.search(
+                    r"CHECKPOINT:|Starting D2X-Redux game engine|Loaded native library:|DXX-Lifecycle|GL_RENDERER|GL_VERSION|invalid reconnect",
+                    line,
+                )
+            ):
+                lines.append(line)
+            if startup and "[LAN-TIMING]" in line and "phase=6 armed=1" in line:
+                break
+        text = "\n".join(lines)
     if text:
         selected[relative] = {"source_sha256": hashlib.sha256(raw).hexdigest(), "text": text}
 blob = gzip.compress(json.dumps(selected, separators=(",", ":")).encode(), mtime=0)
 if len(blob) > 128 * 1024:
+    print(
+        "Largest exported excerpts: "
+        + str(sorted(((len(entry["text"]), name) for name, entry in selected.items()), reverse=True)[:10])
+    )
     raise SystemExit("Refusing annotation export over 128 KiB compressed")
 encoded = base64.b64encode(blob).decode()
 print(f"Exported {len(selected)} public text files/excerpts; gzip sha256={hashlib.sha256(blob).hexdigest()}")

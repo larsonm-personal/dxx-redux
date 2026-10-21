@@ -10,6 +10,12 @@
 #include <map>
 #include <string>
 #include <sys/stat.h>
+#ifdef __ANDROID__
+#include <time.h>
+extern "C" {
+#include "android_log.h"
+}
+#endif
 extern "C" {
 #include "physfsx.h"
 #include "mission.h"
@@ -21,6 +27,38 @@ extern "C" {
 namespace
 {
 using json = nlohmann::ordered_json;
+#ifdef __ANDROID__
+// Attribute synchronous fingerprint work separately from scheduler and I/O waits
+class asset_hash_trace
+{
+	const char *kind;
+	const uint64_t &bytes;
+	struct timespec wall_start{}, cpu_start{};
+	static long long elapsed_us(const struct timespec &end, const struct timespec &start)
+	{
+		return (end.tv_sec - start.tv_sec) * 1000000LL + (end.tv_nsec - start.tv_nsec) / 1000;
+	}
+
+  public:
+	asset_hash_trace(const char *value, const uint64_t &size) : kind(value), bytes(size)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &wall_start);
+		clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_start);
+	}
+	~asset_hash_trace()
+	{
+		struct timespec wall_end{}, cpu_end{};
+		clock_gettime(CLOCK_MONOTONIC, &wall_end);
+		clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end);
+		debug_log_force(DLOG_GAME, "[STARTUP-ASSET] hash=%s bytes=%llu wall_us=%lld thread_cpu_us=%lld",
+		                kind, static_cast<unsigned long long>(bytes), elapsed_us(wall_end, wall_start), elapsed_us(cpu_end, cpu_start));
+	}
+};
+#define ASSET_HASH_TRACE(kind) asset_hash_trace trace(kind, size)
+#else
+#define ASSET_HASH_TRACE(kind) ((void) 0)
+#endif
+
 struct source {
 	std::string path, origin, name, digest;
 	uint64_t size = 0;
@@ -45,6 +83,7 @@ std::string basename(const std::string &path)
 // Read the same handle used by the loader, restoring its cursor before returning
 bool hash_stream(PHYSFS_file *file, std::string &digest, uint64_t &size)
 {
+	ASSET_HASH_TRACE("stream");
 	if (!file) return false;
 	const auto position = PHYSFS_tell(file), length = PHYSFS_fileLength(file);
 	if (position < 0 || length < 0 || !PHYSFS_seek(file, 0)) return false;
@@ -66,6 +105,7 @@ bool hash_stream(PHYSFS_file *file, std::string &digest, uint64_t &size)
 }
 bool hash_archive(const std::string &path, std::string &digest, uint64_t &size)
 {
+	ASSET_HASH_TRACE("archive");
 	FILE *file = std::fopen(path.c_str(), "rb");
 	if (!file) return false;
 	picosha2::hash256_one_by_one hash;

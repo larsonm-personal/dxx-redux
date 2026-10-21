@@ -1,0 +1,46 @@
+{
+  "export_run": 39454455784,
+  "repository": "larsonm-personal/dxx-redux",
+  "gzip_sha256": "448a557692d44c38a446d89c64fa03432a89fbac2f89537548d6501033c98232",
+  "note": "Bounded text excerpts; observation state reduced. Original hashes refer to full CI source files. Screenshots remain in the original artifact unless explicitly listed here.",
+  "files": {
+    "first-play/lan-launch-preparation-public-shareware/session-1-emulator-5554-logcat.txt": {
+      "original_sha256": "2292b20d77f40bfc2619e1b3dd3335844cd7cf41901ddb572bdeb5147a4f5085",
+      "exported_sha256": "7c415a666453fed5fe1b1c5a324844b10705e75763472b6174de4cb9e300f670"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-1-emulator-5556-logcat.txt": {
+      "original_sha256": "5656515d6de357046c584b0d83f7435183d2983d21b52ea82e1d5a98e803613b",
+      "exported_sha256": "6b3eb64d2e308b182822a745e3ae37926452218a62c1cfcbf506e8cab4bc7d4a"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-1-summary.json": {
+      "original_sha256": "dae8db177a38a970fe2b85c64dbebc579e544089ebf3c2032e3cd7814c2a082a",
+      "exported_sha256": "dae8db177a38a970fe2b85c64dbebc579e544089ebf3c2032e3cd7814c2a082a"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-2-emulator-5554-logcat.txt": {
+      "original_sha256": "30f42834adc8a5d5c553ea74dbf68e844725805e9a011eac4520a47b2e76acb8",
+      "exported_sha256": "fd98449dc2a022c553caf36cf753430333e3e4bb8acb50706aa21897de77a6ac"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-2-emulator-5556-logcat.txt": {
+      "original_sha256": "cbb770985bedec6efc09c148c23855bbf2ce3c46fbe759b540fde9d457c43a17",
+      "exported_sha256": "2f29a38101394a1b22ac0690194e3a89ae15ed0b4b757886f92b90a817c703e7"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-2-summary.json": {
+      "original_sha256": "38e3ec99611656728d441986eb8a8ea394e6dcf29b46d0c31bfd9c5bd865e634",
+      "exported_sha256": "38e3ec99611656728d441986eb8a8ea394e6dcf29b46d0c31bfd9c5bd865e634"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-3-emulator-5554-logcat.txt": {
+      "original_sha256": "976bd7193507a1957a86f91201c20f3564b096ba0f01e13e784dd39a8479e258",
+      "exported_sha256": "49781b9dc0793611734a131cd0a89b396b55f0b1944f46c74aa2a147c140363c"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-3-emulator-5556-logcat.txt": {
+      "original_sha256": "ef8b8bbf062f4294246e6e2250e1de40d64df15c9c9d276384db998049b30ac8",
+      "exported_sha256": "7e0d981792562b9e49b0daef96b383d3a90fb212e38431547b339a3d2d7fe8df"
+    },
+    "first-play/lan-launch-preparation-public-shareware/session-3-summary.json": {
+      "original_sha256": "dcb6a60997689f5a255264720ebfa910e95f0fe999ba6011a02a7caf7256ca1c",
+      "exported_sha256": "dcb6a60997689f5a255264720ebfa910e95f0fe999ba6011a02a7caf7256ca1c"
+    }
+  },
+  "source_run": 39451088229,
+  "artifact_id": 12279865438
+}

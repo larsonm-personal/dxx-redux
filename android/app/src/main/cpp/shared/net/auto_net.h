@@ -22,6 +22,13 @@ const char *auto_net_config_last_player(const char *current, const char *saved);
 
 /* Non-zero when the launcher wants an automatic join. */
 extern int auto_join_pending;
+/* Explicit validated launcher LAN start; never set by classic native menus */
+extern int auto_net_lan_startup;
+extern int auto_net_launcher_join_active;
+extern int auto_net_startup_test_delay_ms;
+extern int auto_net_startup_test_drop_admission;
+extern int auto_net_startup_test_duplicates;
+void auto_net_startup_test_hold(const char *role);
 /* Host address to connect to (e.g. "127.0.0.1"). */
 extern char auto_join_host_addr[AUTO_NET_ADDR_LEN];
 /* Host port to connect to (e.g. 42430). */

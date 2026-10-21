@@ -76,7 +76,7 @@ function Invoke-LanTransitionMeasurements {
     [ordered]@{ revision = (git -C $script:REPO_ROOT rev-parse HEAD); baseline = '66e5e27da9850a9f142ac5c13d9e65432d48f4e3'
         clock = 'controller Stopwatch; no device clock subtraction'; samples = 3
         polling = 'Get-GameIntrospection -Fresh includes 800 ms sleep per peer plus ADB; observations are upper bounds'
-        cache = 'sample 1 app data cleared; samples 2/3 process cold with app assets/cache retained; level 2 process warm'
+        cache = 'all samples reset configs/preferences and restart processes; sample 1 clears app data; samples 2/3 retain assets/pilots; level 2 is process warm'
         host = $hostSerial; client = $clientSerial
     } | ConvertTo-Json | Set-Content (Join-Path $outputDirectory 'experiment.json')
     foreach ($serial in @($hostSerial, $clientSerial)) {
