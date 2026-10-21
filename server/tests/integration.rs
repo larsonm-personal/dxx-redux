@@ -40,7 +40,11 @@ impl Drop for TestServer {
 impl TestServer {
     /// Spin up a server on ephemeral ports with an in-memory DB.
     async fn start() -> Self {
-        let config = ServerConfig {
+        Self::with_config(|_| {}).await
+    }
+
+    async fn with_config(configure: impl FnOnce(&mut ServerConfig)) -> Self {
+        let mut config = ServerConfig {
             ws_listen_addr: "127.0.0.1:0".parse().unwrap(),
             http_listen_addr: "127.0.0.1:0".parse().unwrap(),
             relay_listen_addr: "127.0.0.1:0".parse().unwrap(),
@@ -63,8 +67,10 @@ impl TestServer {
             max_connections: 0, // unlimited for tests
             admin_http_listen_addr: None,
             force_relay: false,
+            trusted_proxy_ips: vec![],
         };
 
+        configure(&mut config);
         let state = build_state(config).expect("failed to build state");
 
         // Bind WS listener to get the real port
@@ -2785,6 +2791,7 @@ async fn auth_ok_includes_stun_addrs_when_configured() {
         max_connections: 0,
         admin_http_listen_addr: None,
         force_relay: false,
+        trusted_proxy_ips: vec![],
     };
 
     let state = build_state(config).expect("build state");
@@ -3273,4 +3280,116 @@ async fn online_cannot_fabricate_accepted_friendship() {
     )
     .await;
     assert_eq!(response["success"], false);
+}
+
+#[tokio::test]
+async fn online_unconfigured_production_auth_is_rejected() {
+    let server = TestServer::with_config(|c| c.skip_gpgs_verify = false).await;
+    for method in ["gpgs", "dev", "unknown"] {
+        let mut ws = connect_ws(&server).await;
+        let response = send_recv(
+            &mut ws,
+            json!({"type":"AUTHENTICATE", "protocol_version":CURRENT_PROTOCOL,
+            "client_version":"test", "callsign":"Owner", "platform":"test", "auth_method":method,
+            "play_games_token":"synthetic-token"}),
+        )
+        .await;
+        assert_eq!(response["type"], "AUTH_FAIL");
+    }
+    assert!(server.state.sessions.is_empty());
+    assert!(server.state.stun_allowlist.is_empty());
+}
+
+#[tokio::test]
+async fn online_keypair_works_without_google_configuration() {
+    let server = TestServer::with_config(|c| c.skip_gpgs_verify = false).await;
+    let mut ws = connect_ws(&server).await;
+    let (response, _) = authenticate_keypair_new(&mut ws, "Keypair").await;
+    assert_eq!(response["type"], "AUTH_OK");
+    let pid = uuid::Uuid::parse_str(response["player_id"].as_str().unwrap()).unwrap();
+    assert!(!server.state.sessions.get(&pid).unwrap().gpgs_verified);
+}
+
+#[tokio::test]
+async fn online_pending_sockets_count_toward_capacity() {
+    let server = TestServer::with_config(|c| c.max_connections = 1).await;
+    let mut first = connect_ws(&server).await;
+    let denied = connect_async(server.ws_url()).await;
+    assert!(
+        matches!(denied, Err(tokio_tungstenite::tungstenite::Error::Http(r)) if r.status().as_u16() == 503)
+    );
+    first.close(None).await.unwrap();
+    wait_for_state(|| {
+        server
+            .state
+            .connected_sockets
+            .load(std::sync::atomic::Ordering::Relaxed)
+            == 0
+    })
+    .await;
+    let mut second = connect_ws(&server).await;
+    authenticate(&mut second, "Admitted").await;
+}
+
+async fn connect_with_proxy_header(server: &TestServer, ip: &str) -> WsClient {
+    use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+    let mut request = server.ws_url().into_client_request().unwrap();
+    request
+        .headers_mut()
+        .insert("x-real-ip", ip.parse().unwrap());
+    connect_async(request).await.unwrap().0
+}
+
+#[tokio::test]
+async fn online_proxy_identity_requires_trusted_hop() {
+    let direct = TestServer::start().await;
+    let mut client = connect_with_proxy_header(&direct, "198.51.100.8").await;
+    authenticate(&mut client, "Direct").await;
+    assert!(direct
+        .state
+        .stun_allowlist
+        .contains_key(&"127.0.0.1".parse().unwrap()));
+    assert!(!direct
+        .state
+        .stun_allowlist
+        .contains_key(&"198.51.100.8".parse().unwrap()));
+
+    let proxy =
+        TestServer::with_config(|c| c.trusted_proxy_ips = vec!["127.0.0.1".parse().unwrap()]).await;
+    for (name, ip) in [("One", "127.0.0.2"), ("Two", "127.0.0.3")] {
+        let mut ws = connect_with_proxy_header(&proxy, ip).await;
+        authenticate(&mut ws, name).await;
+        assert!(proxy
+            .state
+            .stun_allowlist
+            .contains_key(&ip.parse().unwrap()));
+    }
+    // Missing/ambiguous forwarded identity must not collapse to the proxy itself.
+    assert!(matches!(connect_async(proxy.ws_url()).await,
+        Err(tokio_tungstenite::tungstenite::Error::Http(r)) if r.status().as_u16() == 400));
+    use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+    let mut request = proxy.ws_url().into_client_request().unwrap();
+    request
+        .headers_mut()
+        .insert("x-real-ip", "127.0.0.2, 127.0.0.3".parse().unwrap());
+    assert!(matches!(connect_async(request).await,
+        Err(tokio_tungstenite::tungstenite::Error::Http(r)) if r.status().as_u16() == 400));
+}
+
+#[tokio::test]
+async fn online_candidate_expansion_is_bounded() {
+    let server = TestServer::start().await;
+    let mut ws = connect_ws(&server).await;
+    authenticate(&mut ws, "Host").await;
+    let room = create_test_room(&mut ws).await;
+    let response = send_recv(
+        &mut ws,
+        json!({"type":"STUN_RESULT", "nat_type":"unknown",
+        "candidates":vec![json!({"candidate_type":"host", "addr":"127.0.0.1:1234"});17]}),
+    )
+    .await;
+    assert_eq!(response["code"], "INVALID_CANDIDATES");
+    assert!(server.state.lobbies.get(&room).unwrap().players[0]
+        .candidates
+        .is_empty());
 }

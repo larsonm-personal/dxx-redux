@@ -32,10 +32,50 @@ pub async fn verify_gpgs_token(
     client_secret: &str,
     auth_code: &str,
 ) -> VerifyResult {
+    verify_gpgs_at(
+        client_id,
+        client_secret,
+        auth_code,
+        "https://oauth2.googleapis.com/token",
+        "https://www.googleapis.com/games/v1/players/me",
+    )
+    .await
+}
+
+async fn bounded_json<T: serde::de::DeserializeOwned>(
+    mut response: reqwest::Response,
+) -> Result<T, &'static str> {
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|_| "response read failed")? {
+        if bytes.len() + chunk.len() > 16 * 1024 {
+            return Err("response too large");
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    serde_json::from_slice(&bytes).map_err(|_| "invalid response")
+}
+
+async fn verify_gpgs_at(
+    client_id: &str,
+    client_secret: &str,
+    auth_code: &str,
+    token_url: &str,
+    player_url: &str,
+) -> VerifyResult {
     // Step 1: Exchange authorization code for tokens
-    let http = reqwest::Client::new();
+    let http = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .build()
+    {
+        Ok(client) => client,
+        Err(_) => {
+            return VerifyResult::Failed {
+                reason: "HTTP client unavailable".into(),
+            }
+        }
+    };
     let token_resp = http
-        .post("https://oauth2.googleapis.com/token")
+        .post(token_url)
         .form(&[
             ("grant_type", "authorization_code"),
             ("code", auth_code),
@@ -58,14 +98,13 @@ pub async fn verify_gpgs_token(
 
     if !token_resp.status().is_success() {
         let status = token_resp.status();
-        let body = token_resp.text().await.unwrap_or_default();
-        warn!(%status, body_prefix = &body[..body.len().min(200)], "GPGS token exchange failed");
+        warn!(%status, "GPGS token exchange failed");
         return VerifyResult::Failed {
             reason: format!("token exchange returned {status}"),
         };
     }
 
-    let tokens: TokenResponse = match token_resp.json().await {
+    let tokens: TokenResponse = match bounded_json(token_resp).await {
         Ok(t) => t,
         Err(e) => {
             warn!(%e, "failed to parse GPGS token response");
@@ -79,7 +118,7 @@ pub async fn verify_gpgs_token(
 
     // Step 2: Use access_token to get the stable GPGS player ID
     let player_resp = http
-        .get("https://www.googleapis.com/games/v1/players/me")
+        .get(player_url)
         .bearer_auth(&tokens.access_token)
         .send()
         .await;
@@ -96,14 +135,13 @@ pub async fn verify_gpgs_token(
 
     if !player_resp.status().is_success() {
         let status = player_resp.status();
-        let body = player_resp.text().await.unwrap_or_default();
-        warn!(%status, body_prefix = &body[..body.len().min(200)], "GPGS players/me failed");
+        warn!(%status, "GPGS players/me failed");
         return VerifyResult::Failed {
             reason: format!("players/me returned {status}"),
         };
     }
 
-    let player: PlayersResponse = match player_resp.json().await {
+    let player: PlayersResponse = match bounded_json(player_resp).await {
         Ok(p) => p,
         Err(e) => {
             warn!(%e, "failed to parse GPGS players/me response");
@@ -113,9 +151,76 @@ pub async fn verify_gpgs_token(
         }
     };
 
-    info!(gpgs_player_id = %player.player_id, "GPGS identity verified");
+    if player.player_id.is_empty() || player.player_id.len() > 256 {
+        return VerifyResult::Failed {
+            reason: "Invalid player identity".into(),
+        };
+    }
+    info!("GPGS identity verified");
 
     VerifyResult::Ok {
         gpgs_player_id: player.player_id,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{
+        routing::{get, post},
+        Form, Json, Router,
+    };
+    use std::collections::HashMap;
+
+    #[tokio::test]
+    async fn gpgs_exchange_uses_verified_player_response() {
+        let app = Router::new()
+            .route(
+                "/token",
+                post(|Form(form): Form<HashMap<String, String>>| async move {
+                    assert_eq!(form["code"], "fixture-code");
+                    assert_eq!(form["client_id"], "fixture-client");
+                    assert_eq!(form["client_secret"], "fixture-secret");
+                    assert_eq!(form["grant_type"], "authorization_code");
+                    Json(serde_json::json!({"access_token":"fixture-access"}))
+                }),
+            )
+            .route(
+                "/player",
+                get(|headers: axum::http::HeaderMap| async move {
+                    assert_eq!(headers["authorization"], "Bearer fixture-access");
+                    Json(serde_json::json!({"playerId":"verified-fixture-player"}))
+                }),
+            )
+            .route(
+                "/denied",
+                get(|| async { axum::http::StatusCode::UNAUTHORIZED }),
+            )
+            .route("/oversize", get(|| async { "x".repeat(20 * 1024) }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let task = tokio::spawn(async { axum::serve(listener, app).await.unwrap() });
+        let verify = |path: &str| (format!("{base}/token"), format!("{base}/{path}"));
+        let (token, player) = verify("player");
+        assert!(
+            matches!(verify_gpgs_at("fixture-client", "fixture-secret", "fixture-code", &token, &player).await,
+            VerifyResult::Ok { gpgs_player_id } if gpgs_player_id == "verified-fixture-player")
+        );
+        for path in ["denied", "oversize"] {
+            let (token, player) = verify(path);
+            assert!(matches!(
+                verify_gpgs_at(
+                    "fixture-client",
+                    "fixture-secret",
+                    "fixture-code",
+                    &token,
+                    &player
+                )
+                .await,
+                VerifyResult::Failed { .. }
+            ));
+        }
+        task.abort();
+        let _ = task.await;
     }
 }

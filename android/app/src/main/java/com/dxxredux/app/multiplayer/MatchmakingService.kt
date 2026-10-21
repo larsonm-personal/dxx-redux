@@ -2,6 +2,7 @@ package com.dxxredux.app.multiplayer
 
 import android.app.Activity
 import android.util.Log
+import com.dxxredux.app.BuildConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -343,6 +344,10 @@ object MatchmakingService {
         retireNetworkWork()
 
         val normalizedUrl = normalizeServerUrl(serverUrl)
+        if (!BuildConfig.DEBUG && !normalizedUrl.startsWith("wss://")) {
+            authenticationUnavailable("Online connections require TLS")
+            return
+        }
         // Store the raw URL so the text field and reconnect use what the user typed
         state.update {
             it.copy(
@@ -358,7 +363,7 @@ object MatchmakingService {
         val request = Request.Builder().url(normalizedUrl).build()
         // Use LAN-tolerant client (accepts self-signed certs) for private IPs
         val host = request.url.host
-        val httpClient = if (isPrivateAddress(host)) lanClient else client
+        val httpClient = if (BuildConfig.DEBUG && isPrivateAddress(host)) lanClient else client
         webSocket = httpClient.newWebSocket(request, Listener(callsign))
     }
 
@@ -399,7 +404,7 @@ object MatchmakingService {
             Log.w(TAG, "send() called with no active WebSocket")
             return
         }
-        Log.d(TAG, "TX: $json")
+        Log.d(TAG, "Sending matchmaking message")
         ws.send(json)
     }
 
@@ -425,7 +430,7 @@ object MatchmakingService {
                             )
                         send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
                     } else {
-                        Log.i(TAG, "GPGS auth code unavailable, falling back to dev token")
+                        Log.i(TAG, "GPGS auth code unavailable")
                         sendDevAuthenticate(callsign)
                     }
                 }
@@ -435,7 +440,23 @@ object MatchmakingService {
         }
     }
 
+    private fun authenticationUnavailable(message: String) {
+        manualDisconnect = true
+        reconnectJob?.cancel()
+        retireNetworkWork()
+        webSocket?.cancel()
+        webSocket = null
+        state.update { it.copy(status = ConnectionStatus.DISCONNECTED, errorMessage = message) }
+    }
+
     private fun sendDevAuthenticate(callsign: String) {
+        val host = webSocket?.request()?.url?.host
+        if (!BuildConfig.DEBUG || host == null || !isPrivateAddress(host)) {
+            authenticationUnavailable(
+                "Online authentication is unavailable. A configured Play Games account is required for this preview.",
+            )
+            return
+        }
         val msg =
             AuthenticateMsg(
                 callsign = callsign,
@@ -1284,8 +1305,7 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.PowChallengeMsg -> {
-                    state.appendLog("PoW challenge received (not yet implemented)")
-                    NetLog.log("AUTH", "PoW challenge received (not yet implemented)")
+                    authenticationUnavailable("This client does not support the server authentication challenge")
                 }
 
                 is ServerMessage.ErrorMsg -> {
@@ -1443,7 +1463,7 @@ object MatchmakingService {
                     val relay = msg.data
                     state.update { it.copy(relayInfo = RelayInfo(relay.relayAddr, relay.sessionToken)) }
                     state.appendLog("Relay assigned: ${relay.relayAddr}")
-                    NetLog.log("RELAY", "Assigned: ${relay.relayAddr} token=${relay.sessionToken}")
+                    NetLog.log("RELAY", "Relay assigned")
                 }
 
                 is ServerMessage.LateJoinProbeReceived -> {

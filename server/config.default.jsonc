@@ -3,6 +3,7 @@
 // Environment variables override values in this file.
 {
     // Network listeners -- bound to localhost; nginx handles TLS on public ports
+    "trusted_proxy_ips": ["127.0.0.1"],
     "ws_listen_addr": "127.0.0.1:9000",
     "http_listen_addr": "127.0.0.1:8080",
     "relay_listen_addr": "0.0.0.0:9001",

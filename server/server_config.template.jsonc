@@ -3,6 +3,8 @@
 // All fields are optional -- defaults are shown below.
 // Environment variables override values in this file.
 {
+    // Exact trusted proxy peers; empty for direct/native TLS deployments
+    // trusted_proxy_ips: [],
     // Network listeners
     // ws_listen_addr: "0.0.0.0:9000",
     // http_listen_addr: "0.0.0.0:8080",

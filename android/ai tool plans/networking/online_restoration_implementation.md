@@ -46,3 +46,24 @@ replacement, authorization checks and mutation cannot interleave. Host departure
 closes the room; a rejected join preserves the old room. Session retirement also
 releases its STUN admission reference. Slow outbound clients are retired instead
 of silently dropping state transitions. Existing native/game behavior is unchanged.
+
+### Authentication and admission slice
+
+Production GPGS now requires explicit configuration and rejects dev/unknown auth
+methods. Local test dev authentication is restricted to loopback. Known server
+keypair authentication remains available; release Android currently requires
+configured Play Games for the online preview and reports unavailable authentication
+explicitly on direct-install builds. This is a visible preview restriction, not
+completion of Android keypair support. Release WS requires TLS and normal trust.
+
+Pending sockets count toward the connection cap and have an absolute authentication
+deadline. Explicit trusted proxy peers may supply exactly one valid X-Real-IP;
+direct peers cannot override identity through headers. Frame/candidate sizes are
+bounded. OAuth responses have time/size bounds and do not log credential payloads.
+
+The full local `cargo test --locked` domain passes: module tests, 74 integration
+cases and 13 NAT simulator cases. A local OAuth fixture checks the real form/bearer
+exchange and verified-player response, including denial and oversize responses;
+no external identity provider was called. Android source was scoped-formatted;
+Android APK and device qualification are still pending. Host JVM proxy qualification
+is being provisioned separately using the pinned Gradle/JDK versions.

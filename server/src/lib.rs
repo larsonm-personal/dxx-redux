@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 /// Shared server state accessible from all tasks.
 pub struct ServerState {
+    pub connected_sockets: std::sync::atomic::AtomicUsize,
     /// Serializes short control-plane transitions; never held across network awaits
     pub control: std::sync::Mutex<()>,
     pub config: config::ServerConfig,
@@ -36,6 +37,7 @@ pub struct ServerState {
 pub fn build_state(config: config::ServerConfig) -> Result<Arc<ServerState>, rusqlite::Error> {
     let db = db::Database::open(&config.db_path)?;
     Ok(Arc::new(ServerState {
+        connected_sockets: std::sync::atomic::AtomicUsize::new(0),
         control: std::sync::Mutex::new(()),
         config,
         lobbies: dashmap::DashMap::new(),

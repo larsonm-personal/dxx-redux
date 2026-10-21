@@ -57,6 +57,8 @@ pub struct ServerConfig {
     /// check results. Useful for testing where peers share a NAT gateway
     /// (e.g. two Android emulators on the same host).
     pub force_relay: bool,
+    /// Exact proxy peers allowed to supply a single X-Real-IP header
+    pub trusted_proxy_ips: Vec<std::net::IpAddr>,
 }
 
 /// JSONC config file schema. All fields optional; env vars override file values.
@@ -86,6 +88,7 @@ struct ConfigFile {
     max_connections: Option<usize>,
     admin_http_listen_addr: Option<String>,
     force_relay: Option<bool>,
+    trusted_proxy_ips: Option<Vec<std::net::IpAddr>>,
 }
 
 impl ServerConfig {
@@ -102,12 +105,15 @@ impl ServerConfig {
                     eprintln!("loaded config from {config_path}");
                     cfg
                 }
-                Err(e) => {
-                    eprintln!("warning: failed to parse {config_path}: {e}");
-                    ConfigFile::default()
-                }
+                Err(_) => panic!("Invalid server configuration; refusing defaults"),
             },
-            Err(_) => ConfigFile::default(),
+            Err(e)
+                if e.kind() == std::io::ErrorKind::NotFound
+                    && std::env::var("CONFIG_FILE").is_err() =>
+            {
+                ConfigFile::default()
+            }
+            Err(_) => panic!("Cannot read server configuration"),
         };
 
         // Helper: env var > file value > default
@@ -148,15 +154,23 @@ impl ServerConfig {
         };
 
         Self {
+            trusted_proxy_ips: match std::env::var("TRUSTED_PROXY_IPS") {
+                Ok(value) => value
+                    .split(',')
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.trim().parse().expect("Invalid trusted proxy IP"))
+                    .collect(),
+                Err(_) => file_cfg.trusted_proxy_ips.unwrap_or_default(),
+            },
             ws_listen_addr: resolve_addr(
                 "WS_LISTEN_ADDR",
                 &file_cfg.ws_listen_addr,
-                "0.0.0.0:9000",
+                "127.0.0.1:9000",
             ),
             http_listen_addr: resolve_addr(
                 "HTTP_LISTEN_ADDR",
                 &file_cfg.http_listen_addr,
-                "0.0.0.0:8080",
+                "127.0.0.1:8080",
             ),
             relay_listen_addr: resolve_addr(
                 "RELAY_LISTEN_ADDR",

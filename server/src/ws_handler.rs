@@ -387,23 +387,82 @@ pub async fn run(
     Ok(())
 }
 
+/// Counts every upgraded socket, including unauthenticated connections
+struct ConnectionPermit(Arc<ServerState>);
+impl Drop for ConnectionPermit {
+    fn drop(&mut self) {
+        self.0
+            .connected_sockets
+            .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+fn client_address(
+    peer: SocketAddr,
+    headers: &axum::http::HeaderMap,
+    trusted: &[std::net::IpAddr],
+) -> Option<SocketAddr> {
+    if !trusted.contains(&peer.ip()) {
+        return Some(peer);
+    }
+    let mut values = headers.get_all("x-real-ip").iter();
+    let ip = values
+        .next()?
+        .to_str()
+        .ok()?
+        .parse::<std::net::IpAddr>()
+        .ok()?;
+    if values.next().is_some() || ip.is_unspecified() || ip.is_multicast() {
+        return None;
+    }
+    Some(SocketAddr::new(ip, peer.port()))
+}
+
 async fn ws_upgrade(
     ws: WebSocketUpgrade,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(state): State<Arc<ServerState>>,
+    headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    // D7: global connection cap
+    let Some(addr) = client_address(addr, &headers, &state.config.trusted_proxy_ips) else {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            "Invalid proxy identity",
+        )
+            .into_response();
+    };
+    // Count pending and authenticated sockets atomically
     let max_conn = state.config.max_connections;
-    if max_conn > 0 && state.sessions.len() >= max_conn {
+    if state
+        .connected_sockets
+        .fetch_update(
+            std::sync::atomic::Ordering::Relaxed,
+            std::sync::atomic::Ordering::Relaxed,
+            |count| {
+                if max_conn == 0 || count < max_conn {
+                    Some(count + 1)
+                } else {
+                    None
+                }
+            },
+        )
+        .is_err()
+    {
         warn!(%addr, max_connections = max_conn, "connection cap reached");
         return (axum::http::StatusCode::SERVICE_UNAVAILABLE, "server full").into_response();
     }
+    let permit = ConnectionPermit(Arc::clone(&state));
     if !state.rate_limiter.check_ip_connection(addr.ip()) {
         warn!(%addr, "WebSocket upgrade rate-limited");
         return (axum::http::StatusCode::TOO_MANY_REQUESTS, "rate limited").into_response();
     }
     debug!(%addr, "WebSocket upgrade accepted");
-    ws.on_upgrade(move |socket| handle_connection(socket, addr, state))
+    ws.max_message_size(16 * 1024)
+        .max_frame_size(16 * 1024)
+        .on_upgrade(move |socket| async move {
+            let _permit = permit;
+            handle_connection(socket, addr, state).await;
+        })
         .into_response()
 }
 
@@ -456,11 +515,14 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     }
     let mut pending_pow: Option<PendingPow> = None;
 
-    // Read loop -- timeout if no message (including pings) for 120s
+    let auth_deadline = tokio::time::Instant::now() + Duration::from_secs(20);
+    // Authentication has an absolute deadline, including peers sending pings
     while let Some(msg_result) = match tokio::select! {
         biased;
         _ = retired.notified() => Ok(None),
-        result = tokio::time::timeout(Duration::from_secs(120), ws_rx.next()) => result,
+        result = tokio::time::timeout_at(if player_id.is_none() { auth_deadline } else {
+                tokio::time::Instant::now() + Duration::from_secs(120)
+            }, ws_rx.next()) => result,
     } {
         Ok(Some(r)) => Some(r),
         Ok(None) => None, // stream ended
@@ -545,6 +607,24 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     break;
                 }
 
+                if !matches!(auth_method.as_str(), "keypair" | "gpgs" | "dev") {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Unsupported authentication method".into(),
+                    });
+                    break;
+                }
+                if auth_method != "keypair"
+                    && ((state.config.skip_gpgs_verify && !addr.ip().is_loopback())
+                        || (!state.config.skip_gpgs_verify
+                            && (auth_method == "dev"
+                                || state.config.google_client_id.is_empty()
+                                || state.config.google_client_secret.is_empty())))
+                {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Authentication method unavailable on this server".into(),
+                    });
+                    break;
+                }
                 if auth_method == "keypair" {
                     // -- Keypair authentication path --
                     let Some(ref pk) = public_key else {
@@ -638,9 +718,13 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 } else {
                     // -- GPGS authentication path (existing) --
                     let token = play_games_token.unwrap_or_default();
-                    let gpgs_id = if state.config.skip_gpgs_verify
-                        || state.config.google_client_id.is_empty()
-                    {
+                    if token.is_empty() || token.len() > 4096 {
+                        let _ = tx.send(ServerMessage::AuthFail {
+                            reason: "Invalid authentication token".into(),
+                        });
+                        break;
+                    }
+                    let gpgs_id = if state.config.skip_gpgs_verify {
                         debug!(%addr, "GPGS verification skipped (dev mode)");
                         token.clone()
                     } else {
@@ -2131,6 +2215,25 @@ fn handle_authenticated_message(
             candidates,
             nat_type,
         } => {
+            if candidates.len() > 16
+                || nat_type.len() > 32
+                || candidates.iter().any(|c| {
+                    c.addr.len() > 128
+                        || !matches!(
+                            c.candidate_type.as_str(),
+                            "host" | "srflx" | "upnp" | "predicted"
+                        )
+                        || c.addr.parse::<SocketAddr>().map_or(true, |a| {
+                            a.port() == 0 || a.ip().is_unspecified() || a.ip().is_multicast()
+                        })
+                })
+            {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_CANDIDATES".into(),
+                    message: "Invalid or excessive candidates".into(),
+                });
+                return;
+            }
             info!(%player_id, %nat_type, candidate_count = candidates.len(), "STUN result received");
             if let Some(session) = state.sessions.get(&player_id) {
                 let ws_ip = session.public_ip;
