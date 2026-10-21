@@ -2,7 +2,7 @@
 # Menu for Play Store uploads, GitHub releases, or both
 #
 # Computes versionCode = commitCount*10 + rev, where rev auto-increments
-# if the target track already has a version from the same commit count.
+# if Play already has a version from the same commit count on any track or bundle.
 #
 # Usage:
 #   .\0_upload_to_test.ps1                     # Menu; Enter selects Play Store
@@ -10,6 +10,7 @@
 #   .\0_upload_to_test.ps1 -BuildType "2"     # Build Release instead
 #   .\0_upload_to_test.ps1 -TrackName "alpha"  # Upload to alpha track instead
 #   .\0_upload_to_test.ps1 -BuildOnly          # Build through this wrapper without uploading
+#   .\0_upload_to_test.ps1 -Action 4           # Release build to closed testing (alpha)
 #   .\0_upload_to_test.ps1 -Action 2 -ReleaseVersion 1.2.0  # GitHub release only
 #   .\0_upload_to_test.ps1 -Action 3 -ReleaseVersion 1.2.0 -BuildMode Unclean  # Both, without prompts
 # Existing BuildType/TrackName/BuildOnly invocations keep the Play Store path unless Action is supplied
@@ -18,7 +19,7 @@ param(
     [string]$BuildType = "3",        # Default: Internal (debug + release signing)
     [string]$TrackName = "internal",  # Default: internal track
     [switch]$BuildOnly,               # Build selected destinations locally without publishing
-    [ValidateSet('1', '2', '3')][string]$Action,
+    [ValidateSet('1', '2', '3', '4')][string]$Action,
     [ValidateSet('Clean', 'Unclean')][string]$BuildMode,
     [ValidatePattern('^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$')][string]$ReleaseVersion
 )
@@ -58,7 +59,7 @@ function Invoke-PlayBuildAndUpload {
     . "$PSScriptRoot\helpers\playstore-auth.ps1"
 
     # ---------------------------------------------------------------
-    #  Query the target track to determine version code with rev
+    #  Query Play tracks and uploaded bundles to determine version code with rev
     # ---------------------------------------------------------------
 
     $commitCountText = git -C $repoRoot rev-list --count HEAD
@@ -89,14 +90,13 @@ function Invoke-PlayBuildAndUpload {
             -ContentType "application/json" -Body "{}" -TimeoutSec 30
         $editId = $edit.id
 
-        $deployedCode = Get-TrackVersionCode -BaseUrl $baseUrl -EditId $editId `
-            -Headers $headers -TrackName $TrackName
-
-        # Delete the temporary edit
         try {
+            $deployedCode = Get-PlayStoreMaxVersionCode -BaseUrl $baseUrl -EditId $editId `
+                -Headers $headers -TrackName $TrackName
+        } finally {
             Invoke-RestMethod -Uri "$baseUrl/edits/$editId" -Method DELETE `
                 -Headers $headers -TimeoutSec 10 | Out-Null
-        } catch {}
+        }
 
         # Compute rev
         if ($deployedCode -gt 0) {
@@ -111,7 +111,7 @@ function Invoke-PlayBuildAndUpload {
                 }
                 Write-Host "Same commit count -- bumping rev to $rev"
             } elseif ($deployedCommit -gt $commitCount) {
-                Write-Host "WARNING: deployed commit count ($deployedCommit) > local ($commitCount)"
+                throw "Play already has a newer commit count ($deployedCommit) than local ($commitCount); update the checkout before publishing"
             }
         } else {
             Write-Host "No deployed version on track '$TrackName'"
@@ -176,21 +176,28 @@ try {
             Write-Host "  1) Build and upload to Play Store (default)"
             Write-Host "  2) Build and release on GitHub"
             Write-Host "  3) Do both"
+            Write-Host "  4) Build Release and upload to closed testing (alpha)"
             Write-Host ""
             while (-not $Action) {
-                $choice = (Read-Host 'Select action (1-3, default 1)').Trim()
+                $choice = (Read-Host 'Select action (1-4, default 1)').Trim()
                 if (-not $choice) { $choice = '1' }
-                if ($choice -in @('1', '2', '3')) {
+                if ($choice -in @('1', '2', '3', '4')) {
                     $Action = $choice
                 } else {
-                    Write-Host 'Enter a number between 1 and 3' -ForegroundColor Yellow
+                    Write-Host 'Enter a number between 1 and 4' -ForegroundColor Yellow
                 }
             }
         }
     }
 
-    if ($Action -eq '1' -and $ReleaseVersion) { throw '-ReleaseVersion requires -Action 2 or 3' }
-    if ($Action -eq '1' -and $BuildMode) { throw '-BuildMode requires -Action 2 or 3' }
+    if ($Action -eq '4') {
+        if (-not $PSBoundParameters.ContainsKey('TrackName')) { $TrackName = 'alpha' }
+        if ($TrackName -in @('internal', 'beta', 'production')) { throw 'Action 4 requires a closed testing track (alpha or a custom closed track)' }
+        if ($PSBoundParameters.ContainsKey('BuildType') -and $BuildType -ne '2') { throw 'Action 4 requires the Release build (-BuildType 2)' }
+        $BuildType = '2'
+    }
+    if ($Action -in @('1', '4') -and $ReleaseVersion) { throw '-ReleaseVersion requires -Action 2 or 3' }
+    if ($Action -in @('1', '4') -and $BuildMode) { throw '-BuildMode requires -Action 2 or 3' }
     if ($Action -in @('2', '3')) {
         # Collect and validate the version before authentication, building or publishing
         while (-not $ReleaseVersion) {
@@ -206,7 +213,7 @@ try {
         if (-not $BuildMode) { $BuildMode = Read-ReleaseBuildMode }
     }
 
-    if ($Action -in @('1', '3')) { Invoke-PlayBuildAndUpload }
+    if ($Action -in @('1', '3', '4')) { Invoke-PlayBuildAndUpload }
     if ($Action -in @('2', '3')) {
         Write-Host "Building GitHub release $ReleaseVersion"
         $releaseParameters = @{ Version = $ReleaseVersion; BuildMode = $BuildMode }

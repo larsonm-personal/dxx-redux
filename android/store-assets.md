@@ -3,14 +3,18 @@
 Run from the repository root with PowerShell 7:
 
 ```powershell
-.\android\generate-store-assets.ps1
+.\android\generate-store-assets.ps1 -ScreenshotsOnly
 ```
+
+Omit `-ScreenshotsOnly` to generate the full preview-video package when its
+qualified format-5 source recordings are available. The full workflow checks
+its sources before building or touching the capture emulator.
 
 This builds the current debug Android app, provisions the dedicated
 `DxxStoreAssets` emulator on port 5580, resets only that emulator's app sandbox,
-and writes a new ignored `android/temp/store-assets_YYYYMMDD_HHMMSS` folder.
+and writes a new ignored `android/store-assets/capture_YYYYMMDD_HHMMSS` folder.
 It never selects a physical phone. The emulator is left running for inspection.
-The retention helper keeps three previous generations before creating a new one.
+Store captures are outside the temporary-file cleanup roots. All captures in this folder are preserved until explicitly removed; neither regeneration nor ordinary temp cleanup retires them. The disposable Python environment and emulator remain under android/temp/store-assets-tools.
 
 Prerequisites: the repository's Android/JDK dependencies, PowerShell 7, Python
 3.10 or newer, hardware emulator acceleration, the API 34 Google APIs x86_64
@@ -19,6 +23,45 @@ system image, and locally indexed full D1/D2 game data. The runner uses
 No game data is downloaded or checked into git. A private Python environment
 under `android/temp/store-assets-tools/venv` installs pinned `imageio-ffmpeg`
 0.6.0 and Pillow 11.3.0; FFmpeg is supplied by the pinned wheel.
+
+## Screenshots without historical demos
+
+```powershell
+.\android\generate-store-assets.ps1 -ScreenshotsOnly
+```
+
+This captures two launcher images, five fresh gameplay views on D1 levels 5,
+18 and 7 and D2 level 9, and the native D1 fly-out. It uses the existing engine
+level-warp and pose automation to frame authored robots, including the level-7
+boss, with robot movement held by the existing debug shortcut during framing. These are live staged gameplay screenshots, not input-replay validation.
+`live-stills.json` records source APK hash, camera poses, image hashes and sizes;
+`states/` retains native state evidence. Camera setup uses the engine invulnerability cheat to prevent incidental contact damage from turning a screenshot into a death animation. PNGs preserve the full rendered display.
+The five gameplay views also perform real primary-weapon kills, contact hostage
+pickups and visits to authored secret areas. The progress recipe covers:
+
+| View | Hostages | Secrets | Combat |
+| --- | --- | --- | --- |
+| D1 level 5, first | Zero | Zero | Zero kills |
+| D1 level 5, second | Some | Some | Weapon kill and explosion |
+| D1 level 18 | All | Some | Weapon kills and explosion |
+| D2 level 9 | Some | Some | Weapon kills and explosion |
+| D1 level 7 boss | Zero | Some | Minion kills; boss remains alive |
+
+`live-stills.json` records exact rescued/total, found/total and killed/total counts.
+`events/` records native explosion state and the increase in kill credit; the
+capture code never assigns progress counters. Camera protection, D2 weapon provisioning and robot hold
+remain capture staging; these are not newly qualified input replay demos.
+
+This mode does not generate a preview video or a featured graphic. Validate a completed run with:
+
+```powershell
+.\android\tests\test_store_asset_pipeline.ps1 -ScreenshotsOnly -OutputDirectory android/store-assets/capture_YYYYMMDD_HHMMSS
+```
+
+The old full-video recipe still requires its original recordings. Backups in
+`android/regression_demos_backup/format4_20261014_0718` use unsupported format 4;
+do not rename their versions or edit expected results to bypass validation.
+Use fresh format-5 recordings for future replay-based captures.
 
 ## Outputs
 
@@ -191,8 +234,8 @@ capture, then select the stills (the dedicated capture emulator must be running
 and already provisioned):
 
 ```powershell
-& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py capture-still-sources --output android/temp/store-assets_YYYYMMDD_HHMMSS
-.\android\generate-store-assets.ps1 -SelectStillsOnly -OutputDirectory android/temp/store-assets_YYYYMMDD_HHMMSS
+& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py capture-still-sources --output android/store-assets/capture_YYYYMMDD_HHMMSS
+.\android\generate-store-assets.ps1 -SelectStillsOnly -OutputDirectory android/store-assets/capture_YYYYMMDD_HHMMSS
 ```
 
 For an existing run, `replay --video-only --demo <path> --output <folder>`
@@ -236,8 +279,8 @@ capture that single moment without ranking or selecting different frames.
 To capture only this additional image in an already provisioned run:
 
 ```powershell
-.\android\generate-store-assets.ps1 -FeaturedOnly -OutputDirectory android/temp/store-assets_20261004_filtered
-.\android\tests\test_store_asset_pipeline.ps1 -FeaturedOnly -OutputDirectory android/temp/store-assets_20261004_filtered
+.\android\generate-store-assets.ps1 -FeaturedOnly -OutputDirectory android/store-assets/capture_20261004_filtered
+.\android\tests\test_store_asset_pipeline.ps1 -FeaturedOnly -OutputDirectory android/store-assets/capture_20261004_filtered
 ```
 
 Use `-NoBuild` when the capture APK already has HUD/camera automation and
@@ -248,7 +291,7 @@ To repeat only the downsample/export from the preserved native source, without
 an emulator replay:
 
 ```powershell
-.\android\temp\store-assets-tools\venv\Scripts\python.exe android/helpers/generate_store_assets.py select-featured --output android/temp/store-assets_20261004_filtered
+.\android\temp\store-assets-tools\venv\Scripts\python.exe android/helpers/generate_store_assets.py select-featured --output android/store-assets/capture_20261004_filtered
 ```
 
 ## Combining filtered video with reviewed sound
@@ -266,9 +309,9 @@ With the DxxStoreAssets emulator and full game data already provisioned:
 
 ```powershell
 .\android\generate-store-boss-preview.ps1 `
-    -OutputDirectory android/temp/store-assets_20261005_boss_video `
-    -ReferenceDirectory android/temp/store-assets_20261004_combined `
-    -BossAudioDirectory android/temp/store-assets_20261004_tempo/still-sources `
+    -OutputDirectory android/store-assets/capture_20261005_boss_video `
+    -ReferenceDirectory android/store-assets/capture_20261004_combined `
+    -BossAudioDirectory android/store-assets/capture_20261004_tempo/still-sources `
     -Serial emulator-5582
 ```
 
@@ -282,7 +325,7 @@ copied sample-for-sample into the audio master before one 320 kb/s AAC encode.
 Boss effects follow simulation time; its MIDI stem retains the native tempo.
 
 ```powershell
-.\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android/temp/store-assets_20261005_boss_video
+.\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android/store-assets/capture_20261005_boss_video
 ```
 
 Validation checks source hashes, 900 frames/30 seconds, launcher silence,
@@ -294,16 +337,16 @@ The recommended regeneration command preserves a reviewed soundtrack while
 regenerating the launcher, gameplay, stills and fixed-step filtered fly-out:
 
 ```powershell
-.\android\generate-store-assets.ps1 -AudioDirectory android/temp/store-assets_20261004_combined
+.\android\generate-store-assets.ps1 -AudioDirectory android/store-assets/capture_20261004_combined
 ```
 
 For already captured visuals and a new fly-out, combine them offline:
 
 ```powershell
 .\android\generate-store-assets.ps1 -CombineVideo `
-    -PictureDirectory android/temp/store-assets_20261004_filtered `
-    -AudioDirectory android/temp/store-assets_20261004_tempo `
-    -OutputDirectory android/temp/store-assets_20261004_combined
+    -PictureDirectory android/store-assets/capture_20261004_filtered `
+    -AudioDirectory android/store-assets/capture_20261004_tempo `
+    -OutputDirectory android/store-assets/capture_20261004_combined
 ```
 
 The output folder must contain the new `flyout.json` and recording, or supply
@@ -311,7 +354,7 @@ The output folder must contain the new `flyout.json` and recording, or supply
 emulator with the current debug APK installed:
 
 ```powershell
-& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py flyout --visual-only --output android/temp/store-assets_20261004_combined
+& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py flyout --visual-only --output android/store-assets/capture_20261004_combined
 ```
 
 Combination checks that picture/audio use the same clip order, durations and
@@ -322,8 +365,8 @@ encoded. All inputs needed for an offline re-export are archived under `inputs/`
 and SHA-256 pinned by `combined-edit.json`. Re-export without older source folders:
 
 ```powershell
-& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py compose-combined --output android/temp/store-assets_20261004_combined
-.\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android/temp/store-assets_20261004_combined
+& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py compose-combined --output android/store-assets/capture_20261004_combined
+.\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android/store-assets/capture_20261004_combined
 ```
 
 Combined validation tracks tunnel-wall geometry rather than counting explosion

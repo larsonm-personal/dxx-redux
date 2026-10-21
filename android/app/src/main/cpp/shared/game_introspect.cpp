@@ -492,6 +492,8 @@ static json serialize_player()
 		{ "secondary_weapon_flags", (unsigned) p->secondary_weapon_flags },
 		{ "hostages_on_board", (int) p->hostages_on_board },
 		{ "hostages_level", (int) p->hostages_level },
+		{ "robots_killed_level", (int) p->num_kills_level },
+		{ "robots_level", (int) p->num_robots_level },
 #ifdef DXX_BUILD_DESCENT_II
 		{ "afterburner_charge", f2fl(p->afterburner_charge) },
 #endif
@@ -685,6 +687,8 @@ static json serialize_level_scene()
 	json result = { { "segment", ConsoleObject ? serialize_scene_segment(ConsoleObject->segnum) : json(nullptr) },
 		            { "reactor_destroyed", Control_center_destroyed != 0 },
 		            { "robots", json::array() },
+		            { "hostages", json::array() },
+		            { "explosions", json::array() },
 		            { "reactors", json::array() } };
 	// Android mod diagnostics: collect references without forcing bitmap uploads
 	json references = json::object();
@@ -712,10 +716,15 @@ static json serialize_level_scene()
 	result["texture_references"] = std::move(references);
 	for (int i = 0; i <= Highest_object_index; ++i) {
 		const object &obj = Objects[i];
+		if (obj.type == OBJ_FIREBALL && obj.lifeleft > 0 && !(obj.flags & OF_SHOULD_BE_DEAD))
+			result["explosions"].push_back({ { "object", i }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "lifeleft", f2fl(obj.lifeleft) } });
+		// Android capture automation locates authored hostages for real collision pickups
+		if (obj.type == OBJ_HOSTAGE && !(obj.flags & OF_SHOULD_BE_DEAD))
+			result["hostages"].push_back({ { "object", i }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) } });
 		if (obj.type == OBJ_ROBOT) {
 			// Locate actual combat for mod sprite acceptance without creating test objects
 			vms_vector position = obj.pos;
-			result["robots"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "shields", f2fl(obj.shields) }, { "distance", ConsoleObject ? json(f2fl(vm_vec_dist_quick(&position, &ConsoleObject->pos))) : json(nullptr) } });
+			result["robots"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "shields", f2fl(obj.shields) }, { "alive", obj.shields > 0 && !(obj.flags & OF_SHOULD_BE_DEAD) }, { "radius", f2fl(obj.size) }, { "distance", ConsoleObject ? json(f2fl(vm_vec_dist_quick(&position, &ConsoleObject->pos))) : json(nullptr) } });
 		}
 		if (obj.type != OBJ_CNTRLCEN) continue;
 		result["reactors"].push_back({ { "object", i }, { "position", serialize_scene_point(obj.pos) }, { "radius", f2fl(obj.size) }, { "shields", f2fl(obj.shields) }, { "destroyed", (obj.flags & OF_DESTROYED) != 0 }, { "render_type", obj.render_type }, { "model", obj.render_type == RT_POLYOBJ ? json(obj.rtype.pobj_info.model_num) : json(nullptr) }, { "segment", serialize_scene_segment(obj.segnum) } });
@@ -788,6 +797,16 @@ static json serialize_secret_areas()
 			for (int s = 0; s < entry->segment_count; s++)
 				segments.push_back(state->segments[entry->segment_offset + s]);
 			item["segments"] = std::move(segments);
+			// Native geometry, shared by D1/D2; consumers do not parse level files
+			if (entry->segment_count > 0) {
+				const int capture_segment = state->segments[entry->segment_offset];
+				if (capture_segment >= 0 && capture_segment <= Highest_segment_index) {
+					vms_vector center;
+					compute_segment_center(&center, &Segments[capture_segment]);
+					item["capture_segment"] = capture_segment;
+					item["capture_position"] = serialize_scene_point(center);
+				}
+			}
 			json entrances = json::array();
 			for (int e = 0; e < entry->entrance_count; e++) {
 				const secret_area_entrance *entrance = &entry->entrances[e];

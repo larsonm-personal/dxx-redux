@@ -149,3 +149,22 @@ function Get-TrackVersionCode {
     }
     return 0
 }
+
+# Version codes are shared across tracks, including uploaded bundles left in drafts
+function Get-PlayStoreMaxVersionCode {
+    param([string]$BaseUrl, [string]$EditId, [hashtable]$Headers, [string]$TrackName)
+
+    $tracks = Invoke-RestMethod -Uri "$BaseUrl/edits/$EditId/tracks" -Headers $Headers -TimeoutSec 30
+    if ($TrackName -notin @($tracks.tracks.track)) {
+        throw "Track '$TrackName' does not exist; create it in Play Console first"
+    }
+    $bundles = Invoke-RestMethod -Uri "$BaseUrl/edits/$EditId/bundles" -Headers $Headers -TimeoutSec 30
+    $codes = @(0)
+    foreach ($track in $tracks.tracks) {
+        foreach ($release in $track.releases) {
+            foreach ($code in $release.versionCodes) { $codes += [long]$code }
+        }
+    }
+    foreach ($bundle in $bundles.bundles) { $codes += [long]$bundle.versionCode }
+    return ($codes | Measure-Object -Maximum).Maximum
+}

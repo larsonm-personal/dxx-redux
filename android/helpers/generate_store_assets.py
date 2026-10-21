@@ -19,6 +19,11 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "com.dxxredux.app"
+PRIMARY_DEMOS = (
+    "d1_descent_level5_20260616_202713.dximdemo",
+    "d1_descent_level18_20260618_202117.dximdemo",
+    "d2_descent2_level9_20260511_192804.dximdemo",
+)
 sys.path.insert(0, str(ROOT / "android/tests"))
 import input_demo_assets as demo_assets  # noqa: E402
 
@@ -26,6 +31,32 @@ import input_demo_assets as demo_assets  # noqa: E402
 def write_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+def check_store_demo_sources(all_demos=False):
+    from store_asset_media import still_recipe, featured_recipe
+
+    directory = ROOT / "android/regression_demos"
+    demos = sorted(directory.glob("*.dximdemo")) if all_demos else [directory / name for name in PRIMARY_DEMOS]
+    sources = set(demos)
+    sources.update(directory / (item["demo"] + ".dximdemo") for item in still_recipe() if item["kind"] == "demo")
+    sources.add(directory / (featured_recipe()["demo"] + ".dximdemo"))
+    problems = [] if demos else ["No primary replay sources"]
+    for source in sorted(sources):
+        if not source.is_file():
+            problems.append("Missing " + source.name)
+            continue
+        with source.open(encoding="utf-8") as stream:
+            header = json.loads(next(stream))
+        if header.get("version") != 5:
+            problems.append(f"Unsupported format {header.get('version')}: {source.name}")
+    if problems:
+        raise RuntimeError(
+            "Store replay sources are unavailable:\n"
+            + "\n".join(problems)
+            + "\nRestore qualified format-5 recordings or use -ScreenshotsOnly for fresh native screenshots"
+        )
+    return demos
 
 
 class Capture:
@@ -851,10 +882,20 @@ class Capture:
             write_json(self.output / "demos" / name / "capture.json", manifest)
         return manifest
 
+    def install(self, apk):
+        try:
+            self.call("install", "-r", "-t", apk)
+        except RuntimeError as error:
+            if "INSTALL_FAILED_UPDATE_INCOMPATIBLE" not in str(error):
+                raise
+            # This dedicated capture AVD has disposable app data
+            self.call("uninstall", PACKAGE)
+            self.call("install", "-r", "-t", apk)
+
     def prepare(self, apk):
         if not apk.exists():
             apk = ROOT / "android/app/build/intermediates/apk/debug/app-debug.apk"
-        self.call("install", "-r", "-t", apk)
+        self.install(apk)
         self.shell("wm", "size", "1080x2400")
         self.shell("wm", "density", "420")
         self.shell("wm", "fixed-to-user-rotation", "default")
@@ -994,6 +1035,8 @@ def main():
         "action",
         choices=[
             "all",
+            "screenshots",
+            "check-sources",
             "prepare",
             "state",
             "screenshot",
@@ -1006,6 +1049,7 @@ def main():
             "review",
             "validate",
             "validate-featured",
+            "validate-stills",
             "select-featured",
             "select-stills",
             "capture-still-sources",
@@ -1039,6 +1083,14 @@ def main():
     parser.add_argument("--audio-run", type=Path)
     parser.add_argument("--flyout-run", type=Path)
     args = parser.parse_args()
+    if args.action == "check-sources":
+        print(json.dumps([str(path) for path in check_store_demo_sources(args.all_demos)], indent=2))
+        return
+    if args.action == "validate-stills":
+        from store_asset_stills import validate_stills
+
+        print(json.dumps(validate_stills(args.output), indent=2))
+        return
     if args.action in ("combine-video", "compose-combined", "validate-combined"):
         from store_asset_video import prepare_combination, compose_combination, validate_combination
 
@@ -1070,11 +1122,16 @@ def main():
             print(json.dumps(validate(args.output), indent=2))
         return
     capture = Capture(args.output, args.serial, args.allow_unverified_assets)
-    if args.action == "all":
+    if args.action == "screenshots":
+        from store_asset_stills import capture_stills
+
+        capture_stills(capture, args.apk)
+    elif args.action == "all":
         from store_asset_media import compose, validate
 
+        demos = check_store_demo_sources(args.all_demos)
         capture.shell("am", "force-stop", PACKAGE)
-        capture.call("install", "-r", "-t", args.apk)
+        capture.install(args.apk)
         capture.shell("pm", "clear", PACKAGE)
         capture.prepare(args.apk)
         write_json(
@@ -1093,16 +1150,6 @@ def main():
         capture.opening()
         print("Recording D1 fly-out", flush=True)
         capture.flyout()
-        demo_dir = ROOT / "android/regression_demos"
-        demos = (
-            sorted(demo_dir.glob("*.dximdemo"))
-            if args.all_demos
-            else [
-                demo_dir / "d1_descent_level5_20260616_202713.dximdemo",
-                demo_dir / "d1_descent_level18_20260618_202117.dximdemo",
-                demo_dir / "d2_descent2_level9_20260511_192804.dximdemo",
-            ]
-        )
         for demo in demos:
             print("Capturing " + demo.name, flush=True)
             capture.replay(demo)

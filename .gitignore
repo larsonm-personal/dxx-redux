@@ -151,3 +151,6 @@ game_data_to_copy_to_emulator/download/*
 
 # Full audit evidence is backed up to Google Drive
 /android/ai tool plans/code management/general_code_quality_evidence_ledger_20260811.md
+
+# Persistent Play Store captures (outside scratch cleanup roots)
+/android/store-assets/

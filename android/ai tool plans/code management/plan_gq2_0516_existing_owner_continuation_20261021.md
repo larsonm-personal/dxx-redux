@@ -1,0 +1,31 @@
+# Chunk0516 existing owner continuation, 2026-10-21
+
+Diagnosis-only conditional implementation and acceptance. No product/test/helper edit or execution, new finding, status/rating change or applied saving.
+
+## Exact all-exit state restoration
+
+The assigned standalone wrapper reaches the helper previously reviewed in0490; its current645-line body was read in this chunk. Preserve its selected serial/package, checked required ADB exits, per-run automation GUID, moved/created tracking and isolated files/shared_prefs/no_backup. Existing OPEN BR-0193 already owns fixed backup generation and sequential finally restoration. Diagnostics and artifact writes precede restoration; a terminating diagnostic write or restore command can bypass later cleanup. This is a prior known requirement, not a new discovery.
+
+Implement one attempt-owned recovery record before destructive movement, with collision-free backup and fixture paths or an explicitly validated exclusive generation. Record prior existence and each acquired/moved resource; do not delete an unowned backup. Put diagnostics behind separately protected collection so every required state restoration is attempted even when capture, host writing, process stop or another restore fails. Accumulate primary and cleanup failures, preserve recoverable originals on incomplete restoration and return nonzero whenever mandatory cleanup is incomplete. Do not let one restoration exception skip remaining independent resources or replace the original diagnostic.
+
+Coordinate existing BR-0543/0173 for exact owned process/logcat retirement and bounded handle disposal before originals are restored; host child exit and force-stop issued are not proof of Android termination. BR-0658 supplies a composed total/remaining budget through commands, polling and mandatory teardown. Preserve checked exit status; direct synchronous ADB currently supplies no per-command deadline here. The900-second aggregate entry alone neither proves a healthy-run timeout defect nor bounds every inner command. BR-0233 retains truthful correlated output publication; report failure must not bypass restoration.
+
+Future controlled actual-helper acceptance: seed distinct files/preferences/no_backup and a foreign backup sentinel; exercise ordinary success, setup/automation failure, each diagnostic read/write failure, each move/remove/restore failure, process-stop failure, bounded timeout and ordinary cancellation. Require exact prior existence/bytes or identified recoverable originals, every independent restoration attempted, foreign state preserved, no owned process writer remaining and nonzero terminal status after mandatory cleanup failure. Concurrency and fault/resource/security matrices remain deferred until authorized. Reuse actual callers instead of source-text tests or a general rollback framework.
+
+## Resource and gameplay contracts
+
+Keep automatic current standard_game_data lookup's measured pinned HOG/PIG hashes. Explicit caller directories intentionally support appropriate registered/shareware variants and receive child member-existence checks; capture and preserve the selected source identity under the existing fixture ownership/provenance policy rather than impose retail-only hashes on all supplied data. Shareware flags without explicit matching data do not transform the registered automatic default. Do not infer that every local shareware mode is invalid or weaken actual mode/readiness assertions.
+
+Retain the180-line owned script's real engine/base-game/asset bank, radial laser selection, movement/fire/audio, automatic door, nondestructible light, monitor effect, lava metadata, reactor wreck/countdown, physical exit and level2 checks. Pose placement deliberately reaches an authored scenario; ordinary fire/movement and flyout are still exercised. Optional launcher/smoke and later campaign profiles have different scope. Preserve per-run result correlation; capture counters are not audible-output or complete visual-fidelity proof.
+
+## Native model admission and text mapping
+
+Preserve archived FIXED BR-0365/0366 staged references, bounded span/RLE/model checks, exact remap/arena commit and prior-generation preservation. FIXED BR-0445 metadata-offset correction remains separate and fixed. Historical build/device validation is not fresh acceptance for this diagnosis, and its stated deferred sanitizer/allocation matrices do not automatically reopen repaired owners.
+
+Existing OPEN GQF-0209/TODO GQR-0195 remains the separate renderer-field-domain owner. Structural opcode/bounds and texture-count checks do not prove signed branch/count/point-start/subcall-animation/glow semantics. Retain its engine-owned validation-before-publication and actual renderer/sanitizer acceptance plan. Keep existing independent texture polygon/rod controls and active CHECK; the later POF fixture correctly composes container admission with a separate instruction validator. Do not equate accepted container headers with drawable geometry or weaken the controls merely because a renderer-domain plan remains open. No new malformed-model reproduction or broader native security review is claimed.
+
+Retain the native compact D1 text map, TXT_HELP index6 format exception and D2 built-in fallback. Keep the Python unittest's independent actual-header symbolic ordinals and meaningful minimum catalogue assertions. Current static602/627-symbol12-range projection has no mismatch, but does not execute text decoding or prove every translation/format. The actual host registry includes this single unittest module and the adapter records failures/skips; do not create a registration or optimized-Python-assert finding. No common parser or duplicate Kotlin/text-format table is justified for cleanup.
+
+## Disposition
+
+RETAIN/ISSUES, direct existing BR-0193 REFERENCE47 MEDIUM23/0/4/10/10 from exact current0673/0490 restoration references, without pooling separate model-domain53 or archived nativeP1 severity. Keep GQR-0195's53MEDIUM-HIGH32/0/4/10/7 unchanged. All three assigned test paths are absent1996: NO_INHERITED_EFFECT0. Mechanical paired text/model context counts are not whole-file semantic review, a new extraction estimate or applied saving. Canonical publication/independent replay/observed mounted Drive backup and the broader diagnosis remain pending.

@@ -43,7 +43,7 @@ try {
     New-Item -ItemType Directory -Path $fixture -Force | Out-Null
     & git -C $fixture init --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Fixture git init failed' }
-    [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "temp/`nandroid/temp/`nbuild*/`ndownloads/`nserver/target/`nandroid/tools/code-quality/python/`nandroid/tools/code-quality/node-path.txt`n")
+    [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "temp/`nandroid/temp/`nandroid/store-assets/`nbuild*/`ndownloads/`nserver/target/`nandroid/tools/code-quality/python/`nandroid/tools/code-quality/node-path.txt`n")
     foreach ($path in @('temp/old.log', 'temp/recent.log', 'temp/tracked.log',
             'temp/copy [1].tmp', 'temp/review.json', 'temp/runs/old/result.json',
             'temp/runs/new/result.json', 'temp/nested-repo/.git/config',
@@ -52,6 +52,9 @@ try {
             'build-protected/keep.cpp', 'downloads/tool.zip',
             'server/target/old/output.o', 'game_data/precious.log',
             'android/tools/code-quality/python/ruff/__main__.py', 'android/tools/code-quality/node-path.txt',
+            'android/store-assets/capture_20260101_010101/selected-stills/01.png',
+            'android/store-assets/capture_20260101_010101/build.log',
+            'android/store-assets/capture_20260101_010101/temp/source.bin',
             'android/regression_demos/precious.dximdemo', 'outside/precious.log')) {
         New-CleanupFixtureFile $path
     }
@@ -117,7 +120,10 @@ try {
     foreach ($path in @('temp/tracked.log', 'temp/user-notes.txt', 'temp/mixed/keep.txt',
             'temp/locked/result.log', 'temp/nested-repo/.git/config',
             'build-old/output.obj', 'build-protected/keep.cpp', 'downloads/tool.zip',
-            'game_data/precious.log', 'android/regression_demos/precious.dximdemo', 'outside/precious.log')) {
+            'game_data/precious.log', 'android/store-assets/capture_20260101_010101/selected-stills/01.png',
+            'android/store-assets/capture_20260101_010101/build.log',
+            'android/store-assets/capture_20260101_010101/temp/source.bin',
+            'android/regression_demos/precious.dximdemo', 'outside/precious.log')) {
         Assert-CleanupExists $path
     }
     if ($state.Prompts) { throw 'Temporary cleanup prompted' }

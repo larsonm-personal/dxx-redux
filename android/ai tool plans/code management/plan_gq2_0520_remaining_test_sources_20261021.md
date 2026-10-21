@@ -1,0 +1,35 @@
+# Chunk0520 remaining test sources, 2026-10-21
+
+Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Locator only; start after0519 mounted Drive proof closes publication. No assigned source credit
+
+- [x] Read exact assigned frozen bodies/hunks/removals and current enclosing bodies/deltas
+- [x] Trace actual FM measurement, capture, decoder and report consumers
+- [x] Reconcile whole existing owners, prior plans and raw quality dispositions
+- [x] Derive direct unpooled disposition and conditional continuation
+- [x] Publish exact evidence, independently replay and verify mounted Drive backup
+
+### GQ2-CHUNK-0520
+
+- `android/tests/fm_feasibility/hmi_probe.py`: L1-L417
+- `android/tests/fm_feasibility/measure_hmi_pitch.py`: L1-L72
+- `android/tests/fm_feasibility/measure_hmi_volume.py`: L1-L134
+- `android/tests/fm_feasibility/opl_trace.py`: L1-L112
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef/originalfb555eec75e1ed12c8348805ab335afb4c721b06. Revalidate actual assignment, HEAD/current sources and owners before credit. Preserve measured source provenance and deliberate producer/backend distinctions; historical FM measurements are not fresh execution or speaker fidelity
+
+Retain desktop parity, native format authority, independent real assertions and handmade comments. No product/test/helper edits or execution, builds/tests/imports, formatter/generator, device/network/media/security/resource/allocation/fault probes, staging or commit. Broader queue/preflights/sweeps/investigations/current-head supplement/closure remain; goal active
+
+
+0520 source gate complete20261021: plan_gq2_0520_source_checkpoint_20261021.md;4wholeadditions735frozen-current/all4equal/base-originalabsent. EvidenceSHA484bf9fbe8ac3521edb71e4afc659d0f7757c2819678187ceec461c9a1163e70;independentstaticPASS70auditSHA4ddea596ec3a38e13f9f3f745357b46f080efa2d956267d721e0adf1c2978eaa. Actual16CLIprobe kinds/source generator and HMP-HMQsubstitution, pitchhash/exactwheel/pairedsnapshots, volumeconsistentattenuation/fullmasterlimits and structuralDRO/state decoder retained. Actual experiment-session/capture/provenance/snapshots/verifier/native-table/source-bank-match-report consumers andwholeowners remain;no runtimefidelity claim. HEAD/all4assigned/all5canonical unchanged/sourcegateonly/0520TODO/canonical519DONE108TODO627/326findings312remediations. No newfinding/status/rating/runtime/saving/productexecution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0520 consumer ingress20261021: plan_gq2_0520_consumer_ingress_checkpoint_20261021.md;15contexts1865range-lines/7wholefiles. EvidenceSHA7351eacc99529340f378d69d97d83f6cbe2b841b6af1bea1c6fe630077cb1841;independentstaticPASS69auditSHAe4dbdbdea83e0686ad1b6584746cd9b16c040ed0c1144796ffc1af4c3474f37c. Actualsnapshotsoneperquery narrows zipconcern;motifvolume vs strictcontrolled/orderedprefix separate. Privatepreparer/ownedwindowcapture and exacthashes retained, temporalprovenance/shutdownpublication still pendingowners. Sharedcmake invokes patch_live-hmi-driver/runtime and measuredtable: productiondependency aswellasexperiment,not tests-only. Partialtable/README/priorplan boundaries explicit. HEAD/all4assigned/all5canonical unchanged/sourcegateonly/consumeropen/0520TODO/canonical519DONE108TODO627/326findings312remediations. Remainingcapturewrapper/native/dependency/table/wholeowners/disposition/publication/Drive;no newfinding/status/rating/runtime/saving/productexecution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0520 consumer gate complete20261021: plan_gq2_0520_consumer_completion_checkpoint_20261021.md;15freshcontexts1131range-lines/5wholefiles+15exactcurrent1865=30contexts2996range-lines/all4consumerinventory/threewholeunions/specificdependencyrecords/1536entrytableprojection/wholehistorical156linefidelityplan. EvidenceSHA7e5b86598ca4a572aec2f3cd9c2ce42ba3fd91937647bffb4150a3ea18a6a042;independentstaticPASS128auditSHA08ae181a3c26c7fbe0053adeb7eea022e4be29921fe1f074ef5f0b59b1510984. RealnativeCLItrace/CHECK/close/renderedtail and actualbackend retained;metadata-before-channel/SNG-HMQ/fullbytebanks/fallback repairs preserved. Tableprojection notcaptureregeneration;historicalcompletedFMresults notfresh runtime. Source/head/all4assigned/all5canonical unchanged/source+consumergatesclosed/3lateropen/0520TODO/canonical519DONE108TODO627/326findings312remediations. Wholeowners/priors/rawquality/disposition/publication/Drive remain;no newfinding/status/rating/runtime/saving/productexecution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0520 reconciliation/disposition complete20261021: plan_gq2_0520_existing_owner_continuation_20261021.md and plan_gq2_0520_synthesis_20261021.md;3wholeBRowners/8physicalqualityrows/5wholepriors/all30contexts2996range-lines/all4assigned revalidated. ReconciliationSHA9d3ef906e0983b935ee9f25c19446132c3012585765a5dabef95edb5247ca4db;independent readonly PASS126 auditSHAc6bd9bf131c4c0a91c898cb1d6417e3abe712f66a826fb9005573b6ccd46d333. RETAIN/ISSUES/directBR0233REFERENCE47MEDIUM23/0/7/10/7unpooled/NO_INHERITED_EFFECT0. Publication continues0233;capture acquisition/independent retirement-report continues0173/0543/prior0385. Preserve nativeCLIrenderedtail/CHECK/close and timestampFALSErepair;optionalcorpus0268/0254 separate. Snapshotzip concern narrowed;Pythonoptimization unadmitted/no native0662rating;0588introspection not arbitrarycaptureprovenance. Fouranalysisgatesclosed/publicationopen/0520TODO/canonical519DONE108TODO627/326findings312remediations unchanged. Next immutable report/snapshot,exactcanonicalreplay,observedscheduledworkerterminal/mountedDriveproof;no newfinding/remediation/status/rating/runtime/saving/product-test-helper edits or execution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0520 terminal publication complete20261021: all five gates closed. Canonical520DONE107TODO627/326findings312remediations/1336terminalranks; GQC1349/GQD1229. Exact six operations preserved all existing BR and GQF/GQR definitions, statuses and priorities; reportSHA29cb2cf31fe5eb16d6dbd70159f3373e3727f7adbf897174cbe24ecf7914f1e9;snapshotSHA453f371bf68c0bd79e7dda2b34dffb78e227a3f95c506e0f9a3af16be874a6a3. Independent PRE1003/POST1008 plus scope24 static checks PASS. Scheduled worker31212 creationticks639281748627543350 observed live-to-terminal; mounted source/copy/sidecar agree 905397450bytes SHAffdd11a9886bdc6c983f60e3ac0925cf1e7cb8767c95b13d88f2c9722652419f; Ready0/noWorkers/noPending/sameLastRun guarded hash window. ProofSHAc2a4380acc3cd8448979b2d0a703a96df2f72e4e8aef1ccc2cf7c4451be5f929;terminalhandoffSHA9798ababd0a7674a52f61864c2f40c374bbe61b5f0eeddb932e3d4dc2bc1de99. Remote cloud sync not observed. RETAIN/directBR0233REFERENCE47MEDIUM23/0/7/10/7/unpooled/NO_INHERITED_EFFECT0/no newfinding/remediation/status/rating/runtime/saving/product-test-helper changes or execution/staging/commit. Next0521 locator plan_gq2_0521_remaining_test_sources_20261021.md; broader queue/sweeps/preflights/investigations/current-head supplement/closure remain;goalactive

@@ -1,0 +1,35 @@
+# Chunk0519 remaining test sources, 2026-10-21
+
+Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Locator only; start after0518 mounted Drive proof closes publication. No assigned source credit
+
+- [x] Read exact assigned frozen bodies/hunks/removals and current enclosing bodies/deltas
+- [x] Trace actual dependency/release/installer helper and suite consumers
+- [x] Reconcile whole existing owners, prior plans and raw quality dispositions
+- [x] Derive direct unpooled disposition and conditional continuation
+- [x] Publish exact evidence, independently replay and verify mounted Drive backup
+
+### GQ2-CHUNK-0519
+
+- `android/tests/test_get_deps_runtime_updates.ps1`: diff hunks1-12, newL12-L235
+- `android/tests/test_github_release.ps1`: L1-L595
+- `android/tests/test_gog_installer_d1_unified.ps1`: diff hunks1-2, newL8-L50
+- `android/tests/test_gog_installer_redbook_unified.ps1`: diff hunks1-3, newL8-L157
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef/originalfb555eec75e1ed12c8348805ab335afb4c721b06. Revalidate actual assignment, HEAD/current sources and existing owners before credit. Hunk locators are not contiguous assigned ranges
+
+Retain desktop parity, native format authority, independent real assertions and handmade comments. No product/test/helper edits or execution, builds/tests/imports, formatter/generator, device/network/media/security/resource/allocation/fault probes, staging or commit. Broader queue/preflights/sweeps/investigations/current-head supplement/closure remain; goal active
+
+
+0519 source gate complete20261021: plan_gq2_0519_source_checkpoint_20261021.md;4paths810reviewlines=595wholeaddition+17completeU0hunks198added17removed/wholefrozen1124-current1205/threeequal1later/allabsent1996. EvidenceSHA0f28ef07905170bc4e643cb30346320c612c5c1174f1ff1fc3cbd02a6fabd1a8;independentstaticPASS141auditSHAa4462de9c0d90e59cfed99f77564a1cd0633d7ba55559870f43598d89e543097. Preserve actualupdater/synchronizer/privatecopy/comment checks and realGit-releaseorchestration/realAPKverifier with narrow mocks; no real signing/Gradle/GitHub/installer runtime claim. Actualhelper/JSONC/suite/budget/wholeowners/disposition/publication/Drive remain. HEAD/all4assigned/all5canonical unchanged/sourcegateonly/0519TODO/canonical518DONE109TODO627/326findings312remediations. No newfinding/status/rating/runtime/saving/productexecution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0519 consumer ingress20261021: plan_gq2_0519_consumer_ingress_checkpoint_20261021.md;24contexts1499range-lines/6wholefiles. EvidenceSHAac8906a552269f6b13a2f89a0ac367c52a7d6bed9acf44910996a01cf815ff3f;independentstaticPASS143auditSHA571978f5a56e0b4dab674074f298d128824db3ec9cb9e2ce308f41d4d9d42747. ActualJDKentry prewritesJDK_VERSION before metadata function; isolateddictionaryfixture doesnotprove wholeentry manifest preservation/unadmitted pendingowners. Preserve FluidSynth6pinFile.Replace, stagedJDK/runtimechecks, realAPKverifier, checkedrelease tools and verifiedpushsize-SHA/SkipPush. Suiteclassification and parent420/defaultlauncher600 budgetlocators require actualdispatch reconciliation. HEAD/all4assigned/all5canonical unchanged/sourcegateonly/consumeropen/0519TODO/canonical518DONE109TODO627/326findings312remediations. Remainingrelease/packaging/installerJSONC-command-lifecycle/updateractions/wholeowners/disposition/publication/Drive. No newfinding/status/rating/runtime/saving/productexecution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0519 consumer gate complete20261021: plan_gq2_0519_consumer_completion_checkpoint_20261021.md;34freshcontexts2072range-lines/2wholeJSONC+24exactcurrent1499=58contexts3571range-lines/all4consumerinventory/whole487releaseunion/2wholeBRlocators. EvidenceSHAb098e54d02c34dd9bed571b97e589736c54f0a71d9a19464ad463a7f91c7d31a;independentstaticPASS205auditSHAa8aee33e2247eab0b7e699062e2b0ab137024494f0a453ce777119f422c7fc42. Preserve actualrun_test finally/exitcleanup and runID-completeness;remaining truthful independentcleanup distinct. ActualbothD2variantsaudio checks retained despite stalepkgcomment. CurrentexactJDKURL-digests/runtime repair retained; prewrite/multipinpublication existingBR0579. Actualinstallerparent420/noaddedargs vs defaultlauncher600 existingBR0658. HEAD/all4assigned/all5canonical unchanged/source+consumergatesclosed/3lateropen/0519TODO/canonical518DONE109TODO627/326findings312remediations. Wholeowners/priors/rawquality/directdisposition/publication/Drive and broadgoal remain;no newfinding/status/rating/runtime/saving/productexecution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0519 reconciliation/disposition complete20261021: plan_gq2_0519_existing_owner_continuation_20261021.md and plan_gq2_0519_synthesis_20261021.md;14wholeBRowners7fresh2consumer5exactqualifiedreuse/6wholepriors5fresh1qualifiedreuse/5physicalqualityrows/current58contexts/all4assigned. ReconciliationSHAbe9814e54de645f17d8410e0e23c7282c0b087b5405980db3bc91724c40f130b;independentstaticPASS205auditSHA22a5deadc2b026886f7653427559c8134f52b2b3180ae7ed748cfce20116fd54. RETAIN/directBR0579REFERENCE47MEDIUM23/0/4/10/10unpooled/NO_INHERITED_EFFECT0. JDKprewrite existing0579 and rejected-switchcleanup existingGQR0277 already0470;no newfinding. Preserve exactJDK/systemconfirmation/FluidSynth/realpackagedidentity/run_testfinally/completecorrelatedresults/verifiedpush/bothD2audio and archived0581-0646FIXED. Fouranalysisgatesclosed/publicationopen/0519TODO/canonical518DONE109TODO627/326findings312remediations unchanged. Next finalreport/flattenedsnapshot/proposed-publishedcanonicalreplay/observedtask and mountedDriveproof. No status/rating/runtime/saving/product-test-helper edits or execution/canonicalappend/Drivegeneration/staging/commit;goalactive
+
+
+0519 terminal publication complete20261021: all five gates closed. Canonical519DONE108TODO627/326findings312remediations/1335terminalranks; GQC1348/GQD1228. Exact six operations preserved all existing BR and GQF/GQR definitions, statuses and priorities; reportSHA3dffa1d3b16a8a361e30462083b6e886eace2a07afb432681019174b573ec7ff;snapshotSHA163dd21a08618b4f0caeede09ca84543f2fd8a283c55c7eb513e4672574a6104. Independent PRE1074/POST1079 plus scope17 static checks PASS. Scheduled worker23296 creationticks639281735330292570 observed live-to-terminal; mounted source/copy/sidecar agree 904856471bytes SHA8ce2d6819c1359bc55deda3e7387930808ec5bd2b9c5781a0e0d531a5d7e955d; Ready0/noWorkers/noPending/sameLastRun guarded hash window. ProofSHA89e7b53a54c3defe12f66e618c831fa322c151eec135b73aa4a3e27ce89b76f3;terminalhandoffSHA85a90f53c8340ec93ca1f0d717eda0698bb426f4ddb2f4baf19ec57f04e3bfce. Remote cloud sync not observed. RETAIN/directBR0579REFERENCE47MEDIUM23/0/4/10/10/unpooled/NO_INHERITED_EFFECT0/no newfinding/remediation/status/rating/runtime/saving/product-test-helper changes or execution/staging/commit. Next0520 locator plan_gq2_0520_remaining_test_sources_20261021.md; broader queue/sweeps/preflights/investigations/current-head supplement/closure remain;goalactive

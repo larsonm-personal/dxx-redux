@@ -44,6 +44,34 @@ Run `./android/0_upload_to_test.ps1` for the publishing menu:
 1. Build and upload to Play Store (default; Internal build, internal track)
 2. Build and release both Android APKs on GitHub
 3. Do both, with Play Store first and GitHub second
+4. Build Release and upload to closed testing (alpha)
+
+For each closed testing release, run:
+
+```powershell
+./android/0_upload_to_test.ps1 -Action 4
+```
+
+Option 4 uses Release signing and the existing `alpha` closed track. For a custom
+closed track, create it in Play Console first and pass `-Action 4 -TrackName NAME`.
+Use `-Action 4 -BuildOnly` to build locally without authentication or upload.
+The upload path queries all tracks and uploaded bundles before building to avoid
+reusing a version code from internal testing or a draft. Revision 9 requires a new
+commit; a checkout older than the uploaded commit count is rejected.
+
+One-time setup in Play Console: complete the store listing (including screenshots
+from the store asset pipeline), app content declarations, privacy policy, pricing
+and country availability. Under Testing > Closed testing > Alpha, configure the
+tester email list or Google Group and retain the opt-in link for testers. Keep
+`play-store-credentials.json`, `keystore.properties` and the upload keystore private.
+
+After upload, check Publishing overview and the Alpha release. The script requests
+a completed release; Google review or managed publishing may still delay tester
+availability. If Google requires `changesNotSentForReview`, the script reports that
+you must send changes for review in Console. A release left in draft makes the
+wrapper fail (the deploy helper exits with code 2) and requires completing setup
+and starting the rollout in Console. A
+successful API commit alone does not establish that testers can install it.
 
 Options 2 and 3 ask for the GitHub release version before work starts. Use
 `-Action 3 -ReleaseVersion 1.2.0 -BuildMode Unclean` to run both without prompts. `-BuildOnly` builds

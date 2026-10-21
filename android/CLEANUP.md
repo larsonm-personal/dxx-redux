@@ -375,3 +375,12 @@ invocation, an interrupted replacement restores its previous tools when needed
 and removes the abandoned transaction workspace. The PowerShell AVD producer runs
 this recovery before resolving `avdmanager`. This does not add recovery for
 sdkmanager's internal partial downloads or for other Windows dependency installers
+
+### Play Store assets
+
+Generated store media live in gitignored `android/store-assets/capture_<timestamp>/`,
+outside the default scratch roots. The workspace cleaner also excludes the entire
+tree, including logs and nested source workspaces. Temporary-file cleanup must
+preserve this tree.
+The store generator preserves all captures there, including across failed retries. Its disposable Python environment and dedicated AVD remain in
+`android/temp/store-assets-tools/`; removing those does not remove exported media.

@@ -881,6 +881,32 @@ def review(output):
                 f"<span>{html.escape(path.stem)} &middot; {w} &times; {h}</span></a>"
             )
         sections.append(f'<h2>{html.escape(title)}</h2><div class="grid">{"".join(cards)}</div>')
+    progress_table = ""
+    manifest = output / "live-stills.json"
+    if manifest.exists():
+        rows = []
+        for item in json.loads(manifest.read_text())["selections"]:
+            if "progress" not in item:
+                continue
+            counts = item["progress"]
+            values = [
+                str(counts["robots_killed"]),
+                f"{counts['hostages_rescued']}/{counts['hostages_total']}",
+                f"{counts['secrets_found']}/{counts['secrets_total']}",
+            ]
+            rows.append(
+                "<tr><td>"
+                + html.escape(item["file"])
+                + "</td>"
+                + "".join("<td>" + html.escape(value) + "</td>" for value in values)
+                + "</tr>"
+            )
+        if rows:
+            progress_table = (
+                "<h2>Verified native progress</h2><table cellpadding=10><tr><th>Screenshot</th><th>Robots destroyed</th><th>Hostages rescued</th><th>Secrets found</th></tr>"
+                + "".join(rows)
+                + "</table>"
+            )
     video = (
         '<video controls preload="metadata" src="store-preview-30s.mp4"></video>'
         if (output / "store-preview-30s.mp4").exists()
@@ -893,9 +919,14 @@ def review(output):
         "a{color:#ddd;text-decoration:none;background:#242232;border-radius:8px;overflow:hidden}img{width:100%;height:220px;object-fit:contain}"
         "span{display:block;padding:12px}video{width:100%;max-height:760px}p{color:#bbb;line-height:1.6}</style>"
         "<h1>DXX-Revival / store asset review</h1><p>Real Android captures. Click any image for the original PNG. "
-        "The 30-second video includes engine MIDI and sound effects: 9 seconds of setup, three 5-second demo excerpts, then 6 seconds of D1 fly-out. "
-        "The game display is preserved in full with padding for a 16:9 video.</p>"
+        + (
+            "The 30-second video includes engine MIDI and sound effects: 9 seconds of setup, three 5-second demo excerpts, then 6 seconds of D1 fly-out. "
+            "The game display is preserved in full with padding for a 16:9 video.</p>"
+            if video
+            else "The screenshots preserve the full rendered display. Fresh gameplay stills use authored scenes framed through engine automation; replay equivalence is reported separately.</p>"
+        )
         + video
+        + progress_table
         + "".join(sections)
         + "</html>"
     )

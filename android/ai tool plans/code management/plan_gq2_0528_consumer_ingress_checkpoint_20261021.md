@@ -1,0 +1,21 @@
+# Chunk 0528 consumer ingress, 2026-10-21
+
+Diagnosis and plans only. Source gate complete; consumer gate remains open. Thirteen fresh current contexts cover886 range-lines, including three whole helpers: wall-blast report validation, pinned public shareware resolution and dependency platform selection. Selected suite/master, host Java/Python selection, parity capture/controller and native trace dispatch ranges are qualified only for their saved scopes
+
+The parity path snapshots its harness/executables, stages assets, attempts native-a/native-repeat/imported captures and reports three separate comparison relationships. Its explicit coverage-gap report remains incomplete; it returns1 for a failed comparison or2 otherwise. Preserve that deliberate nonzero gate and its explicit suite classification. Neither the wrapper nor selected run logic establishes full-fidelity acceptance. Actual comparison schemas, harness/source/executable/asset staging and replay runner consumers remain to read
+
+Selected subprocess.run calls launch the capture and staged controller without a timeout argument. Passing a child timeout does not independently bound parent lifetime or final stream drain. This remains an observation for whole existing process/deadline owner reconciliation, not a new defect admission or observed hang
+
+The whole wall report requires five ordered elapsed phases0/8/24/25/31, matching edition/content game/mission/level and exploding-wall selection, exact shareware level/wall/clip, complete continuation frames, equal uninterrupted/restored states, both expected native-checkpoint byte-order names,134 rejected mutations per phase/source and legacy clearing. Native and imported uninterrupted traces must also agree. Native trace generation/serialization and focused helper controls remain open; source assertions are not runtime evidence
+
+The shareware helper checks source-manifest/import-oracle agreement, unique case-insensitive names, required size/hash, D2 retail-shadow conflicts and unexpected entries; resolution never downloads or installs. Current wrapper copies only required files and validates the staged directory. Preserve the public/retail distinction and exact profiles; no payload decoding occurred
+
+Dependency platform helpers distinguish Windows/Linux/macOS, exclude the Windows WSL launcher and inspect native Bash uname. Selected host code uses ordinary host Python with py -3 support, configured JDK major, explicit JAVA_HOME override and idempotent PATH insertion. Separate verified extraction runtime policy remains separate. Actual external process bounds, environment restoration and fixture-generator acceptance still require reconciliation
+
+Only selected suite/master declarations were read. Replay and wall probes require explicit caller configuration; declared outer allowances are1800 and300 seconds. Wrapper per-capture values and optional workload composition must be assessed through actual master dispatch before any timeout conclusion. No complete master review or implicit default-profile coverage is claimed
+
+Evidence: temp/general_cleanup_20261006/gq2-consumer-ingress-0528-20261021.json, SHA256 adfa9cb1a2ee11dedbd18b21a75a10e3dd79af9ebca9ee4c3ff67cf6d4054638. Independent read-only PASS56 audit: temp/general_cleanup_20261006/gq2-consumer-ingress-audit-0528-20261021.json, SHA256 fe0ac6762ab10b87a5736b1bff768b7d4793c470611c11d421e4550f0291df2c.
+
+Next: production TGA layout/pixel/bitmap/batch transaction and external tools; native wall-blast trace and save/translation semantics; complete required replay comparison/staging/runner contexts; selected dependency preflight/Java/Python fixture consumers and Python test ownership. Then reconcile whole current owners/prior plans/physical quality rows, derive direct unpooled disposition and publish exact evidence with mounted Drive proof
+
+All six sources, all13 contexts, all five canonical files and HEAD unchanged. No new finding/status/rating/runtime/saving or canonical append/Drive generation. No product/test/helper edit or execution, builds/tests/import/generator/formatter, device/network/media/security/resource/allocation/fault probes, staging or commit. Chunk0528 TODO; canonical527 DONE/100 TODO/627 and327 findings/313 remediations. Broader closure work remains; goal active

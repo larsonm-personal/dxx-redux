@@ -1,0 +1,21 @@
+# Chunk 0529 consumer ingress checkpoint, 2026-10-21
+
+Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Source gate qualified separately by plan_gq2_0529_source_checkpoint_20261021.md. This checkpoint adds16 fresh current contexts1120 range-lines/nine whole files; consumer gate remains open for all seven assigned sources
+
+Whole current contexts: PCM standalone CMake, production pcm_ring.h, Android PCM runner, DOS MIDI parent runner, pickup report/schema helper, pickup host profile controls, pickup runtime parity wrapper, gameplay fixture process/staging helper and318-line MIDI comparator. Selected ranges cover native gameplay dispatcher, suite registration, actual pickup and sanitizer workflows, exporter/render CMake registration, ending and flyout generator callers. Exact ranges and hashes are in evidence; selected ranges do not qualify their entire containing files
+
+PCM Android wrapper configures Release with pinned NDK, checks configuration/build/push/native exit and removes the remote test afterward. Standalone -UNDEBUG preserves assertions. It is not proof of Android hardware execution or arbitrary multiwriter safety
+
+Pickup consumers check every ordered2112 case tuple, numeric acquired/released/followup state, loaded asset role/edition/mission and public bank identity. Host negative controls reject empty/missing/duplicate cases, incomplete state and substituted profiles. Runtime wrapper separately executes native/imported and admits ordinary D2 controls; selected native dispatcher loads the public first level and switches real D2 mission/bank before controlled fixtures. Preserve these repairs and the controlled-corridor qualification
+
+Gameplay helper stages and revalidates pinned public assets under a GUID generation outside source data. Its forced-stop followed by unbounded WaitForExit is an observation for whole existing process/cleanup owners, not an admitted new finding. Remaining native pickup order/powerup/quad semantics and shared staging/retirement owners must still be traced
+
+Whole MIDI comparator validates complete SMF tracks and explicit comparison duration, ordered channel messages, timing, effective note state and SysEx. It does not align sequences or stretch clocks. Parse/window exceptions propagate rather than satisfy a failing-comparison negative control. Actual parent requires synthetic CTest names before execution, bounds child processes, retains private diagnostics and atomically writes summary. Missing reference captures are SKIP2; SyntheticOnly is separately qualified synthetic scope. Remaining exporter/TML/renderer/fixture provenance, report publication and production ownership remain open
+
+Ending caller distinguishes built-in end.mve extraction from mission HOG and deliberately missing peer content; flyout explicitly requests esa.mve. No movie payload read or playback test ran. Remaining staging/native decode/runtime consumers and exact reused host-generator qualification remain open
+
+Selected engine-smoke workflow actually invokes Category Public under Xvfb, and public-save workflow invokes host pickup profile controls and both native/imported runtime binaries. This establishes source registration only. Full sanitizer callee inventory, platform builds, master deadlines/results and replay runner/asset/build consumers remain open
+
+Evidence: temp/general_cleanup_20261006/gq2-consumer-ingress-progress-0529-20261021.json, SHA2569ded84923f2de47f50f5f6779107b72dc8f4c879309a4ffa178795b1f3369aa0. Independent read-only PASS67 audit: temp/general_cleanup_20261006/gq2-consumer-ingress-audit-0529-20261021.json, SHA2561cfc620eb226ff9755777de3353a134b8aa863b334b14fd7879ea0f1afa8b542
+
+All seven assigned sources,16 consumer contexts, five canonical files and HEAD verified unchanged. Source gate only; chunk0529 TODO/canonical528 DONE99 TODO627/327 findings313 remediations unchanged. No new finding/status/rating/runtime/saving/canonical append/Drive generation/product-test-helper edit or execution/build/test/import/generator/formatter/device/network/media/security/resource/allocation/fault probe/staging/commit. Continue remaining consumers, whole owners/prior plans/raw quality rows/direct disposition/publication/Drive and broader closure; goal active
