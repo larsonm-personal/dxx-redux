@@ -146,6 +146,10 @@ class BridgeTest(unittest.TestCase):
         self.datagrams.send(b"after")
         self.assertEqual(b"after", self.datagrams.recv(4096))
         self.assertEqual(2, len(self.sources))
+        self.mode("pass", "readdress")
+        self.datagrams.send(b"new address")
+        self.assertEqual(b"new address", self.datagrams.recv(4096))
+        self.assertEqual({"127.0.0.1", "127.0.0.2"}, {address[0] for address in self.sources})
         self.client.sendall(b"control alive")
         self.assertEqual(b"control alive", self.client.recv(4096))
 

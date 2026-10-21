@@ -51,19 +51,19 @@ def run(control, ws_port, ws_upstream, udp_port, udp_upstream):
             if stamp != modified:
                 requested = json.loads(control.read_text())
                 assert requested.get("ws") in ("pass", "drop")
-                assert requested.get("udp") in ("pass", "drop", "impair", "rebind")
+                assert requested.get("udp") in ("pass", "drop", "impair", "rebind", "readdress")
                 mode = requested
                 modified = stamp
                 if mode["ws"] == "drop":
                     for stream in list(pairs):
                         if stream in pairs:
                             close(stream)
-                if mode["udp"] in ("drop", "rebind"):
+                if mode["udp"] in ("drop", "rebind", "readdress"):
                     pending.clear()
-                if mode["udp"] == "rebind":
+                if mode["udp"] in ("rebind", "readdress"):
                     for client, old in list(mappings.items()):
                         upstream = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        upstream.bind(("127.0.0.1", 0))
+                        upstream.bind(("127.0.0.2" if mode["udp"] == "readdress" else "127.0.0.1", 0))
                         upstream.connect(("127.0.0.1", udp_upstream))
                         upstream.setblocking(False)
                         sockets.add(upstream)

@@ -80,7 +80,7 @@ slot, proves surviving traffic beyond the relay timeout, and rejoins the departe
 slot with fresh routes. Host closure and final disconnect must retire rooms,
 relay leases, control sockets and client jobs/sockets. Logs alone and absent
 introspection cannot pass. The next matrix also exercises host/nonhost background/resume, short and long
-UDP-only loss, delay/duplication/reordering, source-port rebinding, WS-only loss
+UDP-only loss, delay/duplication/reordering, loopback address/port rebinding, WS-only loss
 and cancellation, and server restart followed by explicit fresh-game recovery.
 These new device cases require terminal receipts before being treated as qualified;
 internet NAT behavior remains a separate gate.
@@ -89,7 +89,8 @@ Retain the exact head SHA, Actions run ID and receipts before expanding the matr
 `loopback_fault_proxy.py` changes only owned loopback forwarding. Its atomic
 control file independently selects WS or UDP faults; per-client upstream UDP
 sockets preserve distinct endpoint identities. Impairment introduces deterministic
-loss, duplication, delay and reordering; rebinding changes upstream source ports.
+loss, duplication, delay and reordering; rebinding changes upstream source ports; the address-change case uses only the
+owned 127.0.0.2 loopback address.
 It never logs payloads or changes firewall/network configuration. Four owned-socket
 negative/positive controls in `test_loopback_fault_proxy.py` qualify the injector
 before the device owner runs. The public owner has a 1800-second budget and runs

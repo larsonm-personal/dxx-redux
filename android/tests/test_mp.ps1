@@ -998,8 +998,8 @@ try {
         Invoke-OnlineBackgroundResume
         Set-OnlineFault -Udp 'impair'
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'UDP delay loss duplication reordering'
-        Set-OnlineFault -Udp 'rebind'
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT source-port change'
+        Set-OnlineFault -Udp 'readdress'
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT address and port change'
         Set-OnlineFault -Udp 'drop'
         Start-Sleep -Seconds 2
         Set-OnlineFault
