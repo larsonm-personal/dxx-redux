@@ -815,6 +815,28 @@ object MatchmakingService {
         shutdownProxy()
     }
 
+    /** Aggregate Android test diagnostics; never includes keys, tokens or endpoint addresses */
+    @Synchronized
+    fun resourceDiagnostics(): Map<String, Any> =
+        mapOf(
+            "proxy_workers" to LocalhostProxy.activeWorkerCount(),
+            "candidate_socket" to (candidateSocket?.isClosed == false),
+            "upnp_mapping" to (upnpMapping != null),
+            "background_jobs" to (scope.coroutineContext[Job]?.children?.count { !it.isCompleted } ?: 0),
+            "game_state_updates" to gameStateUpdatesEnabled,
+            "peers" to (
+                localhostProxy?.getStats()?.map { peer ->
+                    mapOf(
+                        "slot" to peer.peerSlot,
+                        "sent" to peer.packetsSent,
+                        "received" to peer.packetsReceived,
+                        "bound" to peer.relayBound,
+                        "gameplay_received" to peer.gameplayReceived,
+                    )
+                } ?: emptyList()
+            ),
+        )
+
     private fun cleanupUpnp() {
         upnpMapping?.let { mapping ->
             scope.launch(Dispatchers.IO) {

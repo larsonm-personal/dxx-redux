@@ -228,3 +228,18 @@ completed successfully, including its APK/emulator setup and required selected-t
 reconciliation. Detailed artifact inspection is blocked in the local executor by
 blob-download access. That run used the preceding debug identity path; do not
 attribute it to the later installation identity or all-peer latejoin fixes.
+
+## Three-client native qualification gate
+
+The registered public campaign now requires three disposable emulators and real
+production installation proofs. Every client must report the exact native roster
+and advancing gameplay counters on every peer route, including non-host pairs.
+Middle-slot departure must preserve the surviving pair beyond the relay timeout;
+rejoin must reuse the stable slot with fresh routes. Host closure and disconnect
+must return server and Android network resources to zero. Sanitized case receipts
+are printed in CI logs as well as retained in artifacts.
+
+Local validation passed twelve host JVM tests, 69 planner tests, and scoped
+formatting. The extracted matrix oracle accepts valid three-peer traffic and
+stable slots 0/2, and rejects host-only, missing-native and keepalive-only evidence.
+The expanded native device campaign has not yet been qualified.

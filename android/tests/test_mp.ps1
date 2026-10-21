@@ -53,6 +53,10 @@ $EMU2 = $script:SECONDARY_EMULATOR_SERIAL  # Player 2 (joiner)
 $AVD_MAP = @{ $EMU1 = $script:PRIMARY_AVD_NAME; $EMU2 = $script:SECONDARY_AVD_NAME }
 $CALLSIGN1 = "HostPlt"
 $CALLSIGN2 = "JoinPlt"
+$EMU3 = 'emulator-5558'
+$CALLSIGN3 = 'LatePlt'
+$allTargets = @($EMU1, $EMU2)
+if ($PublicShareware) { $allTargets += $EMU3 }
 
 if ($PublicShareware) {
     $Game = 'd1'
@@ -126,6 +130,62 @@ function Test-AllLobbyPlayersReady {
     return $true
 }
 
+function Assert-OnlinePeerMatrix {
+    param([string[]]$Serials, [string[]]$Callsigns, [int[]]$Slots, [string]$Phase)
+    $baseline = @{}
+    $valid = Wait-ForCondition -Description $Phase -TimeoutSec 45 -PollMs 1000 -Condition {
+        foreach ($serial in $Serials) {
+            $game = Get-GameIntrospection -Serial $serial
+            $control = Get-MpIntrospection -Serial $serial
+            if (-not $game -or -not $game.in_game -or -not $game.is_network -or -not $control -or -not $control.PSObject.Properties['lobby']) { return $false }
+            $connected = @($game.multiplayer.players | Where-Object { $_.connected -eq 1 } | ForEach-Object { $_.callsign.ToLowerInvariant() } | Sort-Object)
+            $expected = @($Callsigns | ForEach-Object { $_.ToLowerInvariant() } | Sort-Object)
+            if (($connected -join ',') -cne ($expected -join ',')) { return $false }
+            $self = @($control.lobby.players | Where-Object { $_.player_id -eq $control.player_id })
+            if ($self.Count -ne 1) { return $false }
+            $ownSlot = $self[0].slot
+            $peers = @($control.online_resources.peers)
+            Write-Status "ONLINE_SAMPLE $Phase $serial connected=$($connected -join ',') own=$ownSlot peers=$((@($peers | ForEach-Object { "$($_.slot):$($_.gameplay_received)" })) -join ',')" 'Gray'
+            $expectedPeers = @($Slots | Where-Object { $_ -ne $ownSlot } | Sort-Object)
+            if ((@($peers.slot | Sort-Object) -join ',') -ne ($expectedPeers -join ',')) { return $false }
+            foreach ($peer in $peers) {
+                if (-not $peer.bound -or $peer.sent -le 0 -or $peer.gameplay_received -le 0) { return $false }
+                $key = "$serial/$($peer.slot)"
+                if (-not $baseline.ContainsKey($key)) {
+                    $baseline[$key] = @{ Sent = $peer.sent; Received = $peer.gameplay_received }
+                    return $false
+                }
+                if ($peer.sent -le $baseline[$key].Sent -or $peer.gameplay_received -le $baseline[$key].Received) { return $false }
+            }
+        }
+        return $true
+    }
+    if (-not $valid) { throw "Native online peer matrix failed: $Phase" }
+    Write-Status "ONLINE_EVIDENCE $Phase clients=$($Serials.Count) slots=$($Slots -join ',') every peer gameplay counter advanced" 'Green'
+}
+
+function Join-RunningOnlineGame {
+    param([string]$Serial, [string]$Callsign)
+    if (-not (Start-SetupActivity -Serial $Serial)) { throw "Late join launcher failed on $Serial" }
+    Send-MpCommand -Serial $Serial -Command 'set_callsign' -Extras @('--es', 'callsign', $Callsign)
+    Send-MpCommand -Serial $Serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
+    if (-not (Wait-ForCondition -Description 'Late join authenticated' -TimeoutSec 20 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $Serial
+                return $control -and $control.status -eq 'CONNECTED'
+            })) { throw 'Late join authentication failed' }
+    Send-MpCommand -Serial $Serial -Command 'refresh_lobbies'
+    if (-not (Wait-ForCondition -Description 'Running room visible' -TimeoutSec 15 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $Serial
+                return $control -and @($control.lobbies | Where-Object { $_.joinable }).Count -eq 1
+            })) { throw 'Running room unavailable for late join' }
+    Send-MpCommand -Serial $Serial -Command 'join_first_lobby'
+    if (-not (Wait-ForCondition -Description 'Late join launch assignment' -TimeoutSec 30 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $Serial
+                return $control -and $control.game_launch_pending
+            })) { throw 'Late join did not receive launch assignment' }
+    Send-MpCommand -Serial $Serial -Command 'launch_game'
+}
+
 function Cleanup {
     Write-Status "Cleaning up..."
     try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}
@@ -133,7 +193,7 @@ function Cleanup {
     # Force-stop the app on both emulators BEFORE killing the server.
     # Otherwise the relay dies first, the game detects a timeout ~15s later,
     # and shows "Host left the game!" dialogs.
-    foreach ($emu in @($EMU1, $EMU2)) {
+    foreach ($emu in $allTargets) {
         try {
             & $ADB -s $emu shell am force-stop $PACKAGE 2>&1 | Out-Null
         } catch {}
@@ -176,14 +236,14 @@ try {
     Write-Status "Both emulators online: $EMU1, $EMU2" "Green"
 
     if ($PublicShareware) {
-        # Validate BOTH disposable targets before resetting either one
-        foreach ($emu in @($EMU1, $EMU2)) {
+        # Validate ALL disposable targets before resetting any app state
+        foreach ($emu in $allTargets) {
             if ($emu -notmatch '^emulator-[0-9]+$' -or
                 (Adb-Dev-Timeout -Serial $emu -AdbArgs @('shell', 'getprop', 'ro.kernel.qemu') -Seconds 5) -ne '1') {
                 throw "Public online fixture requires disposable emulator targets"
             }
         }
-        foreach ($emu in @($EMU1, $EMU2)) {
+        foreach ($emu in $allTargets) {
             $cleared = Adb-Dev-Timeout -Serial $emu -AdbArgs @('shell', 'pm', 'clear', $PACKAGE) -Seconds 30
             if ($cleared -ne 'Success') { throw "Could not reset disposable emulator app state" }
             Adb-Dev-Timeout -Serial $emu -AdbArgs @('shell', 'run-as', $PACKAGE, 'mkdir', '-p', $script:DEFAULT_SET_DIR) -Seconds 10 | Out-Null
@@ -209,8 +269,8 @@ try {
     }
     Write-Status "Game data verified on both emulators" "Green"
 
-    # Clear state inherited from earlier single- or dual-emulator tests.
-    foreach ($emu in @($EMU1, $EMU2)) {
+    # Clear state inherited from earlier emulator tests
+    foreach ($emu in $allTargets) {
         Reset-DeviceGameState -Serial $emu
     }
 
@@ -387,7 +447,7 @@ try {
         "--es", "game", $Game,
         "--es", "mission", $MISSION,
         "--es", "mode", $MODE,
-        "--ei", "max_players", "2"
+        "--ei", "max_players", $(if ($PublicShareware) { "3" } else { "2" })
     )
 
     $lobbyCreated = Wait-ForCondition -Description "Player 1 in lobby" -TimeoutSec 10 -PollMs 750 -Condition {
@@ -820,12 +880,41 @@ try {
                 throw 'Public online fixture did not prove native D1 engine selection'
             }
         }
-        foreach ($emu in @($EMU2, $EMU1)) { Send-MpCommand -Serial $emu -Command 'disconnect' }
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
+        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3
+        Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
+        Send-MpCommand -Serial $EMU2 -Command 'disconnect'
+        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+        # Surviving native gameplay must outlive the departed peer's bind timeout
+        Start-Sleep -Seconds 12
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU3) -Callsigns @($CALLSIGN1, $CALLSIGN3) -Slots @(0, 2) -Phase 'middle-slot departure preserves survivors'
+        Join-RunningOnlineGame -Serial $EMU2 -Callsign $CALLSIGN2
+        Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'middle-slot reconnect with fresh routes'
+        Send-MpCommand -Serial $EMU1 -Command 'disconnect'
+        foreach ($emu in @($EMU2, $EMU3)) {
+            if (-not (Wait-ForCondition -Description 'Host closure retires client routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                        $control = Get-MpIntrospection -Serial $emu
+                        return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0 -and @($control.online_resources.peers).Count -eq 0
+                    })) { throw 'Host closure left active client routes' }
+        }
+        Write-Status 'ONLINE_EVIDENCE host closure retired both surviving clients' 'Green'
+        foreach ($emu in @($EMU3, $EMU2, $EMU1)) { Send-MpCommand -Serial $emu -Command 'disconnect' }
+
         $clean = Wait-ForCondition -Description 'No orphan online rooms, leases or sockets' -TimeoutSec 15 -PollMs 250 -Condition {
             $status = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
             return $status.rooms -eq 0 -and $status.relay_sessions -eq 0 -and $status.pending_and_authenticated_sockets -eq 0
         }
         if (-not $clean) { throw 'Online cleanup did not return owned server resources to baseline' }
+        foreach ($emu in $allTargets) {
+            $retired = Wait-ForCondition -Description 'Client jobs and sockets retired' -TimeoutSec 15 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $emu
+                if (-not $control) { return $false }
+                $resources = $control.online_resources
+                return $control -and $resources.proxy_workers -eq 0 -and $resources.background_jobs -eq 0 -and -not $resources.candidate_socket -and -not $resources.upnp_mapping -and -not $resources.game_state_updates
+            }
+            if (-not $retired) { throw 'Client resources did not return to baseline' }
+        }
+        Write-Status 'ONLINE_EVIDENCE zero rooms, relay leases, control sockets and client network workers' 'Green'
     }
 
     # -- Results --

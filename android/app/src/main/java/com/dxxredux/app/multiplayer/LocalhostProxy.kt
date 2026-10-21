@@ -51,6 +51,7 @@ data class PeerProxyStats(
     val bytesSent: Long,
     val bytesReceived: Long,
     val relayBound: Boolean = true,
+    val gameplayReceived: Long = 0,
 )
 
 class LocalhostProxy(
@@ -59,6 +60,14 @@ class LocalhostProxy(
     private val allowDynamicPeers: Boolean = false,
     private val onFailure: (String) -> Unit = {},
 ) {
+    companion object {
+        private val activeWorkers =
+            java.util.concurrent.atomic
+                .AtomicInteger()
+
+        fun activeWorkerCount(): Int = activeWorkers.get()
+    }
+
     private val diagnosticId = ProxyDiagnostics.nextId()
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId")
     private val peerProxies = mutableListOf<PeerProxy>()
@@ -107,6 +116,7 @@ class LocalhostProxy(
     ): Job {
         val job =
             scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
+                activeWorkers.incrementAndGet()
                 try {
                     block()
                     if (!stopped.get() && !expectedStop()) throw IOException("$name stopped unexpectedly")
@@ -119,9 +129,12 @@ class LocalhostProxy(
                         shutdown()
                         onFailure("Network forwarding stopped: ${e.message ?: name}. Return to the lobby and retry.")
                     }
+                } finally {
+                    activeWorkers.decrementAndGet()
                 }
             }
         jobs.add(job)
+        job.invokeOnCompletion { synchronized(this) { jobs.remove(job) } }
         if (started) job.start()
         return job
     }
@@ -361,7 +374,7 @@ class LocalhostProxy(
         val socket = sharedRealSocket ?: return
         lateJoinProbeActive.set(true)
         val token = java.security.SecureRandom().nextInt()
-        scope.launch(Dispatchers.IO) {
+        launchWorker("late-join probes", { true }) {
             for (addrStr in addrs) {
                 val parts = addrStr.split(":")
                 if (parts.size != 2) continue
@@ -393,7 +406,7 @@ class LocalhostProxy(
         // C10: close sockets first to unblock receive() calls, then cancel jobs
         for (proxy in peerProxies) proxy.close("proxy shutdown")
         sharedRealSocket?.close()
-        for (job in jobs) job.cancel()
+        for (job in jobs.toList()) job.cancel()
         jobs.clear()
         peerJobs.clear()
         peerIdentities = emptyMap()
@@ -491,6 +504,7 @@ private class PeerProxy(
             bytesReceived,
             relayBound =
                 relay?.bound ?: true,
+            gameplayReceived = pdataForwarded + mdataForwarded,
         )
 
     suspend fun run() {

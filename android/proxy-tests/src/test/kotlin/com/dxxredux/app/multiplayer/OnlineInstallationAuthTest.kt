@@ -161,6 +161,11 @@ class OnlineInstallationAuthTest {
                         status.contains("\"relay_sessions\":0")
                 }
             }
+            waitUntil {
+                val resources = service.resourceDiagnostics()
+                resources["background_jobs"] == 0 && resources["proxy_workers"] == 0 &&
+                    resources["candidate_socket"] == false
+            }
         } finally {
             MatchmakingService.disconnect()
             process.destroy()

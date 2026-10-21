@@ -444,7 +444,7 @@ jobs:
           $avds = @(@{ Name = 'Nexus5X_Light_1'; Serial = 'emulator-5554' })
           if ($env:SWEEP_LANE -eq 'android-dual') { $avds += @{ Name = 'Nexus5X_Light_2'; Serial = 'emulator-5556' } }
           $experimentalThird = $env:DXX_RECOVERY_CHECKS -eq 'true' -and (-not $env:DXX_RECOVERY_CASES -or $env:DXX_RECOVERY_CASES -match '(^|,)three-player(-lost)?(,|$)')
-          if ($env:DXX_SELECTED_THREE_EMULATORS -eq 'true' -or $experimentalThird) {
+          if ('${{ steps.selection.outputs.online_preview }}' -eq 'true' -or $env:DXX_SELECTED_THREE_EMULATORS -eq 'true' -or $experimentalThird) {
             $avds += @{ Name = 'Nexus5X_Light_3'; Serial = 'emulator-5558' }
             'DXX_THIRD_EMULATOR_SERIAL=emulator-5558' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
@@ -509,6 +509,24 @@ jobs:
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane "$SWEEP_LANE" --output "$GITHUB_WORKSPACE/results" "${reason[@]}"
+      - name: Report sanitized online qualification receipt
+        if: always() && steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import json, pathlib
+          receipt = pathlib.Path('results/results.json')
+          if receipt.exists():
+              data = json.loads(receipt.read_text())
+              print(json.dumps({'target_sha': data.get('target_sha'), 'results': [
+                  {k: row.get(k) for k in ('id', 'status', 'reason')} for row in data.get('results', [])
+              ]}))
+          log = pathlib.Path('target/temp/mp_test_log.txt')
+          if log.exists():
+              for line in log.read_text(errors='replace').splitlines():
+                  if 'ONLINE_EVIDENCE ' in line or 'ONLINE_SAMPLE ' in line or 'ALL CHECKS PASSED' in line:
+                      print(line)
+          PYTHON
       - name: Collect emulator diagnostics
         if: always() && inputs.lane != 'jvm'
         shell: bash

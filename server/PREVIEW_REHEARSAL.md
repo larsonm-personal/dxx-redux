@@ -42,7 +42,7 @@ gh workflow run nightly-tooling-sweep.yml --ref online-restoration -f campaign=o
 
 It selects only `test_mp_public_shareware`, builds the matching locked server
 with the repository-pinned Rust version, and stages hash-verified public D1
-shareware onto two verified disposable emulators. The runner owns loopback WS,
+shareware onto three verified disposable emulators. The runner owns loopback WS,
 HTTP, STUN and authenticated relay listeners with a synthetic in-memory database.
 It uses the production installation challenge/proof path with development
 authentication disabled. The preceding host test runs the actual Android service
@@ -50,11 +50,13 @@ against the real local server with a deterministic test key. This is not a GPGS
 provider or public TLS deployment qualification. Occupied test ports fail rather than killing unrelated
 processes, and this public variant makes no firewall changes.
 
-Pass requires actual native D1 engine selection, live network gameplay with both
-connected callsigns on each client, a bounded gameplay soak, then zero rooms,
-relay leases and control sockets after explicit disconnect. Logs alone and absent
-introspection cannot pass. This initial two-client campaign does not establish
-three-client late join, mobile background recovery or internet NAT behavior.
+Pass requires actual native D1 engine selection and advancing native gameplay
+counters on every peer link. The campaign adds a third client, removes the middle
+slot, proves surviving traffic beyond the relay timeout, and rejoins the departed
+slot with fresh routes. Host closure and final disconnect must retire rooms,
+relay leases, control sockets and client jobs/sockets. Logs alone and absent
+introspection cannot pass. Mobile background recovery and internet NAT behavior
+remain separate gates.
 Retain the exact head SHA, Actions run ID and receipts before expanding the matrix.
 
 ## Private staging prerequisites
