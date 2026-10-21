@@ -258,3 +258,21 @@ produce visible terminal cleanup; explicit new games must then carry native
 traffic. Cancellation must leave no jobs or sockets after the fault is lifted,
 without using another disconnect to hide a retry. The native packet oracle is
 bound to both D1/D2 header constants; the old classifier demonstrably fails it.
+
+## Native launch roster correction
+
+Retained receipts recovered through the read-only CI inspector confirm b607655
+completed native D1 level one with both callsigns and zero final server resources,
+using development identities. The production-identity run25008c66 authenticated
+both actual Android clients and admitted them into the native selection menu, but
+never entered the level: capacity was three while only two players were selected.
+Native auto-host incorrectly used room capacity as its launch roster threshold.
+
+The launcher now passes the assigned initial roster size separately through JNI;
+both engines use that threshold for automatic start while retaining room capacity
+for late join. LAN defaults retain their existing capacity threshold. The shared
+startup regression passes in both game configurations; thirteen JVM tests pass.
+Native APK/gameplay qualification of this correction remains pending. Fault cases
+now follow the complete initial three-client lifecycle so they cannot obscure its
+result. The later acceleration warning is not used to explain the earlier menu
+wait; it occurred after the test had failed and cleaned up.

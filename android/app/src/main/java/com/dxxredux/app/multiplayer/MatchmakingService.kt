@@ -1266,6 +1266,7 @@ object MatchmakingService {
                 difficulty = gs.gameInfo["difficulty"]?.jsonPrimitive?.intOrNull ?: 1,
                 levelNum = gs.currentLevel ?: gs.gameInfo["level_num"]?.jsonPrimitive?.intOrNull ?: 1,
                 maxPlayers = gs.maxPlayers,
+                startPlayers = gs.peers.size + 1,
                 yourSlot = gs.yourSlot,
                 isHost = isHost,
                 peers = gs.peers,

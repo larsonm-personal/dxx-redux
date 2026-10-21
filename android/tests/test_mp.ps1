@@ -995,15 +995,6 @@ try {
             }
         }
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
-        Invoke-OnlineBackgroundResume
-        Set-OnlineFault -Udp 'impair'
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'UDP delay loss duplication reordering'
-        Set-OnlineFault -Udp 'readdress'
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT address and port change'
-        Set-OnlineFault -Udp 'drop'
-        Start-Sleep -Seconds 2
-        Set-OnlineFault
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'short UDP-only loss recovery'
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
         Send-MpCommand -Serial $EMU2 -Command 'disconnect'
@@ -1039,6 +1030,15 @@ try {
         }
         Write-Status 'ONLINE_EVIDENCE zero rooms, relay leases, control sockets and client network workers' 'Green'
         Start-OnlineRecoveryGame
+        Invoke-OnlineBackgroundResume
+        Set-OnlineFault -Udp 'impair'
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'UDP delay loss duplication reordering'
+        Set-OnlineFault -Udp 'readdress'
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT address and port change'
+        Set-OnlineFault -Udp 'drop'
+        Start-Sleep -Seconds 2
+        Set-OnlineFault
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'short UDP-only loss recovery'
         Set-OnlineFault -Udp 'drop'
         foreach ($serial in @($EMU1, $EMU2)) {
             if (-not (Wait-ForCondition -Description 'UDP outage visible terminal state' -TimeoutSec 25 -PollMs 500 -Condition {

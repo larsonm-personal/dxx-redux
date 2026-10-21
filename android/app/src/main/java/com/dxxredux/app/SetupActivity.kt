@@ -2824,6 +2824,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_mission", info.mission)
             mpIntent.putExtra("mp_game_mode", NetworkConstants.gameModeToInt(info.mode))
             mpIntent.putExtra("mp_max_players", info.maxPlayers)
+            mpIntent.putExtra("mp_start_players", info.startPlayers)
             mpIntent.putExtra("mp_level_num", info.levelNum)
             mpIntent.putExtra("mp_difficulty", info.difficulty)
             mpIntent.putExtra("mp_coop_qol", info.coopQol)

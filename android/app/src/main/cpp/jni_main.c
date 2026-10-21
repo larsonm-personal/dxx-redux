@@ -1268,6 +1268,7 @@ extern int auto_host_my_port;
 extern char auto_host_mission[];
 extern int auto_host_mode;
 extern int auto_host_max_players;
+extern int auto_host_start_players;
 extern int auto_host_level_num;
 extern int auto_host_difficulty;
 extern int auto_host_coop_qol;
@@ -1341,7 +1342,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoJoin(JNIEnv *env, jobject thiz,
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
                                                      jint myPort, jstring jMission, jint mode,
-                                                     jint maxPlayers, jint levelNum, jint difficulty,
+                                                     jint maxPlayers, jint startPlayers, jint levelNum, jint difficulty,
                                                      jboolean coopQol,
                                                      jboolean duplicateEnergyShields,
                                                      jboolean fullDeathSpew,
@@ -1359,6 +1360,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	auto_host_my_port = (int) myPort;
 	auto_host_mode = (int) mode;
 	auto_host_max_players = (int) maxPlayers;
+	auto_host_start_players = (int) startPlayers;
 	auto_host_level_num = (int) levelNum;
 	auto_host_difficulty = (int) difficulty;
 	auto_host_coop_qol = coopQol ? 1 : 0;

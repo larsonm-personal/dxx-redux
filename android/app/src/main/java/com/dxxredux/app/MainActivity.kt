@@ -775,6 +775,7 @@ class MainActivity :
         mission: String,
         mode: Int,
         maxPlayers: Int,
+        startPlayers: Int,
         levelNum: Int,
         difficulty: Int,
         coopQol: Boolean,
@@ -1274,6 +1275,7 @@ class MainActivity :
             val mission = intent.getStringExtra("mp_mission") ?: "descent2"
             val mode = intent.getIntExtra("mp_game_mode", 0)
             val maxPlayers = intent.getIntExtra("mp_max_players", 4)
+            val startPlayers = intent.getIntExtra("mp_start_players", maxPlayers)
             val levelNum = intent.getIntExtra("mp_level_num", 1)
             val difficulty = intent.getIntExtra("mp_difficulty", 1)
             val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
@@ -1289,6 +1291,7 @@ class MainActivity :
                 mission,
                 mode,
                 maxPlayers,
+                startPlayers,
                 levelNum,
                 difficulty,
                 coopQol,

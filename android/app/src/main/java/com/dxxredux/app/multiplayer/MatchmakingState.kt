@@ -102,6 +102,8 @@ data class GameLaunchInfo(
     // Launcher-only LAN preparation barrier, scoped to the host's lobby and attempt
     val lanLobbyId: String? = null,
     val lanLaunchId: Long = 0L,
+    // Initial ready roster may be smaller than room capacity reserved for late join
+    val startPlayers: Int = maxPlayers,
 )
 
 data class MatchmakingState(

@@ -5568,7 +5568,7 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 	Assert(Network_status == NETSTAT_STARTING);
 #ifdef __ANDROID__
 	if (net_launcher_selection_deadline && timer_query() >= net_launcher_selection_deadline &&
-	    net_auto_start_when_full && N_players < Netgame.max_numplayers) {
+	    net_auto_start_when_full && N_players < auto_net_host_start_count(Netgame.max_numplayers)) {
 		net_launcher_selection_timed_out = 1;
 		STARTUP_SYNC_TRACE("initial_selection_timeout");
 		return -2;
@@ -5670,9 +5670,9 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 	 * menu fires EVENT_WINDOW_ACTIVATED on the main menu, which would
 	 * call check_auto_net() and re-enter the host flow if
 	 * auto_host_pending were still set. */
-	if (net_auto_start_when_full && N_players >= Netgame.max_numplayers) {
+	if (net_auto_start_when_full && N_players >= auto_net_host_start_count(Netgame.max_numplayers)) {
 		net_auto_start_when_full = 0;
-		MPDIAG("auto-start: N_players=%d max=%d, closing select_players\n", N_players, Netgame.max_numplayers);
+		MPDIAG("auto-start: N_players=%d expected=%d max=%d, closing select_players\n", N_players, auto_net_host_start_count(Netgame.max_numplayers), Netgame.max_numplayers);
 		newmenu_set_rval(menu, nitems - 1);
 		window_close(newmenu_get_window(menu));
 		return 0;
