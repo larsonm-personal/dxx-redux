@@ -20,6 +20,16 @@ sourceSets.test.kotlin {
     include '**/RelayTransportTest.kt'
     include '**/MatchmakingDiagnosticsTest.kt'
     include 'com/dxxredux/app/multiplayer/MatchmakingDiagnostics.kt'
+    include 'com/dxxredux/app/multiplayer/MatchmakingService.kt'
+    include 'com/dxxredux/app/multiplayer/MatchmakingState.kt'
+    include 'com/dxxredux/app/multiplayer/StunClient.kt'
+    include 'com/dxxredux/app/multiplayer/ConnectivityChecker.kt'
+    include 'com/dxxredux/app/multiplayer/UpnpClient.kt'
+    include '**/HostAndroid*.kt'
+    include 'android/app/Activity.kt'
+    include 'android/widget/Toast.kt'
+    include 'com/dxxredux/app/BuildConfig.kt'
+    include '**/MatchmakingServiceFlowTest.kt'
     include 'com/dxxredux/app/multiplayer/NetworkProtocol.kt'
     include 'com/dxxredux/app/multiplayer/MissionContentProtocol.kt'
     include 'com/dxxredux/app/MissionContentIdentity.kt'
@@ -61,6 +71,7 @@ fun createHistoricalProxy(scope: CoroutineScope, socket: DatagramSocket, localPo
 if (compareHistory) tasks.named('compileTestKotlin') { dependsOn 'prepareHistoricalProxy' }
 
 dependencies {
+    testImplementation "com.squareup.okhttp3:okhttp:${toolVersions['OKHTTP_VERSION']}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"

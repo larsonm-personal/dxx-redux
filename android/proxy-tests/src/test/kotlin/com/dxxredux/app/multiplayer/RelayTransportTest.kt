@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertArrayEquals
@@ -235,4 +236,157 @@ class RelayTransportTest {
         val replacement = RelayTransport(42u, 0, 2, freshKey(), freshKey())
         assertNotNull(replacement.encode(RelayTransport.BIND, ByteArray(16)))
     }
+
+    @Test(timeout = 25_000)
+    fun middleSlotDeparturePreservesSurvivorAndFreshSlotReuse() =
+        runBlocking {
+            val owner = SupervisorJob()
+            val scope = CoroutineScope(owner + Dispatchers.IO)
+            val network = DatagramSocket(0, loopback)
+            val failed = kotlinx.coroutines.CompletableDeferred<String>()
+            val proxy = LocalhostProxy(scope, network, onFailure = { failed.complete(it) })
+            val ports = listOf(1, 2).associateWith { DatagramSocket(0, loopback).use { socket -> socket.localPort } }
+            val remotes = java.util.concurrent.ConcurrentHashMap<UInt, RelayTransport>()
+            val proven =
+                java.util.concurrent.ConcurrentHashMap
+                    .newKeySet<UInt>()
+            val server = DatagramSocket(0, loopback)
+            server.soTimeout = 250
+
+            fun add(
+                slot: Int,
+                token: UInt,
+            ) {
+                val uplink = freshKey()
+                val downlink = freshKey()
+                remotes[token] = RelayTransport(token, slot, 0, downlink, uplink)
+                proxy.addPeer(
+                    PeerProxyConfig(
+                        slot,
+                        ports.getValue(slot),
+                        InetSocketAddress(loopback, server.localPort),
+                        true,
+                        token,
+                        slot,
+                        0,
+                        uplink,
+                        downlink,
+                    ),
+                )
+            }
+            try {
+                scope.launch {
+                    while (kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]?.isActive == true) {
+                        val packet =
+                            try {
+                                receive(server)
+                            } catch (
+                                _: SocketTimeoutException,
+                            ) {
+                                continue
+                            } catch (e: java.net.SocketException) {
+                                if (!owner.isActive) break else throw e
+                            }
+                        val token =
+                            java.nio.ByteBuffer
+                                .wrap(
+                                    packet.data,
+                                    4,
+                                    4,
+                                ).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                                .int
+                                .toUInt()
+                        val remote = remotes[token] ?: continue
+                        val decoded = remote.decode(packet.data, packet.length) ?: continue
+                        val address = InetSocketAddress(packet.address, packet.port)
+                        when (decoded.kind) {
+                            RelayTransport.BIND -> {
+                                send(
+                                    server,
+                                    address,
+                                    remote.encode(
+                                        if (token in proven) RelayTransport.BOUND else RelayTransport.CHALLENGE,
+                                        if (token in proven) byteArrayOf() else ByteArray(16) { 7 },
+                                    ),
+                                )
+                            }
+
+                            RelayTransport.PROOF -> {
+                                proven.add(token)
+                                send(server, address, remote.encode(RelayTransport.BOUND, byteArrayOf()))
+                            }
+
+                            RelayTransport.DATA -> {
+                                send(server, address, remote.encode(RelayTransport.DATA, decoded.payload))
+                            }
+                        }
+                    }
+                }
+                proxy.reconcileRoster(mapOf(1 to "departing", 2 to "survivor"))
+                add(1, 101u)
+                add(2, 102u)
+                proxy.start()
+
+                suspend fun bound(count: Int) {
+                    withTimeout(4000) {
+                        while (proxy.getStats().size != count ||
+                            proxy.getStats().any { !it.relayBound }
+                        ) {
+                            kotlinx.coroutines.delay(10)
+                        }
+                    }
+                }
+                bound(2)
+                proxy.reconcileRoster(mapOf(2 to "survivor"))
+                remotes.remove(101u)
+                withTimeout(2000) {
+                    while (true) {
+                        try {
+                            DatagramSocket(ports.getValue(1), loopback).use { assertTrue(it.isBound) }
+                            break
+                        } catch (
+                            _: java.net.BindException,
+                        ) {
+                            kotlinx.coroutines.delay(5)
+                        }
+                    }
+                }
+                assertEquals(listOf(2), proxy.getStats().map { it.peerSlot })
+                DatagramSocket(NetworkConstants.ENGINE_PORT, loopback).use { engine ->
+                    engine.soTimeout = 2000
+
+                    fun roundTrip(slot: Int) {
+                        val payload = byteArrayOf(0x22, slot.toByte(), 0x33)
+                        send(engine, InetSocketAddress(loopback, ports.getValue(slot)), payload)
+                        val received = receive(engine)
+                        assertArrayEquals(payload, received.data.copyOf(received.length))
+                    }
+                    val deadline = System.nanoTime() + 11_000_000_000L
+                    while (System.nanoTime() < deadline) {
+                        roundTrip(2)
+                        kotlinx.coroutines.delay(200)
+                    }
+                    assertTrue("Departed peer failed the surviving proxy", !failed.isCompleted)
+                    assertTrue(!network.isClosed)
+                    proxy.reconcileRoster(mapOf(1 to "replacement", 2 to "survivor"))
+                    add(1, 103u)
+                    bound(2)
+                    roundTrip(1)
+                    roundTrip(2)
+                    // Identity changes at the same stable slot retire the old route immediately
+                    proxy.reconcileRoster(mapOf(1 to "replacement-again", 2 to "survivor"))
+                    add(1, 104u)
+                    bound(2)
+                    roundTrip(1)
+                    roundTrip(2)
+                    assertTrue(!failed.isCompleted)
+                }
+            } finally {
+                proxy.shutdown()
+                scope.cancel()
+                server.close()
+                network.close()
+                withTimeout(2000) { owner.join() }
+            }
+        }
 }

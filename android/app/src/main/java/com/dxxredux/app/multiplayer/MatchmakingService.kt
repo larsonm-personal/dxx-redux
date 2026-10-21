@@ -236,6 +236,10 @@ object MatchmakingService {
                     }
                 }
             }
+        state.state.value.currentLobby?.let { lobby ->
+            val ownId = state.state.value.playerId
+            proxy.reconcileRoster(lobby.players.filter { it.playerId != ownId }.associate { it.slot to it.playerId })
+        }
         return proxy
     }
 
@@ -1351,6 +1355,16 @@ object MatchmakingService {
                 is ServerMessage.LobbyUpdated -> {
                     val update = msg.data
                     val myId = state.state.value.playerId
+                    val previousRoom =
+                        state.state.value.currentLobby
+                            ?.lobbyId
+                    if (previousRoom != null && previousRoom != update.lobbyId) retireNetworkWork()
+                    localhostProxy?.reconcileRoster(
+                        update.players.filter { it.playerId != myId }.associate {
+                            it.slot to
+                                it.playerId
+                        },
+                    )
                     // First player in the list is the host
                     val hostId = update.players.firstOrNull()?.playerId
                     val isHost = myId != null && myId == hostId
@@ -1579,7 +1593,8 @@ object MatchmakingService {
                     if (resp.success && resp.lobbyId != null) {
                         state.appendLog("Joining friend's lobby: ${resp.lobbyId}")
                         NetLog.log("SOCIAL", "Joining friend's lobby: ${resp.lobbyId}")
-                        joinLobby(resp.lobbyId)
+                        // The server already joined this room and follows with LOBBY_UPDATE
+                        lastLobbyId = null
                     } else {
                         state.appendLog("Cannot join friend's game: ${resp.reason ?: "unknown"}")
                         NetLog.log("ERROR", "Cannot join friend's game: ${resp.reason ?: "unknown"}")

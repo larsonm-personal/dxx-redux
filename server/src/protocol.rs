@@ -396,6 +396,7 @@ pub struct LobbyInfo {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct LobbyPlayerInfo {
+    pub slot: u8,
     pub player_id: Uuid,
     pub callsign: String,
     pub ready: bool,

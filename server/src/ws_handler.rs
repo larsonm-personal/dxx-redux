@@ -43,6 +43,7 @@ fn build_lobby_update(lobby: &Lobby) -> ServerMessage {
         .players
         .iter()
         .map(|p| LobbyPlayerInfo {
+            slot: p.slot,
             player_id: p.player_id,
             callsign: p.callsign.clone(),
             ready: p.ready,
@@ -1992,6 +1993,7 @@ fn handle_authenticated_message(
                     let relay_addr = state.config.relay_public_addr.clone();
                     let mut relay_tokens: std::collections::HashMap<(u8, u8), u32> =
                         std::collections::HashMap::new();
+                    let mut direct_addresses = std::collections::HashMap::new();
                     let mut relay_limit_hit = false;
                     for i in 0..lobby.players.len() {
                         for j in (i + 1)..lobby.players.len() {
@@ -2009,13 +2011,20 @@ fn handle_authenticated_message(
                                 || (conn_type == crate::lobby::ConnectionType::DirectLan
                                     && !confirmed_direct(&lobby.players[i].connection_type)
                                     && !confirmed_direct(&lobby.players[j].connection_type));
-                            let conn_type = if force_or_downgrade_to_relay && !relay_addr.is_empty()
-                            {
-                                crate::lobby::ConnectionType::Relay
-                            } else {
-                                conn_type
-                            };
-                            if conn_type == crate::lobby::ConnectionType::Relay {
+                            let addr_i = best_candidate_addr_for_type(
+                                &lobby.players[i].candidates,
+                                &conn_type,
+                            );
+                            let addr_j = best_candidate_addr_for_type(
+                                &lobby.players[j].candidates,
+                                &conn_type,
+                            );
+                            let requires_relay = force_or_downgrade_to_relay
+                                || conn_type == crate::lobby::ConnectionType::Relay
+                                || addr_i.is_empty()
+                                || addr_j.is_empty();
+                            direct_addresses.insert((i as u8, j as u8), (addr_i, addr_j));
+                            if requires_relay {
                                 let pair = RelayPair {
                                     slot_a: lobby.players[i].slot,
                                     slot_b: lobby.players[j].slot,
@@ -2026,10 +2035,9 @@ fn handle_authenticated_message(
                                     Some(token) => {
                                         relay_tokens.insert((i as u8, j as u8), token);
                                     }
-                                    None if !relay_addr.is_empty() => {
+                                    None => {
                                         relay_limit_hit = true;
                                     }
-                                    None => {}
                                 }
                             }
                         }
@@ -2071,103 +2079,21 @@ fn handle_authenticated_message(
                                 continue;
                             }
                             let other = &lobby.players[other_slot];
-                            let (conn_type, _) = determine_connection_type(
-                                &lobby.players[my_slot],
-                                &lobby.players[other_slot],
-                            );
-
-                            // Force relay when configured (e.g. emulator testing)
-                            let conn_type = if state.config.force_relay && !relay_addr.is_empty() {
-                                crate::lobby::ConnectionType::Relay
-                            } else {
-                                conn_type
-                            };
-
-                            // Downgrade unconfirmed DirectLan to Relay when relay
-                            // is available. "Same public IP" is a heuristic that
-                            // fails for emulators, containers, or CGNAT where two
-                            // peers share a public IP but can't reach each other's
-                            // host candidates. Downgrade if neither player confirmed
-                            // direct connectivity (both Unknown or Relay after probes).
-                            let confirmed_direct = |ct: &crate::lobby::ConnectionType| {
-                                !matches!(
-                                    ct,
-                                    crate::lobby::ConnectionType::Unknown
-                                        | crate::lobby::ConnectionType::Relay
-                                )
-                            };
-                            let conn_type = if conn_type == crate::lobby::ConnectionType::DirectLan
-                                && !relay_addr.is_empty()
-                                && !confirmed_direct(&lobby.players[my_slot].connection_type)
-                                && !confirmed_direct(&lobby.players[other_slot].connection_type)
-                            {
-                                info!(
-                                    my_slot,
-                                    other_slot,
-                                    "DirectLan unconfirmed by probes, downgrading to Relay"
-                                );
-                                crate::lobby::ConnectionType::Relay
-                            } else {
-                                conn_type
-                            };
-
-                            let mut is_relay = conn_type == crate::lobby::ConnectionType::Relay;
-
-                            // For direct: use winning candidate addr; for relay: use relay server
-                            let mut addr = if is_relay {
-                                relay_addr.clone()
-                            } else {
-                                best_candidate_addr_for_type(&other.candidates, &conn_type)
-                            };
-
-                            // If direct addr is empty, downgrade to relay
-                            if !is_relay && addr.is_empty() {
-                                warn!(
-                                    my_slot,
-                                    other_slot, "empty direct addr, downgrading to relay"
-                                );
-                                is_relay = true;
-                                addr = relay_addr.clone();
-
-                                // Allocate relay session for this downgraded pair if needed
-                                let (lo, hi) = if my_slot < other_slot {
-                                    (my_slot as u8, other_slot as u8)
-                                } else {
-                                    (other_slot as u8, my_slot as u8)
-                                };
-                                if !relay_tokens.contains_key(&(lo, hi)) && !addr.is_empty() {
-                                    let pair = RelayPair {
-                                        slot_a: lobby.players[lo as usize].slot,
-                                        slot_b: lobby.players[hi as usize].slot,
-                                        pid_a: lobby.players[lo as usize].player_id,
-                                        pid_b: lobby.players[hi as usize].player_id,
-                                    };
-                                    if let Some(token) =
-                                        allocate_relay_session(state, &relay_addr, lobby_id, &pair)
-                                    {
-                                        relay_tokens.insert((lo, hi), token);
-                                    }
-                                }
-                            }
-
-                            // Warn if addr is still empty (relay not configured)
-                            if addr.is_empty() {
-                                warn!(
-                                    my_slot,
-                                    other_slot, "peer addr empty and relay not configured"
-                                );
-                            }
-
-                            // Look up relay token for this pair
+                            // Each unordered pair was resolved and allocated once above
                             let (lo, hi) = if my_slot < other_slot {
                                 (my_slot as u8, other_slot as u8)
                             } else {
                                 (other_slot as u8, my_slot as u8)
                             };
-                            let relay_token = if is_relay {
-                                relay_tokens.get(&(lo, hi)).copied()
+                            let relay_token = relay_tokens.get(&(lo, hi)).copied();
+                            let is_relay = relay_token.is_some();
+                            let addresses = &direct_addresses[&(lo, hi)];
+                            let addr = if is_relay {
+                                relay_addr.clone()
+                            } else if my_slot < other_slot {
+                                addresses.1.clone()
                             } else {
-                                None
+                                addresses.0.clone()
                             };
                             let relay_dest_slot = if is_relay { Some(other.slot) } else { None };
 

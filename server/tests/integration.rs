@@ -3956,3 +3956,121 @@ async fn online_match_result_closes_membership_once_and_rejects_waiting_room() {
     assert_eq!(server.state.stats.snapshot().in_game, 0);
     assert_eq!(server.state.db.total_games_played().unwrap(), 1);
 }
+
+#[tokio::test]
+async fn online_mixed_candidates_resolve_one_symmetric_pair_or_rollback() {
+    for capacity_full in [false, true] {
+        for advertised_side in [0, 1] {
+            let server = TestServer::with_config(|c| {
+                c.force_relay = false;
+                c.max_relay_sessions = 1;
+            })
+            .await;
+            let mut host = connect_ws(&server).await;
+            authenticate(&mut host, "Host").await;
+            let room = create_test_room(&mut host).await;
+            let mut joiner = connect_ws(&server).await;
+            authenticate(&mut joiner, "Joiner").await;
+            send_only(
+                &mut joiner,
+                json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+            )
+            .await;
+            recv(&mut host).await;
+            recv(&mut joiner).await;
+            let mut clients = [host, joiner];
+            send_only(
+                &mut clients[advertised_side],
+                json!({"type":"STUN_RESULT","nat_type":"full_cone",
+                "candidates":[{"candidate_type":"upnp","addr":"192.0.2.1:12345"}]}),
+            )
+            .await;
+            assert_eq!(
+                recv(&mut clients[1 - advertised_side]).await["type"],
+                "PEER_CANDIDATES"
+            );
+            if capacity_full {
+                server.state.relay_sessions.insert(
+                    123,
+                    dxx_matchmaking::relay::RelaySession::new(
+                        uuid::Uuid::new_v4(),
+                        [(0, uuid::Uuid::new_v4()), (1, uuid::Uuid::new_v4())],
+                        std::time::Instant::now(),
+                    ),
+                );
+            }
+            send_only(&mut clients[0], json!({"type":"START_GAME"})).await;
+            let mut starts = Vec::new();
+            for client in &mut clients {
+                assert_eq!(recv(client).await["type"], "CONNECTION_INFO");
+                starts.push(recv(client).await);
+            }
+            if capacity_full {
+                for response in &starts {
+                    assert_eq!(response["code"], "RELAY_LIMIT_REACHED");
+                }
+                assert_eq!(server.state.stats.snapshot().in_game, 0);
+                assert_eq!(
+                    server.state.lobbies.get(&room).unwrap().state,
+                    dxx_matchmaking::lobby::LobbyState::Waiting
+                );
+                assert_eq!(server.state.relay_sessions.len(), 1);
+            } else {
+                let left = &starts[0]["peers"][0];
+                let right = &starts[1]["peers"][0];
+                assert_eq!(left["is_relay"], true);
+                assert_eq!(right["is_relay"], true);
+                assert_eq!(left["relay_token"], right["relay_token"]);
+                let token = left["relay_token"].as_u64().unwrap() as u32;
+                let a = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                let b = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                let mut sa = 0;
+                let mut sb = 0;
+                bind_udp(
+                    &a,
+                    server.relay_addr,
+                    token,
+                    0,
+                    1,
+                    &left["relay_credentials"],
+                    &mut sa,
+                )
+                .await;
+                bind_udp(
+                    &b,
+                    server.relay_addr,
+                    token,
+                    1,
+                    0,
+                    &right["relay_credentials"],
+                    &mut sb,
+                )
+                .await;
+                for (socket, receiver, from, to, sender, recipient, seq) in [
+                    (&a, &b, 0, 1, left, right, sa),
+                    (&b, &a, 1, 0, right, left, sb),
+                ] {
+                    let bytes = dxx_matchmaking::relay::seal(
+                        &relay_key(&sender["relay_credentials"], "send_key"),
+                        token,
+                        0,
+                        from,
+                        to,
+                        seq + 1,
+                        b"mixed candidates",
+                    )
+                    .unwrap();
+                    socket.send_to(&bytes, server.relay_addr).await.unwrap();
+                    assert_eq!(
+                        dxx_matchmaking::relay::open(
+                            &relay_key(&recipient["relay_credentials"], "receive_key"),
+                            &recv_udp(receiver).await
+                        )
+                        .unwrap(),
+                        b"mixed candidates"
+                    );
+                }
+            }
+        }
+    }
+}

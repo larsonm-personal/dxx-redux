@@ -183,3 +183,24 @@ JVM cases pass, including fresh-key recreation and parser/proxy credential canar
 The catalog validator and scoped mixed formatter pass. The master catalog runner
 has the previously recorded host limitation. These receipts do not substitute for
 APK compilation, native valid-producer gameplay, device recovery or owned staging.
+
+## Stable roster and symmetric route qualification
+
+Protocol 3 roster updates carry stable global slots. Android retires only the
+departed player's proxy workers and ports, retains surviving routes, and requires
+fresh transport keys when a slot is reused. The three-peer host JVM regression
+forwards valid bidirectional payloads beyond the departed peer's ten-second
+acknowledgement deadline, then exercises middle-slot reuse and immediate
+identity replacement. It does not establish native three-player late join.
+
+The host harness now compiles the actual MatchmakingService consumer, with
+external Android/GPGS/native boundaries explicitly unavailable. Its accepted-friend
+coded-room case goes through the actual WebSocket listener and confirms no second
+code-less join is issued. Initial server routes are resolved once per unordered
+pair before any start message; mixed candidates produce symmetric authenticated
+relay assignments, and capacity failure rolls back without partial starts.
+
+Validation: 43 module, 82 integration, 13 NAT and two process tests passed;
+Clippy with warnings denied passed. All ten host JVM cases passed. The scoped
+formatter and catalog validator passed. Native APK/emulator and full recovery
+qualification remain separate open gates.

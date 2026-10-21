@@ -63,6 +63,9 @@ class LocalhostProxy(
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId")
     private val peerProxies = mutableListOf<PeerProxy>()
     private val jobs = mutableListOf<Job>()
+    private val peerJobs = mutableMapOf<Int, Job>()
+    private var peerIdentities = emptyMap<Int, String>()
+    private val retiredPorts = mutableSetOf<Int>()
     private val stopped = AtomicBoolean(false)
     private val failureReported = AtomicBoolean(false)
     private var started = false
@@ -99,19 +102,20 @@ class LocalhostProxy(
     @Synchronized
     private fun launchWorker(
         name: String,
+        expectedStop: () -> Boolean = { false },
         block: suspend () -> Unit,
-    ) {
+    ): Job {
         val job =
             scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
                 try {
                     block()
-                    if (!stopped.get()) throw IOException("$name stopped unexpectedly")
+                    if (!stopped.get() && !expectedStop()) throw IOException("$name stopped unexpectedly")
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     Log.e(TAG, "Proxy $name failed", e)
                     diagnostics.failure("worker $name", sharedRealSocket, e)
-                    if (!stopped.get() && failureReported.compareAndSet(false, true)) {
+                    if (!stopped.get() && !expectedStop() && failureReported.compareAndSet(false, true)) {
                         shutdown()
                         onFailure("Network forwarding stopped: ${e.message ?: name}. Return to the lobby and retry.")
                     }
@@ -119,11 +123,72 @@ class LocalhostProxy(
             }
         jobs.add(job)
         if (started) job.start()
+        return job
+    }
+
+    @Synchronized
+    private fun isCurrentPeer(proxy: PeerProxy) = peerProxies.any { it === proxy }
+
+    @Synchronized
+    fun reconcileRoster(identities: Map<Int, String>) {
+        require(identities.keys.all { it in 0..7 } && identities.values.toSet().size == identities.size)
+        val departed =
+            peerProxies
+                .filter { proxy ->
+                    proxy.slot !in identities ||
+                        (peerIdentities[proxy.slot] != null && peerIdentities[proxy.slot] != identities[proxy.slot])
+                }.map { it.slot }
+        departed.forEach { removePeer(it) }
+        peerIdentities = identities.toMap()
+    }
+
+    @Synchronized
+    fun removePeer(slot: Int) {
+        val proxy = peerProxies.firstOrNull { it.slot == slot } ?: return
+        peerProxies.remove(proxy)
+        retiredPorts.add(proxy.localPort)
+        relayPeersBySlot.remove(slot, proxy)
+        directPeersByAddr.entries.removeIf { it.value === proxy }
+        peerJobs.remove(slot)?.let { job ->
+            jobs.remove(job)
+            job.cancel()
+        }
+        proxy.close("peer departed")
+    }
+
+    private fun createPeer(
+        config: PeerProxyConfig,
+        real: DatagramSocket,
+        ownsReal: Boolean,
+    ): PeerProxy {
+        // Closing a socket wakes blocked receivers asynchronously on some JVMs
+        val retryUntil = if (retiredPorts.remove(config.localPort)) System.nanoTime() + 250_000_000L else 0L
+
+        fun bindLocal(): DatagramSocket {
+            while (true) {
+                try {
+                    return DatagramSocket(config.localPort, InetAddress.getByName("127.0.0.1"))
+                } catch (e: java.net.BindException) {
+                    if (System.nanoTime() >= retryUntil) throw e
+                    Thread.sleep(5)
+                }
+            }
+        }
+        val local = bindLocal()
+        try {
+            return PeerProxy(config, real, ownsReal, diagnosticId, local)
+        } catch (e: Exception) {
+            local.close()
+            throw e
+        }
     }
 
     @Synchronized
     fun addPeer(peerConfig: PeerProxyConfig) {
         check(!stopped.get()) { "Proxy is closed" }
+        val existing = peerProxies.firstOrNull { it.slot == peerConfig.peerSlot }
+        if (existing?.matches(peerConfig) == true) return
+        removePeer(peerConfig.peerSlot)
         val realSocket: DatagramSocket
         val ownsRealSocket: Boolean
         if (sharedRealSocket != null) {
@@ -136,7 +201,7 @@ class LocalhostProxy(
 
         val proxy =
             try {
-                PeerProxy(peerConfig, realSocket, ownsRealSocket, diagnosticId)
+                createPeer(peerConfig, realSocket, ownsRealSocket)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to bind port ${peerConfig.localPort} for slot ${peerConfig.peerSlot}: ${e.message}")
                 if (ownsRealSocket) realSocket.close()
@@ -154,7 +219,8 @@ class LocalhostProxy(
             }
         }
 
-        launchWorker("peer ${peerConfig.peerSlot}") { proxy.run() }
+        peerJobs[peerConfig.peerSlot] =
+            launchWorker("peer ${peerConfig.peerSlot}", { !isCurrentPeer(proxy) }) { proxy.run() }
         Log.i(
             TAG,
             "Added peer proxy: slot=${peerConfig.peerSlot} " +
@@ -182,7 +248,7 @@ class LocalhostProxy(
             )
         val proxy =
             try {
-                PeerProxy(config, sharedRealSocket!!, ownsRealSocket = false, diagnosticId = diagnosticId)
+                createPeer(config, sharedRealSocket!!, false)
             } catch (e: java.net.BindException) {
                 Log.e(TAG, "Host-mode: failed to bind port $localPort for dynamic peer $realAddr: ${e.message}")
                 throw e
@@ -191,7 +257,7 @@ class LocalhostProxy(
         val addrKey = "${realAddr.address.hostAddress}:${realAddr.port}"
         directPeersByAddr[addrKey] = proxy
         // Start the local->real forwarding coroutine
-        launchWorker("dynamic peer $slot") { proxy.run() }
+        peerJobs[slot] = launchWorker("dynamic peer $slot", { !isCurrentPeer(proxy) }) { proxy.run() }
         Log.i(TAG, "Host-mode: dynamic peer slot=$slot local=127.0.0.1:$localPort -> $addrKey")
         return proxy
     }
@@ -329,6 +395,9 @@ class LocalhostProxy(
         sharedRealSocket?.close()
         for (job in jobs) job.cancel()
         jobs.clear()
+        peerJobs.clear()
+        peerIdentities = emptyMap()
+        retiredPorts.clear()
         peerProxies.clear()
         directPeersByAddr.clear()
         relayPeersBySlot.clear()
@@ -363,7 +432,13 @@ private class PeerProxy(
     private val realSocket: DatagramSocket,
     private val ownsRealSocket: Boolean,
     diagnosticId: Long,
+    private val localSocket: DatagramSocket,
 ) {
+    val localPort: Int get() = config.localPort
+    val slot: Int get() = config.peerSlot
+
+    fun matches(other: PeerProxyConfig): Boolean = config == other
+
     private val relay =
         if (config.isRelay) {
             RelayTransport(
@@ -378,7 +453,6 @@ private class PeerProxy(
         }
 
     private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
-    private val localSocket = DatagramSocket(config.localPort, loopback)
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId peer=${config.peerSlot} remote=${config.realAddr}")
 
     init {

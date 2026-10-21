@@ -227,6 +227,7 @@ data class LobbyListMsg(
 
 @Serializable
 data class LobbyPlayerInfo(
+    val slot: Int,
     @SerialName("player_id") val playerId: String,
     val callsign: String,
     val ready: Boolean,
