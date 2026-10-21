@@ -79,9 +79,26 @@ counters on every peer link. The campaign adds a third client, removes the middl
 slot, proves surviving traffic beyond the relay timeout, and rejoins the departed
 slot with fresh routes. Host closure and final disconnect must retire rooms,
 relay leases, control sockets and client jobs/sockets. Logs alone and absent
-introspection cannot pass. Mobile background recovery and internet NAT behavior
-remain separate gates.
+introspection cannot pass. The next matrix also exercises host/nonhost background/resume, short and long
+UDP-only loss, delay/duplication/reordering, source-port rebinding, WS-only loss
+and cancellation, and server restart followed by explicit fresh-game recovery.
+These new device cases require terminal receipts before being treated as qualified;
+internet NAT behavior remains a separate gate.
 Retain the exact head SHA, Actions run ID and receipts before expanding the matrix.
+
+`loopback_fault_proxy.py` changes only owned loopback forwarding. Its atomic
+control file independently selects WS or UDP faults; per-client upstream UDP
+sockets preserve distinct endpoint identities. Impairment introduces deterministic
+loss, duplication, delay and reordering; rebinding changes upstream source ports.
+It never logs payloads or changes firewall/network configuration. Four owned-socket
+negative/positive controls in `test_loopback_fault_proxy.py` qualify the injector
+before the device owner runs. The public owner has a 1800-second budget and runs
+cases sequentially using one prepared APK/emulator set. Background dwell follows
+the LAN test's 110-second launcher/resume route without hidden-process broadcasts.
+After cancellation, resource assertions run without another disconnect so a
+resurrected retry cannot be hidden by cleanup. Long-loss/server-restart recovery
+requires a newly launched game with advancing native peer traffic, not only WS
+reconnection. No automatic restoration of the interrupted game is claimed.
 
 ## Private staging prerequisites
 

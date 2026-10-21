@@ -930,7 +930,7 @@ $allTests += @{
     Type = 'ps1'
     Path = (Join-Path $testsDir 'test_mp.ps1')
     Requires = 'two_emulators'
-    TimeoutSeconds = 1200
+    TimeoutSeconds = 1800
     Arguments = @('-PublicShareware')
 }
 

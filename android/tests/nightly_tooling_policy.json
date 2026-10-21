@@ -3060,11 +3060,9 @@
             "id": "master:test_mp_public_shareware",
             "owner": "master",
             "lane": "android-dual",
-            "args": {
-                "suite": "test_mp_public_shareware"
-            },
-            "estimated_seconds": 1200,
-            "coverage_scope": "Three disposable Android emulators, pinned D1 shareware and owned loopback server; production installation proofs, native all-peer relay traffic, late join, middle-slot departure/rejoin and resource cleanup; not GPGS provider or internet qualification."
+            "args": { "suite": "test_mp_public_shareware" },
+            "estimated_seconds": 1800,
+            "coverage_scope": "Three disposable Android emulators, pinned D1 shareware and owned loopback server; production installation proofs, native all-peer relay traffic, late join, middle-slot departure/rejoin, host/nonhost background/resume, controlled UDP/WS faults, cancellation, server restart and resource cleanup; not GPGS provider or internet qualification."
         },
         {
             "id": "master:test_mp",

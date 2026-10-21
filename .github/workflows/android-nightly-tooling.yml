@@ -130,6 +130,7 @@ jobs:
         if: steps.selection.outputs.online_preview == 'true'
         shell: bash
         run: |
+          python3 target/server/test_loopback_fault_proxy.py
           python3 target/server/rehearse_preview.py \
             --binary "$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking"
       - name: Prepare dependency locations

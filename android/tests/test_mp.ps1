@@ -71,6 +71,8 @@ if ($PublicShareware) { $MISSION = "''" }
 $MODE = $Mode
 
 $serverProcess = $null
+$faultProcess = $null
+$faultControl = Join-Path $REPO_ROOT "temp/online-fault-control.json"
 $testPassed = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\mp_test_log.txt"
@@ -186,6 +188,107 @@ function Join-RunningOnlineGame {
     Send-MpCommand -Serial $Serial -Command 'launch_game'
 }
 
+function Set-OnlineFault {
+    param([string]$Ws = 'pass', [string]$Udp = 'pass')
+    $next = "$faultControl.next"
+    @{ ws = $Ws; udp = $Udp } | ConvertTo-Json -Compress | Set-Content -LiteralPath $next -Encoding utf8NoBOM
+    [IO.File]::Move($next, $faultControl, $true)
+    Start-Sleep -Milliseconds 150
+    if ($faultProcess -and $faultProcess.HasExited) { throw 'Owned network fault bridge exited' }
+}
+
+function Assert-OnlineClean {
+    param([string[]]$Serials = $allTargets, [switch]$NoDisconnect)
+    if (-not $NoDisconnect) {
+        foreach ($serial in $Serials) { Send-MpCommand -Serial $serial -Command 'disconnect' }
+    }
+    if (-not (Wait-ForCondition -Description 'Server resource baseline' -TimeoutSec 20 -PollMs 250 -Condition {
+                $status = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+                return $status.rooms -eq 0 -and $status.relay_sessions -eq 0 -and $status.pending_and_authenticated_sockets -eq 0
+            })) { throw 'Server resources remained after disconnect' }
+    foreach ($serial in $Serials) {
+        if (-not (Wait-ForCondition -Description 'Client resource baseline' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $control = Get-MpIntrospection -Serial $serial
+                    if (-not $control) { return $false }
+                    $r = $control.online_resources
+                    return $control.status -eq 'DISCONNECTED' -and $r.proxy_workers -eq 0 -and $r.background_jobs -eq 0 -and -not $r.candidate_socket -and -not $r.upnp_mapping -and -not $r.game_state_updates
+                })) { throw 'Client resources remained after disconnect' }
+    }
+}
+
+function Start-OnlineRecoveryGame {
+    Assert-OnlineClean
+    foreach ($serial in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+        if (-not (Start-SetupActivity -Serial $serial)) { throw 'Recovery launcher failed' }
+        $callsign = if ($serial -eq $EMU1) { $CALLSIGN1 } else { $CALLSIGN2 }
+        Send-MpCommand -Serial $serial -Command 'set_callsign' -Extras @('--es', 'callsign', $callsign)
+        Send-MpCommand -Serial $serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
+        if (-not (Wait-ForCondition -Description 'Recovery authentication' -TimeoutSec 20 -PollMs 500 -Condition {
+                    $control = Get-MpIntrospection -Serial $serial
+                    return $control -and $control.status -eq 'CONNECTED'
+                })) { throw 'Recovery authentication failed' }
+    }
+    Send-MpCommand -Serial $EMU1 -Command 'create_lobby' -Extras @('--es', 'game', $Game, '--es', 'mission', $MISSION, '--es', 'mode', $MODE, '--ei', 'max_players', '2')
+    if (-not (Wait-ForCondition -Description 'Recovery host room' -TimeoutSec 15 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $EMU1
+                return $control -and $control.PSObject.Properties['lobby'] -and $control.lobby.is_host
+            })) { throw 'Recovery room creation failed' }
+    Send-MpCommand -Serial $EMU2 -Command 'refresh_lobbies'
+    if (-not (Wait-ForCondition -Description 'Recovery room visible' -TimeoutSec 15 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $EMU2
+                return $control -and $control.lobby_count -eq 1
+            })) { throw 'Recovery room not visible' }
+    Send-MpCommand -Serial $EMU2 -Command 'join_first_lobby'
+    if (-not (Wait-ForCondition -Description 'Recovery membership' -TimeoutSec 15 -PollMs 500 -Condition {
+                $control = Get-MpIntrospection -Serial $EMU2
+                return $control -and $control.PSObject.Properties['lobby'] -and $control.lobby.player_count -eq 2
+            })) { throw 'Recovery join failed' }
+    foreach ($serial in @($EMU1, $EMU2)) { Send-MpCommand -Serial $serial -Command 'set_ready' -Extras @('--es', 'ready', 'true') }
+    if (-not (Wait-ForCondition -Description 'Recovery ready roster' -TimeoutSec 15 -PollMs 500 -Condition {
+                return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2
+            })) { throw 'Recovery ready failed' }
+    Send-MpCommand -Serial $EMU1 -Command 'start_game'
+    foreach ($serial in @($EMU1, $EMU2)) {
+        if (-not (Wait-ForCondition -Description 'Recovery launch assignment' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $control = Get-MpIntrospection -Serial $serial
+                    return $control -and $control.game_launch_pending
+                })) { throw 'Recovery launch assignment missing' }
+        Send-MpCommand -Serial $serial -Command 'launch_game'
+    }
+    Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'explicit fresh-game recovery'
+}
+
+function Invoke-OnlineBackgroundResume {
+    foreach ($hidden in @($EMU1, $EMU2)) {
+        $pidBefore = (Adb-Dev -Serial $hidden -AdbArgs @('shell', 'pidof', "${PACKAGE}:game")).Trim()
+        if ($pidBefore -notmatch '^\d+$') { throw 'Missing background game process' }
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'am', 'start', '-a', 'android.settings.SETTINGS') | Out-Null
+        if (-not (Wait-ForCondition -Description 'Online background visibility' -TimeoutSec 20 -PollMs 1000 -Condition {
+                    $intro = Get-GameIntrospection -Serial $hidden -Fresh
+                    return $intro -and $intro.android_lifecycle.observed_visibility -eq 'background'
+                })) { throw 'Online client did not background' }
+        # Do not promote the hidden process through introspection broadcasts during the dwell
+        Start-Sleep -Seconds 60
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'am', 'start', '-a', 'android.intent.action.DIAL') | Out-Null
+        Start-Sleep -Seconds 50
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'monkey', '-p', $PACKAGE, '-c', 'android.intent.category.LAUNCHER', '1') | Out-Null
+        if (-not (Wait-SetupReady -Serial $hidden -TimeoutSec 30)) { throw 'Resume launcher unavailable' }
+        if (-not (Wait-ForCondition -Description 'Resume launcher focus' -TimeoutSec 20 -PollMs 500 -Condition {
+                    $windows = Adb-Dev -Serial $hidden -AdbArgs @('shell', 'dumpsys', 'window')
+                    return $windows -match "mCurrentFocus=.*$([regex]::Escape($PACKAGE))/.*SetupActivity"
+                })) { throw 'Resume launcher did not receive focus' }
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_BACK') | Out-Null
+        if (-not (Wait-ForCondition -Description 'Online foreground visibility' -TimeoutSec 20 -PollMs 1000 -Condition {
+                    $intro = Get-GameIntrospection -Serial $hidden -Fresh
+                    return $intro -and $intro.android_lifecycle.observed_visibility -eq 'foreground'
+                })) { throw 'Online client did not resume' }
+        $pidAfter = (Adb-Dev -Serial $hidden -AdbArgs @('shell', 'pidof', "${PACKAGE}:game")).Trim()
+        if ($pidAfter -ne $pidBefore) { throw 'Background/resume restarted the game process' }
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase "background/resume $hidden"
+    }
+}
+
 function Cleanup {
     Write-Status "Cleaning up..."
     try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}
@@ -197,6 +300,10 @@ function Cleanup {
         try {
             & $ADB -s $emu shell am force-stop $PACKAGE 2>&1 | Out-Null
         } catch {}
+    }
+    if ($script:faultProcess -and -not $script:faultProcess.HasExited) {
+        $script:faultProcess.Kill()
+        if (-not $script:faultProcess.WaitForExit(5000)) { throw 'Owned fault bridge did not stop' }
     }
     if ($script:serverProcess -and -not $script:serverProcess.HasExited) {
         Write-Status "Stopping matchmaking server (PID $($script:serverProcess.Id))..."
@@ -326,11 +433,11 @@ try {
     }
     # Bind to localhost to avoid Windows Firewall prompts (emulator
     # reaches host via 10.0.2.2 which maps to loopback)
-    $env:WS_LISTEN_ADDR = "127.0.0.1:9000"
+    $env:WS_LISTEN_ADDR = if ($PublicShareware) { "127.0.0.1:9002" } else { "127.0.0.1:9000" }
     $env:HTTP_LISTEN_ADDR = "127.0.0.1:8080"
     # Configure built-in UDP relay so LocalhostProxy can route game traffic.
     # Emulators reach host loopback at 10.0.2.2.
-    $env:RELAY_LISTEN_ADDR = "127.0.0.1:9001"
+    $env:RELAY_LISTEN_ADDR = if ($PublicShareware) { "127.0.0.1:9003" } else { "127.0.0.1:9001" }
     $env:RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
     # Force relay for all connections -- two emulators on the same host share
     # a NAT gateway and cannot reach each other's 10.0.2.x addresses directly.
@@ -413,6 +520,13 @@ try {
     Send-MpCommand -Serial $EMU2 -Command "set_callsign" -Extras @("--es", "callsign", $CALLSIGN2)
     Start-Sleep -Milliseconds 500
 
+    if ($PublicShareware) {
+        Set-OnlineFault
+        $faultScript = Join-Path $serverDir 'loopback_fault_proxy.py'
+        $faultProcess = Start-Process -FilePath 'python3' -ArgumentList @($faultScript, '--control', $faultControl) -PassThru -NoNewWindow -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/online-fault.log') -RedirectStandardError (Join-Path $REPO_ROOT 'temp/online-fault-error.log')
+        Start-Sleep -Seconds 1
+        if ($faultProcess.HasExited) { throw 'Owned fault bridge failed to start' }
+    }
     $testServerUrl = if ($Tls) { "wss://10.0.2.2:9000/ws" } else { "ws://10.0.2.2:9000/ws" }
     Write-Status "Connecting via $testServerUrl"
     Send-MpCommand -Serial $EMU1 -Command "connect" -Extras @("--es", "url", $testServerUrl)
@@ -881,6 +995,15 @@ try {
             }
         }
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
+        Invoke-OnlineBackgroundResume
+        Set-OnlineFault -Udp 'impair'
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'UDP delay loss duplication reordering'
+        Set-OnlineFault -Udp 'rebind'
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT source-port change'
+        Set-OnlineFault -Udp 'drop'
+        Start-Sleep -Seconds 2
+        Set-OnlineFault
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'short UDP-only loss recovery'
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
         Send-MpCommand -Serial $EMU2 -Command 'disconnect'
@@ -915,6 +1038,47 @@ try {
             if (-not $retired) { throw 'Client resources did not return to baseline' }
         }
         Write-Status 'ONLINE_EVIDENCE zero rooms, relay leases, control sockets and client network workers' 'Green'
+        Start-OnlineRecoveryGame
+        Set-OnlineFault -Udp 'drop'
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Wait-ForCondition -Description 'UDP outage visible terminal state' -TimeoutSec 25 -PollMs 500 -Condition {
+                        $control = Get-MpIntrospection -Serial $serial
+                        return $control -and $control.error -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
+                    })) { throw 'Long UDP loss did not produce visible bounded cleanup' }
+        }
+        Set-OnlineFault
+        Write-Status 'ONLINE_EVIDENCE long UDP-only outage bounded visible terminal state' 'Green'
+        Start-OnlineRecoveryGame
+        Set-OnlineFault -Ws 'drop'
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Wait-ForCondition -Description 'Control outage retires game routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                        $control = Get-MpIntrospection -Serial $serial
+                        return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
+                    })) { throw 'Control loss left active game routes' }
+        }
+        Assert-OnlineClean
+        Set-OnlineFault
+        Start-Sleep -Seconds 5
+        Assert-OnlineClean -NoDisconnect
+        Write-Status 'ONLINE_EVIDENCE WS-only outage and cancellation stopped retries and retired resources' 'Green'
+        Start-OnlineRecoveryGame
+        $serverProcess.Kill()
+        if (-not $serverProcess.WaitForExit(5000)) { throw 'Owned server did not stop' }
+        $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir -NoNewWindow -PassThru -RedirectStandardError (Join-Path $REPO_ROOT 'temp/server-restart-error.log') -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/server-restart.log')
+        if (-not (Wait-ForCondition -Description 'Restarted server readiness' -TimeoutSec 15 -PollMs 250 -Condition {
+                    if ($serverProcess.HasExited) { throw 'Restarted server exited' }
+                    try { return (Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 1).ready } catch { return $false }
+                })) { throw 'Restarted server unavailable' }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Wait-ForCondition -Description 'Restarted control session without stale room' -TimeoutSec 30 -PollMs 500 -Condition {
+                        $control = Get-MpIntrospection -Serial $serial
+                        return $control -and $control.status -eq 'CONNECTED' -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
+                    })) { throw 'Server restart retained stale room or routes' }
+        }
+        Start-OnlineRecoveryGame
+        Assert-OnlineClean
+        Write-Status 'ONLINE_EVIDENCE server restart retired old game and explicit new game carried native traffic' 'Green'
+
     }
 
     # -- Results --

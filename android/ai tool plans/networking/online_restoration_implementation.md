@@ -243,3 +243,18 @@ Local validation passed twelve host JVM tests, 69 planner tests, and scoped
 formatting. The extracted matrix oracle accepts valid three-peer traffic and
 stable slots 0/2, and rejects host-only, missing-native and keepalive-only evidence.
 The expanded native device campaign has not yet been qualified.
+
+## Bounded fault qualification extension
+
+The next sequential public campaign adds host/nonhost background and resume,
+controlled UDP loss/delay/duplication/reordering and endpoint rebinding, WS-only
+loss with cancellation, and server restart. A loopback-only application bridge
+keeps the control and relay faults independent and changes no system network
+settings. Its four bounded owned-socket controls pass. Device qualification is
+pending: no passing results are inferred from the existence of these cases.
+
+Short outages require advancing native gameplay after recovery. Long outages must
+produce visible terminal cleanup; explicit new games must then carry native
+traffic. Cancellation must leave no jobs or sockets after the fault is lifted,
+without using another disconnect to hide a retry. The native packet oracle is
+bound to both D1/D2 header constants; the old classifier demonstrably fails it.
