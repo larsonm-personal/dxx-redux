@@ -3,9 +3,12 @@ package com.dxxredux.app.multiplayer
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.yield
 import java.io.File
+import java.security.InvalidKeyException
 import java.security.KeyPair
 import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 import java.security.Signature
+import java.security.SignatureException
 import java.security.interfaces.ECPublicKey
 import kotlin.coroutines.coroutineContext
 
@@ -15,7 +18,10 @@ internal class OnlineInstallationAuth(
     private val callsign: String,
     private val audience: String,
     private val platform: String = NetworkConstants.PLATFORM,
+    private val nanoTime: () -> Long = System::nanoTime,
 ) {
+    internal class WorkDeadlineExceeded : IllegalStateException("Installation work deadline exceeded")
+
     private val publicKey: String =
         (pair.public as ECPublicKey).let { key ->
             fun coordinate(value: java.math.BigInteger): ByteArray {
@@ -40,14 +46,14 @@ internal class OnlineInstallationAuth(
         difficulty: Int,
     ): InstallationProofMsg {
         require(challenge.matches(Regex("[0-9a-f]{64}")) && difficulty in 0..22) { "Invalid installation challenge" }
-        val started = System.nanoTime()
+        val started = nanoTime()
         val digest = MessageDigest.getInstance("SHA-256")
         val prefix = challenge.toByteArray(Charsets.UTF_8)
         var nonce = 0L
         while (true) {
             if (nonce % 512 == 0L) {
                 coroutineContext.ensureActive()
-                check(System.nanoTime() - started < 12_000_000_000L) { "Installation authentication timed out" }
+                if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
                 yield()
             }
             val solution = nonce.toString()
@@ -82,6 +88,17 @@ internal class OnlineInstallationAuth(
     }
 
     companion object {
+        // Fixed categories only: provider exceptions may contain sensitive input
+        fun failureCode(error: Exception): String =
+            when (error) {
+                is WorkDeadlineExceeded -> "WORK_DEADLINE"
+                is IllegalArgumentException -> "INVALID_CHALLENGE"
+                is NoSuchAlgorithmException -> "ALGORITHM_UNAVAILABLE"
+                is InvalidKeyException -> "SIGNING_KEY_REJECTED"
+                is SignatureException -> "SIGNATURE_FAILURE"
+                else -> "PROOF_PROVIDER_FAILURE"
+            }
+
         fun fromStorage(
             directory: File,
             callsign: String,

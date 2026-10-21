@@ -1371,10 +1371,15 @@ object MatchmakingService {
                                 ) { send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof)) }
                             } catch (e: kotlinx.coroutines.CancellationException) {
                                 throw e
-                            } catch (_: Exception) {
+                            } catch (e: Exception) {
                                 withConnection(
                                     connection,
-                                ) { authenticationUnavailable("Installation authentication could not complete") }
+                                ) {
+                                    val code = OnlineInstallationAuth.failureCode(e)
+                                    authenticationUnavailable(
+                                        "Installation authentication could not complete ($code)",
+                                    )
+                                }
                             }
                         }
                 }

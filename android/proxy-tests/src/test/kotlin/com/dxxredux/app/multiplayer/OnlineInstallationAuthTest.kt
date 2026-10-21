@@ -26,6 +26,33 @@ import java.security.spec.ECPrivateKeySpec
 import java.security.spec.ECPublicKeySpec
 
 class OnlineInstallationAuthTest {
+    @Test fun workDeadlineIsBoundedAndFailureDiagnosticsExcludeInput() =
+        runBlocking {
+            var clock = 0L
+            val producer =
+                OnlineInstallationAuth(fixtureKey(), "Fixture", "https://fixture.invalid:443", "test") {
+                    clock.also { clock += 12_000_000_000L }
+                }
+            try {
+                producer.proof("ab".repeat(32), 20)
+                fail("Expired work budget accepted")
+            } catch (e: OnlineInstallationAuth.WorkDeadlineExceeded) {
+                assertEquals("WORK_DEADLINE", OnlineInstallationAuth.failureCode(e))
+            }
+            assertEquals(
+                "INVALID_CHALLENGE",
+                OnlineInstallationAuth.failureCode(IllegalArgumentException("secret-canary")),
+            )
+            assertEquals("PROOF_PROVIDER_FAILURE", OnlineInstallationAuth.failureCode(Exception("secret-canary")))
+            for ((error, expected) in listOf(
+                java.security.NoSuchAlgorithmException("secret-canary") to "ALGORITHM_UNAVAILABLE",
+                java.security.InvalidKeyException("secret-canary") to "SIGNING_KEY_REJECTED",
+                java.security.SignatureException("secret-canary") to "SIGNATURE_FAILURE",
+            )) {
+                assertEquals(expected, OnlineInstallationAuth.failureCode(error))
+            }
+        }
+
     private fun fixtureKey(): KeyPair {
         val params =
             AlgorithmParameters
