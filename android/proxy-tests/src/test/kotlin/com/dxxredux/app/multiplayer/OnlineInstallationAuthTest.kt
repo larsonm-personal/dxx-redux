@@ -33,11 +33,15 @@ class OnlineInstallationAuthTest {
                 OnlineInstallationAuth(fixtureKey(), "Fixture", "https://fixture.invalid:443", "test") {
                     clock.also { clock += 12_000_000_000L }
                 }
+            var measurement: OnlineInstallationAuth.WorkMeasurement? = null
             try {
-                producer.proof("ab".repeat(32), 20)
+                producer.proof("ab".repeat(32), 20) { measurement = it }
                 fail("Expired work budget accepted")
             } catch (e: OnlineInstallationAuth.WorkDeadlineExceeded) {
                 assertEquals("WORK_DEADLINE", OnlineInstallationAuth.failureCode(e))
+                assertEquals(20, measurement!!.difficulty)
+                assertEquals(0L, measurement!!.hashes)
+                assertEquals(false, measurement!!.solved)
             }
             assertEquals(
                 "INVALID_CHALLENGE",
@@ -73,7 +77,12 @@ class OnlineInstallationAuthTest {
             val producer = OnlineInstallationAuth(pair, "Fixture", "https://fixture.invalid:443", "test")
             val request = producer.request()
             val challenge = "ab".repeat(32)
-            val proof = producer.proof(challenge, 8)
+            var measurement: OnlineInstallationAuth.WorkMeasurement? = null
+            val proof = producer.proof(challenge, 8) { measurement = it }
+            assertEquals(proof.solution.toLong() + 1, measurement!!.hashes)
+            assertEquals(8, measurement!!.difficulty)
+            assertTrue(measurement!!.solved)
+            assertTrue(measurement!!.elapsedMs >= 0)
             val transcript =
                 "dxx-online-p256-v1\n${NetworkConstants.PROTOCOL_VERSION}\n$challenge\n${request.publicKey}\n" +
                     "Fixture\ntest\nhttps://fixture.invalid:443\n${proof.solution}"
@@ -106,6 +115,22 @@ class OnlineInstallationAuthTest {
                 ) {
                 }
             }
+        }
+
+    @Test fun deterministicExpensiveChallengePreservesProductionWorkAndMeasurement() =
+        runBlocking {
+            val producer = OnlineInstallationAuth(fixtureKey(), "Fixture", "https://fixture.invalid:443", "test")
+            var measurement: OnlineInstallationAuth.WorkMeasurement? = null
+            // Synthetic fixed vector: first qualifying decimal solution requires over four million hashes
+            val proof =
+                producer.proof("8c5bab31288aa9d968e3a9103eaccddee759a109b77346b33cbd65b03d3c90a2", 20) {
+                    measurement = it
+                }
+            assertEquals("4243437", proof.solution)
+            assertEquals(4_243_438L, measurement!!.hashes)
+            assertEquals(20, measurement!!.difficulty)
+            assertTrue(measurement!!.solved)
+            println("WORK_FIXTURE hashes=${measurement!!.hashes} elapsed_ms=${measurement!!.elapsedMs}")
         }
 
     @Test fun actualServiceAuthenticatesAndReconnectsToProductionServer() {

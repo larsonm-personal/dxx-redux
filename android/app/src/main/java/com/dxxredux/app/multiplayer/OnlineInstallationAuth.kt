@@ -41,49 +41,65 @@ internal class OnlineInstallationAuth(
             authAudience = audience,
         )
 
+    data class WorkMeasurement(
+        val difficulty: Int,
+        val hashes: Long,
+        val elapsedMs: Long,
+        val solved: Boolean,
+    )
+
     suspend fun proof(
         challenge: String,
         difficulty: Int,
+        measure: (WorkMeasurement) -> Unit = {},
     ): InstallationProofMsg {
         require(challenge.matches(Regex("[0-9a-f]{64}")) && difficulty in 0..22) { "Invalid installation challenge" }
         val started = nanoTime()
         val digest = MessageDigest.getInstance("SHA-256")
         val prefix = challenge.toByteArray(Charsets.UTF_8)
         var nonce = 0L
-        while (true) {
-            if (nonce % 512 == 0L) {
-                coroutineContext.ensureActive()
-                if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
-                yield()
-            }
-            val solution = nonce.toString()
-            digest.update(prefix)
-            val hash = digest.digest(solution.toByteArray(Charsets.UTF_8))
-            var bits = 0
-            for (byte in hash) {
-                val value = byte.toInt() and 255
-                if (value == 0) {
-                    bits += 8
-                } else {
-                    bits += Integer.numberOfLeadingZeros(value) - 24
-                    break
+        var hashes = 0L
+        var solved = false
+        try {
+            while (true) {
+                if (nonce % 512 == 0L) {
+                    coroutineContext.ensureActive()
+                    if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
+                    yield()
                 }
+                val solution = nonce.toString()
+                digest.update(prefix)
+                val hash = digest.digest(solution.toByteArray(Charsets.UTF_8))
+                hashes++
+                var bits = 0
+                for (byte in hash) {
+                    val value = byte.toInt() and 255
+                    if (value == 0) {
+                        bits += 8
+                    } else {
+                        bits += Integer.numberOfLeadingZeros(value) - 24
+                        break
+                    }
+                }
+                if (bits >= difficulty) {
+                    solved = true
+                    // Keep this canonical transcript synchronized with server/src/pow.rs
+                    val transcript =
+                        "dxx-online-p256-v1\n${NetworkConstants.PROTOCOL_VERSION}\n$challenge\n$publicKey\n" +
+                            "$callsign\n$platform\n$audience\n$solution"
+                    val signature =
+                        Signature
+                            .getInstance("SHA256withECDSA")
+                            .apply {
+                                initSign(pair.private)
+                                update(transcript.toByteArray(Charsets.UTF_8))
+                            }.sign()
+                    return InstallationProofMsg(challenge = challenge, solution = solution, signature = signature.hex())
+                }
+                nonce++
             }
-            if (bits >= difficulty) {
-                // Keep this canonical transcript synchronized with server/src/pow.rs
-                val transcript =
-                    "dxx-online-p256-v1\n${NetworkConstants.PROTOCOL_VERSION}\n$challenge\n$publicKey\n" +
-                        "$callsign\n$platform\n$audience\n$solution"
-                val signature =
-                    Signature
-                        .getInstance("SHA256withECDSA")
-                        .apply {
-                            initSign(pair.private)
-                            update(transcript.toByteArray(Charsets.UTF_8))
-                        }.sign()
-                return InstallationProofMsg(challenge = challenge, solution = solution, signature = signature.hex())
-            }
-            nonce++
+        } finally {
+            measure(WorkMeasurement(difficulty, hashes, (nanoTime() - started) / 1_000_000L, solved))
         }
     }
 

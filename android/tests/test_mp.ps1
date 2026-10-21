@@ -104,6 +104,45 @@ function Get-MpIntrospection {
     return $null
 }
 
+function Measure-InstallationWork {
+    param([string]$ServerUrl)
+    # Only called after disposable emulator validation, against our in-memory server
+    $failed = 0
+    $sample = 0
+    foreach ($serial in $allTargets) {
+        for ($trial = 0; $trial -lt 4; $trial++) {
+            $sample++
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-rf', 'no_backup/online_identity') -Seconds 10 | Out-Null
+            if (-not (Start-SetupActivity -Serial $serial)) { throw 'Work measurement launcher unavailable' }
+            Send-MpCommand -Serial $serial -Command 'set_callsign' -Extras @('--es', 'callsign', 'WorkProbe')
+            Send-MpCommand -Serial $serial -Command 'connect' -Extras @('--es', 'url', $ServerUrl)
+            $done = Wait-ForCondition -Description "Installation work sample $sample" -TimeoutSec 20 -PollMs 500 -Condition {
+                $snapshot = Get-MpIntrospection -Serial $serial
+                return $snapshot -and ($snapshot.status -eq 'CONNECTED' -or $snapshot.error)
+            }
+            $snapshot = Get-MpIntrospection -Serial $serial
+            $work = if ($snapshot) { $snapshot.online_resources.installation_work } else { $null }
+            $valid = $done -and $snapshot.status -eq 'CONNECTED' -and $work -and
+            $work.PSObject.Properties['difficulty'] -and $work.difficulty -eq 20 -and
+            $work.hashes -gt 0 -and $work.solved
+            if (-not $valid) { $failed++ }
+            if ($work -and $work.PSObject.Properties['difficulty']) {
+                Write-Status "ONLINE_WORK sample=$sample difficulty=$([int]$work.difficulty) hashes=$([long]$work.hashes) elapsed_ms=$([long]$work.elapsed_ms) solved=$([bool]$work.solved) authenticated=$([bool]$valid)" 'Gray'
+            } else {
+                Write-Status "ONLINE_WORK sample=$sample category=missing-measurement authenticated=False" 'Gray'
+            }
+            Send-MpCommand -Serial $serial -Command 'disconnect'
+            if (-not (Wait-ForCondition -Description 'Work sample socket cleanup' -TimeoutSec 10 -PollMs 250 -Condition {
+                        $ready = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+                        return $ready.pending_and_authenticated_sockets -eq 0 -and $ready.rooms -eq 0 -and $ready.relay_sessions -eq 0
+                    })) { throw 'Work measurement leaked server resources' }
+        }
+    }
+    if ($failed -gt 0) { throw "Installation work qualification failed: $failed of $sample fresh samples" }
+    Write-Status "ONLINE_EVIDENCE installation work authenticated $sample fresh identities at difficulty 20" 'Green'
+}
+
 function Test-AllLobbyPlayersReady {
     param([string]$Serial, [int]$ExpectedPlayers = 2)
 
@@ -528,6 +567,11 @@ try {
         if ($faultProcess.HasExited) { throw 'Owned fault bridge failed to start' }
     }
     $testServerUrl = if ($Tls) { "wss://10.0.2.2:9000/ws" } else { "ws://10.0.2.2:9000/ws" }
+    if ($PublicShareware) {
+        Measure-InstallationWork -ServerUrl $testServerUrl
+        Send-MpCommand -Serial $EMU1 -Command 'set_callsign' -Extras @('--es', 'callsign', $CALLSIGN1)
+        Send-MpCommand -Serial $EMU2 -Command 'set_callsign' -Extras @('--es', 'callsign', $CALLSIGN2)
+    }
     Write-Status "Connecting via $testServerUrl"
     Send-MpCommand -Serial $EMU1 -Command "connect" -Extras @("--es", "url", $testServerUrl)
     Send-MpCommand -Serial $EMU2 -Command "connect" -Extras @("--es", "url", $testServerUrl)

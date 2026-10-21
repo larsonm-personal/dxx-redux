@@ -304,6 +304,8 @@ object MatchmakingService {
     private var installationAuth: OnlineInstallationAuth? = null
     private var installationAuthJob: Job? = null
 
+    @Volatile private var installationWork: Map<String, Any> = emptyMap()
+
     // Weak reference to current activity for GPGS auth code requests.
     // Set by SetupActivity.onCreate(), cleared automatically by GC.
     private var activityRef: WeakReference<Activity>? = null
@@ -318,6 +320,7 @@ object MatchmakingService {
         callsign: String,
     ) {
         reconnectAttempt = 0
+        installationWork = emptyMap()
         lastLobbyId = null
         state.update {
             it.copy(
@@ -820,6 +823,7 @@ object MatchmakingService {
     @Synchronized
     fun resourceDiagnostics(): Map<String, Any> =
         mapOf(
+            "installation_work" to installationWork,
             "proxy_workers" to LocalhostProxy.activeWorkerCount(),
             "candidate_socket" to (candidateSocket?.isClosed == false),
             "upnp_mapping" to (upnpMapping != null),
@@ -1365,7 +1369,18 @@ object MatchmakingService {
                     installationAuthJob =
                         scope.launch(Dispatchers.Default) {
                             try {
-                                val proof = producer.proof(msg.data.challenge, msg.data.difficulty)
+                                val proof =
+                                    producer.proof(msg.data.challenge, msg.data.difficulty) { work ->
+                                        withConnection(connection) {
+                                            installationWork =
+                                                mapOf(
+                                                    "difficulty" to work.difficulty,
+                                                    "hashes" to work.hashes,
+                                                    "elapsed_ms" to work.elapsedMs,
+                                                    "solved" to work.solved,
+                                                )
+                                        }
+                                    }
                                 withConnection(
                                     connection,
                                 ) { send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof)) }

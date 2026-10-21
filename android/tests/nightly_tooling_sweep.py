@@ -566,6 +566,31 @@ def reconcile(plan, policy, state, receipts):
     return result
 
 
+def online_failure_summary(output):
+    """Return fixed categories only; never export owner exception text or payloads"""
+    root = Path(output).resolve()
+    paths = sorted((root / "master").glob("test_mp_public_shareware_*.log"))[-1:]
+    phase, category = "unknown", "owner-failure"
+    for path in paths:
+        if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root):
+            continue
+        with path.open("rb") as stream:
+            stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, stream.tell() - 131072))
+            text = stream.read(131072).decode("utf-8", errors="replace")
+        text = re.sub(r"\x1b\[[0-9;]*m", "", text)
+        for line in text.splitlines():
+            match = re.search(r"--- Phase ([0-9]{1,2}):", line)
+            if match:
+                phase = "last-numbered-phase-" + match[1]
+            if "EXCEPTION:" in line:
+                category = "owner-exception"
+            elif "FAIL:" in line and category != "owner-exception":
+                category = "owner-assertion"
+        break
+    return f"Online qualification failed: {phase}, {category}; see retained owner log"
+
+
 def collect(plan, policy, lane, output, blocked_reason=""):
     validate_plan(plan, policy)
     output = Path(output)
@@ -643,6 +668,8 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         if status == "NOT_RUN" and blocked_reason:
             status = "BLOCKED"
             row = {"reason": blocked_reason}
+        if entry["id"] == "master:test_mp_public_shareware" and status in ("FAIL", "TIMEOUT") and not row.get("reason"):
+            row = {**row, "reason": online_failure_summary(output)}
         if status not in TERMINAL | {"RUNNING", "NOT_RUN", "BLOCKED"}:
             raise ValueError("Invalid collected status")
         receipt["results"].append(

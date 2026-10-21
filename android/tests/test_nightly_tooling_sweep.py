@@ -49,6 +49,54 @@ class SweepTests(unittest.TestCase):
                 sweep.print_public_jvm_failure(plan, "jvm", root)
                 self.assertEqual(hidden.getvalue(), "")
 
+    def test_online_failure_summary_exports_only_phase_and_fixed_category(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "master").mkdir()
+            canary = 'secret-canary-short {"send_key":"credential-canary"}'
+            owner = root / "master/test_mp_public_shareware_1.log"
+            owner.write_text("\x1b[31m--- Phase 3: Connect ---\x1b[0m\nFAIL: " + canary)
+            self.assertIn("last-numbered-phase-3, owner-assertion", sweep.online_failure_summary(root))
+            owner.write_text(owner.read_text() + "\nEXCEPTION: " + canary)
+            result = sweep.online_failure_summary(root)
+            self.assertIn("last-numbered-phase-3, owner-exception", result)
+            self.assertNotIn("canary", result)
+            owner.unlink()
+            (root / "master/unrelated.log").write_text(canary)
+            self.assertIn("unknown, owner-failure", sweep.online_failure_summary(root))
+
+    def test_online_failed_journal_gains_safe_reason_without_changing_status(self):
+        entry = {
+            "id": "master:test_mp_public_shareware",
+            "owner": "master",
+            "lane": "android-dual",
+            "args": {"suite": "test_mp_public_shareware"},
+            "estimated_seconds": 1800,
+        }
+        policy = {"schema": 1, "suites": [entry]}
+        catalog = {"schema": 1, "tests": [{"name": "test_mp_public_shareware"}]}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy, budget=1800)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sweep.write(
+                root / "attempt.json",
+                {
+                    **sweep.attempt_identity(plan, "android-dual"),
+                    "processes": {"master": {"completed": True, "exit_code": 1}},
+                },
+            )
+            (root / "journal.jsonl").write_text(
+                json.dumps({"name": "test_mp_public_shareware", "commit": SHA, "status": "FAIL", "reason": ""}) + "\n"
+            )
+            (root / "master").mkdir()
+            (root / "master/test_mp_public_shareware_1.log").write_text(
+                "--- Phase 8: Wait for game launch ---\nEXCEPTION: secret-canary"
+            )
+            result = sweep.collect(plan, policy, "android-dual", root)["results"][0]
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("last-numbered-phase-8, owner-exception", result["reason"])
+            self.assertNotIn("canary", result["reason"])
+
     def setUp(self):
         self.policy = {
             "schema": 1,
