@@ -1,4 +1,5 @@
 #include "coop_transition_policy.h"
+#include "coop_phase_transmit.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -338,9 +339,41 @@ static int test_flyout_lifecycle(void)
 	return 1;
 }
 
+static int test_phase_transmit_preserves_barriers_and_retries(void)
+{
+	coop_phase_transmit sent = { 0 };
+	coop_transition_policy p;
+	CHECK(briefing(&p));
+	CHECK(coop_phase_transmit_poll(&sent, 2000, p.generation, p.phase));
+	/* A lost state is retried, but ordinary per-frame polling does not flood */
+	CHECK(!coop_phase_transmit_poll(&sent, 2001, p.generation, p.phase));
+	CHECK(!coop_phase_transmit_poll(&sent, 2249, p.generation, p.phase));
+	CHECK(coop_phase_transmit_poll(&sent, 2250, p.generation, p.phase));
+	CHECK(coop_transition_progress(&p, p.generation, 0, 1, 1, 1, COOP_PRESENTATION_READY, 2251));
+	CHECK(coop_transition_launch_now(&p, p.generation, 0, 2251));
+	CHECK(p.phase == COOP_PHASE_CLOSING_PRESENTATION);
+	CHECK(coop_phase_transmit_poll(&sent, 2251, p.generation, p.phase));
+	CHECK(coop_transition_ack(&p, p.generation, p.phase, 0, 2252));
+	/* Sending early does not skip the remote participant's closure ack */
+	CHECK(p.phase == COOP_PHASE_CLOSING_PRESENTATION);
+	CHECK(!coop_phase_transmit_poll(&sent, 2252, p.generation, p.phase));
+	CHECK(coop_transition_ack(&p, p.generation, p.phase, 1, 2253));
+	CHECK(p.phase == COOP_PHASE_LOADING);
+	CHECK(coop_phase_transmit_poll(&sent, 2253, p.generation, p.phase));
+	CHECK(acknowledge_team(&p, COOP_PHASE_LOADING, 2254));
+	CHECK(coop_phase_transmit_poll(&sent, 2254, p.generation, p.phase));
+	CHECK(acknowledge_team(&p, COOP_PHASE_COMMITTED, 2255));
+	CHECK(coop_phase_transmit_poll(&sent, 2255, p.generation, p.phase));
+	CHECK(!coop_phase_transmit_poll(&sent, 2504, p.generation, p.phase));
+	CHECK(coop_phase_transmit_poll(&sent, 2505, p.generation, p.phase));
+	/* A new operation with the same phase must publish a fresh generation */
+	CHECK(coop_phase_transmit_poll(&sent, 2506, p.generation + 1, p.phase));
+	return 1;
+}
+
 int main(void)
 {
-	if (!test_flyout_lifecycle() || !test_secret_disconnect_releases_each_barrier() ||
+	if (!test_phase_transmit_preserves_barriers_and_retries() || !test_flyout_lifecycle() || !test_secret_disconnect_releases_each_barrier() ||
 	    !test_normal_exit_race_keeps_other_player_in_mine() ||
 	    !test_secret_winner_waits_for_freeze_and_snapshot() ||
 	    !test_load_starts_when_every_peer_is_prepared() ||

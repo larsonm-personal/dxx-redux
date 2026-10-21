@@ -3,17 +3,27 @@ name: Public two-player LAN smoke
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      evidence_run_id:
+        description: Export compact public evidence from an existing run (no emulator execution)
+        type: string
+        default: ""
+      measure_transitions:
+        description: Repeat public LAN transition timing experiment
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: public-lan-${{ github.event.pull_request.number || github.ref }}
+  group: public-lan-${{ github.event.pull_request.number || github.ref }}-${{ inputs.evidence_run_id }}
   cancel-in-progress: true
 
 jobs:
   plan:
     name: Select public LAN smoke
+    if: ${{ !inputs.evidence_run_id }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -62,11 +72,12 @@ jobs:
       plan_artifact: nightly-plan
       lane: android-dual
       retail_assets: false
+      measure_transitions: ${{ inputs.measure_transitions == true }}
 
   finish:
     name: Require public LAN pass
     needs: [plan, android]
-    if: always()
+    if: ${{ always() && !inputs.evidence_run_id }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -121,3 +132,33 @@ jobs:
             summary.json
             summary-state.json
           retention-days: 30
+
+  evidence:
+    name: Export public timing evidence
+    if: ${{ inputs.evidence_run_id != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: nightly-results-android-dual
+          run-id: ${{ inputs.evidence_run_id }}
+          github-token: ${{ github.token }}
+          path: evidence
+      # GitHub caps annotation messages at 4096 characters and notices per step
+      - name: Export bounded diagnostics through check annotations (1/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 0
+      - name: Export bounded diagnostics through check annotations (2/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 1
+      - name: Export bounded diagnostics through check annotations (3/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 2
+      - name: Export bounded diagnostics through check annotations (4/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 3
+      - name: Export bounded diagnostics through check annotations (5/5)
+        run: python3 android/helpers/export_lan_evidence.py evidence 4

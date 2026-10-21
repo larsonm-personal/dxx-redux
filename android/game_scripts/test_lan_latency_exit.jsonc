@@ -1,0 +1,40 @@
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_lan_launch_preparation",
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_countdown_save_test",
+        "value": "seed",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "trigger_endlevel",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "screen_advance_can_activate": true,
+        },
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "request_screen_advance",
+        "generation": "current",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 60000,
+        "expect": {
+            "postlevel_active": true,
+        },
+        "post_delay_ms": 0,
+    },
+]

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650">
+<rect width="100%" height="100%" fill="white" />
+<g font-family="sans-serif" fill="#17233b">
+<text x="20" y="28" font-size="20">Observed LAN transitions: individual samples and mean</text>
+<text
+            x="20"
+            y="50"
+            font-size="12"
+        >Blue = controller upper bound (ADB/poll included); green = device-local duration. Missing phases omitted.</text>
+<text x="20" y="90" font-size="12">d1 emulator-5554 exit_action_to_ready</text>
+<rect x="460" y="77" width="60.22" height="16" fill="#207b54" />
+<circle cx="544.90" cy="85" r="3" fill="#111" />
+<circle cx="505.45" cy="85" r="3" fill="#111" />
+<circle cx="510.31" cy="85" r="3" fill="#111" />
+<text x="1080" y="90" font-size="12">2.636s n=3</text>
+<text x="20" y="120" font-size="12">d1 emulator-5554 next_action_to_level2_arrived</text>
+<rect x="460" y="107" width="43.80" height="16" fill="#207b54" />
+<circle cx="511.20" cy="115" r="3" fill="#111" />
+<circle cx="499.96" cy="115" r="3" fill="#111" />
+<circle cx="500.24" cy="115" r="3" fill="#111" />
+<text x="1080" y="120" font-size="12">1.917s n=3</text>
+<text x="20" y="150" font-size="12">d1 emulator-5554 skip1_action_to_ready</text>
+<rect x="460" y="137" width="37.18" height="16" fill="#207b54" />
+<circle cx="516.96" cy="145" r="3" fill="#111" />
+<circle cx="487.37" cy="145" r="3" fill="#111" />
+<circle cx="487.21" cy="145" r="3" fill="#111" />
+<text x="1080" y="150" font-size="12">1.627s n=3</text>
+<text x="20" y="180" font-size="12">d1 emulator-5554 skip2_action_to_ready</text>
+<rect x="460" y="167" width="39.43" height="16" fill="#207b54" />
+<circle cx="504.87" cy="175" r="3" fill="#111" />
+<circle cx="497.61" cy="175" r="3" fill="#111" />
+<circle cx="495.80" cy="175" r="3" fill="#111" />
+<text x="1080" y="180" font-size="12">1.726s n=3</text>
+<text x="20" y="210" font-size="12">d1 emulator-5554 start_to_briefing1</text>
+<rect x="460" y="197" width="466.08" height="16" fill="#386cb0" />
+<circle cx="1027.91" cy="205" r="3" fill="#111" />
+<circle cx="857.94" cy="205" r="3" fill="#111" />
+<circle cx="892.39" cy="205" r="3" fill="#111" />
+<text x="1080" y="210" font-size="12">20.399s n=3</text>
+<text x="20" y="240" font-size="12">d1 emulator-5556 exit_action_to_ready</text>
+<rect x="460" y="227" width="53.66" height="16" fill="#207b54" />
+<circle cx="528.84" cy="235" r="3" fill="#111" />
+<circle cx="502.11" cy="235" r="3" fill="#111" />
+<circle cx="510.04" cy="235" r="3" fill="#111" />
+<text x="1080" y="240" font-size="12">2.349s n=3</text>
+<text x="20" y="270" font-size="12">d1 emulator-5556 next_action_to_level2_arrived</text>
+<rect x="460" y="257" width="44.23" height="16" fill="#207b54" />
+<circle cx="518.86" cy="265" r="3" fill="#111" />
+<circle cx="497.77" cy="265" r="3" fill="#111" />
+<circle cx="496.05" cy="265" r="3" fill="#111" />
+<text x="1080" y="270" font-size="12">1.936s n=3</text>
+<text x="20" y="300" font-size="12">d1 emulator-5556 skip1_action_to_ready</text>
+<rect x="460" y="287" width="24.52" height="16" fill="#207b54" />
+<circle cx="492.99" cy="295" r="3" fill="#111" />
+<circle cx="480.33" cy="295" r="3" fill="#111" />
+<circle cx="480.24" cy="295" r="3" fill="#111" />
+<text x="1080" y="300" font-size="12">1.073s n=3</text>
+<text x="20" y="330" font-size="12">d1 emulator-5556 skip2_action_to_ready</text>
+<rect x="460" y="317" width="34.46" height="16" fill="#207b54" />
+<circle cx="499.28" cy="325" r="3" fill="#111" />
+<circle cx="491.90" cy="325" r="3" fill="#111" />
+<circle cx="492.19" cy="325" r="3" fill="#111" />
+<text x="1080" y="330" font-size="12">1.508s n=3</text>
+<text x="20" y="360" font-size="12">d1 emulator-5556 start_to_briefing1</text>
+<rect x="460" y="347" width="458.41" height="16" fill="#386cb0" />
+<circle cx="1060.00" cy="355" r="3" fill="#111" />
+<circle cx="830.25" cy="355" r="3" fill="#111" />
+<circle cx="864.99" cy="355" r="3" fill="#111" />
+<text x="1080" y="360" font-size="12">20.063s n=3</text>
+<text x="20" y="390" font-size="12">d2 emulator-5554 exit_action_to_ready</text>
+<rect x="460" y="377" width="54.20" height="16" fill="#207b54" />
+<circle cx="520.82" cy="385" r="3" fill="#111" />
+<circle cx="514.49" cy="385" r="3" fill="#111" />
+<circle cx="507.27" cy="385" r="3" fill="#111" />
+<text x="1080" y="390" font-size="12">2.372s n=3</text>
+<text x="20" y="420" font-size="12">d2 emulator-5554 next_action_to_level2_arrived</text>
+<rect x="460" y="407" width="69.56" height="16" fill="#207b54" />
+<circle cx="532.09" cy="415" r="3" fill="#111" />
+<circle cx="529.41" cy="415" r="3" fill="#111" />
+<circle cx="527.17" cy="415" r="3" fill="#111" />
+<text x="1080" y="420" font-size="12">3.044s n=3</text>
+<text x="20" y="450" font-size="12">d2 emulator-5554 skip1_action_to_ready</text>
+<rect x="460" y="437" width="37.50" height="16" fill="#207b54" />
+<circle cx="495.53" cy="445" r="3" fill="#111" />
+<circle cx="491.74" cy="445" r="3" fill="#111" />
+<circle cx="505.24" cy="445" r="3" fill="#111" />
+<text x="1080" y="450" font-size="12">1.641s n=3</text>
+<text x="20" y="480" font-size="12">d2 emulator-5554 start_to_briefing1</text>
+<rect x="460" y="467" width="518.72" height="16" fill="#386cb0" />
+<circle cx="971.84" cy="475" r="3" fill="#111" />
+<circle cx="978.21" cy="475" r="3" fill="#111" />
+<circle cx="986.13" cy="475" r="3" fill="#111" />
+<text x="1080" y="480" font-size="12">22.703s n=3</text>
+<text x="20" y="510" font-size="12">d2 emulator-5556 exit_action_to_ready</text>
+<rect x="460" y="497" width="49.22" height="16" fill="#207b54" />
+<circle cx="512.60" cy="505" r="3" fill="#111" />
+<circle cx="508.64" cy="505" r="3" fill="#111" />
+<circle cx="506.40" cy="505" r="3" fill="#111" />
+<text x="1080" y="510" font-size="12">2.154s n=3</text>
+<text x="20" y="540" font-size="12">d2 emulator-5556 next_action_to_level2_arrived</text>
+<rect x="460" y="527" width="63.49" height="16" fill="#207b54" />
+<circle cx="519.41" cy="535" r="3" fill="#111" />
+<circle cx="525.09" cy="535" r="3" fill="#111" />
+<circle cx="525.96" cy="535" r="3" fill="#111" />
+<text x="1080" y="540" font-size="12">2.779s n=3</text>
+<text x="20" y="570" font-size="12">d2 emulator-5556 skip1_action_to_ready</text>
+<rect x="460" y="557" width="34.32" height="16" fill="#207b54" />
+<circle cx="492.86" cy="565" r="3" fill="#111" />
+<circle cx="489.59" cy="565" r="3" fill="#111" />
+<circle cx="500.51" cy="565" r="3" fill="#111" />
+<text x="1080" y="570" font-size="12">1.502s n=3</text>
+<text x="20" y="600" font-size="12">d2 emulator-5556 start_to_briefing1</text>
+<rect x="460" y="587" width="548.61" height="16" fill="#386cb0" />
+<circle cx="1001.42" cy="595" r="3" fill="#111" />
+<circle cx="1008.51" cy="595" r="3" fill="#111" />
+<circle cx="1015.90" cy="595" r="3" fill="#111" />
+<text x="1080" y="600" font-size="12">24.011s n=3</text>
+</g></svg>

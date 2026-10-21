@@ -11,6 +11,10 @@ on:
         description: Same-run artifact containing plan.json
         required: true
         type: string
+      measure_transitions:
+        required: false
+        type: boolean
+        default: false
       retail_assets:
         required: false
         type: boolean
@@ -42,6 +46,7 @@ jobs:
       RETAIL_CHECKOUT_COMMIT: ${{ inputs.retail_commit }}
       TARGET_SHA: ${{ inputs.target_sha }}
       SWEEP_LANE: ${{ inputs.lane }}
+      DXX_MEASURE_TRANSITIONS: ${{ inputs.measure_transitions }}
       RETAIL_REQUESTED: ${{ inputs.retail_assets }}
       ORG_GRADLE_PROJECT_ciTestAbi: x86_64
       ORG_GRADLE_PROJECT_compareProxyHistory: "true"

@@ -1,0 +1,5 @@
+revision,game,sample,peer,phase,basis,start_ms,end_ms,duration_ms,source
+66e5e27da9850a9f142ac5c13d9e65432d48f4e3,d1,1,client,discovery_to_first_announcement,native_failed_handshake_log,20247748.0,20250737.0,2989.0,39374851627/session-1-emulator-5556-logcat.txt
+66e5e27da9850a9f142ac5c13d9e65432d48f4e3,d1,1,client,join_retry_1_to_2,native_failed_handshake_log,20251215.0,20252216.0,1001.0,39374851627/session-1-emulator-5556-logcat.txt
+66e5e27da9850a9f142ac5c13d9e65432d48f4e3,d1,1,client,join_retry_2_to_3,native_failed_handshake_log,20252216.0,20253217.0,1001.0,39374851627/session-1-emulator-5556-logcat.txt
+66e5e27da9850a9f142ac5c13d9e65432d48f4e3,d1,1,client,first_join_to_failure,native_failed_handshake_log,20251215.0,20254218.0,3003.0,39374851627/session-1-emulator-5556-logcat.txt

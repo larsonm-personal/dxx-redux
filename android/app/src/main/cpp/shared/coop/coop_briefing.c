@@ -1,6 +1,7 @@
 #include "coop_briefing.h"
 #include "coop_gameplay_runtime.h"
 #include "coop_transition_policy.h"
+#include "coop_phase_transmit.h"
 #include "coop_save.h"
 #include "android_log.h"
 
@@ -63,7 +64,8 @@ static unsigned release_acknowledged;
 static unsigned test_release_delay_ms, test_release_packets_dropped;
 static uint64_t test_release_delay_until;
 static uint32_t game_id, snapshot_revision;
-static uint64_t last_generation, last_send, last_ack, last_host_packet, release_since;
+static uint64_t last_generation, last_ack, last_host_packet, release_since;
+static coop_phase_transmit state_transmit;
 static coop_transition_phase observed_phase;
 static uint64_t peer_seen[COOP_TRANSITION_PLAYERS];
 
@@ -529,7 +531,8 @@ void coop_briefing_arm(void (*present)(int), int level)
 	memset(&local_progress, 0, sizeof(local_progress));
 	plan_ready = 0;
 	snapshot_revision = 0;
-	last_send = last_ack = release_since = 0;
+	last_ack = release_since = 0;
+	memset(&state_transmit, 0, sizeof(state_transmit));
 	last_host_packet = now_ms();
 	observed_phase = COOP_PHASE_SETTLED;
 	if (armed && present) {
@@ -605,6 +608,19 @@ static void acknowledge_local(void)
 
 void coop_briefing_network_frame(void)
 {
+#ifdef __ANDROID__
+	/* Android transition diagnostics use one local monotonic clock per process */
+	static uint64_t logged_generation;
+	static int logged_phase = -1, logged_armed = -1;
+	if (logged_generation != policy.generation || logged_phase != (int) policy.phase || logged_armed != armed) {
+		logged_generation = policy.generation;
+		logged_phase = policy.phase;
+		logged_armed = armed;
+		debug_log_force(DLOG_NETWORK, "[LAN-TIMING] ms=%llu player=%d level=%d generation=%llu phase=%d armed=%d presenting=%d",
+		                (unsigned long long) now_ms(), Player_num, Current_level_num,
+		                (unsigned long long) policy.generation, (int) policy.phase, armed, presenting);
+	}
+#endif
 	if (armed && have_state && policy.phase == COOP_PHASE_SETTLED) {
 		acknowledge_local();
 		/* Do not relinquish operation ownership until each participant has
@@ -614,8 +630,8 @@ void coop_briefing_network_frame(void)
 			if (now_ms() > release_since + PEER_TIMEOUT_MS) armed = 0;
 		}
 	}
-	if (armed && have_state && Player_num == host && now_ms() >= last_send + 250) {
-		last_send = now_ms();
+	if (armed && have_state && Player_num == host &&
+	    coop_phase_transmit_poll(&state_transmit, now_ms(), policy.generation, policy.phase)) {
 		send_packet(STATE);
 	}
 }
