@@ -13,6 +13,7 @@ pub mod resource_budget;
 pub mod stats;
 pub mod stun;
 pub mod tls;
+pub mod transport;
 pub mod ws_handler;
 
 use std::net::IpAddr;
@@ -20,6 +21,8 @@ use std::sync::Arc;
 
 /// Shared server state accessible from all tasks.
 pub struct ServerState {
+    pub transport_slots: Arc<tokio::sync::Semaphore>,
+    pub transport_work: std::sync::Mutex<resource_budget::WorkBudget>,
     pub control_queue_bytes: Arc<tokio::sync::Semaphore>,
     pub control_egress: Arc<resource_budget::FairEgress>,
     pub relay_budget: std::sync::Mutex<resource_budget::RelayBudget>,
@@ -62,6 +65,8 @@ pub fn build_state(
     }
     let db = db::Database::open(&config.db_path)?;
     Ok(Arc::new(ServerState {
+        transport_slots: Arc::new(tokio::sync::Semaphore::new(64)),
+        transport_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(128, 1)),
         control_queue_bytes: Arc::new(tokio::sync::Semaphore::new(32 * 1024 * 1024)),
         control_egress: Arc::new(resource_budget::FairEgress::new(
             8 * 1024 * 1024,

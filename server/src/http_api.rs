@@ -71,9 +71,9 @@ pub async fn run(
     };
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    let _ready = crate::ListenerReady::new(state, crate::ListenerReady::HTTP);
+    let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::HTTP);
     tracing::info!(%addr, public_only = use_public_only, "HTTP API listening");
-    axum::serve(listener, app).await?;
+    crate::transport::serve(listener, app, state, None).await?;
     Ok(())
 }
 
@@ -84,9 +84,9 @@ pub async fn run_admin(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let app = admin_router(Arc::clone(&state));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    let _ready = crate::ListenerReady::new(state, crate::ListenerReady::ADMIN);
+    let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::ADMIN);
     tracing::info!(%addr, "Admin HTTP API listening");
-    axum::serve(listener, app).await?;
+    crate::transport::serve(listener, app, state, None).await?;
     Ok(())
 }
 
@@ -347,6 +347,7 @@ async fn ready(State(state): State<Arc<ServerState>>) -> (StatusCode, Json<serde
         },
         Json(
             serde_json::json!({ "ready": ready, "protocol_version": CURRENT_PROTOCOL,
+            "pending_transports": 64 - state.transport_slots.available_permits(),
             "pending_and_authenticated_sockets": state.connected_sockets.load(std::sync::atomic::Ordering::SeqCst),
             "relay_sessions": state.relay_sessions.len(), "rooms": state.lobbies.len(),
             "pending_native_admissions": state.lobbies.iter().map(|r| r.assigned_late_joiners.len()).sum::<usize>() }),

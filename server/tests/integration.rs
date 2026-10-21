@@ -109,19 +109,18 @@ impl TestServer {
 
         let ws_state = Arc::clone(&state);
         let ws_handle = tokio::spawn(async move {
-            let app = ws_handler::ws_router(ws_state);
-            axum::serve(
-                ws_listener,
-                app.into_make_service_with_connect_info::<SocketAddr>(),
-            )
-            .await
-            .unwrap();
+            let app = ws_handler::ws_router(Arc::clone(&ws_state));
+            dxx_matchmaking::transport::serve(ws_listener, app, ws_state, None)
+                .await
+                .unwrap();
         });
 
         let http_state = Arc::clone(&state);
         let http_handle = tokio::spawn(async move {
-            let app = http_api::router(http_state);
-            axum::serve(http_listener, app).await.unwrap();
+            let app = http_api::router(Arc::clone(&http_state));
+            dxx_matchmaking::transport::serve(http_listener, app, http_state, None)
+                .await
+                .unwrap();
         });
 
         TestServer {
@@ -5391,5 +5390,96 @@ async fn online_maximum_supported_rooms_have_bounded_complete_listing_pages() {
     assert_eq!(
         send_recv(&mut owners[0], json!({"type":"READY","ready":true})).await["type"],
         "LOBBY_UPDATE"
+    );
+}
+
+#[tokio::test]
+async fn online_preupgrade_capacity_preserves_established_control_and_recovers() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let server = TestServer::start().await;
+    let mut survivor = connect_ws(&server).await;
+    authenticate(&mut survivor, "Survivor").await;
+    let mut pending = Vec::new();
+    for index in 0..64 {
+        pending.push(
+            TcpStream::connect(if index % 2 == 0 {
+                server.ws_addr
+            } else {
+                server.http_addr
+            })
+            .await
+            .unwrap(),
+        );
+    }
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while server.state.transport_slots.available_permits() != 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let mut excess = TcpStream::connect(server.http_addr).await.unwrap();
+    let _ = excess
+        .write_all(b"GET /api/v1/health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+        .await;
+    let mut byte = [0];
+    let closed = tokio::time::timeout(std::time::Duration::from_secs(2), excess.read(&mut byte))
+        .await
+        .unwrap();
+    assert!(matches!(closed, Ok(0) | Err(_)));
+    send_only(&mut survivor, json!({"type":"LIST_LOBBIES"})).await;
+    let listing = recv(&mut survivor).await;
+    assert_eq!(listing["type"], "LOBBY_LIST");
+    drop(pending.pop());
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while server.state.transport_slots.available_permits() == 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let response = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .unwrap()
+        .get(format!("http://{}/api/v1/health", server.http_addr))
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    drop(response);
+    drop(pending);
+    drop(survivor);
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while server.state.transport_slots.available_permits() != 64
+            || !server.state.sessions.is_empty()
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn online_partial_http_headers_have_an_absolute_deadline() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let server = TestServer::start().await;
+    let mut survivor = connect_ws(&server).await;
+    authenticate(&mut survivor, "LongLived").await;
+    let mut socket = TcpStream::connect(server.http_addr).await.unwrap();
+    socket
+        .write_all(b"GET /api/v1/health HTTP/1.1\r\nHost: ")
+        .await
+        .unwrap();
+    let mut byte = [0];
+    let result = tokio::time::timeout(std::time::Duration::from_secs(22), socket.read(&mut byte))
+        .await
+        .unwrap();
+    assert!(matches!(result, Ok(0) | Err(_)));
+    assert_eq!(server.state.transport_slots.available_permits(), 64);
+    assert_eq!(
+        send_recv(&mut survivor, json!({"type":"LIST_LOBBIES"})).await["type"],
+        "LOBBY_LIST"
     );
 }

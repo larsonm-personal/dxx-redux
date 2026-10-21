@@ -9,7 +9,6 @@ use axum::routing::get;
 use axum::Router;
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
-use tower::ServiceExt;
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
@@ -448,57 +447,9 @@ pub async fn run(
     let app = ws_router(Arc::clone(&state));
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    let _ready = crate::ListenerReady::new(state, crate::ListenerReady::WS);
-
-    if let Some(tls_cfg) = tls_config {
-        let tls_acceptor = tokio_rustls::TlsAcceptor::from(tls_cfg);
-        info!(%addr, "WebSocket server listening (TLS)");
-        // Manual accept loop: TLS handshake, then serve with axum/hyper
-        loop {
-            let (tcp_stream, remote_addr) = match listener.accept().await {
-                Ok(conn) => conn,
-                Err(e) => {
-                    warn!(%e, "TCP accept error");
-                    continue;
-                }
-            };
-            let acceptor = tls_acceptor.clone();
-            let app = app.clone();
-            tokio::spawn(async move {
-                let tls_stream = match acceptor.accept(tcp_stream).await {
-                    Ok(s) => s,
-                    Err(e) => {
-                        debug!(%remote_addr, %e, "TLS handshake failed");
-                        return;
-                    }
-                };
-                // Build a per-connection service with ConnectInfo injected
-                let tower_svc = app.into_service().map_request(
-                    move |mut req: hyper::Request<hyper::body::Incoming>| {
-                        req.extensions_mut().insert(ConnectInfo(remote_addr));
-                        req
-                    },
-                );
-                let hyper_svc = hyper_util::service::TowerToHyperService::new(tower_svc);
-                let stream = hyper_util::rt::TokioIo::new(tls_stream);
-                let conn = hyper_util::server::conn::auto::Builder::new(
-                    hyper_util::rt::TokioExecutor::new(),
-                )
-                .serve_connection_with_upgrades(stream, hyper_svc)
-                .await;
-                if let Err(e) = conn {
-                    debug!(%remote_addr, %e, "connection error");
-                }
-            });
-        }
-    } else {
-        info!(%addr, "WebSocket server listening (plain)");
-        axum::serve(
-            listener,
-            app.into_make_service_with_connect_info::<SocketAddr>(),
-        )
-        .await?;
-    }
+    let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::WS);
+    info!(%addr, tls = tls_config.is_some(), "WebSocket server listening");
+    crate::transport::serve(listener, app, state, tls_config).await?;
     Ok(())
 }
 
