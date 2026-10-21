@@ -178,7 +178,7 @@ def public_diagnostics(value):
         )
     clean["assets"] = {
         key: value["assets"][key]
-        for key in ("archive", "baseline", "route_oracle", "retail_stage_verified", "metadata_summary", "metadata_output")
+        for key in ("archive", "baseline", "route_oracle", "retail_stage_verified", "metadata_summary", "metadata_output", "route_summary")
         if type(value.get("assets", {}).get(key)) is bool
     }
     return clean

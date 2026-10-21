@@ -746,6 +746,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             else:
                 destination = work / "route"
                 sha = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+                # Combine and hash-check split D1/D2 inputs using the runner's automatic stage
                 code = run_corpus(["pwsh", "-NoProfile", "-NonInteractive", "-File",
                             str(repo / "android/helpers/regenerate_all_guidebot_simulations.ps1"),
                             "-Mode", "Headless", "-NoBuild", "-ExactMissionJson", "-MissionJson", suite["baseline"],
@@ -754,10 +755,14 @@ def run_suite(suite, repo, build_root, output, timeout):
                             "-LevelFileFilter", suite["level_file"],
                             "-HeadlessExecutable", binary("d2", "-headless-route"),
                             "-HogDir", str(repo / "game_data/retail-ci/d2"),
-                            "-D1InD2HogDir", str(repo / "game_data/retail-ci/d1"),
                             "-MaxParallel", "1", "-SampleFraction", "0.000001",
                             "-SampleSeed", str(max(1, int(sha[:7], 16))), "-OutputRoot", str(destination)])
                 summary = document(destination / "summary.json")
+                result["assets"]["route_summary"] = summary is not None
+                if code:
+                    from nightly_regression_corpus import route_runner_failure
+                    result["owner_failure"] = route_runner_failure(
+                        work / ("command-%d.stderr.log" % len(result["commands"])), code)
                 checked = compare_route(expected_route,
                                         document(destination / "results" / baseline.with_suffix(".simulation.json").name),
                                         summary, suite["baseline"], suite["identity"])

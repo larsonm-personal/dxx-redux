@@ -116,6 +116,67 @@ class HostAdapterTests(unittest.TestCase):
                     self.assertFalse(receipt["coverage_complete"])
                     self.assertEqual(receipt["cases"], [])
 
+    def test_d1_corpus_route_uses_verified_automatic_combined_data_and_retains_early_failure(self):
+        from nightly_regression_catalog import CORPUS_COMMIT
+        import nightly_retail
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            baseline = root / "game_data/mission_files/fixture.json"
+            baseline.parent.mkdir(parents=True)
+            baseline.write_text(
+                json.dumps(
+                    [
+                        {
+                            "game": "d1",
+                            "mission_filename": "fixture.msn",
+                            "levels": [{"level_num": 1, "level_file": "one.rdl"}],
+                        }
+                    ]
+                )
+            )
+            baseline.with_suffix(".zip").touch()
+            baseline.with_suffix(".simulation.json").write_text("[]")
+            suite = {
+                "id": "corpus:fixture",
+                "kind": "retail-corpus",
+                "profile": "route",
+                "baseline": "fixture.json",
+                "target_index": 0,
+                "level_num": 1,
+                "level_file": "one.rdl",
+                "identity": "fixture.json|0|1|one.rdl",
+                "coverage_scope": "synthetic",
+            }
+            with (
+                patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
+                patch.object(adapter, "verify_retail_stage"),
+                patch("nightly_corpus_stage.stage_route", return_value=root / "stage"),
+                patch.object(adapter.subprocess, "check_output", return_value="a" * 40),
+                patch.object(adapter.subprocess, "Popen") as launch,
+            ):
+
+                def process(argv, **kwargs):
+                    if "-HeadlessExecutable" in argv:
+                        self.assertNotIn("-D1InD2HogDir", argv)
+                        self.assertEqual(argv[argv.index("-HogDir") + 1], str(root / "game_data/retail-ci/d2"))
+                        kwargs["stderr"].write("D1-in-D2 data directory is missing PRIVATE_PATH SECRET")
+                    return launch.return_value
+
+                launch.side_effect = process
+                launch.return_value.wait.side_effect = [0] * 5 + [1]
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+            receipt = json.loads((root / "receipt.json").read_text())
+            self.assertEqual(launch.call_count, 6)
+            self.assertEqual(code, 2)
+            self.assertFalse(receipt["coverage_complete"])
+            clean = nightly_retail.public_diagnostics(receipt)
+            self.assertFalse(clean["assets"]["route_summary"])
+            self.assertEqual(clean["owner_failure"]["categories"], ["route-base-data"])
+            self.assertEqual(clean["owner_failure"]["exit_code"], 1)
+            self.assertNotIn("PRIVATE", str(clean))
+            self.assertNotIn("SECRET", str(clean))
+
     def test_real_nonzero_process_retains_both_streams_and_typed_receipt(self):
         suite = {"id": "fixture", "kind": "python-script", "path": "fixture.py", "coverage_scope": "fixture"}
         with tempfile.TemporaryDirectory() as directory:
