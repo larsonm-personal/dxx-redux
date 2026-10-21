@@ -106,8 +106,9 @@ jobs:
               raise ValueError('Selected plan differs from exact target')
           selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
           requirements = {
-              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware', 'test_lan_three_player_startup') for test in selected),
+              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware', 'test_lan_three_player_startup', 'test_mp_public_shareware') for test in selected),
               'three_emulators': any(test.get('requires') == 'three_emulators' for test in selected),
+              'online_preview': any(test.get('args', {}).get('suite') == 'test_mp_public_shareware' for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
               'native_replay': any(test.get('owner') == 'shareware' and test.get('args', {}).get('suite') in ('test_auto_level_cheats', 'test_auto_level_demos') for test in selected),
           }
@@ -115,6 +116,16 @@ jobs:
               for name, needed in requirements.items():
                   output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
+      - name: Prepare pinned local matchmaking server
+        if: steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(awk '$1 == "rustc" {print $2}' target/server/rust_version.txt)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          rustup toolchain install "$version" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$version" >> "$GITHUB_ENV"
+          cargo +"$version" build --locked --release --manifest-path target/server/Cargo.toml
       - name: Prepare dependency locations
         shell: bash
         run: |

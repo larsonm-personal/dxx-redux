@@ -31,6 +31,30 @@ required task exit shuts down the process with status 1. Readiness includes the
 protocol version and aggregate socket, room and lease counts, never keys or
 addresses. Verify those counts return to baseline after each lifecycle scenario.
 
+## Branch Android gameplay campaign
+
+The existing extended-suite workflow accepts the bounded `online-preview`
+campaign on a reviewed topic branch:
+
+```sh
+gh workflow run nightly-tooling-sweep.yml --ref online-restoration -f campaign=online-preview
+```
+
+It selects only `test_mp_public_shareware`, builds the matching locked server
+with the repository-pinned Rust version, and stages hash-verified public D1
+shareware onto two verified disposable emulators. The runner owns loopback WS,
+HTTP, STUN and authenticated relay listeners with a synthetic in-memory database.
+It uses explicit debug identities; this is not a production GPGS or direct-install
+identity qualification. Occupied test ports fail rather than killing unrelated
+processes, and this public variant makes no firewall changes.
+
+Pass requires actual native D1 engine selection, live network gameplay with both
+connected callsigns on each client, a bounded gameplay soak, then zero rooms,
+relay leases and control sockets after explicit disconnect. Logs alone and absent
+introspection cannot pass. This initial two-client campaign does not establish
+three-client late join, mobile background recovery or internet NAT behavior.
+Retain the exact head SHA, Actions run ID and receipts before expanding the matrix.
+
 ## Private staging prerequisites
 
 Record the owned hostname/provider, deployment owner, approved service account,

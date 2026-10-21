@@ -924,6 +924,16 @@ $allTests += @{
     Arguments = @('-GeneratedAudio')
 }
 
+$allTests += @{
+    Name = 'test_mp_public_shareware'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 1200
+    Arguments = @('-PublicShareware')
+}
+
 # Exact public variants keep the original retail owners unchanged
 $allTests += @{
     Name = 'test_lan_launch_preparation_public_shareware'
