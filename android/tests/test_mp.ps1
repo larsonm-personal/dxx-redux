@@ -266,17 +266,24 @@ function Test-ExpectedOnlineAdmission {
 }
 
 function Assert-OnlineAdmissionCancelled {
-    param([string]$Serial)
-    Send-MpCommand -Serial $Serial -Command 'disconnect'
-    if (-not (Wait-ForCondition -Description 'Unapproved join cancellation retires only joining client' -TimeoutSec 15 -PollMs 500 -Condition {
+    param([string]$Serial, [switch]$NativeTimeout)
+    # Native timeout must clean membership with the authenticated control socket alive
+    if (-not $NativeTimeout) { Send-MpCommand -Serial $Serial -Command 'disconnect' }
+    $expectedSockets = if ($NativeTimeout) { 3 } else { 2 }
+    if (-not (Wait-ForCondition -Description 'Unapproved join terminal retires only joining client' -TimeoutSec 25 -PollMs 500 -Condition {
                 $ready = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
                 $control = Get-MpIntrospection -Serial $Serial
                 if (-not $control) { return $false }
                 $r = $control.online_resources
-                return $ready.rooms -eq 1 -and $ready.relay_sessions -eq 1 -and $ready.pending_and_authenticated_sockets -eq 2 -and
+                return $ready.rooms -eq 1 -and $ready.relay_sessions -eq 1 -and $ready.pending_and_authenticated_sockets -eq $expectedSockets -and
                 -not $control.PSObject.Properties['lobby'] -and $r.proxy_workers -eq 0 -and $r.background_jobs -eq 0 -and
                 -not $r.candidate_socket -and -not $r.upnp_mapping -and @($r.peers).Count -eq 0
             })) { throw 'Unapproved join cancellation left membership, routes or workers' }
+    if ($NativeTimeout) {
+        $nativeLog = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-d') -Seconds 10
+        if ($nativeLog -notmatch 'Join wait: native terminal failure') { throw 'Missing real native refusal/timeout producer receipt' }
+        Write-Status 'ONLINE_EVIDENCE native refusal/timeout cleaned assigned join without client cancel or F6' 'Green'
+    }
     # Let the native consent prompt and retired-peer relay timeout expire without approval
     Start-Sleep -Seconds 12
     $hostState = Get-GameIntrospection -Serial $EMU1
@@ -284,11 +291,13 @@ function Assert-OnlineAdmissionCancelled {
     Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'unapproved join cancellation preserves original pair'
     # Cleanup is already proved; stopping the unused native join screen cannot mask a leak
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
-    Write-Status 'ONLINE_EVIDENCE expected native request cancelled without F6; original pair and room preserved' 'Green'
+    $terminal = if ($NativeTimeout) { 'timed out natively' } else { 'cancelled' }
+    Write-Status "ONLINE_EVIDENCE expected native request $terminal without F6; original pair and room preserved" 'Green'
 }
 
 function Join-RunningOnlineGame {
-    param([string]$Serial, [string]$Callsign, [switch]$CancelAdmission, [switch]$AllowKnownRejoin)
+    param([string]$Serial, [string]$Callsign, [switch]$CancelAdmission, [switch]$AllowKnownRejoin, [switch]$NativeTimeout)
+    if ($NativeTimeout) { Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-c') -Seconds 10 | Out-Null }
     if (-not (Start-SetupActivity -Serial $Serial)) { throw "Late join launcher failed on $Serial" }
     Send-MpCommand -Serial $Serial -Command 'set_callsign' -Extras @('--es', 'callsign', $Callsign)
     Send-MpCommand -Serial $Serial -Command 'connect' -Extras @('--es', 'url', $testServerUrl)
@@ -341,6 +350,7 @@ function Join-RunningOnlineGame {
         Get-OnlinePeerSample -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'admission observation failure' -Baseline @{} | Out-Null
         throw 'Expected native consent or known rejoin was not observed'
     }
+    if ($NativeTimeout) { Assert-OnlineAdmissionCancelled -Serial $Serial -NativeTimeout; return }
     if ($CancelAdmission) { Assert-OnlineAdmissionCancelled -Serial $Serial; return }
     if ($script:onlineKnownRejoin) { Write-Status 'ONLINE_EVIDENCE known native identity rejoined without a new consent prompt' 'Green'; return }
     # Recheck immediately before sending the key; never approve an unrelated or expired request
@@ -1172,6 +1182,7 @@ try {
             }
         }
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
+        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -NativeTimeout
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'

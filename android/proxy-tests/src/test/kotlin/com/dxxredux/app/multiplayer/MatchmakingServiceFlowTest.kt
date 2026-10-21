@@ -216,6 +216,20 @@ class MatchmakingServiceFlowTest {
             )
             assertTrue(sent.any { it.contains("JOIN_FRIEND_GAME") })
             assertTrue("Completed friend join sent another code-less join", sent.none { it.contains("JOIN_LOBBY") })
+            // Runtime callbacks carry the launch-owned token, never a fresh lookup
+            field("runtimeAttempt", "replacement-attempt")
+            service.runtimeGameProcessDisconnected("old-attempt", false)
+            assertTrue(sent.none { it.contains("LEAVE_LOBBY") })
+            assertEquals(
+                "coded-room",
+                MatchmakingStateHolder.state.value.currentLobby
+                    ?.lobbyId,
+            )
+            service.runtimeGameProcessDisconnected("replacement-attempt", false)
+            service.runtimeGameProcessDisconnected("replacement-attempt", false)
+            assertEquals(1, sent.count { it.contains("LEAVE_LOBBY") })
+            assertEquals(null, MatchmakingStateHolder.state.value.currentLobby)
+            assertEquals(0, service.resourceDiagnostics()["background_jobs"])
         } finally {
             service.disconnect()
         }

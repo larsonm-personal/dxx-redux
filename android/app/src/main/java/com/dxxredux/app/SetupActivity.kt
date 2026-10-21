@@ -2814,6 +2814,7 @@ class SetupActivity : ComponentActivity() {
                 .takeIf { it.isNotBlank() } ?: mpCallsign
         mpCallsign = launchCallsign
         val mpIntent = createGameLaunchIntent(info.game)
+        mpIntent.putExtra("mp_runtime_attempt", info.runtimeAttempt)
         mpIntent.putExtra("mp_callsign", launchCallsign)
         if (launchCallsign.isNotBlank()) {
             mpIntent.putExtra("pilot_callsign", launchCallsign)

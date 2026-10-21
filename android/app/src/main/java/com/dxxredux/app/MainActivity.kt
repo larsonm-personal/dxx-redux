@@ -2520,7 +2520,7 @@ class MainActivity :
 
     private fun startMultiplayerRuntime(host: Boolean) {
         if (multiplayerRuntimeStarted) {
-            RuntimeGameStateBridge.updateHost(host)
+            RuntimeGameStateBridge.updateHost(host, intent.getStringExtra("mp_runtime_attempt"))
             return
         }
         try {
@@ -2542,6 +2542,7 @@ class MainActivity :
         RuntimeGameStateBridge.connect(
             context = this,
             host = host,
+            attempt = intent.getStringExtra("mp_runtime_attempt"),
             stateProvider = { nativeGetNetgameState() },
             onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
         )
@@ -2551,7 +2552,7 @@ class MainActivity :
 
     private fun stopMultiplayerRuntime() {
         if (!multiplayerRuntimeStarted) return
-        RuntimeGameStateBridge.disconnect()
+        if (!RuntimeGameStateBridge.disconnect(intent.getStringExtra("mp_runtime_attempt"))) return
         com.dxxredux.app.multiplayer.MultiplayerGameService
             .stop(this)
         com.dxxredux.app.multiplayer.MultiplayerForegroundService

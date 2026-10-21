@@ -36,6 +36,8 @@ class MultiplayerForegroundService : Service() {
     private val deadlineHandler = Handler(Looper.getMainLooper())
     private val shutdownHandler = Handler(Looper.getMainLooper())
     private var runtimeClient: Messenger? = null
+    private var runtimeAttempt: String? = null
+    private var runtimeDeath: IBinder.DeathRecipient? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val messenger =
         Messenger(
@@ -61,7 +63,7 @@ class MultiplayerForegroundService : Service() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        disconnectGameProcess()
+        // Binder death and explicit STOPPED carry ownership; onUnbind does not
         return false
     }
 
@@ -129,18 +131,45 @@ class MultiplayerForegroundService : Service() {
             Log.w(TAG, "Rejected runtime IPC from UID ${message.sendingUid}")
             return
         }
+        val attempt = message.data.getString(RUNTIME_IPC_KEY_ATTEMPT)
+        if (attempt != null && !MatchmakingService.ownsRuntimeAttempt(attempt)) return
+        if (message.what != RUNTIME_IPC_REGISTER &&
+            (attempt != runtimeAttempt || message.replyTo?.binder != runtimeClient?.binder)
+        ) {
+            return
+        }
         when (message.what) {
             RUNTIME_IPC_REGISTER -> {
+                // A LAN registration cannot replace an owned online runtime
+                if (attempt == null && runtimeAttempt?.let(MatchmakingService::ownsRuntimeAttempt) == true) return
+                val client = message.replyTo ?: return
+                clearRuntimeDeath()
+                runtimeAttempt = attempt
                 runtimeSession.register(message.data.getBoolean(RUNTIME_IPC_KEY_HOST))
-                runtimeClient = message.replyTo
+                runtimeClient = client
+                val death =
+                    IBinder.DeathRecipient {
+                        deadlineHandler.post {
+                            if (runtimeClient?.binder == client.binder &&
+                                runtimeAttempt == attempt
+                            ) {
+                                disconnectGameProcess()
+                            }
+                        }
+                    }
+                runtimeDeath = death
+                try {
+                    client.binder.linkToDeath(death, 0)
+                } catch (_: RemoteException) {
+                    disconnectGameProcess()
+                    return
+                }
                 sendDiagnostics(message)
             }
 
             RUNTIME_IPC_GAME_STATE -> {
-                if (runtimeSession.acceptsGameState()) {
-                    message.data.getIntArray(RUNTIME_IPC_KEY_STATE)?.let {
-                        MatchmakingService.publishRuntimeGameState(it)
-                    }
+                message.data.getIntArray(RUNTIME_IPC_KEY_STATE)?.let {
+                    if (runtimeSession.acceptsGameState()) MatchmakingService.publishRuntimeGameState(it)
                 }
             }
 
@@ -191,12 +220,20 @@ class MultiplayerForegroundService : Service() {
         DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background deadline expired")
         runtimeClient?.let { client ->
             try {
-                client.send(Message.obtain(null, RUNTIME_IPC_BACKGROUND_TIMEOUT))
+                client.send(
+                    Message.obtain(null, RUNTIME_IPC_BACKGROUND_TIMEOUT).apply {
+                        data = Bundle().apply { putString(RUNTIME_IPC_KEY_ATTEMPT, runtimeAttempt) }
+                    },
+                )
             } catch (e: RemoteException) {
                 Log.w(TAG, "Could not notify game process of multiplayer background timeout", e)
             }
         }
-        shutdownHandler.postDelayed(::forceBackgroundShutdown, ENGINE_DISCONNECT_GRACE_MS)
+        val owner = runtimeClient?.binder
+        val attempt = runtimeAttempt
+        shutdownHandler.postDelayed({
+            if (runtimeClient?.binder == owner && runtimeAttempt == attempt) forceBackgroundShutdown()
+        }, ENGINE_DISCONNECT_GRACE_MS)
     }
 
     private fun forceBackgroundShutdown() {
@@ -222,7 +259,11 @@ class MultiplayerForegroundService : Service() {
         try {
             reply.send(
                 Message.obtain(null, RUNTIME_IPC_DIAGNOSTICS).apply {
-                    data = Bundle().apply { putString(RUNTIME_IPC_KEY_DIAGNOSTICS, encoded) }
+                    data =
+                        Bundle().apply {
+                            putString(RUNTIME_IPC_KEY_DIAGNOSTICS, encoded)
+                            putString(RUNTIME_IPC_KEY_ATTEMPT, runtimeAttempt)
+                        }
                 },
             )
         } catch (e: RemoteException) {
@@ -230,9 +271,21 @@ class MultiplayerForegroundService : Service() {
         }
     }
 
+    private fun clearRuntimeDeath() {
+        runtimeDeath?.let { death -> runtimeClient?.binder?.unlinkToDeath(death, 0) }
+        runtimeDeath = null
+    }
+
     private fun disconnectGameProcess() {
         val wasConnected = runtimeSession.isConnected()
-        MatchmakingService.runtimeGameProcessDisconnected(runtimeSession.disconnect())
+        val wasHost = runtimeSession.disconnect()
+        runtimeAttempt?.let { MatchmakingService.runtimeGameProcessDisconnected(it, wasHost) }
+        clearRuntimeDeath()
+        runtimeAttempt = null
+        deadline.foreground()
+        deadlineHandler.removeCallbacksAndMessages(null)
+        shutdownHandler.removeCallbacksAndMessages(null)
+        cancelBackgroundAlarm()
         if (wasConnected) {
             com.dxxredux.app.lobby.LobbyService
                 .onRuntimeGameDisconnected()
@@ -242,6 +295,7 @@ class MultiplayerForegroundService : Service() {
 
     override fun onDestroy() {
         Log.d(TAG, "Service destroyed: game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}")
+        disconnectGameProcess()
         MultiplayerGameService.stop(this)
         deadline.foreground()
         cancelBackgroundAlarm()

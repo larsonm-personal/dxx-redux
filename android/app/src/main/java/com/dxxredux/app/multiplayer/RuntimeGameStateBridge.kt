@@ -23,6 +23,7 @@ internal const val RUNTIME_IPC_GAME_STOPPED = 5
 internal const val RUNTIME_IPC_ACTIVITY_VISIBILITY = 6
 internal const val RUNTIME_IPC_BACKGROUND_TIMEOUT = 7
 internal const val RUNTIME_IPC_KEY_HOST = "host"
+internal const val RUNTIME_IPC_KEY_ATTEMPT = "attempt"
 internal const val RUNTIME_IPC_KEY_STATE = "state"
 internal const val RUNTIME_IPC_KEY_DIAGNOSTICS = "diagnostics"
 internal const val RUNTIME_IPC_KEY_BACKGROUND = "background"
@@ -168,6 +169,7 @@ object RuntimeGameStateBridge {
     private val incoming =
         Messenger(
             Handler(Looper.getMainLooper()) { message ->
+                if (message.data.getString(RUNTIME_IPC_KEY_ATTEMPT) != runtimeAttempt) return@Handler true
                 if (message.what == RUNTIME_IPC_DIAGNOSTICS) {
                     val encoded = message.data.getString(RUNTIME_IPC_KEY_DIAGNOSTICS)
                     diagnostics =
@@ -193,6 +195,7 @@ object RuntimeGameStateBridge {
     private var service: Messenger? = null
     private var bound = false
     private var isHost = false
+    private var runtimeAttempt: String? = null
     private var nativeStateProvider: (() -> IntArray)? = null
     private var backgroundTimeoutHandler: (() -> Unit)? = null
     private var activityBackgrounded = false
@@ -249,6 +252,7 @@ object RuntimeGameStateBridge {
     fun connect(
         context: Context,
         host: Boolean,
+        attempt: String?,
         stateProvider: () -> IntArray,
         onBackgroundTimeout: () -> Unit,
     ) {
@@ -256,6 +260,7 @@ object RuntimeGameStateBridge {
         val bindingContext = context.applicationContext
         appContext = bindingContext
         isHost = host
+        runtimeAttempt = attempt
         nativeStateProvider = stateProvider
         backgroundTimeoutHandler = onBackgroundTimeout
         bound =
@@ -268,7 +273,11 @@ object RuntimeGameStateBridge {
         if (host) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
     }
 
-    fun updateHost(host: Boolean) {
+    fun updateHost(
+        host: Boolean,
+        attempt: String?,
+    ) {
+        if (attempt != runtimeAttempt) return
         if (isHost == host) return
         isHost = host
         handler.removeCallbacks(statePublisher)
@@ -276,7 +285,8 @@ object RuntimeGameStateBridge {
         if (host) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
     }
 
-    fun disconnect() {
+    fun disconnect(attempt: String? = runtimeAttempt): Boolean {
+        if (attempt != runtimeAttempt) return false
         handler.removeCallbacks(statePublisher)
         if (bound) {
             send(RUNTIME_IPC_GAME_STOPPED, Bundle().apply { putBoolean(RUNTIME_IPC_KEY_HOST, isHost) })
@@ -289,11 +299,13 @@ object RuntimeGameStateBridge {
         service = null
         appContext = null
         isHost = false
+        runtimeAttempt = null
         nativeStateProvider = null
         backgroundTimeoutHandler = null
         activityBackgrounded = false
         diagnostics = RuntimeDiagnosticsSnapshot()
         lastDiagnosticRequestMs = 0L
+        return true
     }
 
     fun noteActivityVisibility(background: Boolean) {
@@ -329,7 +341,7 @@ object RuntimeGameStateBridge {
         try {
             destination.send(
                 Message.obtain(null, what).apply {
-                    this.data = data
+                    this.data = Bundle(data).apply { putString(RUNTIME_IPC_KEY_ATTEMPT, runtimeAttempt) }
                     replyTo = incoming
                 },
             )

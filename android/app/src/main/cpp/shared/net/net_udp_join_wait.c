@@ -128,7 +128,10 @@ void net_join_wait_fail(const char *message)
 {
 	/* Keep the attempt guard until the outer join loop closes networking */
 	if (!active) return;
-	if (!failure) failure = message;
+	if (!failure) {
+		failure = message;
+		debug_log_force(DLOG_NETWORK, "Join wait: native terminal failure");
+	}
 	restart = 0;
 	Network_status = NETSTAT_MENU;
 }

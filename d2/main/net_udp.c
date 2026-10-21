@@ -4960,6 +4960,8 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 		return;
 
 #ifdef __ANDROID__
+	if (data[5] == DUMP_DORK)
+		debug_log_force(DLOG_NETWORK, "Join wait: native terminal failure");
 	if (net_join_wait_active() && (data[5] == DUMP_ENDLEVEL || data[5] == DUMP_LEVEL)) {
 		net_join_wait_interrupt();
 		return;
@@ -7928,6 +7930,10 @@ int net_udp_do_join_game(ubyte join_as_obs)
 	}
 
 	// Choice is valid, prepare to join in
+#ifdef __ANDROID__
+	/* Own the joining lifecycle so refusal before sync also emits stopped */
+	android_lifecycle_actions_multiplayer_started(0);
+#endif
 	Difficulty_level = Netgame.difficulty;
 	if(! join_as_obs) {
 		/* android port: pick a temp slot that won't collide with the

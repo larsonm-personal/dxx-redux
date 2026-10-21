@@ -74,6 +74,28 @@ foreach ($leak in @($false, $true)) {
     if ($leak -and ($script:stops -ne 0 -or $script:survivors -ne 0)) { throw 'Cleanup masked an orphan relay pair' }
     if (-not $leak -and ($script:stops -ne 1 -or $script:survivors -ne 1)) { throw 'Cancellation skipped surviving gameplay oracle' }
 }
+# No cancel command is permitted in the native terminal path, even on failure
+function Send-MpCommand { param($Serial, $Command) throw 'Native timeout sent a client cancel' }
+function Invoke-RestMethod {
+    param($Uri, $TimeoutSec)
+    return [pscustomobject]@{ rooms = 1; relay_sessions = 1; pending_and_authenticated_sockets = 3 }
+}
+function Adb-Dev-Timeout {
+    param($Serial, $AdbArgs, $Seconds)
+    if ($AdbArgs[0] -eq 'logcat') {
+        if ($script:nativeReceipt) { return 'Join wait: native terminal failure' }
+        return 'unrelated log line'
+    }
+    if (($AdbArgs -join ' ') -notmatch 'force-stop') { throw 'Unexpected terminal control' }
+    $script:stops++
+}
+foreach ($receipt in @($true, $false)) {
+    $script:nativeReceipt = $receipt; $script:survivors = 0; $script:stops = 0; $failed = $false
+    try { Assert-OnlineAdmissionCancelled -Serial 'emulator-5558' -NativeTimeout } catch { $failed = $true }
+    if ($failed -eq $receipt) { throw 'Native timeout did not require a real producer receipt' }
+    if ($receipt -and ($script:stops -ne 1 -or $script:survivors -ne 1)) { throw 'Native timeout skipped survivor proof' }
+    if (-not $receipt -and ($script:stops -ne 0 -or $script:survivors -ne 0)) { throw 'Cleanup masked a missing native producer' }
+}
 Write-Host 'PASS: explicit online fixture consent, stale/unrelated rejection, cancellation isolation and instrumentation ownership'
 # The failure observer must inspect every client, even when the first roster is wrong
 foreach ($name in @('Get-OnlinePeerSample', 'Assert-OnlinePeerMatrix')) {

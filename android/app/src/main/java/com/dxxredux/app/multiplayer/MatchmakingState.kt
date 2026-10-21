@@ -87,6 +87,7 @@ data class GameLaunchInfo(
     val lanHostAddr: String? = null,
     val lanHostPort: Int = NetworkConstants.ENGINE_PORT,
     val isLan: Boolean = false,
+    val runtimeAttempt: String? = null,
     val hostCallsign: String? = null,
     val hostClientId: String? = null,
     val coopQol: Boolean = true,

@@ -202,6 +202,11 @@ object MatchmakingService {
 
     internal fun currentProxy(): LocalhostProxy? = localhostProxy
 
+    private var runtimeAttempt: String? = null
+
+    @Synchronized
+    internal fun ownsRuntimeAttempt(attempt: String): Boolean = runtimeAttempt == attempt
+
     @Synchronized
     internal fun networkAttempt(): Long = networkGeneration
 
@@ -629,16 +634,18 @@ object MatchmakingService {
         RuntimeGameStateCodec.encode(arr)?.let(::send)
     }
 
-    fun runtimeGameProcessDisconnected(wasHost: Boolean) {
-        if (shouldEndHostedGame(
-                wasHost,
-                gameStateUpdatesEnabled,
-                state.state.value.currentLobby
-                    ?.isHost == true,
-            )
-        ) {
-            NetLog.log("GAME", "Host game process disconnected")
+    @Synchronized
+    fun runtimeGameProcessDisconnected(
+        attempt: String,
+        wasHost: Boolean,
+    ) {
+        if (!ownsRuntimeAttempt(attempt)) return
+        runtimeAttempt = null
+        if (wasHost) {
+            retireNetworkWork()
             endGame()
+        } else {
+            leaveLobby()
         }
     }
 
@@ -803,6 +810,7 @@ object MatchmakingService {
     @Synchronized
     private fun retireNetworkWork() {
         networkGeneration++
+        runtimeAttempt = null
         installationAuthJob?.cancel()
         installationAuthJob = null
         installationAuth = null
@@ -1262,8 +1270,13 @@ object MatchmakingService {
 
         // Determine if we're the host (slot 0 = host)
         val isHost = gs.yourSlot == 0
+        runtimeAttempt =
+            java.util.UUID
+                .randomUUID()
+                .toString()
         val launchInfo =
             GameLaunchInfo(
+                runtimeAttempt = runtimeAttempt,
                 game = gs.game,
                 mission = gs.gameInfo["mission"]?.jsonPrimitive?.content ?: "",
                 mode = gs.gameInfo["mode"]?.jsonPrimitive?.content ?: "",
