@@ -69,7 +69,7 @@ if ($PublicShareware) {
     $publicDirectory = Resolve-SharewareTestData -RepoRoot $REPO_ROOT -Game $Game -DataDir ''
 }
 $MISSION = if ($Game -eq "d1") { "descent" } else { "d2" }
-if ($PublicShareware) { $MISSION = "''" }
+if ($PublicShareware) { $MISSION = if ($Game -eq 'd1') { "''" } else { $publicConfig.Mission } }
 $MODE = $Mode
 
 $serverProcess = $null
