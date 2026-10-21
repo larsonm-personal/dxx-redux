@@ -1,5 +1,6 @@
 """Synthetic private-fixture boundary checks; no token, network or game data."""
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,58 @@ ENV = {'GITHUB_REPOSITORY': retail.REPOSITORY, 'GITHUB_REF': 'refs/heads/cmake',
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_lan_failure_source_sites_retain_no_private_log_text(self):
+        source = "android/tests/test_lan_lobby_discovery.ps1"
+        data = (ROOT / source).read_bytes()
+        expected_line = next(
+            i
+            for i, line in enumerate(data.decode().splitlines(), 1)
+            if "FAIL: Host chat did not reach the joiner" in line
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "test.log"
+            log.write_text("\x1b[31mFAIL: Host chat did not reach the joiner\x1b[0m\nSECRET_ASSET_TEXT")
+            row = {
+                "name": "test_lan_lobby_discovery",
+                "status": "FAIL",
+                "log": str(log),
+                "source": source,
+                "source_sha256": hashlib.sha256(data).hexdigest(),
+                "elapsed": "02:03",
+            }
+            details = retail.master_failure_diagnostics(row, root)
+            self.assertEqual(details["source_matches"], [{"path": source, "line": expected_line}])
+            self.assertTrue(details["source_verified"])
+            self.assertEqual(details["duration_seconds"], 123)
+            clean = retail.public_receipt(
+                {"schema": 1, "target_sha": SHA, "catalog_hash": SHA, "batch_id": SHA, "lane": "android-dual",
+                    "results": [
+                        {
+                            "id": "master:test_lan_lobby_discovery",
+                            "status": "FAIL",
+                            "phase": "tests",
+                            "reason": "SECRET",
+                            "master_diagnostics": details,
+                        }
+                    ]
+                }
+            )
+            self.assertIn(source + ":" + str(expected_line), clean["results"][0]["reason"])
+            self.assertNotIn("SECRET", str(clean))
+            self.assertNotIn("Host chat", str(clean))
+            self.assertNotIn(str(root), str(clean))
+            self.assertFalse(
+                retail.master_failure_diagnostics({**row, "source_sha256": "0" * 64}, root)["source_verified"]
+            )
+            self.assertFalse(
+                retail.master_failure_diagnostics({**row, "log": str(root / "../outside")}, root)["log_available"]
+            )
+            log.write_text("X" * 40000 + "FAIL: Host chat did not reach the joiner" + "X" * 40000)
+            self.assertEqual(retail.master_failure_diagnostics(row, root)["source_matches"], [])
+            log.unlink()
+            self.assertFalse(retail.master_failure_diagnostics(row, root)["log_available"])
+
     def setUp(self):
         self.policy = {'schema': 1, 'suites': [
             {'id': 'master:retail', 'owner': 'master', 'lane': 'android-single',

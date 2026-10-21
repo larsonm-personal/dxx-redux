@@ -105,6 +105,61 @@ COMMANDS = frozenset(('cmake', 'bash', 'pwsh', 'python', 'other',
     'regenerate_all_mission_metadata_host.ps1', 'regenerate_all_guidebot_simulations.ps1', 'gradlew'))
 
 
+LAN_DIAGNOSTIC_SOURCES = {
+    "test_lan": "android/tests/test_lan.ps1",
+    "test_lan_host_migration_public_shareware": "android/tests/test_lan.ps1",
+    "test_lan_lobby_discovery": "android/tests/test_lan_lobby_discovery.ps1",
+}
+
+
+def master_failure_diagnostics(row, output):
+    """Locate fixed source messages; private log text never leaves this reader."""
+    import hashlib
+
+    source = LAN_DIAGNOSTIC_SOURCES.get(row.get("name"))
+    if not source or row.get("status") not in ("FAIL", "TIMEOUT", "BLOCKED", "RUNNING"):
+        return {}
+    result = {"source_matches": [], "log_available": False, "source_verified": False}
+    elapsed = str(row.get("elapsed", ""))
+    if re.fullmatch(r"(?:\d{2}:)?[0-5]\d:[0-5]\d", elapsed):
+        seconds = 0
+        for field in elapsed.split(":"):
+            seconds = seconds * 60 + int(field)
+        if seconds <= 86400:
+            result["duration_seconds"] = seconds
+    root = Path(output).absolute()
+    log = Path(row.get("log") or root / "__missing__").absolute()
+    if (
+        not log.resolve().is_relative_to(root.resolve())
+        or any(p.is_symlink() for p in (log, *log.parents))
+        or not log.is_file()
+    ):
+        return result
+    result.update(log_available=True, log_bytes=log.stat().st_size)
+    with log.open("rb") as stream:
+        head = stream.read(32768)
+        stream.seek(max(len(head), result["log_bytes"] - 32768))
+        text = (head + stream.read(32768)).decode("utf-8", errors="replace")
+    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
+    result["powershell_exception"] = bool(re.search(r"(?m)\bException:|EXCEPTION:", text))
+    script = Path(__file__).resolve().parents[2] / source
+    data = script.read_bytes()
+    if row.get("source") != source or row.get("source_sha256") != hashlib.sha256(data).hexdigest():
+        return result
+    result["source_verified"] = True
+    for number, line in enumerate(data.decode("utf-8-sig").splitlines(), 1):
+        # Only literal source prefixes of failure messages, never interpolation
+        match = re.search(r"""(?:throw\s+|Write-Status\s+)["']([^"'$`\r\n]+)""", line)
+        if not match or ("throw" not in line and not match[1].startswith("FAIL:")):
+            continue
+        literal = match[1].strip()
+        if len(literal) >= 24 and literal in text:
+            result["source_matches"].append({"path": source, "line": number})
+            if len(result["source_matches"]) == 8:
+                break
+    return result
+
+
 def public_diagnostics(value):
     clean = {}
     for key in ("elapsed_seconds", "elapsed_wall_seconds", "setup_seconds"):
@@ -176,6 +231,26 @@ def public_diagnostics(value):
                 ],
             }
         )
+    details = value.get("master_diagnostics")
+    if isinstance(details, dict):
+        clean["master_diagnostics"] = {
+            key: details[key]
+            for key in ("log_available", "source_verified", "powershell_exception")
+            if type(details.get(key)) is bool
+        }
+        if type(details.get("log_bytes")) is int and 0 <= details["log_bytes"] <= 2**40:
+            clean["master_diagnostics"]["log_bytes"] = details["log_bytes"]
+        if type(details.get("duration_seconds")) is int and 0 <= details["duration_seconds"] <= 86400:
+            clean["master_diagnostics"]["duration_seconds"] = details["duration_seconds"]
+        clean["master_diagnostics"]["source_matches"] = [
+            {"path": match["path"], "line": match["line"]}
+            for match in details.get("source_matches", [])[:8]
+            if details.get("source_verified") is True
+            and isinstance(match, dict)
+            and match.get("path") in LAN_DIAGNOSTIC_SOURCES.values()
+            and type(match.get("line")) is int
+            and 1 <= match["line"] <= 100000
+        ]
     clean["assets"] = {
         key: value["assets"][key]
         for key in ("archive", "baseline", "route_oracle", "retail_stage_verified", "metadata_summary", "metadata_output")
@@ -206,6 +281,15 @@ def public_receipt(receipt):
                      'metadata-cli-setup', 'corpus-worker-configure', 'corpus-worker-build') else '',
                  'cases': [{'status': case['status']} for case in row.get('cases', []) if case.get('status') in ('PASS', 'FAIL', 'SKIP', 'BLOCKED')]}
         clean.update(public_diagnostics(row))
+        sites = clean.get("master_diagnostics", {}).get("source_matches", [])
+        if sites and status in ("FAIL", "TIMEOUT", "BLOCKED"):
+            clean["reason"] = (
+                phase
+                + ": "
+                + status
+                + "; matched failure source: "
+                + ", ".join(site["path"] + ":" + str(site["line"]) for site in sites)
+            )
         clean['comparison_only'] = row.get('comparison_only') is True
         clean['runtime_outcome'] = row.get('runtime_outcome') if row.get('runtime_outcome') in ('ok', 'partial', 'failed', 'timeout', 'unsupported', 'route_mismatch') else ''
         if type(row.get('exit_code')) is int:

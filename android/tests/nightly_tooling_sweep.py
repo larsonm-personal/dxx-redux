@@ -401,7 +401,14 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         if entry['owner'] == 'master':
             row = observations.get(entry['args']['suite'], {})
             status = row.get('status', 'NOT_RUN')
-            exit_code = processes.get('master', {}).get('exit_code')
+            runner_exit = processes.get('master', {}).get('exit_code')
+            # A sibling's failure must not overwrite this child's durable result
+            exit_code = row.get('exit_code') if type(row.get('exit_code')) is int else runner_exit
+            if row:
+                try:
+                    row = {**row, 'master_diagnostics': retail.master_failure_diagnostics(row, output)}
+                except (OSError, ValueError):
+                    row = {**row, 'master_diagnostics': {'log_available': False}}
             if not row and exit_code:
                 row = {'reason': f'Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.'}
             if status == 'SKIP':
