@@ -3911,6 +3911,162 @@ async fn online_forced_relay_late_join_is_atomic_at_capacity() {
 }
 
 #[tokio::test]
+async fn online_three_player_late_join_allocates_all_pairs_before_approval() {
+    for capacity in [2, 3] {
+        let server = TestServer::with_config(|c| {
+            c.force_relay = true;
+            c.max_relay_sessions = capacity;
+        })
+        .await;
+        let mut host = connect_ws(&server).await;
+        let h = authenticate(&mut host, "Host").await;
+        let hp = uuid::Uuid::parse_str(h["player_id"].as_str().unwrap()).unwrap();
+        let room = create_test_room(&mut host).await;
+        let mut survivor = connect_ws(&server).await;
+        let b = authenticate(&mut survivor, "Survivor").await;
+        let bp = uuid::Uuid::parse_str(b["player_id"].as_str().unwrap()).unwrap();
+        send_only(
+            &mut survivor,
+            json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+        )
+        .await;
+        recv(&mut host).await;
+        recv(&mut survivor).await;
+        let mut joiner = connect_ws(&server).await;
+        let j = authenticate(&mut joiner, "Joiner").await;
+        let jp = uuid::Uuid::parse_str(j["player_id"].as_str().unwrap()).unwrap();
+        send_only(
+            &mut joiner,
+            json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+        )
+        .await;
+        recv(&mut host).await;
+        recv(&mut survivor).await;
+        recv(&mut joiner).await;
+        {
+            let mut lobby = server.state.lobbies.get_mut(&room).unwrap();
+            lobby.state = dxx_matchmaking::lobby::LobbyState::InGame;
+            lobby.pending_late_joiners.insert(jp);
+        }
+        server.state.stats.game_started();
+        // Existing survivor pair must remain untouched by partial allocation rollback
+        server.state.relay_sessions.insert(
+            123,
+            dxx_matchmaking::relay::RelaySession::new(
+                room,
+                [(0, hp), (1, bp)],
+                std::time::Instant::now(),
+            ),
+        );
+        send_only(&mut joiner, json!({"type":"CONNECTIVITY_OK","peer_id":hp,"winning_candidate_type":"relay","rtt_ms":1})).await;
+        let response = recv(&mut joiner).await;
+        if capacity == 2 {
+            assert_eq!(response["code"], "LOBBY_JOIN_FAILED");
+            assert_eq!(server.state.relay_sessions.len(), 1);
+            assert!(server.state.relay_sessions.contains_key(&123));
+            assert_eq!(server.state.sessions.get(&jp).unwrap().lobby_id, None);
+            assert_eq!(server.state.lobbies.get(&room).unwrap().players.len(), 2);
+            for ws in [&mut host, &mut survivor] {
+                send_only(ws, json!({"type":"LIST_LOBBIES"})).await;
+                loop {
+                    let msg = recv(ws).await;
+                    assert_ne!(msg["type"], "LATE_JOIN_APPROVED");
+                    if msg["type"] == "LOBBY_LIST" {
+                        break;
+                    }
+                }
+            }
+        } else {
+            assert_eq!(response["type"], "GAME_STARTING");
+            assert_eq!(response["your_slot"], 2);
+            assert_eq!(response["peers"].as_array().unwrap().len(), 2);
+            assert_eq!(server.state.relay_sessions.len(), 3);
+            for (slot, ws) in [(0, &mut host), (1, &mut survivor)] {
+                let approval = recv(ws).await;
+                assert_eq!(approval["type"], "LATE_JOIN_APPROVED");
+                let existing = &approval["peer"];
+                let peer = response["peers"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|p| p["slot"] == slot)
+                    .unwrap();
+                let token = peer["relay_token"].as_u64().unwrap() as u32;
+                let js = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                let es = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                let mut jq = 0;
+                let mut eq = 0;
+                bind_udp(
+                    &js,
+                    server.relay_addr,
+                    token,
+                    2,
+                    slot,
+                    &peer["relay_credentials"],
+                    &mut jq,
+                )
+                .await;
+                bind_udp(
+                    &es,
+                    server.relay_addr,
+                    token,
+                    slot,
+                    2,
+                    &existing["relay_credentials"],
+                    &mut eq,
+                )
+                .await;
+                for (from, to, source, dest, credentials, received, sequence) in [
+                    (
+                        2,
+                        slot,
+                        &js,
+                        &es,
+                        &peer["relay_credentials"],
+                        &existing["relay_credentials"],
+                        jq + 1,
+                    ),
+                    (
+                        slot,
+                        2,
+                        &es,
+                        &js,
+                        &existing["relay_credentials"],
+                        &peer["relay_credentials"],
+                        eq + 1,
+                    ),
+                ] {
+                    let frame = dxx_matchmaking::relay::seal(
+                        &relay_key(credentials, "send_key"),
+                        token,
+                        0,
+                        from,
+                        to,
+                        sequence,
+                        b"three-player late join",
+                    )
+                    .unwrap();
+                    source.send_to(&frame, server.relay_addr).await.unwrap();
+                    assert_eq!(
+                        dxx_matchmaking::relay::open(
+                            &relay_key(received, "receive_key"),
+                            &recv_udp(dest).await
+                        )
+                        .unwrap(),
+                        b"three-player late join"
+                    );
+                }
+            }
+            send_only(&mut joiner, json!({"type":"LEAVE_LOBBY"})).await;
+            // A later request serializes the leave before observing aggregate state
+            send_recv(&mut joiner, json!({"type":"LIST_LOBBIES"})).await;
+            assert_eq!(server.state.relay_sessions.len(), 1);
+            assert!(server.state.relay_sessions.contains_key(&123));
+        }
+    }
+}
+
+#[tokio::test]
 async fn online_match_result_closes_membership_once_and_rejects_waiting_room() {
     let server = TestServer::with_config(|c| c.force_relay = true).await;
     let mut host = connect_ws(&server).await;

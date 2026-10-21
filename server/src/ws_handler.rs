@@ -2371,60 +2371,107 @@ fn handle_authenticated_message(
                         && lobby.pending_late_joiners.remove(&player_id)
                     {
                         let host_id = lobby.host_player_id;
-                        let host_player = lobby.players.iter().find(|p| p.player_id == host_id);
-                        let joiner_player = lobby.players.iter().find(|p| p.player_id == player_id);
-                        if let (Some(host_p), Some(joiner_p)) = (host_player, joiner_player) {
-                            let (pair_conn_type, _) = determine_connection_type(host_p, joiner_p);
+                        let joiner = lobby
+                            .players
+                            .iter()
+                            .find(|p| p.player_id == player_id)
+                            .cloned();
+                        let established: Vec<_> = lobby
+                            .players
+                            .iter()
+                            .filter(|p| {
+                                p.player_id != player_id
+                                    && !lobby.pending_late_joiners.contains(&p.player_id)
+                            })
+                            .cloned()
+                            .collect();
+                        if let Some(joiner) = joiner {
                             let relay_addr = state.config.relay_public_addr.clone();
-                            let is_relay = state.config.force_relay
-                                || pair_conn_type == crate::lobby::ConnectionType::Relay
-                                || best_candidate_addr_for_type(
-                                    &host_p.candidates,
-                                    &pair_conn_type,
-                                )
-                                .is_empty()
-                                || best_candidate_addr_for_type(
-                                    &joiner_p.candidates,
-                                    &pair_conn_type,
-                                )
-                                .is_empty();
-
-                            // Determine host address for joiner's peer assignment
-                            let host_addr = if is_relay {
-                                relay_addr.clone()
-                            } else {
-                                best_candidate_addr_for_type(&host_p.candidates, &pair_conn_type)
-                            };
-                            // Determine joiner address for host's peer assignment
-                            let joiner_addr = if is_relay {
-                                relay_addr.clone()
-                            } else {
-                                best_candidate_addr_for_type(&joiner_p.candidates, &pair_conn_type)
-                            };
-
-                            let joiner_slot = lobby
-                                .players
-                                .iter()
-                                .find(|p| p.player_id == player_id)
-                                .map(|p| p.slot)
-                                .unwrap_or(1);
-                            let host_slot = 0u8; // host is always slot 0
-
-                            // Allocate relay if needed
-                            let mut relay_token: Option<u32> = None;
-                            if is_relay && !relay_addr.is_empty() {
-                                let pair = RelayPair {
-                                    slot_a: host_slot,
-                                    slot_b: joiner_slot,
-                                    pid_a: host_id,
-                                    pid_b: player_id,
+                            let mut peers = Vec::new();
+                            let mut approvals = Vec::new();
+                            let mut failed = !established.iter().any(|p| p.player_id == host_id);
+                            let mut host_addr = String::new();
+                            for existing in &established {
+                                let (method, _) = determine_connection_type(existing, &joiner);
+                                let existing_addr =
+                                    best_candidate_addr_for_type(&existing.candidates, &method);
+                                let joiner_addr =
+                                    best_candidate_addr_for_type(&joiner.candidates, &method);
+                                // Late-join ICE currently proves only the host path. Other
+                                // existing peers need authenticated relay until pairwise ICE exists
+                                let is_relay = state.config.force_relay
+                                    || existing.player_id != host_id
+                                    || method == crate::lobby::ConnectionType::Relay
+                                    || existing_addr.is_empty()
+                                    || joiner_addr.is_empty();
+                                let token = if is_relay && !relay_addr.is_empty() {
+                                    allocate_relay_session(
+                                        state,
+                                        &relay_addr,
+                                        lobby_id,
+                                        &RelayPair {
+                                            slot_a: existing.slot,
+                                            slot_b: joiner.slot,
+                                            pid_a: existing.player_id,
+                                            pid_b: player_id,
+                                        },
+                                    )
+                                } else {
+                                    None
                                 };
-                                relay_token =
-                                    allocate_relay_session(state, &relay_addr, lobby_id, &pair);
+                                if is_relay && token.is_none() {
+                                    failed = true;
+                                    break;
+                                }
+                                let remote = if is_relay {
+                                    relay_addr.clone()
+                                } else {
+                                    existing_addr
+                                };
+                                if existing.player_id == host_id {
+                                    host_addr = remote.clone();
+                                }
+                                peers.push(PeerAssignment {
+                                    slot: existing.slot,
+                                    addr: remote,
+                                    is_relay,
+                                    relay_token: token,
+                                    relay_credentials: relay_credentials(state, token, joiner.slot),
+                                    relay_dest_slot: if is_relay {
+                                        Some(existing.slot)
+                                    } else {
+                                        None
+                                    },
+                                });
+                                approvals.push((
+                                    existing.player_id,
+                                    ServerMessage::LateJoinApproved {
+                                        peer: PeerAssignment {
+                                            slot: joiner.slot,
+                                            addr: if is_relay {
+                                                relay_addr.clone()
+                                            } else {
+                                                joiner_addr
+                                            },
+                                            is_relay,
+                                            relay_token: token,
+                                            relay_credentials: relay_credentials(
+                                                state,
+                                                token,
+                                                existing.slot,
+                                            ),
+                                            relay_dest_slot: if is_relay {
+                                                Some(joiner.slot)
+                                            } else {
+                                                None
+                                            },
+                                        },
+                                    },
+                                ));
                             }
-
-                            if is_relay && relay_token.is_none() {
+                            if failed {
                                 drop(lobby);
+                                // Revokes every partially allocated pair for this joiner
                                 leave_room(state, player_id);
                                 let _ = tx.send(ServerMessage::Error {
                                     code: "LOBBY_JOIN_FAILED".into(),
@@ -2434,85 +2481,33 @@ fn handle_authenticated_message(
                                 });
                                 return;
                             }
-
-                            let game = lobby.game.clone();
-                            let game_info = lobby.game_info.clone();
-                            let max_players = lobby.max_players;
-
-                            info!(
-                                %lobby_id, joiner = %player_id,
-                                joiner_slot, method = pair_conn_type.as_str(),
-                                "late-join ICE complete"
-                            );
-
-                            // Build GAME_STARTING for joiner (host as only peer)
-                            let joiner_msg = ServerMessage::GameStarting {
-                                host_addr: host_addr.clone(),
-                                game,
-                                your_slot: joiner_slot,
-                                max_players,
+                            let message = ServerMessage::GameStarting {
+                                host_addr,
+                                game: lobby.game.clone(),
+                                your_slot: joiner.slot,
+                                max_players: lobby.max_players,
                                 current_level: lobby.runtime_level,
-                                game_info,
-                                peers: vec![PeerAssignment {
-                                    slot: host_slot,
-                                    addr: host_addr,
-                                    is_relay,
-                                    relay_token,
-                                    relay_credentials: relay_credentials(
-                                        state,
-                                        relay_token,
-                                        joiner_slot,
-                                    ),
-                                    relay_dest_slot: if is_relay { Some(host_slot) } else { None },
-                                }],
+                                game_info: lobby.game_info.clone(),
+                                peers,
                             };
-
-                            // Build LATE_JOIN_APPROVED for host
-                            let host_msg = ServerMessage::LateJoinApproved {
-                                peer: PeerAssignment {
-                                    slot: joiner_slot,
-                                    addr: joiner_addr,
-                                    is_relay,
-                                    relay_token,
-                                    relay_credentials: relay_credentials(
-                                        state,
-                                        relay_token,
-                                        host_slot,
-                                    ),
-                                    relay_dest_slot: if is_relay {
-                                        Some(joiner_slot)
-                                    } else {
-                                        None
-                                    },
-                                },
-                            };
-
-                            // Update joiner's presence
+                            let mission = game_info_str(&lobby.game_info, "mission");
+                            let player_count = lobby.player_count();
                             drop(lobby);
                             if let Some(mut session) = state.sessions.get_mut(&player_id) {
-                                let lobby_ref = state.lobbies.get(&lobby_id);
-                                let mission = lobby_ref
-                                    .as_ref()
-                                    .map(|l| game_info_str(&l.game_info, "mission"))
-                                    .unwrap_or_default();
-                                let pcount =
-                                    lobby_ref.as_ref().map(|l| l.player_count()).unwrap_or(0);
                                 session.presence = Presence::InGame {
                                     lobby_id,
                                     mission,
-                                    player_count: pcount,
+                                    player_count,
                                 };
                             }
-
-                            // Send messages
-                            if let Some(sess) = state.sessions.get(&player_id) {
-                                let _ = sess.tx.send(joiner_msg);
+                            if let Some(session) = state.sessions.get(&player_id) {
+                                let _ = session.tx.send(message);
                             }
-                            if let Some(sess) = state.sessions.get(&host_id) {
-                                let _ = sess.tx.send(host_msg);
+                            for (id, approval) in approvals {
+                                if let Some(session) = state.sessions.get(&id) {
+                                    let _ = session.tx.send(approval);
+                                }
                             }
-                        } else {
-                            drop(lobby);
                         }
                     } else {
                         // Not a late-join completion -- nothing extra to do
