@@ -29,18 +29,83 @@ on:
         type: choice
         options: [nightly, first-play, graphics-capabilities, basic-use, online-preview]
         default: nightly
+      evidence_run_id:
+        description: "Read sanitized retained online receipt only; no tests or builds"
+        type: string
+        default: ""
   workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || inputs.campaign == 'online-preview' && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
+  group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || inputs.campaign == 'online-preview' && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
   cancel-in-progress: false
 
 jobs:
+  online_evidence:
+    if: github.event_name == 'workflow_dispatch' && inputs.evidence_run_id != ''
+    name: Inspect retained online receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Validate owned online run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.evidence_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == larsonm-personal/dxx-redux ]]
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > source-run.json
+          python3 - <<'PYTHON'
+          import json
+          run = json.load(open('source-run.json'))
+          assert run['head_branch'] == 'online-restoration'
+          assert run['path'] == '.github/workflows/nightly-tooling-sweep.yml'
+          assert run['event'] == 'workflow_dispatch'
+          assert run['status'] == 'completed'
+          print(json.dumps({key: run[key] for key in ('id', 'head_sha', 'conclusion')}))
+          PYTHON
+      - name: Read retained public receipt
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: nightly-results-android-dual
+          path: evidence
+          run-id: ${{ inputs.evidence_run_id }}
+          github-token: ${{ github.token }}
+      - name: Report bounded sanitized evidence
+        run: |
+          python3 - <<'PYTHON'
+          import json, pathlib, re
+          def scrub(line):
+              line = re.sub(r'\x1b\[[0-9;]*m', '', line)
+              line = re.sub(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}', '[redacted]', line)
+              return re.sub(r'[A-Za-z0-9_+/=-]{24,}', '[redacted]', line)[:500]
+          root = pathlib.Path('evidence')
+          receipt = json.loads((root / 'results.json').read_text())
+          print(json.dumps({'target_sha': receipt['target_sha'], 'results': [
+              {key: scrub(str(row.get(key, ''))) for key in ('id', 'status', 'reason')}
+              for row in receipt.get('results', [])
+          ]}))
+          markers = ('FAIL', 'EXCEPTION:', 'ONLINE_', 'ALL CHECKS PASSED', 'Error:', 'error:',
+                     'test_mp', 'timed out', 'Timeout', 'Phase ', 'at ', 'line:')
+          paths = [root / 'master.log']
+          paths.extend((root / 'master').rglob('*test_mp*.txt'))
+          paths.extend((root / 'master').rglob('*test_mp*.log'))
+          for path in paths:
+              if path.is_file() and not path.is_symlink() and path.stat().st_size < 10000000:
+                  print('RECEIPT_FILE ' + str(path.relative_to(root)))
+                  lines = [scrub(line) for line in path.read_text(errors='replace').splitlines()
+                           if any(marker in line for marker in markers)]
+                  print('\n'.join(lines[-100:]))
+          PYTHON
+
   plan:
-    if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'
+    if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
     name: Select tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
