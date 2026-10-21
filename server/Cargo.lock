@@ -407,6 +407,7 @@ dependencies = [
  "hyper-util",
  "rand 0.10.3",
  "reqwest",
+ "ring",
  "rusqlite",
  "rustls",
  "rustls-pemfile",

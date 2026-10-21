@@ -38,7 +38,7 @@ pub async fn run(
     Ok(bound)
 }
 
-async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
+pub async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
     let mut buf = [0u8; 512];
     loop {
         let (len, src) = match socket.recv_from(&mut buf).await {
@@ -54,7 +54,9 @@ async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
             continue;
         }
 
-        if len < STUN_HEADER_LEN {
+        if len < STUN_HEADER_LEN
+            || u16::from_be_bytes([buf[2], buf[3]]) as usize != len - STUN_HEADER_LEN
+        {
             continue;
         }
 

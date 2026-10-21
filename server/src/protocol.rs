@@ -7,8 +7,8 @@ use uuid::Uuid;
 // message schema. Keep MIN_CLIENT_PROTOCOL at the oldest version the
 // server still accepts. Both values must stay in sync with the client
 // constant in NetworkConstants.kt.
-pub const CURRENT_PROTOCOL: u32 = 2;
-pub const MIN_CLIENT_PROTOCOL: u32 = 2;
+pub const CURRENT_PROTOCOL: u32 = 3;
+pub const MIN_CLIENT_PROTOCOL: u32 = 3;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
@@ -464,6 +464,8 @@ pub struct PeerAssignment {
     pub relay_token: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub relay_dest_slot: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relay_credentials: Option<crate::relay::RelayCredentials>,
 }
 
 #[derive(Debug, Serialize, Clone)]

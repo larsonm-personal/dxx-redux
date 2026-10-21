@@ -22,7 +22,6 @@ private const val TAG = "LocalhostProxy"
 // Must be >= UPID_MAX_SIZE (4096) in d1/main/net_udp.h and d2/main/net_udp.h
 private const val MAX_PACKET_SIZE = 4096
 private const val ENGINE_PORT = 42424
-private const val RELAY_HEADER_LEN = 5
 private const val KEEPALIVE_INTERVAL_MS = 15_000L
 
 // Connectivity probe constants (must match ConnectivityChecker)
@@ -43,8 +42,7 @@ private const val PROBE_FLAG_RESPONSE: Short = 0x0002
  * address (direct peers) or relay header from_slot (relay peers). This
  * keeps UPnP port mappings and NAT pinholes valid for all peers.
  *
- * Relay wrapping: [session_token:4LE][dest_slot:1][payload]
- * Relay unwrapping: strips the 5-byte [token:4LE][from_slot:1] header.
+ * Relay packets use the authenticated protocol in RelayTransport.
  */
 data class PeerProxyStats(
     val peerSlot: Int,
@@ -52,6 +50,7 @@ data class PeerProxyStats(
     val packetsReceived: Long,
     val bytesSent: Long,
     val bytesReceived: Long,
+    val relayBound: Boolean = true,
 )
 
 class LocalhostProxy(
@@ -204,7 +203,7 @@ class LocalhostProxy(
      */
     private suspend fun sharedReceiveLoop() {
         val socket = sharedRealSocket ?: return
-        val buf = ByteArray(MAX_PACKET_SIZE)
+        val buf = ByteArray(RelayTransport.MAX_PACKET + 1)
         val pkt = DatagramPacket(buf, buf.size)
 
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
@@ -219,14 +218,12 @@ class LocalhostProxy(
                     continue
                 }
 
-                // Relay peer: parse from_slot from relay header
-                if (pkt.length >= RELAY_HEADER_LEN) {
-                    val fromSlot = pkt.data[4].toInt() and 0xFF
-                    val relayProxy = relayPeersBySlot[fromSlot]
-                    if (relayProxy != null) {
-                        relayProxy.deliverIncoming(pkt.data, pkt.length)
-                        continue
-                    }
+                // Endpoint, allocation keys and replay window are checked before delivery
+                val relaySlot = RelayTransport.senderSlot(pkt.data, pkt.length)
+                val relayProxy = relaySlot?.let { relayPeersBySlot[it] }
+                if (relayProxy != null) {
+                    relayProxy.deliverIncoming(pkt.data, pkt.length, InetSocketAddress(pkt.address, pkt.port))
+                    continue
                 }
 
                 // Unmatched: check for late-join probe echo
@@ -347,6 +344,9 @@ data class PeerProxyConfig(
     val isRelay: Boolean,
     val relayToken: UInt = 0u,
     val relayDestSlot: Int = 0,
+    val relayOwnSlot: Int = -1,
+    val relaySendKey: String? = null,
+    val relayReceiveKey: String? = null,
 )
 
 /**
@@ -364,6 +364,19 @@ private class PeerProxy(
     private val ownsRealSocket: Boolean,
     diagnosticId: Long,
 ) {
+    private val relay =
+        if (config.isRelay) {
+            RelayTransport(
+                config.relayToken,
+                config.relayOwnSlot,
+                config.peerSlot,
+                requireNotNull(config.relaySendKey),
+                requireNotNull(config.relayReceiveKey),
+            )
+        } else {
+            null
+        }
+
     private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
     private val localSocket = DatagramSocket(config.localPort, loopback)
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId peer=${config.peerSlot} remote=${config.realAddr}")
@@ -395,7 +408,16 @@ private class PeerProxy(
     @Volatile
     var mdataForwarded: Long = 0L
 
-    fun getStats() = PeerProxyStats(config.peerSlot, packetsSent, packetsReceived, bytesSent, bytesReceived)
+    fun getStats() =
+        PeerProxyStats(
+            config.peerSlot,
+            packetsSent,
+            packetsReceived,
+            bytesSent,
+            bytesReceived,
+            relayBound =
+                relay?.bound ?: true,
+        )
 
     suspend fun run() {
         kotlinx.coroutines.coroutineScope {
@@ -434,15 +456,36 @@ private class PeerProxy(
     fun deliverIncoming(
         data: ByteArray,
         length: Int,
+        source: InetSocketAddress? = null,
     ) {
         diagnostics.received()
         try {
             val payload: ByteArray
             val payloadLen: Int
             if (config.isRelay) {
-                if (length < RELAY_HEADER_LEN) return
-                payloadLen = length - RELAY_HEADER_LEN
-                payload = data.copyOfRange(RELAY_HEADER_LEN, length)
+                if (source != config.realAddr) return
+                val decoded = relay!!.decode(data, length) ?: return
+                when (decoded.kind) {
+                    RelayTransport.CHALLENGE -> {
+                        if (decoded.payload.size != 16) return
+                        val proof = relay.encode(RelayTransport.PROOF, decoded.payload)
+                        diagnostics.send(
+                            "relay-bind-proof",
+                            realSocket,
+                            DatagramPacket(proof, proof.size, config.realAddr),
+                        )
+                        return
+                    }
+
+                    RelayTransport.DATA -> {
+                        payload = decoded.payload
+                        payloadLen = payload.size
+                    }
+
+                    else -> {
+                        return
+                    }
+                }
             } else {
                 payloadLen = length
                 payload = data.copyOfRange(0, length)
@@ -495,16 +538,8 @@ private class PeerProxy(
                     )
                 }
                 if (config.isRelay) {
-                    // Wrap: [token:4LE][dest_slot:1][payload]
-                    val wrapped =
-                        ByteBuffer
-                            .allocate(RELAY_HEADER_LEN + pkt.length)
-                            .apply {
-                                order(ByteOrder.LITTLE_ENDIAN)
-                                putInt(config.relayToken.toInt())
-                                put(config.relayDestSlot.toByte())
-                                put(pkt.data, 0, pkt.length)
-                            }.array()
+                    if (!relay!!.bound) continue
+                    val wrapped = relay.encode(RelayTransport.DATA, pkt.data.copyOfRange(0, pkt.length))
                     diagnostics.send(
                         "gameplay-send",
                         realSocket,
@@ -528,70 +563,30 @@ private class PeerProxy(
     }
 
     private suspend fun forwardRealToLocal() {
-        val buf = ByteArray(MAX_PACKET_SIZE)
+        val buf = ByteArray(RelayTransport.MAX_PACKET + 1)
         val pkt = DatagramPacket(buf, buf.size)
-        val engineAddr = InetSocketAddress(loopback, ENGINE_PORT)
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
                 diagnostics.receive("network-receive", realSocket, pkt)
-                val payload: ByteArray
-                val payloadLen: Int
-                if (config.isRelay) {
-                    if (pkt.length < RELAY_HEADER_LEN) continue
-                    // Unwrap: skip [token:4][from_slot:1]
-                    payloadLen = pkt.length - RELAY_HEADER_LEN
-                    payload = pkt.data.copyOfRange(RELAY_HEADER_LEN, pkt.length)
-                } else {
-                    payloadLen = pkt.length
-                    payload = pkt.data.copyOfRange(0, pkt.length)
-                }
-                if (isTransportKeepalive(payload, payloadLen)) continue
-                diagnostics.send("engine-delivery-send", localSocket, DatagramPacket(payload, payloadLen, engineAddr))
-                packetsReceived++
-                bytesReceived += payloadLen
-                // Log UPID breakdown periodically to diagnose selective forwarding issues
-                if (payloadLen > 0) {
-                    val upid = payload[0].toInt() and 0xFF
-                    if (upid == 0x22) {
-                        pdataForwarded++
-                    } else if (upid == 0x25 || upid == 0x26) {
-                        mdataForwarded++
-                    }
-                }
-                if (packetsReceived % 500 == 0L) {
-                    Log.i(
-                        TAG,
-                        "real->local slot=${config.peerSlot} total=$packetsReceived pdata=$pdataForwarded mdata=$mdataForwarded",
-                    )
-                }
+                if (InetSocketAddress(pkt.address, pkt.port) != config.realAddr) continue
+                deliverIncoming(pkt.data, pkt.length, InetSocketAddress(pkt.address, pkt.port))
             } catch (e: java.net.SocketException) {
-                val msg = e.message ?: ""
-                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
-                Log.w(TAG, "real->local error: $msg")
+                if (realSocket.isClosed) break
+                Log.w(TAG, "network receive failed: ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "network receive failed", e)
             }
         }
     }
 
     private suspend fun keepalive() {
-        val ping =
-            if (config.isRelay) {
-                // Relay-wrapped keepalive: [token:4LE][dest_slot:1][0x00]
-                ByteBuffer
-                    .allocate(RELAY_HEADER_LEN + 1)
-                    .apply {
-                        order(ByteOrder.LITTLE_ENDIAN)
-                        putInt(config.relayToken.toInt())
-                        put(config.relayDestSlot.toByte())
-                        put(0.toByte())
-                    }.array()
-            } else {
-                byteArrayOf(0)
-            }
         var keepaliveCount = 0L
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
-                kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
+                if (relay == null) kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
+                val ping = relay?.encode(RelayTransport.BIND, ByteArray(16)) ?: byteArrayOf(0)
                 diagnostics.send("keepalive-send", realSocket, DatagramPacket(ping, ping.size, config.realAddr))
+                if (relay != null) kotlinx.coroutines.delay(1000L)
                 keepaliveCount++
                 Log.i(TAG, "keepalive slot=${config.peerSlot} #$keepaliveCount sent=$packetsSent recv=$packetsReceived")
             } catch (e: java.net.SocketException) {

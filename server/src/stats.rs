@@ -91,7 +91,7 @@ pub struct StatsSnapshot {
 pub async fn periodic_tasks(state: Arc<ServerState>) {
     let mut snapshot_interval = tokio::time::interval(Duration::from_secs(300));
     let mut cleanup_interval = tokio::time::interval(Duration::from_secs(600));
-    let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(300));
+    let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(15));
     let mut lobby_cleanup_interval = tokio::time::interval(Duration::from_secs(60));
 
     loop {
@@ -178,6 +178,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
                 }
             }
         }
+        crate::relay::revoke_room(state, lid);
         state.lobbies.remove(&lid);
         state.stats.lobby_closed();
         state.stats.game_ended();

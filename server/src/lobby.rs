@@ -42,6 +42,7 @@ impl Presence {
 /// A player within a lobby.
 #[derive(Debug, Clone, Serialize)]
 pub struct LobbyPlayer {
+    pub slot: u8,
     pub player_id: Uuid,
     pub callsign: String,
     pub ready: bool,
@@ -128,6 +129,7 @@ impl Lobby {
         game_info: JsonValue,
     ) -> Self {
         let host = LobbyPlayer {
+            slot: 0,
             player_id: host_player_id,
             callsign: host_callsign.clone(),
             ready: false,
@@ -201,7 +203,13 @@ impl Lobby {
         if self.players.iter().any(|p| p.player_id == player_id) {
             return false; // already in lobby
         }
+        let Some(slot) =
+            (0..self.max_players).find(|slot| !self.players.iter().any(|p| p.slot == *slot))
+        else {
+            return false;
+        };
         self.players.push(LobbyPlayer {
+            slot,
             player_id,
             callsign,
             ready: false,

@@ -16,6 +16,8 @@ sourceSets.test.kotlin {
     include 'com/dxxredux/app/multiplayer/ProxyDiagnostics.kt'
     include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'
     include '**/ProxyFailureTest.kt'
+    include '**/RelayTransportTest.kt'
+    include 'com/dxxredux/app/multiplayer/RelayTransport.kt'
     include '**/NetLog.kt'
     include '**/Log.kt'
     include '**/HistoricalLocalhostProxy.kt'

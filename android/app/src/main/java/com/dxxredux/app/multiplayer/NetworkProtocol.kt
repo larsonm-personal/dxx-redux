@@ -271,12 +271,20 @@ data class GameStartingMsg(
 )
 
 @Serializable
+class RelayCredentialsMsg(
+    @SerialName("own_slot") val ownSlot: Int,
+    @SerialName("send_key") val sendKey: String,
+    @SerialName("receive_key") val receiveKey: String,
+)
+
+@Serializable
 data class PeerAssignment(
     val slot: Int,
     val addr: String,
     @SerialName("is_relay") val isRelay: Boolean = false,
     @SerialName("relay_token") val relayToken: Long? = null,
     @SerialName("relay_dest_slot") val relayDestSlot: Int? = null,
+    @SerialName("relay_credentials") val relayCredentials: RelayCredentialsMsg? = null,
 )
 
 @Serializable

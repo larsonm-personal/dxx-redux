@@ -1024,7 +1024,7 @@ object MatchmakingService {
             text: String,
         ) {
             withConnection(webSocket) {
-                Log.d(TAG, "RX: $text")
+                Log.d(TAG, "Received matchmaking message")
                 handleMessage(text)
             }
         }
@@ -1184,6 +1184,9 @@ object MatchmakingService {
                         isRelay = peer.isRelay,
                         relayToken = peer.relayToken?.toUInt() ?: 0u,
                         relayDestSlot = peer.relayDestSlot ?: peer.slot,
+                        relayOwnSlot = peer.relayCredentials?.ownSlot ?: -1,
+                        relaySendKey = peer.relayCredentials?.sendKey,
+                        relayReceiveKey = peer.relayCredentials?.receiveKey,
                     ),
                 )
             }
@@ -1492,6 +1495,9 @@ object MatchmakingService {
                                     isRelay = peer.isRelay,
                                     relayToken = peer.relayToken?.toUInt() ?: 0u,
                                     relayDestSlot = peer.relayDestSlot ?: peer.slot,
+                                    relayOwnSlot = peer.relayCredentials?.ownSlot ?: -1,
+                                    relaySendKey = peer.relayCredentials?.sendKey,
+                                    relayReceiveKey = peer.relayCredentials?.receiveKey,
                                 ),
                             )
                         }

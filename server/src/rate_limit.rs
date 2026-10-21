@@ -11,7 +11,7 @@ use uuid::Uuid;
 /// a deque of timestamps. On check, expired entries are pruned and the
 /// current count is compared against the limit.
 pub struct RateLimiter {
-    /// Per-IP connection attempts: max 3 per 60s
+    /// Per-IP connection attempts: max 24 per 60s (eight players plus two reconnect waves)
     ip_connections: DashMap<IpAddr, VecDeque<Instant>>,
     /// Per-IP auth failures: max 5 per 3600s
     ip_auth_fails: DashMap<IpAddr, VecDeque<Instant>>,
@@ -50,7 +50,7 @@ impl RateLimiter {
     }
 
     pub fn check_ip_connection(&self, ip: IpAddr) -> bool {
-        Self::check(&self.ip_connections, ip, 3, 60)
+        Self::check(&self.ip_connections, ip, 24, 60)
     }
 
     pub fn record_auth_fail(&self, ip: IpAddr) -> bool {

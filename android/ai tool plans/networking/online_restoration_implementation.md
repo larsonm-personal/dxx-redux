@@ -67,3 +67,58 @@ exchange and verified-player response, including denial and oversize responses;
 no external identity provider was called. Android source was scoped-formatted;
 Android APK and device qualification are still pending. Host JVM proxy qualification
 is being provisioned separately using the pinned Gradle/JDK versions.
+
+### Protocol 3 relay slice
+
+Protocol 3 requires coordinated server/client installation and rejects older and
+future control protocol versions. Do not enable the release browser on this basis
+alone. Each pair allocation supplies independent random AES-256-GCM uplink and
+downlink keys for each endpoint over authenticated WSS. The relay decrypts and
+reencrypts; this does not provide end-to-end secrecy from the service. Never log
+control message bodies containing credentials. Local plaintext WS is test-only.
+
+The UDP format is `DXR3`, token (u32 little endian), kind, sender slot, destination
+slot, sequence (u64 little endian), ciphertext and a 16-byte GCM tag. The 19-byte
+header is AAD. The nonce is four zero bytes followed by the sequence in big endian.
+Sequences start at one, are bounded by signed 64-bit maximum, and cannot reset
+with the same directional key. New allocations always generate fresh keys. Maximum
+plaintext is 4096 bytes. A 64-packet replay window permits bounded reordering.
+
+A source endpoint must complete an authenticated BIND/CHALLENGE/PROOF exchange
+before forwarding. BOUND confirms admission. Reordered bind packets cannot replace
+a newer endpoint. Challenge responses are no larger than requests. Per-pair work
+is bounded; this is not yet a qualified internet-wide abuse policy. Stable global
+slots support all 28 pairs in an eight-player roster. Room end, departure and kick
+revoke the affected leases; inactive leases expire after 120 seconds. One-second
+bind keepalives preserve active games. Duplicate game starts are rejected.
+
+Local qualification includes real WS-issued relay keys, real dual STUN listeners,
+4096-byte UDP exchange, duplicate rejection, all three pairs in a three-client
+room, stable slots after a middle-player departure, and no rooms/leases/sessions
+or STUN references after closure. Exhaustive pair unit tests cover slots 0..7,
+address rebinding and fresh-allocation rejection. Rust and Kotlin share a fixed
+AES-GCM fixture independently generated with Python cryptography. Host JVM tests
+exercise the actual proxy in shared and separate socket modes and reject wrong
+sources, wrong tokens and replay before engine delivery. These are synthetic game
+payloads, not native valid-producer or Android lifecycle qualification.
+
+Admission now allows 24 upgrades per minute per source IP: an eight-player roster
+plus two complete reconnect waves, while retaining the concurrent cap and an
+absolute authentication deadline that also wraps OAuth verification. The local
+shared-NAT regression exercises the 24 valid connections and rejects the 25th.
+
+Outstanding gates: native valid-producer traffic, full Android compilation and
+device recovery, direct-install authenticated producer, deadline-specific timing
+regression, production-shaped readiness/rollback rehearsal, independent protocol
+review and exact-head CI. Owned staging/live destination and deployment approval
+are still required before any external rollout.
+
+Validation receipt: Rust 1.94.1 `cargo test --locked --manifest-path
+server/Cargo.toml --target-dir android/temp/online-server-target` passed 41 module,
+78 integration and 13 NAT cases under an external 120-second timeout. `cargo
+clippy --locked --all-targets -- -D warnings` passed with the same manifest/target.
+Pinned Gradle/JDK `-PhostJvmOnly=true :proxy-tests:test` passed all five active
+proxy cases. Scoped mixed formatting and `test_validate_automation_catalog.ps1`
+passed. `test_run_all_tests_catalog.ps1` is blocked on this host: its Linux child
+supervisor exits 125 because `/proc/self/task/<pid>/children` is unavailable.
+No other task's CI run was dispatched or changed.

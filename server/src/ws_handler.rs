@@ -582,7 +582,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 // A new attempt retires any challenge from an earlier identity
                 pending_pow = None;
                 // Version check first
-                if protocol_version < MIN_CLIENT_PROTOCOL {
+                if !(MIN_CLIENT_PROTOCOL..=CURRENT_PROTOCOL).contains(&protocol_version) {
                     warn!(%addr, %client_version, %protocol_version, required = MIN_CLIENT_PROTOCOL, "client version rejected");
                     let _ = tx.send(ServerMessage::VersionRejected {
                         reason: format!(
@@ -730,18 +730,27 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         debug!(%addr, "GPGS verification skipped (dev mode)");
                         token.clone()
                     } else {
-                        match identity::verify_gpgs_token(
-                            &state.config.google_client_id,
-                            &state.config.google_client_secret,
-                            &token,
+                        match tokio::time::timeout_at(
+                            auth_deadline,
+                            identity::verify_gpgs_token(
+                                &state.config.google_client_id,
+                                &state.config.google_client_secret,
+                                &token,
+                            ),
                         )
                         .await
                         {
-                            identity::VerifyResult::Ok { gpgs_player_id } => gpgs_player_id,
-                            identity::VerifyResult::Failed { reason } => {
+                            Ok(identity::VerifyResult::Ok { gpgs_player_id }) => gpgs_player_id,
+                            Ok(identity::VerifyResult::Failed { reason }) => {
                                 warn!(%addr, %reason, "GPGS authentication failed");
                                 let _ = tx.send(ServerMessage::AuthFail {
                                     reason: "Google Play Games verification failed".into(),
+                                });
+                                break;
+                            }
+                            Err(_) => {
+                                let _ = tx.send(ServerMessage::AuthFail {
+                                    reason: "Authentication deadline exceeded".into(),
                                 });
                                 break;
                             }
@@ -864,10 +873,10 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     continue;
                 };
                 let _transition = state.control.lock().unwrap();
-                if !state
+                if state
                     .sessions
                     .get(&pid)
-                    .is_some_and(|s| s.connection_id == session_id)
+                    .is_none_or(|s| s.connection_id != session_id)
                 {
                     break;
                 }
@@ -902,6 +911,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
 
 /// Leave a room under the control transition lock; host departure closes it
 fn leave_room(state: &ServerState, pid: Uuid) {
+    crate::relay::revoke_player(state, pid);
     let room_id = state.sessions.get(&pid).and_then(|s| s.lobby_id);
     let Some(room_id) = room_id else {
         return;
@@ -922,6 +932,7 @@ fn leave_room(state: &ServerState, pid: Uuid) {
         false
     };
     if close {
+        crate::relay::revoke_room(state, room_id);
         if let Some((_, room)) = state.lobbies.remove(&room_id) {
             for peer in &room.players {
                 if let Some(mut session) = state.sessions.get_mut(&peer.player_id) {
@@ -1386,67 +1397,46 @@ struct RelayPair {
     slot_b: u8,
     pid_a: Uuid,
     pid_b: Uuid,
-    addr_a: Option<String>,
-    addr_b: Option<String>,
 }
 
 /// Allocate a relay session for a player pair and send RELAY_ASSIGNED to both.
 /// Returns None if relay is not configured or the server-wide relay limit is reached.
-fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPair) -> Option<u32> {
+fn allocate_relay_session(
+    state: &ServerState,
+    relay_addr: &str,
+    room_id: Uuid,
+    pair: &RelayPair,
+) -> Option<u32> {
     if relay_addr.is_empty() {
         return None;
     }
     let max = state.config.max_relay_sessions;
     if max > 0 && state.relay_sessions.len() >= max {
-        warn!(
-            max_relay_sessions = max,
-            current = state.relay_sessions.len(),
-            "relay session limit reached, rejecting allocation"
-        );
         return None;
     }
-    let token = {
-        let mut t = Uuid::new_v4().as_u128() as u32;
-        // D11: retry on collision (birthday problem with 32-bit truncation)
-        let mut attempts = 0;
-        while state.relay_sessions.contains_key(&t) && attempts < 10 {
-            t = Uuid::new_v4().as_u128() as u32;
-            attempts += 1;
-        }
-        if state.relay_sessions.contains_key(&t) {
-            warn!("relay token collision after 10 retries");
-            return None;
-        }
-        t
-    };
-    let player_addrs = dashmap::DashMap::new();
-    // D12: pre-register allowed IPs from known peer addresses
-    let allowed_ips = dashmap::DashSet::new();
-    if let Some(ref a) = pair.addr_a {
-        if let Ok(sa) = a.parse::<SocketAddr>() {
-            player_addrs.insert(pair.slot_a, sa);
-            allowed_ips.insert(sa.ip());
-        }
-    }
-    if let Some(ref b) = pair.addr_b {
-        if let Ok(sa) = b.parse::<SocketAddr>() {
-            player_addrs.insert(pair.slot_b, sa);
-            allowed_ips.insert(sa.ip());
-        }
-    }
+    let token = (0..16)
+        .map(|_| Uuid::new_v4().as_u128() as u32)
+        .find(|token| !state.relay_sessions.contains_key(token))?;
     state.relay_sessions.insert(
         token,
-        crate::relay::RelaySession {
-            session_token: token,
-            player_addrs,
-            expected_players: 2,
-            allowed_ips,
-            created_at: std::time::Instant::now(),
-            packets_forwarded: std::sync::atomic::AtomicU64::new(0),
-        },
+        crate::relay::RelaySession::new(
+            room_id,
+            [(pair.slot_a, pair.pid_a), (pair.slot_b, pair.pid_b)],
+            Instant::now(),
+        ),
     );
-    info!(token, pid_a = %pair.pid_a, pid_b = %pair.pid_b, "relay session allocated");
     Some(token)
+}
+
+fn relay_credentials(
+    state: &ServerState,
+    token: Option<u32>,
+    slot: u8,
+) -> Option<crate::relay::RelayCredentials> {
+    state
+        .relay_sessions
+        .get(&token?)
+        .and_then(|session| session.credentials(slot))
 }
 
 /// Register session and send welcome bundle (AUTH_OK, MOTD, status, lobby list, friends).
@@ -1716,6 +1706,7 @@ fn handle_authenticated_message(
                         return; // only host can end the game
                     }
                     if matches!(lobby.state, LobbyState::InGame | LobbyState::Starting) {
+                        crate::relay::revoke_room(state, lobby_id);
                         state.stats.game_ended();
                         lobby.state = LobbyState::Waiting;
                         lobby.runtime_player_count = None;
@@ -1835,19 +1826,15 @@ fn handle_authenticated_message(
 
         ClientMessage::Ready { ready } => {
             let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
-            if let Some(session_room) = session_room {
-                if let Some(lobby_id) = session_room {
-                    if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                        let requirement_present = mission_requirement(&lobby.game_info).is_some();
-                        if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
-                        {
-                            let mission_matches =
-                                p.mission_status.as_ref().map(|s| s.status.as_str())
-                                    == Some("match");
-                            p.ready = ready && (!requirement_present || mission_matches);
-                        }
-                        broadcast_lobby_update(&lobby, state);
+            if let Some(Some(lobby_id)) = session_room {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    let requirement_present = mission_requirement(&lobby.game_info).is_some();
+                    if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
+                        let mission_matches =
+                            p.mission_status.as_ref().map(|s| s.status.as_str()) == Some("match");
+                        p.ready = ready && (!requirement_present || mission_matches);
                     }
+                    broadcast_lobby_update(&lobby, state);
                 }
             }
         }
@@ -1927,6 +1914,13 @@ fn handle_authenticated_message(
                         });
                         return;
                     }
+                    if !matches!(lobby.state, LobbyState::Waiting | LobbyState::Holepunching) {
+                        let _ = tx.send(ServerMessage::Error {
+                            code: "GAME_ALREADY_STARTED".into(),
+                            message: "The game has already started".into(),
+                        });
+                        return;
+                    }
                     if lobby.players.len() < 2 {
                         let _ = tx.send(ServerMessage::Error {
                             code: "NOT_ENOUGH_PLAYERS".into(),
@@ -1997,26 +1991,13 @@ fn handle_authenticated_message(
                                 conn_type
                             };
                             if conn_type == crate::lobby::ConnectionType::Relay {
-                                let find_public_addr = |p: &crate::lobby::LobbyPlayer| {
-                                    p.candidates
-                                        .iter()
-                                        .find(|c| {
-                                            c.candidate_type == "srflx"
-                                                || c.candidate_type == "observed"
-                                        })
-                                        .map(|c| c.addr.clone())
-                                };
-                                let addr_a = find_public_addr(&lobby.players[i]);
-                                let addr_b = find_public_addr(&lobby.players[j]);
                                 let pair = RelayPair {
-                                    slot_a: i as u8,
-                                    slot_b: j as u8,
+                                    slot_a: lobby.players[i].slot,
+                                    slot_b: lobby.players[j].slot,
                                     pid_a: lobby.players[i].player_id,
                                     pid_b: lobby.players[j].player_id,
-                                    addr_a,
-                                    addr_b,
                                 };
-                                match allocate_relay_session(state, &relay_addr, &pair) {
+                                match allocate_relay_session(state, &relay_addr, lobby_id, &pair) {
                                     Some(token) => {
                                         relay_tokens.insert((i as u8, j as u8), token);
                                     }
@@ -2131,15 +2112,13 @@ fn handle_authenticated_message(
                                 };
                                 if !relay_tokens.contains_key(&(lo, hi)) && !addr.is_empty() {
                                     let pair = RelayPair {
-                                        slot_a: lo,
-                                        slot_b: hi,
+                                        slot_a: lobby.players[lo as usize].slot,
+                                        slot_b: lobby.players[hi as usize].slot,
                                         pid_a: lobby.players[lo as usize].player_id,
                                         pid_b: lobby.players[hi as usize].player_id,
-                                        addr_a: None,
-                                        addr_b: None,
                                     };
                                     if let Some(token) =
-                                        allocate_relay_session(state, &relay_addr, &pair)
+                                        allocate_relay_session(state, &relay_addr, lobby_id, &pair)
                                     {
                                         relay_tokens.insert((lo, hi), token);
                                     }
@@ -2165,18 +2144,19 @@ fn handle_authenticated_message(
                             } else {
                                 None
                             };
-                            let relay_dest_slot = if is_relay {
-                                Some(other_slot as u8)
-                            } else {
-                                None
-                            };
+                            let relay_dest_slot = if is_relay { Some(other.slot) } else { None };
 
                             peers.push(crate::protocol::PeerAssignment {
-                                slot: other_slot as u8,
+                                slot: other.slot,
                                 addr,
                                 is_relay,
                                 relay_token,
                                 relay_dest_slot,
+                                relay_credentials: relay_credentials(
+                                    state,
+                                    relay_token,
+                                    lobby.players[my_slot].slot,
+                                ),
                             });
                         }
 
@@ -2185,7 +2165,7 @@ fn handle_authenticated_message(
                             ServerMessage::GameStarting {
                                 host_addr: host_addr.clone(),
                                 game: game.clone(),
-                                your_slot: my_slot as u8,
+                                your_slot: lobby.players[my_slot].slot,
                                 max_players,
                                 current_level: None,
                                 game_info: game_info.clone(),
@@ -2248,74 +2228,71 @@ fn handle_authenticated_message(
                 .sessions
                 .get(&player_id)
                 .map(|s| (s.public_ip, s.lobby_id));
-            if let Some((ws_ip, session_room)) = session_info {
-                if let Some(lobby_id) = session_room {
-                    if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                        // Generate predicted port candidates for symmetric NATs
-                        let predicted = generate_predicted_candidates(&candidates, &nat_type);
-                        let mut all_candidates = candidates.clone();
-                        all_candidates.extend(predicted);
+            if let Some((ws_ip, Some(lobby_id))) = session_info {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    // Generate predicted port candidates for symmetric NATs
+                    let predicted = generate_predicted_candidates(&candidates, &nat_type);
+                    let mut all_candidates = candidates.clone();
+                    all_candidates.extend(predicted);
 
-                        // Inject "observed" candidates: server-known public IP + each
-                        // host candidate's port. If the player port-forwarded, these
-                        // addresses will be directly reachable. The connectivity check
-                        // will verify. Skip if we already have a matching srflx.
-                        let observed = generate_observed_candidates(&all_candidates, ws_ip);
-                        if !observed.is_empty() {
-                            info!(
-                                %player_id,
-                                count = observed.len(),
-                                "injected observed candidates from WS IP"
-                            );
-                            all_candidates.extend(observed);
-                        }
+                    // Inject "observed" candidates: server-known public IP + each
+                    // host candidate's port. If the player port-forwarded, these
+                    // addresses will be directly reachable. The connectivity check
+                    // will verify. Skip if we already have a matching srflx.
+                    let observed = generate_observed_candidates(&all_candidates, ws_ip);
+                    if !observed.is_empty() {
+                        info!(
+                            %player_id,
+                            count = observed.len(),
+                            "injected observed candidates from WS IP"
+                        );
+                        all_candidates.extend(observed);
+                    }
 
-                        if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
-                        {
-                            p.candidates = all_candidates.clone();
-                            p.nat_type = Some(nat_type);
-                        }
-                        // Distribute sender's candidates to all other players in the lobby
-                        let sender_nat = lobby
-                            .players
-                            .iter()
-                            .find(|p| p.player_id == player_id)
-                            .and_then(|p| p.nat_type.clone())
-                            .unwrap_or_default();
-                        let peer_msgs: Vec<(Uuid, ServerMessage)> = lobby
-                            .players
-                            .iter()
-                            .filter(|p| p.player_id != player_id)
-                            .map(|p| {
-                                (
-                                    p.player_id,
-                                    ServerMessage::PeerCandidates {
-                                        peer_id: player_id,
-                                        candidates: all_candidates.clone(),
-                                        nat_type: sender_nat.clone(),
-                                    },
-                                )
-                            })
-                            .collect();
+                    if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
+                        p.candidates = all_candidates.clone();
+                        p.nat_type = Some(nat_type);
+                    }
+                    // Distribute sender's candidates to all other players in the lobby
+                    let sender_nat = lobby
+                        .players
+                        .iter()
+                        .find(|p| p.player_id == player_id)
+                        .and_then(|p| p.nat_type.clone())
+                        .unwrap_or_default();
+                    let peer_msgs: Vec<(Uuid, ServerMessage)> = lobby
+                        .players
+                        .iter()
+                        .filter(|p| p.player_id != player_id)
+                        .map(|p| {
+                            (
+                                p.player_id,
+                                ServerMessage::PeerCandidates {
+                                    peer_id: player_id,
+                                    candidates: all_candidates.clone(),
+                                    nat_type: sender_nat.clone(),
+                                },
+                            )
+                        })
+                        .collect();
 
-                        // Check if ALL players have submitted STUN results
-                        let all_have_candidates = lobby.players.len() > 1
-                            && lobby.players.iter().all(|p| !p.candidates.is_empty())
-                            && lobby.state == LobbyState::Waiting;
-                        let check_msgs = if all_have_candidates {
-                            lobby.state = LobbyState::Holepunching;
-                            lobby.holepunch_started_at = Some(std::time::Instant::now());
-                            Some(build_connectivity_check_messages(&lobby))
-                        } else {
-                            None
-                        };
+                    // Check if ALL players have submitted STUN results
+                    let all_have_candidates = lobby.players.len() > 1
+                        && lobby.players.iter().all(|p| !p.candidates.is_empty())
+                        && lobby.state == LobbyState::Waiting;
+                    let check_msgs = if all_have_candidates {
+                        lobby.state = LobbyState::Holepunching;
+                        lobby.holepunch_started_at = Some(std::time::Instant::now());
+                        Some(build_connectivity_check_messages(&lobby))
+                    } else {
+                        None
+                    };
 
-                        // Late-join ICE: if lobby is InGame and the sender just got
-                        // candidates, and the host has candidates, start pairwise ICE
-                        // between the joiner and host only.
-                        let late_join_msgs = if lobby.state == LobbyState::InGame
-                            && player_id != lobby.host_player_id
-                        {
+                    // Late-join ICE: if lobby is InGame and the sender just got
+                    // candidates, and the host has candidates, start pairwise ICE
+                    // between the joiner and host only.
+                    let late_join_msgs =
+                        if lobby.state == LobbyState::InGame && player_id != lobby.host_player_id {
                             let host_id = lobby.host_player_id;
                             // Check both have candidates before borrowing players
                             let both_have_candidates = lobby
@@ -2374,43 +2351,41 @@ fn handle_authenticated_message(
                             None
                         };
 
-                        drop(lobby);
-                        for (pid, msg) in peer_msgs {
+                    drop(lobby);
+                    for (pid, msg) in peer_msgs {
+                        if let Some(sess) = state.sessions.get(&pid) {
+                            let _ = sess.tx.send(msg);
+                        }
+                    }
+                    // Send CONNECTIVITY_CHECK_GO to all players simultaneously
+                    if let Some(msgs) = check_msgs {
+                        for (pid, msg) in msgs {
                             if let Some(sess) = state.sessions.get(&pid) {
                                 let _ = sess.tx.send(msg);
                             }
                         }
-                        // Send CONNECTIVITY_CHECK_GO to all players simultaneously
-                        if let Some(msgs) = check_msgs {
-                            for (pid, msg) in msgs {
-                                if let Some(sess) = state.sessions.get(&pid) {
-                                    let _ = sess.tx.send(msg);
-                                }
-                            }
-                            info!(%lobby_id, "connectivity checks started (all STUN results received)");
+                        info!(%lobby_id, "connectivity checks started (all STUN results received)");
+                    }
+                    // Send late-join ICE messages
+                    if let Some((host_id, pairs, probe_addrs, joiner_callsign)) = late_join_msgs {
+                        // CONNECTIVITY_CHECK_GO to joiner
+                        if let Some(sess) = state.sessions.get(&player_id) {
+                            let _ = sess
+                                .tx
+                                .send(ServerMessage::ConnectivityCheckGo { peer_addrs: pairs });
                         }
-                        // Send late-join ICE messages
-                        if let Some((host_id, pairs, probe_addrs, joiner_callsign)) = late_join_msgs
-                        {
-                            // CONNECTIVITY_CHECK_GO to joiner
-                            if let Some(sess) = state.sessions.get(&player_id) {
-                                let _ = sess
-                                    .tx
-                                    .send(ServerMessage::ConnectivityCheckGo { peer_addrs: pairs });
-                            }
-                            // LATE_JOIN_PROBE to host
-                            if let Some(sess) = state.sessions.get(&host_id) {
-                                let _ = sess.tx.send(ServerMessage::LateJoinProbe {
-                                    joiner_id: player_id,
-                                    joiner_callsign,
-                                    probe_addrs,
-                                });
-                            }
-                            info!(
-                                %lobby_id, joiner = %player_id,
-                                "late-join ICE initiated"
-                            );
+                        // LATE_JOIN_PROBE to host
+                        if let Some(sess) = state.sessions.get(&host_id) {
+                            let _ = sess.tx.send(ServerMessage::LateJoinProbe {
+                                joiner_id: player_id,
+                                joiner_callsign,
+                                probe_addrs,
+                            });
                         }
+                        info!(
+                            %lobby_id, joiner = %player_id,
+                            "late-join ICE initiated"
+                        );
                     }
                 }
             }
@@ -2423,158 +2398,150 @@ fn handle_authenticated_message(
         } => {
             // Record connectivity result and update connection_type for the pair
             let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
-            if let Some(session_room) = session_room {
-                if let Some(lobby_id) = session_room {
-                    if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                        let conn_type = match winning_candidate_type.as_str() {
-                            "host" => crate::lobby::ConnectionType::DirectLan,
-                            "upnp" => crate::lobby::ConnectionType::DirectUpnp,
-                            "srflx" => crate::lobby::ConnectionType::DirectHolepunch,
-                            "observed" => crate::lobby::ConnectionType::DirectHolepunch,
-                            "predicted" => crate::lobby::ConnectionType::PredictedHolepunch,
-                            "relay" => crate::lobby::ConnectionType::Relay,
-                            _ => crate::lobby::ConnectionType::Unknown,
-                        };
-                        if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
-                        {
-                            p.connection_type = conn_type;
-                            p.ping_ms = Some(rtt_ms);
-                        }
-                        info!(%player_id, %peer, %winning_candidate_type, rtt_ms, "connectivity ok");
+            if let Some(Some(lobby_id)) = session_room {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    let conn_type = match winning_candidate_type.as_str() {
+                        "host" => crate::lobby::ConnectionType::DirectLan,
+                        "upnp" => crate::lobby::ConnectionType::DirectUpnp,
+                        "srflx" => crate::lobby::ConnectionType::DirectHolepunch,
+                        "observed" => crate::lobby::ConnectionType::DirectHolepunch,
+                        "predicted" => crate::lobby::ConnectionType::PredictedHolepunch,
+                        "relay" => crate::lobby::ConnectionType::Relay,
+                        _ => crate::lobby::ConnectionType::Unknown,
+                    };
+                    if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
+                        p.connection_type = conn_type;
+                        p.ping_ms = Some(rtt_ms);
+                    }
+                    info!(%player_id, %peer, %winning_candidate_type, rtt_ms, "connectivity ok");
 
-                        // Late-join completion: joiner reported ConnectivityOk
-                        if lobby.state == LobbyState::InGame
-                            && lobby.pending_late_joiners.remove(&player_id)
-                        {
-                            let host_id = lobby.host_player_id;
-                            let host_player = lobby.players.iter().find(|p| p.player_id == host_id);
-                            let joiner_player =
-                                lobby.players.iter().find(|p| p.player_id == player_id);
-                            if let (Some(host_p), Some(joiner_p)) = (host_player, joiner_player) {
-                                let (pair_conn_type, _) =
-                                    determine_connection_type(host_p, joiner_p);
-                                let relay_addr = state.config.relay_public_addr.clone();
-                                let is_relay =
-                                    pair_conn_type == crate::lobby::ConnectionType::Relay;
+                    // Late-join completion: joiner reported ConnectivityOk
+                    if lobby.state == LobbyState::InGame
+                        && lobby.pending_late_joiners.remove(&player_id)
+                    {
+                        let host_id = lobby.host_player_id;
+                        let host_player = lobby.players.iter().find(|p| p.player_id == host_id);
+                        let joiner_player = lobby.players.iter().find(|p| p.player_id == player_id);
+                        if let (Some(host_p), Some(joiner_p)) = (host_player, joiner_player) {
+                            let (pair_conn_type, _) = determine_connection_type(host_p, joiner_p);
+                            let relay_addr = state.config.relay_public_addr.clone();
+                            let is_relay = pair_conn_type == crate::lobby::ConnectionType::Relay;
 
-                                // Determine host address for joiner's peer assignment
-                                let host_addr = if is_relay {
-                                    relay_addr.clone()
-                                } else {
-                                    best_candidate_addr_for_type(
-                                        &host_p.candidates,
-                                        &pair_conn_type,
-                                    )
-                                };
-                                // Determine joiner address for host's peer assignment
-                                let joiner_addr = if is_relay {
-                                    relay_addr.clone()
-                                } else {
-                                    best_candidate_addr_for_type(
-                                        &joiner_p.candidates,
-                                        &pair_conn_type,
-                                    )
-                                };
-
-                                // Assign joiner slot = their position in lobby.players
-                                let joiner_slot = lobby
-                                    .players
-                                    .iter()
-                                    .position(|p| p.player_id == player_id)
-                                    .unwrap_or(1)
-                                    as u8;
-                                let host_slot = 0u8; // host is always slot 0
-
-                                // Allocate relay if needed
-                                let mut relay_token: Option<u32> = None;
-                                if is_relay && !relay_addr.is_empty() {
-                                    let pair = RelayPair {
-                                        slot_a: host_slot,
-                                        slot_b: joiner_slot,
-                                        pid_a: host_id,
-                                        pid_b: player_id,
-                                        addr_a: None,
-                                        addr_b: None,
-                                    };
-                                    relay_token = allocate_relay_session(state, &relay_addr, &pair);
-                                }
-
-                                let game = lobby.game.clone();
-                                let game_info = lobby.game_info.clone();
-                                let max_players = lobby.max_players;
-
-                                info!(
-                                    %lobby_id, joiner = %player_id,
-                                    joiner_slot, method = pair_conn_type.as_str(),
-                                    "late-join ICE complete"
-                                );
-
-                                // Build GAME_STARTING for joiner (host as only peer)
-                                let joiner_msg = ServerMessage::GameStarting {
-                                    host_addr: host_addr.clone(),
-                                    game,
-                                    your_slot: joiner_slot,
-                                    max_players,
-                                    current_level: lobby.runtime_level,
-                                    game_info,
-                                    peers: vec![PeerAssignment {
-                                        slot: host_slot,
-                                        addr: host_addr,
-                                        is_relay,
-                                        relay_token,
-                                        relay_dest_slot: if is_relay {
-                                            Some(host_slot)
-                                        } else {
-                                            None
-                                        },
-                                    }],
-                                };
-
-                                // Build LATE_JOIN_APPROVED for host
-                                let host_msg = ServerMessage::LateJoinApproved {
-                                    peer: PeerAssignment {
-                                        slot: joiner_slot,
-                                        addr: joiner_addr,
-                                        is_relay,
-                                        relay_token,
-                                        relay_dest_slot: if is_relay {
-                                            Some(joiner_slot)
-                                        } else {
-                                            None
-                                        },
-                                    },
-                                };
-
-                                // Update joiner's presence
-                                drop(lobby);
-                                if let Some(mut session) = state.sessions.get_mut(&player_id) {
-                                    let lobby_ref = state.lobbies.get(&lobby_id);
-                                    let mission = lobby_ref
-                                        .as_ref()
-                                        .map(|l| game_info_str(&l.game_info, "mission"))
-                                        .unwrap_or_default();
-                                    let pcount =
-                                        lobby_ref.as_ref().map(|l| l.player_count()).unwrap_or(0);
-                                    session.presence = Presence::InGame {
-                                        lobby_id,
-                                        mission,
-                                        player_count: pcount,
-                                    };
-                                }
-
-                                // Send messages
-                                if let Some(sess) = state.sessions.get(&player_id) {
-                                    let _ = sess.tx.send(joiner_msg);
-                                }
-                                if let Some(sess) = state.sessions.get(&host_id) {
-                                    let _ = sess.tx.send(host_msg);
-                                }
+                            // Determine host address for joiner's peer assignment
+                            let host_addr = if is_relay {
+                                relay_addr.clone()
                             } else {
-                                drop(lobby);
+                                best_candidate_addr_for_type(&host_p.candidates, &pair_conn_type)
+                            };
+                            // Determine joiner address for host's peer assignment
+                            let joiner_addr = if is_relay {
+                                relay_addr.clone()
+                            } else {
+                                best_candidate_addr_for_type(&joiner_p.candidates, &pair_conn_type)
+                            };
+
+                            let joiner_slot = lobby
+                                .players
+                                .iter()
+                                .find(|p| p.player_id == player_id)
+                                .map(|p| p.slot)
+                                .unwrap_or(1);
+                            let host_slot = 0u8; // host is always slot 0
+
+                            // Allocate relay if needed
+                            let mut relay_token: Option<u32> = None;
+                            if is_relay && !relay_addr.is_empty() {
+                                let pair = RelayPair {
+                                    slot_a: host_slot,
+                                    slot_b: joiner_slot,
+                                    pid_a: host_id,
+                                    pid_b: player_id,
+                                };
+                                relay_token =
+                                    allocate_relay_session(state, &relay_addr, lobby_id, &pair);
+                            }
+
+                            let game = lobby.game.clone();
+                            let game_info = lobby.game_info.clone();
+                            let max_players = lobby.max_players;
+
+                            info!(
+                                %lobby_id, joiner = %player_id,
+                                joiner_slot, method = pair_conn_type.as_str(),
+                                "late-join ICE complete"
+                            );
+
+                            // Build GAME_STARTING for joiner (host as only peer)
+                            let joiner_msg = ServerMessage::GameStarting {
+                                host_addr: host_addr.clone(),
+                                game,
+                                your_slot: joiner_slot,
+                                max_players,
+                                current_level: lobby.runtime_level,
+                                game_info,
+                                peers: vec![PeerAssignment {
+                                    slot: host_slot,
+                                    addr: host_addr,
+                                    is_relay,
+                                    relay_token,
+                                    relay_credentials: relay_credentials(
+                                        state,
+                                        relay_token,
+                                        joiner_slot,
+                                    ),
+                                    relay_dest_slot: if is_relay { Some(host_slot) } else { None },
+                                }],
+                            };
+
+                            // Build LATE_JOIN_APPROVED for host
+                            let host_msg = ServerMessage::LateJoinApproved {
+                                peer: PeerAssignment {
+                                    slot: joiner_slot,
+                                    addr: joiner_addr,
+                                    is_relay,
+                                    relay_token,
+                                    relay_credentials: relay_credentials(
+                                        state,
+                                        relay_token,
+                                        host_slot,
+                                    ),
+                                    relay_dest_slot: if is_relay {
+                                        Some(joiner_slot)
+                                    } else {
+                                        None
+                                    },
+                                },
+                            };
+
+                            // Update joiner's presence
+                            drop(lobby);
+                            if let Some(mut session) = state.sessions.get_mut(&player_id) {
+                                let lobby_ref = state.lobbies.get(&lobby_id);
+                                let mission = lobby_ref
+                                    .as_ref()
+                                    .map(|l| game_info_str(&l.game_info, "mission"))
+                                    .unwrap_or_default();
+                                let pcount =
+                                    lobby_ref.as_ref().map(|l| l.player_count()).unwrap_or(0);
+                                session.presence = Presence::InGame {
+                                    lobby_id,
+                                    mission,
+                                    player_count: pcount,
+                                };
+                            }
+
+                            // Send messages
+                            if let Some(sess) = state.sessions.get(&player_id) {
+                                let _ = sess.tx.send(joiner_msg);
+                            }
+                            if let Some(sess) = state.sessions.get(&host_id) {
+                                let _ = sess.tx.send(host_msg);
                             }
                         } else {
-                            // Not a late-join completion -- nothing extra to do
+                            drop(lobby);
                         }
+                    } else {
+                        // Not a late-join completion -- nothing extra to do
                     }
                 }
             }
@@ -2587,27 +2554,22 @@ fn handle_authenticated_message(
         } => {
             // Update connection_type for an existing peer pair mid-session
             let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
-            if let Some(session_room) = session_room {
-                if let Some(lobby_id) = session_room {
-                    if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                        let conn_type = match new_method.as_str() {
-                            "direct_lan" => crate::lobby::ConnectionType::DirectLan,
-                            "direct_upnp" => crate::lobby::ConnectionType::DirectUpnp,
-                            "direct_holepunch" => crate::lobby::ConnectionType::DirectHolepunch,
-                            "predicted_holepunch" => {
-                                crate::lobby::ConnectionType::PredictedHolepunch
-                            }
-                            "relay" => crate::lobby::ConnectionType::Relay,
-                            _ => crate::lobby::ConnectionType::Unknown,
-                        };
-                        if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
-                        {
-                            p.connection_type = conn_type;
-                        }
-                        info!(%player_id, %peer, %new_method, ?detail, "connectivity update");
-                        // Refresh CONNECTION_INFO for all players
-                        send_connection_info(&lobby, state);
+            if let Some(Some(lobby_id)) = session_room {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    let conn_type = match new_method.as_str() {
+                        "direct_lan" => crate::lobby::ConnectionType::DirectLan,
+                        "direct_upnp" => crate::lobby::ConnectionType::DirectUpnp,
+                        "direct_holepunch" => crate::lobby::ConnectionType::DirectHolepunch,
+                        "predicted_holepunch" => crate::lobby::ConnectionType::PredictedHolepunch,
+                        "relay" => crate::lobby::ConnectionType::Relay,
+                        _ => crate::lobby::ConnectionType::Unknown,
+                    };
+                    if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
+                        p.connection_type = conn_type;
                     }
+                    info!(%player_id, %peer, %new_method, ?detail, "connectivity update");
+                    // Refresh CONNECTION_INFO for all players
+                    send_connection_info(&lobby, state);
                 }
             }
         }
@@ -2615,38 +2577,36 @@ fn handle_authenticated_message(
         ClientMessage::FileHashes { hashes } => {
             // Compare against host's hashes and report mismatches
             let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
-            if let Some(session_room) = session_room {
-                if let Some(lobby_id) = session_room {
-                    // Store this player's hashes, then compare with host's
-                    if let Some(lobby) = state.lobbies.get(&lobby_id) {
-                        let host_id = lobby.host_player_id;
-                        if player_id == host_id {
-                            // Host sent hashes -- nothing to compare against self
-                            return;
-                        }
+            if let Some(Some(lobby_id)) = session_room {
+                // Store this player's hashes, then compare with host's
+                if let Some(lobby) = state.lobbies.get(&lobby_id) {
+                    let host_id = lobby.host_player_id;
+                    if player_id == host_id {
+                        // Host sent hashes -- nothing to compare against self
+                        return;
                     }
-                    // For now, forward hashes to host for comparison
-                    if let Some(lobby) = state.lobbies.get(&lobby_id) {
-                        let host_id = lobby.host_player_id;
-                        drop(lobby);
-                        if let Some(host_session) = state.sessions.get(&host_id) {
-                            let callsign = state
-                                .sessions
-                                .get(&player_id)
-                                .map(|s| s.callsign.clone())
-                                .unwrap_or_default();
-                            // Send as a lobby update with file info
-                            // The host client handles the actual hash comparison
-                            let _ = host_session.tx.send(ServerMessage::Error {
-                                code: "FILE_HASHES_RECEIVED".into(),
-                                message: serde_json::json!({
-                                    "player_id": player_id,
-                                    "callsign": callsign,
-                                    "hashes": hashes
-                                })
-                                .to_string(),
-                            });
-                        }
+                }
+                // For now, forward hashes to host for comparison
+                if let Some(lobby) = state.lobbies.get(&lobby_id) {
+                    let host_id = lobby.host_player_id;
+                    drop(lobby);
+                    if let Some(host_session) = state.sessions.get(&host_id) {
+                        let callsign = state
+                            .sessions
+                            .get(&player_id)
+                            .map(|s| s.callsign.clone())
+                            .unwrap_or_default();
+                        // Send as a lobby update with file info
+                        // The host client handles the actual hash comparison
+                        let _ = host_session.tx.send(ServerMessage::Error {
+                            code: "FILE_HASHES_RECEIVED".into(),
+                            message: serde_json::json!({
+                                "player_id": player_id,
+                                "callsign": callsign,
+                                "hashes": hashes
+                            })
+                            .to_string(),
+                        });
                     }
                 }
             }
@@ -2678,6 +2638,7 @@ fn handle_authenticated_message(
                         info!(%player_id, kicked = %target, %lobby_id, "player kicked");
                         broadcast_lobby_update(&lobby, state);
                     }
+                    crate::relay::revoke_player(state, target);
                     // Notify kicked player and update their session
                     if let Some(kicked_session) = state.sessions.get(&target) {
                         let _ = kicked_session.tx.send(ServerMessage::Error {
@@ -2754,6 +2715,7 @@ fn handle_authenticated_message(
             }
 
             // Clean up the lobby
+            crate::relay::revoke_room(state, lobby_id);
             state.lobbies.remove(&lobby_id);
             state.stats.lobby_closed();
             state.stats.game_ended();
@@ -3061,6 +3023,7 @@ mod tests {
 
     fn make_player(candidates: Vec<(&str, &str)>, nat_type: Option<&str>) -> LobbyPlayer {
         LobbyPlayer {
+            slot: 0,
             player_id: Uuid::new_v4(),
             callsign: "test".into(),
             ready: false,
