@@ -361,4 +361,242 @@ $mainMenu.is_network = $true
 if (Test-LanRecoveryMenu $mainMenu) { throw 'Network-active menu passed as disconnected main menu' }
 $errorDialog.game_window_is_front = $true
 if (Test-LanRecoveryMenu $errorDialog $message) { throw 'Foreground game window passed as recovery dialog' }
-Write-Host 'PASS: public LAN state rejects false success, physical targets, altered assets and nonterminal waiting menus; retail remains default'
+# Three-player identity controls reject a duplicated, dropped or unrelated peer
+$threePlayerHelper = Join-Path $PSScriptRoot '../helpers/check_lan_three_player_startup.ps1'
+$threeAst = [Management.Automation.Language.Parser]::ParseFile($threePlayerHelper, [ref]$null, [ref]$parseErrors)
+if ($parseErrors.Count) { throw "Three-player helper parser errors: $parseErrors" }
+$threePredicate = $threeAst.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-LanThreePlayerState'
+    }, $true)
+. ([scriptblock]::Create($threePredicate.Extent.Text))
+$threeState = @{
+    is_network = $true
+    multiplayer = @{
+        num_players = 3; num_connected = 3; level_num = 1; gamemode_name = 'cooperative'
+        players = @(
+            @{ callsign = 'TimingH'; is_me = $true; connected = 1 },
+            @{ callsign = 'TimingJ'; is_me = $false; connected = 1 },
+            @{ callsign = 'TimingK'; is_me = $false; connected = 1 }
+        )
+    }
+}
+if (-not (Test-LanThreePlayerState $threeState)) { throw 'Three distinct connected peers were rejected' }
+foreach ($field in @('num_players', 'num_connected')) {
+    $threeState.multiplayer[$field] = 2
+    if (Test-LanThreePlayerState $threeState) { throw "Incomplete $field passed three-player coverage" }
+    $threeState.multiplayer[$field] = 3
+}
+$threeState.multiplayer.players[2].callsign = 'TimingJ'
+if (Test-LanThreePlayerState $threeState) { throw 'Duplicate callsign passed three-player coverage' }
+$threeState.multiplayer.players[2].callsign = 'TimingK'
+$threeState.multiplayer.players[2].connected = 0
+if (Test-LanThreePlayerState $threeState) { throw 'Disconnected peer passed three-player coverage' }
+$threeState.multiplayer.players[2].connected = 1
+$threeState.multiplayer.players[1].is_me = $true
+if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity passed three-player coverage' }
+
+# A caller-owned emulator must fail a reset without entering generic restart recovery
+& {
+    $helperAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../helpers/test_helpers.ps1'), [ref]$null, [ref]$parseErrors)
+    if ($parseErrors.Count) { throw "Test helper parser errors: $parseErrors" }
+    foreach ($name in @('Reset-GameState', 'Reset-DeviceGameState')) {
+        $definition = $helperAst.Find({ param($node)
+                $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name
+            }, $true)
+        . ([scriptblock]::Create($definition.Extent.Text))
+    }
+    $resetProbe = @{ Recoveries = 0 }
+    function Adb { param($AdbArgs) }
+    function Stop-AppAndWait { }
+    function Write-Status { param($Message, $Color) }
+    function Publish-DefaultActiveFileSet { return $false }
+    function Ensure-EmulatorHealthy { $resetProbe.Recoveries++ }
+    $previousSerial = $env:ANDROID_SERIAL
+    foreach ($noRecovery in @($true, $false)) {
+        $caught = $false
+        try { Reset-DeviceGameState -Serial 'emulator-5558' -NoEmulatorRecovery:$noRecovery } catch {
+            $expected = if ($noRecovery) { 'Default active game-data publication failed; caller-owned emulator was not recycled' } else { 'could not publish the default active game-data set after emulator recovery' }
+            if ($_.Exception.Message -cne $expected) { throw }
+            $caught = $true
+        }
+        if (-not $caught -or $resetProbe.Recoveries -ne [int](-not $noRecovery) -or $env:ANDROID_SERIAL -cne $previousSerial) {
+            throw 'Reset recovery boundary or device environment restoration changed'
+        }
+    }
+}
+
+# Execute the real controller against deterministic host-only peers, never adb
+& {
+    . $threePlayerHelper
+    $previousThird = $env:DXX_THIRD_EMULATOR_SERIAL
+    $env:DXX_THIRD_EMULATOR_SERIAL = 'emulator-5558'
+    $hostSerial = 'emulator-5554'
+    $clientSerial = 'emulator-5556'
+    $script:REPO_ROOT = 'unused-host-fixture'
+    $script:PACKAGE = 'com.example.fixture'
+    $script:latencyClock = [Diagnostics.Stopwatch]::StartNew()
+    $publicFiles = @(@{ Game = 'd1' }, @{ Game = 'd2' })
+    $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('three-player-controller-' + [guid]::NewGuid().ToString('N'))
+    function git { $global:LASTEXITCODE = 0; return ('a' * 40) }
+    function Stage-PublicLanAssets { param($Serial, $Files) $script:stageCount++ }
+    function Assert-PublicLanDeviceAssets { param($Serial, $Files) }
+    function Reset-DeviceGameState { param($Serial, [switch]$NoEmulatorRecovery)
+        if ([bool]$NoEmulatorRecovery -ne ($Serial -ceq 'emulator-5558')) { throw 'Caller-owned third emulator must not enter reset recovery' }
+    }
+    function Write-LatencyEvent { param($Peer, $Event, $Data) }
+    function Add-ControllerEvent {
+        param($Serial, $Event)
+        $script:controllerEvents.Add(@{ Case = "$script:latencyGame/$script:latencySample"; Serial = $Serial; Event = $Event })
+    }
+    function Invoke-LatencyCommand {
+        param($Serial, $Command, $Extras)
+        if ($Command -in @('lan_start_game', 'launch_game')) { Add-ControllerEvent $Serial $Command }
+        if ($Command -ceq 'launch_game') {
+            $mode = if ($Serial -ceq 'emulator-5558') { $script:gameLogFixture } else { 'correct' }
+            if ($mode -notin @('missing', 'wrong')) {
+                $script:peerLogs[$Serial].Add("  101.000  2000  2000 I MainActivity: Loaded native library: dxx-redux-$script:latencyGame")
+            }
+            if ($mode -in @('wrong', 'conflicting')) {
+                $otherEngine = if ($script:latencyGame -ceq 'd1') { 'd2' } else { 'd1' }
+                $script:peerLogs[$Serial].Add("  101.001  2000  2000 I MainActivity: Loaded native library: dxx-redux-$otherEngine")
+            }
+            foreach ($event in @('wait_requests_flush', 'load_hold_begin', 'initial_load_peer_lost', 'initial_sync_timeout')) {
+                $script:peerLogs[$Serial].Add("event=$event")
+            }
+        }
+    }
+    function Invoke-LatencyAutomation { param($Phase) }
+    function Save-LatencyAutomation { param($Phase) }
+    function Assert-LanRecoveryMenu { param($Serial, $Event, $ErrorText) }
+    function Test-EmulatorHealthy { param($Serial) return $true }
+    function Start-SetupActivity {
+        param($Serial)
+        Add-ControllerEvent $Serial 'setup'
+        # Launcher services load D2 even when the selected game is native D1
+        $script:peerLogs[$Serial].Add('  100.000  1000  1000 I SetupActivity: Loaded native library: dxx-redux-d2')
+        return $true
+    }
+    function Send-MpCommand { param($Serial, $Command, $Extras) }
+    function Read-LanPreparationLobby {
+        param($Serial)
+        return @{ lan = @{ players = @(
+                    @{ callsign = 'TimingH'; connected = $true; ready = $true },
+                    @{ callsign = 'TimingJ'; connected = $true; ready = $true },
+                    @{ callsign = 'TimingK'; connected = $true; ready = $true }
+                ) } }
+    }
+    function Adb-Dev-Timeout {
+        param($Serial, $AdbArgs, $Seconds)
+        if ($AdbArgs[0] -ceq 'get-state') { return 'device' }
+        if ($AdbArgs -contains 'getprop') { return '1' }
+        if ($AdbArgs[0] -ceq 'logcat') {
+            if ($AdbArgs -contains '-c') {
+                Add-ControllerEvent $Serial 'logcat-clear'
+                $script:peerLogs[$Serial].Clear()
+                return ''
+            }
+            if ($AdbArgs -notcontains '-d') { throw 'Unexpected mocked logcat command' }
+            return ($script:peerLogs[$Serial] -join "`n")
+        }
+        if ($AdbArgs -contains 'pidof') { return '12345' }
+        if ($AdbArgs -contains 'sh') { return 'STOPPED' }
+        return ''
+    }
+    function Wait-ForCondition {
+        param($Description, $TimeoutSec, $PollMs, $Condition)
+        $ready = & $Condition
+        if ($ready -and $Description -ceq 'All three launcher players ready') {
+            Add-ControllerEvent 'all' 'ready'
+            foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) {
+                $script:peerLogs[$serial].Add('  100.500  1000  1000 I SetupActivity: event=launcher_ready')
+            }
+        }
+        return $ready
+    }
+    function Wait-LatencyPeers {
+        param($Event, $Predicate, $Timeout)
+        if ($script:failFirst -and $script:latencyGame -ceq 'd1' -and $Event -ceq 'three.briefing.ready') {
+            throw 'Intentional host-only first-case failure'
+        }
+    }
+    try {
+        $expected = @('d1/three-player', 'd1/three-player-lost', 'd2/three-player', 'd2/three-player-lost')
+        foreach ($fixture in @('correct', 'first-case-failure', 'missing', 'wrong', 'conflicting')) {
+            $failure = $fixture -cne 'correct'
+            $script:failFirst = $fixture -ceq 'first-case-failure'
+            $script:gameLogFixture = $fixture
+            $expectedFailures = @(if ($script:failFirst) { 'd1/three-player' } elseif ($failure) { $expected })
+            $script:stageCount = 0
+            $script:controllerEvents = [Collections.Generic.List[object]]::new()
+            $script:peerLogs = @{}
+            foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) {
+                $script:peerLogs[$serial] = [Collections.Generic.List[string]]::new()
+            }
+            $outputDirectory = Join-Path $fixtureRoot $fixture
+            New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+            $caught = $false
+            try { Invoke-LanThreePlayerStartupChecks } catch {
+                if (-not $failure -or $_.Exception.Message -cne 'Three-player startup category did not pass every selected case') { throw }
+                $caught = $true
+            }
+            if ($caught -ne $failure) { throw 'Controller did not propagate the case failure' }
+            $summary = Get-Content (Join-Path $outputDirectory 'three-player-summary.json') -Raw | ConvertFrom-Json
+            if ($summary.results.Count -ne 4 -or -not $summary.coverage_complete -or $summary.passed -eq $failure -or
+                $summary.revision -cne ('a' * 40) -or $summary.category -cne 'three_player_network') {
+                throw 'Controller summary did not retain four independent terminal results'
+            }
+            $failedCases = @($summary.results | Where-Object status -EQ 'FAIL')
+            if (($summary.results.id -join ',') -cne ($expected -join ',') -or
+                (@($failedCases | ForEach-Object id) -join ',') -cne ($expectedFailures -join ',') -or $script:stageCount -ne 6) {
+                throw 'Controller repeated asset staging or omitted cases after a failure'
+            }
+            foreach ($failed in $failedCases) {
+                $reason = if ($script:failFirst) { 'Intentional host-only first-case failure' }
+                else { "Expected native $($failed.id.Split('/')[0]) engine was not observed on emulator-5558" }
+                if ($failed.reason -cne $reason) { throw 'Controller failed for an unexpected reason' }
+            }
+            $expectedEvents = @(
+                foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) { "$serial/logcat-clear"; "$serial/setup" }
+                'all/ready'
+                "$hostSerial/lan_start_game"
+                foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) { "$serial/launch_game" }
+            )
+            foreach ($case in $expected) {
+                $events = @($script:controllerEvents | Where-Object Case -CEQ $case | ForEach-Object { "$($_.Serial)/$($_.Event)" })
+                if (($events -join ',') -cne ($expectedEvents -join ',')) { throw "Fresh case capture must retain launcher and game evidence: $case" }
+                $casePath = Join-Path $outputDirectory ('parallel-startup-checks/' + $case.Replace('/', '-') + '/case-result.json')
+                if (-not (Test-Path -LiteralPath $casePath)) { throw "Missing independent case result: $case" }
+                $leaf = Get-Content -LiteralPath $casePath -Raw | ConvertFrom-Json
+                $result = @($summary.results | Where-Object id -CEQ $case)[0]
+                if ($leaf.id -cne $case -or $leaf.status -cne $result.status -or $leaf.reason -cne $result.reason) {
+                    throw "Independent case result disagrees with the summary: $case"
+                }
+                foreach ($serial in @($hostSerial, $clientSerial, 'emulator-5558')) {
+                    $logPath = Join-Path (Split-Path -Parent $casePath) ("$($case.Replace('/', '-'))-$serial-logcat.txt")
+                    $rawLog = Get-Content -LiteralPath $logPath -Raw
+                    if (-not $rawLog.Contains('I SetupActivity: Loaded native library: dxx-redux-d2') -or
+                        -not $rawLog.Contains('I SetupActivity: event=launcher_ready')) {
+                        throw "Native-engine filtering discarded raw launcher evidence: $case $serial"
+                    }
+                }
+            }
+        }
+        $env:DXX_THIRD_EMULATOR_SERIAL = $clientSerial
+        $script:stageCount = 0
+        $caught = $false
+        try { Invoke-LanThreePlayerStartupChecks } catch {
+            if ($_.Exception.Message -cne 'Three distinct disposable emulators are required') { throw }
+            $caught = $true
+        }
+        if (-not $caught -or $script:stageCount -ne 0) { throw 'Aliased third emulator reached destructive fixture setup' }
+    } finally {
+        Remove-Item -LiteralPath $fixtureRoot -Recurse -Force -ErrorAction SilentlyContinue
+        if ($null -eq $previousThird) { Remove-Item Env:DXX_THIRD_EMULATOR_SERIAL -ErrorAction SilentlyContinue }
+        else { $env:DXX_THIRD_EMULATOR_SERIAL = $previousThird }
+    }
+}
+$threeOwner = Get-Content (Join-Path $PSScriptRoot 'test_lan_three_player_startup.ps1') -Raw
+if ($threeOwner -notmatch '-PublicShareware -ThreePlayerStartup -RecoveryChecks:\$false -MeasureTransitions:\$false') {
+    throw 'Independent owner must explicitly disable inherited experiment switches'
+}
+Write-Host 'PASS: public LAN and independent three-player evidence, safe setup reuse, complete receipts and negative controls'

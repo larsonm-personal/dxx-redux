@@ -280,7 +280,7 @@ jobs:
           if-no-files-found: warn
 
   android:
-    name: ${{ matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Two-device tests' || 'Android tests' }}
+    name: ${{ matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests' }}
     needs: plan
     if: needs.plan.outputs.android_lanes != '[]'
     strategy:

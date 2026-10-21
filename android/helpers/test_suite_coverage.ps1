@@ -44,6 +44,10 @@ function Get-TestSuiteCoveragePolicy {
             'test_coop_pause'
             'test_independent_checkpoints'
         )
+        # Scheduled extended coverage or an explicit exact selection, never ordinary rotation
+        three_player_network = @(
+            'test_lan_three_player_startup'
+        )
         audio_preferences = @(
             'test_dos_midi_parity'
             'test_sound_trace'
@@ -433,7 +437,7 @@ function Select-TestSuiteCoverage {
     if ($AllScenarios) {
         return $Tests | Where-Object {
             $name = if ($_.BaseName) { $_.BaseName } else { $_.Name }
-            $families[$name] -ne 'explicit'
+            $families[$name] -notin @('explicit', 'three_player_network')
         }
     }
     foreach ($family in @($policy.Keys | Sort-Object)) {
@@ -442,6 +446,6 @@ function Select-TestSuiteCoverage {
                 $families[$name] -eq $family
             } | Sort-Object Name)
         if ($family -in @('core', 'extended_graphics')) { $candidates }
-        elseif ($family -ne 'explicit' -and $candidates.Count) { $candidates[$Seed % $candidates.Count] }
+        elseif ($family -notin @('explicit', 'three_player_network') -and $candidates.Count) { $candidates[$Seed % $candidates.Count] }
     }
 }

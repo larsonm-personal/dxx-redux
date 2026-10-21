@@ -8,6 +8,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/nightly_public_fixture_policy.ps1')
 # Media-free admission is deliberately narrower than instrumentation ownership
 $mediaFree = @(
+    @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_three_player_startup'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @() },
     @{ Name = 'test_lan_lobby_discovery'; BaseName = 'test_lan_lobby_discovery'; Type = 'ps1'; Requires = 'two_emulators' },
     @{ Name = 'test_lan_broadcast'; BaseName = 'test_lan_broadcast'; Type = 'ps1'; Requires = 'two_emulators' },
     @{ Name = 'test_launcher_media_controls_generated'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-GeneratedAudio') },
@@ -78,6 +79,13 @@ foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
 }
 $deniedMediaFree = @(
+    @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_three_player_startup'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @('-FutureVariant') },
+    @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_three_player_startup'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @('-D1DataDirectory', 'other') },
+    @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_three_player_startup'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @() },
+    @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_three_player_startup'; Type = 'jsonc'; Requires = 'three_emulators'; Arguments = @() },
+    @{ Name = 'test_lan_three_player_startup_other'; BaseName = 'test_lan_three_player_startup'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @() },
+    @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_launch_preparation'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @() },
+    @{ Name = 'test_unknown_three_player'; BaseName = 'test_unknown_three_player'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @() },
     @{ Name = 'test_lan_lobby_discovery'; BaseName = 'test_lan_lobby_discovery'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-ReconnectCoverage') },
     @{ Name = 'test_launcher_media_controls'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator' },
     @{ Name = 'test_launcher_media_controls_generated'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-AudioFile', 'arbitrary.mp3') },
@@ -129,6 +137,129 @@ New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
 $producerLock = [IO.File]::Open((Join-Path $fixtureRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 $catalogs = @()
 try {
+    # Execute the real exact-selection, tier grouping and third-target guard without any Android side effects
+    $suiteParseErrors = $null
+    $suiteAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'android/run_all_tests.ps1'), [ref]$null, [ref]$suiteParseErrors)
+    if ($suiteParseErrors.Count) { throw "Master runner parse errors: $suiteParseErrors" }
+    & {
+        foreach ($functionName in @('Sort-TestsForExecution', 'Test-ThirdEmulatorTarget', 'Stop-ThreeEmulatorTestState')) {
+            $definition = $suiteAst.Find({ param($node)
+                    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName
+                }, $true)
+            if (-not $definition) { throw "Missing runner function: $functionName" }
+            . ([scriptblock]::Create($definition.Extent.Text))
+        }
+        $targetProbe = @{ Online = $true; Qemu = '1'; Calls = [Collections.Generic.List[string]]::new() }
+        function Write-Status { param($Message, $Color) }
+        function Test-DeviceOnline { param($Serial) return $targetProbe.Online }
+        function Adb-Dev-Timeout {
+            param($Serial, $AdbArgs, $Seconds)
+            $targetProbe.Calls.Add("${Serial}:$($AdbArgs -join ' ')")
+            if (($AdbArgs -join ' ') -ceq 'shell getprop ro.kernel.qemu') { return $targetProbe.Qemu }
+        }
+        $script:PRIMARY_EMULATOR_SERIAL = 'emulator-5554'
+        $script:SECONDARY_EMULATOR_SERIAL = 'emulator-5556'
+        $script:THIRD_EMULATOR_SERIAL = 'emulator-5558'
+        $script:PACKAGE = 'com.dxxredux.app'
+        if (-not (Test-ThirdEmulatorTarget)) { throw 'Valid third emulator rejected' }
+        foreach ($serial in @('physical-device', 'emulator-5554', 'emulator-5556')) {
+            $script:THIRD_EMULATOR_SERIAL = $serial
+            $targetProbe.Calls.Clear()
+            if (Test-ThirdEmulatorTarget) { throw 'Invalid or duplicate third target admitted' }
+            if ($targetProbe.Calls.Count) { throw 'Invalid target was probed before checking its identity' }
+        }
+        $script:THIRD_EMULATOR_SERIAL = 'emulator-5558'
+        $targetProbe.Online = $false
+        if (Test-ThirdEmulatorTarget) { throw 'Offline third emulator admitted' }
+        $targetProbe.Online = $true
+        $targetProbe.Qemu = '0'
+        if (Test-ThirdEmulatorTarget) { throw 'Unverified third emulator admitted' }
+        $targetProbe.Calls.Clear()
+        Stop-ThreeEmulatorTestState
+        if (@($targetProbe.Calls | Where-Object { $_ -notmatch 'shell getprop ro.kernel.qemu$' }).Count) { throw 'Cleanup modified an unverified target' }
+        $targetProbe.Qemu = '1'
+        $targetProbe.Calls.Clear()
+        Stop-ThreeEmulatorTestState
+        if (@($targetProbe.Calls | Where-Object { $_ -match 'shell am force-stop com.dxxredux.app$' }).Count -ne 3 -or
+            @($targetProbe.Calls | Where-Object { $_ -match 'rm -f files/lan_startup_test.json$' }).Count -ne 3 -or
+            @($targetProbe.Calls | Where-Object { $_ -match 'emu kill|pm clear' }).Count) {
+            throw 'Three-player timeout cleanup must clear test hooks without stopping caller-owned emulators'
+        }
+
+        $SelectedTestsPath = Join-Path $fixtureRoot 'three_player_selected.json'
+        '["test_lan_three_player_startup"]' | Set-Content -LiteralPath $SelectedTestsPath -Encoding utf8NoBOM
+        $owner = @{ Name = 'test_lan_three_player_startup'; BaseName = 'test_lan_three_player_startup'; Type = 'ps1'; Requires = 'three_emulators'; Arguments = @() }
+        $allTests = @($owner, @{ Name = 'test_lan'; BaseName = 'test_lan'; Requires = 'two_emulators' })
+        $Filter = $null
+        $Target45Minutes = $false
+        $selectionBlock = $suiteAst.EndBlock.Statements | Where-Object {
+            $_ -is [Management.Automation.Language.IfStatementAst] -and $_.Clauses[0].Item1.Extent.Text -ceq '$SelectedTestsPath'
+        }
+        if (@($selectionBlock).Count -ne 1) { throw 'Exact selection block missing' }
+        . ([scriptblock]::Create($selectionBlock.Extent.Text))
+        $runnableTests = @($allTests)
+        $groupVariables = @('tierNone', 'tierServer', 'tierSingleEmu', 'tierExtract', 'tierDualEmu', 'tierTripleEmu', 'executionTests')
+        $groupStatements = @($suiteAst.EndBlock.Statements | Where-Object {
+                $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.VariablePath.UserPath -in $groupVariables
+            })
+        if ($groupStatements.Count -ne $groupVariables.Count) { throw 'Runner tier grouping is incomplete' }
+        foreach ($statement in $groupStatements) { . ([scriptblock]::Create($statement.Extent.Text)) }
+        if ($executionTests.Count -ne 1 -or $executionTests[0].Name -cne $owner.Name -or $tierTripleEmu.Count -ne 1 -or $tierDualEmu.Count) {
+            throw 'Exact three-player selection was dropped or duplicated by infrastructure grouping'
+        }
+        $requirementGuard = $suiteAst.EndBlock.Statements | Where-Object {
+            $_ -is [Management.Automation.Language.ForEachStatementAst] -and $_.Extent.Text -match 'Unsupported test infrastructure:'
+        }
+        if (@($requirementGuard).Count -ne 1) { throw 'Unknown infrastructure must fail closed' }
+        $runnableTests = @(@{ Name = 'future'; Requires = 'unknown_emulators' })
+        $rejected = $false
+        try { . ([scriptblock]::Create($requirementGuard.Extent.Text)) } catch {
+            if ($_.Exception.Message -notlike 'Unsupported test infrastructure:*') { throw }
+            $rejected = $true
+        }
+        if (-not $rejected) { throw 'Unknown infrastructure was silently dropped' }
+
+        $tierBlock = $suiteAst.EndBlock.Statements | Where-Object {
+            $_ -is [Management.Automation.Language.IfStatementAst] -and $_.Extent.Text -match '== Tier 5: Three-emulator tests =='
+        }
+        if (@($tierBlock).Count -ne 1) { throw 'Three-emulator execution tier missing' }
+        $executionProbe = @{ Runs = 0; Installs = 0; Cleanup = 0; ThirdReady = $true; InstallOk = $true; Status = 'PASS'; Recoveries = 0 }
+        function Test-ThirdEmulatorTarget { return $executionProbe.ThirdReady }
+        function Test-SingleEmulator { return $true }
+        function Test-TwoEmulators { return $true }
+        function Invoke-SecondaryEmulatorPreflight { param($RequireStandardGameData) return 'emulator-5556' }
+        function Install-ApkOnDevice { param($Serial) $executionProbe.Installs++; return $executionProbe.InstallOk }
+        function Install-AppAndData { throw 'Fixed public owner unexpectedly required retail game data' }
+        function Invoke-SingleTest { param($Test) $executionProbe.Runs++; return @{ Status = $executionProbe.Status } }
+        function Stop-ThreeEmulatorTestState { $executionProbe.Cleanup++ }
+        function Recover-DualEmulatorEnvironment { param($PrimarySerialRef, $SecondarySerialRef) $executionProbe.Recoveries++; return $true }
+        foreach ($status in @('PASS', 'FAIL', 'TIMEOUT')) {
+            $stopEarly = $false
+            $executionProbe.Runs = 0
+            $executionProbe.Cleanup = 0
+            $executionProbe.Status = $status
+            . ([scriptblock]::Create($tierBlock.Extent.Text))
+            if ($executionProbe.Runs -ne 1 -or $executionProbe.Cleanup -ne 1 -or $executionProbe.Recoveries -ne 0 -or $script:threeEmulatorTestActive) {
+                throw 'Exact three-player selection must execute once and clean up on every terminal result without needless recovery'
+            }
+        }
+        $tierTripleEmu = @($owner, $owner.Clone())
+        $executionProbe.Runs = 0
+        $executionProbe.Cleanup = 0
+        . ([scriptblock]::Create($tierBlock.Extent.Text))
+        if ($executionProbe.Runs -ne 2 -or $executionProbe.Recoveries -ne 1 -or $executionProbe.Cleanup -ne 2) {
+            throw 'A failed three-player owner must recover its pair and clean hooks before another owner runs'
+        }
+        $tierTripleEmu = @($owner)
+        foreach ($failure in @('ThirdReady', 'InstallOk')) {
+            $executionProbe[$failure] = $false
+            $executionProbe.Runs = 0
+            . ([scriptblock]::Create($tierBlock.Extent.Text))
+            if ($executionProbe.Runs) { throw 'Three-player execution continued after failed provisioning' }
+            $executionProbe[$failure] = $true
+        }
+    }
+    Write-Host 'Exact three-player scheduling, target guards and timeout cleanup passed'
     foreach ($number in 1..6) {
         [IO.File]::WriteAllText((Join-Path $fixtureRoot ('report_2000010{0}_000000.md' -f $number)), 'catalog retention sentinel')
     }
@@ -154,8 +285,15 @@ try {
         if ($multiplayer.Count -ne 1 -or $multiplayer[0].timeout_seconds -ne $multiplayerTimeout) {
             throw 'Multiplayer soak must retain the normal setup/build timeout allowance'
         }
+        $threePlayer = @($catalog.tests | Where-Object name -eq 'test_lan_three_player_startup')
+        if ($threePlayer.Count -ne 1 -or $threePlayer[0].base_name -cne 'test_lan_three_player_startup' -or
+            $threePlayer[0].type -cne 'ps1' -or $threePlayer[0].requires -cne 'three_emulators' -or
+            $threePlayer[0].timeout_seconds -ne 900 -or $threePlayer[0].manual -or
+            'test_lan_three_player_startup' -notin (Get-TestSuiteCoveragePolicy).three_player_network) {
+            throw 'Three-player coverage needs its own fixed no-argument public owner, three-emulator tier and 900s timeout'
+        }
         foreach ($test in $catalog.tests) {
-            if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
+            if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'three_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }
         }
         foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_wall_blast_save_profiles', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles', 'test_lan_launch_preparation_profiles', 'test_lan_public_profiles', 'test_demo_import_first_play_profiles')) {
@@ -247,9 +385,16 @@ try {
         $fullCoverage = @(Select-TestSuiteCoverage -Tests $unattended -Seed 0 -AllScenarios)
         $explicitNames = (Get-TestSuiteCoveragePolicy).explicit
         if (@($fullCoverage | Where-Object BaseName -in $explicitNames).Count) { throw 'Full unattended coverage included an explicit investigation' }
-        $expectedNames = @($unattended | Where-Object BaseName -notin $explicitNames | ForEach-Object name | Sort-Object)
+        $exactOnlyNames = @($explicitNames) + @((Get-TestSuiteCoveragePolicy).three_player_network)
+        $expectedNames = @($unattended | Where-Object BaseName -notin $exactOnlyNames | ForEach-Object name | Sort-Object)
         $selectedNames = @($fullCoverage | ForEach-Object name | Sort-Object)
         if (Compare-Object $expectedNames $selectedNames) { throw 'Full unattended coverage dropped a supported scenario or replay variant' }
+        foreach ($seed in 0..40) {
+            if ('test_lan_three_player_startup' -in @(Select-TestSuiteCoverage -Tests $unattended -Seed $seed).Name) {
+                throw 'Ordinary suite rotation unexpectedly requires a third emulator'
+            }
+        }
+        if ('test_lan_three_player_startup' -in $selectedNames) { throw 'Three-player coverage must remain an exact scheduled/explicit selection' }
         if ('test_graphics_recovery' -notin $selectedNames) { throw 'Full coverage omitted the provisioned graphics recovery owner' }
         if ('test_emulator_recovery' -notin $selectedNames) { throw 'Full coverage omitted the provisioned two-emulator recovery test' }
         if ('test_distribution_build_info' -notin $selectedNames) { throw 'Full coverage omitted installed APK build information' }

@@ -19,11 +19,15 @@
             6. Second emulator started, APK installed, game data pushed
             7. Matchmaking server started for dual-emulator tests that request it
             8. Two-emulator tests (multiplayer and LAN)
-            9. Cleanup in reverse order
+            9. Explicit three-emulator tests using an already-running third emulator
+            10. Cleanup in reverse order
 
     An existing dedicated pair can be selected through DXX_TEST_PRIMARY_SERIAL,
     DXX_TEST_SECONDARY_SERIAL, DXX_TEST_PRIMARY_AVD and DXX_TEST_SECONDARY_AVD.
     Provision both AVD names first; -Serial emulator still runs the full profile.
+    Three-player owners run only through Filter or SelectedTestsPath. Start a
+    third disposable emulator first (DXX_THIRD_EMULATOR_SERIAL, default emulator-5558);
+    the suite validates and installs it but never boots, recycles, or stops it.
 
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
@@ -75,6 +79,7 @@
 .PARAMETER FullSuite
     Run every retained unattended scenario and every physical route case.
     Explicit investigations and probes requiring caller configuration remain direct runs.
+    Three-player network coverage remains exact-selection/Filter-only.
     FullExtracts, ExtendedGraphics and ExtendedMultiplayer remain separate options.
 
 .PARAMETER ExtractSampleCount
@@ -149,6 +154,7 @@ $routeSampleSeed = if ($SampleSeed -gt 0) { $SampleSeed } else { [int]([DateTime
 . "$helpersDir\runtime_targeted_sampling.ps1"
 . "$helpersDir\test_suite_coverage.ps1"
 . "$helpersDir\nightly_public_fixture_policy.ps1"
+$script:THIRD_EMULATOR_SERIAL = if ($env:DXX_THIRD_EMULATOR_SERIAL) { $env:DXX_THIRD_EMULATOR_SERIAL } else { 'emulator-5558' }
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
@@ -212,6 +218,13 @@ if (-not $ListTests) { & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -
 $script:cancelRequested = $false
 $script:cancelCleanupStarted = $false
 $script:activePowerSession = $null
+$script:threeEmulatorTestActive = $false
+
+# Tracked infra for cleanup
+$script:autoServerProc = $null
+$script:startedEmu1 = $false
+$script:startedEmu2 = $false
+$script:startedDocker = $false
 
 function Stop-ChildProcessTree {
     param([int]$ParentProcessId)
@@ -234,6 +247,7 @@ function Request-TestSuiteCancel {
     Write-Host ""
     Write-Host "Ctrl-C received; stopping test runner children" -ForegroundColor Yellow
     Stop-ChildProcessTree -ParentProcessId $PID
+    if ($script:threeEmulatorTestActive) { Stop-ThreeEmulatorTestState }
     Stop-AndroidTestPowerSession -Session $script:activePowerSession
     $script:activePowerSession = $null
 }
@@ -256,6 +270,37 @@ function Test-SingleEmulator {
 function Test-TwoEmulators {
     return ((Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL) -and
         (Test-DeviceOnline -Serial $script:SECONDARY_EMULATOR_SERIAL))
+}
+
+# The third emulator is caller-provisioned; do not guess an AVD or recycle another device
+function Test-ThirdEmulatorTarget {
+    $serials = @($script:PRIMARY_EMULATOR_SERIAL, $script:SECONDARY_EMULATOR_SERIAL, $script:THIRD_EMULATOR_SERIAL)
+    if (@($serials | Where-Object { $_ -notmatch '^emulator-[0-9]+$' }).Count -or
+        @($serials | Sort-Object -Unique).Count -ne 3) {
+        Write-Status 'Three-player coverage requires three distinct disposable emulator serials' 'Red'
+        return $false
+    }
+    if (-not (Test-DeviceOnline -Serial $script:THIRD_EMULATOR_SERIAL)) {
+        Write-Status "Start third disposable emulator $script:THIRD_EMULATOR_SERIAL before selecting three-player coverage" 'Red'
+        return $false
+    }
+    $emulated = Adb-Dev-Timeout -Serial $script:THIRD_EMULATOR_SERIAL -AdbArgs @('shell', 'getprop', 'ro.kernel.qemu') -Seconds 5
+    if (([string]$emulated).Trim() -cne '1') {
+        Write-Status "Refusing unverified third emulator $script:THIRD_EMULATOR_SERIAL" 'Red'
+        return $false
+    }
+    return $true
+}
+
+# The child normally clears these hooks; timeout/cancellation must not leave them active
+function Stop-ThreeEmulatorTestState {
+    foreach ($serial in @($script:PRIMARY_EMULATOR_SERIAL, $script:SECONDARY_EMULATOR_SERIAL, $script:THIRD_EMULATOR_SERIAL)) {
+        if (-not (Test-DeviceOnline -Serial $serial)) { continue }
+        $emulated = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'getprop', 'ro.kernel.qemu') -Seconds 5
+        if (([string]$emulated).Trim() -cne '1') { continue }
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/lan_startup_test.json') -Seconds 5 | Out-Null
+    }
 }
 
 function Test-MatchmakingServer {
@@ -404,11 +449,13 @@ $manualTests = @(
 # Infrastructure requirement classification
 $twoEmuTests = @("test_mp", "test_lan", "test_coop_pause", "test_independent_checkpoints", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
 $twoEmuTests += 'test_coop_join_missing_level'
+$threeEmuTests = @('test_lan_three_player_startup')
 $serverTests = @("test_bot_client")
 $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_lan_three_player_startup" = 900
     "test_d1_wall_blast_save" = 300
     "test_public_save_continuation" = 900
     "test_async_checkpoint_unified" = 360
@@ -817,7 +864,8 @@ foreach ($t in $ps1Files) {
     }
     $baseName = Get-TestBaseName -TestName $name
     $req = "none"
-    if ($name -in $twoEmuTests) { $req = "two_emulators" }
+    if ($name -in $threeEmuTests) { $req = "three_emulators" }
+    elseif ($name -in $twoEmuTests) { $req = "two_emulators" }
     elseif ($name -in $serverTests) { $req = "server" }
     elseif ($name -in $extractTests) { $req = "extract" }
     elseif ($name -in $noInfraTests) { $req = "none" }
@@ -1109,6 +1157,14 @@ if ($Filter) {
 
 $extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_probe")
 $profileSkipped = @()
+# IncludeManual and FullSuite do not implicitly opt in to a third device
+if (-not $SelectedTestsPath -and -not $Filter) {
+    $allTests = @($allTests | Where-Object {
+            if ($_.BaseName -notin (Get-TestSuiteCoveragePolicy).three_player_network) { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'scheduled three-player coverage; use -Filter or -SelectedTestsPath with three emulators' }
+            return $false
+        })
+}
 if (Test-PhysicalTestTarget) {
     $allTests = @($allTests | Where-Object {
             if ($_.Name -ne 'test_controller_touch_hotplug') { return $true }
@@ -1200,6 +1256,8 @@ if (-not $SelectedTestsPath -and ($Target45Minutes -or (-not $Filter -and -not $
             $baseName = if ($test.BaseName) { $test.BaseName } else { $test.Name }
             $reason = if ($baseName -in $explicitTests) {
                 "explicit investigation/caller configuration; run directly"
+            } elseif ($baseName -in (Get-TestSuiteCoveragePolicy).three_player_network) {
+                "scheduled three-player coverage; use -Filter or -SelectedTestsPath with three emulators"
             } else {
                 "scenario rotation seed $routeSampleSeed; use -Filter or -FullSuite"
             }
@@ -1219,13 +1277,21 @@ function Sort-TestsForExecution {
     return , @($Tests | Sort-Object Name)
 }
 
+# Fail closed rather than silently omitting an unhandled infrastructure declaration
+foreach ($test in $runnableTests) {
+    if ($test.Requires -notin @('none', 'server', 'emulator', 'two_emulators', 'three_emulators', 'extract')) {
+        throw "Unsupported test infrastructure: $($test.Name) requires $($test.Requires)"
+    }
+}
+
 # Group by infrastructure tier
 $tierNone = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "none" })
 $tierServer = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "server" })
 $tierSingleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
 $tierDualEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" })
+$tierTripleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "three_emulators" })
 $tierExtract = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "extract" })
-$executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExtract) + @($tierDualEmu)
+$executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExtract) + @($tierDualEmu) + @($tierTripleEmu)
 
 $historicalRuntimeByName = @{}
 $historicalReportPath = ""
@@ -1321,8 +1387,9 @@ if ($Target45Minutes -and $executionTests.Count -gt 0) {
     $tierServer = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'server' })
     $tierSingleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'emulator' })
     $tierDualEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'two_emulators' })
+    $tierTripleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'three_emulators' })
     $tierExtract = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'extract' })
-    $executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExtract) + @($tierDualEmu)
+    $executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExtract) + @($tierDualEmu) + @($tierTripleEmu)
     for ($index = 0; $index -lt $executionTests.Count; $index++) {
         $executionTests[$index]['ProgressIndex'] = $index + 1
     }
@@ -1359,7 +1426,7 @@ function Test-HostToolPrerequisites {
     $needsNativeHostTools = @($runnableTests | Where-Object {
             $_.Name -in $hostToolTests -or
             $_.BaseName -in $hostToolTests -or
-            $_.Requires -in @("server", "two_emulators")
+            $_.Requires -in @("server", "two_emulators", "three_emulators")
         }).Count -gt 0
 
     if (-not $needsNativeHostTools) {
@@ -1694,8 +1761,8 @@ function Invoke-SecondaryEmulatorPreflight {
     $serial = $script:SECONDARY_EMULATOR_SERIAL
     if (-not (Test-DeviceOnline -Serial $serial)) { return $null }
     $appDataOk = Install-SuiteTarget -Serial $serial
-    if ($RequireStandardGameData -and -not $appDataOk) {
-        Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
+    if (-not $appDataOk) {
+        Write-Status "Preflight: app/data provisioning failed on $serial" "Red"
         return $null
     }
     if (-not (Invoke-SetupActivityPreflight -Serial $serial -RequireStandardGameData:$RequireStandardGameData)) {
@@ -1706,10 +1773,10 @@ function Invoke-SecondaryEmulatorPreflight {
 }
 
 function Invoke-SuitePreflight {
-    $needsPrimaryEmulator = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
+    $needsPrimaryEmulator = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierTripleEmu.Count + $tierExtract.Count) -gt 0
     $needsServer = $tierServer.Count -gt 0
     $needsExtractData = $tierExtract.Count -gt 0
-    $needsStandardGameData = Test-SuiteNeedsStandardGameData -Tests @($tierSingleEmu + $tierDualEmu)
+    $needsStandardGameData = Test-SuiteNeedsStandardGameData -Tests @($tierSingleEmu + $tierDualEmu + $tierTripleEmu)
     $script:suiteRequiresStandardGameData = $needsStandardGameData -or $tierExtract.Count -gt 0
 
     if (-not ($needsPrimaryEmulator -or $needsServer -or $needsExtractData)) {
@@ -1866,6 +1933,7 @@ Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
 Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
+Write-Host "  Tier 5 (three emu):      $($tierTripleEmu.Count)"
 if ($runtimeSample) {
     $sampleEstimate = Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds
     Write-Host "  45-minute hash ring:    $($executionTests.Count) tests, estimated $sampleEstimate"
@@ -1899,9 +1967,12 @@ if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
     exit 1
 }
 
+# Validate the caller-owned third emulator before building or modifying any target
+if ($tierTripleEmu.Count -gt 0 -and -not (Test-ThirdEmulatorTarget)) { exit 1 }
+
 # -- Build APK if any emulator tests will run --
 
-$needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
+$needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierTripleEmu.Count + $tierExtract.Count) -gt 0
 $script:needsInstrumentation = @($runnableTests | Where-Object BaseName -in (Get-TestSuiteInstrumentationOwners)).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
     if (-not (Test-PhysicalTestTarget) -and -not (Test-SoftwareAndroidTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
@@ -1978,12 +2049,6 @@ $stopEarly = $false
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:completedTestSeconds = 0.0
 
-# Tracked infra for cleanup
-$script:autoServerProc = $null
-$script:startedEmu1 = $false
-$script:startedEmu2 = $false
-$script:startedDocker = $false
-
 function Invoke-SingleTest {
     param([hashtable]$Test)
     if ($TestBudgetSeconds -gt 0 -and $script:completedTestSeconds -ge $TestBudgetSeconds) {
@@ -2038,7 +2103,7 @@ function Invoke-SingleTest {
     if ($Test.Requires -eq 'emulator' -and (Get-Command $psScript).Parameters.ContainsKey('Serial') -and '-Serial' -notin $psArguments) {
         $psArguments += @('-Serial', $script:singleTestSerial)
     }
-    if ($Test.Requires -eq 'two_emulators') {
+    if ($Test.Requires -in @('two_emulators', 'three_emulators')) {
         $pairArguments = @{
             HostDevice = $script:PRIMARY_EMULATOR_SERIAL; JoinDevice = $script:SECONDARY_EMULATOR_SERIAL
             HostAvd = $script:PRIMARY_AVD_NAME; JoinAvd = $script:SECONDARY_AVD_NAME
@@ -2459,6 +2524,55 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         foreach ($test in $tierDualEmu) {
             $infraSkipped += @{ Name = $test.Name; Reason = $reason; Type = $test.Type }
         }
+    }
+}
+
+# -- Tier 5: scheduled or explicitly selected three-emulator coverage --
+
+if ($tierTripleEmu.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 5: Three-emulator tests ==" -ForegroundColor Cyan
+    $thirdNeedsGameData = Test-SuiteNeedsStandardGameData -Tests $tierTripleEmu
+    $tripleReady = Test-ThirdEmulatorTarget
+    if ($tripleReady) {
+        $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
+        if (-not (Test-SingleEmulator)) {
+            $emu1Serial = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$thirdNeedsGameData
+        }
+        $emu2Serial = if ($emu1Serial) { Invoke-SecondaryEmulatorPreflight -RequireStandardGameData:$thirdNeedsGameData } else { $null }
+        $tripleReady = $emu1Serial -and $emu2Serial -and (Test-TwoEmulators)
+    }
+    if ($tripleReady) {
+        $tripleReady = if ($thirdNeedsGameData) {
+            Install-AppAndData -Serial $script:THIRD_EMULATOR_SERIAL
+        } else {
+            Install-ApkOnDevice -Serial $script:THIRD_EMULATOR_SERIAL
+        }
+    }
+    if ($tripleReady) {
+        try {
+            for ($index = 0; $index -lt $tierTripleEmu.Count; $index++) {
+                if ($stopEarly) { break }
+                $test = $tierTripleEmu[$index]
+                $script:threeEmulatorTestActive = $true
+                $result = Invoke-SingleTest -Test $test
+                if ($result.Status -in @('FAIL', 'TIMEOUT') -and -not $stopEarly -and ($index + 1) -lt $tierTripleEmu.Count) {
+                    Stop-ThreeEmulatorTestState
+                    # Reuse pair recovery, but never recycle the caller-owned third emulator
+                    if (-not (Recover-DualEmulatorEnvironment -PrimarySerialRef ([ref]$emu1Serial) -SecondarySerialRef ([ref]$emu2Serial)) -or
+                        -not (Test-ThirdEmulatorTarget)) {
+                        Write-Status 'Three-emulator recovery failed; stopping remaining three-player tests' 'Red'
+                        break
+                    }
+                }
+            }
+        } finally {
+            Stop-ThreeEmulatorTestState
+            $script:threeEmulatorTestActive = $false
+        }
+    } else {
+        # Leave these tests NOT_RUN and fail the suite instead of reporting a successful skip
+        Write-Status 'Three-emulator provisioning failed; selected three-player tests did not run' 'Red'
     }
 }
 
