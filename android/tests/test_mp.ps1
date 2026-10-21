@@ -141,13 +141,16 @@ function Measure-InstallationWork {
     }
     $vectorFailures = 0
     foreach ($serial in $allTargets) {
-        $output = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'installation_work', "$PACKAGE.test/com.dxxredux.app.RecoveryInstrumentation") -Seconds 35
+        $output = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'instrument', '-w', '-r', '-e', 'suite', 'installation_work', "$PACKAGE.test/com.dxxredux.app.RecoveryInstrumentation") -Seconds 35
         foreach ($line in @($output -split "`n")) {
             if ($line -match 'ONLINE_WORK_VECTOR difficulty=20 hashes=[0-9]+ elapsed_ms=[0-9]+ solved=(true|false)') {
                 Write-Status "$($Matches[0])" 'Gray'
             }
         }
-        if ($output -notmatch 'PASS: installation work fixture and cancellation' -or $output -notmatch 'INSTRUMENTATION_CODE: -1') { $vectorFailures++ }
+        $passed = $output -match 'PASS: installation work fixture and cancellation'
+        $finished = $output -match '(?m)^INSTRUMENTATION_CODE: -1\s*$'
+        Write-Status "ONLINE_WORK_RESULT pass_marker=$([bool]$passed) terminal_ok=$([bool]$finished)" 'Gray'
+        if (-not $passed -or -not $finished) { $vectorFailures++ }
     }
     if ($failed -gt 0 -or $vectorFailures -gt 0) {
         throw "Installation work qualification failed: $failed of $sample fresh samples; $vectorFailures of 3 device vectors"

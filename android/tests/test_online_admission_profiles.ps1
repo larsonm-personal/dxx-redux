@@ -119,3 +119,40 @@ foreach ($wrong in @($false, $true)) {
     if (@($script:snapshots | Where-Object { $_ -like 'ONLINE_STATE *' }).Count -ne 6) { throw 'First-client failure hid other clients' }
 }
 Write-Host 'PASS: every client is observed while native roster and gameplay checks remain strict'
+
+# Model Android Instrument.TextStatusReporter: stream-only pretty output omits the terminal code
+$definition = $owner.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Measure-InstallationWork'
+    }, $true)
+. ([scriptblock]::Create($definition.Extent.Text))
+function Adb-Dev-Timeout {
+    param($Serial, $AdbArgs, $Seconds)
+    if ($AdbArgs -notcontains 'instrument') { return '' }
+    $script:vectors++
+    $stream = "ONLINE_WORK_VECTOR difficulty=20 hashes=4243438 elapsed_ms=7000 solved=true`n"
+    if ($script:vectorCase -ne 'missing-pass') { $stream += "PASS: installation work fixture and cancellation`n" }
+    if ($AdbArgs -contains '-r' -and $script:vectorCase -ne 'missing-code') {
+        $code = if ($script:vectorCase -eq 'failed-code') { 0 } else { -1 }
+        return "INSTRUMENTATION_RESULT: stream=$stream`nINSTRUMENTATION_CODE: $code"
+    }
+    return $stream
+}
+function Start-SetupActivity { param($Serial) return $true }
+function Send-MpCommand { param($Serial, $Command, $Extras) if ($Command -eq 'connect') { $script:attempts++ } }
+function Get-MpIntrospection {
+    param($Serial)
+    return [pscustomobject]@{ status = 'CONNECTED'; error = $null; online_resources = [pscustomobject]@{
+            installation_work = [pscustomobject]@{ difficulty = 20; hashes = 100; elapsed_ms = 1; solved = $true }
+        }
+    }
+}
+function Wait-ForCondition { param($Description, $TimeoutSec, $PollMs, $Condition) return (& $Condition) }
+function Invoke-RestMethod { param($Uri, $TimeoutSec) return [pscustomobject]@{ pending_and_authenticated_sockets = 0; rooms = 0; relay_sessions = 0 } }
+foreach ($case in @('raw-pass', 'missing-code', 'failed-code', 'missing-pass')) {
+    $script:vectorCase = $case; $script:vectors = 0; $script:attempts = 0; $script:snapshots = @(); $failed = $false
+    try { Measure-InstallationWork -ServerUrl 'ws://127.0.0.1:9000/ws' } catch { $failed = $true }
+    if ($failed -ne ($case -ne 'raw-pass')) { throw "Instrumentation terminal evidence result: $case" }
+    if ($script:vectors -ne 3 -or $script:attempts -ne 12) { throw 'Work campaign skipped required samples' }
+    if (@($script:snapshots | Where-Object { $_ -like 'ONLINE_WORK_RESULT *' }).Count -ne 3) { throw 'Missing bounded vector result diagnostics' }
+}
+Write-Host 'PASS: actual raw instrumentation output is required; solved work alone cannot qualify the fixture'
