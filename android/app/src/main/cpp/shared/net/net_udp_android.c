@@ -95,10 +95,14 @@ static int android_net_udp_auth_verify(void *context)
 	const android_net_udp_verification *verification =
 	    (const android_net_udp_verification *) context;
 
-	return android_net_udp_reconnect_verify(
+	const int verified = android_net_udp_reconnect_verify(
 	    verification->public_key, verification->public_key_len,
 	    verification->message, verification->message_len,
 	    verification->signature, verification->signature_len);
+#ifndef NDEBUG
+	if (!verified) debug_log_force(DLOG_NETWORK, "[STARTUP-AUTH] signature_rejected");
+#endif
+	return verified;
 }
 
 static void android_net_udp_auth_route_bytes(

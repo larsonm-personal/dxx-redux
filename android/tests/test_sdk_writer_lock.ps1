@@ -116,10 +116,10 @@ exit $LASTEXITCODE
     $bin = Join-Path $root 'dependencies/android-sdk/cmdline-tools/latest/bin'
     New-Item -ItemType Directory -Path $bin -Force | Out-Null
     if (Test-RegressionWindowsHost) {
-        [IO.File]::WriteAllText((Join-Path $bin 'avdmanager.bat'), "@echo off`r`necho Name: Nexus5X_Light_1`r`necho Name: Nexus5X_Light_2`r`n")
+        [IO.File]::WriteAllText((Join-Path $bin 'avdmanager.bat'), "@echo off`r`necho Name: Nexus5X_Light_1`r`necho Name: Nexus5X_Light_2`r`necho Name: Nexus5X_Light_3`r`n")
     } else {
         $manager = Join-Path $bin 'avdmanager'
-        [IO.File]::WriteAllText($manager, "#!/usr/bin/env bash`necho 'Name: Nexus5X_Light_1'`necho 'Name: Nexus5X_Light_2'`n")
+        [IO.File]::WriteAllText($manager, "#!/usr/bin/env bash`necho 'Name: Nexus5X_Light_1'`necho 'Name: Nexus5X_Light_2'`necho 'Name: Nexus5X_Light_3'`n")
         & chmod +x $manager
         if ($LASTEXITCODE -ne 0) { throw 'Could not prepare native AVD fixture' }
     }
@@ -130,6 +130,13 @@ exit $LASTEXITCODE
         $execution.Results += $result
     }
     if ($execution.Results[0].TimedOut -or $execution.Results[0].ExitCode -ne 0 -or $execution.Results[0].StandardOutput -notmatch "AVD 'Nexus5X_Light_2' already exists") { throw "AVD entry point re-entry failed: $($execution.Results[0].StandardError)" }
+    $task.Arguments += @('-AvdName', 'Nexus5X_Light_3')
+    $execution.Results = @()
+    Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
+        param($task, $result)
+        $execution.Results += $result
+    }
+    if ($execution.Results[0].TimedOut -or $execution.Results[0].ExitCode -ne 0 -or $execution.Results[0].StandardOutput -notmatch "AVD 'Nexus5X_Light_3' already exists") { throw "Explicit third AVD forwarding failed: $($execution.Results[0].StandardError)" }
     Write-Host 'PASS: SDK writer serialization, contention, failure, timeout release, PowerShell forwarding and cached AVD entry point'
 } finally {
     $env:DXX_TEST_SDK_WRAPPER = $previousWrapper

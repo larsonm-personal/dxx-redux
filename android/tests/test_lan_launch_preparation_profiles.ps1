@@ -333,4 +333,32 @@ if ($guard -lt 0 -or $candidate -lt $guard -or $nativeD1Start -lt $candidate -or
     $nativeD2Start -lt $stage -or $importedStart -lt $nativeD2Start) {
     throw 'Admission and native D1 must precede D2 staging; native starts must precede imported content'
 }
-Write-Host 'PASS: public LAN state rejects false success, physical targets and altered assets; retail remains default'
+$recoverySource = Join-Path $PSScriptRoot '../helpers/check_lan_parallel_startup.ps1'
+$recoveryAst = [Management.Automation.Language.Parser]::ParseFile($recoverySource, [ref]$null, [ref]$parseErrors)
+if ($parseErrors.Count) { throw "Recovery helper parser errors: $parseErrors" }
+$recoveryPredicate = $recoveryAst.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-LanRecoveryMenu'
+    }, $true)
+if (-not $recoveryPredicate) { throw 'Recovery menu predicate missing' }
+. ([scriptblock]::Create($recoveryPredicate.Extent.Text))
+# The real synchronization dialog already has screen_mode=menu and in_game=false
+$waiting = @{
+    in_game = $false; screen_mode = 'menu'; is_network = $true; game_window_is_front = $false
+    menu = @{ type = 'newmenu'; title = ''; subtitle = 'Wait...'; items = @(@{ text = 'Waiting for host to enter' }) }
+}
+$message = 'The host did not finish starting within 60 seconds'
+if (Test-LanRecoveryMenu $waiting $message) { throw 'Synchronization Wait dialog passed as recovery' }
+if (Test-LanRecoveryMenu $null $message) { throw 'Absent observation passed as recovery' }
+$errorDialog = $waiting.Clone()
+$errorDialog.menu = @{ type = 'newmenu'; title = 'Error'; subtitle = $message; items = @(@{ text = 'OK' }) }
+if (-not (Test-LanRecoveryMenu $errorDialog $message)) { throw 'Explicit expected failure dialog was rejected' }
+if (Test-LanRecoveryMenu $errorDialog 'Different failure') { throw 'Unrelated dialog passed as expected recovery' }
+$mainMenu = $waiting.Clone()
+$mainMenu.is_network = $false
+$mainMenu.menu = @{ type = 'newmenu'; title = ''; subtitle = ''; items = @(@{ text = 'New game' }, @{ text = 'Options...' }, @{ text = 'Quit' }) }
+if (-not (Test-LanRecoveryMenu $mainMenu)) { throw 'Disconnected main menu was rejected' }
+$mainMenu.is_network = $true
+if (Test-LanRecoveryMenu $mainMenu) { throw 'Network-active menu passed as disconnected main menu' }
+$errorDialog.game_window_is_front = $true
+if (Test-LanRecoveryMenu $errorDialog $message) { throw 'Foreground game window passed as recovery dialog' }
+Write-Host 'PASS: public LAN state rejects false success, physical targets, altered assets and nonterminal waiting menus; retail remains default'

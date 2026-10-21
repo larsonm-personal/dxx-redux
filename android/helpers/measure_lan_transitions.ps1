@@ -1,5 +1,6 @@
 # Opt-in support for test_lan_launch_preparation; two verified disposable emulators
 # Controller durations include command/poll overhead. Native script logs are local clocks
+$script:latencyPeerSerials = @($hostSerial, $clientSerial)
 function Write-LatencyEvent([string]$Peer, [string]$Event, $Data = $null) {
     [ordered]@{ sample = $script:latencySample; game = $script:latencyGame; peer = $Peer
         event = $Event; controller_ms = $script:latencyClock.Elapsed.TotalMilliseconds; data = $Data
@@ -8,7 +9,7 @@ function Write-LatencyEvent([string]$Peer, [string]$Event, $Data = $null) {
 }
 
 function Wait-LatencyPeers([string]$Event, [scriptblock]$Predicate, [int]$Timeout = 120) {
-    $pending = @($hostSerial, $clientSerial)
+    $pending = @($script:latencyPeerSerials)
     $deadline = $script:latencyClock.Elapsed.TotalSeconds + $Timeout
     while ($pending.Count -and $script:latencyClock.Elapsed.TotalSeconds -lt $deadline) {
         foreach ($serial in @($pending)) {
@@ -31,7 +32,7 @@ function Invoke-LatencyCommand([string]$Serial, [string]$Command, [string[]]$Ext
 }
 
 function Save-LatencyAutomation([string]$Phase) {
-    foreach ($serial in @($hostSerial, $clientSerial)) {
+    foreach ($serial in $script:latencyPeerSerials) {
         foreach ($name in @('automation_log.jsonl', 'automation_result.json')) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "files/$name") -Seconds 10 |
                 Set-Content (Join-Path $outputDirectory "$($script:latencyGame)-$($script:latencySample)-$serial-$Phase-$name") -Encoding utf8
@@ -52,12 +53,12 @@ function Invoke-LatencyAutomation([string]$Phase) {
     $stagedPath = Join-Path $outputDirectory $name
     [IO.File]::WriteAllText($stagedPath, $payload, [Text.UTF8Encoding]::new($false))
     # Stage on both peers before the timed command; file-copy time is not an engine wait
-    foreach ($serial in @($hostSerial, $clientSerial)) {
+    foreach ($serial in $script:latencyPeerSerials) {
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('push', $stagedPath, "/data/local/tmp/$name") -Seconds 30 | Out-Null
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', "/data/local/tmp/$name", "files/$name") -Seconds 10 | Out-Null
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/automation_result.json', 'files/automation_log.jsonl') -Seconds 5 | Out-Null
     }
-    foreach ($serial in @($hostSerial, $clientSerial)) {
+    foreach ($serial in $script:latencyPeerSerials) {
         Write-LatencyEvent $serial "$Phase.request"
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $name) -Seconds 10 | Out-Null
         Write-LatencyEvent $serial "$Phase.return"
@@ -65,7 +66,7 @@ function Invoke-LatencyAutomation([string]$Phase) {
 }
 
 function Save-LatencyScreen([string]$Phase) {
-    foreach ($serial in @($hostSerial, $clientSerial)) {
+    foreach ($serial in $script:latencyPeerSerials) {
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'screencap', '-p', '/data/local/tmp/latency.png') -Seconds 10 | Out-Null
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('pull', '/data/local/tmp/latency.png', (Join-Path $outputDirectory "$($script:latencyGame)-$($script:latencySample)-$serial-$Phase.png")) -Seconds 10 | Out-Null
     }
@@ -79,17 +80,17 @@ function Invoke-LanTransitionMeasurements {
         cache = 'all samples reset configs/preferences and restart processes; sample 1 clears app data; samples 2/3 retain assets/pilots; level 2 is process warm'
         host = $hostSerial; client = $clientSerial
     } | ConvertTo-Json | Set-Content (Join-Path $outputDirectory 'experiment.json')
-    foreach ($serial in @($hostSerial, $clientSerial)) {
+    foreach ($serial in $script:latencyPeerSerials) {
         Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'getprop') -Seconds 10 | Set-Content (Join-Path $outputDirectory "$serial-properties.txt")
     }
     foreach ($game in @('d1', 'd2')) {
         $script:latencyGame = $game
         $files = @($publicFiles | Where-Object Game -CEQ $game)
-        foreach ($serial in @($hostSerial, $clientSerial)) { Stage-PublicLanAssets -Serial $serial -Files $files }
+        foreach ($serial in $script:latencyPeerSerials) { Stage-PublicLanAssets -Serial $serial -Files $files }
         foreach ($sample in 1..3) {
             $script:latencySample = $sample
             try {
-                foreach ($serial in @($hostSerial, $clientSerial)) {
+                foreach ($serial in $script:latencyPeerSerials) {
                     Reset-DeviceGameState -Serial $serial
                     Adb-Dev-Timeout -Serial $serial -AdbArgs @('logcat', '-c') -Seconds 5 | Out-Null
                     Write-LatencyEvent $serial 'launcher.request'
@@ -141,7 +142,7 @@ function Invoke-LanTransitionMeasurements {
                 Save-LatencyScreen 'level2'
                 Write-LatencyEvent 'both' 'sample.pass'
             } finally {
-                foreach ($serial in @($hostSerial, $clientSerial)) {
+                foreach ($serial in $script:latencyPeerSerials) {
                     Adb-Dev-Timeout -Serial $serial -AdbArgs @('logcat', '-d', '-v', 'monotonic') -Seconds 15 |
                         Set-Content (Join-Path $outputDirectory "$game-$sample-$serial-logcat.txt") -Encoding utf8
                     Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null

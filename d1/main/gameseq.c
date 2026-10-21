@@ -19,6 +19,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 
 #ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(NDEBUG)
+#include "auto_net.h"
+#endif
+
 #include "android_sound_trace.h"
 #endif
 
@@ -720,6 +724,12 @@ void LoadLevel(int level_num,int page_in_textures)
 	/* New objects must not inherit the previous level's custom definitions */
 	custom_restore_definitions();
 
+	#if defined(__ANDROID__) && !defined(NDEBUG)
+	/* Exercise the real missing-file error path after launcher admission */
+	if (auto_net_lan_startup && auto_net_launcher_join_active && auto_net_startup_test_packet_fault == 8)
+		load_ret = load_level("__missing_startup_test_level__");
+	else
+#endif
 	load_ret = load_level(level_name);
 	if (!load_ret) {
 		Current_level_num=level_num;

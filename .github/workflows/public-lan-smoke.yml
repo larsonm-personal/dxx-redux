@@ -8,6 +8,14 @@ on:
         description: Export compact public evidence from an existing run (no emulator execution)
         type: string
         default: ""
+      recovery_cases:
+        description: Optional comma-separated recovery cases (empty runs all)
+        type: string
+        default: ""
+      recovery_checks:
+        description: Run focused parallel startup recovery experiments
+        type: boolean
+        default: false
       measure_transitions:
         description: Repeat public LAN transition timing experiment
         type: boolean
@@ -73,6 +81,8 @@ jobs:
       lane: android-dual
       retail_assets: false
       measure_transitions: ${{ inputs.measure_transitions == true }}
+      recovery_checks: ${{ inputs.recovery_checks == true }}
+      recovery_cases: ${{ inputs.recovery_cases }}
 
   finish:
     name: Require public LAN pass

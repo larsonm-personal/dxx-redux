@@ -1,5 +1,6 @@
 """Pure planner/reconciliation controls; never invokes PowerShell or GitHub."""
 import copy
+import io
 import json
 import os
 import subprocess
@@ -14,6 +15,36 @@ SHA = '0000000000000000000000000000000000000008'  # Stable first/second/third fi
 
 
 class SweepTests(unittest.TestCase):
+    def test_public_jvm_failure_exposes_bounded_owner_log(self):
+        plan = {"tests": [{"id": "master:test_gradle_unit_tests", "lane": "jvm"}]}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "master").mkdir()
+            (root / "master.log").write_text("owner failed")
+            (root / "master/test_gradle_unit_tests_1.log").write_text(
+                "old line\n" * 10000 + "ExampleTest > assertion FAILED\n::error::untrusted\n##[error]legacy\n"
+            )
+            (root / "master/private.log").write_text("unrelated private output")
+            output = io.StringIO()
+            with patch("sys.stdout", output):
+                sweep.print_public_jvm_failure(plan, "jvm", root)
+            lines = output.getvalue().splitlines()
+            self.assertEqual(len(lines), 3)
+            payload = json.loads(lines[-1])
+            self.assertEqual(len(payload["tail"]), 200)
+            self.assertIn("ExampleTest > assertion FAILED", payload["tail"])
+            self.assertIn("##[error]legacy", payload["tail"])
+            self.assertNotIn("##[", output.getvalue())
+            self.assertIn(r"\u0023\u0023[error]legacy", output.getvalue())
+            self.assertNotIn("unrelated private output", output.getvalue())
+            for lane, private_plan in [("host", plan), ("jvm", {**plan, "retail_assets": {"commit": SHA}})]:
+                with patch("sys.stdout", io.StringIO()) as hidden:
+                    sweep.print_public_jvm_failure(private_plan, lane, root)
+                    self.assertEqual(hidden.getvalue(), "")
+            with patch.dict(os.environ, {"RETAIL_REQUESTED": "true"}), patch("sys.stdout", io.StringIO()) as hidden:
+                sweep.print_public_jvm_failure(plan, "jvm", root)
+                self.assertEqual(hidden.getvalue(), "")
+
     def setUp(self):
         self.policy = {'schema': 1, 'suites': [
             {'id': 'master:' + name, 'owner': 'master', 'lane': 'host', 'args': {'suite': name}, 'estimated_seconds': 100}

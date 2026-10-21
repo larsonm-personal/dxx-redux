@@ -1,0 +1,10 @@
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_lan_launch_preparation",
+        },
+    },
+    { "action": "key", "key": "escape", "post_delay_ms": 0 },
+]

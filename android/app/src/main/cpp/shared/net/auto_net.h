@@ -28,6 +28,7 @@ extern int auto_net_launcher_join_active;
 extern int auto_net_startup_test_delay_ms;
 extern int auto_net_startup_test_drop_admission;
 extern int auto_net_startup_test_duplicates;
+extern int auto_net_startup_test_packet_fault;
 void auto_net_startup_test_hold(const char *role);
 /* Host address to connect to (e.g. "127.0.0.1"). */
 extern char auto_join_host_addr[AUTO_NET_ADDR_LEN];

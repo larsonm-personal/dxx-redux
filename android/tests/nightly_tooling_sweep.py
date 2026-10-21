@@ -474,6 +474,28 @@ def run_command(command, cwd, log, timeout=None):
         raise
 
 
+def print_public_jvm_failure(plan, lane, output):
+    """Expose bounded owner output without exporting retail or other lane logs"""
+    if lane != "jvm" or plan.get("retail_assets") or os.environ.get("RETAIL_REQUESTED") == "true":
+        return
+    selected = [entry["id"] for entry in plan["tests"] if entry["lane"] == lane]
+    if selected != ["master:test_gradle_unit_tests"]:
+        return
+    output = Path(output).resolve()
+    paths = [output / "master.log"]
+    paths.extend(sorted((output / "master").glob("test_gradle_unit_tests_*.log"))[-2:])
+    print("Public JVM failure diagnostics: master:test_gradle_unit_tests")
+    for path in paths:
+        if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(output):
+            continue
+        with path.open("rb") as stream:
+            stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, stream.tell() - 65536))
+            tail = stream.read(65536).decode("utf-8", errors="replace").splitlines()[-200:]
+        # JSON quotes modern commands; escape hashes for the legacy ##[ parser
+        print(json.dumps({"file": path.name, "tail": tail}, ensure_ascii=True).replace("#", "\\u0023"))
+
+
 def execute(plan, policy, lane, repo, output):
     validate_plan(plan, policy)
     repo, output = Path(repo).resolve(), Path(output).resolve()
@@ -516,6 +538,8 @@ def execute(plan, policy, lane, repo, output):
             process = run_command(command, repo, log)
         process_evidence('master', True, process.returncode)
         receipt['runner_failed'] = process.returncode != 0
+        if receipt['runner_failed']:
+            print_public_jvm_failure(plan, lane, output)
         observations = journal_observations(journal, actual)
         for entry in masters:
             row = observations.get(entry['args']['suite'], {})

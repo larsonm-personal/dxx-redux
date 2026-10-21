@@ -48,6 +48,7 @@ static void publish(void)
 	const char *message;
 	switch (current.phase) {
 		case NET_JOIN_READY: message = "Joining the team\nWaiting for approval or level synchronization"; break;
+		case NET_JOIN_INITIAL_LOAD:
 		case NET_JOIN_PREPARING: message = "Preparing the next level\nWaiting for the team to finish loading"; break;
 		case NET_JOIN_BRIEFING:
 			message = current.host_ready ? "Briefing - the host is ready\nJoining with the remaining briefing time"
@@ -146,7 +147,7 @@ void net_join_wait_receive(const net_join_status *status, unsigned transit_ms)
 		debug_log(DLOG_NETWORK, "Join wait: phase=%u level=%d remaining_ms=%u", status->phase, status->level, status->remaining_ms);
 	current = *status;
 	if (target_valid && (status->visit != target_visit || status->level != target_level ||
-	                     (status->phase != NET_JOIN_READY && status->phase != NET_JOIN_BRIEFING &&
+	                     (status->phase != NET_JOIN_INITIAL_LOAD && status->phase != NET_JOIN_READY && status->phase != NET_JOIN_BRIEFING &&
 	                      status->phase != NET_JOIN_PREPARING))) restart = 1;
 	received_at = now;
 	deadline = next_deadline;
@@ -214,7 +215,7 @@ static int prepare_poll(newmenu *menu, d_event *event, void *unused)
 	if (event->type != EVENT_WINDOW_DRAW) return 0;
 	net_join_wait_frame();
 	if (Network_status == NETSTAT_MENU) return -2;
-	return current.level && current.visit && (current.phase == NET_JOIN_READY || current.phase == NET_JOIN_BRIEFING) ? -2 : 0;
+	return current.level && current.visit && (current.phase == NET_JOIN_INITIAL_LOAD || current.phase == NET_JOIN_READY || current.phase == NET_JOIN_BRIEFING) ? -2 : 0;
 }
 
 int net_join_wait_prepare(void)
@@ -232,6 +233,11 @@ int net_join_wait_prepare(void)
 	target_visit = current.visit;
 	target_valid = 1;
 	return 1;
+}
+
+int net_join_wait_initial_load(void)
+{
+	return active && target_valid && current.phase == NET_JOIN_INITIAL_LOAD;
 }
 
 void net_join_wait_sync_begin(void)

@@ -47,6 +47,7 @@ int auto_net_launcher_join_active = 0;
 int auto_net_startup_test_delay_ms = 0;
 int auto_net_startup_test_drop_admission = 0;
 int auto_net_startup_test_duplicates = 0;
+int auto_net_startup_test_packet_fault = 0;
 void auto_net_startup_test_hold(const char *role)
 {
 #ifndef NDEBUG

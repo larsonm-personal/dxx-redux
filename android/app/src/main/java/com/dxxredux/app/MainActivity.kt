@@ -722,6 +722,7 @@ class MainActivity :
         delayMs: Int,
         dropAdmission: Boolean,
         duplicates: Int,
+        packetFault: Int,
     )
 
     external fun nativeGetMultiplayerPings(): IntArray
@@ -1235,6 +1236,7 @@ class MainActivity :
             startupTest?.optInt("delay_ms", 0)?.coerceIn(0, 30000) ?: 0,
             startupTest?.optBoolean("drop_admission", false) ?: false,
             startupTest?.optInt("duplicates", 0)?.coerceIn(0, 2) ?: 0,
+            startupTest?.optInt("packet_fault", 0)?.coerceIn(0, 8) ?: 0,
         )
         isLanQrHost = mpMode == "host" && intent.getBooleanExtra("mp_is_lan", false)
         isMultiplayerGame = mpMode != null

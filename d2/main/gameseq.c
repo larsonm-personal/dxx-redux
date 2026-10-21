@@ -19,6 +19,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 
 #ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(NDEBUG)
+#include "auto_net.h"
+#endif
+
 #include "android_sound_trace.h"
 #endif
 
@@ -969,6 +973,12 @@ void LoadLevel(int level_num,int page_in_textures)
 	d1_assets = d1_in_d2_prepare_level_assets(level_name);
 	if (!d1_assets)
 		reset_level_robots_file(); // restore mission models before initial object verification
+	#if defined(__ANDROID__) && !defined(NDEBUG)
+	/* Exercise the real missing-file error path after launcher admission */
+	if (auto_net_lan_startup && auto_net_launcher_join_active && auto_net_startup_test_packet_fault == 8)
+		load_ret = load_level("__missing_startup_test_level__");
+	else
+#endif
 	load_ret = load_level(level_name);		//actually load the data from disk!
 
 	if (load_ret)
