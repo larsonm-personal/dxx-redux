@@ -579,6 +579,8 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     });
                     break;
                 }
+                // A new attempt retires any challenge from an earlier identity
+                pending_pow = None;
                 // Version check first
                 if protocol_version < MIN_CLIENT_PROTOCOL {
                     warn!(%addr, %client_version, %protocol_version, required = MIN_CLIENT_PROTOCOL, "client version rejected");
@@ -787,6 +789,12 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 challenge,
                 solution,
             } => {
+                if player_id.is_some() {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Already authenticated".into(),
+                    });
+                    break;
+                }
                 let Some(ref pp) = pending_pow else {
                     let _ = tx.send(ServerMessage::Error {
                         code: "NO_PENDING_POW".into(),
@@ -1826,8 +1834,9 @@ fn handle_authenticated_message(
         }
 
         ClientMessage::Ready { ready } => {
-            if let Some(session) = state.sessions.get(&player_id) {
-                if let Some(lobby_id) = session.lobby_id {
+            let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
+            if let Some(session_room) = session_room {
+                if let Some(lobby_id) = session_room {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                         let requirement_present = mission_requirement(&lobby.game_info).is_some();
                         if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
@@ -2235,9 +2244,12 @@ fn handle_authenticated_message(
                 return;
             }
             info!(%player_id, %nat_type, candidate_count = candidates.len(), "STUN result received");
-            if let Some(session) = state.sessions.get(&player_id) {
-                let ws_ip = session.public_ip;
-                if let Some(lobby_id) = session.lobby_id {
+            let session_info = state
+                .sessions
+                .get(&player_id)
+                .map(|s| (s.public_ip, s.lobby_id));
+            if let Some((ws_ip, session_room)) = session_info {
+                if let Some(lobby_id) = session_room {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                         // Generate predicted port candidates for symmetric NATs
                         let predicted = generate_predicted_candidates(&candidates, &nat_type);
@@ -2410,8 +2422,9 @@ fn handle_authenticated_message(
             rtt_ms,
         } => {
             // Record connectivity result and update connection_type for the pair
-            if let Some(session) = state.sessions.get(&player_id) {
-                if let Some(lobby_id) = session.lobby_id {
+            let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
+            if let Some(session_room) = session_room {
+                if let Some(lobby_id) = session_room {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                         let conn_type = match winning_candidate_type.as_str() {
                             "host" => crate::lobby::ConnectionType::DirectLan,
@@ -2573,8 +2586,9 @@ fn handle_authenticated_message(
             detail,
         } => {
             // Update connection_type for an existing peer pair mid-session
-            if let Some(session) = state.sessions.get(&player_id) {
-                if let Some(lobby_id) = session.lobby_id {
+            let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
+            if let Some(session_room) = session_room {
+                if let Some(lobby_id) = session_room {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                         let conn_type = match new_method.as_str() {
                             "direct_lan" => crate::lobby::ConnectionType::DirectLan,
@@ -2600,8 +2614,9 @@ fn handle_authenticated_message(
 
         ClientMessage::FileHashes { hashes } => {
             // Compare against host's hashes and report mismatches
-            if let Some(session) = state.sessions.get(&player_id) {
-                if let Some(lobby_id) = session.lobby_id {
+            let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
+            if let Some(session_room) = session_room {
+                if let Some(lobby_id) = session_room {
                     // Store this player's hashes, then compare with host's
                     if let Some(lobby) = state.lobbies.get(&lobby_id) {
                         let host_id = lobby.host_player_id;

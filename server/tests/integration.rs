@@ -3393,3 +3393,90 @@ async fn online_candidate_expansion_is_bounded() {
         .candidates
         .is_empty());
 }
+
+#[tokio::test]
+async fn online_old_pow_cannot_change_authenticated_identity() {
+    let server = TestServer::start().await;
+    let mut ws = connect_ws(&server).await;
+    let key = ed25519_dalek::SigningKey::generate(&mut rand::rng());
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    send_only(
+        &mut ws,
+        json!({"type":"AUTHENTICATE", "protocol_version":CURRENT_PROTOCOL,
+        "client_version":"test", "callsign":"KeyA", "platform":"test", "auth_method":"keypair",
+        "public_key":hex::encode(key.verifying_key().as_bytes()), "auth_timestamp":timestamp,
+        "auth_signature":sign_with_key(&key,"KeyA",timestamp)}),
+    )
+    .await;
+    let challenge = recv(&mut ws).await;
+    assert_eq!(challenge["type"], "POW_CHALLENGE");
+    authenticate(&mut ws, "IdentityB").await;
+    let challenge_text = challenge["challenge"].as_str().unwrap();
+    let response = send_recv(
+        &mut ws,
+        json!({"type":"POW_SOLUTION", "challenge":challenge_text,
+        "solution":solve_pow(challenge_text,challenge["difficulty"].as_u64().unwrap() as u8)}),
+    )
+    .await;
+    assert_eq!(response["type"], "AUTH_FAIL");
+    wait_for_state(|| server.state.sessions.is_empty()).await;
+    assert!(server.state.stun_allowlist.is_empty());
+    assert_eq!(server.state.stats.snapshot().online, 0);
+}
+
+// Run this case with an external process timeout too: a synchronous lock stall
+// can prevent Tokio's own timeout future from being polled.
+#[tokio::test]
+async fn online_late_join_completion_keeps_control_plane_responsive() {
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    let h = authenticate(&mut host, "Host").await;
+    let room = create_test_room(&mut host).await;
+    let mut joiner = connect_ws(&server).await;
+    let j = authenticate(&mut joiner, "Joiner").await;
+    let hp = uuid::Uuid::parse_str(h["player_id"].as_str().unwrap()).unwrap();
+    let jp = uuid::Uuid::parse_str(j["player_id"].as_str().unwrap()).unwrap();
+    send_only(
+        &mut joiner,
+        json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+    )
+    .await;
+    recv(&mut joiner).await;
+    recv(&mut host).await;
+    // Seed the in-game boundary; drive completion through the real socket handler.
+    {
+        let mut lobby = server.state.lobbies.get_mut(&room).unwrap();
+        lobby.state = dxx_matchmaking::lobby::LobbyState::InGame;
+        lobby.pending_late_joiners.insert(jp);
+        for p in &mut lobby.players {
+            p.candidates = vec![dxx_matchmaking::protocol::ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "127.0.0.1:42424".into(),
+            }];
+        }
+    }
+    send_only(
+        &mut joiner,
+        json!({"type":"CONNECTIVITY_OK","peer_id":hp,
+        "winning_candidate_type":"host","rtt_ms":1}),
+    )
+    .await;
+    loop {
+        if recv(&mut joiner).await["type"] == "GAME_STARTING" {
+            break;
+        }
+    }
+    send_only(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+    loop {
+        if recv(&mut host).await["type"] == "LOBBY_LIST" {
+            break;
+        }
+    }
+    assert!(matches!(
+        server.state.sessions.get(&jp).unwrap().presence,
+        dxx_matchmaking::lobby::Presence::InGame { .. }
+    ));
+}
