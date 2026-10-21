@@ -123,6 +123,7 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
 
 /// Reap lobbies stuck in non-Waiting states (D5) and revert Holepunching timeouts (D6)
 fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
+    let _transition = state.control.lock().unwrap();
     use crate::lobby::LobbyState;
     let now = std::time::Instant::now();
     let max_game_age = Duration::from_secs(5 * 60); // 5 minutes with no state update

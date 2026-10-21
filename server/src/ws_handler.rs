@@ -22,14 +22,18 @@ use crate::protocol::*;
 use crate::ServerState;
 
 /// Wrapper around bounded mpsc::Sender that provides fire-and-forget send.
-/// Drops messages silently if the channel is full (slow client backpressure).
+/// Retires a slow connection rather than silently losing state transitions.
 #[derive(Debug, Clone)]
-pub struct BoundedSender(mpsc::Sender<ServerMessage>);
+pub struct BoundedSender(mpsc::Sender<ServerMessage>, Arc<tokio::sync::Notify>);
 
 impl BoundedSender {
     #[allow(clippy::result_large_err)]
     pub fn send(&self, msg: ServerMessage) -> Result<(), mpsc::error::TrySendError<ServerMessage>> {
-        self.0.try_send(msg)
+        let result = self.0.try_send(msg);
+        if result.is_err() {
+            self.1.notify_one();
+        }
+        result
     }
 }
 
@@ -295,6 +299,7 @@ fn build_active_game_list(state: &ServerState) -> Vec<ActiveGameInfo> {
 
 /// Per-player session state, stored in the shared sessions DashMap.
 pub struct PlayerSession {
+    pub connection_id: Uuid,
     pub player_id: Uuid,
     pub callsign: String,
     pub presence: Presence,
@@ -408,10 +413,11 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     // Bounded channel for sending messages back to this client.
     // Backpressure: if the client falls 256 messages behind, we drop it.
     let (raw_tx, mut rx) = mpsc::channel::<ServerMessage>(256);
-    let tx = BoundedSender(raw_tx);
+    let retired = Arc::new(tokio::sync::Notify::new());
+    let tx = BoundedSender(raw_tx, Arc::clone(&retired));
 
     // Task: drain the outbound channel and send to the WebSocket
-    let send_task = tokio::spawn(async move {
+    let mut send_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             let text = match serde_json::to_string(&msg) {
                 Ok(t) => t,
@@ -451,16 +457,18 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     let mut pending_pow: Option<PendingPow> = None;
 
     // Read loop -- timeout if no message (including pings) for 120s
-    while let Some(msg_result) =
-        match tokio::time::timeout(Duration::from_secs(120), ws_rx.next()).await {
-            Ok(Some(r)) => Some(r),
-            Ok(None) => None, // stream ended
-            Err(_) => {
-                debug!(%addr, "WebSocket read timed out (120s idle)");
-                None // treat as disconnect
-            }
+    while let Some(msg_result) = match tokio::select! {
+        biased;
+        _ = retired.notified() => Ok(None),
+        result = tokio::time::timeout(Duration::from_secs(120), ws_rx.next()) => result,
+    } {
+        Ok(Some(r)) => Some(r),
+        Ok(None) => None, // stream ended
+        Err(_) => {
+            debug!(%addr, "WebSocket read timed out (120s idle)");
+            None // treat as disconnect
         }
-    {
+    } {
         let msg = match msg_result {
             Ok(Message::Text(text)) => text,
             Ok(Message::Close(_)) => break,
@@ -503,6 +511,12 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 auth_timestamp,
                 auth_signature,
             } => {
+                if player_id.is_some() {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Already authenticated".into(),
+                    });
+                    break;
+                }
                 // Version check first
                 if protocol_version < MIN_CLIENT_PROTOCOL {
                     warn!(%addr, %client_version, %protocol_version, required = MIN_CLIENT_PROTOCOL, "client version rejected");
@@ -757,83 +771,106 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     });
                     continue;
                 };
-                handle_authenticated_message(&state, pid, client_msg, &tx).await;
+                let _transition = state.control.lock().unwrap();
+                if !state
+                    .sessions
+                    .get(&pid)
+                    .is_some_and(|s| s.connection_id == session_id)
+                {
+                    break;
+                }
+                handle_authenticated_message(&state, pid, client_msg, &tx);
             }
         }
     }
 
-    // Cleanup on disconnect
+    // Ownership check and cleanup share the same transaction as replacement and commands
     if let Some(pid) = player_id {
-        // Remove from lobby if in one
-        let lobby_id = state.sessions.get(&pid).and_then(|s| s.lobby_id);
-        if let Some(lobby_id) = lobby_id {
-            let should_remove = if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                let was_host = lobby.host_player_id == pid;
-                lobby.remove_player(&pid);
-                if lobby.players.is_empty() {
-                    true
-                } else if was_host {
-                    // Host left: dissolve the lobby and notify remaining players
-                    let kick_msg = ServerMessage::Error {
-                        code: "HOST_DISCONNECTED".into(),
-                        message: "The host has disconnected.".into(),
-                    };
-                    for p in lobby.players.iter() {
-                        if let Some(sess) = state.sessions.get(&p.player_id) {
-                            let _ = sess.tx.send(kick_msg.clone());
-                        }
-                        // Clear each player's lobby_id
-                        if let Some(mut s) = state.sessions.get_mut(&p.player_id) {
-                            s.lobby_id = None;
-                        }
-                    }
-                    true // remove the orphaned lobby
-                } else {
-                    // Non-host left: broadcast updated player list
-                    broadcast_lobby_update(&lobby, &state);
-                    false
-                }
-            } else {
-                false
-            };
-            if should_remove {
-                // Track whether the lobby was in-game so we can decrement the counter
-                let was_in_game = state
-                    .lobbies
-                    .get(&lobby_id)
-                    .map(|l| matches!(l.state, LobbyState::Starting | LobbyState::InGame))
-                    .unwrap_or(false);
-                state.lobbies.remove(&lobby_id);
-                state.stats.lobby_closed();
-                if was_in_game {
-                    state.stats.game_ended();
-                }
-            }
+        let _transition = state.control.lock().unwrap();
+        if state
+            .sessions
+            .get(&pid)
+            .is_some_and(|s| s.connection_id == session_id)
+        {
+            remove_session(&state, pid);
         }
-        state.sessions.remove(&pid);
-        state.stats.player_disconnected();
-        // Remove client IP from STUN allowlist (ref-counted, D17 fix)
-        let ip = addr.ip();
-        let remove = state
-            .stun_allowlist
-            .get(&ip)
-            .map(|c| *c <= 1)
-            .unwrap_or(true);
-        if remove {
-            state.stun_allowlist.remove(&ip);
-        } else if let Some(mut c) = state.stun_allowlist.get_mut(&ip) {
-            *c -= 1;
-        }
-        let _ = state
-            .db
-            .log_connection_event(Some(&pid), "disconnect", None);
-        info!(%pid, "player disconnected");
     }
 
     // Drop the sender so the send_task can drain remaining messages
     // and exit cleanly instead of being aborted mid-flight.
     drop(tx);
-    let _ = send_task.await;
+    if tokio::time::timeout(Duration::from_secs(2), &mut send_task)
+        .await
+        .is_err()
+    {
+        send_task.abort();
+        let _ = send_task.await;
+    }
+}
+
+/// Leave a room under the control transition lock; host departure closes it
+fn leave_room(state: &ServerState, pid: Uuid) {
+    let room_id = state.sessions.get(&pid).and_then(|s| s.lobby_id);
+    let Some(room_id) = room_id else {
+        return;
+    };
+    if let Some(mut session) = state.sessions.get_mut(&pid) {
+        session.lobby_id = None;
+        session.presence = Presence::Online;
+    }
+    let close = if let Some(mut room) = state.lobbies.get_mut(&room_id) {
+        room.remove_player(&pid);
+        if room.host_player_id == pid || room.players.is_empty() {
+            true
+        } else {
+            broadcast_lobby_update(&room, state);
+            false
+        }
+    } else {
+        false
+    };
+    if close {
+        if let Some((_, room)) = state.lobbies.remove(&room_id) {
+            for peer in &room.players {
+                if let Some(mut session) = state.sessions.get_mut(&peer.player_id) {
+                    if session.lobby_id == Some(room_id) {
+                        session.lobby_id = None;
+                        session.presence = Presence::Online;
+                        let _ = session.tx.send(ServerMessage::Error {
+                            code: "HOST_DISCONNECTED".into(),
+                            message: "The host has left the room".into(),
+                        });
+                    }
+                }
+            }
+            state.stats.lobby_closed();
+            if matches!(room.state, LobbyState::Starting | LobbyState::InGame) {
+                state.stats.game_ended();
+            }
+        }
+    }
+}
+
+/// Retire exactly the current session under the control transition lock
+fn remove_session(state: &ServerState, pid: Uuid) {
+    leave_room(state, pid);
+    if let Some((_, old)) = state.sessions.remove(&pid) {
+        old.tx.1.notify_one();
+        state.stats.player_disconnected();
+        // Atomic ref-count transition for multiple clients behind the same NAT
+        if let dashmap::mapref::entry::Entry::Occupied(mut entry) =
+            state.stun_allowlist.entry(old.public_ip)
+        {
+            if *entry.get() <= 1 {
+                entry.remove();
+            } else {
+                *entry.get_mut() -= 1;
+            }
+        }
+        let _ = state
+            .db
+            .log_connection_event(Some(&pid), "disconnect", None);
+    }
 }
 
 /// Pick the best candidate address for direct connection: prefer srflx, then
@@ -1334,9 +1371,12 @@ fn complete_auth(
     session_id: Uuid,
     addr: SocketAddr,
 ) {
+    let _transition = state.control.lock().unwrap();
+    remove_session(state, pid);
     state.sessions.insert(
         pid,
         PlayerSession {
+            connection_id: session_id,
             player_id: pid,
             callsign: callsign.to_string(),
             presence: Presence::Online,
@@ -1408,7 +1448,7 @@ fn complete_auth(
     );
 }
 
-async fn handle_authenticated_message(
+fn handle_authenticated_message(
     state: &Arc<ServerState>,
     player_id: Uuid,
     msg: ClientMessage,
@@ -1465,6 +1505,7 @@ async fn handle_authenticated_message(
                 .map(|s| s.callsign.clone())
                 .unwrap_or_default();
 
+            leave_room(state, player_id);
             let lobby = Lobby::new(
                 player_id,
                 callsign,
@@ -1613,35 +1654,6 @@ async fn handle_authenticated_message(
                 return;
             }
 
-            // D13: implicitly leave old lobby before joining a new one
-            let old_lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
-            if let Some(old_lid) = old_lobby_id {
-                if old_lid != lobby_id {
-                    if let Some(mut old_lobby) = state.lobbies.get_mut(&old_lid) {
-                        old_lobby.remove_player(&player_id);
-                        if old_lobby.players.is_empty() {
-                            let was_in_game = matches!(
-                                old_lobby.state,
-                                LobbyState::Starting | LobbyState::InGame
-                            );
-                            drop(old_lobby);
-                            state.lobbies.remove(&old_lid);
-                            state.stats.lobby_closed();
-                            if was_in_game {
-                                state.stats.game_ended();
-                            }
-                        } else {
-                            broadcast_lobby_update(&old_lobby, state);
-                        }
-                    }
-                    if let Some(mut session) = state.sessions.get_mut(&player_id) {
-                        session.lobby_id = None;
-                        session.presence = Presence::Online;
-                    }
-                    info!(%player_id, lobby_id = %old_lid, "implicitly left old lobby");
-                }
-            }
-
             // Check kicked-player and lobby-code restrictions before joining
             if let Some(lobby) = state.lobbies.get(&lobby_id) {
                 if lobby.kicked_players.contains(&player_id) {
@@ -1677,6 +1689,25 @@ async fn handle_authenticated_message(
                 }
             }
 
+            let old_room = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
+            if old_room == Some(lobby_id) {
+                if let Some(room) = state.lobbies.get(&lobby_id) {
+                    broadcast_lobby_update(&room, state);
+                }
+                return;
+            }
+            if !state
+                .lobbies
+                .get(&lobby_id)
+                .is_some_and(|room| room.is_joinable())
+            {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "JOIN_FAILED".into(),
+                    message: "Room unavailable".into(),
+                });
+                return;
+            }
+            leave_room(state, player_id);
             let callsign = state
                 .sessions
                 .get(&player_id)
@@ -1707,34 +1738,7 @@ async fn handle_authenticated_message(
         }
 
         ClientMessage::LeaveLobby {} => {
-            let lobby_id = if let Some(mut session) = state.sessions.get_mut(&player_id) {
-                if let Some(lid) = session.lobby_id.take() {
-                    session.presence = Presence::Online;
-                    Some(lid)
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-            if let Some(lobby_id) = lobby_id {
-                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                    lobby.remove_player(&player_id);
-                    if lobby.players.is_empty() {
-                        let was_in_game =
-                            matches!(lobby.state, LobbyState::Starting | LobbyState::InGame);
-                        drop(lobby);
-                        state.lobbies.remove(&lobby_id);
-                        state.stats.lobby_closed();
-                        if was_in_game {
-                            state.stats.game_ended();
-                        }
-                    } else {
-                        broadcast_lobby_update(&lobby, state);
-                    }
-                }
-                info!(%player_id, %lobby_id, "left lobby");
-            }
+            leave_room(state, player_id);
         }
 
         ClientMessage::Ready { ready } => {
@@ -2536,7 +2540,15 @@ async fn handle_authenticated_message(
                 let is_host = state
                     .lobbies
                     .get(&lobby_id)
-                    .map(|l| l.host_player_id == player_id)
+                    .map(|l| {
+                        l.host_player_id == player_id
+                            && target != player_id
+                            && l.players.iter().any(|p| p.player_id == target)
+                            && state
+                                .sessions
+                                .get(&target)
+                                .is_some_and(|s| s.lobby_id == Some(lobby_id))
+                    })
                     .unwrap_or(false);
                 if is_host {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
@@ -2669,7 +2681,13 @@ async fn handle_authenticated_message(
         ClientMessage::FriendAccept {
             player_id: friend_id,
         } => {
-            let _ = state.db.accept_friend(&player_id, &friend_id);
+            if state.db.accept_friend(&player_id, &friend_id).is_err() {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_REQUEST".into(),
+                    message: "Pending friend request required".into(),
+                });
+                return;
+            }
             info!(%player_id, %friend_id, "friend request accepted");
             // Notify the friend if online
             if let Some(friend_session) = state.sessions.get(&friend_id) {
@@ -2704,6 +2722,22 @@ async fn handle_authenticated_message(
         }
 
         ClientMessage::JoinFriendGame { friend_player_id } => {
+            let accepted = |a: &Uuid, b: &Uuid| {
+                state.db.get_friends(a).is_ok_and(|friends| {
+                    friends
+                        .iter()
+                        .any(|f| f.friend_id == *b && f.status == "accepted")
+                })
+            };
+            if !accepted(&player_id, &friend_player_id) || !accepted(&friend_player_id, &player_id)
+            {
+                let _ = tx.send(ServerMessage::JoinFriendGameResp {
+                    success: false,
+                    reason: Some("Accepted friendship required".into()),
+                    lobby_id: None,
+                });
+                return;
+            }
             // Look up the friend's current game
             let game_info =
                 state
@@ -2765,6 +2799,10 @@ async fn handle_authenticated_message(
                         .map(|l| l.is_joinable())
                         .unwrap_or(false);
                     if joinable {
+                        if state.sessions.get(&player_id).and_then(|s| s.lobby_id) != Some(lobby_id)
+                        {
+                            leave_room(state, player_id);
+                        }
                         // Perform the join (reuse join logic)
                         let callsign = state
                             .sessions

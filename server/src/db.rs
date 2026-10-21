@@ -336,14 +336,21 @@ impl Database {
         let tx = conn.unchecked_transaction()?;
 
         // Flip the existing pending row (friend_id -> player_id) to accepted
-        tx.prepare_cached(
-            "UPDATE friends SET status = 'accepted'
-             WHERE player_id = :from AND friend_id = :to",
-        )?
-        .execute(named_params! {
-            ":from": SqlUuid::from(*friend_id),
-            ":to":   SqlUuid::from(*player_id),
-        })?;
+        let changed = tx
+            .prepare_cached(
+                "UPDATE friends SET status = 'accepted'
+             WHERE player_id = :from AND friend_id = :to AND status = 'pending'
+             AND NOT EXISTS (SELECT 1 FROM friends WHERE player_id = :to
+                 AND friend_id = :from AND status = 'blocked')",
+            )?
+            .execute(named_params! {
+                ":from": SqlUuid::from(*friend_id),
+                ":to":   SqlUuid::from(*player_id),
+            })?;
+
+        if changed != 1 {
+            return Err(rusqlite::Error::QueryReturnedNoRows);
+        }
 
         // Ensure the reverse row exists as accepted
         tx.prepare_cached(

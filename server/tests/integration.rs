@@ -30,6 +30,13 @@ struct TestServer {
     _http_handle: tokio::task::JoinHandle<()>,
 }
 
+impl Drop for TestServer {
+    fn drop(&mut self) {
+        self._ws_handle.abort();
+        self._http_handle.abort();
+    }
+}
+
 impl TestServer {
     /// Spin up a server on ephemeral ports with an in-memory DB.
     async fn start() -> Self {
@@ -3083,4 +3090,187 @@ async fn test_friend_full_lifecycle() {
     let af3 = alice_friends3["friends"].as_array().unwrap();
     assert_eq!(af3.len(), 1);
     assert_eq!(af3[0]["status"], "blocked");
+}
+
+// Online restoration: observe actual socket ownership and room isolation.
+async fn wait_for_state(mut ready: impl FnMut() -> bool) {
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while !ready() {
+            tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .expect("server state did not converge");
+}
+
+async fn create_test_room(ws: &mut WsClient) -> uuid::Uuid {
+    let update = send_recv(
+        ws,
+        json!({
+            "type": "CREATE_LOBBY", "game": "d2", "max_players": 3,
+            "lobby_code": "private-fixture"
+        }),
+    )
+    .await;
+    assert_eq!(update["type"], "LOBBY_UPDATE");
+    uuid::Uuid::parse_str(update["lobby_id"].as_str().unwrap()).unwrap()
+}
+
+#[tokio::test]
+async fn online_replaced_socket_cannot_remove_current_room() {
+    let server = TestServer::start().await;
+    let mut old = connect_ws(&server).await;
+    let identity = authenticate(&mut old, "Owner").await;
+    let pid = uuid::Uuid::parse_str(identity["player_id"].as_str().unwrap()).unwrap();
+    let mut current = connect_ws(&server).await;
+    authenticate(&mut current, "Owner").await;
+    let room = create_test_room(&mut current).await;
+    old.close(None).await.unwrap();
+    // Synchronize with a fresh request, then allow the close handler to run.
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    assert!(
+        server.state.sessions.contains_key(&pid),
+        "old close removed new session"
+    );
+    assert!(
+        server.state.lobbies.contains_key(&room),
+        "old close removed new room"
+    );
+    assert_eq!(server.state.stats.snapshot().online, 1);
+    current.close(None).await.unwrap();
+    wait_for_state(|| server.state.sessions.is_empty()).await;
+    assert!(server.state.lobbies.is_empty());
+    assert!(server.state.stun_allowlist.is_empty());
+}
+
+#[tokio::test]
+async fn online_host_cannot_kick_other_room_member() {
+    let server = TestServer::start().await;
+    let mut alice = connect_ws(&server).await;
+    authenticate(&mut alice, "Alice").await;
+    let room_a = create_test_room(&mut alice).await;
+    let mut bob = connect_ws(&server).await;
+    let identity = authenticate(&mut bob, "Bob").await;
+    let pid = uuid::Uuid::parse_str(identity["player_id"].as_str().unwrap()).unwrap();
+    let room_b = create_test_room(&mut bob).await;
+    send_only(&mut alice, json!({"type":"KICK_PLAYER", "player_id":pid})).await;
+    // A subsequent request is a barrier for the preceding command.
+    send_only(&mut alice, json!({"type":"LIST_LOBBIES"})).await;
+    loop {
+        if recv(&mut alice).await["type"] == "LOBBY_LIST" {
+            break;
+        }
+    }
+    assert_eq!(
+        server.state.sessions.get(&pid).unwrap().lobby_id,
+        Some(room_b)
+    );
+    assert!(!server
+        .state
+        .lobbies
+        .get(&room_a)
+        .unwrap()
+        .kicked_players
+        .contains(&pid));
+}
+
+#[tokio::test]
+async fn online_nonfriend_cannot_bypass_room_code() {
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    let identity = authenticate(&mut host, "Host").await;
+    let room = create_test_room(&mut host).await;
+    let mut stranger = connect_ws(&server).await;
+    authenticate(&mut stranger, "Stranger").await;
+    let response = send_recv(
+        &mut stranger,
+        json!({
+            "type":"JOIN_FRIEND_GAME", "friend_player_id":identity["player_id"]
+        }),
+    )
+    .await;
+    assert_eq!(response["type"], "JOIN_FRIEND_GAME_RESP");
+    assert_eq!(response["success"], false);
+    assert_eq!(server.state.lobbies.get(&room).unwrap().players.len(), 1);
+}
+
+#[tokio::test]
+async fn online_host_leave_closes_room_and_cleans_membership() {
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Host").await;
+    let room = create_test_room(&mut host).await;
+    let mut peer = connect_ws(&server).await;
+    let identity = authenticate(&mut peer, "Peer").await;
+    let pid = uuid::Uuid::parse_str(identity["player_id"].as_str().unwrap()).unwrap();
+    let joined = send_recv(
+        &mut peer,
+        json!({"type":"JOIN_LOBBY", "lobby_id":room, "lobby_code":"private-fixture"}),
+    )
+    .await;
+    assert_eq!(joined["type"], "LOBBY_UPDATE");
+    recv(&mut host).await;
+    send_only(&mut host, json!({"type":"LEAVE_LOBBY"})).await;
+    assert_eq!(recv(&mut peer).await["code"], "HOST_DISCONNECTED");
+    assert!(server.state.lobbies.is_empty());
+    assert_eq!(server.state.sessions.get(&pid).unwrap().lobby_id, None);
+    assert_eq!(server.state.stats.snapshot().lobbies, 0);
+}
+
+#[tokio::test]
+async fn online_repeated_auth_retires_one_session_only() {
+    let server = TestServer::start().await;
+    let mut ws = connect_ws(&server).await;
+    authenticate(&mut ws, "Owner").await;
+    create_test_room(&mut ws).await;
+    let result = send_recv(&mut ws, json!({"type":"AUTHENTICATE", "protocol_version":CURRENT_PROTOCOL,
+        "client_version":"test", "callsign":"Other", "platform":"test", "play_games_token":"other"})).await;
+    assert_eq!(result["type"], "AUTH_FAIL");
+    wait_for_state(|| server.state.sessions.is_empty()).await;
+    assert!(server.state.lobbies.is_empty());
+    assert!(server.state.stun_allowlist.is_empty());
+    assert_eq!(server.state.stats.snapshot().online, 0);
+}
+
+#[tokio::test]
+async fn online_close_before_welcome_cleans_session() {
+    let server = TestServer::start().await;
+    let mut ws = connect_ws(&server).await;
+    send_only(&mut ws, json!({"type":"AUTHENTICATE", "protocol_version":CURRENT_PROTOCOL,
+        "client_version":"test", "callsign":"Owner", "platform":"test", "play_games_token":"owner"})).await;
+    ws.close(None).await.unwrap();
+    // Read through the close handshake, so the server has processed our frames.
+    let _ = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while let Some(Ok(message)) = ws.next().await {
+            if message.is_close() {
+                break;
+            }
+        }
+    })
+    .await;
+    wait_for_state(|| server.state.sessions.is_empty()).await;
+    assert!(server.state.stun_allowlist.is_empty());
+    assert_eq!(server.state.stats.snapshot().online, 0);
+}
+
+#[tokio::test]
+async fn online_cannot_fabricate_accepted_friendship() {
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    let h = authenticate(&mut host, "Host").await;
+    let hp = uuid::Uuid::parse_str(h["player_id"].as_str().unwrap()).unwrap();
+    create_test_room(&mut host).await;
+    let mut peer = connect_ws(&server).await;
+    let p = authenticate(&mut peer, "Peer").await;
+    let pp = uuid::Uuid::parse_str(p["player_id"].as_str().unwrap()).unwrap();
+    assert!(server.state.db.accept_friend(&pp, &hp).is_err());
+    server.state.db.add_friend_request(&hp, &pp).unwrap();
+    server.state.db.block_player(&pp, &hp).unwrap();
+    assert!(server.state.db.accept_friend(&pp, &hp).is_err());
+    let response = send_recv(
+        &mut peer,
+        json!({"type":"JOIN_FRIEND_GAME", "friend_player_id":hp}),
+    )
+    .await;
+    assert_eq!(response["success"], false);
 }
