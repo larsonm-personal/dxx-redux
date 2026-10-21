@@ -139,8 +139,23 @@ function Measure-InstallationWork {
                     })) { throw 'Work measurement leaked server resources' }
         }
     }
-    if ($failed -gt 0) { throw "Installation work qualification failed: $failed of $sample fresh samples" }
-    Write-Status "ONLINE_EVIDENCE installation work authenticated $sample fresh identities at difficulty 20" 'Green'
+    $vectorFailures = 0
+    foreach ($serial in $allTargets) {
+        $output = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'installation_work', "$PACKAGE.test/com.dxxredux.app.RecoveryInstrumentation") -Seconds 35
+        foreach ($line in @($output -split "`n")) {
+            if ($line -match 'ONLINE_WORK_VECTOR difficulty=20 hashes=[0-9]+ elapsed_ms=[0-9]+ solved=(true|false)') {
+                Write-Status "$($Matches[0])" 'Gray'
+            }
+        }
+        if ($output -notmatch 'PASS: installation work fixture and cancellation' -or $output -notmatch 'INSTRUMENTATION_CODE: -1') { $vectorFailures++ }
+    }
+    if ($failed -gt 0 -or $vectorFailures -gt 0) {
+        throw "Installation work qualification failed: $failed of $sample fresh samples; $vectorFailures of 3 device vectors"
+    }
+    foreach ($serial in $allTargets) {
+        if (-not (Start-SetupActivity -Serial $serial)) { throw 'Launcher unavailable after work vector' }
+    }
+    Write-Status "ONLINE_EVIDENCE installation work authenticated $sample fresh identities at difficulty 20 and passed 3 expensive device vectors" 'Green'
 }
 
 function Test-AllLobbyPlayersReady {
@@ -175,31 +190,53 @@ function Assert-OnlinePeerMatrix {
     param([string[]]$Serials, [string[]]$Callsigns, [int[]]$Slots, [string]$Phase)
     $baseline = @{}
     $valid = Wait-ForCondition -Description $Phase -TimeoutSec 45 -PollMs 1000 -Condition {
+        $allValid = $true
         foreach ($serial in $Serials) {
             $game = Get-GameIntrospection -Serial $serial
             $control = Get-MpIntrospection -Serial $serial
-            if (-not $game -or -not $game.in_game -or -not $game.is_network -or -not $control -or -not $control.PSObject.Properties['lobby']) { return $false }
-            $connected = @($game.multiplayer.players | Where-Object { $_.connected -eq 1 } | ForEach-Object { $_.callsign.ToLowerInvariant() } | Sort-Object)
+            $nativeReady = $game -and $game.in_game -and $game.is_network
+            $roomReady = $control -and $control.PSObject.Properties['lobby']
+            $peers = @(if ($control) { $control.online_resources.peers })
+            $connected = @(if ($game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer) {
+                    $game.multiplayer.players | Where-Object { $_.connected -eq 1 } | ForEach-Object { $_.callsign.ToLowerInvariant() } | Sort-Object
+                })
+            $pending = $game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer -and
+            $game.multiplayer.PSObject.Properties['join_request_pending'] -and $game.multiplayer.join_request_pending
+            $nativeSlot = -1
+            $networkStatus = -1
+            $pendingFixture = -1
+            if ($game -and $game.PSObject.Properties['multiplayer'] -and $game.multiplayer) {
+                if ($game.multiplayer.PSObject.Properties['my_player_num']) { $nativeSlot = [int]$game.multiplayer.my_player_num }
+                if ($game.multiplayer.PSObject.Properties['network_status']) { $networkStatus = [int]$game.multiplayer.network_status }
+                if ($pending -and $game.multiplayer.PSObject.Properties['join_request_callsign']) {
+                    for ($fixture = 0; $fixture -lt $Callsigns.Count; $fixture++) {
+                        if ($game.multiplayer.join_request_callsign -ieq $Callsigns[$fixture]) { $pendingFixture = $fixture }
+                    }
+                }
+            }
             $expected = @($Callsigns | ForEach-Object { $_.ToLowerInvariant() } | Sort-Object)
-            if (($connected -join ',') -cne ($expected -join ',')) { return $false }
+            $rosterReady = ($connected -join ',') -ceq ($expected -join ',')
+            $peerSummary = (@($peers | ForEach-Object { "$([int]$_.slot):$([bool]$_.bound):$([long]$_.sent):$([long]$_.gameplay_received)" })) -join ','
+            Write-Status "ONLINE_STATE $Phase $serial native=$([bool]$nativeReady) room=$([bool]$roomReady) roster_ok=$rosterReady pending_approval=$([bool]$pending) pending_fixture=$pendingFixture native_slot=$nativeSlot network_status=$networkStatus connected=$($connected.Count) peers=$peerSummary" 'Gray'
+            if (-not $nativeReady -or -not $roomReady -or -not $rosterReady) { $allValid = $false; continue }
             $self = @($control.lobby.players | Where-Object { $_.player_id -eq $control.player_id })
-            if ($self.Count -ne 1) { return $false }
+            if ($self.Count -ne 1) { $allValid = $false; continue }
             $ownSlot = $self[0].slot
-            $peers = @($control.online_resources.peers)
             Write-Status "ONLINE_SAMPLE $Phase $serial connected=$($connected -join ',') own=$ownSlot peers=$((@($peers | ForEach-Object { "$($_.slot):$($_.gameplay_received)" })) -join ',')" 'Gray'
             $expectedPeers = @($Slots | Where-Object { $_ -ne $ownSlot } | Sort-Object)
-            if ((@($peers.slot | Sort-Object) -join ',') -ne ($expectedPeers -join ',')) { return $false }
+            if ((@($peers.slot | Sort-Object) -join ',') -ne ($expectedPeers -join ',')) { $allValid = $false; continue }
             foreach ($peer in $peers) {
-                if (-not $peer.bound -or $peer.sent -le 0 -or $peer.gameplay_received -le 0) { return $false }
+                if (-not $peer.bound -or $peer.sent -le 0 -or $peer.gameplay_received -le 0) { $allValid = $false; continue }
                 $key = "$serial/$($peer.slot)"
                 if (-not $baseline.ContainsKey($key)) {
                     $baseline[$key] = @{ Sent = $peer.sent; Received = $peer.gameplay_received }
-                    return $false
+                    $allValid = $false
+                    continue
                 }
-                if ($peer.sent -le $baseline[$key].Sent -or $peer.gameplay_received -le $baseline[$key].Received) { return $false }
+                if ($peer.sent -le $baseline[$key].Sent -or $peer.gameplay_received -le $baseline[$key].Received) { $allValid = $false }
             }
         }
-        return $true
+        return $allValid
     }
     if (-not $valid) { throw "Native online peer matrix failed: $Phase" }
     Write-Status "ONLINE_EVIDENCE $Phase clients=$($Serials.Count) slots=$($Slots -join ',') every peer gameplay counter advanced" 'Green'

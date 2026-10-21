@@ -48,6 +48,18 @@ class OnlineInstallationAuthTest {
                 OnlineInstallationAuth.failureCode(IllegalArgumentException("secret-canary")),
             )
             assertEquals("PROOF_PROVIDER_FAILURE", OnlineInstallationAuth.failureCode(Exception("secret-canary")))
+            var checks = 0
+            val suspended =
+                OnlineInstallationAuth(fixtureKey(), "Fixture", "https://fixture.invalid:443", "test") {
+                    if (++checks >= 3) 12_000_000_000L else 0L
+                }
+            try {
+                suspended.proof("ab".repeat(32), 0)
+                fail("Solution completed after the work deadline")
+            } catch (_: OnlineInstallationAuth.WorkDeadlineExceeded) {
+                // Even the first valid hash cannot bypass an elapsed deadline after yielding
+            }
+
             for ((error, expected) in listOf(
                 java.security.NoSuchAlgorithmException("secret-canary") to "ALGORITHM_UNAVAILABLE",
                 java.security.InvalidKeyException("secret-canary") to "SIGNING_KEY_REJECTED",
@@ -131,6 +143,14 @@ class OnlineInstallationAuthTest {
             assertEquals(20, measurement!!.difficulty)
             assertTrue(measurement!!.solved)
             println("WORK_FIXTURE hashes=${measurement!!.hashes} elapsed_ms=${measurement!!.elapsedMs}")
+            com.dxxredux.app.OnlineInstallationWorkChecks.run { line ->
+                assertTrue(
+                    line.matches(
+                        Regex("ONLINE_WORK_VECTOR difficulty=20 hashes=4243438 elapsed_ms=[0-9]+ solved=true"),
+                    ),
+                )
+                println(line)
+            }
         }
 
     @Test fun actualServiceAuthenticatesAndReconnectsToProductionServer() {

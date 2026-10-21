@@ -13,6 +13,8 @@ kotlin {
 // Compile the actual proxy with only Android logging replaced by host test sinks
 sourceSets.test.kotlin {
     srcDir '../app/src/main/java'
+    srcDir '../app/src/androidTest/java'
+    include 'com/dxxredux/app/OnlineInstallationWorkChecks.kt'
     include 'com/dxxredux/app/multiplayer/LocalhostProxy.kt'
     include 'com/dxxredux/app/multiplayer/ProxyDiagnostics.kt'
     include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'

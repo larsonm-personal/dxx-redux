@@ -97,6 +97,40 @@ class SweepTests(unittest.TestCase):
             self.assertIn("last-numbered-phase-8, owner-exception", result["reason"])
             self.assertNotIn("canary", result["reason"])
 
+    def test_online_native_event_reader_exports_only_fixed_counts(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        body = workflow.split("      - name: Report bounded sanitized evidence", 1)[1].split("  plan:", 1)[0]
+        code = body.split("python3 - <<'PYTHON'", 1)[1].rsplit("          PYTHON", 1)[0]
+        import textwrap
+
+        code = textwrap.dedent(code)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "evidence/setup").mkdir(parents=True)
+            (root / "evidence/results.json").write_text(json.dumps({"target_sha": SHA, "results": []}))
+            (root / "evidence/setup/emulator-5554-logcat.log").write_text(
+                "refuse_stuff: prompting secret-short-canary\nrefuse_stuff: TIMEOUT secret-short-canary\n"
+            )
+            result = subprocess.run(
+                [sys.executable, "-c", code],
+                cwd=root,
+                env={**os.environ, "EVIDENCE_KIND": "online"},
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertNotIn("canary", result.stdout)
+            row = json.loads(
+                next(
+                    line.removeprefix("ONLINE_NATIVE_EVENTS ")
+                    for line in result.stdout.splitlines()
+                    if line.startswith("ONLINE_NATIVE_EVENTS ")
+                )
+            )
+            self.assertEqual(row["retained_tail_counts"]["host_approval_pending"], 1)
+            self.assertEqual(row["retained_tail_counts"]["host_approval_timeout"], 1)
+            self.assertEqual(row["retained_tail_counts"]["native_identity_rejected"], 0)
+
     def setUp(self):
         self.policy = {
             "schema": 1,

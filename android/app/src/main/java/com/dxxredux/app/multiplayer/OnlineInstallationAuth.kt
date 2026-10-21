@@ -57,6 +57,10 @@ internal class OnlineInstallationAuth(
         val started = nanoTime()
         val digest = MessageDigest.getInstance("SHA-256")
         val prefix = challenge.toByteArray(Charsets.UTF_8)
+        val input = prefix.copyOf(prefix.size + 20)
+        val hash = ByteArray(32)
+        var digits = 1
+        input[prefix.size] = '0'.code.toByte()
         var nonce = 0L
         var hashes = 0L
         var solved = false
@@ -67,9 +71,9 @@ internal class OnlineInstallationAuth(
                     if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
                     yield()
                 }
-                val solution = nonce.toString()
-                digest.update(prefix)
-                val hash = digest.digest(solution.toByteArray(Charsets.UTF_8))
+                // Reuse ASCII decimal input and digest buffers; preserve challenge + nonce bytes
+                digest.update(input, 0, prefix.size + digits)
+                digest.digest(hash, 0, hash.size)
                 hashes++
                 var bits = 0
                 for (byte in hash) {
@@ -82,7 +86,10 @@ internal class OnlineInstallationAuth(
                     }
                 }
                 if (bits >= difficulty) {
+                    coroutineContext.ensureActive()
+                    if (nanoTime() - started >= 12_000_000_000L) throw WorkDeadlineExceeded()
                     solved = true
+                    val solution = String(input, prefix.size, digits, Charsets.UTF_8)
                     // Keep this canonical transcript synchronized with server/src/pow.rs
                     val transcript =
                         "dxx-online-p256-v1\n${NetworkConstants.PROTOCOL_VERSION}\n$challenge\n$publicKey\n" +
@@ -97,6 +104,16 @@ internal class OnlineInstallationAuth(
                     return InstallationProofMsg(challenge = challenge, solution = solution, signature = signature.hex())
                 }
                 nonce++
+                var position = prefix.size + digits - 1
+                while (position >= prefix.size && input[position] == '9'.code.toByte()) {
+                    input[position--] = '0'.code.toByte()
+                }
+                if (position >= prefix.size) {
+                    input[position] = (input[position] + 1).toByte()
+                } else {
+                    input[prefix.size] = '1'.code.toByte()
+                    input[prefix.size + digits++] = '0'.code.toByte()
+                }
             }
         } finally {
             measure(WorkMeasurement(difficulty, hashes, (nanoTime() - started) / 1_000_000L, solved))

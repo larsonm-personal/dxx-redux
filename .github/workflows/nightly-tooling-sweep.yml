@@ -116,6 +116,30 @@ jobs:
                       print('\n'.join(scrub(line) for line in (failure.text or '').splitlines()[:35]))
               raise SystemExit(0)
           receipt = json.loads((root / 'results.json').read_text())
+          # Fixed event categories only: never print raw native or authentication log bodies
+          event_markers = {
+              'refuse_stuff: prompting': 'host_approval_pending',
+              'refuse_stuff: ACCEPTED': 'host_approval_accepted',
+              'refuse_stuff: TIMEOUT': 'host_approval_timeout',
+              'refuse_stuff: REJECTED full': 'host_roster_full',
+              'welcome_player: REJECTED endlevel': 'native_endlevel_rejected',
+              'welcome_player: REJECTED level mismatch': 'native_level_rejected',
+              'read_object_packet: SYNC FAILED': 'native_object_sync_failed',
+              'sync rejected local identity': 'native_identity_rejected',
+              'event=admission_received': 'native_admission_received',
+              'event=initial_route_proven': 'native_route_proven',
+              'Late-join approved: slot': 'relay_route_assignment_received',
+          }
+          for serial in ('emulator-5554', 'emulator-5556', 'emulator-5558'):
+              path = root / 'setup' / (serial + '-logcat.log')
+              if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()) or path.stat().st_size > 10000000:
+                  continue
+              counts = {event: 0 for event in event_markers.values()}
+              for line in path.read_text(errors='replace').splitlines():
+                  for marker, event in event_markers.items():
+                      if marker in line:
+                          counts[event] += 1
+              print('ONLINE_NATIVE_EVENTS ' + json.dumps({'client': serial, 'retained_tail_counts': counts}))
           print(json.dumps({'target_sha': receipt['target_sha'], 'results': [
               {key: scrub(str(row.get(key, ''))) for key in ('id', 'status', 'reason')}
               for row in receipt.get('results', [])

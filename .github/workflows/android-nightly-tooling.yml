@@ -531,7 +531,7 @@ jobs:
           log = pathlib.Path('target/temp/mp_test_log.txt')
           if log.exists():
               for line in log.read_text(errors='replace').splitlines():
-                  if 'ONLINE_EVIDENCE ' in line or 'ONLINE_SAMPLE ' in line or 'ONLINE_WORK ' in line or 'ALL CHECKS PASSED' in line:
+                  if 'ONLINE_EVIDENCE ' in line or 'ONLINE_SAMPLE ' in line or 'ONLINE_WORK ' in line or 'ONLINE_WORK_VECTOR ' in line or 'ONLINE_STATE ' in line or 'ALL CHECKS PASSED' in line:
                       print(line)
           PYTHON
       - name: Collect emulator diagnostics
