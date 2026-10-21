@@ -622,6 +622,7 @@ $extractTests = @(
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
     # These execute host tools or mocked transports, never the selected Android device
+    "test_auto_level_demo_listing",
     "test_acoustid_regeneration",
     "test_active_game_data_reset",
     "test_android_distributions",

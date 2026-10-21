@@ -607,6 +607,24 @@ jobs:
                       target = destination / name / filename
                       target.parent.mkdir(parents=True, exist_ok=True)
                       shutil.copyfile(path, target)
+          # Retain only bounded text from the public automatic-recording owner
+          recording_files = ('android.txt', 'guided-rejection.txt', 'recording-listing.json',
+                             'automation_result.json.diagnostic.json', 'automation_log.jsonl.diagnostic.json')
+          for source in temporary.glob('auto-level-demos-*'):
+              if not source.is_dir() or source.is_symlink():
+                  continue
+              for game in ('d1', 'd2', 'd1-in-d2'):
+                  scenario = source / game
+                  if scenario.is_symlink():
+                      continue
+                  for filename in recording_files:
+                      path = scenario / filename
+                      if path.is_file() and not path.is_symlink():
+                          target = pathlib.Path('results/auto-level-demos') / source.name / game / filename
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          with path.open('rb') as stream:
+                              stream.seek(max(0, path.stat().st_size - 65536))
+                              target.write_bytes(stream.read(65536))
           PYTHON
       - name: Upload execution evidence
         if: always() && !inputs.retail_assets

@@ -14,6 +14,7 @@ if ($Secret -and ($Game -ne 'd2' -or $DataEdition -ne 'retail' -or $Cheats)) {
     throw 'Secret validation requires -Game d2 -DataEdition retail without -Cheats'
 }
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
+. (Join-Path $PSScriptRoot '../helpers/auto_level_demo_listing.ps1')
 . (Join-Path $PSScriptRoot '../helpers/standard_game_data.ps1')
 if (!$OutputDirectory) {
     $OutputDirectory = Join-Path $script:REPO_ROOT ('android/temp/auto-level-demos-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -70,10 +71,7 @@ try {
                 Set-Content (Join-Path $destination 'activity-exit-info.txt') -Encoding utf8NoBOM
             throw "Automatic demo recording failed for $gameName"
         }
-        $remoteDir = "files/${gameName}x-redux/input_demo_recordings/new"
-        $listing = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'find', $remoteDir, '-name', '*.dximdemo')
-        $sources = @(($listing -join "`n") -split '\r?\n' | Where-Object { $_.Trim() })
-        if ($sources.Count -ne 2) { throw "Expected two new $gameName recordings, got $($sources.Count)" }
+        $sources = @(Get-AutoLevelRecordingPaths -Game $gameName -Package $script:PACKAGE -Serial $Serial -OutputDirectory $destination)
         $levels = @()
         $localRecordings = @()
         foreach ($source in $sources) {
@@ -138,6 +136,12 @@ try {
             if (Select-String -LiteralPath $local -Pattern '"type":"checkpoint"' -Quiet) {
                 throw 'Automatic recording contains a checkpoint'
             }
+        }
+        $expectedLevels = if ($Secret) { '-1,1' } else { '1,2' }
+        if ((($levels | Sort-Object) -join ',') -ne $expectedLevels) { throw "Missing expected level recordings: $expectedLevels" }
+        # Verify both exported engine/level headers before starting either replay
+        foreach ($local in $localRecordings) {
+            $header = Get-Content -LiteralPath $local -First 1 | ConvertFrom-Json
             $replayParameters = @{}
             if ($scenario -eq 'd1-in-d2') {
                 # Imported captures also identify any loaded optional D2 containers
@@ -165,10 +169,15 @@ try {
                 Tee-Object -FilePath (Join-Path $destination ("replay-level" + $header.level + ".txt"))
             if ($LASTEXITCODE -ne 0) { throw "Independent level demo replay failed for $gameName" }
         }
-        $expectedLevels = if ($Secret) { '-1,1' } else { '1,2' }
-        if ((($levels | Sort-Object) -join ',') -ne $expectedLevels) { throw "Missing expected level recordings: $expectedLevels" }
         Write-Output "PASS: $scenario automatic level recording and independent replay"
     }
+} catch {
+    if ($destination -and (Test-Path -LiteralPath $destination)) {
+        try {
+            Save-AutoLevelScenarioFailure -OutputDirectory $destination -Package $script:PACKAGE -Serial $Serial
+        } catch { Write-Warning "Could not retain scenario diagnostics: $_" }
+    }
+    throw
 } finally {
     $env:ANDROID_SERIAL = $priorSerial
 }

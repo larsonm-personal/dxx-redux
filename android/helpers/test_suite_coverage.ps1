@@ -146,6 +146,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_gradle_unit_tests'
             'test_gradle_unit_test_evidence'
             'test_automation_result_evidence'
+            'test_auto_level_demo_listing'
             'test_guidebot_publication_batching'
             'test_guidebot_route_regressions'
             'test_guidebot_simulation_reporting'
