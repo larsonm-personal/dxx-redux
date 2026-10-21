@@ -3614,28 +3614,6 @@ async fn bind_udp(
 }
 
 #[tokio::test]
-async fn online_shared_nat_supports_full_roster_and_reconnect_budget() {
-    let server = TestServer::start().await;
-    for round in 0..3 {
-        let mut clients = Vec::new();
-        for slot in 0..8 {
-            let mut ws = connect_ws(&server).await;
-            authenticate(&mut ws, &format!("Player{slot}")).await;
-            clients.push(ws);
-        }
-        assert_eq!(server.state.sessions.len(), 8);
-        for mut ws in clients {
-            ws.close(None).await.unwrap();
-        }
-        wait_for_state(|| server.state.sessions.is_empty()).await;
-        assert_eq!(server.state.stats.snapshot().online, 0, "round {round}");
-    }
-    assert!(
-        matches!(connect_async(server.ws_url()).await,Err(tokio_tungstenite::tungstenite::Error::Http(r)) if r.status().as_u16()==429)
-    );
-}
-
-#[tokio::test]
 async fn online_three_client_relay_pairs_and_departure_cleanup() {
     let server = TestServer::with_config(|c| c.force_relay = true).await;
     let mut clients = Vec::new();
@@ -5482,4 +5460,57 @@ async fn online_partial_http_headers_have_an_absolute_deadline() {
         send_recv(&mut survivor, json!({"type":"LIST_LOBBIES"})).await["type"],
         "LOBBY_LIST"
     );
+}
+
+#[tokio::test]
+async fn online_two_shared_nat_rosters_can_reconnect_twice_with_a_finite_source_cap() {
+    let server = TestServer::start().await;
+    let mut identities = Vec::new();
+    for wave in 0..3 {
+        let mut peers = Vec::new();
+        for player in 0..16 {
+            let mut peer = connect_ws(&server).await;
+            let auth = authenticate(&mut peer, &format!("Nat{player:02}")).await;
+            if wave == 0 {
+                identities.push(auth["player_id"].clone());
+            } else {
+                assert_eq!(auth["player_id"], identities[player]);
+            }
+            peers.push(peer);
+        }
+        assert_eq!(server.state.sessions.len(), 16);
+        for peer in &mut peers {
+            assert_eq!(
+                send_recv(peer, json!({"type":"LIST_LOBBIES"})).await["type"],
+                "LOBBY_LIST"
+            );
+        }
+        drop(peers);
+        tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            while !server.state.sessions.is_empty() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+    }
+    let mut remaining = Vec::new();
+    for _ in 0..16 {
+        remaining.push(connect_ws(&server).await);
+    }
+    assert!(matches!(connect_async(server.ws_url()).await,
+        Err(tokio_tungstenite::tungstenite::Error::Http(r)) if r.status().as_u16() == 429));
+    drop(remaining);
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while server
+            .state
+            .connected_sockets
+            .load(std::sync::atomic::Ordering::SeqCst)
+            != 0
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
 }

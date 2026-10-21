@@ -45,7 +45,7 @@ impl<K: Eq + std::hash::Hash> WindowEntries<K> {
 /// a deque of timestamps. On check, expired entries are pruned and the
 /// current count is compared against the limit.
 pub struct RateLimiter {
-    /// Per-IP connection attempts: max 24 per 60s (eight players plus two reconnect waves)
+    /// Per-IP connection attempts: max 64 per 60s (two full rooms plus two reconnect waves)
     ip_connections: Mutex<WindowEntries<IpAddr>>,
     /// Per-IP auth failures: max 5 per 3600s
     ip_auth_fails: Mutex<WindowEntries<IpAddr>>,
@@ -84,7 +84,7 @@ impl RateLimiter {
     }
 
     pub fn check_ip_connection(&self, ip: IpAddr) -> bool {
-        Self::check(&self.ip_connections, ip, 24, 60)
+        Self::check(&self.ip_connections, ip, 64, 60)
     }
 
     pub fn record_auth_fail(&self, ip: IpAddr) -> bool {
