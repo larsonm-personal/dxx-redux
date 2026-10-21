@@ -944,24 +944,37 @@ fn leave_room(state: &ServerState, pid: Uuid) {
         false
     };
     if close {
-        crate::relay::revoke_room(state, room_id);
-        if let Some((_, room)) = state.lobbies.remove(&room_id) {
-            for peer in &room.players {
-                if let Some(mut session) = state.sessions.get_mut(&peer.player_id) {
-                    if session.lobby_id == Some(room_id) {
-                        session.lobby_id = None;
-                        session.presence = Presence::Online;
+        close_room(
+            state,
+            room_id,
+            pid,
+            "HOST_DISCONNECTED",
+            "The host has left the room",
+        );
+    }
+}
+
+/// Close a room once, fencing all memberships and allocations under control lock
+fn close_room(state: &ServerState, room_id: Uuid, requester: Uuid, code: &str, message: &str) {
+    crate::relay::revoke_room(state, room_id);
+    if let Some((_, room)) = state.lobbies.remove(&room_id) {
+        for peer in &room.players {
+            if let Some(mut session) = state.sessions.get_mut(&peer.player_id) {
+                if session.lobby_id == Some(room_id) {
+                    session.lobby_id = None;
+                    session.presence = Presence::Online;
+                    if peer.player_id != requester {
                         let _ = session.tx.send(ServerMessage::Error {
-                            code: "HOST_DISCONNECTED".into(),
-                            message: "The host has left the room".into(),
+                            code: code.into(),
+                            message: message.into(),
                         });
                     }
                 }
             }
-            state.stats.lobby_closed();
-            if matches!(room.state, LobbyState::Starting | LobbyState::InGame) {
-                state.stats.game_ended();
-            }
+        }
+        state.stats.lobby_closed();
+        if matches!(room.state, LobbyState::Starting | LobbyState::InGame) {
+            state.stats.game_ended();
         }
     }
 }
@@ -2437,7 +2450,18 @@ fn handle_authenticated_message(
                         if let (Some(host_p), Some(joiner_p)) = (host_player, joiner_player) {
                             let (pair_conn_type, _) = determine_connection_type(host_p, joiner_p);
                             let relay_addr = state.config.relay_public_addr.clone();
-                            let is_relay = pair_conn_type == crate::lobby::ConnectionType::Relay;
+                            let is_relay = state.config.force_relay
+                                || pair_conn_type == crate::lobby::ConnectionType::Relay
+                                || best_candidate_addr_for_type(
+                                    &host_p.candidates,
+                                    &pair_conn_type,
+                                )
+                                .is_empty()
+                                || best_candidate_addr_for_type(
+                                    &joiner_p.candidates,
+                                    &pair_conn_type,
+                                )
+                                .is_empty();
 
                             // Determine host address for joiner's peer assignment
                             let host_addr = if is_relay {
@@ -2471,6 +2495,18 @@ fn handle_authenticated_message(
                                 };
                                 relay_token =
                                     allocate_relay_session(state, &relay_addr, lobby_id, &pair);
+                            }
+
+                            if is_relay && relay_token.is_none() {
+                                drop(lobby);
+                                leave_room(state, player_id);
+                                let _ = tx.send(ServerMessage::Error {
+                                    code: "LOBBY_JOIN_FAILED".into(),
+                                    message:
+                                        "Relay capacity is unavailable; please join again later"
+                                            .into(),
+                                });
+                                return;
                             }
 
                             let game = lobby.game.clone();
@@ -2687,6 +2723,17 @@ fn handle_authenticated_message(
                 return;
             }
 
+            let active = state.lobbies.get(&lobby_id).is_some_and(|room| {
+                matches!(room.state, LobbyState::Starting | LobbyState::InGame)
+            });
+            if !active {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "GAME_NOT_STARTED".into(),
+                    message: "Only an active game can report results".into(),
+                });
+                return;
+            }
+
             let match_id = Uuid::new_v4();
             let mode = state
                 .lobbies
@@ -2726,11 +2773,13 @@ fn handle_authenticated_message(
                 });
             }
 
-            // Clean up the lobby
-            crate::relay::revoke_room(state, lobby_id);
-            state.lobbies.remove(&lobby_id);
-            state.stats.lobby_closed();
-            state.stats.game_ended();
+            close_room(
+                state,
+                lobby_id,
+                player_id,
+                "LOBBY_CLOSED",
+                "The game has ended",
+            );
 
             info!(%match_id, %lobby_id, "match result recorded");
             let _ = tx.send(ServerMessage::MatchResultAck { match_id });

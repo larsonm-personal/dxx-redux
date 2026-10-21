@@ -1,8 +1,8 @@
 //! Version 3 relay: per-direction AES-256-GCM keys and proven UDP bindings.
 //! Keys are delivered only over the authenticated control connection. The relay
 //! terminates encryption; this is not end-to-end confidentiality from the server.
-use std::collections::BTreeMap;
-use std::net::SocketAddr;
+use std::collections::{BTreeMap, HashMap};
+use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -246,7 +246,11 @@ impl RelaySession {
             return None;
         }
         let sender = state.peers.get_mut(&from)?;
-        // Bound per-session work before authentication, without changing route/replay state
+        // Invalid ciphertext and replay must never debit a claimed peer's quota
+        let payload = open(&sender.uplink, packet)?;
+        if !sender.replay.accept(seq) {
+            return None;
+        }
         if now.duration_since(sender.budget_start) >= Duration::from_secs(1) {
             sender.budget_start = now;
             sender.budget_packets = 0;
@@ -257,10 +261,6 @@ impl RelaySession {
         }
         sender.budget_packets += 1;
         sender.budget_bytes += packet.len();
-        let payload = open(&sender.uplink, packet)?;
-        if !sender.replay.accept(seq) {
-            return None;
-        }
         match kind {
             BIND if payload.len() == 16 => {
                 // A reordered older bind must not replace a newer pending route
@@ -343,12 +343,51 @@ pub async fn run(
     run_socket(UdpSocket::bind(addr).await?, state).await?;
     Ok(())
 }
+// Separate untrusted source/global work budget, independent of claimed slot identity
+struct CryptoAdmission {
+    started: Instant,
+    packets: usize,
+    sources: HashMap<IpAddr, usize>,
+}
+impl CryptoAdmission {
+    fn new() -> Self {
+        Self {
+            started: Instant::now(),
+            packets: 0,
+            sources: HashMap::new(),
+        }
+    }
+    fn accept(&mut self, source: IpAddr, now: Instant) -> bool {
+        if now.duration_since(self.started) >= Duration::from_secs(1) {
+            self.started = now;
+            self.packets = 0;
+            self.sources.clear();
+        }
+        if self.packets >= 16_384
+            || (!self.sources.contains_key(&source) && self.sources.len() >= 1024)
+        {
+            return false;
+        }
+        let count = self.sources.entry(source).or_default();
+        if *count >= 4096 {
+            return false;
+        }
+        *count += 1;
+        self.packets += 1;
+        true
+    }
+}
+
 pub async fn run_socket(socket: UdpSocket, state: Arc<ServerState>) -> std::io::Result<()> {
     let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::RELAY);
     let mut buf = vec![0u8; MAX_PACKET + 1];
+    let mut admission = CryptoAdmission::new();
     loop {
         let (len, source) = socket.recv_from(&mut buf).await?;
         if !(HEADER_LEN + 16..=MAX_PACKET).contains(&len) || &buf[..4] != MAGIC {
+            continue;
+        }
+        if !admission.accept(source.ip(), Instant::now()) {
             continue;
         }
         let token = u32::from_le_bytes(buf[4..8].try_into().unwrap());
@@ -472,5 +511,57 @@ mod tests {
         assert!(!w.accept(0));
         assert!(w.accept(200));
         assert!(!w.accept(100));
+    }
+
+    #[test]
+    fn forged_sender_does_not_spend_authenticated_peer_budget() {
+        let now = Instant::now();
+        let session = RelaySession::new(
+            Uuid::new_v4(),
+            [(0, Uuid::new_v4()), (2, Uuid::new_v4())],
+            now,
+        );
+        let a = "127.0.0.1:10001".parse().unwrap();
+        let b = "127.0.0.1:10002".parse().unwrap();
+        let mut sa = 0;
+        let mut sb = 0;
+        bind(&session, 42, 0, 2, a, &mut sa, now);
+        bind(&session, 42, 2, 0, b, &mut sb, now);
+        let cb = session.credentials(2).unwrap();
+        let valid = seal(
+            &key(&cb.send_key),
+            42,
+            DATA,
+            2,
+            0,
+            sb + 1,
+            b"still admitted",
+        )
+        .unwrap();
+        let mut forged = valid.clone();
+        *forged.last_mut().unwrap() ^= 1;
+        for _ in 0..300 {
+            assert!(session.process(&forged, a, now).is_none());
+        }
+        assert!(session.process(&valid, b, now).is_some());
+    }
+
+    #[test]
+    fn unauthenticated_work_budget_is_bounded_and_separate() {
+        let mut budget = CryptoAdmission::new();
+        let now = budget.started;
+        let a: IpAddr = "127.0.0.1".parse().unwrap();
+        let b: IpAddr = "127.0.0.2".parse().unwrap();
+        for _ in 0..4096 {
+            assert!(budget.accept(a, now));
+        }
+        assert!(!budget.accept(a, now));
+        assert!(budget.accept(b, now));
+        for i in 3..1026 {
+            let _ = budget.accept(IpAddr::V4(std::net::Ipv4Addr::from(i)), now);
+        }
+        assert_eq!(budget.sources.len(), 1024);
+        assert!(budget.accept(a, now + Duration::from_secs(1)));
+        assert_eq!(budget.sources.len(), 1);
     }
 }

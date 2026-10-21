@@ -20,11 +20,17 @@ import java.net.InetSocketAddress
 import java.net.SocketTimeoutException
 
 class RelayTransportTest {
-    private val keyA = (0..31).joinToString("") { "%02x".format(it) }
-    private val keyB = (32..63).joinToString("") { "%02x".format(it) }
+    private fun freshKey() =
+        ByteArray(32)
+            .also { java.security.SecureRandom().nextBytes(it) }
+            .joinToString("") { "%02x".format(it) }
+
+    private val keyA = freshKey()
+    private val keyB = freshKey()
     private val loopback = InetAddress.getByName("127.0.0.1")
 
     @Test fun crossLanguageAesGcmFixtureAndReplay() {
+        val keyA = (0..31).joinToString("") { "%02x".format(it) }
         val sender = RelayTransport(0x11223344u, 0, 2, keyA, keyB)
         val receiver = RelayTransport(0x11223344u, 2, 0, keyB, keyA)
         val payload = ByteArray(32) { it.toByte() }
@@ -75,7 +81,11 @@ class RelayTransportTest {
 
     @Test(timeout = 15_000)
     fun realProxyChecksEndpointKeysAndReplayInBothSocketModes() {
+        val canaries = mutableListOf<String>()
         for (shared in listOf(false, true)) {
+            val keyA = freshKey()
+            val keyB = freshKey()
+            canaries.addAll(listOf(keyA, keyB))
             val owner = SupervisorJob()
             val scope = CoroutineScope(owner + Dispatchers.IO)
             val network = if (shared) DatagramSocket(0, loopback) else null
@@ -146,6 +156,11 @@ class RelayTransportTest {
                 runBlocking { withTimeout(2000) { owner.join() } }
             }
         }
+        val diagnostics = NetLog.entries + android.util.Log.entries
+        assertTrue(
+            "Synthetic relay credential appeared in diagnostics",
+            diagnostics.none { line -> canaries.any { line.contains(it) } },
+        )
     }
 
     @Test(timeout = 15_000)
@@ -197,4 +212,27 @@ class RelayTransportTest {
                 withTimeout(2000) { owner.join() }
             }
         }
+
+    @Test fun transportRecreationRequiresFreshDirectionalKeys() {
+        val first = RelayTransport(42u, 0, 2, keyA, keyB)
+        first.encode(RelayTransport.BIND, ByteArray(16))
+        try {
+            RelayTransport(42u, 0, 2, keyA, keyB)
+            fail("Transport recreation reused its sending key and sequence")
+        } catch (_: IllegalStateException) {
+        }
+        try {
+            RelayTransport(42u, 0, 2, freshKey(), keyB)
+            fail("Transport recreation reset the receive replay window with an old key")
+        } catch (_: IllegalStateException) {
+        }
+        try {
+            val same = freshKey()
+            RelayTransport(42u, 0, 2, same, same)
+            fail("Both directions accepted the same key")
+        } catch (_: IllegalArgumentException) {
+        }
+        val replacement = RelayTransport(42u, 0, 2, freshKey(), freshKey())
+        assertNotNull(replacement.encode(RelayTransport.BIND, ByteArray(16)))
+    }
 }

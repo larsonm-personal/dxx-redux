@@ -1036,7 +1036,6 @@ object MatchmakingService {
             text: String,
         ) {
             withConnection(webSocket) {
-                Log.d(TAG, "Received matchmaking message")
                 handleMessage(text)
             }
         }
@@ -1281,7 +1280,7 @@ object MatchmakingService {
 
     private fun handleMessage(text: String) {
         try {
-            when (val msg = ServerMessage.parse(text)) {
+            when (val msg = MatchmakingDiagnostics.parse(text) ?: return) {
                 is ServerMessage.AuthOkMsg -> {
                     state.update {
                         it.copy(
@@ -1513,7 +1512,7 @@ object MatchmakingService {
 
                 is ServerMessage.Unknown -> {
                     state.appendLog("Unknown message type: ${msg.type}")
-                    NetLog.log("CONNECT", "Unknown message type: ${msg.type}")
+                    NetLog.log("CONNECT", "Unknown matchmaking message type")
                 }
 
                 is ServerMessage.MaintenanceReceived -> {
@@ -1588,10 +1587,10 @@ object MatchmakingService {
                     }
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "handleMessage error", e)
-            state.appendLog("Internal error: ${e.message}")
-            NetLog.log("ERROR", "Internal error: ${e.message}")
+        } catch (_: Exception) {
+            Log.e(TAG, "Matchmaking message handling failed")
+            state.appendLog("Matchmaking message handling failed")
+            NetLog.log("ERROR", "Matchmaking message handling failed")
         }
     }
 }

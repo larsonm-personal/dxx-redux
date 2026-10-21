@@ -1,5 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 def toolVersions = new Properties()
@@ -17,6 +18,11 @@ sourceSets.test.kotlin {
     include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'
     include '**/ProxyFailureTest.kt'
     include '**/RelayTransportTest.kt'
+    include '**/MatchmakingDiagnosticsTest.kt'
+    include 'com/dxxredux/app/multiplayer/MatchmakingDiagnostics.kt'
+    include 'com/dxxredux/app/multiplayer/NetworkProtocol.kt'
+    include 'com/dxxredux/app/multiplayer/MissionContentProtocol.kt'
+    include 'com/dxxredux/app/MissionContentIdentity.kt'
     include 'com/dxxredux/app/multiplayer/RelayTransport.kt'
     include '**/NetLog.kt'
     include '**/Log.kt'
@@ -55,6 +61,7 @@ fun createHistoricalProxy(scope: CoroutineScope, socket: DatagramSocket, localPo
 if (compareHistory) tasks.named('compileTestKotlin') { dependsOn 'prepareHistoricalProxy' }
 
 dependencies {
+    testImplementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }

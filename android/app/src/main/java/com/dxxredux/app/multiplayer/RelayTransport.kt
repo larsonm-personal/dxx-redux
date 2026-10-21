@@ -32,6 +32,8 @@ internal class RelayTransport(
 
     init {
         require(ownSlot in 0..7 && peerSlot in 0..7 && ownSlot != peerSlot)
+        require(!this.sendKey.encoded.contentEquals(this.receiveKey.encoded))
+        claimKeys(this.sendKey.encoded, this.receiveKey.encoded)
     }
 
     data class Packet(
@@ -112,6 +114,31 @@ internal class RelayTransport(
         const val MAX_PAYLOAD = 4096
         const val MAX_PACKET = HEADER_SIZE + MAX_PAYLOAD + 16
         private val MAGIC = byteArrayOf(68, 88, 82, 51)
+
+        // Never evict a used key: reconstructing an allocation must obtain fresh keys
+        // A process restart also establishes a new authenticated control session
+        private val usedSendKeys = HashSet<String>()
+        private val usedReceiveKeys = HashSet<String>()
+
+        @Synchronized
+        private fun claimKeys(
+            send: ByteArray,
+            receive: ByteArray,
+        ) {
+            fun fingerprint(key: ByteArray) =
+                java.security.MessageDigest
+                    .getInstance("SHA-256")
+                    .digest(key)
+                    .joinToString("") { "%02x".format(it) }
+            val sending = fingerprint(send)
+            val receiving = fingerprint(receive)
+            check(usedSendKeys.size < 4096) { "Relay allocation limit reached; restart the application" }
+            check(sending !in usedSendKeys && receiving !in usedReceiveKeys) {
+                "Relay allocation cannot be reused; reconnect for fresh credentials"
+            }
+            usedSendKeys.add(sending)
+            usedReceiveKeys.add(receiving)
+        }
 
         fun senderSlot(
             data: ByteArray,

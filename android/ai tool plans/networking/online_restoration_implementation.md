@@ -152,3 +152,34 @@ host-JVM suite passes six active proxy tests, including the ten-second terminal
 case. Scoped formatting passes. Catalog validation passes; the master catalog
 execution remains blocked by this host's unavailable `/proc/.../children` support.
 No APK/device, external staging/live or full native gameplay result is claimed.
+
+### Independent-review regressions
+
+Three added controls failed against the previous implementation: forced-relay
+late join selected a direct route; a waiting-room match result was accepted; and
+forged ciphertext spent the quota of the claimed sender. The corrected tests now
+prove real UDP traffic for forced-relay late join, capacity-denial rollback with
+no start/approval messages or stranded membership, and one idempotent match-result
+closure with zero room/game counters and cleared membership. Invalid ciphertext
+and replay no longer debit an authenticated peer's quota. A separate bounded
+source/global admission budget limits unauthenticated cryptographic work.
+
+Android transport recreation requires fresh sending and receiving keys. Process
+lifetime fingerprint sets are bounded and never evict used keys; repeating a key
+fails visibly instead of resetting its sequence or replay window. Reaching the
+bounded set limit requires an application restart and fresh control authentication.
+Both directions must have distinct keys. A regression covers reused sending keys,
+reused receiving keys and a valid replacement with fresh keys.
+
+Inbound body logging was already removed in the relay slice. The follow-up also
+removes parser exception text, which can contain the input, and tests the actual
+protocol parser with synthetic credential canaries in valid and malformed frames.
+The host JVM suite scans its logcat and exported diagnostic sinks, including real
+proxy traffic. Full MatchmakingService/Android device qualification remains open.
+
+Review validation: all 43 Rust module, 81 integration, 13 NAT and two process tests
+pass under the locked toolchain; Clippy passes with warnings denied. Eight host
+JVM cases pass, including fresh-key recreation and parser/proxy credential canaries.
+The catalog validator and scoped mixed formatter pass. The master catalog runner
+has the previously recorded host limitation. These receipts do not substitute for
+APK compilation, native valid-producer gameplay, device recovery or owned staging.

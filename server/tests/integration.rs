@@ -3780,3 +3780,179 @@ async fn online_production_preview_rejects_unqualified_keypair_producer() {
     assert!(response["reason"].as_str().unwrap().contains("unavailable"));
     wait_for_state(|| server.state.sessions.is_empty()).await;
 }
+
+#[tokio::test]
+async fn online_forced_relay_late_join_is_atomic_at_capacity() {
+    for capacity_full in [false, true] {
+        let server = TestServer::with_config(|c| {
+            c.force_relay = true;
+            c.max_relay_sessions = 1;
+        })
+        .await;
+        let mut host = connect_ws(&server).await;
+        let h = authenticate(&mut host, "Host").await;
+        let room = create_test_room(&mut host).await;
+        let mut joiner = connect_ws(&server).await;
+        let j = authenticate(&mut joiner, "Joiner").await;
+        let hp = uuid::Uuid::parse_str(h["player_id"].as_str().unwrap()).unwrap();
+        let jp = uuid::Uuid::parse_str(j["player_id"].as_str().unwrap()).unwrap();
+        send_only(
+            &mut joiner,
+            json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+        )
+        .await;
+        recv(&mut host).await;
+        recv(&mut joiner).await;
+        {
+            let mut lobby = server.state.lobbies.get_mut(&room).unwrap();
+            lobby.state = dxx_matchmaking::lobby::LobbyState::InGame;
+            lobby.pending_late_joiners.insert(jp);
+            for p in &mut lobby.players {
+                p.candidates = vec![dxx_matchmaking::protocol::ConnectionCandidate {
+                    candidate_type: "host".into(),
+                    addr: "127.0.0.1:42424".into(),
+                }];
+            }
+        }
+        server.state.stats.game_started();
+        if capacity_full {
+            server.state.relay_sessions.insert(
+                123,
+                dxx_matchmaking::relay::RelaySession::new(
+                    uuid::Uuid::new_v4(),
+                    [(0, uuid::Uuid::new_v4()), (1, uuid::Uuid::new_v4())],
+                    std::time::Instant::now(),
+                ),
+            );
+        }
+        send_only(&mut joiner,json!({"type":"CONNECTIVITY_OK","peer_id":hp,"winning_candidate_type":"host","rtt_ms":1})).await;
+        let response = recv(&mut joiner).await;
+        if capacity_full {
+            assert_eq!(response["code"], "LOBBY_JOIN_FAILED");
+            assert_eq!(server.state.sessions.get(&jp).unwrap().lobby_id, None);
+            assert!(matches!(
+                server.state.sessions.get(&jp).unwrap().presence,
+                dxx_matchmaking::lobby::Presence::Online
+            ));
+            assert_eq!(server.state.lobbies.get(&room).unwrap().players.len(), 1);
+            assert!(!server
+                .state
+                .lobbies
+                .get(&room)
+                .unwrap()
+                .pending_late_joiners
+                .contains(&jp));
+            assert_eq!(server.state.relay_sessions.len(), 1);
+            send_only(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+            loop {
+                let message = recv(&mut host).await;
+                assert_ne!(message["type"], "LATE_JOIN_APPROVED");
+                if message["type"] == "LOBBY_LIST" {
+                    break;
+                }
+            }
+            assert_eq!(
+                send_recv(&mut joiner, json!({"type":"LIST_LOBBIES"})).await["type"],
+                "LOBBY_LIST"
+            );
+        } else {
+            assert_eq!(response["type"], "GAME_STARTING");
+            let approved = recv(&mut host).await;
+            assert_eq!(approved["type"], "LATE_JOIN_APPROVED");
+            let jpeer = &response["peers"][0];
+            let hpeer = &approved["peer"];
+            assert_eq!(jpeer["is_relay"], true);
+            let token = jpeer["relay_token"].as_u64().unwrap() as u32;
+            let js = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+            let hs = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+            let mut jseq = 0;
+            let mut hseq = 0;
+            bind_udp(
+                &js,
+                server.relay_addr,
+                token,
+                1,
+                0,
+                &jpeer["relay_credentials"],
+                &mut jseq,
+            )
+            .await;
+            bind_udp(
+                &hs,
+                server.relay_addr,
+                token,
+                0,
+                1,
+                &hpeer["relay_credentials"],
+                &mut hseq,
+            )
+            .await;
+            let packet = dxx_matchmaking::relay::seal(
+                &relay_key(&jpeer["relay_credentials"], "send_key"),
+                token,
+                0,
+                1,
+                0,
+                jseq + 1,
+                b"valid late join",
+            )
+            .unwrap();
+            js.send_to(&packet, server.relay_addr).await.unwrap();
+            assert_eq!(
+                dxx_matchmaking::relay::open(
+                    &relay_key(&hpeer["relay_credentials"], "receive_key"),
+                    &recv_udp(&hs).await
+                )
+                .unwrap(),
+                b"valid late join"
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn online_match_result_closes_membership_once_and_rejects_waiting_room() {
+    let server = TestServer::with_config(|c| c.force_relay = true).await;
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Host").await;
+    let room = create_test_room(&mut host).await;
+    let report = json!({"type":"MATCH_RESULT","lobby_id":room,"duration_secs":10,"result":"completed","players":[]});
+    assert_eq!(
+        send_recv(&mut host, report.clone()).await["code"],
+        "GAME_NOT_STARTED"
+    );
+    assert_eq!(server.state.stats.snapshot().in_game, 0);
+    assert!(server.state.lobbies.contains_key(&room));
+    let mut joiner = connect_ws(&server).await;
+    authenticate(&mut joiner, "Joiner").await;
+    send_only(
+        &mut joiner,
+        json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+    )
+    .await;
+    recv(&mut host).await;
+    recv(&mut joiner).await;
+    send_only(&mut host, json!({"type":"START_GAME"})).await;
+    for client in [&mut host, &mut joiner] {
+        recv(client).await;
+        recv(client).await;
+    }
+    assert_eq!(server.state.stats.snapshot().in_game, 1);
+    assert_eq!(
+        send_recv(&mut host, report.clone()).await["type"],
+        "MATCH_RESULT_ACK"
+    );
+    assert!(server.state.lobbies.is_empty());
+    assert!(server.state.relay_sessions.is_empty());
+    assert!(server
+        .state
+        .sessions
+        .iter()
+        .all(|s| s.lobby_id.is_none()
+            && matches!(s.presence, dxx_matchmaking::lobby::Presence::Online)));
+    assert_eq!(server.state.stats.snapshot().in_game, 0);
+    assert_eq!(server.state.stats.snapshot().lobbies, 0);
+    assert_eq!(send_recv(&mut host, report).await["code"], "NOT_HOST");
+    assert_eq!(server.state.stats.snapshot().in_game, 0);
+    assert_eq!(server.state.db.total_games_played().unwrap(), 1);
+}
