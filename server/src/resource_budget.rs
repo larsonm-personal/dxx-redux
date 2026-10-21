@@ -171,9 +171,57 @@ impl SourceBudget {
     }
 }
 
+/// FIFO byte grants: each connection has at most one waiting writer
+pub struct FairEgress {
+    window: tokio::sync::Mutex<(Instant, usize)>,
+    bytes: usize,
+    interval: Duration,
+}
+impl FairEgress {
+    pub fn new(bytes: usize, interval: Duration) -> Self {
+        Self {
+            window: tokio::sync::Mutex::new((Instant::now(), 0)),
+            bytes,
+            interval,
+        }
+    }
+    pub async fn wait(&self, bytes: usize) {
+        assert!(bytes <= self.bytes);
+        let mut window = self.window.lock().await;
+        let now = Instant::now();
+        if now.duration_since(window.0) >= self.interval {
+            *window = (now, 0);
+        }
+        if bytes > self.bytes - window.1 {
+            tokio::time::sleep(self.interval.saturating_sub(window.0.elapsed())).await;
+            *window = (Instant::now(), 0);
+        }
+        window.1 += bytes;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn noisy_writer_cannot_starve_an_unrelated_control_response() {
+        let budget = std::sync::Arc::new(FairEgress::new(1024, Duration::from_millis(10)));
+        let other = budget.clone();
+        let (started, ready) = tokio::sync::oneshot::channel();
+        let noisy = tokio::spawn(async move {
+            other.wait(1024).await;
+            started.send(()).unwrap();
+            for _ in 0..100 {
+                other.wait(1024).await;
+            }
+        });
+        ready.await.unwrap();
+        tokio::time::timeout(Duration::from_millis(100), budget.wait(100))
+            .await
+            .unwrap();
+        noisy.abort();
+        let _ = noisy.await;
+    }
     #[test]
     fn pair_allocation_limits_allow_initial_roster_and_three_recoveries() {
         let mut budget = AllocationBudget::new();

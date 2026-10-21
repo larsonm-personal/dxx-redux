@@ -40,6 +40,8 @@ data class InstallationProofMsg(
 @Serializable
 data class ListLobbiesMsg(
     val type: String = "LIST_LOBBIES",
+    val cursor: String? = null,
+    @SerialName("listing_id") val listingId: String? = null,
 )
 
 @Serializable
@@ -233,6 +235,9 @@ data class LobbyInfo(
 @Serializable
 data class LobbyListMsg(
     val lobbies: List<LobbyInfo>,
+    @SerialName("listing_id") val listingId: String? = null,
+    @SerialName("next_cursor") val nextCursor: String? = null,
+    val reset: Boolean = true,
 )
 
 @Serializable

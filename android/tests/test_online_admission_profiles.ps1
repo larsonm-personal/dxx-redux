@@ -179,3 +179,45 @@ foreach ($case in @('raw-pass', 'missing-code', 'failed-code', 'missing-pass')) 
     if (@($script:snapshots | Where-Object { $_ -like 'ONLINE_WORK_RESULT *' }).Count -ne 3) { throw 'Missing bounded vector result diagnostics' }
 }
 Write-Host 'PASS: actual raw instrumentation output is required; solved work alone cannot qualify the fixture'
+
+$returnDefinition = $owner.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-OnlineReturnToGame'
+    }, $true)
+if (-not $returnDefinition) { throw 'Missing Return to Game owner' }
+. ([scriptblock]::Create($returnDefinition.Extent.Text))
+$ACTIVITY = 'com.dxxredux.app.SetupActivity'
+function Start-SetupActivity { throw 'Return to Game must not use the force-stop helper' }
+function Wait-SetupReady { param($Serial, $TimeoutSec) return $true }
+function Adb-Dev-Timeout {
+    param($Serial, $AdbArgs, $Seconds)
+    if ($AdbArgs -contains 'force-stop') { throw 'Return to Game destroyed the owned process' }
+    if ($AdbArgs -contains 'start') { $script:returnStarted = $true }
+    if ($AdbArgs -contains 'pidof') {
+        if ($script:returnStarted -and $script:returnCase -eq 'replaced-pid') { return '999' }
+        return '123'
+    }
+    return ''
+}
+function Get-GameIntrospection {
+    param($Serial, [switch]$Fresh)
+    if (-not $Fresh) { throw 'Return to Game accepted cached native evidence' }
+    return [pscustomobject]@{ in_game = $true; is_network = $true; multiplayer = [pscustomobject]@{ my_player_num = 0 } }
+}
+function Get-MpIntrospection {
+    param($Serial)
+    $room = if ($script:returnStarted -and $script:returnCase -eq 'replaced-room') { 'new-room' } else { 'original-room' }
+    $epoch = if ($script:returnStarted -and $script:returnCase -eq 'replaced-attempt') { 2 } else { 1 }
+    return [pscustomobject]@{ lobby = [pscustomobject]@{ lobby_id = $room }; online_resources = [pscustomobject]@{ runtime_attempt_epoch = $epoch } }
+}
+function Assert-OnlinePeerMatrix { param($Serials, $Callsigns, $Slots, $Phase) $script:returnTraffic = $true }
+foreach ($case in @('preserved', 'replaced-pid', 'replaced-room', 'replaced-attempt')) {
+    $script:returnCase = $case; $script:returnStarted = $false; $script:returnTraffic = $false; $failed = $false
+    try { Invoke-OnlineReturnToGame } catch { $failed = $true }
+    if ($failed -ne ($case -ne 'preserved')) { throw "Return to Game ownership control failed: $case" }
+    if ($case -eq 'preserved' -and -not $script:returnTraffic) { throw 'Return to Game omitted survivor traffic' }
+}
+. ([scriptblock]::Create($returnDefinition.Extent.Text.Replace(' -Fresh', '')))
+$script:returnCase = 'preserved'; $script:returnStarted = $false; $failed = $false
+try { Invoke-OnlineReturnToGame } catch { $failed = $true }
+if (-not $failed) { throw 'Cached-native-evidence negative control passed unexpectedly' }
+Write-Host 'PASS: Return to Game preserves owner lifetimes and requires fresh native and survivor evidence'

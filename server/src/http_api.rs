@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::{
-    extract::{Json, State},
+    extract::{Json, Query, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::get,
@@ -115,6 +115,7 @@ struct PlayerCounts {
 struct LobbySection {
     count: u32,
     games: Vec<LobbyInfo>,
+    next_cursor: Option<uuid::Uuid>,
 }
 
 #[derive(Serialize)]
@@ -136,40 +137,29 @@ async fn public_budget(
     {
         return StatusCode::TOO_MANY_REQUESTS.into_response();
     }
-    next.run(request).await
+    let Ok(_slot) = state.public_slots.try_acquire() else {
+        return StatusCode::TOO_MANY_REQUESTS.into_response();
+    };
+    let response = next.run(request).await;
+    let (parts, body) = response.into_parts();
+    let Ok(bytes) = axum::body::to_bytes(body, 128 * 1024).await else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+    state.public_egress.wait(bytes.len()).await;
+    axum::response::Response::from_parts(parts, axum::body::Body::from(bytes))
 }
 
-async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
+#[derive(Deserialize)]
+struct LobbyQuery {
+    after: Option<uuid::Uuid>,
+}
+async fn status(
+    State(state): State<Arc<ServerState>>,
+    Query(query): Query<LobbyQuery>,
+) -> Json<StatusResponse> {
     let snap = state.stats.snapshot();
 
-    // Build lobby list
-    let games: Vec<LobbyInfo> = state
-        .lobbies
-        .iter()
-        .map(|entry| {
-            let lobby = entry.value();
-            LobbyInfo {
-                lobby_id: lobby.id,
-                host_callsign: lobby.host_callsign.clone(),
-                game: lobby.game.clone(),
-                player_count: lobby.player_count(),
-                max_players: lobby.max_players,
-                joinable: lobby.is_joinable(),
-                host_ping_ms: state
-                    .sessions
-                    .get(&lobby.host_player_id)
-                    .and_then(|s| s.ping_ms),
-                has_code: lobby.code.is_some(),
-                verified_only: lobby.verified_only,
-                game_info: lobby.game_info.clone(),
-                lobby_state: match lobby.state {
-                    crate::lobby::LobbyState::InGame => "in_progress".into(),
-                    _ => "waiting".into(),
-                },
-                current_level: lobby.runtime_level,
-            }
-        })
-        .collect();
+    let (games, next_cursor) = crate::ws_handler::lobby_page(&state, query.after);
 
     let total_unique = state.db.total_unique_players().unwrap_or(0);
     let total_games = state.db.total_games_played().unwrap_or(0);
@@ -188,6 +178,7 @@ async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
         lobbies: LobbySection {
             count: snap.lobbies,
             games,
+            next_cursor,
         },
         stats: AggregateStats {
             total_unique_players: total_unique,

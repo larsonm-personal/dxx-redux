@@ -456,6 +456,32 @@ function Start-OnlineRecoveryGame {
     Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'explicit fresh-game recovery'
 }
 
+function Invoke-OnlineReturnToGame {
+    $gamePid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 10).Trim()
+    $controlPid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', $PACKAGE) -Seconds 10).Trim()
+    $before = Get-MpIntrospection -Serial $EMU1
+    if ($gamePid -notmatch '^\d+$' -or $controlPid -notmatch '^\d+$' -or -not $before.lobby -or $before.online_resources.runtime_attempt_epoch -le 0) {
+        throw 'Return to Game requires a live owned launch'
+    }
+    $room = $before.lobby.lobby_id
+    $attempt = $before.online_resources.runtime_attempt_epoch
+    # Start-SetupActivity intentionally force-stops; this transition must preserve both processes
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") -Seconds 10 | Out-Null
+    if (-not (Wait-SetupReady -Serial $EMU1 -TimeoutSec 15)) { throw 'Host launcher return setup failed' }
+    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '--es', 'command', 'launch') -Seconds 10 | Out-Null
+    if (-not (Wait-ForCondition -Description 'Host Return to Game preserves launch ownership' -TimeoutSec 15 -PollMs 500 -Condition {
+                $native = Get-GameIntrospection -Serial $EMU1 -Fresh
+                $control = Get-MpIntrospection -Serial $EMU1
+                $currentGamePid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 10).Trim()
+                $currentControlPid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', $PACKAGE) -Seconds 10).Trim()
+                if ($currentGamePid -ne $gamePid -or $currentControlPid -ne $controlPid) { throw 'Return to Game restarted an owned process' }
+                return $native -and $native.in_game -and $native.is_network -and $native.multiplayer.my_player_num -eq 0 -and
+                $control -and $control.lobby.lobby_id -eq $room -and $control.online_resources.runtime_attempt_epoch -eq $attempt
+            })) { throw 'Return to Game changed the room or runtime attempt' }
+    Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'Return to Game preserves original pair'
+    Write-Status 'ONLINE_EVIDENCE Return to Game preserved native/control processes, room, attempt epoch and original traffic' 'Green'
+}
+
 function Invoke-OnlineBackgroundResume {
     foreach ($hidden in @($EMU1, $EMU2)) {
         $pidBefore = (Adb-Dev -Serial $hidden -AdbArgs @('shell', 'pidof', "${PACKAGE}:game")).Trim()
@@ -1206,13 +1232,7 @@ try {
 
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -NativeTimeout
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
-        # Exercise the real launcher Return to Game path, which replaces Activity.intent
-        if (-not (Start-SetupActivity -Serial $EMU1)) { throw 'Host launcher return setup failed' }
-        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '--es', 'command', 'launch') -Seconds 10 | Out-Null
-        if (-not (Wait-ForCondition -Description 'Host Return to Game' -TimeoutSec 15 -PollMs 500 -Condition {
-                    $value = Get-GameIntrospection -Serial $EMU1
-                    return $value -and $value.is_network -and $value.in_game -and $value.multiplayer.my_player_num -eq 0
-                })) { throw 'Host Return to Game did not preserve native session' }
+        Invoke-OnlineReturnToGame
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -DelayLaunchSeconds 30
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
         $admitted = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2

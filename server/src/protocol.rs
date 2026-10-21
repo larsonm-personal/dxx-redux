@@ -7,8 +7,8 @@ use uuid::Uuid;
 // message schema. Keep MIN_CLIENT_PROTOCOL at the oldest version the
 // server still accepts. Both values must stay in sync with the client
 // constant in NetworkConstants.kt.
-pub const CURRENT_PROTOCOL: u32 = 4;
-pub const MIN_CLIENT_PROTOCOL: u32 = 4;
+pub const CURRENT_PROTOCOL: u32 = 5;
+pub const MIN_CLIENT_PROTOCOL: u32 = 5;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
@@ -87,7 +87,12 @@ pub enum ClientMessage {
     EndGame {},
 
     #[serde(rename = "LIST_LOBBIES")]
-    ListLobbies {},
+    ListLobbies {
+        #[serde(default)]
+        cursor: Option<Uuid>,
+        #[serde(default)]
+        listing_id: Option<Uuid>,
+    },
 
     #[serde(rename = "JOIN_LOBBY")]
     JoinLobby {
@@ -249,7 +254,12 @@ pub enum ServerMessage {
     },
 
     #[serde(rename = "LOBBY_LIST")]
-    LobbyList { lobbies: Vec<LobbyInfo> },
+    LobbyList {
+        lobbies: Vec<LobbyInfo>,
+        listing_id: Uuid,
+        reset: bool,
+        next_cursor: Option<Uuid>,
+    },
 
     #[serde(rename = "LOBBY_UPDATE")]
     LobbyUpdate {

@@ -21,10 +21,12 @@ use std::sync::Arc;
 /// Shared server state accessible from all tasks.
 pub struct ServerState {
     pub control_queue_bytes: Arc<tokio::sync::Semaphore>,
-    pub control_egress: Arc<std::sync::Mutex<resource_budget::RelayBudget>>,
+    pub control_egress: Arc<resource_budget::FairEgress>,
     pub relay_budget: std::sync::Mutex<resource_budget::RelayBudget>,
     pub auth_work: std::sync::Mutex<resource_budget::WorkBudget>,
     pub auth_slots: tokio::sync::Semaphore,
+    pub public_slots: tokio::sync::Semaphore,
+    pub public_egress: resource_budget::FairEgress,
     pub public_work: std::sync::Mutex<resource_budget::WorkBudget>,
     pub allocation_work: std::sync::Mutex<resource_budget::AllocationBudget>,
     pub ready_listeners: std::sync::atomic::AtomicU8,
@@ -48,9 +50,9 @@ pub fn build_state(
 ) -> Result<Arc<ServerState>, Box<dyn std::error::Error + Send + Sync>> {
     if !config.skip_gpgs_verify
         && (config.max_connections == 0
-            || config.max_connections > 2000
+            || config.max_connections > 500
             || config.max_relay_sessions == 0
-            || config.max_relay_sessions > 1000)
+            || config.max_relay_sessions > 100)
     {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -61,10 +63,18 @@ pub fn build_state(
     let db = db::Database::open(&config.db_path)?;
     Ok(Arc::new(ServerState {
         control_queue_bytes: Arc::new(tokio::sync::Semaphore::new(32 * 1024 * 1024)),
-        control_egress: Arc::new(std::sync::Mutex::new(resource_budget::RelayBudget::new())),
+        control_egress: Arc::new(resource_budget::FairEgress::new(
+            8 * 1024 * 1024,
+            std::time::Duration::from_secs(1),
+        )),
         relay_budget: std::sync::Mutex::new(resource_budget::RelayBudget::new()),
         auth_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(64, 1)),
         auth_slots: tokio::sync::Semaphore::new(8),
+        public_slots: tokio::sync::Semaphore::new(32),
+        public_egress: resource_budget::FairEgress::new(
+            8 * 1024 * 1024,
+            std::time::Duration::from_secs(1),
+        ),
         public_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(120, 1)),
         allocation_work: std::sync::Mutex::new(resource_budget::AllocationBudget::new()),
         ready_listeners: std::sync::atomic::AtomicU8::new(0),

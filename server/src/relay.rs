@@ -26,7 +26,7 @@ pub const BOUND: u8 = 4;
 const MAGIC: &[u8; 4] = b"DXR3";
 
 /// Sliding replay window permits bounded packet reordering without nonce reuse
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 pub struct ReplayWindow {
     highest: u64,
     seen: u64,
@@ -238,7 +238,11 @@ impl RelaySession {
             return false;
         }
         match packet[8] {
-            DATA => peer.endpoint == Some(source),
+            DATA => {
+                let mut replay = peer.replay;
+                peer.endpoint == Some(source)
+                    && replay.accept(u64::from_le_bytes(packet[11..19].try_into().unwrap()))
+            }
             BIND => packet.len() == HEADER_LEN + 32,
             PROOF => {
                 packet.len() == HEADER_LEN + 32
@@ -387,7 +391,6 @@ struct CryptoAdmission {
     handshakes: crate::resource_budget::SourceBudget,
     started: Instant,
     packets: usize,
-    sources: HashMap<IpAddr, usize>,
     pairs: HashMap<u32, usize>,
 }
 impl CryptoAdmission {
@@ -395,10 +398,9 @@ impl CryptoAdmission {
         Self {
             handshake_start: Instant::now(),
             handshake_pairs: HashMap::new(),
-            handshakes: crate::resource_budget::SourceBudget::new(2048, 256),
+            handshakes: crate::resource_budget::SourceBudget::new(2048, 512),
             started: Instant::now(),
             packets: 0,
-            sources: HashMap::new(),
             pairs: HashMap::new(),
         }
     }
@@ -415,26 +417,20 @@ impl CryptoAdmission {
         *self.handshake_pairs.entry(token).or_default() += 1;
         true
     }
-    fn accept(&mut self, source: IpAddr, token: u32, now: Instant) -> bool {
+    fn accept(&mut self, token: u32, now: Instant) -> bool {
         if now.duration_since(self.started) >= Duration::from_secs(1) {
             self.started = now;
             self.packets = 0;
-            self.sources.clear();
             self.pairs.clear();
         }
-        if self.pairs.get(&token).copied().unwrap_or(0) >= 1024 {
-            return false;
-        }
-        if self.packets >= 16_384
-            || (!self.sources.contains_key(&source) && self.sources.len() >= 1024)
+        // Production supports at most100 pairs: each has its own256-work allowance
+        // The global ceiling equals their sum, so another pair cannot spend it
+        if self.packets >= 25_600
+            || self.pairs.get(&token).copied().unwrap_or(0) >= 256
+            || (!self.pairs.contains_key(&token) && self.pairs.len() >= 100)
         {
             return false;
         }
-        let count = self.sources.entry(source).or_default();
-        if *count >= 4096 {
-            return false;
-        }
-        *count += 1;
         self.packets += 1;
         *self.pairs.entry(token).or_default() += 1;
         true
@@ -458,7 +454,7 @@ fn dispatch_packet(
             return None;
         }
         let allowed = if packet[8] == DATA {
-            admission.accept(source.ip(), token, now)
+            admission.accept(token, now)
         } else {
             admission.accept_handshake(source.ip(), token, now)
         };
@@ -535,6 +531,126 @@ mod tests {
         let (_, reply) = session.process(&packet, addr, now).unwrap();
         assert_eq!(reply[8], BOUND);
     }
+    #[test]
+    fn maximum_supported_hostile_pairs_cannot_spend_a_survivor_reservation() {
+        let sessions = dashmap::DashMap::new();
+        let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
+        let mut admission = CryptoAdmission::new();
+        let now = admission.started;
+        let good_a = "127.0.0.1:21000".parse().unwrap();
+        let good_b = "127.0.0.1:21001".parse().unwrap();
+        let survivor = RelaySession::new(
+            Uuid::new_v4(),
+            [(0, Uuid::new_v4()), (1, Uuid::new_v4())],
+            now,
+        );
+        let mut ga = 0;
+        let mut gb = 0;
+        bind(&survivor, 999, 0, 1, good_a, &mut ga, now);
+        bind(&survivor, 999, 1, 0, good_b, &mut gb, now);
+        let key_good = key(&survivor.credentials(0).unwrap().send_key);
+        sessions.insert(999, survivor);
+        for token in 0..99 {
+            let a: SocketAddr = format!("127.0.0.{}:{}", 1 + token % 4, 22000 + token * 2)
+                .parse()
+                .unwrap();
+            let b: SocketAddr = format!("127.0.0.{}:{}", 1 + token % 4, 22001 + token * 2)
+                .parse()
+                .unwrap();
+            let bad = RelaySession::new(
+                Uuid::new_v4(),
+                [(0, Uuid::new_v4()), (1, Uuid::new_v4())],
+                now,
+            );
+            let mut sa = 0;
+            let mut sb = 0;
+            bind(&bad, token, 0, 1, a, &mut sa, now);
+            bind(&bad, token, 1, 0, b, &mut sb, now);
+            sessions.insert(token, bad);
+            let forged = seal(&[0; 32], token, DATA, 0, 1, sa + 1, b"forged").unwrap();
+            for _ in 0..2 {
+                for _ in 0..256 {
+                    assert!(
+                        dispatch_packet(&sessions, &budget, &mut admission, &forged, a, now)
+                            .is_none()
+                    );
+                }
+                ga += 1;
+                let valid =
+                    seal(&key_good, 999, DATA, 0, 1, ga, b"reserved survivor traffic").unwrap();
+                assert!(
+                    dispatch_packet(&sessions, &budget, &mut admission, &valid, good_a, now)
+                        .is_some()
+                );
+                // Replays do not consume even the raw work reservation
+                let before = admission.packets;
+                assert!(
+                    dispatch_packet(&sessions, &budget, &mut admission, &valid, good_a, now)
+                        .is_none()
+                );
+                assert_eq!(admission.packets, before);
+            }
+        }
+        assert_eq!(sessions.len(), 100);
+        assert_eq!(admission.packets, 99 * 256 + 198);
+    }
+    #[test]
+    fn two_full_rosters_at_forty_packets_per_path_share_one_nat() {
+        let sessions = dashmap::DashMap::new();
+        let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
+        let mut admission = CryptoAdmission::new();
+        let now = admission.started;
+        let mut paths = Vec::new();
+        for room_index in 0..2 {
+            let room = Uuid::new_v4();
+            let ids: Vec<_> = (0..8).map(|_| Uuid::new_v4()).collect();
+            for a in 0..8 {
+                for b in a + 1..8 {
+                    let token = paths.len() as u32 + 1;
+                    let aa: SocketAddr = format!("127.0.0.1:{}", 25000 + room_index * 100 + a)
+                        .parse()
+                        .unwrap();
+                    let bb: SocketAddr = format!("127.0.0.1:{}", 25000 + room_index * 100 + b)
+                        .parse()
+                        .unwrap();
+                    let session =
+                        RelaySession::new(room, [(a as u8, ids[a]), (b as u8, ids[b])], now);
+                    let mut sa = 0;
+                    let mut sb = 0;
+                    bind(&session, token, a as u8, b as u8, aa, &mut sa, now);
+                    bind(&session, token, b as u8, a as u8, bb, &mut sb, now);
+                    paths.push((
+                        token,
+                        a as u8,
+                        b as u8,
+                        aa,
+                        bb,
+                        key(&session.credentials(a as u8).unwrap().send_key),
+                        key(&session.credentials(b as u8).unwrap().send_key),
+                    ));
+                    sessions.insert(token, session);
+                }
+            }
+        }
+        for sequence in 3..43 {
+            for (token, a, b, aa, bb, ka, kb) in &paths {
+                for (from, to, address, key) in [(*a, *b, *aa, ka), (*b, *a, *bb, kb)] {
+                    let packet = seal(key, *token, DATA, from, to, sequence, &[0x42; 512]).unwrap();
+                    assert!(dispatch_packet(
+                        &sessions,
+                        &budget,
+                        &mut admission,
+                        &packet,
+                        address,
+                        now
+                    )
+                    .is_some());
+                }
+            }
+        }
+        assert_eq!(admission.packets, 4480);
+    }
+
     #[test]
     fn authenticated_arbitrary_payload_cost_is_shared_across_pairs() {
         let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
@@ -618,11 +734,11 @@ mod tests {
             );
         }
         assert_eq!(admission.packets, 0);
-        let forged = seal(&[0; 32], 43, DATA, 0, 1, 1, b"invalid").unwrap();
+        let forged = seal(&[0; 32], 43, DATA, 0, 1, 3, b"invalid").unwrap();
         for _ in 0..20000 {
             assert!(dispatch_packet(&sessions, &budget, &mut admission, &forged, a, now).is_none());
         }
-        assert_eq!(admission.packets, 1024);
+        assert_eq!(admission.packets, 256);
         let valid = seal(
             &key(&ca.send_key),
             42,
@@ -745,21 +861,19 @@ mod tests {
     }
 
     #[test]
-    fn unauthenticated_work_budget_is_bounded_and_separate() {
+    fn every_supported_pair_has_a_bounded_crypto_reservation() {
         let mut budget = CryptoAdmission::new();
         let now = budget.started;
-        let a: IpAddr = "127.0.0.1".parse().unwrap();
-        let b: IpAddr = "127.0.0.2".parse().unwrap();
-        for _ in 0..4096 {
-            assert!(budget.accept(a, budget.packets as u32, now));
+        for token in 0..100 {
+            for _ in 0..256 {
+                assert!(budget.accept(token, now));
+            }
         }
-        assert!(!budget.accept(a, budget.packets as u32, now));
-        assert!(budget.accept(b, budget.packets as u32, now));
-        for i in 3..1026 {
-            let _ = budget.accept(IpAddr::V4(std::net::Ipv4Addr::from(i)), i, now);
-        }
-        assert_eq!(budget.sources.len(), 1024);
-        assert!(budget.accept(a, 42, now + Duration::from_secs(1)));
-        assert_eq!(budget.sources.len(), 1);
+        assert_eq!(budget.packets, 25_600);
+        assert_eq!(budget.pairs.len(), 100);
+        assert!(!budget.accept(100, now));
+        assert!(!budget.accept(0, now));
+        assert!(budget.accept(100, now + Duration::from_secs(1)));
+        assert_eq!(budget.pairs.len(), 1);
     }
 }

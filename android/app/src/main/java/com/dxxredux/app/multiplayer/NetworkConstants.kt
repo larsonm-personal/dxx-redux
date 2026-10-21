@@ -2,7 +2,7 @@ package com.dxxredux.app.multiplayer
 
 // Shared protocol constants -- keep in sync with server/src/protocol.rs
 object NetworkConstants {
-    const val PROTOCOL_VERSION: Int = 4
+    const val PROTOCOL_VERSION: Int = 5
     const val CLIENT_VERSION: String = "android-0.1.0"
     const val PLATFORM: String = "android"
 

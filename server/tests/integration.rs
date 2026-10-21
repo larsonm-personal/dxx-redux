@@ -5303,3 +5303,93 @@ async fn online_assigned_admission_host_replacement_and_expiry_race_are_owned() 
         }
     }
 }
+
+#[tokio::test]
+async fn online_maximum_supported_rooms_have_bounded_complete_listing_pages() {
+    let server = TestServer::with_config(|c| {
+        c.max_connections = 500;
+        c.max_relay_sessions = 100;
+        c.trusted_proxy_ips = vec!["127.0.0.1".parse().unwrap()];
+    })
+    .await;
+    let mut production = server.state.config.clone();
+    production.skip_gpgs_verify = false;
+    assert!(build_state(production.clone()).is_ok());
+    production.max_connections = 501;
+    assert!(build_state(production.clone()).is_err());
+    production.max_connections = 500;
+    production.max_relay_sessions = 101;
+    assert!(build_state(production).is_err());
+    let info = json!({"mission":"fixture","mode":"anarchy","padding":"x".repeat(5000)});
+    let mut owners = Vec::new();
+    for i in 0..499 {
+        if i > 0 && i % 32 == 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(1050)).await;
+        }
+        let ip = format!("127.1.{}.{}", i / 250, i % 250 + 1);
+        let mut owner = connect_with_proxy_header(&server, &ip).await;
+        authenticate(&mut owner, &format!("Room{i}")).await;
+        assert_eq!(
+            send_recv(
+                &mut owner,
+                json!({"type":"CREATE_LOBBY","game":"d1","max_players":8,"game_info":info})
+            )
+            .await["type"],
+            "LOBBY_UPDATE"
+        );
+        owners.push(owner);
+    }
+    let mut viewer = connect_with_proxy_header(&server, "127.2.0.1").await;
+    authenticate(&mut viewer, "Viewer").await;
+    assert_eq!(server.state.sessions.len(), 500);
+    assert!(connect_async(server.ws_url()).await.is_err());
+    let mut page = send_recv(&mut viewer, json!({"type":"LIST_LOBBIES"})).await;
+    let mut seen = std::collections::HashSet::new();
+    loop {
+        assert_eq!(page["type"], "LOBBY_LIST");
+        assert!(serde_json::to_vec(&page).unwrap().len() < 128 * 1024);
+        for row in page["lobbies"].as_array().unwrap() {
+            assert!(seen.insert(row["lobby_id"].as_str().unwrap().to_owned()));
+            assert_eq!(row["game_info"], info);
+        }
+        if page["next_cursor"].is_null() {
+            break;
+        }
+        let request = json!({"type":"LIST_LOBBIES","cursor":page["next_cursor"],"listing_id":page["listing_id"]});
+        tokio::time::sleep(std::time::Duration::from_millis(75)).await;
+        page = send_recv(&mut viewer, request).await;
+    }
+    assert_eq!(seen.len(), 499);
+    assert_eq!(server.state.sessions.len(), 500);
+    let client = reqwest::Client::new();
+    let mut after = String::new();
+    seen.clear();
+    loop {
+        let response = client
+            .get(server.http_url(&format!("/api/v1/status{after}")))
+            .send()
+            .await
+            .unwrap();
+        assert!(response.status().is_success());
+        let bytes = response.bytes().await.unwrap();
+        assert!(bytes.len() < 128 * 1024);
+        let status: Value = serde_json::from_slice(&bytes).unwrap();
+        for row in status["lobbies"]["games"].as_array().unwrap() {
+            assert!(seen.insert(row["lobby_id"].as_str().unwrap().to_owned()));
+            assert_eq!(row["game_info"], info);
+        }
+        if status["lobbies"]["next_cursor"].is_null() {
+            break;
+        }
+        after = format!(
+            "?after={}",
+            status["lobbies"]["next_cursor"].as_str().unwrap()
+        );
+    }
+    assert_eq!(seen.len(), 499);
+    assert_eq!(server.state.sessions.len(), 500);
+    assert_eq!(
+        send_recv(&mut owners[0], json!({"type":"READY","ready":true})).await["type"],
+        "LOBBY_UPDATE"
+    );
+}

@@ -203,6 +203,7 @@ object MatchmakingService {
     internal fun currentProxy(): LocalhostProxy? = localhostProxy
 
     private var runtimeAttempt: String? = null
+    private var runtimeAttemptEpoch = 0L
     private var gameEpoch: String? = null
     private val pendingAdmissions = mutableMapOf<Int, String>()
 
@@ -374,6 +375,9 @@ object MatchmakingService {
         serverUrl: String,
         callsign: String,
     ) {
+        lobbyPageJob?.cancel()
+        lobbyPageRequest = null
+        lobbyListingId = null
         connectionGeneration++
         manualDisconnect = false
         reconnectJob?.cancel()
@@ -408,6 +412,9 @@ object MatchmakingService {
 
     @Synchronized
     fun disconnect() {
+        lobbyPageJob?.cancel()
+        lobbyPageRequest = null
+        lobbyListingId = null
         connectionGeneration++
         manualDisconnect = true
         lastLobbyId = null
@@ -526,8 +533,34 @@ object MatchmakingService {
             }
     }
 
+    private var lobbyListingId: String? = null
+    private var lobbyPageRequest: ListLobbiesMsg? = null
+    private var lobbyPageJob: Job? = null
+
+    @Synchronized
     fun requestLobbyList() {
-        send(protocolJson.encodeToString(ListLobbiesMsg.serializer(), ListLobbiesMsg()))
+        lobbyPageJob?.cancel()
+        lobbyListingId = null
+        val request = ListLobbiesMsg()
+        lobbyPageRequest = request
+        send(protocolJson.encodeToString(ListLobbiesMsg.serializer(), request))
+    }
+
+    private fun scheduleLobbyPage(delayMs: Long) {
+        val request = lobbyPageRequest ?: return
+        val connection = webSocket ?: return
+        lobbyPageJob?.cancel()
+        lobbyPageJob =
+            scope.launch {
+                delay(delayMs)
+                withConnection(connection) {
+                    if (lobbyPageRequest ==
+                        request
+                    ) {
+                        send(protocolJson.encodeToString(ListLobbiesMsg.serializer(), request))
+                    }
+                }
+            }
     }
 
     fun createLobby(
@@ -859,6 +892,7 @@ object MatchmakingService {
     fun resourceDiagnostics(): Map<String, Any> =
         mapOf(
             "installation_work" to installationWork,
+            "runtime_attempt_epoch" to if (runtimeAttempt == null) 0L else runtimeAttemptEpoch,
             "proxy_workers" to LocalhostProxy.activeWorkerCount(),
             "candidate_socket" to (candidateSocket?.isClosed == false),
             "upnp_mapping" to (upnpMapping != null),
@@ -1297,6 +1331,7 @@ object MatchmakingService {
 
         // Determine if we're the host (slot 0 = host)
         val isHost = gs.yourSlot == 0
+        runtimeAttemptEpoch++
         runtimeAttempt =
             java.util.UUID
                 .randomUUID()
@@ -1371,6 +1406,9 @@ object MatchmakingService {
                 is ServerMessage.AuthOkMsg -> {
                     // An accepted socket is not a recovered authenticated session
                     reconnectAttempt = 0
+                    lobbyPageJob?.cancel()
+                    lobbyListingId = null
+                    lobbyPageRequest = ListLobbiesMsg()
                     state.update {
                         it.copy(
                             status = ConnectionStatus.CONNECTED,
@@ -1474,9 +1512,23 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.LobbyListReceived -> {
-                    state.update { it.copy(lobbies = msg.data.lobbies) }
-                    state.appendLog("Lobby list: ${msg.data.lobbies.size} lobbies")
-                    NetLog.log("SERVER", "Lobby list: ${msg.data.lobbies.size} lobbies")
+                    val page = msg.data
+                    if (page.reset) lobbyListingId = page.listingId
+                    if (page.listingId != lobbyListingId) return
+                    state.update {
+                        it.copy(
+                            lobbies =
+                                (if (page.reset) page.lobbies else it.lobbies + page.lobbies).distinctBy { lobby ->
+                                    lobby.lobbyId
+                                },
+                        )
+                    }
+                    lobbyPageRequest = page.nextCursor?.let { ListLobbiesMsg(cursor = it, listingId = page.listingId) }
+                    if (lobbyPageRequest != null) {
+                        scheduleLobbyPage(75)
+                    } else {
+                        state.appendLog("Lobby list: ${state.state.value.lobbies.size} lobbies")
+                    }
                 }
 
                 is ServerMessage.LobbyUpdated -> {
@@ -1538,6 +1590,7 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.RateLimited -> {
+                    scheduleLobbyPage(msg.data.retryAfterMs.coerceIn(1000, 10000))
                     state.appendLog("Rate limited, retry in ${msg.data.retryAfterMs}ms")
                     NetLog.log("SERVER", "Rate limited, retry in ${msg.data.retryAfterMs}ms")
                 }

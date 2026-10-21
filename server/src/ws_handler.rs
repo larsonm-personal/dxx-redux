@@ -26,7 +26,7 @@ use crate::ServerState;
 #[derive(Debug)]
 struct QueuedControl {
     text: String,
-    _global: tokio::sync::OwnedSemaphorePermit,
+    _global: Option<tokio::sync::OwnedSemaphorePermit>,
     _connection: tokio::sync::OwnedSemaphorePermit,
 }
 #[derive(Clone)]
@@ -35,8 +35,7 @@ pub struct BoundedSender {
     retired: Arc<tokio::sync::Notify>,
     global_bytes: Arc<tokio::sync::Semaphore>,
     connection_bytes: Arc<tokio::sync::Semaphore>,
-    egress: Arc<std::sync::Mutex<crate::resource_budget::RelayBudget>>,
-    connection: Uuid,
+    critical_bytes: Arc<tokio::sync::Semaphore>,
 }
 impl std::fmt::Debug for BoundedSender {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -46,22 +45,35 @@ impl std::fmt::Debug for BoundedSender {
 impl BoundedSender {
     #[allow(clippy::result_large_err)]
     pub fn send(&self, msg: ServerMessage) -> Result<(), mpsc::error::TrySendError<ServerMessage>> {
+        let bulk = matches!(
+            &msg,
+            ServerMessage::LobbyList { .. }
+                | ServerMessage::ServerStatus { .. }
+                | ServerMessage::FriendListResp { .. }
+        );
+        let text = serde_json::to_string(&msg).unwrap_or_default();
+        if text.len() > 1024 * 1024 {
+            return self.send(ServerMessage::Error {
+                code: "QUERY_TOO_LARGE".into(),
+                message: "Response exceeds the supported query size".into(),
+            });
+        }
         let queued = (|| {
-            let text = serde_json::to_string(&msg).ok()?;
-            if text.len() > 1024 * 1024
-                || !self.egress.lock().unwrap().accept(
-                    self.connection,
-                    self.connection,
-                    text.len(),
-                    Instant::now(),
+            let global = if bulk {
+                Some(
+                    Arc::clone(&self.global_bytes)
+                        .try_acquire_many_owned(text.len() as u32)
+                        .ok()?,
                 )
-            {
-                return None;
-            }
-            let global = Arc::clone(&self.global_bytes)
-                .try_acquire_many_owned(text.len() as u32)
-                .ok()?;
-            let connection = Arc::clone(&self.connection_bytes)
+            } else {
+                None
+            };
+            let pool = if bulk {
+                &self.connection_bytes
+            } else {
+                &self.critical_bytes
+            };
+            let connection = Arc::clone(pool)
                 .try_acquire_many_owned(text.len() as u32)
                 .ok()?;
             self.tx
@@ -73,7 +85,13 @@ impl BoundedSender {
                 .ok()
         })();
         if queued.is_none() {
-            self.retired.notify_one();
+            if bulk {
+                let _ = self.send(ServerMessage::RateLimited {
+                    retry_after_ms: 1000,
+                });
+            } else {
+                self.retired.notify_one();
+            }
             return Err(mpsc::error::TrySendError::Full(msg));
         }
         Ok(())
@@ -265,48 +283,97 @@ fn valid_mission_status(status: &str) -> bool {
 }
 
 /// Build the list of waiting lobbies for LOBBY_LIST responses.
-fn build_lobby_list(state: &ServerState) -> Vec<LobbyInfo> {
-    state
+pub fn lobby_page(state: &ServerState, after: Option<Uuid>) -> (Vec<LobbyInfo>, Option<Uuid>) {
+    let mut ids: Vec<_> = state
         .lobbies
         .iter()
         .filter(|entry| {
-            matches!(
-                entry.value().state,
-                LobbyState::Waiting | LobbyState::InGame
-            )
+            matches!(entry.state, LobbyState::Waiting | LobbyState::InGame)
+                && after.is_none_or(|id| *entry.key() > id)
         })
-        .map(|entry| {
-            let l = entry.value();
-            let host_ping_ms = state
-                .sessions
-                .get(&l.host_player_id)
-                .and_then(|s| s.ping_ms);
-            let is_in_game = l.state == LobbyState::InGame;
-            let display_player_count = if is_in_game {
-                l.runtime_player_count.unwrap_or(l.player_count())
-            } else {
-                l.player_count()
-            };
-            LobbyInfo {
+        .map(|entry| *entry.key())
+        .collect();
+    ids.sort_unstable();
+    let more = ids.len() > 16;
+    ids.truncate(16);
+    let next = if more { ids.last().copied() } else { None };
+    let rows = ids
+        .into_iter()
+        .filter_map(|id| {
+            let l = state.lobbies.get(&id)?;
+            let playing = l.state == LobbyState::InGame;
+            Some(LobbyInfo {
                 lobby_id: l.id,
                 host_callsign: l.host_callsign.clone(),
                 game: l.game.clone(),
-                player_count: display_player_count,
+                player_count: if playing {
+                    l.runtime_player_count.unwrap_or(l.player_count())
+                } else {
+                    l.player_count()
+                },
                 max_players: l.max_players,
                 joinable: l.is_joinable(),
-                host_ping_ms,
+                host_ping_ms: state
+                    .sessions
+                    .get(&l.host_player_id)
+                    .and_then(|s| s.ping_ms),
                 has_code: l.code.is_some(),
                 verified_only: l.verified_only,
                 game_info: l.game_info.clone(),
-                lobby_state: if is_in_game {
+                lobby_state: if playing {
                     "in_progress".into()
                 } else {
                     "waiting".into()
                 },
                 current_level: l.runtime_level,
-            }
+            })
         })
-        .collect()
+        .collect();
+    (rows, next)
+}
+
+fn send_lobby_page(
+    state: &ServerState,
+    player: Uuid,
+    cursor: Option<Uuid>,
+    listing: Option<Uuid>,
+    tx: &BoundedSender,
+) {
+    let id = if cursor.is_none() {
+        Uuid::new_v4()
+    } else {
+        let valid = state.sessions.get(&player).is_some_and(|s| {
+            s.listing_id == listing
+                && s.listing_cursor == cursor
+                && s.listing_deadline > Instant::now()
+        });
+        if !valid {
+            let _ = tx.send(ServerMessage::Error {
+                code: "QUERY_EXPIRED".into(),
+                message: "Refresh the lobby list".into(),
+            });
+            return;
+        }
+        listing.unwrap()
+    };
+    let (lobbies, next_cursor) = lobby_page(state, cursor);
+    if tx
+        .send(ServerMessage::LobbyList {
+            lobbies,
+            listing_id: id,
+            reset: cursor.is_none(),
+            next_cursor,
+        })
+        .is_ok()
+    {
+        if let Some(mut session) = state.sessions.get_mut(&player) {
+            if cursor.is_none() {
+                session.listing_deadline = Instant::now() + Duration::from_secs(30);
+            }
+            session.listing_id = Some(id);
+            session.listing_cursor = next_cursor;
+        }
+    }
 }
 
 /// Build a list of active (in-progress) games, capped at 20.
@@ -343,6 +410,9 @@ fn build_active_game_list(state: &ServerState) -> Vec<ActiveGameInfo> {
 
 /// Per-player session state, stored in the shared sessions DashMap.
 pub struct PlayerSession {
+    pub listing_id: Option<Uuid>,
+    pub listing_cursor: Option<Uuid>,
+    pub listing_deadline: Instant,
     pub connection_id: Uuid,
     pub player_id: Uuid,
     pub callsign: String,
@@ -523,13 +593,14 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
         retired: Arc::clone(&retired),
         global_bytes: Arc::clone(&state.control_queue_bytes),
         connection_bytes: Arc::new(tokio::sync::Semaphore::new(2 * 1024 * 1024)),
-        egress: Arc::clone(&state.control_egress),
-        connection: Uuid::new_v4(),
+        critical_bytes: Arc::new(tokio::sync::Semaphore::new(64 * 1024)),
     };
 
     // Task: drain the outbound channel and send to the WebSocket
+    let egress = Arc::clone(&state.control_egress);
     let mut send_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
+            egress.wait(msg.text.len()).await;
             // Timeout on send: if the client's TCP window is full for 10s, disconnect
             match tokio::time::timeout(
                 Duration::from_secs(10),
@@ -1129,6 +1200,8 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
             remove_session(&state, pid);
         }
     }
+
+    state.rate_limiter.release_connection(session_id);
 
     // Drop the sender so the send_task can drain remaining messages
     // and exit cleanly instead of being aborted mid-flight.
@@ -1751,6 +1824,9 @@ fn complete_auth(
     state.sessions.insert(
         pid,
         PlayerSession {
+            listing_id: None,
+            listing_cursor: None,
+            listing_deadline: Instant::now(),
             connection_id: session_id,
             player_id: pid,
             callsign: callsign.to_string(),
@@ -1810,8 +1886,7 @@ fn complete_auth(
         total_games_played: total_played,
     });
 
-    let lobbies = build_lobby_list(state);
-    let _ = tx.send(ServerMessage::LobbyList { lobbies });
+    send_lobby_page(state, pid, None, None, tx);
 
     let friend_list = friends::build_friend_list(state, &pid);
     let _ = tx.send(friend_list);
@@ -2086,14 +2161,13 @@ fn handle_authenticated_message(
             }
         }
 
-        ClientMessage::ListLobbies {} => {
-            if !state.rate_limiter.check_lobby_list(player_id) {
+        ClientMessage::ListLobbies { cursor, listing_id } => {
+            if cursor.is_none() && !state.rate_limiter.check_lobby_list(player_id) {
                 let _ = tx.send(ServerMessage::RateLimited {
                     retry_after_ms: 10_000,
                 });
             } else {
-                let lobbies = build_lobby_list(state);
-                let _ = tx.send(ServerMessage::LobbyList { lobbies });
+                send_lobby_page(state, player_id, cursor, listing_id, tx);
             }
         }
 
@@ -3336,39 +3410,68 @@ fn handle_authenticated_message(
 #[cfg(test)]
 mod tests {
     #[tokio::test]
-    async fn outbound_byte_reservations_release_on_drain_or_receiver_drop() {
+    async fn bulk_reservations_release_on_receive_and_closed_queue() {
+        let global = Arc::new(tokio::sync::Semaphore::new(2 * 1024 * 1024));
+        let connection = Arc::new(tokio::sync::Semaphore::new(2 * 1024 * 1024));
         let (tx, mut rx) = tokio::sync::mpsc::channel(256);
-        let global = std::sync::Arc::new(tokio::sync::Semaphore::new(80));
-        let connection = std::sync::Arc::new(tokio::sync::Semaphore::new(80));
-        let retired = std::sync::Arc::new(tokio::sync::Notify::new());
-        let sender = super::BoundedSender {
+        let sender = BoundedSender {
             tx,
-            retired: retired.clone(),
+            retired: Arc::new(tokio::sync::Notify::new()),
             global_bytes: global.clone(),
             connection_bytes: connection.clone(),
-            egress: std::sync::Arc::new(std::sync::Mutex::new(
-                crate::resource_budget::RelayBudget::new(),
-            )),
-            connection: uuid::Uuid::new_v4(),
+            critical_bytes: Arc::new(tokio::sync::Semaphore::new(64 * 1024)),
         };
-        let message = crate::protocol::ServerMessage::RateLimited {
-            retry_after_ms: 1000,
+        let message = || ServerMessage::LobbyList {
+            lobbies: vec![],
+            listing_id: Uuid::new_v4(),
+            reset: true,
+            next_cursor: None,
         };
-        let size = serde_json::to_string(&message).unwrap().len();
-        assert!(size > 40 && size <= 80);
-        sender.send(message.clone()).unwrap();
-        assert_eq!(global.available_permits(), 80 - size);
-        assert!(sender.send(message.clone()).is_err());
-        tokio::time::timeout(std::time::Duration::from_millis(100), retired.notified())
-            .await
-            .unwrap();
-        drop(rx.recv().await);
-        assert_eq!(global.available_permits(), 80);
-        assert_eq!(connection.available_permits(), 80);
-        sender.send(message).unwrap();
+        sender.send(message()).unwrap();
+        assert!(global.available_permits() < 2 * 1024 * 1024);
+        assert_eq!(global.available_permits(), connection.available_permits());
+        drop(rx.recv().await.unwrap());
+        assert_eq!(global.available_permits(), 2 * 1024 * 1024);
+        sender.send(message()).unwrap();
         drop(rx);
-        assert_eq!(global.available_permits(), 80);
-        assert_eq!(connection.available_permits(), 80);
+        assert!(sender.send(message()).is_err());
+        assert_eq!(global.available_permits(), 2 * 1024 * 1024);
+        assert_eq!(connection.available_permits(), 2 * 1024 * 1024);
+    }
+
+    #[tokio::test]
+    async fn shared_bulk_exhaustion_preserves_all_supported_hosts() {
+        use futures_util::FutureExt;
+        let global = Arc::new(tokio::sync::Semaphore::new(0));
+        for _ in 0..500 {
+            let (tx, mut rx) = tokio::sync::mpsc::channel(256);
+            let retired = Arc::new(tokio::sync::Notify::new());
+            let sender = BoundedSender {
+                tx,
+                retired: retired.clone(),
+                global_bytes: global.clone(),
+                connection_bytes: Arc::new(tokio::sync::Semaphore::new(2 * 1024 * 1024)),
+                critical_bytes: Arc::new(tokio::sync::Semaphore::new(64 * 1024)),
+            };
+            assert!(sender
+                .send(ServerMessage::LobbyList {
+                    lobbies: vec![],
+                    listing_id: Uuid::new_v4(),
+                    reset: true,
+                    next_cursor: None
+                })
+                .is_err());
+            assert!(rx.recv().await.unwrap().text.contains("RATE_LIMITED"));
+            sender
+                .send(ServerMessage::LobbyUpdate {
+                    lobby_id: Uuid::new_v4(),
+                    players: vec![],
+                })
+                .unwrap();
+            assert!(rx.recv().await.unwrap().text.contains("LOBBY_UPDATE"));
+            assert!(retired.notified().now_or_never().is_none());
+            assert_eq!(sender.critical_bytes.available_permits(), 64 * 1024);
+        }
     }
 
     use super::*;

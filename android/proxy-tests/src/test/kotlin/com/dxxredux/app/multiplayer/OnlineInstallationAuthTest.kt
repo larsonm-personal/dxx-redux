@@ -233,6 +233,105 @@ class OnlineInstallationAuthTest {
                         status.contains("\"relay_sessions\":0")
                 }
             }
+            val client = okhttp3.OkHttpClient()
+            val owners = mutableListOf<okhttp3.WebSocket>()
+            try {
+                repeat(17) { index ->
+                    val messages = java.util.concurrent.LinkedBlockingQueue<String>()
+                    val socket =
+                        client.newWebSocket(
+                            okhttp3.Request
+                                .Builder()
+                                .url("ws://127.0.0.1:$wsPort/ws")
+                                .build(),
+                            object : okhttp3.WebSocketListener() {
+                                override fun onMessage(
+                                    webSocket: okhttp3.WebSocket,
+                                    text: String,
+                                ) {
+                                    messages.offer(text)
+                                }
+                            },
+                        )
+                    owners += socket
+
+                    fun receive(): org.json.JSONObject =
+                        org.json.JSONObject(checkNotNull(messages.poll(8, java.util.concurrent.TimeUnit.SECONDS)))
+                    val pair =
+                        java.security.KeyPairGenerator
+                            .getInstance("EC")
+                            .apply {
+                                initialize(ECGenParameterSpec("secp256r1"))
+                            }.generateKeyPair()
+                    val producer = OnlineInstallationAuth(pair, "Page$index", audience, "test")
+                    socket.send(protocolJson.encodeToString(AuthenticateMsg.serializer(), producer.request()))
+                    val challenge = receive()
+                    assertEquals("INSTALLATION_CHALLENGE", challenge.getString("type"))
+                    val proof =
+                        runBlocking { producer.proof(challenge.getString("challenge"), challenge.getInt("difficulty")) }
+                    socket.send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof))
+                    for (kind in listOf(
+                        "AUTH_OK",
+                        "SERVER_STATUS",
+                        "LOBBY_LIST",
+                        "FRIEND_LIST_RESP",
+                    )) {
+                        assertEquals(kind, receive().getString("type"))
+                    }
+                    socket.send(
+                        org.json
+                            .JSONObject()
+                            .put(
+                                "type",
+                                "CREATE_LOBBY",
+                            ).put(
+                                "game",
+                                "d1",
+                            ).put(
+                                "max_players",
+                                8,
+                            ).put("game_info", org.json.JSONObject().put("padding", "x".repeat(5000)))
+                            .toString(),
+                    )
+                    assertEquals("LOBBY_UPDATE", receive().getString("type"))
+                }
+                service.connect("ws://127.0.0.1:$wsPort/ws", "Fixture")
+                waitUntil {
+                    MatchmakingStateHolder.state.value.status == ConnectionStatus.CONNECTED &&
+                        MatchmakingStateHolder.state.value.lobbies.size == 17
+                }
+                assertEquals(
+                    17,
+                    MatchmakingStateHolder.state.value.lobbies
+                        .map { it.lobbyId }
+                        .toSet()
+                        .size,
+                )
+                assertTrue(
+                    MatchmakingStateHolder.state.value.lobbies
+                        .all { it.gameInfo.toString().contains("x".repeat(5000)) },
+                )
+            } finally {
+                service.disconnect()
+                owners.forEach { it.cancel() }
+                client.dispatcher.executorService.shutdown()
+                client.connectionPool.evictAll()
+            }
+            waitUntil {
+                val status =
+                    java.net
+                        .URI("http://127.0.0.1:$httpPort/api/v1/ready")
+                        .toURL()
+                        .openConnection()
+                        .apply {
+                            connectTimeout = 1000
+                            readTimeout = 1000
+                        }.getInputStream()
+                        .bufferedReader()
+                        .use { it.readText() }
+                status.contains("\"pending_and_authenticated_sockets\":0") &&
+                    status.contains("\"rooms\":0") && status.contains("\"relay_sessions\":0")
+            }
             waitUntil {
                 val resources = service.resourceDiagnostics()
                 resources["background_jobs"] == 0 && resources["proxy_workers"] == 0 &&
