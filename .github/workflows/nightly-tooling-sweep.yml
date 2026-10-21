@@ -100,8 +100,8 @@ jobs:
               if path.is_file() and not path.is_symlink() and path.stat().st_size < 10000000:
                   print('RECEIPT_FILE ' + str(path.relative_to(root)))
                   lines = [scrub(line) for line in path.read_text(errors='replace').splitlines()
-                           if any(marker in line for marker in markers)]
-                  print('\n'.join(lines[-100:]))
+                           if path.name.startswith('test_mp_public_shareware') or any(marker in line for marker in markers)]
+                  print('\n'.join(lines[-300:]))
           PYTHON
 
   plan:
