@@ -4576,6 +4576,36 @@ async fn online_concurrent_late_joiners_are_pending_and_silent_membership_expire
             1
         );
     }
+    // A lease captured by an earlier host connection cannot be acknowledged by its replacement
+    let original_connection = {
+        let mut lobby = server.state.lobbies.get_mut(&room).unwrap();
+        let lease = lobby.assigned_late_joiners.values_mut().next().unwrap();
+        let original = lease.host_connection;
+        lease.host_connection = uuid::Uuid::new_v4();
+        original
+    };
+    send_only(&mut host, completion.clone()).await;
+    send_recv(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+    assert_eq!(
+        server
+            .state
+            .lobbies
+            .get(&room)
+            .unwrap()
+            .assigned_late_joiners
+            .len(),
+        1
+    );
+    server
+        .state
+        .lobbies
+        .get_mut(&room)
+        .unwrap()
+        .assigned_late_joiners
+        .values_mut()
+        .next()
+        .unwrap()
+        .host_connection = original_connection;
     // Delay beyond the measured native admission interval without extending the lease
     let delayed = std::time::Instant::now() - std::time::Duration::from_secs(45);
     for lease in server
@@ -4679,6 +4709,28 @@ async fn online_concurrent_late_joiners_are_pending_and_silent_membership_expire
         lease.assigned + std::time::Duration::from_secs(119),
     );
     assert_eq!(server.state.relay_sessions.len(), 3);
+    // Admission checks the actual lease age even before the expiry worker runs
+    server
+        .state
+        .lobbies
+        .get_mut(&room)
+        .unwrap()
+        .assigned_late_joiners
+        .get_mut(&sp)
+        .unwrap()
+        .assigned = std::time::Instant::now() - std::time::Duration::from_secs(121);
+    send_only(&mut host, forged.clone()).await;
+    send_recv(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+    assert_eq!(
+        server
+            .state
+            .lobbies
+            .get(&room)
+            .unwrap()
+            .assigned_late_joiners
+            .len(),
+        1
+    );
     dxx_matchmaking::ws_handler::expire_pending_late_joins(
         &server.state,
         lease.assigned + std::time::Duration::from_secs(120),
@@ -4740,6 +4792,230 @@ async fn online_concurrent_late_joiners_are_pending_and_silent_membership_expire
             dxx_matchmaking::relay::open(&relay_key(rx, "receive_key"), &recv_udp(receiver).await)
                 .unwrap(),
             b"survivor after admission expiry"
+        );
+    }
+}
+
+#[tokio::test]
+async fn online_overlapping_admission_is_serialized_and_retry_builds_all_pairs() {
+    for capacity in [5, 6] {
+        let server = TestServer::with_config(|c| {
+            c.force_relay = true;
+            c.max_relay_sessions = capacity;
+        })
+        .await;
+        let mut host = connect_ws(&server).await;
+        authenticate(&mut host, "Host").await;
+        let room = create_test_room(&mut host).await;
+        let mut survivor = connect_ws(&server).await;
+        authenticate(&mut survivor, "Survivor").await;
+        send_only(
+            &mut survivor,
+            json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+        )
+        .await;
+        recv(&mut host).await;
+        recv(&mut survivor).await;
+        for ready_host in [true, false] {
+            send_only(
+                if ready_host { &mut host } else { &mut survivor },
+                json!({"type":"READY","ready":true}),
+            )
+            .await;
+            recv(&mut host).await;
+            recv(&mut survivor).await;
+        }
+        send_only(&mut host, json!({"type":"START_GAME"})).await;
+        assert_eq!(recv(&mut host).await["type"], "CONNECTION_INFO");
+        let initial = recv(&mut host).await;
+        assert_eq!(initial["type"], "GAME_STARTING");
+        let existing_token = initial["peers"][0]["relay_token"].as_u64().unwrap() as u32;
+        assert_eq!(recv(&mut survivor).await["type"], "CONNECTION_INFO");
+        let survivor_start = recv(&mut survivor).await;
+        assert_eq!(survivor_start["type"], "GAME_STARTING");
+        let host_udp = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let survivor_udp = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let mut host_seq = 0;
+        let mut survivor_seq = 0;
+        bind_udp(
+            &host_udp,
+            server.relay_addr,
+            existing_token,
+            0,
+            1,
+            &initial["peers"][0]["relay_credentials"],
+            &mut host_seq,
+        )
+        .await;
+        bind_udp(
+            &survivor_udp,
+            server.relay_addr,
+            existing_token,
+            1,
+            0,
+            &survivor_start["peers"][0]["relay_credentials"],
+            &mut survivor_seq,
+        )
+        .await;
+        send_only(&mut host, json!({"type":"UPDATE_GAME_STATE","player_count":2,"max_players":4,"current_level":1,"game_status":1})).await;
+        send_recv(&mut host, json!({"type":"LIST_LOBBIES"})).await;
+
+        let join = json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"});
+        let stun = json!({"type":"STUN_RESULT","nat_type":"unknown","candidates":[]});
+        let mut a = connect_ws(&server).await;
+        authenticate(&mut a, "AdmissionA").await;
+        send_only(&mut a, join.clone()).await;
+        for ws in [&mut host, &mut survivor, &mut a] {
+            assert_eq!(recv(ws).await["type"], "LOBBY_UPDATE");
+        }
+        send_only(&mut a, stun.clone()).await;
+        assert_eq!(recv(&mut a).await["type"], "GAME_STARTING");
+        let mut receipt = Value::Null;
+        for ws in [&mut host, &mut survivor] {
+            assert_eq!(recv(ws).await["type"], "PEER_CANDIDATES");
+            let approved = recv(ws).await;
+            assert_eq!(approved["type"], "LATE_JOIN_APPROVED");
+            if receipt.is_null() {
+                receipt = approved["admission_id"].clone();
+            }
+        }
+        assert_eq!(server.state.relay_sessions.len(), 3);
+        let survivor_epoch = server
+            .state
+            .relay_sessions
+            .get(&existing_token)
+            .unwrap()
+            .epoch;
+        let mut b = connect_ws(&server).await;
+        let bid = authenticate(&mut b, "AdmissionB").await;
+        let bpid = uuid::Uuid::parse_str(bid["player_id"].as_str().unwrap()).unwrap();
+        send_only(&mut b, join.clone()).await;
+        for ws in [&mut host, &mut survivor, &mut a, &mut b] {
+            assert_eq!(recv(ws).await["type"], "LOBBY_UPDATE");
+        }
+        send_only(&mut b, stun.clone()).await;
+        assert_eq!(recv(&mut b).await["code"], "LOBBY_JOIN_BUSY");
+        for ws in [&mut host, &mut survivor, &mut a] {
+            assert_eq!(recv(ws).await["type"], "PEER_CANDIDATES");
+            assert_eq!(recv(ws).await["type"], "LOBBY_UPDATE");
+        }
+        assert_eq!(server.state.sessions.get(&bpid).unwrap().lobby_id, None);
+        assert_eq!(server.state.relay_sessions.len(), 3);
+        assert_eq!(
+            server
+                .state
+                .lobbies
+                .get(&room)
+                .unwrap()
+                .assigned_late_joiners
+                .len(),
+            1
+        );
+        send_only(&mut host,json!({"type":"HOST_NATIVE_ADMITTED","lobby_id":room,"game_epoch":initial["game_epoch"],"admission_id":receipt,"slot":2})).await;
+        assert_eq!(
+            send_recv(&mut host, json!({"type":"LIST_LOBBIES"})).await["type"],
+            "LOBBY_LIST"
+        );
+        assert!(server
+            .state
+            .lobbies
+            .get(&room)
+            .unwrap()
+            .assigned_late_joiners
+            .is_empty());
+        send_only(&mut b, join).await;
+        for ws in [&mut host, &mut survivor, &mut a, &mut b] {
+            assert_eq!(recv(ws).await["type"], "LOBBY_UPDATE");
+        }
+        send_only(&mut b, stun).await;
+        if capacity == 5 {
+            assert_eq!(recv(&mut b).await["code"], "LOBBY_JOIN_FAILED");
+            for ws in [&mut host, &mut survivor, &mut a] {
+                assert_eq!(recv(ws).await["type"], "PEER_CANDIDATES");
+                assert_eq!(recv(ws).await["type"], "LOBBY_UPDATE");
+            }
+            assert_eq!(server.state.relay_sessions.len(), 3);
+        } else {
+            let start = recv(&mut b).await;
+            assert_eq!(start["type"], "GAME_STARTING");
+            assert_eq!(start["peers"].as_array().unwrap().len(), 3);
+            let mut a_peer = Value::Null;
+            for ws in [&mut host, &mut survivor, &mut a] {
+                assert_eq!(recv(ws).await["type"], "PEER_CANDIDATES");
+                let approval = recv(ws).await;
+                assert_eq!(approval["type"], "LATE_JOIN_APPROVED");
+                a_peer = approval["peer"].clone();
+            }
+            assert_eq!(server.state.relay_sessions.len(), 6);
+            let b_peer = start["peers"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|p| p["slot"] == 2)
+                .unwrap();
+            let token = a_peer["relay_token"].as_u64().unwrap() as u32;
+            let au = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+            let bu = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+            let mut aq = 0;
+            let mut bq = 0;
+            let ac = &a_peer["relay_credentials"];
+            let bc = &b_peer["relay_credentials"];
+            bind_udp(&au, server.relay_addr, token, 2, 3, ac, &mut aq).await;
+            bind_udp(&bu, server.relay_addr, token, 3, 2, bc, &mut bq).await;
+            for (source, dest, from, to, tx, rx, seq) in
+                [(&au, &bu, 2, 3, ac, bc, aq), (&bu, &au, 3, 2, bc, ac, bq)]
+            {
+                let frame = dxx_matchmaking::relay::seal(
+                    &relay_key(tx, "send_key"),
+                    token,
+                    0,
+                    from,
+                    to,
+                    seq + 1,
+                    b"serialized admission full mesh",
+                )
+                .unwrap();
+                source.send_to(&frame, server.relay_addr).await.unwrap();
+                assert_eq!(
+                    dxx_matchmaking::relay::open(
+                        &relay_key(rx, "receive_key"),
+                        &recv_udp(dest).await
+                    )
+                    .unwrap(),
+                    b"serialized admission full mesh"
+                );
+            }
+        }
+        assert_eq!(
+            server
+                .state
+                .relay_sessions
+                .get(&existing_token)
+                .unwrap()
+                .epoch,
+            survivor_epoch
+        );
+        let frame = dxx_matchmaking::relay::seal(
+            &relay_key(&initial["peers"][0]["relay_credentials"], "send_key"),
+            existing_token,
+            0,
+            0,
+            1,
+            host_seq + 1,
+            b"survivor remains live",
+        )
+        .unwrap();
+        host_udp.send_to(&frame, server.relay_addr).await.unwrap();
+        assert_eq!(
+            dxx_matchmaking::relay::open(
+                &relay_key(
+                    &survivor_start["peers"][0]["relay_credentials"],
+                    "receive_key"
+                ),
+                &recv_udp(&survivor_udp).await
+            )
+            .unwrap(),
+            b"survivor remains live"
         );
     }
 }

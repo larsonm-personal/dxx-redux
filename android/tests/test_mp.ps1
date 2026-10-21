@@ -1206,6 +1206,13 @@ try {
 
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -NativeTimeout
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
+        # Exercise the real launcher Return to Game path, which replaces Activity.intent
+        if (-not (Start-SetupActivity -Serial $EMU1)) { throw 'Host launcher return setup failed' }
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '--es', 'command', 'launch') -Seconds 10 | Out-Null
+        if (-not (Wait-ForCondition -Description 'Host Return to Game' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $value = Get-GameIntrospection -Serial $EMU1
+                    return $value -and $value.is_network -and $value.in_game -and $value.multiplayer.my_player_num -eq 0
+                })) { throw 'Host Return to Game did not preserve native session' }
         Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -DelayLaunchSeconds 30
         Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
         $admitted = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2

@@ -1759,6 +1759,20 @@ fn complete_late_join(
     if lobby.state != LobbyState::InGame {
         return;
     }
+    if !lobby.pending_late_joiners.contains_key(&player_id) {
+        return;
+    }
+    // Native host consent owns one admission at a time. Never expose an
+    // unaccepted peer to a second joiner; that joiner may retry after acceptance
+    if !lobby.assigned_late_joiners.is_empty() {
+        drop(lobby);
+        leave_room(state, player_id);
+        let _ = tx.send(ServerMessage::Error {
+            code: "LOBBY_JOIN_BUSY".into(),
+            message: "Another player is awaiting host consent; please join again shortly".into(),
+        });
+        return;
+    }
     let Some(started) = lobby.pending_late_joiners.remove(&player_id) else {
         return;
     };
@@ -1785,7 +1799,9 @@ fn complete_late_join(
         .players
         .iter()
         .filter(|p| {
-            p.player_id != player_id && !lobby.pending_late_joiners.contains_key(&p.player_id)
+            p.player_id != player_id
+                && !lobby.pending_late_joiners.contains_key(&p.player_id)
+                && !lobby.assigned_late_joiners.contains_key(&p.player_id)
         })
         .cloned()
         .collect();

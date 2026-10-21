@@ -10090,7 +10090,9 @@ void net_udp_do_refuse_stuff(UDP_sequence_packet *their,
 
 		if ((timer_query()) > RefuseTimeLimit+REFUSE_INTERVAL)
 		{
+#ifdef __ANDROID__
 			debug_log_force(DLOG_NETWORK, "ONLINE_ADMISSION event=host_consent_timeout");
+#endif
 			MPDIAG("refuse_stuff: TIMEOUT for '%s', dumping\n",
 			       their->player.callsign);
 			RefuseTimeLimit=0;

@@ -931,6 +931,9 @@ class MainActivity :
     }
 
     private var gameStarted = false
+
+    // Captured by onCreate before a Return to Game intent can replace Activity.intent
+    private val runtimeLaunchAttempt by lazy { intent.getStringExtra("mp_runtime_attempt") }
     private var multiplayerRuntimeStarted = false
     private var nativeMultiplayerActive = false
     private var nativeMultiplayerHost = false
@@ -1172,7 +1175,7 @@ class MainActivity :
         com.dxxredux.app.multiplayer.UdpReconnectIdentity
             .initialize(noBackupFilesDir)
         super.onCreate(savedInstanceState)
-        RuntimeGameStateBridge.claimActivity(this, intent.getStringExtra("mp_runtime_attempt"))
+        RuntimeGameStateBridge.claimActivity(this, runtimeLaunchAttempt)
 
         refreshTransientLaunchState(intent)
         if (shouldRedirectConsumedTransientLaunch()) {
@@ -2520,9 +2523,9 @@ class MainActivity :
     }
 
     private fun startMultiplayerRuntime(host: Boolean) {
-        if (!RuntimeGameStateBridge.ownsActivity(this, intent.getStringExtra("mp_runtime_attempt"))) return
+        if (!RuntimeGameStateBridge.ownsActivity(this, runtimeLaunchAttempt)) return
         if (multiplayerRuntimeStarted) {
-            RuntimeGameStateBridge.updateHost(host, intent.getStringExtra("mp_runtime_attempt"))
+            RuntimeGameStateBridge.updateHost(host, runtimeLaunchAttempt)
             return
         }
         try {
@@ -2545,7 +2548,7 @@ class MainActivity :
             RuntimeGameStateBridge.connect(
                 context = this,
                 host = host,
-                attempt = intent.getStringExtra("mp_runtime_attempt"),
+                attempt = runtimeLaunchAttempt,
                 stateProvider = { nativeGetNetgameState() },
                 onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
             )
@@ -2556,7 +2559,7 @@ class MainActivity :
 
     private fun stopMultiplayerRuntime() {
         if (!multiplayerRuntimeStarted) return
-        if (!RuntimeGameStateBridge.disconnect(intent.getStringExtra("mp_runtime_attempt"))) return
+        if (!RuntimeGameStateBridge.disconnect(runtimeLaunchAttempt)) return
         com.dxxredux.app.multiplayer.MultiplayerGameService
             .stop(this)
         com.dxxredux.app.multiplayer.MultiplayerForegroundService
@@ -2568,7 +2571,7 @@ class MainActivity :
         admissionId: String,
         slot: Int,
     ) {
-        val attempt = intent.getStringExtra("mp_runtime_attempt")
+        val attempt = runtimeLaunchAttempt
         runOnUiThread {
             if (RuntimeGameStateBridge.ownsActivity(this, attempt)) {
                 RuntimeGameStateBridge.nativeAdmitted(attempt, admissionId, slot)
@@ -2583,7 +2586,7 @@ class MainActivity :
         runOnUiThread {
             if (!RuntimeGameStateBridge.ownsActivity(
                     this,
-                    intent.getStringExtra("mp_runtime_attempt"),
+                    runtimeLaunchAttempt,
                 )
             ) {
                 return@runOnUiThread
