@@ -31,3 +31,23 @@ Reviewed asset revision: d9fbeaf6eb059fd4504308bfd6364734775b7cba
   multi-owner regeneration retains its existing path and is not newly qualified
 - Nested aggregate metadata, missing CD inputs, unsupported levels, ambiguous
   variants and ewithin-versions remain unavailable, without synthetic coverage
+
+## Review qualification
+
+- Registered staging tests in the Linux/Windows tooling workflow and host catalog
+- Match native descriptor-basename HOG loading; reject a differing hog directive
+- Preserve explicit alternate-HAM HOG dependencies and expose selected loose
+  resources at the native search root without unrelated loose-level shadowing
+- Full private staging sweep: all 131 available archives extracted safely;
+  507 of 518 mission targets staged (2,239 level rows, including 61 already
+  unavailable level rows that remain blocked by catalog policy)
+- Remaining 11 targets are all previously guarded levelpack variants: seven
+  distinct-payload ambiguities and four incomplete HOG/loose-level bindings
+  (three of those contain 29 pre-existing missing level rows)
+- No formerly flat mission acquired a staging failure. This is source/staging
+  evidence only, not native execution or strict route-oracle coverage
+- 142 nightly tests completed with one optional local 7-Zip skip; a separate
+  92-test focused run including real 7-Zip passed with no skips
+- Scoped Python/JSON/workflow formatting and automation catalog validation passed
+- Existing hosted private workflows have no branch/asset-pin override: nightly
+  private access is cmake-only; corpus comparison is cmake-only with fixed refs

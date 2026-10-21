@@ -1300,6 +1300,16 @@
       "constraints": []
     },
     {
+      "id": "python:test_nightly_corpus_stage.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_nightly_corpus_stage.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": ["pwsh"],
+      "coverage_scope": "Synthetic isolated corpus staging and archive rejection controls; no private assets or native runtime assertions.",
+      "constraints": []
+    },
+    {
       "id": "python:test_nightly_retail.py",
       "kind": "python-unittest",
       "path": "android/tests/test_nightly_retail.py",

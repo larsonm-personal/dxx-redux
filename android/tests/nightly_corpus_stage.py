@@ -207,11 +207,29 @@ def select_files(root, mission):
         hog = member_path(overrides[0].strip()) if overrides else name.with_suffix(".hog")
         if len(hog.parts) != 1 or hog.suffix.casefold() != ".hog":
             raise StageUnavailable("Corpus HOG override escapes the descriptor directory")
-        if hog.name.casefold() not in siblings:
-            raise StageUnavailable("Descriptor-associated corpus HOG unavailable")
-        selected = {descriptor.name.casefold(): descriptor, hog.name.casefold(): siblings[hog.name.casefold()]}
-        # Loose levels from neighboring missions must not shadow this HOG's members
+        # d2/main/mission.c mounts only the descriptor-basename .hog
+        if hog.name.casefold() != name.with_suffix(".hog").name.casefold():
+            raise StageUnavailable("Corpus HOG override is unsupported by the route engine")
+        # Native mission loading allows loose levels without a mission HOG
         level_names = {v.casefold() for v in re.findall(r"(?im)^\s*([^,;\s]+\.(?:rl2|rdl))(?=\s|,|$)", text)}
+        selected = {descriptor.name.casefold(): descriptor}
+        if hog.name.casefold() in siblings:
+            selected[hog.name.casefold()] = siblings[hog.name.casefold()]
+        elif not level_names or not all(n in siblings for n in level_names):
+            raise StageUnavailable("Descriptor-associated corpus HOG or complete loose levels unavailable")
+        alternate = re.findall(r"(?im)^\s*!ham\s*=\s*([^;\r\n]+)", text)
+        if len(alternate) > 1:
+            raise StageUnavailable("Ambiguous alternate corpus HAM dependency")
+        if alternate:
+            ham = member_path(alternate[0].strip())
+            if len(ham.parts) != 1 or ham.suffix.casefold() != ".ham":
+                raise StageUnavailable("Unsafe alternate corpus HAM dependency")
+            alternate_hog = ham.with_suffix(".hog").name.casefold()
+            if alternate_hog in siblings:
+                selected[alternate_hog] = siblings[alternate_hog]
+            elif ham.name.casefold() not in siblings:
+                raise StageUnavailable("Alternate corpus HAM dependency requires reviewed staging")
+        # Loose levels from neighboring missions must not shadow this HOG's members
         selected.update(
             {
                 n: p
@@ -249,9 +267,13 @@ def stage_route(archive, mission, destination, seven_zip=None, source_directory=
                 if path.suffix.casefold() in (".mn2", ".msn"):
                     data = data.replace(b"\x1a", b"")
                 (stage / name).write_bytes(data)
+                # Desktop/headless loaders open loose resources at the search root
+                if path.suffix.casefold() in COMPANIONS:
+                    (stage.parent / name).write_bytes(data)
             destination.mkdir()
             created = True
-            stage.rename(destination / "missions")
+            for path in stage.parent.iterdir():
+                path.rename(destination / path.name)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         if created:
             shutil.rmtree(destination)

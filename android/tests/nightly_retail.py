@@ -48,6 +48,11 @@ def lane_requires_retail(plan, lane):
 # Only source-defined messages may cross the retail boundary. Never publish a
 # substring of arbitrary exception text or a raw command/output stream.
 PUBLIC_REASONS = frozenset((
+    'Unsafe alternate corpus HAM dependency',
+    'Descriptor-associated corpus HOG or complete loose levels unavailable',
+    'Ambiguous alternate corpus HAM dependency',
+    'Alternate corpus HAM dependency requires reviewed staging',
+    'Corpus HOG override is unsupported by the route engine',
     '7-Zip prerequisite unavailable',
     'Ambiguous corpus descriptor HOG override',
     'Ambiguous corpus variants have distinct payloads',

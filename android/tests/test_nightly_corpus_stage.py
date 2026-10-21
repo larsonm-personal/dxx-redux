@@ -67,19 +67,66 @@ class CorpusStageTests(unittest.TestCase):
                 stage.stage_route(archive, {"mission_filename": "m.mn2"}, self.root / "stage")
             self.assertFalse((self.root / "stage").exists())
 
-    def test_identical_variants_can_deduplicate_and_hog_override_is_associated(self):
+    def test_identical_variants_deduplicate_with_engine_basename_binding(self):
         rows = [
             (folder + "/" + name, value)
             for folder in ("a", "b")
             for name, value in (
-                ("m.mn2", b"name=fixture\nhog = PAYLOAD.HOG\n"),
-                ("payload.hog", b"correct"),
-                ("m.hog", b"wrong"),
+                ("m.mn2", b"name=fixture\nhog = M.HOG\n"),
+                ("payload.hog", b"wrong"),
+                ("m.hog", b"correct"),
             )
         ]
         result = stage.stage_route(self.archive(rows), {"mission_filename": "m.mn2"}, self.root / "stage")
-        self.assertEqual((result / "missions/payload.hog").read_bytes(), b"correct")
-        self.assertFalse((result / "missions/m.hog").exists())
+        self.assertEqual((result / "missions/m.hog").read_bytes(), b"correct")
+        self.assertFalse((result / "missions/payload.hog").exists())
+
+    def test_differing_hog_directive_fails_closed_instead_of_unmounted_payload(self):
+        archive = self.archive(
+            [("m.mn2", b"name=x\nhog=payload.hog"), ("payload.hog", b"wrong-binding"), ("m.hog", b"engine-binding")]
+        )
+        with self.assertRaisesRegex(stage.StageUnavailable, "unsupported by the route engine"):
+            stage.stage_route(archive, {"mission_filename": "m.mn2"}, self.root / "stage")
+        self.assertFalse((self.root / "stage").exists())
+
+    def test_loose_levels_are_bound_and_visible_at_native_search_root(self):
+        archive = self.archive(
+            [
+                ("nested/M.MSN", b"num_levels=1\nONE.RDL\n"),
+                ("nested/One.RDL", b"selected"),
+                ("nested/Other.RDL", b"unrelated"),
+            ]
+        )
+        result = stage.stage_route(
+            archive, {"mission_filename": "m.msn", "mission_path": "nested/m.msn"}, self.root / "stage"
+        )
+        self.assertEqual((result / "one.rdl").read_bytes(), b"selected")
+        self.assertEqual((result / "missions/one.rdl").read_bytes(), b"selected")
+        self.assertFalse((result / "other.rdl").exists())
+        self.assertFalse((result / "missions/other.rdl").exists())
+
+    def test_explicit_alternate_ham_retains_its_associated_hog(self):
+        archive = self.archive(
+            [
+                ("m.mn2", b"!name=fixture\n!ham=ROBOTS.HAM\n"),
+                ("m.hog", b"levels"),
+                ("robots.hog", b"robot-data"),
+                ("unrelated.hog", b"unrelated"),
+            ]
+        )
+        result = stage.stage_route(archive, {"mission_filename": "m.mn2"}, self.root / "stage")
+        self.assertEqual((result / "missions/robots.hog").read_bytes(), b"robot-data")
+        self.assertEqual((result / "missions/m.hog").read_bytes(), b"levels")
+        self.assertFalse((result / "missions/unrelated.hog").exists())
+
+    def test_missing_or_escaping_alternate_ham_is_explicitly_blocked(self):
+        for directive in (b"!ham=missing.ham", b"!ham=../escape.ham"):
+            with self.assertRaises(stage.StageUnavailable):
+                stage.stage_route(
+                    self.archive([("m.mn2", directive), ("m.hog", b"levels")]),
+                    {"mission_filename": "m.mn2"},
+                    self.root / "stage",
+                )
 
     def test_hog_member_bytes_and_names_are_never_rewritten(self):
         import struct
