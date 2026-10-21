@@ -7137,6 +7137,10 @@ GetPlayersAgain:
 		  timer_update();
             j=newmenu_do1( NULL, title, opts, m, net_udp_start_poll, NULL, 1 );
 
+            /* Negative returns abort, even if they match a disabled option */
+            if (j < 0)
+              break;
+
             if(j==opt_msg)
              {
               multi_send_message_dialog();

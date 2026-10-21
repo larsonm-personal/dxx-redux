@@ -326,6 +326,14 @@ if(NOT ANDROID)
             GAME_SOURCES ../../android/tests/test_autoselect.cpp ${D1X_SECRET_AREA_SOURCES}
             INCLUDE_GAME_DIR)
         if(UNIX AND NOT APPLE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+            if(UDP)
+                target_sources(test_upstream_compat PRIVATE
+                    ../../android/tests/test_net_udp_selection_menu.c)
+                target_link_options(test_upstream_compat PRIVATE
+                    "-Wl,--wrap=main" "-Wl,--wrap=newmenu_do1" "-Wl,--wrap=multi_send_message_dialog")
+                add_test(NAME test_net_udp_selection_menu
+                    COMMAND test_upstream_compat --udp-selection-menu)
+            endif()
             dxx_add_headless_target(
                 test_d1_level_load_failure
                 ../../android/tests/test_d1_level_load_failure.c
