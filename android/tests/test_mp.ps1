@@ -253,7 +253,8 @@ try {
     }
 
     # Set env vars for server, then launch with Start-Process for clean stderr capture
-    $env:SKIP_GPGS_VERIFY = "true"
+    $env:SKIP_GPGS_VERIFY = if ($PublicShareware) { "false" } else { "true" }
+    $env:INSTALLATION_AUTH_AUDIENCE = if ($Tls) { "https://10.0.2.2:9000" } else { "http://10.0.2.2:9000" }
     $env:RUST_LOG = "info"
     # The public campaign owns a synthetic database and loopback-only listeners
     if ($PublicShareware) {

@@ -204,3 +204,27 @@ Validation: 43 module, 82 integration, 13 NAT and two process tests passed;
 Clippy with warnings denied passed. All ten host JVM cases passed. The scoped
 formatter and catalog validator passed. Native APK/emulator and full recovery
 qualification remain separate open gates.
+
+## Production installation identity implementation
+
+The temporary GPGS-only restriction above is superseded by the explicit
+`p256_challenge` method. A fresh, single-use server nonce binds the connection
+attempt, public key, protocol version, callsign, platform, configured origin
+and proof-of-work solution. Timestamp-only keypair auth remains local-test-only.
+The Android producer uses P-256 ECDSA already supported by the existing Android
+identity code, keeps per-origin keys in private non-backed-up storage, and bounds
+and cancels proof-of-work. Missing audience configuration fails closed.
+
+The actual MatchmakingService and signing/serialization code authenticated twice
+against the real Rust process with development authentication disabled and a
+fixed test key. Identity persisted across disconnect; sockets, rooms and leases
+returned to zero. Rust negatives cover changed key/context/signature/audience,
+new-connection replay, same-connection replay, overlapping attempts, and the
+absolute twenty-second challenge deadline. All 145 Rust tests and twelve host
+JVM tests passed. This remains distinct from provider GPGS and device qualification.
+
+The first native campaign, run 39567671249 at b607655aacc6130b24ae993d8164ac3dce05909c,
+completed successfully, including its APK/emulator setup and required selected-test
+reconciliation. Detailed artifact inspection is blocked in the local executor by
+blob-download access. That run used the preceding debug identity path; do not
+attribute it to the later installation identity or all-peer latejoin fixes.

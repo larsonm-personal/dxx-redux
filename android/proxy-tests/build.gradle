@@ -30,6 +30,9 @@ sourceSets.test.kotlin {
     include 'android/widget/Toast.kt'
     include 'com/dxxredux/app/BuildConfig.kt'
     include '**/MatchmakingServiceFlowTest.kt'
+    include '**/OnlineInstallationAuthTest.kt'
+    include 'com/dxxredux/app/multiplayer/OnlineInstallationAuth.kt'
+    include 'com/dxxredux/app/multiplayer/UdpReconnectStore.kt'
     include 'com/dxxredux/app/multiplayer/NetworkProtocol.kt'
     include 'com/dxxredux/app/multiplayer/MissionContentProtocol.kt'
     include 'com/dxxredux/app/MissionContentIdentity.kt'
@@ -81,6 +84,7 @@ tasks.withType(Test).configureEach {
     useJUnit()
     maxParallelForks = 1
     systemProperty 'dxx.compareProxyHistory', compareHistory
+    if (project.hasProperty('onlineServerBinary')) systemProperty 'dxx.onlineServerBinary', project.property('onlineServerBinary')
     timeout = java.time.Duration.ofMinutes(2)
     testLogging { events 'passed', 'failed'; showStandardStreams = true }
 }

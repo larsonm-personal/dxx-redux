@@ -57,6 +57,8 @@ pub struct ServerConfig {
     /// check results. Useful for testing where peers share a NAT gateway
     /// (e.g. two Android emulators on the same host).
     pub force_relay: bool,
+    /// Exact client-visible scheme://host:port for installation proof audience binding
+    pub installation_auth_audience: String,
     /// Exact proxy peers allowed to supply a single X-Real-IP header
     pub trusted_proxy_ips: Vec<std::net::IpAddr>,
 }
@@ -88,6 +90,7 @@ struct ConfigFile {
     max_connections: Option<usize>,
     admin_http_listen_addr: Option<String>,
     force_relay: Option<bool>,
+    installation_auth_audience: Option<String>,
     trusted_proxy_ips: Option<Vec<std::net::IpAddr>>,
 }
 
@@ -154,6 +157,11 @@ impl ServerConfig {
         };
 
         Self {
+            installation_auth_audience: resolve(
+                "INSTALLATION_AUTH_AUDIENCE",
+                &file_cfg.installation_auth_audience,
+                "",
+            ),
             trusted_proxy_ips: match std::env::var("TRUSTED_PROXY_IPS") {
                 Ok(value) => value
                     .split(',')

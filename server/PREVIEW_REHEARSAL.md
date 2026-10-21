@@ -44,8 +44,10 @@ It selects only `test_mp_public_shareware`, builds the matching locked server
 with the repository-pinned Rust version, and stages hash-verified public D1
 shareware onto two verified disposable emulators. The runner owns loopback WS,
 HTTP, STUN and authenticated relay listeners with a synthetic in-memory database.
-It uses explicit debug identities; this is not a production GPGS or direct-install
-identity qualification. Occupied test ports fail rather than killing unrelated
+It uses the production installation challenge/proof path with development
+authentication disabled. The preceding host test runs the actual Android service
+against the real local server with a deterministic test key. This is not a GPGS
+provider or public TLS deployment qualification. Occupied test ports fail rather than killing unrelated
 processes, and this public variant makes no firewall changes.
 
 Pass requires actual native D1 engine selection, live network gameplay with both
@@ -104,3 +106,26 @@ Do not serve protocol 2 clients from protocol 3 or roll back only one endpoint.
 Restore a database snapshot only if schema compatibility requires it, and retain
 the failed-state snapshot for diagnosis. No rollback, deployment, firewall change,
 secret creation or live probe is executed by this document or the local tests.
+
+## Installation identity contract
+
+The `p256_challenge` method uses a fresh connection-bound nonce and P-256 ECDSA
+with SHA-256. The domain-separated transcript includes protocol version, nonce,
+public key, callsign, platform, audience and proof-of-work solution. Challenges
+are single-use and expire with the absolute authentication deadline. Replacing an
+authentication attempt invalidates its outstanding challenge. Registration costs
+bounded client proof-of-work; known keys still require a fresh signature.
+
+Set `INSTALLATION_AUTH_AUDIENCE` to the exact client-visible `scheme://host:port`,
+including the port (for example the approved HTTPS hostname with `:443`). Empty
+configuration disables this method. The client derives the audience from its
+actual connection URL, never from the challenge; the server checks its configured
+audience. The debug loopback campaign explicitly uses `http://10.0.2.2:9000`.
+Production Android connections require WSS with normal certificate validation.
+
+Installation keys are scoped to that origin and retained in private, non-backed-up
+app storage. App-data deletion loses the identity; this is not a cross-device
+account or an account-recovery mechanism. Installation identities remain unverified
+and do not satisfy GPGS-only room policy. The old timestamp-only keypair method
+remains restricted to explicit loopback development mode. No live account or
+credential is created by the fixture tests.

@@ -25,6 +25,16 @@ data class AuthenticateMsg(
     val callsign: String,
     val platform: String = NetworkConstants.PLATFORM,
     @SerialName("auth_method") val authMethod: String = "gpgs",
+    @SerialName("public_key") val publicKey: String? = null,
+    @SerialName("auth_audience") val authAudience: String? = null,
+)
+
+@Serializable
+data class InstallationProofMsg(
+    val type: String = "INSTALLATION_PROOF",
+    val challenge: String,
+    val solution: String,
+    val signature: String,
 )
 
 @Serializable
@@ -448,6 +458,10 @@ sealed class ServerMessage {
         val data: AuthFail,
     ) : ServerMessage()
 
+    data class InstallationChallengeMsg(
+        val data: PowChallenge,
+    ) : ServerMessage()
+
     data class PowChallengeMsg(
         val data: PowChallenge,
     ) : ServerMessage()
@@ -564,6 +578,10 @@ sealed class ServerMessage {
 
                 "AUTH_FAIL" -> {
                     AuthFailMsg(protocolJson.decodeFromString<AuthFail>(text))
+                }
+
+                "INSTALLATION_CHALLENGE" -> {
+                    InstallationChallengeMsg(protocolJson.decodeFromString<PowChallenge>(text))
                 }
 
                 "POW_CHALLENGE" -> {

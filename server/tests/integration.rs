@@ -74,6 +74,7 @@ impl TestServer {
             admin_http_listen_addr: None,
             force_relay: false,
             trusted_proxy_ips: vec![],
+            installation_auth_audience: "https://fixture.invalid:443".into(),
         };
 
         configure(&mut config);
@@ -2858,6 +2859,7 @@ async fn auth_ok_includes_stun_addrs_when_configured() {
         admin_http_listen_addr: None,
         force_relay: false,
         trusted_proxy_ips: vec![],
+        installation_auth_audience: "https://fixture.invalid:443".into(),
     };
 
     let state = build_state(config).expect("build state");
@@ -4229,4 +4231,144 @@ async fn online_mixed_candidates_resolve_one_symmetric_pair_or_rollback() {
             }
         }
     }
+}
+
+fn installation_fixture_key() -> ring::signature::EcdsaKeyPair {
+    // Public test scalar one, never used for a deployed identity
+    let mut scalar = [0u8; 32];
+    scalar[31] = 1;
+    let point = hex::decode(concat!(
+        "04",
+        "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
+        "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+    ))
+    .unwrap();
+    ring::signature::EcdsaKeyPair::from_private_key_and_public_key(
+        &ring::signature::ECDSA_P256_SHA256_ASN1_SIGNING,
+        &scalar,
+        &point,
+        &ring::rand::SystemRandom::new(),
+    )
+    .unwrap()
+}
+fn installation_request(key: &ring::signature::EcdsaKeyPair, callsign: &str) -> Value {
+    use ring::signature::KeyPair;
+    json!({"type":"AUTHENTICATE","protocol_version":CURRENT_PROTOCOL,"client_version":"fixture","callsign":callsign,"platform":"test","auth_method":"p256_challenge","public_key":hex::encode(key.public_key().as_ref()),"auth_audience":"https://fixture.invalid:443"})
+}
+fn installation_proof(
+    key: &ring::signature::EcdsaKeyPair,
+    challenge: &Value,
+    callsign: &str,
+) -> Value {
+    use ring::signature::KeyPair;
+    let nonce = challenge["challenge"].as_str().unwrap();
+    let difficulty = challenge["difficulty"].as_u64().unwrap() as u8;
+    let solution = (0..1_000_000u64)
+        .map(|i| i.to_string())
+        .find(|s| dxx_matchmaking::pow::verify_pow(nonce, s, difficulty))
+        .unwrap();
+    let transcript = dxx_matchmaking::pow::installation_transcript(
+        nonce,
+        &hex::encode(key.public_key().as_ref()),
+        callsign,
+        "test",
+        "https://fixture.invalid:443",
+        &solution,
+    );
+    let signature = key
+        .sign(&ring::rand::SystemRandom::new(), transcript.as_bytes())
+        .unwrap();
+    json!({"type":"INSTALLATION_PROOF","challenge":nonce,"solution":solution,"signature":hex::encode(signature.as_ref())})
+}
+#[tokio::test]
+async fn online_production_installation_identity_is_nonce_and_audience_bound() {
+    let server = TestServer::with_config(|c| c.skip_gpgs_verify = false).await;
+    let key = installation_fixture_key();
+    let mut first = connect_ws(&server).await;
+    let challenge = send_recv(&mut first, installation_request(&key, "Owner")).await;
+    assert_eq!(challenge["type"], "INSTALLATION_CHALLENGE");
+    assert_eq!(challenge["difficulty"], 8);
+    let proof = installation_proof(&key, &challenge, "Owner");
+    let authenticated = send_recv(&mut first, proof.clone()).await;
+    assert_eq!(authenticated["type"], "AUTH_OK");
+    let identity = authenticated["player_id"].clone();
+    // A captured valid proof cannot authenticate another connection, even for the same identity
+    let mut replay = connect_ws(&server).await;
+    let next = send_recv(&mut replay, installation_request(&key, "Owner")).await;
+    assert_eq!(next["difficulty"], 0);
+    assert_ne!(next["challenge"], challenge["challenge"]);
+    assert_eq!(send_recv(&mut replay, proof).await["type"], "AUTH_FAIL");
+    assert_eq!(server.state.sessions.len(), 1);
+    // A fresh proof replaces the old connection and retains installation identity
+    let mut replacement = connect_ws(&server).await;
+    let fresh = send_recv(&mut replacement, installation_request(&key, "Owner")).await;
+    let response = send_recv(&mut replacement, installation_proof(&key, &fresh, "Owner")).await;
+    assert_eq!(response["player_id"], identity);
+    assert_eq!(server.state.sessions.len(), 1);
+    for bad in [
+        "audience",
+        "callsign",
+        "stale_attempt",
+        "platform",
+        "key",
+        "signature",
+    ] {
+        let mut socket = connect_ws(&server).await;
+        let mut request = installation_request(&key, "Other");
+        if bad == "platform" {
+            request["platform"] = "other-context".into();
+        }
+        if bad == "key" {
+            request["public_key"] = format!("04{}", "00".repeat(64)).into();
+        }
+        if bad == "audience" {
+            request["auth_audience"] = "https://other.invalid:443".into();
+            assert_eq!(send_recv(&mut socket, request).await["type"], "AUTH_FAIL");
+        } else {
+            let nonce = send_recv(&mut socket, request.clone()).await;
+            if bad == "stale_attempt" {
+                send_recv(&mut socket, request).await;
+            }
+            let mut proof = installation_proof(
+                &key,
+                &nonce,
+                if bad == "callsign" { "Forged" } else { "Other" },
+            );
+            if bad == "signature" {
+                proof["signature"] = "00".repeat(70).into();
+            }
+            assert_eq!(send_recv(&mut socket, proof).await["type"], "AUTH_FAIL");
+        }
+        assert_eq!(server.state.sessions.len(), 1);
+    }
+}
+
+#[tokio::test]
+async fn online_installation_challenge_expires_and_proof_is_single_use() {
+    let server = TestServer::with_config(|c| c.skip_gpgs_verify = false).await;
+    let key = installation_fixture_key();
+    let mut socket = connect_ws(&server).await;
+    let challenge = send_recv(&mut socket, installation_request(&key, "Fixture")).await;
+    let proof = installation_proof(&key, &challenge, "Fixture");
+    assert_eq!(
+        send_recv(&mut socket, proof.clone()).await["type"],
+        "AUTH_OK"
+    );
+    for expected in ["SERVER_STATUS", "LOBBY_LIST", "FRIEND_LIST_RESP"] {
+        assert_eq!(recv(&mut socket).await["type"], expected);
+    }
+    assert_eq!(send_recv(&mut socket, proof).await["type"], "AUTH_FAIL");
+    let mut expired = connect_ws(&server).await;
+    let challenge = send_recv(&mut expired, installation_request(&key, "Fixture")).await;
+    assert_eq!(challenge["type"], "INSTALLATION_CHALLENGE");
+    let waiting = std::time::Instant::now();
+    let closed = tokio::time::timeout(std::time::Duration::from_secs(23), expired.next())
+        .await
+        .expect("absolute auth deadline must close socket");
+    assert!(waiting.elapsed() >= std::time::Duration::from_secs(19));
+    assert!(matches!(
+        closed,
+        None | Some(Err(_)) | Some(Ok(Message::Close(_)))
+    ));
+    assert!(server.state.sessions.is_empty());
 }

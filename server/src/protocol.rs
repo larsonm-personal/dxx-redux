@@ -39,6 +39,8 @@ pub enum ClientMessage {
         /// Ed25519 signature of "callsign:timestamp" (128 hex chars)
         #[serde(default)]
         auth_signature: Option<String>,
+        #[serde(default)]
+        auth_audience: Option<String>,
     },
 
     #[serde(rename = "CREATE_LOBBY")]
@@ -175,6 +177,13 @@ pub enum ClientMessage {
 
     #[serde(rename = "POW_SOLUTION")]
     PowSolution { challenge: String, solution: String },
+
+    #[serde(rename = "INSTALLATION_PROOF")]
+    InstallationProof {
+        challenge: String,
+        solution: String,
+        signature: String,
+    },
 }
 
 fn default_auth_method() -> String {
@@ -204,6 +213,9 @@ pub enum ServerMessage {
 
     #[serde(rename = "POW_CHALLENGE")]
     PowChallenge { challenge: String, difficulty: u8 },
+
+    #[serde(rename = "INSTALLATION_CHALLENGE")]
+    InstallationChallenge { challenge: String, difficulty: u8 },
 
     #[serde(rename = "VERSION_REJECTED")]
     VersionRejected {

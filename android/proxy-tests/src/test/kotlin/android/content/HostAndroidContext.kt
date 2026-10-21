@@ -4,6 +4,7 @@ package android.content
 
 // Host boundary only; service control-flow tests do not exercise Android storage
 open class Context {
+    open val noBackupFilesDir: java.io.File get() = error("Android private storage outside host test scope")
     val applicationContext: Context get() = this
 
     fun getSharedPreferences(

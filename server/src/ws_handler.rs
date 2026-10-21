@@ -516,6 +516,15 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
         pubkey_hash: String,
     }
     let mut pending_pow: Option<PendingPow> = None;
+    struct PendingInstallation {
+        challenge: String,
+        public_key: String,
+        callsign: String,
+        platform: String,
+        audience: String,
+        difficulty: u8,
+    }
+    let mut pending_installation: Option<PendingInstallation> = None;
 
     let auth_deadline = tokio::time::Instant::now() + Duration::from_secs(20);
     // Authentication has an absolute deadline, including peers sending pings
@@ -574,6 +583,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 public_key,
                 auth_timestamp,
                 auth_signature,
+                auth_audience,
             } => {
                 if player_id.is_some() {
                     let _ = tx.send(ServerMessage::AuthFail {
@@ -583,6 +593,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 }
                 // A new attempt retires any challenge from an earlier identity
                 pending_pow = None;
+                pending_installation = None;
                 // Version check first
                 if !(MIN_CLIENT_PROTOCOL..=CURRENT_PROTOCOL).contains(&protocol_version) {
                     warn!(%addr, %client_version, %protocol_version, required = MIN_CLIENT_PROTOCOL, "client version rejected");
@@ -611,11 +622,68 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     break;
                 }
 
-                if !matches!(auth_method.as_str(), "keypair" | "gpgs" | "dev") {
+                if !matches!(
+                    auth_method.as_str(),
+                    "keypair" | "gpgs" | "dev" | "p256_challenge"
+                ) {
                     let _ = tx.send(ServerMessage::AuthFail {
                         reason: "Unsupported authentication method".into(),
                     });
                     break;
+                }
+                if auth_method == "p256_challenge" {
+                    let audience = auth_audience.unwrap_or_default();
+                    if audience.is_empty() || audience != state.config.installation_auth_audience {
+                        let _ = tx.send(ServerMessage::AuthFail {
+                            reason: "Installation authentication audience unavailable".into(),
+                        });
+                        break;
+                    }
+                    let Some(pk) = public_key else {
+                        let _ = tx.send(ServerMessage::AuthFail {
+                            reason: "Installation public key required".into(),
+                        });
+                        break;
+                    };
+                    if pk.len() != 130
+                        || !pk
+                            .bytes()
+                            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                        || !pk.starts_with("04")
+                        || platform.is_empty()
+                        || platform.len() > 32
+                        || !platform.bytes().all(|b| (0x20..=0x7e).contains(&b))
+                    {
+                        let _ = tx.send(ServerMessage::AuthFail {
+                            reason: "Invalid installation identity".into(),
+                        });
+                        break;
+                    }
+                    let hash = format!("p256:{}", pow::hash_pubkey(&pk));
+                    let difficulty = match state.db.find_player_by_keypair(&hash) {
+                        Ok(Some(_)) => 0,
+                        Ok(None) => state.config.pow_difficulty,
+                        Err(_) => {
+                            let _ = tx.send(ServerMessage::AuthFail {
+                                reason: "Identity storage unavailable".into(),
+                            });
+                            break;
+                        }
+                    };
+                    let challenge = pow::generate_challenge();
+                    let _ = tx.send(ServerMessage::InstallationChallenge {
+                        challenge: challenge.clone(),
+                        difficulty,
+                    });
+                    pending_installation = Some(PendingInstallation {
+                        challenge,
+                        public_key: pk,
+                        callsign,
+                        platform,
+                        audience,
+                        difficulty,
+                    });
+                    continue;
                 }
                 // The current keypair producer is local-test-only until challenge-bound
                 // authentication and the matching release client are qualified
@@ -805,6 +873,89 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     );
                     player_id = Some(pid);
                 }
+            }
+
+            ClientMessage::InstallationProof {
+                challenge,
+                solution,
+                signature,
+            } => {
+                if player_id.is_some() {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Already authenticated".into(),
+                    });
+                    break;
+                }
+                // Consume before verification: every connection challenge permits one proof
+                let Some(pending) = pending_installation.take() else {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "No installation challenge pending".into(),
+                    });
+                    break;
+                };
+                let transcript = pow::installation_transcript(
+                    &pending.challenge,
+                    &pending.public_key,
+                    &pending.callsign,
+                    &pending.platform,
+                    &pending.audience,
+                    &solution,
+                );
+                if tokio::time::Instant::now() >= auth_deadline
+                    || challenge != pending.challenge
+                    || solution.is_empty()
+                    || solution.len() > 20
+                    || !solution.bytes().all(|b| b.is_ascii_digit())
+                    || signature.len() > 144
+                    || !pow::verify_pow(&challenge, &solution, pending.difficulty)
+                    || !pow::verify_installation_signature(
+                        &pending.public_key,
+                        transcript.as_bytes(),
+                        &signature,
+                    )
+                {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Invalid installation proof".into(),
+                    });
+                    break;
+                }
+                let hash = format!("p256:{}", pow::hash_pubkey(&pending.public_key));
+                let result = {
+                    // Serialize first registration, then release before complete_auth takes ownership
+                    let _control = state.control.lock().unwrap();
+                    state
+                        .db
+                        .find_player_by_keypair(&hash)
+                        .and_then(|existing| match existing {
+                            Some(id) => Ok(id),
+                            None => state.db.register_keypair_player(&hash, &pending.callsign),
+                        })
+                };
+                let Ok(pid) = result else {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Identity storage unavailable".into(),
+                    });
+                    break;
+                };
+                if state.db.is_banned(&pid).unwrap_or(true) {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Identity unavailable".into(),
+                    });
+                    break;
+                }
+                complete_auth(
+                    &state,
+                    &tx,
+                    pid,
+                    &pending.callsign,
+                    &pending.platform,
+                    false,
+                    "p256_challenge",
+                    session_id,
+                    addr,
+                );
+                pending_pow = None;
+                player_id = Some(pid);
             }
 
             ClientMessage::PowSolution {
@@ -2964,7 +3115,9 @@ fn handle_authenticated_message(
         }
 
         // Already handled before authentication
-        ClientMessage::Authenticate { .. } | ClientMessage::PowSolution { .. } => {}
+        ClientMessage::Authenticate { .. }
+        | ClientMessage::PowSolution { .. }
+        | ClientMessage::InstallationProof { .. } => {}
     }
 }
 

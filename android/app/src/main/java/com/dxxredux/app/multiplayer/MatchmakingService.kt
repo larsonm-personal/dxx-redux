@@ -300,7 +300,8 @@ object MatchmakingService {
 
     // Unique per app process -- ensures two emulators/devices get different player IDs
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
-    private val devToken: String = "dev-${UUID.randomUUID()}"
+    private var installationAuth: OnlineInstallationAuth? = null
+    private var installationAuthJob: Job? = null
 
     // Weak reference to current activity for GPGS auth code requests.
     // Set by SetupActivity.onCreate(), cleared automatically by GC.
@@ -435,12 +436,12 @@ object MatchmakingService {
                         send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
                     } else {
                         Log.i(TAG, "GPGS auth code unavailable")
-                        sendDevAuthenticate(callsign)
+                        sendInstallationAuthenticate(callsign)
                     }
                 }
             }
         } else {
-            withConnection(connection) { sendDevAuthenticate(callsign) }
+            withConnection(connection) { sendInstallationAuthenticate(callsign) }
         }
     }
 
@@ -464,21 +465,31 @@ object MatchmakingService {
         }
     }
 
-    private fun sendDevAuthenticate(callsign: String) {
-        val host = webSocket?.request()?.url?.host
-        if (!BuildConfig.DEBUG || host == null || !isPrivateAddress(host)) {
-            authenticationUnavailable(
-                "Online authentication is unavailable. A configured Play Games account is required for this preview.",
-            )
+    private fun sendInstallationAuthenticate(callsign: String) {
+        val connection = webSocket ?: return
+        val context = activityRef?.get()?.applicationContext
+        if (context == null) {
+            authenticationUnavailable("Installation identity storage is unavailable")
             return
         }
-        val msg =
-            AuthenticateMsg(
-                callsign = callsign,
-                playGamesToken = devToken,
-                authMethod = "dev",
-            )
-        send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
+        val url = connection.request().url
+        val host = if (url.host.contains(':')) "[${url.host}]" else url.host
+        val audience = "${url.scheme}://$host:${url.port}"
+        installationAuthJob?.cancel()
+        installationAuthJob =
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val producer = OnlineInstallationAuth.fromStorage(context.noBackupFilesDir, callsign, audience)
+                    withConnection(connection) {
+                        installationAuth = producer
+                        send(protocolJson.encodeToString(AuthenticateMsg.serializer(), producer.request()))
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    withConnection(connection) { authenticationUnavailable("Could not open installation identity") }
+                }
+            }
     }
 
     fun requestLobbyList() {
@@ -788,6 +799,9 @@ object MatchmakingService {
     @Synchronized
     private fun retireNetworkWork() {
         networkGeneration++
+        installationAuthJob?.cancel()
+        installationAuthJob = null
+        installationAuth = null
         gameHandoffJob?.cancel()
         gameHandoffJob = null
         stunJob?.cancel()
@@ -1312,6 +1326,32 @@ object MatchmakingService {
 
                 is ServerMessage.AuthFailMsg -> {
                     authenticationUnavailable("Auth failed: ${msg.data.reason}")
+                }
+
+                is ServerMessage.InstallationChallengeMsg -> {
+                    val connection = webSocket ?: return
+                    val producer = installationAuth
+                    if (producer == null) {
+                        authenticationUnavailable("Unexpected installation challenge")
+                        return
+                    }
+                    installationAuth = null
+                    installationAuthJob?.cancel()
+                    installationAuthJob =
+                        scope.launch(Dispatchers.Default) {
+                            try {
+                                val proof = producer.proof(msg.data.challenge, msg.data.difficulty)
+                                withConnection(
+                                    connection,
+                                ) { send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof)) }
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (_: Exception) {
+                                withConnection(
+                                    connection,
+                                ) { authenticationUnavailable("Installation authentication could not complete") }
+                            }
+                        }
                 }
 
                 is ServerMessage.PowChallengeMsg -> {

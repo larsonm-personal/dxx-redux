@@ -325,6 +325,13 @@ jobs:
           if not match or tuple(map(int, match.groups())) < (36, 5):
               raise SystemExit('BLOCKED: dual LAN tests require emulator 36.5+ shared Wi-Fi; isolated NAT is unsupported')
           PYTHON
+      - name: Qualify production installation identity with real service
+        if: steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          bash target/android/gradlew -p target/android -PhostJvmOnly=true \
+            -PonlineServerBinary="$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking" \
+            :proxy-tests:test --no-daemon --max-workers=2
       - name: Build emulator APKs before boot
         if: inputs.lane != 'jvm'
         id: apk
