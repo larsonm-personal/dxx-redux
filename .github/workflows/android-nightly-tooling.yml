@@ -126,6 +126,12 @@ jobs:
           rustup toolchain install "$version" --profile minimal
           echo "RUSTUP_TOOLCHAIN=$version" >> "$GITHUB_ENV"
           cargo +"$version" build --locked --release --manifest-path target/server/Cargo.toml
+      - name: Rehearse owned TLS listener lifecycle
+        if: steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          python3 target/server/rehearse_preview.py \
+            --binary "$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking"
       - name: Prepare dependency locations
         shell: bash
         run: |

@@ -21,6 +21,23 @@ import java.net.InetSocketAddress
 import java.net.SocketTimeoutException
 
 class RelayTransportTest {
+    private fun nativeGameplayTypes(): List<Int> {
+        val names = listOf("UPID_PDATA", "UPID_MDATA_PNORM", "UPID_MDATA_PNEEDACK")
+        val headers =
+            listOf("d1", "d2").map { game ->
+                val text = java.io.File(System.getProperty("dxx.repoRoot"), "$game/main/net_udp.h").readText()
+                names.map { name ->
+                    Regex("(?m)^#define\\s+$name\\s+(\\d+)\\b").find(text)!!.groupValues[1].toInt()
+                }
+            }
+        assertEquals("D1/D2 producer IDs diverged", headers[0], headers[1])
+        assertEquals(
+            headers[0],
+            listOf(LocalhostProxy.UPID_PDATA, LocalhostProxy.UPID_MDATA_PNORM, LocalhostProxy.UPID_MDATA_PNEEDACK),
+        )
+        return headers[0]
+    }
+
     private fun freshKey() =
         ByteArray(32)
             .also { java.security.SecureRandom().nextBytes(it) }
@@ -126,7 +143,8 @@ class RelayTransportTest {
                                 Thread.sleep(5)
                             }
                             assertTrue(proxy.getStats().all { it.relayBound })
-                            val payload = ByteArray(RelayTransport.MAX_PAYLOAD) { 0x22 }
+                            val pdata = nativeGameplayTypes().first().toByte()
+                            val payload = ByteArray(RelayTransport.MAX_PAYLOAD) { pdata }
                             val valid = remote.encode(RelayTransport.DATA, payload)
                             send(stranger, address, valid)
                             noEngineDelivery(engine)
@@ -139,6 +157,20 @@ class RelayTransportTest {
                             assertArrayEquals(payload, incoming.data.copyOf(incoming.length))
                             send(server, address, valid)
                             noEngineDelivery(engine)
+                            assertEquals("Native PDATA was not counted", 1L, proxy.getStats().single().gameplayReceived)
+                            for (upid in nativeGameplayTypes().drop(1) + listOf(0x22, 0x25, 0x26, 19)) {
+                                val probe = byteArrayOf(upid.toByte(), 1, 2)
+                                send(server, address, remote.encode(RelayTransport.DATA, probe))
+                                assertArrayEquals(probe, receive(engine).let { it.data.copyOf(it.length) })
+                            }
+                            val counted = System.nanoTime() + 2_000_000_000L
+                            while (proxy.getStats().single().packetsReceived < 7 &&
+                                System.nanoTime() < counted
+                            ) {
+                                Thread.sleep(5)
+                            }
+                            assertEquals(7L, proxy.getStats().single().packetsReceived)
+                            assertEquals(3L, proxy.getStats().single().gameplayReceived)
                             send(engine, InetSocketAddress(loopback, port), payload)
                             var decoded: RelayTransport.Packet?
                             do {
@@ -356,7 +388,7 @@ class RelayTransportTest {
                     engine.soTimeout = 2000
 
                     fun roundTrip(slot: Int) {
-                        val payload = byteArrayOf(0x22, slot.toByte(), 0x33)
+                        val payload = byteArrayOf(nativeGameplayTypes().first().toByte(), slot.toByte(), 0x33)
                         send(engine, InetSocketAddress(loopback, ports.getValue(slot)), payload)
                         val received = receive(engine)
                         assertArrayEquals(payload, received.data.copyOf(received.length))

@@ -61,6 +61,10 @@ class LocalhostProxy(
     private val onFailure: (String) -> Unit = {},
 ) {
     companion object {
+        // Mirror D1/D2 main/net_udp.h; the host producer-conformance test reads both headers
+        internal const val UPID_PDATA = 16
+        internal const val UPID_MDATA_PNORM = 17
+        internal const val UPID_MDATA_PNEEDACK = 18
         private val activeWorkers =
             java.util.concurrent.atomic
                 .AtomicInteger()
@@ -588,9 +592,9 @@ private class PeerProxy(
             bytesReceived += payloadLen
             if (payloadLen > 0) {
                 val upid = payload[0].toInt() and 0xFF
-                if (upid == 0x22) {
+                if (upid == LocalhostProxy.UPID_PDATA) {
                     pdataForwarded++
-                } else if (upid == 0x25 || upid == 0x26) {
+                } else if (upid == LocalhostProxy.UPID_MDATA_PNORM || upid == LocalhostProxy.UPID_MDATA_PNEEDACK) {
                     mdataForwarded++
                 }
             }
