@@ -78,6 +78,21 @@ class CorpusComparisons(unittest.TestCase):
         warnings = metadata_differences({"data_warnings": ["PRIVATE"]}, {"data_warnings": ["SECRET"]})
         self.assertEqual(warnings, [{"path": ["data_warnings", 0], "kind": "value"}])
 
+    def test_route_early_failure_categories_are_bounded_and_private(self):
+        from nightly_regression_corpus import route_runner_failure
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "stderr.log"
+            for text, category in (
+                ("\x1b[31mD1-in-D2 data directory is missing\x1b[0m PRIVATE_PATH", "route-base-data"),
+                ("Game data file matching pinned hash not found: PRIVATE", "route-base-data"),
+                ("Assertion PRIVATE failed", "assertion"),
+                ("SECRET_UNKNOWN_ERROR", "unclassified-owner-failure"),
+                ("D2 HOG directory not found" + "X" * 20000, "unclassified-owner-failure"),
+            ):
+                path.write_text(text)
+                self.assertEqual(route_runner_failure(path, 1), {"exit_code": 1, "categories": [category]})
+
     def test_inner_worker_failure_diagnostics_are_typed_and_private(self):
         from nightly_regression_corpus import metadata_worker_diagnostics, metadata_owner_failure
         import nightly_retail

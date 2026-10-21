@@ -94,7 +94,22 @@ def metadata_differences(expected, actual, path=()):
 WORKER_CATEGORIES = frozenset(('assertion', 'address-sanitizer', 'undefined-behavior',
     'segmentation-fault', 'cpp-exception', 'worker-timeout', 'unexpected-eof',
     'worker-shutdown', 'archive-extraction', 'descriptor-invalid', 'variant-selection',
-    'projection-worker', 'unclassified-owner-failure'))
+    'projection-worker', 'route-base-data', 'unclassified-owner-failure'))
+
+
+def route_runner_failure(stderr_path, code):
+    # Retain only fixed categories from bounded local stderr, never private text
+    with Path(stderr_path).open("rb") as stream:
+        stream.seek(max(0, Path(stderr_path).stat().st_size - 16384))
+        text = stream.read(16384).decode("utf-8", errors="replace")
+    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
+    categories = worker_failure_categories(text)
+    if re.search(
+        r"D1-in-D2 data directory is missing|Game data file matching pinned hash not found|D2 HOG directory not found",
+        text,
+    ):
+        categories.append("route-base-data")
+    return {"exit_code": code, "categories": categories or ["unclassified-owner-failure"]}
 
 
 def worker_failure_categories(text):

@@ -74,6 +74,27 @@ try {
         throw 'Staging replaced an existing directory'
     }
 
+    # The corpus adapter passes only HogDir, leaving D1-in-D2 automatic staging
+    $splitRoot = Join-Path $tempRoot 'split-retail'
+    $splitDependencies = @(Get-StandardGameDataDeps)
+    foreach ($dependency in $splitDependencies) {
+        $game = if ($dependency.file -in @('descent.hog', 'descent.pig')) { 'd1' } else { 'd2' }
+        $directory = Join-Path $splitRoot "game_data/retail-ci/$game"
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+        $file = Join-Path $directory $dependency.file
+        [IO.File]::WriteAllText($file, "synthetic $($dependency.file)")
+        $dependency.sha256 = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
+    }
+    $splitCandidates = @(Get-StandardGameDataCandidates -RepoRoot $splitRoot -Game d2) +
+    @(Get-StandardGameDataCandidates -RepoRoot $splitRoot -Game d1)
+    $combined = New-StandardGameDataStage -Destination (Join-Path $tempRoot 'd1-in-d2') -Candidates $splitCandidates -Dependencies $splitDependencies
+    if ($combined.Hashes.Count -ne 11) { throw 'Split retail inputs did not produce the complete D1-in-D2 stage' }
+    [IO.File]::WriteAllText((Join-Path $splitRoot 'game_data/retail-ci/d2/descent2.ham'), 'wrong edition')
+    $rejected = $false
+    try { New-StandardGameDataStage -Destination (Join-Path $tempRoot 'bad-d1-in-d2') -Candidates $splitCandidates -Dependencies $splitDependencies | Out-Null }
+    catch { $rejected = $_ -match 'matching pinned hash not found' }
+    if (-not $rejected) { throw 'Combined retail staging accepted a mismatched D2 dependency' }
+
     $failedStage = Join-Path $tempRoot 'failed stage'
     $originalResolver = ${function:Resolve-StandardGameDataDirectory}
     try {
