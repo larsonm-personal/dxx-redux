@@ -26,6 +26,8 @@ void SaveGame(void);
 int get_level_name(void);
 
 extern int load_level(const char *filename);
+/* Debug connectivity validation, with dialogs only for interactive rendering */
+int gamesave_check_segment_connections(void);
 extern int save_level(char *filename);
 
 extern char Gamesave_current_filename[PATH_MAX];

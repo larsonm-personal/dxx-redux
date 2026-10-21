@@ -6,6 +6,10 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
+    add_test(NAME test_headless_connectivity_warning COMMAND test_upstream_compat
+                                                             --headless-connectivity)
+    set_tests_properties(test_headless_connectivity_warning PROPERTIES TIMEOUT 30 SKIP_RETURN_CODE
+                                                                       77)
     add_test(
         NAME test_headless_audio_lifecycle
         COMMAND ${CMAKE_COMMAND} -DHEADLESS_TEST_EXECUTABLE=$<TARGET_FILE:test_upstream_compat> -P

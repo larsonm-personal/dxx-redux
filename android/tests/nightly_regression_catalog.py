@@ -40,6 +40,9 @@ def suites(repo=ROOT):
                        'estimated_seconds': 180, 'coverage_scope': 'Full archive metadata comparison'})
         document = json.loads((Path(repo) / 'game_data/mission_files' / relative).read_text(encoding='utf-8-sig'))
         missions = document if isinstance(document, list) else [document]
+        if any('/' in row.get('mission_path', '').replace('\\', '/') for row in missions):
+            common['unavailable_reason'] = 'Nested mission variant requires a variant-aware regression stage'
+            result[-1]['unavailable_reason'] = common['unavailable_reason']
         for mission in missions:
             if mission.get('game') not in ('d1', 'd2'):
                 continue
@@ -57,7 +60,8 @@ def suites(repo=ROOT):
 def policy_suites(repo=ROOT):
     return [{'id': row['id'], 'owner': 'host-adapter', 'lane': 'host',
              'args': {'suite': row['id']}, 'estimated_seconds': row['estimated_seconds'],
-             'fixture': 'retail-corpus', 'category': 'mission-' + row['profile']}
+             'fixture': 'retail-corpus', 'category': 'mission-' + row['profile'],
+             **({'unavailable_reason': row['unavailable_reason']} if row.get('unavailable_reason') else {})}
             for row in suites(repo)]
 
 

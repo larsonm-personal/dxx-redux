@@ -164,6 +164,9 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
         ((index, item) for ring in rings.values() for index, item in enumerate(ring)),
         key=lambda row: (row[0], state.get('retryable', {}).get(row[1][0], {}).get('attempts', 0), digest([sha, row[1][0]])))]
     for ident, entry in ordered:
+        if entry.get('unavailable_reason'):
+            unavailable.append({'id': ident, 'reason': entry['unavailable_reason'], 'blocker_kind': 'target-capability'})
+            continue
         if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos', 'retail-corpus') and not retail_assets:
             unavailable.append({'id': ident, 'reason': 'retail configuration unavailable for this run; pending'})
             continue
@@ -250,6 +253,8 @@ def validate_plan(plan, policy):
             raise ValueError('Private demo selection lacks reviewed commit')
         if entry.get('fixture') == 'retail-corpus' and not retail.corpus_available(plan.get('retail_assets')):
             raise ValueError('Mission corpus selection lacks reviewed commit')
+        if entry.get('unavailable_reason'):
+            raise ValueError('Selected owner requires an unavailable target capability')
         seen.add(ident)
     if plan.get('budget_scope') != 'per-lane' or not 1 <= plan.get('budget_seconds', 0) <= 2700:
         raise ValueError('Invalid per-lane budget')
@@ -354,11 +359,20 @@ def reconcile(plan, policy, state, receipts):
             compact['exclusions'] = [str(x)[:256] for x in row.get('exclusions', [])[:32]]
             if ident.startswith('corpus:'):
                 # Many exact route leaves share a run; retain proof without duplicating verbose diagnostics.
-                compact = {key: compact[key] for key in ('status', 'run_url', 'coverage_complete')}
+                compact = {key: compact[key] for key in ('status', 'run_url', 'coverage_complete', 'reason')}
                 if row.get('comparison_only'):
                     compact.update(comparison_only=True, runtime_outcome=row.get('runtime_outcome', ''))
                 if cases:
                     compact['case_counts'] = {status: sum(c.get('status') == status for c in cases) for status in ('PASS', 'FAIL') if any(c.get('status') == status for c in cases)}
+            if row['status'] in ('FAIL', 'TIMEOUT'):
+                details = retail.public_diagnostics(row)
+                workers = details.get('workers', []) + [details.get('owner_failure', {})]
+                categories = sorted({category for worker in workers for category in worker.get('categories', [])})
+                if categories:
+                    compact['failure_categories'] = categories
+                exits = [worker['exit_code'] for worker in workers if worker.get('exit_code') not in (None, 0)]
+                if exits:
+                    compact['worker_exit_codes'] = exits
             prior = result['records'].get(ident)
             if prior and prior != compact:
                 raise ValueError('Conflicting completed receipt')
@@ -395,7 +409,13 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         else:
             path = output / (entry['id'].replace(':', '_') + '.json')
             process = processes.get(entry['id'], {})
-            row = read(path) if process.get('completed') and path.exists() else {}
+            row = read(path) if process and path.exists() else {}
+            worker_id = row.get('worker_diagnostics_id')
+            if isinstance(worker_id, str) and re.fullmatch('[0-9a-f]{32}', worker_id):
+                from nightly_regression_corpus import metadata_worker_diagnostics
+                row['workers'] = metadata_worker_diagnostics(path.with_suffix('.artifacts') / ('metadata-workers-' + worker_id))
+            if row and not process.get('completed'):
+                row.update(status='NOT_RUN', coverage_complete=False)
             exit_code = process.get('exit_code')
             status = row.get('status', 'NOT_RUN')
             if row and (row.get('schema') != 1 or row.get('suite') != entry['args']['suite']):
@@ -414,7 +434,7 @@ def collect(plan, policy, lane, output, blocked_reason=""):
             row = {'reason': blocked_reason}
         if status not in TERMINAL | {'RUNNING', 'NOT_RUN', 'BLOCKED'}:
             raise ValueError('Invalid collected status')
-        receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'comparison_only': row.get('comparison_only', False), 'runtime_outcome': row.get('runtime_outcome', ''), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', status == 'BLOCKED'), 'blocker_kind': row.get('blocker_kind', 'infrastructure' if status == 'BLOCKED' else '')})
+        receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'exit_code': row.get('exit_code', exit_code), **retail.public_diagnostics(row), 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'comparison_only': row.get('comparison_only', False), 'runtime_outcome': row.get('runtime_outcome', ''), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', status == 'BLOCKED'), 'blocker_kind': row.get('blocker_kind', 'infrastructure' if status == 'BLOCKED' else '')})
     if retail.lane_requires_retail(plan, lane):
         receipt = retail.public_receipt(receipt)
     write(output / 'results.json', receipt)
@@ -726,6 +746,8 @@ def main():
         state = reconcile(plan, policy, read(args.state), [read(p) for p in args.receipts])
         write(args.output, state)
         summary = {'target_sha': state['target_sha'], 'terminal_owner_attempts': sum(r['status'] in COVERED for r in state['records'].values()), 'fully_covered_owners': sum(r.get('coverage_complete') is True for r in state['records'].values()), 'passed_leaf_cases': sum(r.get('case_counts', {}).get('PASS', 0) for r in state['records'].values()), 'incomplete_owners': [k for k, r in state['records'].items() if r.get('coverage_complete') is not True], 'failures': [k for k, r in state['records'].items() if r['status'] in ('FAIL', 'TIMEOUT')], 'retryable_infrastructure': state.get('retryable', {}), 'excluded': plan['exclusions'], 'target_capability_exclusions': state.get('excluded', {}), 'unavailable_pending': plan.get('unavailable', [])}
+        summary['failure_details'] = {key: {field: row[field] for field in ('status', 'reason', 'failure_categories', 'worker_exit_codes') if field in row}
+                                      for key, row in state['records'].items() if row['status'] in ('FAIL', 'TIMEOUT')}
         pending = set(policy_entries(policy)) - set(state['records']) - set(state.get('excluded', {})) - {e['id'] for e in plan['exclusions']}
         summary['matching_unconfirmed_routes'] = {key: row['runtime_outcome'] for key, row in state['records'].items() if row.get('comparison_only')}
         summary['pending_owners'] = len(pending)
