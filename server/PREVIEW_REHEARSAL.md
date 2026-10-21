@@ -31,6 +31,30 @@ required task exit shuts down the process with status 1. Readiness includes the
 protocol version and aggregate socket, room and lease counts, never keys or
 addresses. Verify those counts return to baseline after each lifecycle scenario.
 
+## Owned TLS and artifact rehearsal
+
+With Python 3.11+ and OpenSSL available, use supplied locally built artifacts:
+
+```sh
+python3 server/rehearse_preview.py --binary /absolute/path/candidate
+python3 server/rehearse_preview.py --binary /absolute/path/candidate --previous-binary /absolute/path/previous
+```
+
+The runner binds only loopback listeners, clears inherited server configuration,
+uses a disposable synthetic database and generates a one-day localhost test
+certificate in a private temporary directory. Normal trust must reject that
+certificate; explicit test trust must complete a real WSS upgrade. Readiness and
+all aggregate resources must return to baseline before each owned process stops.
+All children are reaped and temporary state removed on failure as well as success.
+
+Without a distinct previous binary this reports restart only. With one, it tests
+previous/candidate/previous against the same synthetic database and requires the
+same protocol version. Receipts contain artifact hashes and phase outcomes. This
+has been exercised with distinct e079f44 and 7e0bd045 debug server artifacts
+on Python 3.12.14/OpenSSL 3.5.7, with every phase passing. It
+qualifies local TLS/process rollback only: no proxy topology, real database
+migration, matched Android rollback or gameplay claim follows from it.
+
 ## Branch Android gameplay campaign
 
 The existing extended-suite workflow accepts the bounded `online-preview`
