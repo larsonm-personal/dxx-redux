@@ -1466,6 +1466,8 @@ object MatchmakingService {
         try {
             when (val msg = MatchmakingDiagnostics.parse(text) ?: return) {
                 is ServerMessage.AuthOkMsg -> {
+                    // The timer may be delayed; acceptance must still obey the monotonic budget
+                    if (!installationTimeRemaining()) return
                     // An accepted socket is not a recovered authenticated session
                     reconnectAttempt = 0
                     clearInstallationBudget()

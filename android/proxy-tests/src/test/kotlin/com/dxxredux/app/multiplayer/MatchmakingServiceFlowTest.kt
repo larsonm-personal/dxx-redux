@@ -169,7 +169,7 @@ class MatchmakingServiceFlowTest {
                     """{"type":"INSTALLATION_CHALLENGE","challenge":"${("a" + attempt).repeat(32)}","difficulty":20}""",
                 )
                 val deadline = System.nanoTime() + 3_000_000_000L
-                while (field("webSocket").get(service) != null) {
+                while (synchronized(service) { field("webSocket").get(service) != null }) {
                     check(System.nanoTime() < deadline) { "Expired producer did not retire socket" }
                     Thread.sleep(5)
                 }
@@ -238,6 +238,297 @@ class MatchmakingServiceFlowTest {
             scheduler.runCurrent()
             field("scope").set(service, originalScope)
         }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun authOkCannotClearExpiredBudgetBeforeDelayedTimerRuns() {
+        val service = MatchmakingService
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        val scheduler = kotlinx.coroutines.test.TestCoroutineScheduler()
+        val owner = kotlinx.coroutines.SupervisorJob()
+        val originalScope = field("scope").get(service)
+        val begin = service.javaClass.getDeclaredMethod("beginInstallationWork").apply { isAccessible = true }
+        val consume =
+            service.javaClass.getDeclaredMethod("handleMessage", String::class.java).apply {
+                isAccessible =
+                    true
+            }
+        val authOk = """{"type":"AUTH_OK","player_id":"fixture-player","session_token":"fixture-session"}"""
+        service.disconnect()
+        field("scope").set(
+            service,
+            kotlinx.coroutines.CoroutineScope(owner + kotlinx.coroutines.test.StandardTestDispatcher(scheduler)),
+        )
+        try {
+            assertEquals(true, begin.invoke(service))
+            // Leave the deadline coroutine queued while monotonic time reaches its boundary
+            field("installationDeadlineNanos").setLong(service, System.nanoTime())
+            consume.invoke(service, authOk)
+            assertEquals(ConnectionStatus.DISCONNECTED, MatchmakingStateHolder.state.value.status)
+            assertEquals(null, MatchmakingStateHolder.state.value.playerId)
+            assertEquals(null, MatchmakingStateHolder.state.value.sessionToken)
+            assertTrue(
+                MatchmakingStateHolder.state.value.errorMessage!!
+                    .contains("TOTAL_DEADLINE"),
+            )
+            assertEquals(null, field("installationDeadlineJob").get(service))
+            scheduler.runCurrent()
+            assertEquals(0, service.resourceDiagnostics()["background_jobs"])
+            scheduler.advanceTimeBy(45000)
+            scheduler.runCurrent()
+            assertEquals(ConnectionStatus.DISCONNECTED, MatchmakingStateHolder.state.value.status)
+
+            // A live budget still accepts the same response and cancels its pending timer
+            service.disconnect()
+            assertEquals(true, begin.invoke(service))
+            consume.invoke(service, authOk)
+            assertEquals(ConnectionStatus.CONNECTED, MatchmakingStateHolder.state.value.status)
+            assertEquals("fixture-player", MatchmakingStateHolder.state.value.playerId)
+            assertEquals("fixture-session", MatchmakingStateHolder.state.value.sessionToken)
+            assertEquals(0, field("installationAttempts").get(service))
+            assertEquals(null, field("installationDeadlineJob").get(service))
+            scheduler.advanceTimeBy(45000)
+            scheduler.runCurrent()
+            assertEquals(ConnectionStatus.CONNECTED, MatchmakingStateHolder.state.value.status)
+        } finally {
+            service.disconnect()
+            owner.cancel()
+            scheduler.runCurrent()
+            field("scope").set(service, originalScope)
+        }
+    }
+
+    @Test(timeout = 30000)
+    fun actualSocketsRecoverAfterFirstProofExhaustionWithFreshChallenge() {
+        val service = MatchmakingService
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        val directory =
+            java.nio.file.Files
+                .createTempDirectory("online-proof-retry")
+                .toFile()
+        val activity =
+            object : android.app.Activity() {
+                override val noBackupFilesDir = directory
+            }
+        val listener = java.net.ServerSocket(0, 2, java.net.InetAddress.getLoopbackAddress())
+        listener.soTimeout = 15000
+        val failure =
+            java.util.concurrent.atomic
+                .AtomicReference<Throwable?>()
+        val authenticated = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        val requests = mutableListOf<org.json.JSONObject>()
+        val connections = mutableListOf<Any>()
+        val challenges = listOf("8c5bab31288aa9d968e3a9103eaccddee759a109b77346b33cbd65b03d3c90a2", "ab".repeat(32))
+        val server =
+            Thread {
+                try {
+                    repeat(2) { attempt ->
+                        listener.accept().use { socket ->
+                            socket.soTimeout = 15000
+                            val input = java.io.DataInputStream(socket.getInputStream())
+                            val output = java.io.DataOutputStream(socket.getOutputStream())
+                            val header = StringBuilder()
+                            while (!header.endsWith("\r\n\r\n")) {
+                                header.append(input.readUnsignedByte().toChar())
+                                check(header.length < 16384)
+                            }
+                            val key =
+                                header
+                                    .lines()
+                                    .first {
+                                        it.startsWith(
+                                            "Sec-WebSocket-Key:",
+                                            true,
+                                        )
+                                    }.substringAfter(':')
+                                    .trim()
+                            val accept =
+                                java.util.Base64.getEncoder().encodeToString(
+                                    java.security.MessageDigest.getInstance("SHA-1").digest(
+                                        (
+                                            key +
+                                                "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+                                        ).toByteArray(),
+                                    ),
+                                )
+                            output.write(
+                                (
+                                    "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\n" +
+                                        "Connection: Upgrade\r\nSec-WebSocket-Accept: $accept\r\n\r\n"
+                                ).toByteArray(),
+                            )
+                            output.flush()
+
+                            fun receive(): org.json.JSONObject {
+                                check(input.readUnsignedByte() and 15 == 1)
+                                val lengthByte = input.readUnsignedByte()
+                                check(lengthByte and 128 != 0)
+                                val length =
+                                    if (lengthByte and 127 ==
+                                        126
+                                    ) {
+                                        input.readUnsignedShort()
+                                    } else {
+                                        lengthByte and 127
+                                    }
+                                check(length in 1..16384)
+                                val mask = ByteArray(4).also(input::readFully)
+                                val payload = ByteArray(length).also(input::readFully)
+                                payload.indices.forEach {
+                                    payload[it] =
+                                        (payload[it].toInt() xor mask[it % 4].toInt()).toByte()
+                                }
+                                return org.json.JSONObject(payload.toString(Charsets.UTF_8))
+                            }
+
+                            fun send(text: String) {
+                                val bytes = text.toByteArray()
+                                output.writeByte(129)
+                                if (bytes.size < 126) {
+                                    output.writeByte(bytes.size)
+                                } else {
+                                    output.writeByte(126)
+                                    output.writeShort(bytes.size)
+                                }
+                                output.write(bytes)
+                                output.flush()
+                            }
+                            val request = receive()
+                            assertEquals("AUTHENTICATE", request.getString("type"))
+                            requests += request
+                            synchronized(service) {
+                                connections += checkNotNull(field("webSocket").get(service))
+                                if (attempt == 0) {
+                                    // Alter only this real producer's clock, after its persisted identity request
+                                    val producer = checkNotNull(field("installationAuth").get(service))
+                                    var reads = 0
+                                    producer.javaClass.getDeclaredField("nanoTime").apply { isAccessible = true }.set(
+                                        producer,
+                                        { if (++reads >= 3) 12_000_000_000L else 0L },
+                                    )
+                                }
+                            }
+                            send(
+                                """{"type":"INSTALLATION_CHALLENGE","challenge":"${challenges[attempt]}",""" +
+                                    """"difficulty":20}""",
+                            )
+                            if (attempt == 0) {
+                                // No manual socket substitution: the actual failure must cancel and reconnect
+                                assertEquals(
+                                    "Exhausted proof sent data instead of retiring its socket",
+                                    -1,
+                                    input.read(),
+                                )
+                                val work = service.resourceDiagnostics()["installation_work"] as Map<*, *>
+                                assertEquals(512L, work["hashes"])
+                                assertEquals(false, work["solved"])
+                                assertEquals(1, work["attempt"])
+                            } else {
+                                assertTrue(connections[0] !== connections[1])
+                                assertEquals(requests[0].getString("public_key"), request.getString("public_key"))
+                                assertEquals(requests[0].getString("auth_audience"), request.getString("auth_audience"))
+                                val proof = receive()
+                                assertEquals("INSTALLATION_PROOF", proof.getString("type"))
+                                assertEquals(challenges[1], proof.getString("challenge"))
+                                val solution = proof.getString("solution")
+                                val hash =
+                                    java.security.MessageDigest.getInstance("SHA-256").digest(
+                                        (
+                                            challenges[1] +
+                                                solution
+                                        ).toByteArray(),
+                                    )
+                                assertEquals(0, hash[0].toInt())
+                                assertEquals(0, hash[1].toInt())
+                                assertEquals(0, hash[2].toInt() and 240)
+
+                                fun hex(value: String) = value.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                                val publicBytes = hex(request.getString("public_key"))
+                                val params =
+                                    java.security.AlgorithmParameters
+                                        .getInstance("EC")
+                                        .apply {
+                                            init(java.security.spec.ECGenParameterSpec("secp256r1"))
+                                        }.getParameterSpec(java.security.spec.ECParameterSpec::class.java)
+                                val publicKey =
+                                    java.security.KeyFactory.getInstance("EC").generatePublic(
+                                        java.security.spec.ECPublicKeySpec(
+                                            java.security.spec.ECPoint(
+                                                java.math.BigInteger(1, publicBytes.copyOfRange(1, 33)),
+                                                java.math.BigInteger(1, publicBytes.copyOfRange(33, 65)),
+                                            ),
+                                            params,
+                                        ),
+                                    )
+                                val transcript =
+                                    listOf(
+                                        "dxx-online-p256-v1",
+                                        NetworkConstants.PROTOCOL_VERSION.toString(),
+                                        challenges[1],
+                                        request.getString("public_key"),
+                                        request.getString("callsign"),
+                                        request.getString("platform"),
+                                        request.getString("auth_audience"),
+                                        solution,
+                                    ).joinToString("\n")
+                                assertTrue(
+                                    java.security.Signature
+                                        .getInstance("SHA256withECDSA")
+                                        .apply {
+                                            initVerify(publicKey)
+                                            update(transcript.toByteArray())
+                                        }.verify(hex(proof.getString("signature"))),
+                                )
+                                val work = service.resourceDiagnostics()["installation_work"] as Map<*, *>
+                                assertEquals(2, work["attempt"])
+                                assertEquals(20, work["difficulty"])
+                                assertEquals(true, work["solved"])
+                                send(
+                                    """{"type":"AUTH_OK","player_id":"retry-fixture",""" +
+                                        """"session_token":"retry-session"}""",
+                                )
+                                authenticated.countDown()
+                                check(release.await(10, java.util.concurrent.TimeUnit.SECONDS))
+                            }
+                        }
+                    }
+                } catch (error: Throwable) {
+                    failure.set(error)
+                    authenticated.countDown()
+                }
+            }.apply { isDaemon = true }
+        service.disconnect()
+        try {
+            service.setActivity(activity)
+            server.start()
+            service.connect("ws://127.0.0.1:${listener.localPort}/ws", "RetryFixture")
+            assertTrue(
+                "Real reconnect did not authenticate",
+                authenticated.await(20, java.util.concurrent.TimeUnit.SECONDS),
+            )
+            failure.get()?.let { throw AssertionError("Owned proof fixture failed", it) }
+            val deadline = System.nanoTime() + 3_000_000_000L
+            while (MatchmakingStateHolder.state.value.status != ConnectionStatus.CONNECTED) {
+                check(System.nanoTime() < deadline)
+                Thread.sleep(5)
+            }
+            assertEquals("retry-fixture", MatchmakingStateHolder.state.value.playerId)
+            assertEquals("retry-session", MatchmakingStateHolder.state.value.sessionToken)
+            assertEquals(0, field("installationAttempts").get(service))
+            assertEquals(null, field("installationDeadlineJob").get(service))
+        } finally {
+            service.disconnect()
+            release.countDown()
+            listener.close()
+            server.join(2000)
+            directory.deleteRecursively()
+        }
+        failure.get()?.let { throw AssertionError("Owned proof fixture failed", it) }
+        assertEquals(0, service.resourceDiagnostics()["background_jobs"])
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

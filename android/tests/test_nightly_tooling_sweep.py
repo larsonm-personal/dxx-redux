@@ -79,6 +79,7 @@ class SweepTests(unittest.TestCase):
             "tests": [{"name": "test_mp_public_shareware"}, {"name": "test_mp_public_shareware_d2"}],
         }
         plan, _ = sweep.plan_batch(SHA, catalog, policy, budget=1800)
+        plan = sweep.select_public_campaign(plan, policy, catalog, "online-preview")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             sweep.write(
