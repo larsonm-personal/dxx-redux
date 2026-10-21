@@ -639,7 +639,8 @@ def run_suite(suite, repo, build_root, output, timeout):
         )
     try:
         if suite.get("kind") == "retail-corpus":
-            from nightly_regression_catalog import CORPUS_COMMIT
+            from nightly_regression_catalog import CORPUS_COMMIT, vertigo_campaign, unavailable_level
+            from nightly_corpus_stage import stage_route, StageUnavailable
             from nightly_regression_corpus import compare_metadata, compare_route, freeze_oracles, require_unchanged_oracles
             if os.environ.get("RETAIL_CHECKOUT_COMMIT") != CORPUS_COMMIT:
                 return finish("BLOCKED", "Reviewed corpus revision is not staged", retryable=True)
@@ -649,7 +650,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             result["assets"].update(baseline=baseline.is_file(), archive=archive is not None,
                                     route_oracle=baseline.with_suffix(".simulation.json").is_file())
             builtin = baseline.name in ("FirstStrike.json", "Counterstrike.json")
-            if not builtin and archive is None:
+            is_vertigo = suite["profile"] == "route" and suite["baseline"] == "CD - Descent II - The Vertigo Series (USA).json" and suite.get("target_index") == 0
+            if not builtin and archive is None and not is_vertigo:
                 return finish("BLOCKED", "Archive or CD-source fixture unavailable", retryable=False,
                               blocker_kind="target-capability")
             if suite["profile"] == "route":
@@ -657,7 +659,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                     return finish("BLOCKED", "Committed route oracle unavailable", retryable=False, blocker_kind="target-capability")
             metadata = json.loads(baseline.read_text(encoding="utf-8-sig"))
             missions = metadata if isinstance(metadata, list) else [metadata]
-            if any("/" in row.get("mission_path", "").replace("\\", "/") for row in missions):
+            if suite["profile"] == "metadata" and any("/" in row.get("mission_path", "").replace("\\", "/") for row in missions):
                 return finish("BLOCKED", "Nested mission variant requires a variant-aware regression stage", retryable=False,
                               blocker_kind="target-capability")
             oracle_paths = (baseline, baseline.with_suffix(".simulation.json"))
@@ -669,8 +671,34 @@ def run_suite(suite, repo, build_root, output, timeout):
                     return run(argv)
                 finally:
                     require_unchanged_oracles(oracle_bytes)
-            verify_retail_stage(repo)
+            verify_retail_stage(repo, include_missions=is_vertigo)
             result["assets"]["retail_stage_verified"] = True
+            prepared_stage = None
+            if suite["profile"] == "route" and not builtin:
+                selected = [m for m in missions if m.get("target_index", 0) == suite.get("target_index")]
+                if len(selected) != 1:
+                    return finish("BLOCKED", "Corpus selected mission identity is ambiguous", retryable=False, blocker_kind="target-capability")
+                mission = selected[0]
+                levels = [v for v in mission.get("levels", []) if v.get("level_num") == suite.get("level_num") and v.get("level_file") == suite.get("level_file")]
+                if len(levels) != 1 or unavailable_level(levels[0]):
+                    return finish("BLOCKED", "Committed level is explicitly missing or unsupported", retryable=False, blocker_kind="target-capability")
+                if is_vertigo and not vertigo_campaign(suite["baseline"], mission):
+                    return finish("BLOCKED", "Archive or CD-source fixture unavailable", retryable=False, blocker_kind="target-capability")
+                seven_zip = None
+                if archive and archive.suffix.casefold() in (".7z", ".rar"):
+                    extractor_path = work / "extractor-path.txt"
+                    bootstrap = work / "extractor.ps1"
+                    bootstrap.write_text("param($Helper, $Output)\n$ErrorActionPreference = 'Stop'\n$tool = & $Helper\n[IO.File]::WriteAllText($Output, [string]$tool)\n", encoding="utf-8")
+                    code = run(["pwsh", "-NoProfile", "-NonInteractive", "-File", str(bootstrap),
+                                str(repo / "android/get_deps/helpers/get_7zip.ps1"), str(extractor_path)], setup=True)
+                    if code or not extractor_path.is_file():
+                        return finish("BLOCKED", "7-Zip prerequisite unavailable", code, retryable=True, blocker_kind="corpus-worker-configure")
+                    seven_zip = extractor_path.read_text().strip()
+                try:
+                    prepared_stage = stage_route(archive, mission, work / "exact-mission", seven_zip=seven_zip,
+                        source_directory=repo / "game_data/retail-ci/missions" if is_vertigo else None)
+                except StageUnavailable as error:
+                    return finish("BLOCKED", str(error), retryable=False, blocker_kind="target-capability")
             cli = repo / "android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli"
             if not cli.is_file():
                 code = run(["bash", str(repo / "android/gradlew"), "-p", str(repo / "android"),
@@ -721,6 +749,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 code = run_corpus(["pwsh", "-NoProfile", "-NonInteractive", "-File",
                             str(repo / "android/helpers/regenerate_all_guidebot_simulations.ps1"),
                             "-Mode", "Headless", "-NoBuild", "-ExactMissionJson", "-MissionJson", suite["baseline"],
+                            *(["-PreparedMissionStage", str(prepared_stage)] if prepared_stage else []),
                             "-MissionTargetIndex", str(suite["target_index"]), "-Level", str(suite["level_num"]),
                             "-LevelFileFilter", suite["level_file"],
                             "-HeadlessExecutable", binary("d2", "-headless-route"),

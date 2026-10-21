@@ -1,11 +1,26 @@
 """Discover bounded regression owners from existing checked-in mission baselines."""
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 import subprocess
 
-CORPUS_COMMIT = '5fb5b199f9f8c670cff7b0b4ea7086c8505bbefa'
+CORPUS_COMMIT = 'd9fbeaf6eb059fd4504308bfd6364734775b7cba'
+HISTORICAL_CORPUS_COMMIT = '5fb5b199f9f8c670cff7b0b4ea7086c8505bbefa'
+VERTIGO_BASELINE = 'CD - Descent II - The Vertigo Series (USA).json'
+
+
+def vertigo_campaign(relative, mission):
+    return (relative == VERTIGO_BASELINE and mission.get('target_index', 0) == 0
+            and mission.get('mission_filename', '').casefold() == 'd2x.mn2'
+            and mission.get('game') == 'd2')
+
+
+def unavailable_level(level):
+    return bool(re.search(r'level file is missing|unsupported level version [0-9]+|invalid level header',
+                         str(level.get('route_problem') or level.get('problems', '')), re.I))
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'android/helpers'))
 
@@ -41,8 +56,10 @@ def suites(repo=ROOT):
         document = json.loads((Path(repo) / 'game_data/mission_files' / relative).read_text(encoding='utf-8-sig'))
         missions = document if isinstance(document, list) else [document]
         if any('/' in row.get('mission_path', '').replace('\\', '/') for row in missions):
-            common['unavailable_reason'] = 'Nested mission variant requires a variant-aware regression stage'
-            result[-1]['unavailable_reason'] = common['unavailable_reason']
+            result[-1]['unavailable_reason'] = 'Nested mission variant requires a variant-aware regression stage'
+        missing_source = relative.startswith('CD - ') or relative in ('castaway_redux.json', 'ewithin-versions.json')
+        if missing_source:
+            result[-1]['unavailable_reason'] = 'Archive or CD-source fixture unavailable'
         for mission in missions:
             if mission.get('game') not in ('d1', 'd2'):
                 continue
@@ -50,7 +67,12 @@ def suites(repo=ROOT):
                 target = mission.get('target_index', 0)
                 identity = f"{relative}|{target}|{level['level_num']}|{level['level_file']}"
                 leaf = hashlib.sha256(identity.encode()).hexdigest()[:20]
-                result.append({**common, 'id': f'corpus:route:{leaf}', 'profile': 'route',
+                unavailable = {}
+                if missing_source and not vertigo_campaign(relative, mission):
+                    unavailable['unavailable_reason'] = 'Archive or CD-source fixture unavailable'
+                if unavailable_level(level):
+                    unavailable['unavailable_reason'] = 'Committed level is explicitly missing or unsupported'
+                result.append({**common, **unavailable, 'id': f'corpus:route:{leaf}', 'profile': 'route',
                                'target_index': target, 'level_num': level['level_num'], 'level_file': level['level_file'],
                                'identity': identity, 'estimated_seconds': 360,
                                'coverage_scope': 'One exact route level; receipts traverse every admitted level before cycle completion'})
@@ -67,7 +89,7 @@ def policy_suites(repo=ROOT):
 
 def stage_archives(source, repo, commit):
     """Copy only baseline-matched archives from the reviewed immutable checkout."""
-    if commit != CORPUS_COMMIT:
+    if commit not in (CORPUS_COMMIT, HISTORICAL_CORPUS_COMMIT):
         raise ValueError('Mission corpus requires the reviewed immutable asset revision')
     source, repo = Path(source).resolve(), Path(repo).resolve()
     actual = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()

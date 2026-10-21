@@ -5,6 +5,8 @@ param(
     [ValidateSet('Headless', 'Headed', 'Desktop')][string]$Mode = 'Headless',
     [string[]]$MissionJson,
     [switch]$ExactMissionJson,
+    # Validated, isolated stage supplied by the exact-owner corpus adapter
+    [string]$PreparedMissionStage,
     [string]$MissionMetadataRoot,
     [int[]]$Level,
     [int[]]$MissionTargetIndex,
@@ -223,6 +225,9 @@ function Copy-GuidebotFlatStage {
 function Initialize-GuidebotMissionStage {
     param([Parameter(Mandatory)][IO.FileInfo]$MetadataFile)
 
+    if ($PreparedMissionStage) {
+        return [pscustomobject]@{ ExtraDir = $PreparedMissionStage; Source = 'prepared-exact-owner' }
+    }
     if ($MetadataFile.Name -in @('Counterstrike.json', 'FirstStrike.json')) {
         return [pscustomobject]@{ ExtraDir = ''; Source = 'builtin' }
     }
@@ -664,6 +669,14 @@ if ($SampleFraction -lt 1.0) {
     $selectedItems = @(Select-RuntimeHashRingFractionItems -Items $allItems -Fraction $SampleFraction `
             -Seed ($SampleSeed -bxor 611) -StatePath $SampleStatePath `
             -RingName 'regenerate:guidebot-simulation:levels')
+}
+
+if ($PreparedMissionStage) {
+    if ($Mode -ne 'Headless' -or -not $ExactMissionJson -or $WriteRegression -or
+        $allItems.Count -ne 1 -or $selectedItems.Count -ne 1 -or
+        -not (Test-Path -LiteralPath (Join-Path $PreparedMissionStage 'missions') -PathType Container)) {
+        throw 'Prepared mission staging requires exactly one headless owner without regression writes'
+    }
 }
 
 Write-GuidebotStatus "GuideBot simulation work: $($selectedItems.Count)/$($allItems.Count) levels, mode $Mode"

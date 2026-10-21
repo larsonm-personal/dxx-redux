@@ -23,9 +23,9 @@ class HostAdapterTests(unittest.TestCase):
         self.enterContext(patch.object(adapter.sys, "platform", "linux"))
         self.enterContext(patch.object(adapter.signal, "SIGKILL", 9, create=True))
 
-    def test_nested_corpus_metadata_and_routes_stop_before_build_or_flattening(self):
+    def test_nested_corpus_metadata_stops_before_build_or_flattening(self):
         from nightly_regression_catalog import CORPUS_COMMIT
-        for profile in ("metadata", "route"):
+        for profile in ("metadata",):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
                 baseline = root / "game_data/mission_files/variant.json"
@@ -47,6 +47,33 @@ class HostAdapterTests(unittest.TestCase):
                 self.assertTrue(receipt["assets"]["route_oracle"])
                 launch.assert_not_called()
 
+    def test_exact_nested_corpus_target_stages_only_its_payload_before_build(self):
+        from nightly_regression_catalog import CORPUS_COMMIT
+        for target in (1, 0):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                baseline = root / "game_data/mission_files/fixture.json"
+                baseline.parent.mkdir(parents=True)
+                rows = [{"target_index": i, "mission_filename": "m.mn2", "mission_path": str(i) + "/m.mn2",
+                         "levels": [{"level_num": 1, "level_file": "one.rl2"}]} for i in (0, 1)]
+                baseline.write_text(json.dumps(rows))
+                baseline.with_suffix(".simulation.json").write_text("[]")
+                with zipfile.ZipFile(baseline.with_suffix(".zip"), "w") as archive:
+                    for i in (1, 0):
+                        archive.writestr(str(i) + "/m.mn2", "name=fixture")
+                        archive.writestr(str(i) + "/m.hog", str(i))
+                suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": "route",
+                         "baseline": "fixture.json", "target_index": target, "level_num": 1,
+                         "level_file": "one.rl2", "coverage_scope": "synthetic"}
+                with (patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
+                      patch.object(adapter, "verify_retail_stage"), patch.object(adapter.subprocess, "Popen") as launch):
+                    launch.return_value.wait.return_value = 9
+                    self.assertEqual(adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30), 2)
+                self.assertEqual((root / "receipt.artifacts/exact-mission/missions/m.hog").read_text(), str(target))
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(receipt["blocker_kind"], "metadata-cli-setup")
+                self.assertFalse(receipt["coverage_complete"])
+
     def test_corpus_setup_uses_host_jvm_and_reports_static_failure_stage(self):
         from nightly_regression_catalog import CORPUS_COMMIT
         for profile in ("metadata", "route"):
@@ -60,13 +87,14 @@ class HostAdapterTests(unittest.TestCase):
                     root = Path(directory).resolve()
                     baseline = root / "game_data/mission_files/fixture.json"
                     baseline.parent.mkdir(parents=True)
-                    baseline.write_text(json.dumps([{"mission_path": "fixture.mn2"}]))
+                    baseline.write_text(json.dumps([{"mission_path": "fixture.mn2", "levels": [{"level_num": 1, "level_file": "one.rl2"}]}]))
                     baseline.with_suffix(".zip").touch()
                     baseline.with_suffix(".simulation.json").write_text("[]")
                     suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": profile,
-                             "baseline": "fixture.json", "coverage_scope": "synthetic"}
+                             "baseline": "fixture.json", "target_index": 0, "level_num": 1, "level_file": "one.rl2", "coverage_scope": "synthetic"}
                     with (patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
                           patch.object(adapter, "verify_retail_stage"),
+                          patch("nightly_corpus_stage.stage_route", return_value=root / "stage"),
                           patch.object(adapter.subprocess, "Popen") as launch):
                         launch.return_value.wait.side_effect = [0] * failure_at + [9]
                         code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)

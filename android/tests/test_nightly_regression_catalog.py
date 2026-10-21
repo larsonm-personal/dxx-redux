@@ -45,7 +45,9 @@ class CorpusCatalogTests(unittest.TestCase):
             plan, state = sweep.plan_batch("b" * 40, {"schema": 1, "tests": []}, policy)
             self.assertEqual(plan["tests"], [])
             self.assertEqual(len(plan["unavailable"]), 2)
-            self.assertTrue(all(row["blocker_kind"] == "target-capability" for row in plan["unavailable"]))
+            self.assertEqual(sum(row.get("blocker_kind") == "target-capability" for row in plan["unavailable"]), 1)
+            self.assertIn("unavailable_reason", entries[0])
+            self.assertNotIn("unavailable_reason", entries[1])
             self.assertEqual(state["records"], {})
             self.assertEqual(plan["estimated_seconds"], 0)
 
