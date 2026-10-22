@@ -175,6 +175,7 @@ try {
                 $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-MatchesRequestedFilter'
             }, $true)
         . ([scriptblock]::Create($filterDefinition.Extent.Text))
+        $Target45Minutes = $false
         foreach ($Filter in @('', '*', 'test_mp', 'test_mp*') + $optIn) {
             $SelectedTestsPath = $null
             $allTests = @($declared | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
@@ -183,6 +184,15 @@ try {
             . ([scriptblock]::Create($guard[0].Extent.Text))
             if ($Filter -cin $optIn) {
                 if ($allTests.Count -ne 1 -or $allTests[0].Name -cne $Filter) { throw 'Exact transport filter failed to opt in' }
+                $Target45Minutes = $true
+                $rejected = $false
+                try {
+                    . ([scriptblock]::Create($guard[0].Extent.Text))
+                } catch {
+                    if ($_.Exception.Message -cne 'Exact transport mode selection cannot combine with -Target45Minutes; remove -Target45Minutes to run the requested mode') { throw }
+                    $rejected = $true
+                } finally { $Target45Minutes = $false }
+                if (-not $rejected) { throw 'Timed sampling silently dropped an exact transport selection' }
             } elseif (Compare-Object @($expected.Name) @($allTests.Name)) { throw 'Default or broad filter changed baseline selection' }
         }
         foreach ($name in $optIn) {
@@ -193,6 +203,7 @@ try {
             . ([scriptblock]::Create($guard[0].Extent.Text))
             if ($allTests.Count -ne 1 -or $allTests[0].Name -cne $name) { throw 'Exact transport plan selection failed' }
         }
+        Write-Host 'PASS: every exact transport filter rejects incompatible timed sampling with an actionable error'
         Write-Host 'PASS: real PowerShell default/full selection matches baseline across 41 seeds; broad filters exclude transport modes and each exact filter/plan opts in'
     }
     & {

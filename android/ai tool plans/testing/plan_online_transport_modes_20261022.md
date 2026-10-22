@@ -45,3 +45,10 @@ Real catalog/PowerShell selector controls compare the pre-addition catalog (all 
 Those controls pass; replacing the coverage selector with the prior published implementation makes the same regression test fail as intended
 Automation catalog passes. The full master-catalog test reaches the existing local /proc supervisor limitation only after these new controls and existing three-player controls pass
 Scoped quality still cannot provision PSScriptAnalyzer1.25.0; no other scoped formatter failures
+
+## Exact-filter timed-sampling edge
+
+Reject an exact transport-mode Filter combined with Target45Minutes, with an error directing the caller to remove the timed-sampling flag
+This avoids accepting an opt-in only to silently drop it in later coverage selection
+The real guard regression checks rejection for all three exact modes while retaining the existing positive exact-filter and exact-CI controls
+No additional native campaign is dispatched for this selector-only change

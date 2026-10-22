@@ -1211,6 +1211,9 @@ $extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_
 $profileSkipped = @()
 # Broad owner filters, FullSuite and IncludeManual must not enable transport faults
 if (-not $SelectedTestsPath) {
+    if ($Target45Minutes -and $Filter -cin (Get-TestSuiteOptInVariants)) {
+        throw 'Exact transport mode selection cannot combine with -Target45Minutes; remove -Target45Minutes to run the requested mode'
+    }
     $allTests = @($allTests | Where-Object {
             if ($_.Name -cnotin (Get-TestSuiteOptInVariants) -or $Filter -ceq $_.Name) { return $true }
             $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'opt-in transport mode; use its exact -Filter name or -SelectedTestsPath' }
