@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise upgrade/install orchestration without downloading or deploying anything."""
 
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -18,7 +19,7 @@ class RustHelpers(unittest.TestCase):
         self.root = Path(self.temp.name)
         for name in (
             "server/rust_tools.conf",
-            "server/rust-toolchain.toml",
+            "rust-toolchain.toml",
             "server/rust_upgrade.sh",
             "server/rust_dependency_lint.sh",
             "server/check_exact_dependencies.py",
@@ -60,6 +61,34 @@ class RustHelpers(unittest.TestCase):
         )
         self.assertNotIn("stable", commands)
         self.assertNotIn("curl", commands)
+
+    def test_windows_bootstrap_uses_versioned_executable(self):
+        self.mock("rustup", 'echo "rustup 1.28.0"')
+        self.mock("uname", 'if [[ "$1" == -s ]]; then echo MINGW64_NT; else echo x86_64; fi')
+        fixture = self.root / "installer-fixture"
+        fixture.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "installer $*" >> "$LOG"\n')
+        self.env["BOOTSTRAP_FIXTURE"] = str(fixture)
+        self.env["BOOTSTRAP_SHA256"] = hashlib.sha256(fixture.read_bytes()).hexdigest()
+        self.mock(
+            "curl",
+            """
+            target="${@: -1}"
+            if [[ "$*" == *".sha256 "* ]]; then
+                printf '%s\\n' "$BOOTSTRAP_SHA256" > "$target"
+            else
+                cp "$BOOTSTRAP_FIXTURE" "$target"
+            fi
+        """,
+        )
+        result = self.run_helper("android/get_deps/helpers/get_rust.sh")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = self.log.read_text()
+        self.assertIn(
+            "https://static.rust-lang.org/rustup/archive/1.29.2/x86_64-pc-windows-msvc/rustup-init.exe",
+            commands,
+        )
+        self.assertIn("rustup-init.exe: OK", result.stdout)
+        self.assertIn("installer -y --no-modify-path --profile minimal --default-toolchain 1.99.1", commands)
 
     def test_upgrade_locks_addons_and_dates_nightly(self):
         result = self.run_helper("server/rust_upgrade.sh")

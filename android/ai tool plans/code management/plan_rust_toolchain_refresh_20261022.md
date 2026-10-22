@@ -57,7 +57,7 @@ Six direct pins remain unchanged; package version and edition are unchanged
 ## Upgrade and regular-install flow
 
 1. Discover releases from official Rust distribution manifests and crates.io metadata
-2. Edit `server/rust-toolchain.toml`, `server/rust_tools.conf` and the matching `RUSTFMT_TOOLCHAIN` pin
+2. Edit `rust-toolchain.toml`, `server/rust_tools.conf` and the matching `RUSTFMT_TOOLCHAIN` pin
 3. Run `bash server/rust_upgrade.sh` to install exact selections and record actual inventory
 4. Preview dependencies with `bash server/rust_dependency_lint.sh --dry-run --incompatible`
 5. Review release notes, then run the helper without `--dry-run`; inspect manifest and lockfile
@@ -95,7 +95,7 @@ tungstenite 0.30.0 / ed25519-dalek 3.0.0 crate CHANGELOG.md files
 - Base and upgraded locked tests: 37 unit + 62 integration + 13 NAT = 112 passed
 - cargo clippy --locked --all-targets: clean, no warnings
 - cargo fmt --check using 1.99.1: pass, no Rust formatting changes
-- Six isolated helper tests, exact-pin guard, Bash syntax, ShellCheck 0.11.0,
+- Seven isolated helper tests, exact-pin guard, Bash syntax, ShellCheck 0.11.0,
   shfmt 3.14.1 and actionlint 1.7.12: pass
 - Scoped project mixed-language quality invocation: all checks passed
 - Automation catalog validation: 95 standalone JSON tests, 430 support scripts,
@@ -155,3 +155,7 @@ Target: cmake; branch: rust-toolchain-refresh
 Identity: larsonm-personal for both Git commits and GitHub operations
 Hosted server, tooling, engine, public save-integrity and LAN smoke checks run
 on the branch; current/final results are recorded in the PR body
+
+Root-cwd callers such as Start-MatchmakingServer also resolve the root
+rust-toolchain.toml pin. The versioned bootstrap supports Git Bash/MSYS/Cygwin
+on Windows x86_64 using rustup-init.exe; an isolated test verifies that selection

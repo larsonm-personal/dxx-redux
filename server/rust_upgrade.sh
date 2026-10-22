@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Select exact releases in rust-toolchain.toml/rust_tools.conf before running
+# Select exact releases in ../rust-toolchain.toml and rust_tools.conf before running
 # Discover candidates from the official Rust manifests and crates.io, then review
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"

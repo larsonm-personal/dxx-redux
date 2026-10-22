@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "server/**"
+      - "rust-toolchain.toml"
       - "android/get_deps/helpers/get_rust.sh"
       - "android/get_deps/tool_versions.conf"
       - ".github/workflows/server-rust.yml"
