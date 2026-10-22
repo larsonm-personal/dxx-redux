@@ -25,6 +25,7 @@ class RustHelpers(unittest.TestCase):
             "server/check_exact_dependencies.py",
             "server/Cargo.toml",
             "android/get_deps/helpers/get_rust.sh",
+            "android/get_deps/helpers/platform.sh",
         ):
             dest = self.root / name
             dest.parent.mkdir(parents=True, exist_ok=True)

@@ -3,6 +3,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# shellcheck source=platform.sh
+source "$REPO_ROOT/android/get_deps/helpers/platform.sh"
 # shellcheck source=../../../server/rust_tools.conf
 source "$REPO_ROOT/server/rust_tools.conf"
 : "${RUSTUP_VERSION:?Missing rustup pin}"
@@ -30,7 +32,7 @@ if ! command -v rustup >/dev/null 2>&1 || [[ "$(rustup --version 2>/dev/null | a
         exit 1
         ;;
     esac
-    installer_dir="$(mktemp -d)"
+    installer_dir="$(create_temp_dir rustup-init)"
     trap 'rm -rf "$installer_dir"' EXIT
     url="https://static.rust-lang.org/rustup/archive/$RUSTUP_VERSION/$host/$installer"
     curl --proto '=https' --tlsv1.2 -fsSL "$url" -o "$installer_dir/$installer"
