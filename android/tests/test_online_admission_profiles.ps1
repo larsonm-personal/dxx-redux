@@ -432,3 +432,59 @@ if ($gate -lt 0 -or $readyCommand -lt $gate -or $startCommand -lt $readyCommand 
     $source.Substring($readyCommand, $startCommand - $readyCommand) -notmatch 'Test-AllLobbyPlayersReady -Serial \$EMU1 -ExpectedPlayers 2 -RequireDirect:\$PublicDirect' -or
     $source -notmatch '\$direct.relay_sessions -ne 0') { throw 'Direct gate ordering or zero-relay oracle changed' }
 Write-Host 'PASS: delayed current-pair probes gate direct startup; stale, missing and relay results fail without weakening normal ready or zero-relay checks'
+
+. "$PSScriptRoot/../helpers/online_transport_modes.ps1"
+foreach ($case in @('valid', 'no-match-counter', 'direct', 'no-send', 'matched', 'old-room', 'old-network', 'old-check', 'wrong-peer', 'wrong-player', 'changed-roster', 'probing', 'missing')) {
+    $control = New-DirectControl 0
+    $probe = $control.online_resources.connectivity
+    $probe.results[0].candidate_type = 'relay'
+    $probe.probe_counts.matched = 0
+    switch ($case) {
+        'no-match-counter' { $probe.probe_counts.PSObject.Properties.Remove('matched') }
+        'direct' { $probe.results[0].candidate_type = 'host' }
+        'no-send' { $probe.probe_counts.sent_0 = 0 }
+        'matched' { $probe.probe_counts.matched = 1 }
+        'old-room' { $probe.results[0].room_id = 'old-room' }
+        'old-network' { $probe.results[0].network_epoch-- }
+        'old-check' { $probe.results[0].check_epoch-- }
+        'wrong-peer' { $probe.results[0].peer_id = 'replacement' }
+        'wrong-player' { $control.player_id = 'replacement' }
+        'changed-roster' { $control.lobby.players[1].player_id = 'replacement' }
+        'probing' { $probe.phase = 'PROBING' }
+        'missing' { $control = $null }
+    }
+    $accepted = Test-OnlineFallbackProbe -Control $control -RoomId 'room' -PlayerId 'host-id' -PeerId 'join-id'
+    if ($accepted -ne ($case -in @('valid', 'no-match-counter'))) { throw "Initial fallback guard failed: $case" }
+}
+foreach ($kind in @('direct', 'relay')) {
+    foreach ($case in @('valid', 'other-kind', 'old-epoch', 'replaced-attempt', 'wrong-slot', 'no-traffic', 'no-peer', 'extra-peer', 'missing')) {
+        $resources = [pscustomobject]@{ runtime_attempt_epoch = 4; peers = @(
+                [pscustomobject]@{ slot = 1; route_kind = $kind; route_epoch = 4; gameplay_received = 12 }
+            ) }
+        switch ($case) {
+            'other-kind' { $resources.peers[0].route_kind = if ($kind -eq 'direct') { 'relay' } else { 'direct' } }
+            'old-epoch' { $resources.peers[0].route_epoch = 3 }
+            'replaced-attempt' { $resources.peers[0].route_epoch = 5; $resources.runtime_attempt_epoch = 5 }
+            'wrong-slot' { $resources.peers[0].slot = 2 }
+            'no-traffic' { $resources.peers[0].gameplay_received = 0 }
+            'no-peer' { $resources.peers = @() }
+            'extra-peer' { $resources.peers += $resources.peers[0] }
+            'missing' { $resources = $null }
+        }
+        $accepted = Test-OnlineTransportRoute -Resources $resources -Kind $kind -Slot 1 -ExpectedEpoch 4
+        if ($accepted -ne ($case -eq 'valid')) { throw "Native route guard failed: $kind/$case" }
+    }
+}
+. "$PSScriptRoot/../helpers/cooperative_gameplay.ps1"
+$script:pairedCalls = @()
+function Invoke-PairedGameAutomation {
+    param($PrimarySerial, $PrimaryScript, $SecondarySerial, $SecondaryScript, $Description)
+    $script:pairedCalls += "$PrimarySerial/$PrimaryScript/$SecondarySerial/$SecondaryScript"
+    return $true
+}
+if (-not (Invoke-CoopDeathScenario) -or $script:pairedCalls.Count -ne 4 -or
+    $script:pairedCalls[1] -cne "$EMU2/test_coop_death.jsonc/$EMU1/test_coop_death_survivor.jsonc" -or
+    $script:pairedCalls[3] -cne "$EMU1/test_coop_death.jsonc/$EMU2/test_coop_death_survivor.jsonc") {
+    throw 'Shared co-op death scenario must prepare and test both player roles'
+}
+Write-Host 'PASS: opt-in fallback provenance, route kind/slot/epoch/traffic guards and shared co-op role coverage'

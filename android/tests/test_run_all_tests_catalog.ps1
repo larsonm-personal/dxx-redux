@@ -49,6 +49,9 @@ foreach ($name in $generatedJsoncOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
 }
 foreach ($variant in @(
+        @{ Name = 'test_mp_coop_d1_relay'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-PublicGame', 'd1', '-TransportMode', 'AuthenticatedRelay') },
+        @{ Name = 'test_mp_coop_d2_direct'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-TransportMode', 'ServerDirect') },
+        @{ Name = 'test_mp_coop_d2_initial_fallback'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-TransportMode', 'InitialFallback') },
         @{ Name = 'test_mp_public_shareware_d2'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-PublicDirect') },
         @{ Name = 'test_mp_public_shareware'; BaseName = 'test_mp'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware') },
         @{ Name = 'test_lan_host_migration_public_shareware'; BaseName = 'test_lan'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-Game', 'd1', '-HostMigration') },

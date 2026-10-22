@@ -29,6 +29,7 @@ param(
     [switch]$PublicShareware,
     [ValidateSet("d1", "d2")][string]$PublicGame = "d1",
     [switch]$PublicDirect,
+    [ValidateSet('', 'ServerDirect', 'AuthenticatedRelay', 'InitialFallback')][string]$TransportMode = '',
     [switch]$Tls,
     [int]$TimeoutSeconds = 180,
     [ValidateRange(0, 3600)]
@@ -41,6 +42,13 @@ Set-StrictMode -Version Latest
 # Source shared env setup (JAVA_HOME, cmake, cargo)
 . "$PSScriptRoot\..\helpers\test_env.ps1"
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
+
+if ($TransportMode -and (-not $PublicShareware -or $PublicDirect)) {
+    throw 'TransportMode requires PublicShareware and selects its own direct/relay policy'
+}
+if ($TransportMode) { $PublicDirect = $TransportMode -eq 'ServerDirect' }
+. "$PSScriptRoot/../helpers/cooperative_gameplay.ps1"
+. "$PSScriptRoot/../helpers/online_transport_modes.ps1"
 
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
@@ -58,11 +66,11 @@ $CALLSIGN2 = "JoinPlt"
 $EMU3 = 'emulator-5558'
 $CALLSIGN3 = 'LatePlt'
 $allTargets = @($EMU1, $EMU2)
-if ($PublicShareware) { $allTargets += $EMU3 }
+if ($PublicShareware -and -not $TransportMode) { $allTargets += $EMU3 }
 
 if ($PublicShareware) {
     $Game = $PublicGame
-    $Mode = 'anarchy'
+    $Mode = if ($TransportMode) { 'coop' } else { 'anarchy' }
     $SoakSeconds = 15
     . "$PSScriptRoot/../helpers/shareware_test_data.ps1"
     $publicConfig = Get-SharewareTestGameConfig -RepoRoot $REPO_ROOT -Game $Game
@@ -165,7 +173,8 @@ function Measure-InstallationWork {
 }
 
 function Test-OnlineDirectProbe {
-    param($Control, [string]$RoomId, [string]$PlayerId, [string]$PeerId)
+    param($Control, [string]$RoomId, [string]$PlayerId, [string]$PeerId,
+        [string[]]$CandidateTypes = @('host', 'srflx', 'observed', 'upnp', 'predicted'))
     if (-not $Control -or -not $Control.PSObject.Properties['lobby'] -or -not $Control.lobby -or
         $Control.lobby.lobby_id -cne $RoomId -or $Control.player_id -cne $PlayerId -or
         -not $Control.PSObject.Properties['online_resources']) { return $false }
@@ -186,7 +195,7 @@ function Test-OnlineDirectProbe {
     }
     return ($result.room_id -ceq $RoomId -and $result.network_epoch -eq $probe.network_epoch -and
         $result.check_epoch -eq $probe.check_epoch -and $result.peer_id -ceq $PeerId -and
-        $result.candidate_type -cin @('host', 'srflx', 'observed', 'upnp', 'predicted'))
+        $result.candidate_type -cin $CandidateTypes)
 }
 
 function Wait-OnlineDirectReadiness {
@@ -528,6 +537,7 @@ function Start-OnlineRecoveryGame {
                 return $control -and $control.PSObject.Properties['lobby'] -and $control.lobby.player_count -eq 2
             })) { throw 'Recovery join failed' }
     if ($PublicDirect) { Wait-OnlineDirectReadiness }
+    if ($TransportMode -eq 'InitialFallback') { Wait-OnlineInitialFallback }
     foreach ($serial in @($EMU1, $EMU2)) { Send-MpCommand -Serial $serial -Command 'set_ready' -Extras @('--es', 'ready', 'true') }
     if (-not (Wait-ForCondition -Description 'Recovery ready roster' -TimeoutSec 15 -PollMs 500 -Condition {
                 return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2 -RequireDirect:$PublicDirect
@@ -702,6 +712,7 @@ function Invoke-OnlineBackgroundResume {
 
 function Cleanup {
     Write-Status "Cleaning up..."
+    try { Remove-OnlineProbeFaults } catch { $script:testPassed = $false; Write-Status $_.Exception.Message 'Red' }
     try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}
     try { if ($logcatProc2 -and -not $logcatProc2.HasExited) { Stop-Process -Id $logcatProc2.Id -Force } } catch {}
     # Force-stop the app on both emulators BEFORE killing the server.
@@ -852,7 +863,7 @@ try {
     $env:RELAY_LISTEN_ADDR = if ($PublicShareware) { "127.0.0.1:9003" } else { "127.0.0.1:9001" }
     $env:RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
     # Relay campaigns force relay; direct campaigns must prove current peer reachability
-    $env:FORCE_RELAY = if ($PublicDirect) { "false" } else { "true" }
+    $env:FORCE_RELAY = if ($PublicDirect -or $TransportMode -eq 'InitialFallback') { "false" } else { "true" }
     $env:LOG_DIR = (Join-Path $REPO_ROOT "temp")
     if ($Tls) {
         $tlsDir = Join-Path $REPO_ROOT "temp\tls"
@@ -923,6 +934,9 @@ try {
 
     # -- Step 3: Connect to matchmaking --
     Write-Status ""
+    if ($TransportMode -eq 'InitialFallback') {
+        foreach ($serial in $allTargets) { Install-OnlineProbeFault -Serial $serial }
+    }
     Write-Status "--- Phase 3: Connect to matchmaking ---" "White"
 
     # Drive the multiplayer flow through the SetupActivity MP_COMMAND receiver.
@@ -1045,6 +1059,7 @@ try {
 
     # Probe reports precede Ready on each WebSocket; the ready broadcast then acknowledges server receipt
     if ($PublicDirect) { Wait-OnlineDirectReadiness }
+    if ($TransportMode -eq 'InitialFallback') { Wait-OnlineInitialFallback }
     Write-Status "Setting both players ready via MP_COMMAND"
     Send-MpCommand -Serial $EMU1 -Command "set_ready" -Extras @("--es", "ready", "true")
     Send-MpCommand -Serial $EMU2 -Command "set_ready" -Extras @("--es", "ready", "true")
@@ -1430,115 +1445,129 @@ try {
             Write-Status 'ONLINE_EVIDENCE native direct pair advanced with zero relay leases' 'Green'
         }
 
-        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -NativeTimeout
-        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
-        Invoke-OnlineReturnToGame
-        Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -DelayLaunchSeconds 30
-        Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
-        $admitted = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
-        if ($admitted.pending_native_admissions -ne 0) { throw 'Native host acceptance did not retire the delayed admission lease' }
-        Write-Status 'ONLINE_EVIDENCE delayed assignment, real host consent and native synchronization completed host-owned lease' 'Green'
-
-        Send-MpCommand -Serial $EMU2 -Command 'disconnect'
-        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
-        # Surviving native gameplay must outlive the departed peer's bind timeout
-        Start-Sleep -Seconds 12
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU3) -Callsigns @($CALLSIGN1, $CALLSIGN3) -Slots @(0, 2) -Phase 'middle-slot departure preserves survivors'
-        Join-RunningOnlineGame -Serial $EMU2 -Callsign $CALLSIGN2 -AllowKnownRejoin
-        Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'middle-slot reconnect with fresh routes'
-        Send-MpCommand -Serial $EMU1 -Command 'disconnect'
-        foreach ($emu in @($EMU2, $EMU3)) {
-            if (-not (Wait-ForCondition -Description 'Host closure retires client routes' -TimeoutSec 20 -PollMs 500 -Condition {
-                        $control = Get-MpIntrospection -Serial $emu
+        if ($TransportMode) {
+            $epochs = Assert-OnlineTransportGraph
+            if (-not (Invoke-CoopDeathScenario)) { throw 'Shared co-op death/respawn scenario failed' }
+            Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'shared co-op death/respawn'
+            Assert-OnlineTransportGraph -ExpectedEpochs $epochs | Out-Null
+            Send-MpCommand -Serial $EMU1 -Command 'disconnect'
+            if (-not (Wait-ForCondition -Description 'Online host closure retires joiner routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                        $control = Get-MpIntrospection -Serial $EMU2
                         return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0 -and @($control.online_resources.peers).Count -eq 0
-                    })) { throw 'Host closure left active client routes' }
-        }
-        Write-Status 'ONLINE_EVIDENCE host closure retired both surviving clients' 'Green'
-        foreach ($emu in @($EMU3, $EMU2, $EMU1)) { Send-MpCommand -Serial $emu -Command 'disconnect' }
+                    })) { throw 'Online host closure retained joiner routes' }
+            Assert-OnlineClean
+            Write-Status "ONLINE_TRANSPORT mode=$TransportMode game=$Game shared_coop_death=True host_closure=True" 'Green'
+        } else {
+            Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -NativeTimeout
+            Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -CancelAdmission
+            Invoke-OnlineReturnToGame
+            Join-RunningOnlineGame -Serial $EMU3 -Callsign $CALLSIGN3 -DelayLaunchSeconds 30
+            Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'three-player late join'
+            $admitted = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+            if ($admitted.pending_native_admissions -ne 0) { throw 'Native host acceptance did not retire the delayed admission lease' }
+            Write-Status 'ONLINE_EVIDENCE delayed assignment, real host consent and native synchronization completed host-owned lease' 'Green'
 
-        $clean = Wait-ForCondition -Description 'No orphan online rooms, leases or sockets' -TimeoutSec 15 -PollMs 250 -Condition {
-            $status = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
-            return $status.rooms -eq 0 -and $status.relay_sessions -eq 0 -and $status.pending_and_authenticated_sockets -eq 0
-        }
-        if (-not $clean) { throw 'Online cleanup did not return owned server resources to baseline' }
-        foreach ($emu in $allTargets) {
-            $retired = Wait-ForCondition -Description 'Client jobs and sockets retired' -TimeoutSec 15 -PollMs 500 -Condition {
-                $control = Get-MpIntrospection -Serial $emu
-                if (-not $control) { return $false }
-                $resources = $control.online_resources
-                return $control -and $resources.proxy_workers -eq 0 -and $resources.background_jobs -eq 0 -and -not $resources.candidate_socket -and -not $resources.upnp_mapping -and -not $resources.game_state_updates
+            Send-MpCommand -Serial $EMU2 -Command 'disconnect'
+            Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+            # Surviving native gameplay must outlive the departed peer's bind timeout
+            Start-Sleep -Seconds 12
+            Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU3) -Callsigns @($CALLSIGN1, $CALLSIGN3) -Slots @(0, 2) -Phase 'middle-slot departure preserves survivors'
+            Join-RunningOnlineGame -Serial $EMU2 -Callsign $CALLSIGN2 -AllowKnownRejoin
+            Assert-OnlinePeerMatrix -Serials $allTargets -Callsigns @($CALLSIGN1, $CALLSIGN2, $CALLSIGN3) -Slots @(0, 1, 2) -Phase 'middle-slot reconnect with fresh routes'
+            Send-MpCommand -Serial $EMU1 -Command 'disconnect'
+            foreach ($emu in @($EMU2, $EMU3)) {
+                if (-not (Wait-ForCondition -Description 'Host closure retires client routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                            $control = Get-MpIntrospection -Serial $emu
+                            return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0 -and @($control.online_resources.peers).Count -eq 0
+                        })) { throw 'Host closure left active client routes' }
             }
-            if (-not $retired) { throw 'Client resources did not return to baseline' }
-        }
-        Write-Status 'ONLINE_EVIDENCE zero rooms, relay leases, control sockets and client network workers' 'Green'
-        if ($PublicDirect) {
+            Write-Status 'ONLINE_EVIDENCE host closure retired both surviving clients' 'Green'
+            foreach ($emu in @($EMU3, $EMU2, $EMU1)) { Send-MpCommand -Serial $emu -Command 'disconnect' }
+
+            $clean = Wait-ForCondition -Description 'No orphan online rooms, leases or sockets' -TimeoutSec 15 -PollMs 250 -Condition {
+                $status = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+                return $status.rooms -eq 0 -and $status.relay_sessions -eq 0 -and $status.pending_and_authenticated_sockets -eq 0
+            }
+            if (-not $clean) { throw 'Online cleanup did not return owned server resources to baseline' }
+            foreach ($emu in $allTargets) {
+                $retired = Wait-ForCondition -Description 'Client jobs and sockets retired' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $control = Get-MpIntrospection -Serial $emu
+                    if (-not $control) { return $false }
+                    $resources = $control.online_resources
+                    return $control -and $resources.proxy_workers -eq 0 -and $resources.background_jobs -eq 0 -and -not $resources.candidate_socket -and -not $resources.upnp_mapping -and -not $resources.game_state_updates
+                }
+                if (-not $retired) { throw 'Client resources did not return to baseline' }
+            }
+            Write-Status 'ONLINE_EVIDENCE zero rooms, relay leases, control sockets and client network workers' 'Green'
+            if ($PublicDirect) {
+                Start-OnlineRecoveryGame
+                Invoke-OnlineBackgroundResume
+                $direct = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
+                if ($direct.relay_sessions -ne 0) { throw 'Direct recovery unexpectedly used relay' }
+                Set-OnlineFault -Ws 'drop'
+                foreach ($serial in @($EMU1, $EMU2)) {
+                    if (-not (Wait-ForCondition -Description 'Direct control loss retires routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                                $control = Get-MpIntrospection -Serial $serial
+                                return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
+                            })) { throw 'Direct control loss retained native routes' }
+                }
+                Assert-OnlineClean
+                Set-OnlineFault
+                $serverProcess.Kill()
+                if (-not $serverProcess.WaitForExit(5000)) { throw 'Direct fixture server did not stop' }
+                $env:FORCE_RELAY = 'true'
+                $PublicDirect = $false
+                $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir -NoNewWindow -PassThru -RedirectStandardError (Join-Path $REPO_ROOT 'temp/server-relay-error.log') -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/server-relay.log')
+                if (-not (Wait-ForCondition -Description 'Relay fixture readiness' -TimeoutSec 15 -PollMs 250 -Condition {
+                            if ($serverProcess.HasExited) { throw 'Relay fixture exited' }
+                            try { return (Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 1).ready } catch { return $false }
+                        })) { throw 'Relay fixture did not become ready' }
+                Write-Status 'ONLINE_EVIDENCE direct background and control-loss recovery completed before separate relay fault qualification' 'Green'
+            }
             Start-OnlineRecoveryGame
             Invoke-OnlineBackgroundResume
-            $direct = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
-            if ($direct.relay_sessions -ne 0) { throw 'Direct recovery unexpectedly used relay' }
+            Set-OnlineFault -Udp 'impair'
+            Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'UDP delay loss duplication reordering'
+            Set-OnlineFault -Udp 'readdress'
+            Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT address and port change'
+            Set-OnlineFault -Udp 'drop'
+            Start-Sleep -Seconds 2
+            Set-OnlineFault
+            Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'short UDP-only loss recovery'
+            Assert-OnlineUdpOutage
+            Set-OnlineFault
+            Write-Status 'ONLINE_EVIDENCE long UDP-only outage bounded visible joiner cleanup and terminal or verified live host-only state' 'Green'
+            Start-OnlineRecoveryGame
             Set-OnlineFault -Ws 'drop'
             foreach ($serial in @($EMU1, $EMU2)) {
-                if (-not (Wait-ForCondition -Description 'Direct control loss retires routes' -TimeoutSec 20 -PollMs 500 -Condition {
+                if (-not (Wait-ForCondition -Description 'Control outage retires game routes' -TimeoutSec 20 -PollMs 500 -Condition {
                             $control = Get-MpIntrospection -Serial $serial
                             return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
-                        })) { throw 'Direct control loss retained native routes' }
+                        })) { throw 'Control loss left active game routes' }
             }
             Assert-OnlineClean
             Set-OnlineFault
+            Start-Sleep -Seconds 5
+            Assert-OnlineClean -NoDisconnect
+            Write-Status 'ONLINE_EVIDENCE WS-only outage and cancellation stopped retries and retired resources' 'Green'
+            Start-OnlineRecoveryGame
             $serverProcess.Kill()
-            if (-not $serverProcess.WaitForExit(5000)) { throw 'Direct fixture server did not stop' }
-            $env:FORCE_RELAY = 'true'
-            $PublicDirect = $false
-            $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir -NoNewWindow -PassThru -RedirectStandardError (Join-Path $REPO_ROOT 'temp/server-relay-error.log') -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/server-relay.log')
-            if (-not (Wait-ForCondition -Description 'Relay fixture readiness' -TimeoutSec 15 -PollMs 250 -Condition {
-                        if ($serverProcess.HasExited) { throw 'Relay fixture exited' }
+            if (-not $serverProcess.WaitForExit(5000)) { throw 'Owned server did not stop' }
+            $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir -NoNewWindow -PassThru -RedirectStandardError (Join-Path $REPO_ROOT 'temp/server-restart-error.log') -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/server-restart.log')
+            if (-not (Wait-ForCondition -Description 'Restarted server readiness' -TimeoutSec 15 -PollMs 250 -Condition {
+                        if ($serverProcess.HasExited) { throw 'Restarted server exited' }
                         try { return (Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 1).ready } catch { return $false }
-                    })) { throw 'Relay fixture did not become ready' }
-            Write-Status 'ONLINE_EVIDENCE direct background and control-loss recovery completed before separate relay fault qualification' 'Green'
+                    })) { throw 'Restarted server unavailable' }
+            foreach ($serial in @($EMU1, $EMU2)) {
+                if (-not (Wait-ForCondition -Description 'Restarted control session without stale room' -TimeoutSec 30 -PollMs 500 -Condition {
+                            $control = Get-MpIntrospection -Serial $serial
+                            return $control -and $control.status -eq 'CONNECTED' -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
+                        })) { throw 'Server restart retained stale room or routes' }
+            }
+            Start-OnlineRecoveryGame
+            Assert-OnlineClean
+            Write-Status 'ONLINE_EVIDENCE server restart retired old game and explicit new game carried native traffic' 'Green'
         }
-        Start-OnlineRecoveryGame
-        Invoke-OnlineBackgroundResume
-        Set-OnlineFault -Udp 'impair'
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'UDP delay loss duplication reordering'
-        Set-OnlineFault -Udp 'readdress'
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'owned NAT address and port change'
-        Set-OnlineFault -Udp 'drop'
-        Start-Sleep -Seconds 2
-        Set-OnlineFault
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'short UDP-only loss recovery'
-        Assert-OnlineUdpOutage
-        Set-OnlineFault
-        Write-Status 'ONLINE_EVIDENCE long UDP-only outage bounded visible joiner cleanup and terminal or verified live host-only state' 'Green'
-        Start-OnlineRecoveryGame
-        Set-OnlineFault -Ws 'drop'
-        foreach ($serial in @($EMU1, $EMU2)) {
-            if (-not (Wait-ForCondition -Description 'Control outage retires game routes' -TimeoutSec 20 -PollMs 500 -Condition {
-                        $control = Get-MpIntrospection -Serial $serial
-                        return $control -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
-                    })) { throw 'Control loss left active game routes' }
-        }
-        Assert-OnlineClean
-        Set-OnlineFault
-        Start-Sleep -Seconds 5
-        Assert-OnlineClean -NoDisconnect
-        Write-Status 'ONLINE_EVIDENCE WS-only outage and cancellation stopped retries and retired resources' 'Green'
-        Start-OnlineRecoveryGame
-        $serverProcess.Kill()
-        if (-not $serverProcess.WaitForExit(5000)) { throw 'Owned server did not stop' }
-        $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir -NoNewWindow -PassThru -RedirectStandardError (Join-Path $REPO_ROOT 'temp/server-restart-error.log') -RedirectStandardOutput (Join-Path $REPO_ROOT 'temp/server-restart.log')
-        if (-not (Wait-ForCondition -Description 'Restarted server readiness' -TimeoutSec 15 -PollMs 250 -Condition {
-                    if ($serverProcess.HasExited) { throw 'Restarted server exited' }
-                    try { return (Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 1).ready } catch { return $false }
-                })) { throw 'Restarted server unavailable' }
-        foreach ($serial in @($EMU1, $EMU2)) {
-            if (-not (Wait-ForCondition -Description 'Restarted control session without stale room' -TimeoutSec 30 -PollMs 500 -Condition {
-                        $control = Get-MpIntrospection -Serial $serial
-                        return $control -and $control.status -eq 'CONNECTED' -and -not $control.PSObject.Properties['lobby'] -and $control.online_resources.proxy_workers -eq 0
-                    })) { throw 'Server restart retained stale room or routes' }
-        }
-        Start-OnlineRecoveryGame
-        Assert-OnlineClean
-        Write-Status 'ONLINE_EVIDENCE server restart retired old game and explicit new game carried native traffic' 'Green'
 
     }
 

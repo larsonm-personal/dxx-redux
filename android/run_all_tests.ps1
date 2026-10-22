@@ -946,6 +946,36 @@ $allTests += @{
     Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-PublicDirect')
 }
 
+$allTests += @{
+    Name = 'test_mp_coop_d1_relay'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicShareware', '-PublicGame', 'd1', '-TransportMode', 'AuthenticatedRelay')
+}
+
+$allTests += @{
+    Name = 'test_mp_coop_d2_direct'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-TransportMode', 'ServerDirect')
+}
+
+$allTests += @{
+    Name = 'test_mp_coop_d2_initial_fallback'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-TransportMode', 'InitialFallback')
+}
+
 # Exact public variants keep the original retail owners unchanged
 $allTests += @{
     Name = 'test_lan_launch_preparation_public_shareware'
