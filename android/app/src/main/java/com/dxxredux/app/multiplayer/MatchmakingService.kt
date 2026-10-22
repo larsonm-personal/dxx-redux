@@ -167,6 +167,8 @@ object MatchmakingService {
 
     @Volatile
     private var connectivityCheckJob: Job? = null
+    private var discoveredCandidates: List<ConnectionCandidate> = emptyList()
+    private var probeDiagnostics: Map<String, Int> = emptyMap()
     private var connectivityCheckEpoch = 0L
     private var connectivityResults: Map<String, Map<String, Any>> = emptyMap()
 
@@ -946,7 +948,9 @@ object MatchmakingService {
     @Synchronized
     private fun retireNetworkWork() {
         networkGeneration++
+        discoveredCandidates = emptyList()
         connectivityResults = emptyMap()
+        probeDiagnostics = emptyMap()
         runtimeAttempt = null
         gameEpoch = null
         pendingAdmissions.clear()
@@ -979,6 +983,16 @@ object MatchmakingService {
                     "candidate_count" to state.state.value.iceStatus.stunCandidateCount,
                     "peer_candidate_count" to state.state.value.iceStatus.peerCandidatesReceived,
                     "results" to connectivityResults.values.toList(),
+                    "probe_counts" to probeDiagnostics,
+                    "local_candidates" to
+                        discoveredCandidates.map { mapOf("type" to it.candidateType, "addr" to it.addr) },
+                    "pairs" to
+                        state.state.value.connectivityPairs.map {
+                            mapOf(
+                                "type" to it.remoteType,
+                                "addr" to it.remoteAddr,
+                            )
+                        },
                 ),
             "runtime_attempt_epoch" to if (runtimeAttempt == null) 0L else runtimeAttemptEpoch,
             "proxy_workers" to LocalhostProxy.activeWorkerCount(),
@@ -1021,6 +1035,8 @@ object MatchmakingService {
         stunJob?.cancel()
         closeCandidateSocket()
         connectivityResults = emptyMap()
+        probeDiagnostics = emptyMap()
+        discoveredCandidates = emptyList()
         val generation = ++networkGeneration
         val socket = DatagramSocket()
         candidateSocket = socket
@@ -1074,6 +1090,7 @@ object MatchmakingService {
                             NetLog.log("UPNP", "Mapped ${upnpResult.externalIp}:${upnpResult.externalPort}")
                         }
 
+                        discoveredCandidates = allCandidates.toList()
                         stunCompleted = true
                         state.update { s ->
                             s.copy(
@@ -1141,6 +1158,7 @@ object MatchmakingService {
         connectivityCheckJob?.cancel()
         connectivityCheckEpoch++
         connectivityResults = emptyMap()
+        probeDiagnostics = emptyMap()
         val generation = networkGeneration
         val socket = candidateSocket
         connectivityCheckJob =
@@ -1154,6 +1172,11 @@ object MatchmakingService {
                                 pairs,
                                 existingSocket = socket,
                                 checkActive = { job.ensureActive() },
+                                diagnostics = { counts ->
+                                    withNetwork(generation) {
+                                        if (job.isActive) probeDiagnostics = counts
+                                    }
+                                },
                             )
                         }
                     withNetwork(generation) {

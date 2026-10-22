@@ -197,6 +197,8 @@ function Wait-OnlineDirectReadiness {
     $script:directRoom = [string]$hostControl.lobby.lobby_id
     $identities = @([string]$hostControl.player_id, [string]$joinControl.player_id)
     $script:directIdentities = $identities
+    $wlanIps = @((Get-DeviceWlanIp -Serial $EMU1), (Get-DeviceWlanIp -Serial $EMU2))
+    $reportedChecks = [Collections.Generic.HashSet[string]]::new()
     if (-not $script:directRoom -or -not $identities[0] -or -not $identities[1] -or $identities[0] -ceq $identities[1]) {
         throw 'Direct fixture has no distinct current identities'
     }
@@ -216,6 +218,23 @@ function Wait-OnlineDirectReadiness {
                 $candidates = [int]$probe.candidate_count; $peerCandidates = [int]$probe.peer_candidate_count
                 $methods = (@($probe.results | ForEach-Object { $_.candidate_type } |
                             Where-Object { $_ -cin @('host', 'srflx', 'observed', 'upnp', 'predicted', 'relay') } | Select-Object -First 2) -join ',')
+            }
+            if ($phase -eq 'COMPLETE' -and $probe.PSObject.Properties['probe_counts'] -and
+                $reportedChecks.Add("${i}/${epoch}/${check}")) {
+                $localWifi = $wlanIps[$i] -and @($probe.local_candidates | Where-Object { $_.type -ceq 'host' -and $_.addr.StartsWith("$($wlanIps[$i]):") }).Count -gt 0
+                $peerWifi = $wlanIps[1 - $i] -and @($probe.pairs | Where-Object { $_.type -ceq 'host' -and $_.addr.StartsWith("$($wlanIps[1 - $i]):") }).Count -gt 0
+                $wifiSends = 0
+                for ($pairIndex = 0; $pairIndex -lt @($probe.pairs).Count; $pairIndex++) {
+                    $pair = @($probe.pairs)[$pairIndex]
+                    $sent = $probe.probe_counts.PSObject.Properties["sent_$pairIndex"]
+                    if ($wlanIps[1 - $i] -and $pair.addr.StartsWith("$($wlanIps[1 - $i]):") -and $sent) {
+                        $wifiSends += [int]$sent.Value
+                    }
+                }
+                $counts = @($probe.probe_counts.PSObject.Properties | Where-Object {
+                        $_.Name -match '^(sent_[0-9]{1,2}|send_errors|received|requests|echoes|echo_errors|responses|matched|short_packets|other_packets)$'
+                    } | Select-Object -First 48 | ForEach-Object { "$($_.Name)=$([int]$_.Value)" }) -join ','
+                Write-Status "ONLINE_PROBE peer=$i local_wifi_advertised=$localWifi peer_wifi_offered=$peerWifi wifi_sends=$wifiSends counts={$counts}" 'Gray'
             }
             Write-Status "ONLINE_DIRECT peer=$i accepted=$accepted phase=$phase network_epoch=$epoch check_epoch=$check candidates=$candidates peer_candidates=$peerCandidates methods=$methods" 'Gray'
             $passed = $passed -and $accepted
@@ -831,8 +850,7 @@ try {
     # Emulators reach host loopback at 10.0.2.2.
     $env:RELAY_LISTEN_ADDR = if ($PublicShareware) { "127.0.0.1:9003" } else { "127.0.0.1:9001" }
     $env:RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
-    # Force relay for all connections -- two emulators on the same host share
-    # a NAT gateway and cannot reach each other's 10.0.2.x addresses directly.
+    # Relay campaigns force relay; direct campaigns must prove current peer reachability
     $env:FORCE_RELAY = if ($PublicDirect) { "false" } else { "true" }
     $env:LOG_DIR = (Join-Path $REPO_ROOT "temp")
     if ($Tls) {

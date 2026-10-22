@@ -9,6 +9,23 @@ import org.junit.Test
 
 /** Runs the actual service's completed-join consumer; Android storage/GPGS/IPC are not simulated */
 class MatchmakingServiceFlowTest {
+    @Test(timeout = 5000)
+    fun unansweredProbeExportsSendsWithoutClaimingReceivedTraffic() {
+        java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()).use { peer ->
+            var counts = emptyMap<String, Int>()
+            val result =
+                ConnectivityChecker.probe(
+                    listOf(CandidatePair("peer", "host", "host", "127.0.0.1:${peer.localPort}", 1)),
+                    diagnostics = { counts = it },
+                )
+            assertEquals(null, result)
+            assertTrue((counts["sent_0"] ?: 0) > 0)
+            assertEquals(0, counts["received"] ?: 0)
+            assertEquals(0, counts["matched"] ?: 0)
+            assertEquals(setOf("sent_0"), counts.keys)
+        }
+    }
+
     @Test(timeout = 10000)
     fun delayedProbeDiagnosticsBelongToCurrentRoomAndCheck() {
         val service = MatchmakingService
@@ -63,6 +80,11 @@ class MatchmakingServiceFlowTest {
             }
             failure.get()?.let { throw AssertionError("Owned probe responder failed", it) }
             val done = diagnostics()
+            val counts = done["probe_counts"] as Map<*, *>
+            assertEquals(1, counts["sent_0"])
+            assertEquals(1, counts["received"])
+            assertEquals(1, counts["responses"])
+            assertEquals(1, counts["matched"])
             val result = (done["results"] as List<*>).single() as Map<*, *>
             assertEquals("owned-room", result["room_id"])
             assertEquals("joiner", result["peer_id"])
@@ -71,6 +93,7 @@ class MatchmakingServiceFlowTest {
             assertEquals(epoch, result["check_epoch"])
             synchronized(service) { begin.invoke(service, pairs) }
             assertEquals(epoch + 1, diagnostics()["check_epoch"])
+            assertTrue((diagnostics()["probe_counts"] as Map<*, *>).isEmpty())
             assertTrue((diagnostics()["results"] as List<*>).isEmpty())
             service.disconnect()
             assertTrue((diagnostics()["results"] as List<*>).isEmpty())

@@ -18,3 +18,16 @@
 - Fresh refs remain cmake 4be58740e29440a2c2b944b31bcfd2d72c0d325b and online-restoration f5c01779546eff1eef67681c85acd3261412f784 before publication; PR113 mergeable and user-set non-draft state preserved
 - Prior f5c0177 D1 online 39693846692, ordinary sample 39693830711, LAN 39693830643, tooling 39693830689 and engine checks all succeeded; D2 39705491539 failed actual direct qualification while relay gameplay worked
 - D2 qualification will run on the published fix; direct reachability and the historical race remain unproven until device evidence is available
+
+## D2 probe-delivery investigation
+
+- Run 39709354374 at 5bc012b failed before Ready/StartGame: both current checks completed with relay; joiner timed out nine pairs in 3000ms without a reported send exception
+- The readiness guard worked; early start alone cannot explain this failure
+- Fixture STUN reports loopback reflexive addresses; shared Wi-Fi uniqueness does not prove UDP reachability
+- Add bounded actual send/receive/request/echo/response counters and fixture Wi-Fi candidate membership checks, keeping raw endpoints out of owner logs
+- Confirm counters through the real delayed UDP service test and host fixture controls; do not alter candidate selection, socket routing, probe timeout, LAN defaults, Rust pins or direct-only oracle based on incomplete evidence
+- Artifact download through both available paths returns HTTP 403 locally; parent reviewer supplied retained joiner evidence, while host logcat was unavailable
+- Diagnostic validation: JVM suite 26 tests, 23 passed and 3 optional server-backed skips; real delayed successful probe and unanswered UDP timeout counter tests pass
+- Host controls verify Wi-Fi candidate membership, actual per-pair send totals and sanitized bounded owner output; catalog validation passes
+- Local catalog integration still blocked by `/proc/self/task/<pid>/children`; pinned PowerShell analyzer unavailable locally, Kotlin formatting passes
+- This follow-up is instrumentation, not a claimed reachability fix; the next exact-head campaign is a targeted measurement of candidate membership versus UDP delivery, preserving the failing direct-only oracle

@@ -45,12 +45,18 @@ object ConnectivityChecker {
         token: Int = SecureRandom().nextInt(),
         existingSocket: DatagramSocket? = null,
         checkActive: () -> Unit = {},
+        diagnostics: (Map<String, Int>) -> Unit = {},
     ): ConnectivityResult? {
         if (pairs.isEmpty()) return null
 
         val ownsSocket = existingSocket == null
         val socket = existingSocket ?: DatagramSocket()
         socket.soTimeout = PROBE_INTERVAL_MS.toInt()
+        val counts = mutableMapOf<String, Int>()
+
+        fun count(name: String) {
+            counts[name] = (counts[name] ?: 0) + 1
+        }
         try {
             val startTime = System.currentTimeMillis()
             var seq: Short = 0
@@ -69,14 +75,16 @@ object ConnectivityChecker {
                     sentTimes[seq] = Pair(sendTime, pair)
                     try {
                         socket.send(DatagramPacket(probePacket, probePacket.size, addr))
+                        count("sent_$pairIndex")
                     } catch (e: Exception) {
+                        count("send_errors")
                         Log.w(TAG, "Probe send failed to ${pair.remoteAddr}: ${e.message}")
                     }
                 }
 
                 // Receive loop: drain available packets until timeout, handling
                 // both incoming requests (echo back) and responses (our win).
-                val r = receiveAndEcho(socket, token, sentTimes)
+                val r = receiveAndEcho(socket, token, sentTimes, ::count)
                 if (r != null) return r
 
                 seq++
@@ -87,6 +95,7 @@ object ConnectivityChecker {
             return null
         } finally {
             if (ownsSocket) socket.close()
+            diagnostics(counts.toMap())
         }
     }
 
@@ -97,35 +106,48 @@ object ConnectivityChecker {
         socket: DatagramSocket,
         ourToken: Int,
         sentTimes: Map<Short, Pair<Long, CandidatePair>>,
+        count: (String) -> Unit,
     ): ConnectivityResult? {
         try {
             val buf = ByteArray(PROBE_SIZE)
             val pkt = DatagramPacket(buf, buf.size)
             socket.receive(pkt)
+            count("received")
 
-            if (pkt.length < PROBE_SIZE) return null
+            if (pkt.length < PROBE_SIZE) {
+                count("short_packets")
+                return null
+            }
             val bb = ByteBuffer.wrap(buf)
             val magic = bb.int
-            if (magic != PROBE_MAGIC) return null
+            if (magic != PROBE_MAGIC) {
+                count("other_packets")
+                return null
+            }
             val pktToken = bb.int
             val pktSeq = bb.short
             val flags = bb.short
 
             if (flags == PROBE_FLAG_REQUEST) {
+                count("requests")
                 // Echo the peer's probe back as a response, preserving
                 // their token and seq so they can match it.
                 val resp = buildProbe(pktToken, pktSeq, PROBE_FLAG_RESPONSE)
                 val replyAddr = InetSocketAddress(pkt.address, pkt.port)
                 try {
                     socket.send(DatagramPacket(resp, resp.size, replyAddr))
+                    count("echoes")
                 } catch (e: Exception) {
+                    count("echo_errors")
                     Log.w(TAG, "Echo send failed: ${e.message}")
                 }
                 return null
             }
 
+            if (flags == PROBE_FLAG_RESPONSE) count("responses")
             if (flags == PROBE_FLAG_RESPONSE && pktToken == ourToken) {
                 val entry = sentTimes[pktSeq] ?: return null
+                count("matched")
                 val rtt = (System.currentTimeMillis() - entry.first).toInt()
                 val pair = entry.second
                 Log.i(TAG, "Connectivity OK: peer=${pair.peerId} type=${pair.remoteType} rtt=${rtt}ms")

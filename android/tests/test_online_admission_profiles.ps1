@@ -331,12 +331,22 @@ if (-not $failed) { throw 'Outage accepted cached host evidence' }
 Write-Host 'PASS: real outage owner keeps 25-second bound, requires affected-peer error/cleanup and fresh exact-owner native host survival'
 
 # Direct qualification must wait for completed current-pair results, never readiness alone
+$script:probeEvidence = [Collections.Generic.List[string]]::new()
+function Write-Status {
+    param($Message, $Color)
+    if ($Message -like 'ONLINE_PROBE *') { $script:probeEvidence.Add($Message) }
+}
+
 foreach ($name in @('Test-OnlineDirectProbe', 'Wait-OnlineDirectReadiness', 'Test-AllLobbyPlayersReady')) {
     $definition = $owner.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
     if (-not $definition) { throw "Missing direct fixture function $name" }
     . ([scriptblock]::Create($definition.Extent.Text))
+}
+function Get-DeviceWlanIp { param($Serial)
+    if ($Serial -eq $EMU1) { return '10.0.2.16' }
+    return '10.0.2.17'
 }
 function New-DirectControl {
     param([int]$Index)
@@ -349,6 +359,9 @@ function New-DirectControl {
             ) }
         online_resources = [pscustomobject]@{ connectivity = [pscustomobject]@{
                 phase = 'COMPLETE'; network_epoch = 4; check_epoch = 7; candidate_count = 1; peer_candidate_count = 1
+                probe_counts = [pscustomobject]@{ sent_0 = 1; received = 1; matched = 1 }
+                local_candidates = @([pscustomobject]@{ type = 'host'; addr = "10.0.2.$(16 + $Index):1234" })
+                pairs = @([pscustomobject]@{ type = 'host'; addr = "10.0.2.$(17 - $Index):1234" })
                 results = @([pscustomobject]@{ room_id = 'room'; network_epoch = 4; check_epoch = 7
                         peer_id = $ids[1 - $Index]; candidate_type = 'host' })
             } }
@@ -401,6 +414,10 @@ foreach ($never in @($false, $true)) {
     try { Wait-OnlineDirectReadiness } catch { $failed = $true }
     if ($failed -ne $never) { throw 'Direct owner did not distinguish delayed completion from unresolved probes' }
 }
+if ($script:probeEvidence.Count -ne 2 -or @($script:probeEvidence | Where-Object {
+            $_ -notmatch 'local_wifi_advertised=True peer_wifi_offered=True wifi_sends=1' -or
+            $_ -notmatch 'received=1' -or $_ -notmatch 'matched=1' -or $_ -match '10\.0\.2|host-id|join-id'
+        }).Count) { throw 'Bounded probe evidence lost candidate/counter provenance or exposed raw endpoints' }
 $script:neverDirect = $false; $script:directPoll = 3
 foreach ($relay in @($false, $true)) {
     $script:serverRelay = $relay
