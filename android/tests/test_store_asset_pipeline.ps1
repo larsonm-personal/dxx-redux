@@ -1,17 +1,24 @@
 #!/usr/bin/env pwsh
 # End-to-end asset integration: generate real media or validate a completed run
 [CmdletBinding()]
-param([string]$OutputDirectory, [switch]$FeaturedOnly)
+param([string]$OutputDirectory, [switch]$FeaturedOnly, [switch]$ScreenshotsOnly)
 $ErrorActionPreference = 'Stop'
+if ($FeaturedOnly -and $ScreenshotsOnly) { throw 'Choose either -FeaturedOnly or -ScreenshotsOnly' }
 if ($FeaturedOnly -and !$OutputDirectory) { throw '-FeaturedOnly requires an existing -OutputDirectory' }
 $androidDir = Split-Path $PSScriptRoot
 if (!$OutputDirectory) {
-    $OutputDirectory = Join-Path $androidDir ('temp/store-assets_test_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
-    & (Join-Path $androidDir 'generate-store-assets.ps1') -OutputDirectory $OutputDirectory
+    $OutputDirectory = Join-Path $androidDir ('store-assets/capture_test_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
+    & (Join-Path $androidDir 'generate-store-assets.ps1') -OutputDirectory $OutputDirectory -ScreenshotsOnly:$ScreenshotsOnly
     if ($LASTEXITCODE) { throw 'Store asset generation failed' }
 }
 $python = Join-Path $androidDir $(if ($IsWindows) { 'temp/store-assets-tools/venv/Scripts/python.exe' } else { 'temp/store-assets-tools/venv/bin/python' })
 if (!(Test-Path $python)) { $python = (Get-Command python -ErrorAction Stop).Source }
+if ($ScreenshotsOnly -or (!$FeaturedOnly -and (Test-Path (Join-Path $OutputDirectory 'live-stills.json')))) {
+    & $python (Join-Path $androidDir 'helpers/generate_store_assets.py') validate-stills --output $OutputDirectory
+    if ($LASTEXITCODE) { throw 'Live screenshot validation failed' }
+    Write-Output 'PASS: eight native screenshots, full-resolution PNGs, recorded hashes, populated launcher save verified gameplay graphics/levels and real kill/hostage/secret progress variants'
+    return
+}
 if (!$FeaturedOnly -and (Test-Path (Join-Path $OutputDirectory 'boss-edit.json'))) {
     & $python (Join-Path $androidDir 'helpers/store_asset_boss_video.py') validate --output $OutputDirectory
     if ($LASTEXITCODE) { throw 'Boss preview integration validation failed' }

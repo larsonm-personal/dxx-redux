@@ -46,7 +46,7 @@ try {
     New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
     & git -C $fixtureRoot init --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Fixture Git init failed' }
-    [IO.File]::WriteAllText((Join-Path $fixtureRoot '.gitignore'), "temp/`nandroid/temp_TEST_ONLY/`nandroid/build-outputs/`n")
+    [IO.File]::WriteAllText((Join-Path $fixtureRoot '.gitignore'), "temp/`nandroid/temp_TEST_ONLY/`nandroid/build-outputs/`nandroid/store-assets/`n")
 
     foreach ($relativePath in @(
             "temp\TEST_ONLY_run_bucket\TEST_ONLY_run_20260101_010101",
@@ -56,6 +56,8 @@ try {
             "temp\TEST_ONLY_future_tool_run_20260102_010101",
             "android\temp_TEST_ONLY\TEST_ONLY_snapshots\TEST_ONLY_capture-20260101-010101",
             "android\temp_TEST_ONLY\TEST_ONLY_snapshots\TEST_ONLY_capture-20260102-010101",
+            "android\store-assets\capture_20260101_010101",
+            "android\store-assets\capture_20260102_010101",
             "temp\TEST_ONLY_stable_cache",
             "temp\TEST_ONLY_vendor_workspace\TEST_ONLY_nested"
         )) {
@@ -193,6 +195,8 @@ try {
             "android\build-outputs\TEST_ONLY_package-release-20260101-010101-v1.test-output",
             "temp\TEST_ONLY_reports\TEST_ONLY_report_20260102_010101.test-output",
             "temp\TEST_ONLY_warnings-2026-01-02.test-output",
+            "android\store-assets\capture_20260101_010101\TEST_ONLY_artifact.txt",
+            "android\store-assets\capture_20260102_010101\TEST_ONLY_artifact.txt",
             "temp\TEST_ONLY_stable_cache\TEST_ONLY_artifact.txt",
             "temp\TEST_ONLY_stable-output.test-output",
             "temp\TEST_ONLY_vendor_workspace\TEST_ONLY_nested\TEST_ONLY_history_20260101_010101.test-output",
@@ -200,6 +204,10 @@ try {
         )) {
         Assert-Exists -RelativePath $relativePath
     }
+
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts (Join-Path $fixtureRoot 'android/store-assets') | Out-Null
+    Assert-Exists 'android/store-assets/capture_20260101_010101/TEST_ONLY_artifact.txt'
+    Assert-Exists 'android/store-assets/capture_20260102_010101/TEST_ONLY_artifact.txt'
 
     Write-Output "PASS: class-based old artifact cleanup helper"
 } finally {

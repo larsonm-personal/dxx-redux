@@ -45,7 +45,8 @@ $comparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) {
 $comparer = if ($comparison -eq [StringComparison]::Ordinal) {
     [StringComparer]::Ordinal
 } else { [StringComparer]::OrdinalIgnoreCase }
-$excludedTrees = @($ExcludePaths | Where-Object { $_ } | ForEach-Object {
+# Published store captures are persistent, including their logs and source workspaces
+$excludedTrees = @(@('android/store-assets') + $ExcludePaths | Where-Object { $_ } | ForEach-Object {
         $path = if ([IO.Path]::IsPathRooted($_)) { $_ } else { Join-Path $RepositoryRoot $_ }
         $full = [IO.Path]::GetFullPath($path).TrimEnd('\', '/')
         if (-not $full.StartsWith($RepositoryRoot + [IO.Path]::DirectorySeparatorChar, $comparison)) {

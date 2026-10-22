@@ -4,7 +4,7 @@
     Regenerate launcher screenshots, demo candidates and a 30-second review video
 .DESCRIPTION
     Uses only the dedicated DxxStoreAssets emulator and resets that app sandbox.
-    Media and licensed game data stay in ignored android/temp directories.
+    Media and licensed game data stay in ignored android/store-assets directories.
     See store-assets.md for requirements and editing the clip recipe.
 #>
 [CmdletBinding()]
@@ -12,6 +12,7 @@ param(
     [string]$OutputDirectory,
     [switch]$NoBuild,
     [switch]$AllDemos,
+    [switch]$ScreenshotsOnly,
     [switch]$AllowUnverifiedAssets,
     [switch]$ComposeOnly,
     [switch]$SelectStillsOnly,
@@ -24,17 +25,23 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if (([int]$ComposeOnly.IsPresent + [int]$SelectStillsOnly.IsPresent + [int]$FeaturedOnly.IsPresent + [int]$CombineVideo.IsPresent) -gt 1) { throw 'Choose only one generation mode' }
+if ($ScreenshotsOnly -and ($ComposeOnly -or $SelectStillsOnly -or $FeaturedOnly -or $CombineVideo -or $AllDemos -or $AudioDirectory -or $Recipe)) { throw '-ScreenshotsOnly cannot use demo/video options' }
 $repoRoot = Split-Path $PSScriptRoot
 $toolsDir = Join-Path $PSScriptRoot 'temp/store-assets-tools'
 New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
 if (!$OutputDirectory) {
     if ($ComposeOnly -or $SelectStillsOnly -or $FeaturedOnly -or $CombineVideo) { throw 'Partial generation requires -OutputDirectory' }
-    $OutputDirectory = Join-Path $PSScriptRoot ('temp/store-assets_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
+    $OutputDirectory = Join-Path $PSScriptRoot ('store-assets/capture_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
 }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 if (!$ComposeOnly -and !$SelectStillsOnly -and !$FeaturedOnly -and !$CombineVideo) {
-    if (Test-Path (Join-Path $OutputDirectory 'build.json')) { throw 'Choose a new output directory for regeneration, or use -ComposeOnly' }
-    & (Join-Path $PSScriptRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $OutputDirectory
+    if ((Test-Path (Join-Path $OutputDirectory 'build.json')) -or (Test-Path (Join-Path $OutputDirectory 'live-stills.json'))) { throw 'Choose a new output directory for regeneration, or use -ComposeOnly' }
+    # Persistent publication directories must survive both cleanup and failed retries
+    $storeRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'store-assets'))
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    $persistent = $OutputDirectory.Equals($storeRoot, $comparison) -or $OutputDirectory.StartsWith($storeRoot + [IO.Path]::DirectorySeparatorChar, $comparison)
+    $retentionTarget = if ($persistent) { $storeRoot } else { $OutputDirectory }
+    & (Join-Path $PSScriptRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $retentionTarget
     New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 }
 $python = (Get-Command python -ErrorAction Stop).Source
@@ -67,6 +74,12 @@ if ($ComposeOnly -or $SelectStillsOnly) {
     Write-Output "Review: $(Join-Path $OutputDirectory 'index.html')"
     return
 }
+if (!$ScreenshotsOnly -and !$FeaturedOnly) {
+    $sourceArguments = @($generator, 'check-sources', '--output', $OutputDirectory)
+    if ($AllDemos) { $sourceArguments += '--all-demos' }
+    & $venvPython @sourceArguments
+    if ($LASTEXITCODE) { throw 'Full store capture requires qualified format-5 replay sources; use -ScreenshotsOnly for fresh screenshots' }
+}
 $depBase = (Get-Content (Join-Path $repoRoot 'dependency_base.txt') -First 1).Trim()
 $env:JAVA_HOME = Join-Path $depBase 'jdk-21'
 $env:ANDROID_HOME = Join-Path $depBase 'android-sdk'
@@ -75,11 +88,16 @@ $env:Path = (Join-Path $env:JAVA_HOME 'bin') + [IO.Path]::PathSeparator + $env:P
 $adb = Join-Path $env:ANDROID_HOME $(if ($IsWindows) { 'platform-tools/adb.exe' } else { 'platform-tools/adb' })
 $emulator = Join-Path $env:ANDROID_HOME $(if ($IsWindows) { 'emulator/emulator.exe' } else { 'emulator/emulator' })
 $avdManager = Join-Path $env:ANDROID_HOME $(if ($IsWindows) { 'cmdline-tools/latest/bin/avdmanager.bat' } else { 'cmdline-tools/latest/bin/avdmanager' })
+# Keep registration beside the disposable emulator instead of depending on a user profile
+$env:ANDROID_AVD_HOME = Join-Path $toolsDir 'avd-home'
+New-Item -ItemType Directory -Force -Path $env:ANDROID_AVD_HOME | Out-Null
 $avdPath = Join-Path $toolsDir 'avd'
 if (!(Test-Path (Join-Path $avdPath 'config.ini'))) {
     'no' | & $avdManager create avd --name DxxStoreAssets --package 'system-images;android-34;google_apis;x86_64' --device 'Nexus 5X' --path $avdPath *> (Join-Path $toolsDir 'avd-create.log')
     if ($LASTEXITCODE) { throw 'AVD creation failed; install the API 34 google_apis x86_64 system image' }
 }
+# Repair a missing descriptor when the existing disk/config survived profile cleanup
+[IO.File]::WriteAllText((Join-Path $env:ANDROID_AVD_HOME 'DxxStoreAssets.ini'), "avd.ini.encoding=UTF-8`npath=$avdPath`ntarget=android-34`n")
 $configPath = Join-Path $avdPath 'config.ini'
 $config = Get-Content -LiteralPath $configPath -Raw
 $settings = @{
@@ -128,7 +146,8 @@ if (!$NoBuild) {
 $apk = Join-Path $PSScriptRoot 'app/build/intermediates/apk/debug/app-debug.apk'
 if (!(Test-Path $apk)) { $apk = Join-Path $PSScriptRoot 'app/build/outputs/apk/debug/app-debug.apk' }
 if (!(Test-Path $apk)) { throw 'Debug APK is missing' }
-$arguments = @($generator, 'all', '--output', $OutputDirectory, '--apk', $apk)
+$action = if ($ScreenshotsOnly) { 'screenshots' } else { 'all' }
+$arguments = @($generator, $action, '--output', $OutputDirectory, '--apk', $apk)
 if ($FeaturedOnly) {
     & $adb -s emulator-5580 install -r -t $apk | Out-Null
     if ($LASTEXITCODE) { throw 'Could not install capture APK' }

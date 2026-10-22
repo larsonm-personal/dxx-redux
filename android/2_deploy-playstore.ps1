@@ -20,6 +20,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $PACKAGE = "com.dxxrevival.app"
+$script:reviewSubmissionRequired = $false
 
 function Read-NumberedChoice {
     param(
@@ -109,7 +110,7 @@ if (-not $tracks -or $tracks.Count -eq 0) {
     # Provide defaults if the API returns empty (new app with no releases)
     $trackNames = @("internal", "alpha", "beta", "production")
 } else {
-    $trackNames = $tracks | ForEach-Object { $_.track }
+    $trackNames = @($tracks | ForEach-Object { $_.track })
 }
 
 Write-Host ""
@@ -169,6 +170,7 @@ function TryCommitEdit {
         $err = $_.ErrorDetails.Message
         if (-not $err) { try { $err = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
         if ($err -match "changesNotSentForReview") {
+            $script:reviewSubmissionRequired = $true
             Write-Host "Retrying commit with changesNotSentForReview..."
             $url2 = "$baseUrl/edits/$editId" + ":commit?changesNotSentForReview=true"
             try {
@@ -178,9 +180,11 @@ function TryCommitEdit {
             } catch {
                 $err2 = $_.ErrorDetails.Message
                 if (-not $err2) { try { $err2 = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+                if (-not $err2) { $err2 = $_.Exception.Message }
                 return $err2
             }
         }
+        if (-not $err) { $err = $_.Exception.Message }
         return $err
     }
 }
@@ -338,10 +342,18 @@ if ($releaseStatus -eq "draft") {
 }
 
 Write-Host ""
-Write-Host "=== Deployment successful ==="
+Write-Host "=== Deployment committed ==="
 Write-Host "  Package:     $PACKAGE"
 Write-Host "  Track:       $selectedTrack"
 Write-Host "  VersionCode: $versionCode"
 Write-Host "  SHA-256:     $aabDigest"
 Write-Host "  Status:      $releaseStatus"
+if ($script:reviewSubmissionRequired) {
+    Write-Host 'Action required: open Play Console > Publishing overview and send changes for review'
+}
+if ($releaseStatus -eq 'draft') {
+    Write-Host 'Action required: complete app setup and start the closed testing rollout in Play Console'
+    exit 2
+}
+Write-Host 'Check Play Console for review, managed publishing, countries and tester availability'
 Write-Host ""
