@@ -1,0 +1,15 @@
+# Chunk0517 source checkpoint, 2026-10-21
+
+Diagnosis and plans only. All three whole frozen additions496lines read: live navigation native369, host support65 and Android mission metadata62. All whole current bodies511lines read:381/71/59. All3 absent GQ2 base and1996 original, all3 have explicit later deltas. Current HEAD092f4c7d247eaeb26160933540f3bdbf2f318d4a.
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef/originalfb555eec75e1ed12c8348805ab335afb4c721b06. Raw assignment SHA5c23b3dcdcdf433910a4011f3db22c7d4f50c7940db313ec6586e2642e424030. One combined later diff clipped a removed span; the complete frozen C++ body was reread separately, recovering all removed switch-arrival/hostage prerequisite code. Current C++ body was fully read in two ranges. Do not infer credit from clipped helper/search output.
+
+Preserve native active check accumulation, ordered JSON/exit status, actual endpoint comparison, grate detour/physics and moving-player return, reactor/patrol and hostage controls. Current hostage checks deliberately replace frozen prerequisite/frontier/switch-arrival expectations with unreachable-no-plan/failure-message and reachable/no-hostage behavior; reconcile actual current engine policy before simplifying or reversing it.
+
+Later public-demo fixture explicitly controls authored identities, adjacent bot/player placement, keys and shields, then checks native-physics arrival, pending objective across frames, player survival and local patrol. Its disclosed controlled scope is not ordinary combat or complete public/retail equivalence. Keep that distinction and meaningful new assertions.
+
+Host wrapper preserves GUID output, producer lock, private per-case user directories, actual native process supervision, two identical raw results, optional Maximum archive and explicit exit2 skip. Metadata script preserves separate active-mission/background-worker/guidance and subsequent preview contracts, with later serial/package/physical isolation/install improvements. Required command status, cleanup and final publication need existing-owner reconciliation; no stale result, incomplete write or lifecycle failure reproduced.
+
+Evidence temp/general_cleanup_20261006/gq2-source-progress-0517-20261021.json SHA46ad39a38fcbccb8b3f7eef7382b81bf5dc3b129a7a29be19b6d2fefade838c4. Independent source replay PASS44 temp/general_cleanup_20261006/gq2-source-audit-0517-20261021.json SHAe8bb376b0e8f11253873cae60266d377e6de366488c922d53a00ed6e7a085503. Actual frozen/current bodies, complete diffs/later patches, base-original absence, exact assignment, prior0516 terminal, HEAD and all5 canonical identities verified.
+
+Source gate only closed. Consumer/whole-owner/prior/raw-quality/direct-disposition/publication/Drive work remains. Canonical516DONE111TODO627/326findings312remediations unchanged;0517TODO. No product/test/helper edit or execution, new finding/status/rating/runtime/saving/canonical append/Drive generation/staging/commit. Broad goal active.

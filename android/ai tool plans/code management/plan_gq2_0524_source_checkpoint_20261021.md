@@ -1,0 +1,13 @@
+# Chunk0524 source checkpoint, 2026-10-21
+
+Diagnosis and plans only. All five assigned whole additions744lines read: patch_hmi.py202, patch_live.py120, probe.cpp228, replay_capture.py130, run.ps164. Current bodies equal frozen head; all paths absent frozen base and1996original. Complete frozen patches/current deltas, raw assignment and prior523 terminal handoff bound; no inherited saving or code simplification admitted from source-only review
+
+Evidence temp/general_cleanup_20261006/gq2-source-progress-0524-20261021.json SHA27957ea639610604a10f9ed5a9e30f3ab0a17c03e6446d15857306b6913d9a51; independent read-only PASS43 auditSHA3843aa8b3b8f8474d2f97b86963047d555a8539921cbdf085085cf46c6ee6b23. Current HEAD092f4c7d247eaeb26160933540f3bdbf2f318d4a/all5assigned/all5canonical unchanged; previous523 mounted proof and terminal handoff revalidated. Canonical523DONE104TODO627/326findings312remediations/1339terminalranks unchanged
+
+Preserve external-event render-batch bookkeeping as explicitly approximate, optional measured pitch/HMI rules, nominal-key-on then saved wheel, paired banks/side-specific volume-pan, allocation/sustain/held state and runtime sample/chip/FIFO/filter reset/CC120 silence. Patch helpers mix exact asserted markers and unchecked text replacement/function delimiters; actual pinned inputs/generation consumers required before defect or merger admission. No patch script imported or executed
+
+Offline probe distinguishes file/live MIDI, OPL3 captured-register replay and dual-OPL2 approximation with matched native-rate chip stimulus. Duration bound does not prove complete-token admission; failed stream extraction/captured-prefix behavior, unchecked final closes and exceptional raw chip allocation lifetime remain unadmitted observations pending actual consumers/whole owners. No malformed input/allocation/fault/media/runtime probe
+
+Replay page explicitly qualifies envelope timing correlation, no time stretch and captured-register versus live playback; gain-matched excerpts are human diagnostics, not timbre parity. Actual same-session provenance/table claims and default-Level7 page wording remain consumer qualification. Runner checks command outcomes and restores location; only default game07/20s invokes verify.py, while custom experiments yield measurements without that oracle
+
+Source gate complete; other four gates open. Next actual production/experiment patch inputs and consumers, reference/table/capture provenance, process/publication boundaries, whole owners/priors/dispositions and final publication/Drive proof. No new finding/remediation/status/rating/runtime/saving or product/test/helper edit/execution/staging/commit; broader goal active

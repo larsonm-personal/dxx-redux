@@ -1,0 +1,13 @@
+# Chunk0523 consumer ingress, 2026-10-21
+
+Diagnosis and plans only. Eleven exact contexts585range-lines/two whole: route parent93 and navigation shared host34, selected case catalog/selector, actual simulation writer and batching/final summary ranges, initial150native Original lines, selected suite/master/CMake registration contexts. Combined clipped catalogue/writer output recovered in exact ranges before credit; no wholecasecatalog/whole regeneration/native794 claim
+
+Evidence temp/general_cleanup_20261006/gq2-consumer-ingress-0523-20261021.json SHA810309499dd517640bc6013b8001441435efb74047dcfca26c4001537ec45a79; independent read-only PASS49 auditSHA3ecd05ea40152cb15616167018488d616aab5f39ef33983273daa1d2fd7b53cc verifies exact current ranges/raw scope/all5assigned/HEAD/fivecanonical unchanged
+
+Actual route parent invokes child scripts through shared process pool with600seconds, retains native exits/timeout/skip and atomic case logs/summary, then fails or returns explicitSKIP as appropriate. Four source tests are Alwaystrue canaries; selector keeps all Always entries before family rotation. Batching separately listed in master/no-infrastructure coverage. Actual master dispatch, case catalog breadth and shared pool runtime remain outside these selected reads
+
+Navigation helper uses standard private D2/optionalD1 staging and bounded90second native execution with captured log/error; actual source pins/stage/OS cleanup still pending. Native CMake links live fixture and separate frozen Redux reference. First150 native lines demonstrate restored object/AI/path/global/RNG comparison with presentation fields deliberately excluded; remaining native scenarios/save/return/default/precision/reactor contracts require actual source
+
+Batching fixture supplies current nested publisher dependencies on WriteRegressiontrue path, deliberately stubbing only writer. Preserve pending32/elapsed30/finalpartial/headedimmediate and changed-files uniqueness, but no physical I/O acceptance. Actual WriteGuidebotSimulationFile projects current result identity, preserves only current hash/schema prior records and uses stale/not-run otherwise, validates records and delegates serializer. Full task callback/infrastructure/selected result accounting and serializer not yet reviewed
+
+Remaining work selection/schema/result completeness, native defaults/precision/reactor and whole Original/reference, source staging/pool/host build/budgets, wholeowners/priors/disposition/publication/mountedDrive. Sourcegateonly/consumeropen/0523TODO/canonical522DONE105TODO627/326findings312remediations. No newfinding/status/rating/runtime/saving/product-test-helper edit/execution/canonicalappend/Drivegeneration/staging/commit;goalactive

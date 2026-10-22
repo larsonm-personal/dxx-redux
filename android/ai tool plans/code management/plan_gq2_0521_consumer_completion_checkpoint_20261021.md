@@ -1,0 +1,17 @@
+# Chunk0521 consumer completion, 2026-10-21
+
+Diagnosis and plans only. Twenty-one fresh contexts2572range-lines/11whole plus exact revalidated prior9contexts812lines yields30contexts3384range-lines. Whole541line FM experiment assembled with earlier1-65 and newly completed66-541; all intervening helpers read explicitly. All four assigned consumer inventories covered; no implicit transitive engine/library or full README credit
+
+Evidence temp/general_cleanup_20261006/gq2-consumer-completion-0521-20261021.json SHAdeaebaef895a3df0f6d61e6b69fda8ef458876eb6804d42a65e3951e57538b7d; independent read-only PASS113 auditSHA36f4e023efde55285abb97d0c06955274681b554f18e572cdf5d27375b31cb1b. Exact raw/range/whole-union, all4sources, selected two-pin records/equality, HEAD and fivecanonical identities rechecked
+
+Current music_fluid fourth-order/128voices/gain0.4 reference, bounded synchronous snapshot loader and recreated DSP/reset differ intentionally from historical offline highest/48/0.2. Whole original-driver verifier checks controlled paired counts, transition order and settled active events; ordered song comparison explicitly covers captured prefix and reports extra rendered notes. Volume caller validates paired voice/routing before matching, retains full song-master127/index63/motif limits. No generic zip/count defect admitted
+
+Actual experimental probe uses real file/live/register/chip sources but optional trace stream failures and destructor-only WAV close differ from production active CHECK/write-close/full-tail behavior. Delayed I/O failure was not executed. Whole FM experiment retains known-broken live noteoff control, fixed/file PCM equality, both core stimuli and connection inversion. Helper subprocesses lack explicit timeout; fixed device/work names and correlated output publication remain existing-owner observations. No new finding or runtime claim
+
+Whole native HMP exporter uses shipping playback converter/native TML with explicit once/repeat/legacy and checked primary/auxiliary MIDI close. Whole TSF clip renderer enforces requested finite window and renders synth tail with checked write/close. Standalone Fluid exact-short-return failure and production CLI tail-fill are deliberately distinguished. No reproduction of optional corpus PCM finding on these repaired paths
+
+Shared CMake patches a build-local pinned player with HMI/runtime flags. Both experiment and production selected YMFM/YMFMIDI commits agree; emu8950 remains experiment-only. Preserve marker assertions, independent baseline/live/pitch/driver targets and source/package boundaries. Normal prepare rejects tracked modifications; direct CMake and untracked/generated source policy remain conditional acceptance, not a newly proven dependency defect. No upstream/download/license/build proof
+
+Historical README first95 and later68lines were read separately; earlier unsupported rhythm/first-pass experiment assumptions do not supersede later shared production support. Source bank/DRO interpretation remains a diagnostic original-register oracle, not a substitute for native game format ownership or a waveform/device benchmark
+
+Source and consumer gates complete; reconciliation, direct unpooled disposition and publication/Drive gates remain. All4assigned/all30contexts/currentHEAD/fivecanonical unchanged;0521TODO/canonical520DONE107TODO627/326findings312remediations. No newfinding/status/rating/runtime/saving/product-test-helper edit or execution/canonicalappend/Drivegeneration/staging/commit;goalactive

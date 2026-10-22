@@ -1,0 +1,11 @@
+# Chunk0516 assigned source checkpoint, 2026-10-21
+
+Diagnosis and plans only. Exact assignment is three paths76 review-lines: standalone wrapper21 whole added lines, symbolic text mapping40 whole added lines and two complete native C test U0 hunks14added1removed. The native new-line envelope5-97 is not a contiguous assigned body. All removals were read. Whole frozen/current bodies were also inspected as enclosing context:161/192 lines respectively. One current file equals frozen; wrapper and native fixture each have explicit later changes. All three are absent1996; the C fixture exists at GQ2 base, the two scripts do not.
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef/originalfb555eec75e1ed12c8348805ab335afb4c721b06. Actual HEAD092f4c7d247eaeb26160933540f3bdbf2f318d4a. Raw assignment SHA6f2c5816a00a52cb699f48d4cb68dc417b0c6a9d432d82b0d6a224c8331a386c.
+
+Preserve catalog ownership, exact resource-resolution differences, current D2/shareware forwarding and actual child delegation. The text unittest compares symbolic ordinal mappings and explicitly excludes TXT_HELP for its calling convention. This is a source regression oracle, not proof of every runtime text string. Native texture-aware controls deliberately accept a structurally valid polygon/rod but reject its missing texture. Keep active CHECK and the later POF container/instruction composition; no native parser/test/probe was executed.
+
+Source evidence temp/general_cleanup_20261006/gq2-source-progress-0516-20261021.json SHA5506fe118823be07d94a65999b64061a68f0fd4db006ba6b96f7953d2ef5682c. Independent source replay PASS45 temp/general_cleanup_20261006/gq2-source-audit-0516-20261021.json SHA65eff6866740c532038066d116bd06bffc47330a017c48a350d326b3402ace97. Replayed actual frozen bodies/patches/removals/current bodies/later deltas/base-original presence, exact assignment, prior0515 terminal and all5 canonical identities.
+
+Source gate only is closed. Actual consumers, whole owners/priors/raw quality/direct disposition and publication/observed Drive remain. Canonical515DONE112TODO627/326findings312remediations unchanged;0516TODO. No new finding/status/rating/runtime/saving/product execution/canonical append/Drive generation/staging/commit; broader goal active.
