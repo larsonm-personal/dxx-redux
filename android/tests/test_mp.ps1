@@ -164,12 +164,12 @@ function Measure-InstallationWork {
         if (-not $passed -or -not $finished) { $vectorFailures++ }
     }
     if ($failed -gt 0 -or $vectorFailures -gt 0) {
-        throw "Installation work qualification failed: $failed of $sample fresh samples; $vectorFailures of 3 device vectors"
+        throw "Installation work qualification failed: $failed of $sample fresh samples; $vectorFailures of $($allTargets.Count) device vectors"
     }
     foreach ($serial in $allTargets) {
         if (-not (Start-SetupActivity -Serial $serial)) { throw 'Launcher unavailable after work vector' }
     }
-    Write-Status "ONLINE_EVIDENCE installation work authenticated $sample fresh identities at difficulty 20 and passed 3 expensive device vectors" 'Green'
+    Write-Status "ONLINE_EVIDENCE installation work authenticated $sample fresh identities at difficulty 20 and passed $($allTargets.Count) expensive device vectors" 'Green'
 }
 
 function Test-OnlineDirectProbe {

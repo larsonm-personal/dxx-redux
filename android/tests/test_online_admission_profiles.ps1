@@ -178,6 +178,16 @@ foreach ($case in @('raw-pass', 'missing-code', 'failed-code', 'missing-pass')) 
     if ($script:vectors -ne 3 -or $script:attempts -ne 12) { throw 'Work campaign skipped required samples' }
     if (@($script:snapshots | Where-Object { $_ -like 'ONLINE_WORK_RESULT *' }).Count -ne 3) { throw 'Missing bounded vector result diagnostics' }
 }
+$originalTargets = $allTargets
+try {
+    $allTargets = @($EMU1, $EMU2)
+    $script:vectorCase = 'raw-pass'; $script:vectors = 0; $script:attempts = 0; $script:snapshots = @()
+    Measure-InstallationWork -ServerUrl 'ws://127.0.0.1:9000/ws'
+    if ($script:vectors -ne 2 -or $script:attempts -ne 8 -or
+        @($script:snapshots | Where-Object { $_ -ceq 'ONLINE_EVIDENCE installation work authenticated 8 fresh identities at difficulty 20 and passed 2 expensive device vectors' }).Count -ne 1) {
+        throw 'Two-player transport fixture misreported authentication coverage'
+    }
+} finally { $allTargets = $originalTargets }
 Write-Host 'PASS: actual raw instrumentation output is required; solved work alone cannot qualify the fixture'
 
 $returnDefinition = $owner.Find({ param($node)
