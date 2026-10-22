@@ -103,4 +103,55 @@ tungstenite 0.30.0 / ed25519-dalek 3.0.0 crate CHANGELOG.md files
 - Master catalog execution blocked by executor: Linux child supervisor cannot
   read /proc/self/task/<pid>/children (exit 125). Tests remain unchanged
 - No C/C++ changes; native gameplay builds and live deployment are outside this validation
-- Addon installation, RustSec audit and published CI results recorded below when complete
+- Addon and advisory results below; final hosted CI status is maintained in draft PR #115
+
+## Completed addon and advisory verification
+
+- `bash server/rust_upgrade.sh`: pass; rust_version.txt is actual installed output
+- `bash server/rust_dependency_lint.sh --incompatible`: pass; no further manifest/lock
+  changes, dated nightly all-targets udeps reports all dependencies used
+- bindgen 0.73.2 + host libclang 19 generated a C-struct binding whose compile-time
+  size/alignment/offset assertions compile with Rust 1.99.1
+- Cargo.lock SHA256: `b8492d61fe7f27abd64a2f67e6f9c58f80f50c5639bd60f3b929d851e5d2f0ac`
+- cargo-audit 0.22.2 against RustSec database commit
+  `4b587f00996ebe5c05a73eaef105ef241e876414` (1348 advisories):
+  old lockfile 20 vulnerability findings; refreshed lockfile zero (audit exit 0)
+- Old lockfile also had three unsound warnings and one yanked-package warning;
+  those no longer appear in the refreshed lockfile
+- Remaining informational warning: [RUSTSEC-2025-0134](https://rustsec.org/advisories/RUSTSEC-2025-0134.html),
+  rustls-pemfile 2.2.0 is unmaintained. It is already a thin wrapper around
+  rustls-pki-types PEM parsing. Retained exact existing version to avoid changing
+  TLS parsing in this bounded refresh; follow-up can use `PemObject` directly
+- These are lockfile advisory matches, not a claim that every old finding was
+  exploitable through this server's enabled features or call paths
+
+### Old lockfile vulnerability matches eliminated
+
+- [RUSTSEC-2026-0044](https://rustsec.org/advisories/RUSTSEC-2026-0044.html): aws-lc-sys 0.38.0
+- [RUSTSEC-2026-0048](https://rustsec.org/advisories/RUSTSEC-2026-0048.html): aws-lc-sys 0.38.0
+- [RUSTSEC-2026-0258](https://rustsec.org/advisories/RUSTSEC-2026-0258.html): h2 0.4.13
+- [RUSTSEC-2026-0338](https://rustsec.org/advisories/RUSTSEC-2026-0338.html): quinn-proto 0.11.14
+- [RUSTSEC-2026-0342](https://rustsec.org/advisories/RUSTSEC-2026-0342.html): quinn-proto 0.11.14
+- [RUSTSEC-2026-0340](https://rustsec.org/advisories/RUSTSEC-2026-0340.html): quinn-proto 0.11.14
+- [RUSTSEC-2026-0339](https://rustsec.org/advisories/RUSTSEC-2026-0339.html): quinn-proto 0.11.14
+- [RUSTSEC-2026-0185](https://rustsec.org/advisories/RUSTSEC-2026-0185.html): quinn-proto 0.11.14
+- [RUSTSEC-2026-0348](https://rustsec.org/advisories/RUSTSEC-2026-0348.html): rustls 0.23.37
+- [RUSTSEC-2026-0346](https://rustsec.org/advisories/RUSTSEC-2026-0346.html): rustls 0.23.37
+- [RUSTSEC-2026-0349](https://rustsec.org/advisories/RUSTSEC-2026-0349.html): rustls 0.23.37
+- [RUSTSEC-2026-0285](https://rustsec.org/advisories/RUSTSEC-2026-0285.html): rustls 0.23.37
+- [RUSTSEC-2026-0104](https://rustsec.org/advisories/RUSTSEC-2026-0104.html): rustls-webpki 0.103.9
+- [RUSTSEC-2026-0382](https://rustsec.org/advisories/RUSTSEC-2026-0382.html): rustls-webpki 0.103.9
+- [RUSTSEC-2026-0099](https://rustsec.org/advisories/RUSTSEC-2026-0099.html): rustls-webpki 0.103.9
+- [RUSTSEC-2026-0098](https://rustsec.org/advisories/RUSTSEC-2026-0098.html): rustls-webpki 0.103.9
+- [RUSTSEC-2026-0049](https://rustsec.org/advisories/RUSTSEC-2026-0049.html): rustls-webpki 0.103.9
+- [RUSTSEC-2026-0009](https://rustsec.org/advisories/RUSTSEC-2026-0009.html): time 0.3.44
+- [RUSTSEC-2026-0383](https://rustsec.org/advisories/RUSTSEC-2026-0383.html): webpki-root-certs 1.0.6
+- [RUSTSEC-2026-0381](https://rustsec.org/advisories/RUSTSEC-2026-0381.html): webpki-roots 1.0.6
+
+## Publication checkpoint
+
+Draft PR: https://github.com/larsonm-personal/dxx-redux/pull/115
+Target: cmake; branch: rust-toolchain-refresh
+Identity: larsonm-personal for both Git commits and GitHub operations
+Hosted server, tooling, engine, public save-integrity and LAN smoke checks run
+on the branch; current/final results are recorded in the PR body
