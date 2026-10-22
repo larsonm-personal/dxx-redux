@@ -3738,10 +3738,16 @@ mod tests {
         assert!(lobby.holepunch_started_at.is_none());
         for player in &lobby.players {
             assert!(player.connectivity_checks.is_empty());
-            assert!(player.validated_routes.is_empty());
-            assert_eq!(player.connection_type, ConnectionType::Unknown);
-            assert_eq!(player.ping_ms, None);
         }
+        assert_eq!(
+            validated_remote_addr(&lobby.players[0], &lobby.players[1]),
+            "10.0.2.17:41002"
+        );
+        assert_eq!(lobby.players[0].connection_type, ConnectionType::DirectLan);
+        assert_eq!(lobby.players[0].ping_ms, Some(1));
+        assert!(lobby.players[1].validated_routes.is_empty());
+        assert_eq!(lobby.players[1].connection_type, ConnectionType::Unknown);
+        assert_eq!(lobby.players[1].ping_ms, None);
         // A late report still cannot resurrect the completed timeout transition
         assert!(!accept_connectivity_report(
             &mut lobby, bid, aid, delayed, "host", 1
@@ -3760,13 +3766,17 @@ mod tests {
             validated_remote_addr(&lobby.players[1], &lobby.players[0]),
             "10.0.2.16:41001"
         );
-        // The worker uses the same transition to retire both accepted and unused offers
+        // The worker expires unused offers without discarding the current validated route
         let expiry = lobby.holepunch_started_at.unwrap() + crate::lobby::HOLEPUNCH_TIMEOUT;
         assert!(lobby.expire_connectivity_attempt(expiry));
         assert!(lobby
             .players
             .iter()
-            .all(|p| p.connectivity_checks.is_empty() && p.validated_routes.is_empty()));
+            .all(|p| p.connectivity_checks.is_empty()));
+        assert_eq!(
+            validated_remote_addr(&lobby.players[1], &lobby.players[0]),
+            "10.0.2.16:41001"
+        );
     }
 
     fn make_player(candidates: Vec<(&str, &str)>, nat_type: Option<&str>) -> LobbyPlayer {

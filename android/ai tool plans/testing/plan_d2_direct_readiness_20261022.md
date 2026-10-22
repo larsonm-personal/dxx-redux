@@ -52,9 +52,20 @@
 
 - Candidate offer IDs are a breaking schema change: raise Android protocol and server current/minimum protocol together from 5 to 6
 - Reject v5 at authentication with explicit protocol/update guidance before auth or PoW challenge; test old-schema rejection, Android/server parity and current-version acceptance
-- Share the 30-second holepunch deadline between cleanup and report acceptance; clear issued offers, accepted routes and type/ping state when expiring an attempt
-- Fence delayed reports and StartGame even before the cleanup worker runs; verify expired-unused offer rejection, accepted-route retirement and fresh-attempt acceptance
+- Share the 30-second holepunch deadline between cleanup and report acceptance; clear unused issued offers when expiring an attempt while preserving candidate-bound accepted routes
+- Fence delayed reports and StartGame even before the cleanup worker runs; verify expired-unused offer rejection, accepted-route preservation and fresh-attempt acceptance
 - Preserve active D2 run 39716307780 at 74ec15b for evidence; do not dispatch a duplicate or deploy
 - Follow-up validation: 172 Rust tests pass (61 unit, 95 integration, 13 installation auth, 3 UDP reconnect); 26 matched-v6 JVM tests pass, with only the historical proxy comparison skipped
 - Scoped format/lint and catalog validation pass; catalog integration still hits the local `/proc` child-supervisor limitation
 - Existing D2 run 39716307780 remains active on 74ec15b; no cancellation, duplicate dispatch or deployment
+
+## Preserve successful routes beyond offer timeout
+
+- Offer acceptance deadline and accepted route lifetime are distinct: timeout retires unused offers but keeps validated exact endpoints while peer/candidate ownership is unchanged
+- Keep report state/age rejection and all candidate-refresh, peer-departure and room-end invalidations
+- Add real WebSocket launch coverage after the deadline, both before and after cleanup, with zero relay capacity and strict exact direct endpoints; advance the stored monotonic start time instead of sleeping
+- Retain expired-unused report rejection and fresh-attempt positive tests
+- Prior D2 run remains untouched; no duplicate dispatch or deployment
+
+- Route-lifetime validation: all 173 Rust tests pass (61 unit, 96 integration, 13 installation auth, 3 UDP reconnect), including delayed direct launch before/after cleanup with no relay capacity and stale unused report rejection
+- Scoped formatting passes; no Android code, wire version, dependency pins or endpoint ownership invalidation paths changed in this follow-up

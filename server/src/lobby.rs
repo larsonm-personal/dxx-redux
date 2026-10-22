@@ -136,7 +136,7 @@ pub struct AssignedAdmission {
 }
 
 impl Lobby {
-    /// Retire the whole attempt at its monotonic deadline, including accepted directions
+    /// Expire unused offers; accepted routes remain valid until peer/candidate ownership changes
     pub fn expire_connectivity_attempt(&mut self, now: Instant) -> bool {
         if self.state != LobbyState::Holepunching
             || !self
@@ -149,9 +149,6 @@ impl Lobby {
         self.holepunch_started_at = None;
         for player in &mut self.players {
             player.connectivity_checks.clear();
-            player.validated_routes.clear();
-            player.connection_type = ConnectionType::Unknown;
-            player.ping_ms = None;
         }
         true
     }

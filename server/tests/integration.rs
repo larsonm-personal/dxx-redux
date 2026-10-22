@@ -5625,6 +5625,17 @@ async fn online_two_shared_nat_rosters_can_reconnect_twice_with_a_finite_source_
 
 #[tokio::test]
 async fn direct_launch_uses_validated_second_host_candidate_for_each_peer() {
+    assert_validated_direct_launch(false, false).await;
+}
+
+#[tokio::test]
+async fn validated_direct_launch_survives_offer_timeout_without_relay_capacity() {
+    for cleanup_before_start in [false, true] {
+        assert_validated_direct_launch(true, cleanup_before_start).await;
+    }
+}
+
+async fn assert_validated_direct_launch(advance_past_deadline: bool, cleanup_before_start: bool) {
     async fn receive_type(ws: &mut WsClient, kind: &str) -> Value {
         for _ in 0..8 {
             let message = recv(ws).await;
@@ -5638,7 +5649,7 @@ async fn direct_launch_uses_validated_second_host_candidate_for_each_peer() {
         }
         panic!("Missing expected {kind}");
     }
-    let server = TestServer::start().await;
+    let server = TestServer::with_config(|config| config.max_relay_sessions = 0).await;
     let mut host = connect_ws(&server).await;
     let h = authenticate(&mut host, "Host").await;
     let room = create_test_room(&mut host).await;
@@ -5689,6 +5700,19 @@ async fn direct_launch_uses_validated_second_host_candidate_for_each_peer() {
     send_only(&mut joiner, json!({"type":"READY","ready":true})).await;
     receive_type(&mut host, "LOBBY_UPDATE").await;
     receive_type(&mut joiner, "LOBBY_UPDATE").await;
+    if advance_past_deadline {
+        let mut lobby = server.state.lobbies.get_mut(&room).unwrap();
+        assert!(lobby.players.iter().all(|p| p.validated_routes.len() == 1));
+        lobby.holepunch_started_at = Some(
+            std::time::Instant::now()
+                - dxx_matchmaking::lobby::HOLEPUNCH_TIMEOUT
+                - std::time::Duration::from_secs(1),
+        );
+        if cleanup_before_start {
+            assert!(lobby.expire_connectivity_attempt(std::time::Instant::now()));
+            assert_eq!(lobby.state, dxx_matchmaking::lobby::LobbyState::Waiting);
+        }
+    }
     send_only(&mut host, json!({"type":"START_GAME"})).await;
     let host_start = receive_type(&mut host, "GAME_STARTING").await;
     let join_start = receive_type(&mut joiner, "GAME_STARTING").await;
