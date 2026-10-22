@@ -147,6 +147,55 @@ try {
     $suiteAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'android/run_all_tests.ps1'), [ref]$null, [ref]$suiteParseErrors)
     if ($suiteParseErrors.Count) { throw "Master runner parse errors: $suiteParseErrors" }
     & {
+        # Real discovery and selector execution; no Android infrastructure or child supervisor
+        $catalog = (& (Join-Path $repoRoot 'android/run_all_tests.ps1') -ListTests | Out-String) | ConvertFrom-Json
+        $declared = @($catalog.tests | Where-Object { -not $_.manual } | ForEach-Object {
+                @{ Name = $_.name; BaseName = $_.base_name; Type = $_.type }
+            })
+        $optIn = @(Get-TestSuiteOptInVariants)
+        if ($optIn.Count -ne 3 -or @($declared | Where-Object Name -cin $optIn).Count -ne 3) { throw 'Transport variants missing from real catalog' }
+        # The pre-addition catalog is exactly this catalog without the three added entries
+        $baseline = @($declared | Where-Object Name -cnotin $optIn)
+        foreach ($full in @($false, $true)) {
+            foreach ($seed in 0..40) {
+                $expected = @(Select-TestSuiteCoverage -Tests $baseline -Seed $seed -AllScenarios:$full).Name
+                $actual = @(Select-TestSuiteCoverage -Tests $declared -Seed $seed -AllScenarios:$full).Name
+                if (Compare-Object $expected $actual) { throw "Transport addition changed baseline PowerShell selection: full=$full seed=$seed" }
+                if ('test_mp' -notin $actual -or ($full -and 'test_lan' -notin $actual)) { throw 'Original multiplayer coverage was weakened' }
+            }
+        }
+        $guard = @($suiteAst.EndBlock.Statements | Where-Object {
+                $_ -is [Management.Automation.Language.IfStatementAst] -and $_.Extent.Text -match 'Get-TestSuiteOptInVariants'
+            })
+        if ($guard.Count -ne 1) { throw 'Transport execution opt-in guard missing' }
+        $exact = @($suiteAst.EndBlock.Statements | Where-Object {
+                $_ -is [Management.Automation.Language.IfStatementAst] -and $_.Clauses[0].Item1.Extent.Text -ceq '$SelectedTestsPath'
+            })
+        $filterDefinition = $suiteAst.Find({ param($node)
+                $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-MatchesRequestedFilter'
+            }, $true)
+        . ([scriptblock]::Create($filterDefinition.Extent.Text))
+        foreach ($Filter in @('', '*', 'test_mp', 'test_mp*') + $optIn) {
+            $SelectedTestsPath = $null
+            $allTests = @($declared | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
+            $expected = @($baseline | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
+            $profileSkipped = @()
+            . ([scriptblock]::Create($guard[0].Extent.Text))
+            if ($Filter -cin $optIn) {
+                if ($allTests.Count -ne 1 -or $allTests[0].Name -cne $Filter) { throw 'Exact transport filter failed to opt in' }
+            } elseif (Compare-Object @($expected.Name) @($allTests.Name)) { throw 'Default or broad filter changed baseline selection' }
+        }
+        foreach ($name in $optIn) {
+            $SelectedTestsPath = Join-Path $fixtureRoot 'transport_selected.json'
+            ConvertTo-Json -InputObject @($name) | Set-Content -LiteralPath $SelectedTestsPath
+            $Filter = $null; $Target45Minutes = $false; $allTests = @($declared); $profileSkipped = @()
+            . ([scriptblock]::Create($exact[0].Extent.Text))
+            . ([scriptblock]::Create($guard[0].Extent.Text))
+            if ($allTests.Count -ne 1 -or $allTests[0].Name -cne $name) { throw 'Exact transport plan selection failed' }
+        }
+        Write-Host 'PASS: real PowerShell default/full selection matches baseline across 41 seeds; broad filters exclude transport modes and each exact filter/plan opts in'
+    }
+    & {
         foreach ($functionName in @('Sort-TestsForExecution', 'Test-ThirdEmulatorTarget', 'Stop-ThreeEmulatorTestState')) {
             $definition = $suiteAst.Find({ param($node)
                     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName
@@ -391,7 +440,7 @@ try {
         $explicitNames = (Get-TestSuiteCoveragePolicy).explicit
         if (@($fullCoverage | Where-Object BaseName -in $explicitNames).Count) { throw 'Full unattended coverage included an explicit investigation' }
         $exactOnlyNames = @($explicitNames) + @((Get-TestSuiteCoveragePolicy).three_player_network)
-        $expectedNames = @($unattended | Where-Object BaseName -notin $exactOnlyNames | ForEach-Object name | Sort-Object)
+        $expectedNames = @($unattended | Where-Object { $_.BaseName -notin $exactOnlyNames -and $_.Name -cnotin (Get-TestSuiteOptInVariants) } | ForEach-Object name | Sort-Object)
         $selectedNames = @($fullCoverage | ForEach-Object name | Sort-Object)
         if (Compare-Object $expectedNames $selectedNames) { throw 'Full unattended coverage dropped a supported scenario or replay variant' }
         foreach ($seed in 0..40) {

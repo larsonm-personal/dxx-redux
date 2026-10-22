@@ -1209,6 +1209,14 @@ if ($Filter) {
 
 $extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_probe")
 $profileSkipped = @()
+# Broad owner filters, FullSuite and IncludeManual must not enable transport faults
+if (-not $SelectedTestsPath) {
+    $allTests = @($allTests | Where-Object {
+            if ($_.Name -cnotin (Get-TestSuiteOptInVariants) -or $Filter -ceq $_.Name) { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'opt-in transport mode; use its exact -Filter name or -SelectedTestsPath' }
+            return $false
+        })
+}
 # IncludeManual and FullSuite do not implicitly opt in to a third device
 if (-not $SelectedTestsPath -and -not $Filter) {
     $allTests = @($allTests | Where-Object {

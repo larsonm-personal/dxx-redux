@@ -35,3 +35,13 @@ Draft PR116 targets online-restoration. Initial implementation 5f6c59af73e3fa66e
 Full planner suite: 82 pass; unchanged LAN public-profile controls pass
 Native campaign39731864363 was dispatched once at that initial implementation and passed selection; execution remains pending
 A focused follow-up corrects the work-evidence device count for the two-player slice (8 fresh identities and 2 device vector suites), with a positive host control; the original three-player campaign remains 12 identities and 3 device suites
+
+## PowerShell opt-in selector correction
+
+Independent review identified that the PowerShell coverage selector expanded the new BaseName=test_mp variants even though the Python nightly planner excluded them
+The three exact variant names now have an explicit opt-in list: coverage selection excludes them, and execution excludes them unless selected by their exact Filter name or SelectedTestsPath
+Broad owner/wildcard filters, IncludeManual and FullSuite cannot opt in accidentally; the original test_mp and LAN entries retain their existing policies
+Real catalog/PowerShell selector controls compare the pre-addition catalog (all original entries) with the augmented catalog across 41 seeds and normal/full profiles, check broad-filter equivalence, and select each new mode through both supported exact paths
+Those controls pass; replacing the coverage selector with the prior published implementation makes the same regression test fail as intended
+Automation catalog passes. The full master-catalog test reaches the existing local /proc supervisor limitation only after these new controls and existing three-player controls pass
+Scoped quality still cannot provision PSScriptAnalyzer1.25.0; no other scoped formatter failures
