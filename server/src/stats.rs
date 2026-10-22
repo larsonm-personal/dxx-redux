@@ -131,7 +131,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
     use crate::lobby::LobbyState;
     let now = std::time::Instant::now();
     let max_game_age = Duration::from_secs(5 * 60); // 5 minutes with no state update
-    let holepunch_timeout = Duration::from_secs(30);
+    let holepunch_timeout = crate::lobby::HOLEPUNCH_TIMEOUT;
 
     let mut to_remove = Vec::new();
     let mut to_revert = Vec::new();
@@ -141,7 +141,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
         // D6: revert Holepunching to Waiting after 30s
         if lobby.state == LobbyState::Holepunching {
             if let Some(started) = lobby.holepunch_started_at {
-                if now.duration_since(started) > holepunch_timeout {
+                if now.duration_since(started) >= holepunch_timeout {
                     to_revert.push(lobby.id);
                 }
             }
@@ -158,9 +158,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
 
     for lid in to_revert {
         if let Some(mut lobby) = state.lobbies.get_mut(&lid) {
-            if lobby.state == LobbyState::Holepunching {
-                lobby.state = LobbyState::Waiting;
-                lobby.holepunch_started_at = None;
+            if lobby.expire_connectivity_attempt(now) {
                 info!(lobby_id = %lid, "holepunching timed out, reverted to Waiting");
             }
         }

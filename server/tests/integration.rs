@@ -265,6 +265,51 @@ async fn test_auth_version_rejected() {
     );
 }
 
+/// v5 lacks candidate offer IDs and must fail before authentication/challenge issuance
+#[tokio::test]
+async fn offer_id_schema_rejects_v5_before_authentication_with_upgrade_message() {
+    let server = TestServer::start().await;
+    assert!(MIN_CLIENT_PROTOCOL > 5);
+    let android = include_str!(
+        "../../android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkConstants.kt"
+    );
+    let android_version: u32 = android
+        .split("PROTOCOL_VERSION: Int = ")
+        .nth(1)
+        .unwrap()
+        .lines()
+        .next()
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+    assert_eq!(android_version, CURRENT_PROTOCOL);
+    for method in ["dev", "p256_challenge"] {
+        let mut ws = connect_ws(&server).await;
+        let rejected = send_recv(&mut ws, json!({
+            "type":"AUTHENTICATE", "protocol_version":5, "client_version":"1.0.0",
+            "callsign":"OldSchema", "platform":"android", "play_games_token":"tok", "auth_method":method
+        })).await;
+        assert_eq!(rejected["type"], "VERSION_REJECTED");
+        assert_eq!(rejected["required_version"], MIN_CLIENT_PROTOCOL);
+        assert_eq!(rejected["current_server_version"], CURRENT_PROTOCOL);
+        assert!(rejected["reason"].as_str().unwrap().contains("protocol 5"));
+        assert!(rejected["reason"].as_str().unwrap().contains("update"));
+        assert_eq!(rejected["update_url"], server.state.config.update_url);
+        assert!(server.state.sessions.is_empty());
+    }
+    let old_report = json!({"type":"CONNECTIVITY_OK", "peer_id":uuid::Uuid::new_v4(), "winning_candidate_type":"host", "rtt_ms":1});
+    assert!(
+        serde_json::from_value::<dxx_matchmaking::protocol::ClientMessage>(old_report).is_err()
+    );
+    // The matching wire version authenticates; the launch regression exercises its offer-ID reports
+    let mut current = connect_ws(&server).await;
+    assert_eq!(
+        authenticate(&mut current, "CurrentSchema").await["type"],
+        "AUTH_OK"
+    );
+}
+
 /// Create a lobby and see it in the lobby list.
 #[tokio::test]
 async fn test_create_and_list_lobby() {

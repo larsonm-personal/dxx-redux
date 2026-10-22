@@ -690,8 +690,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     warn!(%addr, %client_version, %protocol_version, required = MIN_CLIENT_PROTOCOL, "client version rejected");
                     let _ = tx.send(ServerMessage::VersionRejected {
                         reason: format!(
-                            "Your client is too old (v{client_version}). \
-                             Please update to the latest version."
+                            "Client protocol {protocol_version} is unsupported; this server requires protocol {MIN_CLIENT_PROTOCOL}..={CURRENT_PROTOCOL}. Please update to a compatible client."
                         ),
                         required_version: MIN_CLIENT_PROTOCOL,
                         required_version_name: "1.0.0".into(),
@@ -1744,6 +1743,20 @@ fn accept_connectivity_report(
     kind: &str,
     rtt: u32,
 ) -> bool {
+    lobby.expire_connectivity_attempt(Instant::now());
+    let current_attempt = match lobby.state {
+        LobbyState::Holepunching => lobby
+            .holepunch_started_at
+            .is_some_and(|started| started.elapsed() < crate::lobby::HOLEPUNCH_TIMEOUT),
+        LobbyState::InGame => lobby
+            .pending_late_joiners
+            .get(&reporter)
+            .is_some_and(|started| started.elapsed() < LATE_JOIN_TIMEOUT),
+        _ => false,
+    };
+    if !current_attempt {
+        return false;
+    }
     let Some(player) = lobby.players.iter().find(|p| p.player_id == reporter) else {
         return false;
     };
@@ -2536,6 +2549,7 @@ fn handle_authenticated_message(
                         });
                         return;
                     }
+                    lobby.expire_connectivity_attempt(Instant::now());
                     if !matches!(lobby.state, LobbyState::Waiting | LobbyState::Holepunching) {
                         let _ = tx.send(ServerMessage::Error {
                             code: "GAME_ALREADY_STARTED".into(),
@@ -3584,6 +3598,8 @@ mod tests {
             serde_json::json!({}),
         );
         lobby.players = vec![a, b];
+        lobby.state = LobbyState::Holepunching;
+        lobby.holepunch_started_at = Some(Instant::now());
         build_connectivity_check_messages(&mut lobby);
         let offer = lobby.players[0]
             .connectivity_checks
@@ -3669,7 +3685,10 @@ mod tests {
             1
         ));
         lobby.remove_player(&bid);
+        lobby.state = LobbyState::Waiting;
         assert!(lobby.add_player(bid, "replacement".into()));
+        lobby.state = LobbyState::Holepunching;
+        lobby.holepunch_started_at = Some(Instant::now());
         lobby.players[1].candidates = vec![ConnectionCandidate {
             candidate_type: "host".into(),
             addr: fresh.remote_addr.clone(),
@@ -3683,6 +3702,71 @@ mod tests {
             1
         ));
         assert!(validated_remote_addr(&lobby.players[0], &lobby.players[1]).is_empty());
+    }
+
+    #[test]
+    fn expired_connectivity_attempt_rejects_delayed_report_and_allows_fresh_attempt() {
+        let a = make_player(vec![("host", "10.0.2.16:41001")], None);
+        let b = make_player(vec![("host", "10.0.2.17:41002")], None);
+        let (aid, bid) = (a.player_id, b.player_id);
+        let mut lobby = Lobby::new(
+            aid,
+            "host".into(),
+            "d2".into(),
+            4,
+            None,
+            false,
+            serde_json::json!({}),
+        );
+        lobby.players = vec![a, b];
+        lobby.state = LobbyState::Holepunching;
+        lobby.holepunch_started_at = Some(Instant::now());
+        build_connectivity_check_messages(&mut lobby);
+        let accepted = *lobby.players[0].connectivity_checks.keys().next().unwrap();
+        let delayed = *lobby.players[1].connectivity_checks.keys().next().unwrap();
+        assert!(!lobby.expire_connectivity_attempt(Instant::now()));
+        assert!(accept_connectivity_report(
+            &mut lobby, aid, bid, accepted, "host", 1
+        ));
+        assert!(!validated_remote_addr(&lobby.players[0], &lobby.players[1]).is_empty());
+        lobby.holepunch_started_at = Some(Instant::now() - crate::lobby::HOLEPUNCH_TIMEOUT);
+        // The worker has not run: the report path must fence the expired attempt itself
+        assert!(!accept_connectivity_report(
+            &mut lobby, bid, aid, delayed, "host", 1
+        ));
+        assert_eq!(lobby.state, LobbyState::Waiting);
+        assert!(lobby.holepunch_started_at.is_none());
+        for player in &lobby.players {
+            assert!(player.connectivity_checks.is_empty());
+            assert!(player.validated_routes.is_empty());
+            assert_eq!(player.connection_type, ConnectionType::Unknown);
+            assert_eq!(player.ping_ms, None);
+        }
+        // A late report still cannot resurrect the completed timeout transition
+        assert!(!accept_connectivity_report(
+            &mut lobby, bid, aid, delayed, "host", 1
+        ));
+        lobby.state = LobbyState::Holepunching;
+        lobby.holepunch_started_at = Some(Instant::now());
+        build_connectivity_check_messages(&mut lobby);
+        let fresh = *lobby.players[1].connectivity_checks.keys().next().unwrap();
+        assert!(!accept_connectivity_report(
+            &mut lobby, bid, aid, delayed, "host", 1
+        ));
+        assert!(accept_connectivity_report(
+            &mut lobby, bid, aid, fresh, "host", 1
+        ));
+        assert_eq!(
+            validated_remote_addr(&lobby.players[1], &lobby.players[0]),
+            "10.0.2.16:41001"
+        );
+        // The worker uses the same transition to retire both accepted and unused offers
+        let expiry = lobby.holepunch_started_at.unwrap() + crate::lobby::HOLEPUNCH_TIMEOUT;
+        assert!(lobby.expire_connectivity_attempt(expiry));
+        assert!(lobby
+            .players
+            .iter()
+            .all(|p| p.connectivity_checks.is_empty() && p.validated_routes.is_empty()));
     }
 
     fn make_player(candidates: Vec<(&str, &str)>, nat_type: Option<&str>) -> LobbyPlayer {

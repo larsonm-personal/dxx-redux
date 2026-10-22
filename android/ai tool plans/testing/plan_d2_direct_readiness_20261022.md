@@ -45,5 +45,16 @@
 - JVM validation with the rebuilt server: 27 tests total, 26 passed, only the opt-in historical proxy comparison skipped; wrong-source/self-echo/multi-candidate UDP, real auth and outage tests pass
 - Host fixture controls and catalog validation pass; catalog integration remains blocked by the local `/proc` supervisor limitation
 - Scoped Kotlin formatting and pinned rustfmt 1.96.1 pass; local PSScriptAnalyzer 1.25.0 provisioning still unavailable
-- Compiler/component/dependency pin files unchanged; the offer-ID protocol requires matching client/server builds, supplied together by the campaign
+- Compiler/component/dependency pin files unchanged; protocol v6 rejects earlier clients before authentication, and the campaign supplies matched builds
 - Publish fast-forward from 0193fdc and run one exact-head D2 campaign; native qualification remains pending that result
+
+## Protocol negotiation and expired offers follow-up
+
+- Candidate offer IDs are a breaking schema change: raise Android protocol and server current/minimum protocol together from 5 to 6
+- Reject v5 at authentication with explicit protocol/update guidance before auth or PoW challenge; test old-schema rejection, Android/server parity and current-version acceptance
+- Share the 30-second holepunch deadline between cleanup and report acceptance; clear issued offers, accepted routes and type/ping state when expiring an attempt
+- Fence delayed reports and StartGame even before the cleanup worker runs; verify expired-unused offer rejection, accepted-route retirement and fresh-attempt acceptance
+- Preserve active D2 run 39716307780 at 74ec15b for evidence; do not dispatch a duplicate or deploy
+- Follow-up validation: 172 Rust tests pass (61 unit, 95 integration, 13 installation auth, 3 UDP reconnect); 26 matched-v6 JVM tests pass, with only the historical proxy comparison skipped
+- Scoped format/lint and catalog validation pass; catalog integration still hits the local `/proc` child-supervisor limitation
+- Existing D2 run 39716307780 remains active on 74ec15b; no cancellation, duplicate dispatch or deployment

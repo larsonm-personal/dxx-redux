@@ -1,8 +1,10 @@
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use std::collections::{HashMap, HashSet};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use uuid::Uuid;
+
+pub const HOLEPUNCH_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Possible lobby states.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,6 +136,26 @@ pub struct AssignedAdmission {
 }
 
 impl Lobby {
+    /// Retire the whole attempt at its monotonic deadline, including accepted directions
+    pub fn expire_connectivity_attempt(&mut self, now: Instant) -> bool {
+        if self.state != LobbyState::Holepunching
+            || !self
+                .holepunch_started_at
+                .is_some_and(|started| now.saturating_duration_since(started) >= HOLEPUNCH_TIMEOUT)
+        {
+            return false;
+        }
+        self.state = LobbyState::Waiting;
+        self.holepunch_started_at = None;
+        for player in &mut self.players {
+            player.connectivity_checks.clear();
+            player.validated_routes.clear();
+            player.connection_type = ConnectionType::Unknown;
+            player.ping_ms = None;
+        }
+        true
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         host_player_id: Uuid,

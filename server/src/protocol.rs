@@ -7,8 +7,9 @@ use uuid::Uuid;
 // message schema. Keep MIN_CLIENT_PROTOCOL at the oldest version the
 // server still accepts. Both values must stay in sync with the client
 // constant in NetworkConstants.kt.
-pub const CURRENT_PROTOCOL: u32 = 5;
-pub const MIN_CLIENT_PROTOCOL: u32 = 5;
+// v6 binds connectivity reports to server-issued candidate offers
+pub const CURRENT_PROTOCOL: u32 = 6;
+pub const MIN_CLIENT_PROTOCOL: u32 = 6;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
