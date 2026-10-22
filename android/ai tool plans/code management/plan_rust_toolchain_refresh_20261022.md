@@ -159,3 +159,26 @@ on the branch; current/final results are recorded in the PR body
 Root-cwd callers such as Start-MatchmakingServer also resolve the root
 rust-toolchain.toml pin. The versioned bootstrap supports Git Bash/MSYS/Cygwin
 on Windows x86_64 using rustup-init.exe; an isolated test verifies that selection
+
+## Strict server-only CI follow-up
+
+The user explicitly requested Rust work if and only if `server/` changes
+The workflow runs on pull requests and pushes to `cmake`, with an always-present
+`server` job. Its lightweight Python filter gates every Rust verification,
+installation, build, test, Clippy and formatting step. An unrelated change
+finishes the same check successfully without running Rust tools. There are no
+workflow-level path filters, manual dispatch bypasses or branch protection changes
+
+- Pull requests compare the merge base of event base/head SHAs to the PR head:
+  aggregate changes across the PR, even if its newest commit is unrelated
+- Existing-branch pushes compare event before/after SHAs: the complete push diff
+- New branches compare to the empty tree; deleted refs select no Rust work
+- Exact `server/` path scope includes deletions and moves into/out of the directory
+- Root toolchain, Android, native and workflow-only changes do not select Rust work
+- Full checkout history avoids changed-file API truncation; missing old push SHAs
+  are fetched explicitly, and comparison errors fail rather than silently skipping
+
+Eleven real-Git filter/workflow tests cover positive/negative paths, PR aggregate
+versus push scope, base-only changes, deletions, renames, new/deleted branches,
+invalid inputs, output wiring and gating of every Rust step. All pass locally
+Exact compiler/components, pinned checkout action and locked Cargo commands remain

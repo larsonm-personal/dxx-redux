@@ -1,14 +1,10 @@
 name: Server Rust checks
 
+# Always emit the server check; gate Rust steps instead of filtering the workflow
 on:
-  workflow_dispatch:
   pull_request:
-    paths:
-      - "server/**"
-      - "rust-toolchain.toml"
-      - "android/get_deps/helpers/get_rust.sh"
-      - "android/get_deps/tool_versions.conf"
-      - ".github/workflows/server-rust.yml"
+  push:
+    branches: [cmake]
 
 permissions:
   contents: read
@@ -25,14 +21,26 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Test the server change filter
+        run: python3 .github/tests/test_server_rust_changes.py
+      - name: Detect server changes
+        id: changes
+        run: python3 .github/scripts/server_rust_changes.py
+      - name: No server changes
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "No server changes; Rust installation, build and tests skipped"
       - name: Verify exact pins and helper orchestration
+        if: steps.changes.outputs.changed == 'true'
         run: |
           python3 server/check_exact_dependencies.py
           python3 server/test_rust_helpers.py
           bash -n server/rust_upgrade.sh server/rust_dependency_lint.sh server/deploy_build.sh android/get_deps/helpers/get_rust.sh
       - name: Install declared compiler and components
+        if: steps.changes.outputs.changed == 'true'
         run: bash android/get_deps/helpers/get_rust.sh
       - name: Build and test locked dependencies
+        if: steps.changes.outputs.changed == 'true'
         working-directory: server
         run: |
           cargo build --locked
