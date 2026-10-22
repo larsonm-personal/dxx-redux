@@ -1,184 +1,47 @@
-# Rust toolchain and dependency refresh
+# Rust refresh checkpoint
 
+Branch: rust-toolchain-refresh; draft PR: https://github.com/larsonm-personal/dxx-redux/pull/115
 Base: cmake 4be58740e29440a2c2b944b31bcfd2d72c0d325b
-Branch: rust-toolchain-refresh
 
-## Scope and plan
+## Scope
 
-- Audit existing Rust upgrade, dependency, installation, formatting and CI helpers
-- Query official Rust distribution manifests and crates.io metadata for stable selections
-- Pin compiler, compatible components, rustup, addon tools and dated udeps nightly
-- Keep all direct/dev Cargo dependencies exact; retain package 0.1.0 and edition 2021
-- Make regular installs reproducible, preserve explicit upgrade workflow, remove floating nightly
-- Build/test with --locked, run Clippy, pinned formatting, addon checks and script tests
-- Check RustSec advisories and source/API compatibility; document base defects separately
-- Publish this independent branch and a draft PR targeting cmake; monitor applicable CI
+Refresh compiler, components, addons and exact server dependencies independently
+of online-restoration/PR113. No deployment, merge or cmake push
 
-No online-restoration/PR113 history, deployment, service/configuration changes, or cmake push
+## Selections and workflow
 
-## Discovery evidence
+- Rust/Cargo 1.99.1, Clippy 0.1.99, rustfmt 1.10.0 from the same compiler release
+- rustup 1.29.2, cargo-udeps 0.1.61, cargo-edit 0.13.14, bindgen 0.73.2
+- udeps uses nightly-2026-10-22
+- Versions verified against official Rust distribution manifests and crates.io
+- Compiler/components: root rust-toolchain.toml; addons: server/rust_tools.conf
+- rust_upgrade.sh installs exact selections and records actual version output
+- rust_dependency_lint.sh uses cargo upgrade --pinned; --dry-run previews without
+  changing the lockfile, while --incompatible explicitly permits major updates
+- All 25 direct/dev dependency versions remain exact; 19 updated
+- Package 0.1.0 and edition 2021 remain unchanged
+- Normal installation uses declared versions; deploy build uses --locked
+- Rust bootstrap uses platform.sh's portable create_temp_dir helper
 
-Official https://static.rust-lang.org/dist/channel-rust-stable.toml queried 2026-10-22:
-Rust 1.99.1 (2026-10-15 release), Clippy 0.1.99, rustfmt 1.10.0
-Official rustup release-stable.toml: 1.29.2
-crates.io API: cargo-udeps 0.1.61, cargo-edit 0.13.14 (MSRV 1.97), bindgen-cli 0.73.2
-Existing formatter pin: Rust 1.96.1; align with selected stable compiler
+## CI
 
-The base has 25 versioned direct/dev dependencies (24 normal, one dev), all exact
-PR113's direct ring dependency is absent; do not silently import it or its fixes
-No .agents/skills directory exists in this checkout or /workspace/.agents
+The server check always reports on PRs and pushes to cmake. A short inline Git
+comparison runs Rust only for server/ changes: PR aggregate merge-base-to-head,
+push before-to-after, new branch versus empty tree, deleted ref skipped
+Deletions and moves into/out of server/ count. Unrelated Android, native, root
+compiler declaration and workflow-only changes do not run Rust. No branch
+protection changes. Bespoke Python guards/filter/tests were removed on request
 
-## Exact dependency changes
+## Validation and known limits
 
-| Crate             | Before         | After      |
-| ----------------- | -------------- | ---------- |
-| tokio             | `=1.51.1`      | `=1.54.1`  |
-| tokio-tungstenite | `=0.29.0`      | `=0.30.0`  |
-| rustls            | `=0.23.37`     | `=0.23.46` |
-| tokio-rustls      | `=0.26.4`      | `=0.26.6`  |
-| serde             | `=1.0.228`     | `=1.0.229` |
-| serde_json        | `=1.0.149`     | `=1.0.154` |
-| reqwest           | `=0.13.2`      | `=0.13.5`  |
-| dashmap           | `=6.1.0`       | `=6.2.1`   |
-| uuid              | `=1.23.0`      | `=1.28.0`  |
-| tracing-appender  | `=0.2.4`       | `=0.2.5`   |
-| futures-util      | `=0.3.32`      | `=0.3.34`  |
-| axum              | `=0.8.8`       | `=0.8.9`   |
-| rusqlite          | `=0.39.0`      | `=0.40.2`  |
-| chrono            | `=0.4.44`      | `=0.4.45`  |
-| ed25519-dalek     | `=3.0.0-pre.6` | `=3.0.0`   |
-| sha2              | `=0.11.0`      | `=0.11.1`  |
-| rand              | `=0.10.0`      | `=0.10.3`  |
-| hyper             | `=1.9.0`       | `=1.12.0`  |
-| hyper-util        | `=0.1.20`      | `=0.1.21`  |
+Locked build and 112 Rust tests, Clippy, formatting, dated udeps and bindgen smoke
+checks passed. The portability regression passed after adopting create_temp_dir
+The full hosted CI suite passed at 6ba7a6bd9efdf7117aa4932104ef4789ae2a1c9a
+Current-head CI and simplification validation are recorded in the PR body
 
-Six direct pins remain unchanged; package version and edition are unchanged
-
-## Upgrade and regular-install flow
-
-1. Discover releases from official Rust distribution manifests and crates.io metadata
-2. Edit `rust-toolchain.toml`, `server/rust_tools.conf` and the matching `RUSTFMT_TOOLCHAIN` pin
-3. Run `bash server/rust_upgrade.sh` to install exact selections and record actual inventory
-4. Preview dependencies with `bash server/rust_dependency_lint.sh --dry-run --incompatible`
-5. Review release notes, then run the helper without `--dry-run`; inspect manifest and lockfile
-6. Run locked build/tests, Clippy, formatting and advisory checks before committing
-
-The dependency helper preserves exact requirements with cargo-upgrade `--pinned`,
-checks all dependency tables before/after, resolves the lockfile, and runs locked
-udeps with a dated nightly. It no longer deletes the registry or requests the
-non-sparse git index. A dry run exits before lock/build operations
-
-Regular get_rust/deploy installs consume declared pins, including a versioned
-rustup installer checked against the official SHA256 file. They never discover
-stable/nightly releases. Deploy builds use --locked; deployment was not executed
-
-## Compatibility review
-
-- All 272 resolved packages with declared MSRVs support the selected compiler
-- ed25519-dalek moves from 3.0.0-pre.6 to stable 3.0.0; its release notes raise MSRV
-  to 1.85 and update signature/rand_core dependencies. Existing key generation,
-  signature roundtrip/rejection tests pass without changing verification code
-- tokio-tungstenite/tungstenite 0.30.0 raises MSRV to 1.85 and rejects invalid
-  Sec-WebSocket-Key values. Existing websocket integration tests pass
-- rusqlite 0.40 changes virtual-table interfaces not used by this server and
-  updates bundled SQLite; database/integration tests pass
-- No source/API edits, crypto-provider selection changes, LAN-default changes,
-  or imported PR113/online-restoration history
-
-Sources: official distribution manifests, https://crates.io/api/v1/crates/{crate},
-https://github.com/rusqlite/rusqlite/releases/tag/v0.40.0, and published
-tungstenite 0.30.0 / ed25519-dalek 3.0.0 crate CHANGELOG.md files
-
-## Validation checkpoint
-
-- Base and upgraded locked builds pass on Rust 1.99.1
-- Base and upgraded locked tests: 37 unit + 62 integration + 13 NAT = 112 passed
-- cargo clippy --locked --all-targets: clean, no warnings
-- cargo fmt --check using 1.99.1: pass, no Rust formatting changes
-- Seven isolated helper tests, exact-pin guard, Bash syntax, ShellCheck 0.11.0,
-  shfmt 3.14.1 and actionlint 1.7.12: pass
-- Scoped project mixed-language quality invocation: all checks passed
-- Automation catalog validation: 95 standalone JSON tests, 430 support scripts,
-  262 standalone PowerShell tests, pass
-- Master catalog execution blocked by executor: Linux child supervisor cannot
-  read /proc/self/task/<pid>/children (exit 125). Tests remain unchanged
-- No C/C++ changes; native gameplay builds and live deployment are outside this validation
-- Addon and advisory results below; final hosted CI status is maintained in draft PR #115
-
-## Completed addon and advisory verification
-
-- `bash server/rust_upgrade.sh`: pass; rust_version.txt is actual installed output
-- `bash server/rust_dependency_lint.sh --incompatible`: pass; no further manifest/lock
-  changes, dated nightly all-targets udeps reports all dependencies used
-- bindgen 0.73.2 + host libclang 19 generated a C-struct binding whose compile-time
-  size/alignment/offset assertions compile with Rust 1.99.1
-- Cargo.lock SHA256: `b8492d61fe7f27abd64a2f67e6f9c58f80f50c5639bd60f3b929d851e5d2f0ac`
-- cargo-audit 0.22.2 against RustSec database commit
-  `4b587f00996ebe5c05a73eaef105ef241e876414` (1348 advisories):
-  old lockfile 20 vulnerability findings; refreshed lockfile zero (audit exit 0)
-- Old lockfile also had three unsound warnings and one yanked-package warning;
-  those no longer appear in the refreshed lockfile
-- Remaining informational warning: [RUSTSEC-2025-0134](https://rustsec.org/advisories/RUSTSEC-2025-0134.html),
-  rustls-pemfile 2.2.0 is unmaintained. It is already a thin wrapper around
-  rustls-pki-types PEM parsing. Retained exact existing version to avoid changing
-  TLS parsing in this bounded refresh; follow-up can use `PemObject` directly
-- These are lockfile advisory matches, not a claim that every old finding was
-  exploitable through this server's enabled features or call paths
-
-### Old lockfile vulnerability matches eliminated
-
-- [RUSTSEC-2026-0044](https://rustsec.org/advisories/RUSTSEC-2026-0044.html): aws-lc-sys 0.38.0
-- [RUSTSEC-2026-0048](https://rustsec.org/advisories/RUSTSEC-2026-0048.html): aws-lc-sys 0.38.0
-- [RUSTSEC-2026-0258](https://rustsec.org/advisories/RUSTSEC-2026-0258.html): h2 0.4.13
-- [RUSTSEC-2026-0338](https://rustsec.org/advisories/RUSTSEC-2026-0338.html): quinn-proto 0.11.14
-- [RUSTSEC-2026-0342](https://rustsec.org/advisories/RUSTSEC-2026-0342.html): quinn-proto 0.11.14
-- [RUSTSEC-2026-0340](https://rustsec.org/advisories/RUSTSEC-2026-0340.html): quinn-proto 0.11.14
-- [RUSTSEC-2026-0339](https://rustsec.org/advisories/RUSTSEC-2026-0339.html): quinn-proto 0.11.14
-- [RUSTSEC-2026-0185](https://rustsec.org/advisories/RUSTSEC-2026-0185.html): quinn-proto 0.11.14
-- [RUSTSEC-2026-0348](https://rustsec.org/advisories/RUSTSEC-2026-0348.html): rustls 0.23.37
-- [RUSTSEC-2026-0346](https://rustsec.org/advisories/RUSTSEC-2026-0346.html): rustls 0.23.37
-- [RUSTSEC-2026-0349](https://rustsec.org/advisories/RUSTSEC-2026-0349.html): rustls 0.23.37
-- [RUSTSEC-2026-0285](https://rustsec.org/advisories/RUSTSEC-2026-0285.html): rustls 0.23.37
-- [RUSTSEC-2026-0104](https://rustsec.org/advisories/RUSTSEC-2026-0104.html): rustls-webpki 0.103.9
-- [RUSTSEC-2026-0382](https://rustsec.org/advisories/RUSTSEC-2026-0382.html): rustls-webpki 0.103.9
-- [RUSTSEC-2026-0099](https://rustsec.org/advisories/RUSTSEC-2026-0099.html): rustls-webpki 0.103.9
-- [RUSTSEC-2026-0098](https://rustsec.org/advisories/RUSTSEC-2026-0098.html): rustls-webpki 0.103.9
-- [RUSTSEC-2026-0049](https://rustsec.org/advisories/RUSTSEC-2026-0049.html): rustls-webpki 0.103.9
-- [RUSTSEC-2026-0009](https://rustsec.org/advisories/RUSTSEC-2026-0009.html): time 0.3.44
-- [RUSTSEC-2026-0383](https://rustsec.org/advisories/RUSTSEC-2026-0383.html): webpki-root-certs 1.0.6
-- [RUSTSEC-2026-0381](https://rustsec.org/advisories/RUSTSEC-2026-0381.html): webpki-roots 1.0.6
-
-## Publication checkpoint
-
-Draft PR: https://github.com/larsonm-personal/dxx-redux/pull/115
-Target: cmake; branch: rust-toolchain-refresh
-Identity: larsonm-personal for both Git commits and GitHub operations
-Hosted server, tooling, engine, public save-integrity and LAN smoke checks run
-on the branch; current/final results are recorded in the PR body
-
-Root-cwd callers such as Start-MatchmakingServer also resolve the root
-rust-toolchain.toml pin. The versioned bootstrap supports Git Bash/MSYS/Cygwin
-on Windows x86_64 using rustup-init.exe; an isolated test verifies that selection
-
-## Strict server-only CI follow-up
-
-The user explicitly requested Rust work if and only if `server/` changes
-The workflow runs on pull requests and pushes to `cmake`, with an always-present
-`server` job. Its lightweight Python filter gates every Rust verification,
-installation, build, test, Clippy and formatting step. An unrelated change
-finishes the same check successfully without running Rust tools. There are no
-workflow-level path filters, manual dispatch bypasses or branch protection changes
-
-- Pull requests compare the merge base of event base/head SHAs to the PR head:
-  aggregate changes across the PR, even if its newest commit is unrelated
-- Existing-branch pushes compare event before/after SHAs: the complete push diff
-- New branches compare to the empty tree; deleted refs select no Rust work
-- Exact `server/` path scope includes deletions and moves into/out of the directory
-- Root toolchain, Android, native and workflow-only changes do not select Rust work
-- Full checkout history avoids changed-file API truncation; missing old push SHAs
-  are fetched explicitly, and comparison errors fail rather than silently skipping
-
-Eleven real-Git filter/workflow tests cover positive/negative paths, PR aggregate
-versus push scope, base-only changes, deletions, renames, new/deleted branches,
-invalid inputs, output wiring and gating of every Rust step. All pass locally
-Exact compiler/components, pinned checkout action and locked Cargo commands remain
+RustSec database 4b587f00996ebe5c05a73eaef105ef241e876414: old lockfile 20
+vulnerability matches, refreshed lockfile zero. Retained informational warning
+RUSTSEC-2025-0134: rustls-pemfile 2.2.0 is unmaintained; a separate change can
+migrate PEM parsing to rustls-pki-types. No advisory ignores or TLS changes
+Local SDK/master catalog execution is limited by missing executor /proc child
+supervision support; tests were not weakened. No live deployment was tested

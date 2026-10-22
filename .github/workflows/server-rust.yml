@@ -22,20 +22,36 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Test the server change filter
-        run: python3 .github/tests/test_server_rust_changes.py
       - name: Detect server changes
         id: changes
-        run: python3 .github/scripts/server_rust_changes.py
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.event.after }}
+          DELETED: ${{ github.event.deleted }}
+        run: |
+          if [[ "$DELETED" == true ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$BASE" == 0000000000000000000000000000000000000000 ]]; then
+            BASE=$(git hash-object -t tree --stdin </dev/null)
+          else
+            git cat-file -e "$BASE^{commit}" || git fetch --no-tags --depth=1 origin "$BASE"
+          fi
+          # PR aggregate diff; pushes compare their before/after snapshots
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            BASE=$(git merge-base "$BASE" "$HEAD")
+          fi
+          status=0
+          git diff --quiet --no-renames "$BASE" "$HEAD" -- server/ || status=$?
+          case "$status" in
+            0) echo "changed=false" >> "$GITHUB_OUTPUT" ;;
+            1) echo "changed=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
       - name: No server changes
         if: steps.changes.outputs.changed != 'true'
         run: echo "No server changes; Rust installation, build and tests skipped"
-      - name: Verify exact pins and helper orchestration
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          python3 server/check_exact_dependencies.py
-          python3 server/test_rust_helpers.py
-          bash -n server/rust_upgrade.sh server/rust_dependency_lint.sh server/deploy_build.sh android/get_deps/helpers/get_rust.sh
       - name: Install declared compiler and components
         if: steps.changes.outputs.changed == 'true'
         run: bash android/get_deps/helpers/get_rust.sh
