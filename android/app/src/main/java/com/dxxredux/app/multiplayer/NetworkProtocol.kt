@@ -168,6 +168,7 @@ data class ConnectionCandidate(
 
 @Serializable
 data class ConnectivityOkMsg(
+    @SerialName("check_id") val checkId: String,
     val type: String = "CONNECTIVITY_OK",
     @SerialName("peer_id") val peerId: String,
     @SerialName("winning_candidate_type") val winningCandidateType: String,
@@ -417,6 +418,7 @@ data class CandidatePair(
     @SerialName("remote_type") val remoteType: String,
     @SerialName("remote_addr") val remoteAddr: String,
     val priority: Int,
+    @SerialName("check_id") val checkId: String = "",
 )
 
 @Serializable

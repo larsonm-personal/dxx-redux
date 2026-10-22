@@ -1669,8 +1669,12 @@ fn candidate_pair_priority(local_type: &str, remote_type: &str) -> u32 {
 }
 
 /// Build per-player CONNECTIVITY_CHECK_GO messages with prioritized candidate pairs.
-fn build_connectivity_check_messages(lobby: &Lobby) -> Vec<(Uuid, ServerMessage)> {
+fn build_connectivity_check_messages(lobby: &mut Lobby) -> Vec<(Uuid, ServerMessage)> {
     let mut result = Vec::new();
+    for player in &mut lobby.players {
+        player.connectivity_checks.clear();
+        player.validated_routes.clear();
+    }
     for player in &lobby.players {
         let mut pairs: Vec<CandidatePair> = Vec::new();
         for peer in &lobby.players {
@@ -1680,6 +1684,7 @@ fn build_connectivity_check_messages(lobby: &Lobby) -> Vec<(Uuid, ServerMessage)
             for local_cand in &player.candidates {
                 for remote_cand in &peer.candidates {
                     pairs.push(CandidatePair {
+                        check_id: Uuid::new_v4(),
                         peer_id: peer.player_id,
                         local_type: local_cand.candidate_type.clone(),
                         remote_type: remote_cand.candidate_type.clone(),
@@ -1698,7 +1703,87 @@ fn build_connectivity_check_messages(lobby: &Lobby) -> Vec<(Uuid, ServerMessage)
             ServerMessage::ConnectivityCheckGo { peer_addrs: pairs },
         ));
     }
+    for (player_id, message) in &result {
+        if let ServerMessage::ConnectivityCheckGo { peer_addrs } = message {
+            let player = lobby
+                .players
+                .iter_mut()
+                .find(|p| p.player_id == *player_id)
+                .unwrap();
+            player
+                .connectivity_checks
+                .extend(peer_addrs.iter().map(|pair| (pair.check_id, pair.clone())));
+        }
+    }
     result
+}
+
+/// Resolve only the endpoint this reporter validated for this peer's current candidates
+fn validated_remote_addr(
+    reporter: &crate::lobby::LobbyPlayer,
+    peer: &crate::lobby::LobbyPlayer,
+) -> String {
+    reporter
+        .validated_routes
+        .get(&peer.player_id)
+        .filter(|pair| {
+            peer.candidates.iter().any(|candidate| {
+                candidate.candidate_type == pair.remote_type && candidate.addr == pair.remote_addr
+            })
+        })
+        .map(|pair| pair.remote_addr.clone())
+        .unwrap_or_default()
+}
+
+/// An authenticated player can only accept an issued offer for the current room/peer/attempt
+fn accept_connectivity_report(
+    lobby: &mut Lobby,
+    reporter: Uuid,
+    peer: Uuid,
+    check_id: Uuid,
+    kind: &str,
+    rtt: u32,
+) -> bool {
+    let Some(player) = lobby.players.iter().find(|p| p.player_id == reporter) else {
+        return false;
+    };
+    let Some(pair) = player.connectivity_checks.get(&check_id).cloned() else {
+        return false;
+    };
+    if reporter == peer || pair.peer_id != peer || (kind != "relay" && pair.remote_type != kind) {
+        return false;
+    }
+    let Some(remote) = lobby.players.iter().find(|p| p.player_id == peer) else {
+        return false;
+    };
+    if !remote.candidates.iter().any(|candidate| {
+        candidate.candidate_type == pair.remote_type && candidate.addr == pair.remote_addr
+    }) {
+        return false;
+    }
+    let conn_type = match kind {
+        "host" => crate::lobby::ConnectionType::DirectLan,
+        "upnp" => crate::lobby::ConnectionType::DirectUpnp,
+        "srflx" | "observed" => crate::lobby::ConnectionType::DirectHolepunch,
+        "predicted" => crate::lobby::ConnectionType::PredictedHolepunch,
+        "relay" => crate::lobby::ConnectionType::Relay,
+        _ => return false,
+    };
+    let player = lobby
+        .players
+        .iter_mut()
+        .find(|p| p.player_id == reporter)
+        .unwrap();
+    player
+        .connectivity_checks
+        .retain(|_, offer| offer.peer_id != peer);
+    player.validated_routes.remove(&peer);
+    if kind != "relay" {
+        player.validated_routes.insert(peer, pair);
+    }
+    player.connection_type = conn_type;
+    player.ping_ms = Some(rtt);
+    true
 }
 
 struct RelayPair {
@@ -1916,10 +2001,10 @@ fn complete_late_join(
         let mut host_addr = String::new();
         for existing in &established {
             let (method, _) = determine_connection_type(existing, &joiner);
-            let existing_addr = best_candidate_addr_for_type(&existing.candidates, &method);
-            let joiner_addr = best_candidate_addr_for_type(&joiner.candidates, &method);
-            // Late-join ICE currently proves only the host path. Other
-            // existing peers need authenticated relay until pairwise ICE exists
+            let existing_addr = validated_remote_addr(&joiner, existing);
+            let joiner_addr = validated_remote_addr(existing, &joiner);
+            // Late-join ICE currently lacks reverse proof. Every unconfirmed
+            // direction uses authenticated relay until pairwise ICE exists
             let is_relay = state.config.force_relay
                 || existing.player_id != host_id
                 || method == crate::lobby::ConnectionType::Relay
@@ -2251,6 +2336,8 @@ fn handle_authenticated_message(
                         // Reset all players to not-ready
                         for p in &mut lobby.players {
                             p.ready = false;
+                            p.connectivity_checks.clear();
+                            p.validated_routes.clear();
                             p.mission_status = None;
                         }
                         info!(%player_id, %lobby_id, "host ended game, lobby reset to Waiting");
@@ -2521,14 +2608,10 @@ fn handle_authenticated_message(
                                 || (conn_type == crate::lobby::ConnectionType::DirectLan
                                     && !confirmed_direct(&lobby.players[i].connection_type)
                                     && !confirmed_direct(&lobby.players[j].connection_type));
-                            let addr_i = best_candidate_addr_for_type(
-                                &lobby.players[i].candidates,
-                                &conn_type,
-                            );
-                            let addr_j = best_candidate_addr_for_type(
-                                &lobby.players[j].candidates,
-                                &conn_type,
-                            );
+                            let addr_i =
+                                validated_remote_addr(&lobby.players[j], &lobby.players[i]);
+                            let addr_j =
+                                validated_remote_addr(&lobby.players[i], &lobby.players[j]);
                             let requires_relay = force_or_downgrade_to_relay
                                 || conn_type == crate::lobby::ConnectionType::Relay
                                 || addr_i.is_empty()
@@ -2625,7 +2708,11 @@ fn handle_authenticated_message(
                             my_pid,
                             ServerMessage::GameStarting {
                                 game_epoch: lobby.game_epoch,
-                                host_addr: host_addr.clone(),
+                                host_addr: peers
+                                    .iter()
+                                    .find(|peer| peer.slot == 0)
+                                    .map(|peer| peer.addr.clone())
+                                    .unwrap_or_else(|| host_addr.clone()),
                                 game: game.clone(),
                                 your_slot: lobby.players[my_slot].slot,
                                 max_players,
@@ -2714,6 +2801,17 @@ fn handle_authenticated_message(
                         all_candidates.extend(observed);
                     }
 
+                    for player in &mut lobby.players {
+                        if player.player_id == player_id {
+                            player.connectivity_checks.clear();
+                            player.validated_routes.clear();
+                        } else {
+                            player
+                                .connectivity_checks
+                                .retain(|_, pair| pair.peer_id != player_id);
+                            player.validated_routes.remove(&player_id);
+                        }
+                    }
                     if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
                         p.candidates = all_candidates.clone();
                         p.nat_type = Some(nat_type);
@@ -2748,7 +2846,7 @@ fn handle_authenticated_message(
                     let check_msgs = if all_have_candidates {
                         lobby.state = LobbyState::Holepunching;
                         lobby.holepunch_started_at = Some(std::time::Instant::now());
-                        Some(build_connectivity_check_messages(&lobby))
+                        Some(build_connectivity_check_messages(&mut lobby))
                     } else {
                         None
                     };
@@ -2803,6 +2901,7 @@ fn handle_authenticated_message(
                             for local_cand in &j.candidates {
                                 for remote_cand in &h.candidates {
                                     pairs.push(CandidatePair {
+                                        check_id: Uuid::new_v4(),
                                         peer_id: host_id,
                                         local_type: local_cand.candidate_type.clone(),
                                         remote_type: remote_cand.candidate_type.clone(),
@@ -2818,6 +2917,14 @@ fn handle_authenticated_message(
                             let probe_addrs: Vec<String> =
                                 j.candidates.iter().map(|c| c.addr.clone()).collect();
                             let joiner_callsign = j.callsign.clone();
+                            let player = lobby
+                                .players
+                                .iter_mut()
+                                .find(|p| p.player_id == player_id)
+                                .unwrap();
+                            player
+                                .connectivity_checks
+                                .extend(pairs.iter().map(|pair| (pair.check_id, pair.clone())));
                             info!(
                                 %player_id, %host_id, pairs = pairs.len(),
                                 "late-join ICE: sending probes"
@@ -2876,6 +2983,7 @@ fn handle_authenticated_message(
 
         ClientMessage::ConnectivityOk {
             peer_id: peer,
+            check_id,
             winning_candidate_type,
             rtt_ms,
         } => {
@@ -2883,18 +2991,15 @@ fn handle_authenticated_message(
             let session_room = state.sessions.get(&player_id).map(|s| s.lobby_id);
             if let Some(Some(lobby_id)) = session_room {
                 if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                    let conn_type = match winning_candidate_type.as_str() {
-                        "host" => crate::lobby::ConnectionType::DirectLan,
-                        "upnp" => crate::lobby::ConnectionType::DirectUpnp,
-                        "srflx" => crate::lobby::ConnectionType::DirectHolepunch,
-                        "observed" => crate::lobby::ConnectionType::DirectHolepunch,
-                        "predicted" => crate::lobby::ConnectionType::PredictedHolepunch,
-                        "relay" => crate::lobby::ConnectionType::Relay,
-                        _ => crate::lobby::ConnectionType::Unknown,
-                    };
-                    if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
-                        p.connection_type = conn_type;
-                        p.ping_ms = Some(rtt_ms);
+                    if !accept_connectivity_report(
+                        &mut lobby,
+                        player_id,
+                        peer,
+                        check_id,
+                        &winning_candidate_type,
+                        rtt_ms,
+                    ) {
+                        return;
                     }
                     info!(%player_id, %peer, %winning_candidate_type, rtt_ms, "connectivity ok");
 
@@ -3458,6 +3563,128 @@ mod tests {
         }
     }
 
+    #[test]
+    fn connectivity_offers_bind_reporter_peer_endpoint_and_attempt() {
+        let a = make_player(
+            vec![("host", "10.0.2.15:41001"), ("host", "10.0.2.16:41001")],
+            None,
+        );
+        let b = make_player(
+            vec![("host", "10.0.2.15:41002"), ("host", "10.0.2.17:41002")],
+            None,
+        );
+        let (aid, bid) = (a.player_id, b.player_id);
+        let mut lobby = Lobby::new(
+            aid,
+            "host".into(),
+            "d2".into(),
+            4,
+            None,
+            false,
+            serde_json::json!({}),
+        );
+        lobby.players = vec![a, b];
+        build_connectivity_check_messages(&mut lobby);
+        let offer = lobby.players[0]
+            .connectivity_checks
+            .values()
+            .find(|p| p.remote_addr == "10.0.2.17:41002")
+            .unwrap()
+            .clone();
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            Uuid::new_v4(),
+            "host",
+            1
+        ));
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            bid,
+            aid,
+            offer.check_id,
+            "host",
+            1
+        ));
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            aid,
+            offer.check_id,
+            "host",
+            1
+        ));
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            offer.check_id,
+            "srflx",
+            1
+        ));
+        assert!(accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            offer.check_id,
+            "host",
+            1
+        ));
+        assert_eq!(
+            validated_remote_addr(&lobby.players[0], &lobby.players[1]),
+            "10.0.2.17:41002"
+        );
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            offer.check_id,
+            "relay",
+            1
+        ));
+        build_connectivity_check_messages(&mut lobby);
+        assert!(validated_remote_addr(&lobby.players[0], &lobby.players[1]).is_empty());
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            offer.check_id,
+            "host",
+            1
+        ));
+        let fresh = lobby.players[0]
+            .connectivity_checks
+            .values()
+            .find(|p| p.remote_addr == "10.0.2.17:41002")
+            .unwrap()
+            .clone();
+        lobby.players[1].candidates[1].addr = "10.0.2.18:41002".into();
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            fresh.check_id,
+            "host",
+            1
+        ));
+        lobby.remove_player(&bid);
+        assert!(lobby.add_player(bid, "replacement".into()));
+        lobby.players[1].candidates = vec![ConnectionCandidate {
+            candidate_type: "host".into(),
+            addr: fresh.remote_addr.clone(),
+        }];
+        assert!(!accept_connectivity_report(
+            &mut lobby,
+            aid,
+            bid,
+            fresh.check_id,
+            "host",
+            1
+        ));
+        assert!(validated_remote_addr(&lobby.players[0], &lobby.players[1]).is_empty());
+    }
+
     fn make_player(candidates: Vec<(&str, &str)>, nat_type: Option<&str>) -> LobbyPlayer {
         LobbyPlayer {
             slot: 0,
@@ -3471,6 +3698,8 @@ mod tests {
                     addr: a.into(),
                 })
                 .collect(),
+            connectivity_checks: std::collections::HashMap::new(),
+            validated_routes: std::collections::HashMap::new(),
             nat_type: nat_type.map(|s| s.into()),
             connection_type: ConnectionType::Unknown,
             ping_ms: None,

@@ -47,6 +47,11 @@ pub struct LobbyPlayer {
     pub callsign: String,
     pub ready: bool,
     pub candidates: Vec<crate::protocol::ConnectionCandidate>,
+    /// Server-issued offers and accepted directional routes for the current candidate attempt
+    #[serde(skip)]
+    pub connectivity_checks: HashMap<Uuid, crate::protocol::CandidatePair>,
+    #[serde(skip)]
+    pub validated_routes: HashMap<Uuid, crate::protocol::CandidatePair>,
     pub nat_type: Option<String>,
     pub connection_type: ConnectionType,
     pub ping_ms: Option<u32>,
@@ -145,6 +150,8 @@ impl Lobby {
             callsign: host_callsign.clone(),
             ready: false,
             candidates: Vec::new(),
+            connectivity_checks: HashMap::new(),
+            validated_routes: HashMap::new(),
             nat_type: None,
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
@@ -230,6 +237,8 @@ impl Lobby {
             callsign,
             ready: false,
             candidates: Vec::new(),
+            connectivity_checks: HashMap::new(),
+            validated_routes: HashMap::new(),
             nat_type: None,
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
@@ -240,6 +249,12 @@ impl Lobby {
 
     pub fn remove_player(&mut self, player_id: &Uuid) {
         self.players.retain(|p| &p.player_id != player_id);
+        for player in &mut self.players {
+            player
+                .connectivity_checks
+                .retain(|_, pair| &pair.peer_id != player_id);
+            player.validated_routes.remove(player_id);
+        }
         self.pending_late_joiners.remove(player_id);
         self.assigned_late_joiners.remove(player_id);
     }

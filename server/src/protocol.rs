@@ -138,6 +138,7 @@ pub enum ClientMessage {
     #[serde(rename = "CONNECTIVITY_OK")]
     ConnectivityOk {
         peer_id: Uuid,
+        check_id: Uuid,
         winning_candidate_type: String,
         rtt_ms: u32,
     },
@@ -473,6 +474,7 @@ pub struct ConnectionCandidate {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct CandidatePair {
+    pub check_id: Uuid,
     pub peer_id: Uuid,
     pub local_type: String,
     pub remote_type: String,

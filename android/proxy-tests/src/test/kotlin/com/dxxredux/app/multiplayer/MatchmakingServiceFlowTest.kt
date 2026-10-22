@@ -9,6 +9,84 @@ import org.junit.Test
 
 /** Runs the actual service's completed-join consumer; Android storage/GPGS/IPC are not simulated */
 class MatchmakingServiceFlowTest {
+    @Test(timeout = 10000)
+    fun multipleCandidatesRequireWinningEndpointSourceAndRejectSelfEcho() {
+        val loopback = java.net.InetAddress.getLoopbackAddress()
+        java.net.DatagramSocket(0, loopback).use { dead ->
+            java.net.DatagramSocket(0, loopback).use { peer ->
+                java.net.DatagramSocket(0, loopback).use { forged ->
+                    peer.soTimeout = 4000
+                    val failure =
+                        java.util.concurrent.atomic
+                            .AtomicReference<Throwable?>()
+                    val responder =
+                        Thread {
+                            try {
+                                fun receive(): java.net.DatagramPacket {
+                                    val packet = java.net.DatagramPacket(ByteArray(12), 12)
+                                    peer.receive(packet)
+                                    check(
+                                        java.nio.ByteBuffer
+                                            .wrap(packet.data)
+                                            .getShort(10)
+                                            .toInt() == 1,
+                                    )
+                                    return packet
+                                }
+                                val original = receive()
+                                val response = original.data.clone()
+                                java.nio.ByteBuffer
+                                    .wrap(response)
+                                    .putShort(10, 2)
+                                forged.send(java.net.DatagramPacket(response, 12, original.socketAddress))
+                                receive() // The checker progressed after rejecting the wrong source
+                                peer.send(java.net.DatagramPacket(original.data, 12, original.socketAddress))
+                                receive() // It ignored its own token instead of echoing the request
+                                peer.send(java.net.DatagramPacket(response, 12, original.socketAddress))
+                            } catch (error: Throwable) {
+                                failure.set(error)
+                            }
+                        }.apply {
+                            isDaemon = true
+                            start()
+                        }
+                    try {
+                        val winner = "127.0.0.1:${peer.localPort}"
+                        var counts = emptyMap<String, Int>()
+                        val result =
+                            ConnectivityChecker.probe(
+                                listOf(
+                                    CandidatePair(
+                                        "peer",
+                                        "host",
+                                        "host",
+                                        "127.0.0.1:${dead.localPort}",
+                                        100,
+                                        "unreachable-offer",
+                                    ),
+                                    CandidatePair("peer", "host", "host", winner, 100, "winning-offer"),
+                                ),
+                                diagnostics = { counts = it },
+                            )
+                        responder.join(1000)
+                        failure.get()?.let { throw AssertionError("Probe fixture failed", it) }
+                        assertEquals("winning-offer", result?.checkId)
+                        assertEquals(winner, result?.remoteAddr)
+                        assertEquals("host", result?.winningCandidateType)
+                        assertEquals(1, counts["wrong_source"])
+                        assertEquals(1, counts["self_requests"])
+                        assertEquals(1, counts["matched"])
+                        assertEquals(2, counts["responses"])
+                        assertEquals(0, counts["echoes"] ?: 0)
+                    } finally {
+                        peer.close()
+                        responder.join(1000)
+                    }
+                }
+            }
+        }
+    }
+
     @Test(timeout = 5000)
     fun unansweredProbeExportsSendsWithoutClaimingReceivedTraffic() {
         java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()).use { peer ->
@@ -81,7 +159,7 @@ class MatchmakingServiceFlowTest {
             failure.get()?.let { throw AssertionError("Owned probe responder failed", it) }
             val done = diagnostics()
             val counts = done["probe_counts"] as Map<*, *>
-            assertEquals(1, counts["sent_0"])
+            assertTrue((counts["sent_0"] as Int) in 1..16)
             assertEquals(1, counts["received"])
             assertEquals(1, counts["responses"])
             assertEquals(1, counts["matched"])

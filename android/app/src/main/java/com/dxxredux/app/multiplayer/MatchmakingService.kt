@@ -841,6 +841,8 @@ object MatchmakingService {
         peerId: String,
         winningCandidateType: String,
         rttMs: Int,
+        checkId: String,
+        remoteAddr: String = "",
     ) {
         connectivityResults = connectivityResults + (
             peerId to
@@ -854,9 +856,17 @@ object MatchmakingService {
                     "peer_id" to peerId,
                     "candidate_type" to winningCandidateType,
                     "rtt_ms" to rttMs,
+                    "check_id" to checkId,
+                    "remote_addr" to remoteAddr,
                 )
         )
-        val msg = ConnectivityOkMsg(peerId = peerId, winningCandidateType = winningCandidateType, rttMs = rttMs)
+        val msg =
+            ConnectivityOkMsg(
+                checkId = checkId,
+                peerId = peerId,
+                winningCandidateType = winningCandidateType,
+                rttMs = rttMs,
+            )
         send(protocolJson.encodeToString(ConnectivityOkMsg.serializer(), msg))
     }
 
@@ -1197,7 +1207,13 @@ object MatchmakingService {
                                 "HOLEPUNCH",
                                 "Direct: type=${result.winningCandidateType} rtt=${result.rttMs}ms peer=${result.peerId}",
                             )
-                            sendConnectivityOk(result.peerId, result.winningCandidateType, result.rttMs)
+                            sendConnectivityOk(
+                                result.peerId,
+                                result.winningCandidateType,
+                                result.rttMs,
+                                result.checkId,
+                                result.remoteAddr,
+                            )
                         } else {
                             state.update { s ->
                                 s.copy(
@@ -1212,7 +1228,7 @@ object MatchmakingService {
                             NetLog.log("HOLEPUNCH", "No direct connection, falling back to relay")
                             // Notify the server for each unique peer so it allocates relay
                             pairs.map { it.peerId }.distinct().forEach { peerId ->
-                                sendConnectivityOk(peerId, "relay", 0)
+                                sendConnectivityOk(peerId, "relay", 0, pairs.first { it.peerId == peerId }.checkId)
                             }
                         }
                     }
@@ -1236,7 +1252,7 @@ object MatchmakingService {
                         NetLog.log("ERROR", "Connectivity check failed: ${e.message}")
                         // Still notify the server so game launch isn't blocked
                         pairs.map { it.peerId }.distinct().forEach { peerId ->
-                            sendConnectivityOk(peerId, "relay", 0)
+                            sendConnectivityOk(peerId, "relay", 0, pairs.first { it.peerId == peerId }.checkId)
                         }
                     }
                 }

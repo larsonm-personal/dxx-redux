@@ -24,6 +24,8 @@ data class ConnectivityResult(
     val peerId: String,
     val winningCandidateType: String, // "host", "srflx", "predicted", "relay"
     val rttMs: Int,
+    val checkId: String,
+    val remoteAddr: String,
 )
 
 object ConnectivityChecker {
@@ -129,6 +131,11 @@ object ConnectivityChecker {
             val flags = bb.short
 
             if (flags == PROBE_FLAG_REQUEST) {
+                // An offer must never qualify by reflecting our own request
+                if (pktToken == ourToken) {
+                    count("self_requests")
+                    return null
+                }
                 count("requests")
                 // Echo the peer's probe back as a response, preserving
                 // their token and seq so they can match it.
@@ -147,6 +154,10 @@ object ConnectivityChecker {
             if (flags == PROBE_FLAG_RESPONSE) count("responses")
             if (flags == PROBE_FLAG_RESPONSE && pktToken == ourToken) {
                 val entry = sentTimes[pktSeq] ?: return null
+                if (pkt.socketAddress != parseAddr(entry.second.remoteAddr)) {
+                    count("wrong_source")
+                    return null
+                }
                 count("matched")
                 val rtt = (System.currentTimeMillis() - entry.first).toInt()
                 val pair = entry.second
@@ -155,6 +166,8 @@ object ConnectivityChecker {
                     peerId = pair.peerId,
                     winningCandidateType = pair.remoteType,
                     rttMs = rtt,
+                    checkId = pair.checkId,
+                    remoteAddr = pair.remoteAddr,
                 )
             }
 

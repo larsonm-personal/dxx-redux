@@ -232,7 +232,7 @@ function Wait-OnlineDirectReadiness {
                     }
                 }
                 $counts = @($probe.probe_counts.PSObject.Properties | Where-Object {
-                        $_.Name -match '^(sent_[0-9]{1,2}|send_errors|received|requests|echoes|echo_errors|responses|matched|short_packets|other_packets)$'
+                        $_.Name -match '^(sent_[0-9]{1,2}|send_errors|received|requests|echoes|echo_errors|responses|matched|short_packets|other_packets|wrong_source|self_requests)$'
                     } | Select-Object -First 48 | ForEach-Object { "$($_.Name)=$([int]$_.Value)" }) -join ','
                 Write-Status "ONLINE_PROBE peer=$i local_wifi_advertised=$localWifi peer_wifi_offered=$peerWifi wifi_sends=$wifiSends counts={$counts}" 'Gray'
             }

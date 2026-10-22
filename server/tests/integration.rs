@@ -2797,7 +2797,13 @@ async fn test_connectivity_ok_updates_player() {
     .await;
     // Host: PEER_CANDIDATES + CONNECTIVITY_CHECK_GO
     let _ = recv(&mut host).await;
-    let _ = recv(&mut host).await;
+    let offers = recv(&mut host).await;
+    let check = offers["peer_addrs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["remote_type"] == "srflx")
+        .unwrap();
     // Joiner: CONNECTIVITY_CHECK_GO
     let _ = recv(&mut joiner).await;
 
@@ -2808,6 +2814,7 @@ async fn test_connectivity_ok_updates_player() {
             "type": "CONNECTIVITY_OK",
             "peer_id": joiner_id,
             "winning_candidate_type": "srflx",
+            "check_id": check["check_id"],
             "rtt_ms": 42,
         }),
     )
@@ -3526,10 +3533,38 @@ async fn online_late_join_completion_keeps_control_plane_responsive() {
                 addr: "127.0.0.1:42424".into(),
             }];
         }
+        let offer = dxx_matchmaking::protocol::CandidatePair {
+            check_id: uuid::Uuid::new_v4(),
+            peer_id: hp,
+            local_type: "host".into(),
+            remote_type: "host".into(),
+            remote_addr: "127.0.0.1:42424".into(),
+            priority: 100,
+        };
+        lobby
+            .players
+            .iter_mut()
+            .find(|p| p.player_id == jp)
+            .unwrap()
+            .connectivity_checks
+            .insert(offer.check_id, offer);
     }
+    let check_id = *server
+        .state
+        .lobbies
+        .get(&room)
+        .unwrap()
+        .players
+        .iter()
+        .find(|p| p.player_id == jp)
+        .unwrap()
+        .connectivity_checks
+        .keys()
+        .next()
+        .unwrap();
     send_only(
         &mut joiner,
-        json!({"type":"CONNECTIVITY_OK","peer_id":hp,
+        json!({"type":"CONNECTIVITY_OK","peer_id":hp,"check_id":check_id,
         "winning_candidate_type":"host","rtt_ms":1}),
     )
     .await;
@@ -3796,6 +3831,21 @@ async fn online_forced_relay_late_join_is_atomic_at_capacity() {
                     addr: "127.0.0.1:42424".into(),
                 }];
             }
+            let offer = dxx_matchmaking::protocol::CandidatePair {
+                check_id: uuid::Uuid::new_v4(),
+                peer_id: hp,
+                local_type: "host".into(),
+                remote_type: "host".into(),
+                remote_addr: "127.0.0.1:42424".into(),
+                priority: 100,
+            };
+            lobby
+                .players
+                .iter_mut()
+                .find(|p| p.player_id == jp)
+                .unwrap()
+                .connectivity_checks
+                .insert(offer.check_id, offer);
         }
         server.state.stats.game_started();
         if capacity_full {
@@ -3808,7 +3858,20 @@ async fn online_forced_relay_late_join_is_atomic_at_capacity() {
                 ),
             );
         }
-        send_only(&mut joiner,json!({"type":"CONNECTIVITY_OK","peer_id":hp,"winning_candidate_type":"host","rtt_ms":1})).await;
+        let check_id = *server
+            .state
+            .lobbies
+            .get(&room)
+            .unwrap()
+            .players
+            .iter()
+            .find(|p| p.player_id == jp)
+            .unwrap()
+            .connectivity_checks
+            .keys()
+            .next()
+            .unwrap();
+        send_only(&mut joiner,json!({"type":"CONNECTIVITY_OK","peer_id":hp,"check_id":check_id,"winning_candidate_type":"host","rtt_ms":1})).await;
         let response = recv(&mut joiner).await;
         if capacity_full {
             assert_eq!(response["code"], "LOBBY_JOIN_FAILED");
@@ -5513,4 +5576,83 @@ async fn online_two_shared_nat_rosters_can_reconnect_twice_with_a_finite_source_
     })
     .await
     .unwrap();
+}
+
+#[tokio::test]
+async fn direct_launch_uses_validated_second_host_candidate_for_each_peer() {
+    async fn receive_type(ws: &mut WsClient, kind: &str) -> Value {
+        for _ in 0..8 {
+            let message = recv(ws).await;
+            if message["type"] == kind {
+                return message;
+            }
+            assert!(matches!(
+                message["type"].as_str(),
+                Some("CONNECTION_INFO" | "LOBBY_UPDATE")
+            ));
+        }
+        panic!("Missing expected {kind}");
+    }
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    let h = authenticate(&mut host, "Host").await;
+    let room = create_test_room(&mut host).await;
+    let mut joiner = connect_ws(&server).await;
+    let j = authenticate(&mut joiner, "Joiner").await;
+    send_only(
+        &mut joiner,
+        json!({"type":"JOIN_LOBBY","lobby_id":room,"lobby_code":"private-fixture"}),
+    )
+    .await;
+    recv(&mut host).await;
+    recv(&mut joiner).await;
+    send_only(
+        &mut host,
+        json!({"type":"STUN_RESULT","nat_type":"no_stun","candidates":[
+        {"candidate_type":"host","addr":"10.0.2.15:41001"},
+        {"candidate_type":"host","addr":"10.0.2.16:41001"}]}),
+    )
+    .await;
+    recv(&mut joiner).await;
+    send_only(
+        &mut joiner,
+        json!({"type":"STUN_RESULT","nat_type":"no_stun","candidates":[
+        {"candidate_type":"host","addr":"10.0.2.15:41002"},
+        {"candidate_type":"host","addr":"10.0.2.17:41002"}]}),
+    )
+    .await;
+    recv(&mut host).await;
+    let host_go = recv(&mut host).await;
+    let join_go = recv(&mut joiner).await;
+    let host_offer = host_go["peer_addrs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["remote_addr"] == "10.0.2.17:41002")
+        .unwrap();
+    let join_offer = join_go["peer_addrs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["remote_addr"] == "10.0.2.16:41001")
+        .unwrap();
+    send_only(&mut host, json!({"type":"CONNECTIVITY_OK","peer_id":j["player_id"],"check_id":host_offer["check_id"],"winning_candidate_type":"host","rtt_ms":1})).await;
+    send_only(&mut host, json!({"type":"READY","ready":true})).await;
+    receive_type(&mut host, "LOBBY_UPDATE").await;
+    receive_type(&mut joiner, "LOBBY_UPDATE").await;
+    send_only(&mut joiner, json!({"type":"CONNECTIVITY_OK","peer_id":h["player_id"],"check_id":join_offer["check_id"],"winning_candidate_type":"host","rtt_ms":1})).await;
+    send_only(&mut joiner, json!({"type":"READY","ready":true})).await;
+    receive_type(&mut host, "LOBBY_UPDATE").await;
+    receive_type(&mut joiner, "LOBBY_UPDATE").await;
+    send_only(&mut host, json!({"type":"START_GAME"})).await;
+    let host_start = receive_type(&mut host, "GAME_STARTING").await;
+    let join_start = receive_type(&mut joiner, "GAME_STARTING").await;
+    assert_eq!(host_start["type"], "GAME_STARTING");
+    assert_eq!(join_start["type"], "GAME_STARTING");
+    assert_eq!(host_start["peers"][0]["addr"], "10.0.2.17:41002");
+    assert_eq!(join_start["peers"][0]["addr"], "10.0.2.16:41001");
+    assert_eq!(join_start["host_addr"], "10.0.2.16:41001");
+    assert_eq!(host_start["peers"][0]["is_relay"], false);
+    assert_eq!(join_start["peers"][0]["is_relay"], false);
+    assert!(server.state.relay_sessions.is_empty());
 }
