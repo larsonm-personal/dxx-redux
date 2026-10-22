@@ -69,3 +69,17 @@
 
 - Route-lifetime validation: all 173 Rust tests pass (61 unit, 96 integration, 13 installation auth, 3 UDP reconnect), including delayed direct launch before/after cleanup with no relay capacity and stale unused report rejection
 - Scoped formatting passes; no Android code, wire version, dependency pins or endpoint ownership invalidation paths changed in this follow-up
+
+## Asymmetric probe responder lifetime
+
+- Run 39716307780 on older 74ec15b showed one matched peer and one peer with a rejected wrong-source response and no match; exact historical source endpoint was not retained
+- Reproduce an early local winner while the other checker must try a later candidate, using actual sockets and packet/latch ordering rather than sleeps
+- Retain the first valid result while continuing echo service until the original three-second monotonic deadline; stop additional outbound requests after local success
+- Preserve exact response-source validation, own-token rejection, cancellation and service generation fences
+- Add privacy-safe counters distinguishing rejected offered versus unoffered endpoints and echoes after a local match; neither source class is accepted for the wrong pair
+- Keep independently running/queued D1 and D2 campaigns untouched; no dispatch, cancellation or deployment
+- Negative control on unchanged 34c6090 checker: asymmetric peer deterministically returned no winning result after its three-second window; cancellation-after-local-win control also failed because the old implementation returned immediately
+- Fixed matched-server JVM suite: 30 tests, 29 passed, only the historical proxy comparison skipped; asymmetric real sockets, held-result cancellation and both offered/unoffered wrong-source rejection pass
+- Historical wrong_source did not record sender endpoint, so its offered/unoffered classification remains unknown; new counters provide that distinction without relaxing endpoint checks
+- Host fixture controls and catalog validation pass; Kotlin formatting passes, local PowerShell analyzer provisioning and `/proc` catalog integration remain environmental limitations
+- D1 39718667222 and D2 39719362114 on 34c6090 remain untouched; no new campaign dispatched

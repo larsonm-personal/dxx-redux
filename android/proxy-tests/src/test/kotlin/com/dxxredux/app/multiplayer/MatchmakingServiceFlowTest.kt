@@ -9,8 +9,227 @@ import org.junit.Test
 
 /** Runs the actual service's completed-join consumer; Android storage/GPGS/IPC are not simulated */
 class MatchmakingServiceFlowTest {
+    private class ObservedProbeSocket(
+        private val token: Int,
+    ) : java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()) {
+        val requestSent = java.util.concurrent.CountDownLatch(1)
+        val responseReceived =
+            java.util.concurrent.atomic
+                .AtomicBoolean(false)
+
+        override fun send(packet: java.net.DatagramPacket) {
+            super.send(packet)
+            if (packet.length == 12 &&
+                java.nio.ByteBuffer
+                    .wrap(packet.data)
+                    .getShort(packet.offset + 10)
+                    .toInt() == 1
+            ) {
+                requestSent.countDown()
+            }
+        }
+
+        override fun receive(packet: java.net.DatagramPacket) {
+            super.receive(packet)
+            if (packet.length == 12) {
+                val bytes = java.nio.ByteBuffer.wrap(packet.data)
+                if (bytes.getInt(packet.offset + 4) == token &&
+                    bytes.getShort(packet.offset + 10).toInt() == 2
+                ) {
+                    responseReceived.set(true)
+                }
+            }
+        }
+    }
+
+    @Test(timeout = 10000)
+    fun earlyWinnerKeepsEchoingForPeersLaterCandidateWithinOriginalDeadline() {
+        ObservedProbeSocket(1111).use { first ->
+            java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()).use { second ->
+                java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()).use { silent ->
+                    val localWin = java.util.concurrent.CountDownLatch(1)
+                    val failure =
+                        java.util.concurrent.atomic
+                            .AtomicReference<Throwable?>()
+                    val firstResult =
+                        java.util.concurrent.atomic
+                            .AtomicReference<ConnectivityResult?>()
+                    val secondResult =
+                        java.util.concurrent.atomic
+                            .AtomicReference<ConnectivityResult?>()
+                    val firstCounts =
+                        java.util.concurrent.atomic
+                            .AtomicReference<Map<String, Int>>(emptyMap())
+                    val started = System.nanoTime()
+                    val firstThread =
+                        Thread {
+                            try {
+                                firstResult.set(
+                                    ConnectivityChecker.probe(
+                                        listOf(
+                                            CandidatePair(
+                                                "second",
+                                                "host",
+                                                "host",
+                                                "127.0.0.1:${second.localPort}",
+                                                100,
+                                                "first-offer",
+                                            ),
+                                        ),
+                                        token = 1111,
+                                        existingSocket = first,
+                                        checkActive = { if (first.responseReceived.get()) localWin.countDown() },
+                                        diagnostics = { firstCounts.set(it) },
+                                    ),
+                                )
+                            } catch (
+                                error: Throwable,
+                            ) {
+                                failure.compareAndSet(null, error)
+                            } finally {
+                                localWin.countDown()
+                            }
+                        }.apply {
+                            isDaemon = true
+                            start()
+                        }
+                    assertTrue(first.requestSent.await(2, java.util.concurrent.TimeUnit.SECONDS))
+                    val secondThread =
+                        Thread {
+                            try {
+                                var iterations = 0
+                                secondResult.set(
+                                    ConnectivityChecker.probe(
+                                        listOf(
+                                            CandidatePair(
+                                                "first",
+                                                "host",
+                                                "host",
+                                                "127.0.0.1:${silent.localPort}",
+                                                100,
+                                                "silent-offer",
+                                            ),
+                                            CandidatePair(
+                                                "first",
+                                                "host",
+                                                "host",
+                                                "127.0.0.1:${first.localPort}",
+                                                100,
+                                                "later-offer",
+                                            ),
+                                        ),
+                                        token = 2222,
+                                        existingSocket = second,
+                                        checkActive = {
+                                            iterations++
+                                            if (iterations ==
+                                                2
+                                            ) {
+                                                check(localWin.await(2, java.util.concurrent.TimeUnit.SECONDS))
+                                            }
+                                        },
+                                    ),
+                                )
+                            } catch (error: Throwable) {
+                                failure.compareAndSet(null, error)
+                            }
+                        }.apply {
+                            isDaemon = true
+                            start()
+                        }
+                    try {
+                        firstThread.join(4500)
+                        secondThread.join(4500)
+                        failure.get()?.let { throw AssertionError("Asymmetric probe fixture failed", it) }
+                        assertTrue(!firstThread.isAlive && !secondThread.isAlive)
+                        assertEquals("first-offer", firstResult.get()?.checkId)
+                        assertEquals(
+                            "Later peer must receive its own valid response",
+                            "later-offer",
+                            secondResult.get()?.checkId,
+                        )
+                        assertTrue((firstCounts.get()["echoes_after_match"] ?: 0) >= 1)
+                        assertTrue((firstCounts.get()["sent_0"] ?: 0) in 1..16)
+                        assertTrue((System.nanoTime() - started) / 1_000_000 < 4500)
+                    } finally {
+                        first.close()
+                        second.close()
+                        firstThread.join(1000)
+                        secondThread.join(1000)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(timeout = 5000)
+    fun cancellationAfterLocalWinCannotPublishHeldResultOrCloseSharedSocket() {
+        ObservedProbeSocket(3333).use { socket ->
+            java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()).use { peer ->
+                peer.soTimeout = 2000
+                val failure =
+                    java.util.concurrent.atomic
+                        .AtomicReference<Throwable?>()
+                val responder =
+                    Thread {
+                        try {
+                            val packet = java.net.DatagramPacket(ByteArray(12), 12)
+                            peer.receive(packet)
+                            java.nio.ByteBuffer
+                                .wrap(packet.data)
+                                .putShort(10, 2)
+                            peer.send(packet)
+                        } catch (error: Throwable) {
+                            failure.set(error)
+                        }
+                    }.apply {
+                        isDaemon = true
+                        start()
+                    }
+                var counts = emptyMap<String, Int>()
+                var cancelled = false
+                try {
+                    ConnectivityChecker.probe(
+                        listOf(CandidatePair("peer", "host", "host", "127.0.0.1:${peer.localPort}", 100, "offer")),
+                        token = 3333,
+                        existingSocket = socket,
+                        checkActive = {
+                            if (socket.responseReceived.get()) {
+                                throw kotlinx.coroutines
+                                    .CancellationException(
+                                        "retired attempt",
+                                    )
+                            }
+                        },
+                        diagnostics = { counts = it },
+                    )
+                } catch (
+                    _: kotlinx.coroutines.CancellationException,
+                ) {
+                    cancelled = true
+                } finally {
+                    responder.join(1000)
+                }
+                failure.get()?.let { throw AssertionError("Cancellation fixture failed", it) }
+                assertTrue(cancelled)
+                assertEquals(1, counts["matched"])
+                assertTrue(!socket.isClosed)
+                assertEquals(0, counts["echoes_after_match"] ?: 0)
+            }
+        }
+    }
+
     @Test(timeout = 10000)
     fun multipleCandidatesRequireWinningEndpointSourceAndRejectSelfEcho() {
+        assertWrongSourceIsRejected(false)
+    }
+
+    @Test(timeout = 10000)
+    fun offeredAlternativeCannotQualifyADifferentCandidate() {
+        assertWrongSourceIsRejected(true)
+    }
+
+    private fun assertWrongSourceIsRejected(offeredAlternative: Boolean) {
         val loopback = java.net.InetAddress.getLoopbackAddress()
         java.net.DatagramSocket(0, loopback).use { dead ->
             java.net.DatagramSocket(0, loopback).use { peer ->
@@ -65,7 +284,21 @@ class MatchmakingServiceFlowTest {
                                         "unreachable-offer",
                                     ),
                                     CandidatePair("peer", "host", "host", winner, 100, "winning-offer"),
-                                ),
+                                ) +
+                                    if (offeredAlternative) {
+                                        listOf(
+                                            CandidatePair(
+                                                "peer",
+                                                "host",
+                                                "host",
+                                                "127.0.0.1:${forged.localPort}",
+                                                100,
+                                                "alternate-offer",
+                                            ),
+                                        )
+                                    } else {
+                                        emptyList()
+                                    },
                                 diagnostics = { counts = it },
                             )
                         responder.join(1000)
@@ -74,6 +307,10 @@ class MatchmakingServiceFlowTest {
                         assertEquals(winner, result?.remoteAddr)
                         assertEquals("host", result?.winningCandidateType)
                         assertEquals(1, counts["wrong_source"])
+                        assertEquals(
+                            1,
+                            counts[if (offeredAlternative) "wrong_source_offered" else "wrong_source_unoffered"],
+                        )
                         assertEquals(1, counts["self_requests"])
                         assertEquals(1, counts["matched"])
                         assertEquals(2, counts["responses"])

@@ -33,7 +33,8 @@ object ConnectivityChecker {
      * Race UDP probes across all candidate pairs. Both sides run this
      * simultaneously: we send REQUEST probes and echo any incoming
      * REQUEST as a RESPONSE back to the sender. The first RESPONSE
-     * matching one of our sent probes wins.
+     * matching one of our sent probes wins. Keep echoing until the same bounded
+     * check deadline so a peer with a later winning candidate can also finish.
      *
      * Runs blocking I/O -- call from Dispatchers.IO.
      *
@@ -60,41 +61,48 @@ object ConnectivityChecker {
             counts[name] = (counts[name] ?: 0) + 1
         }
         try {
-            val startTime = System.currentTimeMillis()
+            val deadline = System.nanoTime() + TOTAL_TIMEOUT_MS * 1_000_000L
+            var winner: ConnectivityResult? = null
+            val offeredEndpoints = pairs.mapNotNull { parseAddr(it.remoteAddr) }.toSet()
             var seq: Short = 0
             val sentTimes = mutableMapOf<Short, Pair<Long, CandidatePair>>()
 
-            while (System.currentTimeMillis() - startTime < TOTAL_TIMEOUT_MS) {
+            while (System.nanoTime() < deadline) {
                 checkActive()
-                // Send a probe to the next pair in round-robin
-                val pairIndex = (seq.toInt() and 0xFFFF) % pairs.size
-                val pair = pairs[pairIndex]
+                if (winner == null) {
+                    // Send a probe to the next pair in round-robin
+                    val pairIndex = (seq.toInt() and 0xFFFF) % pairs.size
+                    val pair = pairs[pairIndex]
 
-                val probePacket = buildProbe(token, seq, PROBE_FLAG_REQUEST)
-                val addr = parseAddr(pair.remoteAddr)
-                if (addr != null) {
-                    val sendTime = System.currentTimeMillis()
-                    sentTimes[seq] = Pair(sendTime, pair)
-                    try {
-                        socket.send(DatagramPacket(probePacket, probePacket.size, addr))
-                        count("sent_$pairIndex")
-                    } catch (e: Exception) {
-                        count("send_errors")
-                        Log.w(TAG, "Probe send failed to ${pair.remoteAddr}: ${e.message}")
+                    val probePacket = buildProbe(token, seq, PROBE_FLAG_REQUEST)
+                    val addr = parseAddr(pair.remoteAddr)
+                    if (addr != null) {
+                        val sendTime = System.nanoTime()
+                        sentTimes[seq] = Pair(sendTime, pair)
+                        try {
+                            socket.send(DatagramPacket(probePacket, probePacket.size, addr))
+                            count("sent_$pairIndex")
+                        } catch (e: Exception) {
+                            count("send_errors")
+                            Log.w(TAG, "Probe send failed to ${pair.remoteAddr}: ${e.message}")
+                        }
                     }
                 }
 
-                // Receive loop: drain available packets until timeout, handling
-                // both incoming requests (echo back) and responses (our win).
-                val r = receiveAndEcho(socket, token, sentTimes, ::count)
-                if (r != null) return r
+                // A local win does not prove the peer has received its own response
+                // Continue bounded echo service without sending more requests
+                val remainingMs = ((deadline - System.nanoTime()) / 1_000_000L).coerceAtLeast(1L)
+                socket.soTimeout = minOf(PROBE_INTERVAL_MS, remainingMs).toInt()
+                val r = receiveAndEcho(socket, token, sentTimes, offeredEndpoints, winner != null, ::count)
+                if (winner == null && r != null) winner = r
 
                 seq++
                 if (seq < 0) seq = 0 // unsigned wrap
             }
 
-            Log.i(TAG, "All ${pairs.size} pairs timed out after ${TOTAL_TIMEOUT_MS}ms")
-            return null
+            checkActive()
+            if (winner == null) Log.i(TAG, "All ${pairs.size} pairs timed out after ${TOTAL_TIMEOUT_MS}ms")
+            return winner
         } finally {
             if (ownsSocket) socket.close()
             diagnostics(counts.toMap())
@@ -108,6 +116,8 @@ object ConnectivityChecker {
         socket: DatagramSocket,
         ourToken: Int,
         sentTimes: Map<Short, Pair<Long, CandidatePair>>,
+        offeredEndpoints: Set<InetSocketAddress>,
+        alreadyQualified: Boolean,
         count: (String) -> Unit,
     ): ConnectivityResult? {
         try {
@@ -144,6 +154,7 @@ object ConnectivityChecker {
                 try {
                     socket.send(DatagramPacket(resp, resp.size, replyAddr))
                     count("echoes")
+                    if (alreadyQualified) count("echoes_after_match")
                 } catch (e: Exception) {
                     count("echo_errors")
                     Log.w(TAG, "Echo send failed: ${e.message}")
@@ -156,10 +167,19 @@ object ConnectivityChecker {
                 val entry = sentTimes[pktSeq] ?: return null
                 if (pkt.socketAddress != parseAddr(entry.second.remoteAddr)) {
                     count("wrong_source")
+                    count(
+                        if (pkt.socketAddress in
+                            offeredEndpoints
+                        ) {
+                            "wrong_source_offered"
+                        } else {
+                            "wrong_source_unoffered"
+                        },
+                    )
                     return null
                 }
                 count("matched")
-                val rtt = (System.currentTimeMillis() - entry.first).toInt()
+                val rtt = ((System.nanoTime() - entry.first) / 1_000_000L).toInt()
                 val pair = entry.second
                 Log.i(TAG, "Connectivity OK: peer=${pair.peerId} type=${pair.remoteType} rtt=${rtt}ms")
                 return ConnectivityResult(
