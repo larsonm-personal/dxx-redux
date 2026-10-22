@@ -785,6 +785,8 @@ internal fun SetupActivity.writeMpIntrospectJson() {
                 pj.put("player_id", p.playerId)
                 pj.put("callsign", p.callsign)
                 pj.put("ready", p.ready)
+                pj.put("connection_type", p.connectionType)
+                pj.put("ping_ms", p.pingMs ?: JSONObject.NULL)
                 pj.put("slot", p.slot)
                 pArr.put(pj)
             }

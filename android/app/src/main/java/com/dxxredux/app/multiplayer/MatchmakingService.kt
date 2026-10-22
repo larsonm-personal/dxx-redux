@@ -167,6 +167,8 @@ object MatchmakingService {
 
     @Volatile
     private var connectivityCheckJob: Job? = null
+    private var connectivityCheckEpoch = 0L
+    private var connectivityResults: Map<String, Map<String, Any>> = emptyMap()
 
     // Host updates are published by MainActivity through the foreground-service
     // Binder because the native engine runs in the separate :game process.
@@ -838,6 +840,20 @@ object MatchmakingService {
         winningCandidateType: String,
         rttMs: Int,
     ) {
+        connectivityResults = connectivityResults + (
+            peerId to
+                mapOf(
+                    "room_id" to (
+                        state.state.value.currentLobby
+                            ?.lobbyId ?: ""
+                    ),
+                    "network_epoch" to networkGeneration,
+                    "check_epoch" to connectivityCheckEpoch,
+                    "peer_id" to peerId,
+                    "candidate_type" to winningCandidateType,
+                    "rtt_ms" to rttMs,
+                )
+        )
         val msg = ConnectivityOkMsg(peerId = peerId, winningCandidateType = winningCandidateType, rttMs = rttMs)
         send(protocolJson.encodeToString(ConnectivityOkMsg.serializer(), msg))
     }
@@ -930,6 +946,7 @@ object MatchmakingService {
     @Synchronized
     private fun retireNetworkWork() {
         networkGeneration++
+        connectivityResults = emptyMap()
         runtimeAttempt = null
         gameEpoch = null
         pendingAdmissions.clear()
@@ -954,6 +971,15 @@ object MatchmakingService {
     fun resourceDiagnostics(): Map<String, Any> =
         mapOf(
             "installation_work" to installationWork,
+            "connectivity" to
+                mapOf(
+                    "network_epoch" to networkGeneration,
+                    "check_epoch" to connectivityCheckEpoch,
+                    "phase" to state.state.value.iceStatus.phase.name,
+                    "candidate_count" to state.state.value.iceStatus.stunCandidateCount,
+                    "peer_candidate_count" to state.state.value.iceStatus.peerCandidatesReceived,
+                    "results" to connectivityResults.values.toList(),
+                ),
             "runtime_attempt_epoch" to if (runtimeAttempt == null) 0L else runtimeAttemptEpoch,
             "proxy_workers" to LocalhostProxy.activeWorkerCount(),
             "candidate_socket" to (candidateSocket?.isClosed == false),
@@ -967,6 +993,8 @@ object MatchmakingService {
                         "sent" to peer.packetsSent,
                         "received" to peer.packetsReceived,
                         "bound" to peer.relayBound,
+                        "route_kind" to if (peer.isRelay) "relay" else "direct",
+                        "route_epoch" to runtimeAttemptEpoch,
                         "gameplay_received" to peer.gameplayReceived,
                     )
                 } ?: emptyList()
@@ -992,6 +1020,7 @@ object MatchmakingService {
         if (gameHandoffJob?.isActive == true) return
         stunJob?.cancel()
         closeCandidateSocket()
+        connectivityResults = emptyMap()
         val generation = ++networkGeneration
         val socket = DatagramSocket()
         candidateSocket = socket
@@ -1110,6 +1139,8 @@ object MatchmakingService {
         if (gameHandoffJob?.isActive == true) return
         // C11: cancel previous check to avoid duplicates
         connectivityCheckJob?.cancel()
+        connectivityCheckEpoch++
+        connectivityResults = emptyMap()
         val generation = networkGeneration
         val socket = candidateSocket
         connectivityCheckJob =

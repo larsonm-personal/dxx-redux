@@ -329,3 +329,89 @@ $script:outageCase = 'live-host-only'; $script:outageDropped = $false; $failed =
 try { Assert-OnlineUdpOutage } catch { $failed = $true }
 if (-not $failed) { throw 'Outage accepted cached host evidence' }
 Write-Host 'PASS: real outage owner keeps 25-second bound, requires affected-peer error/cleanup and fresh exact-owner native host survival'
+
+# Direct qualification must wait for completed current-pair results, never readiness alone
+foreach ($name in @('Test-OnlineDirectProbe', 'Wait-OnlineDirectReadiness', 'Test-AllLobbyPlayersReady')) {
+    $definition = $owner.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+        }, $true)
+    if (-not $definition) { throw "Missing direct fixture function $name" }
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
+function New-DirectControl {
+    param([int]$Index)
+    $ids = @('host-id', 'join-id')
+    return [pscustomobject]@{
+        player_id = $ids[$Index]
+        lobby = [pscustomobject]@{ lobby_id = 'room'; players = @(
+                [pscustomobject]@{ player_id = $ids[0]; ready = $true; connection_type = 'direct_lan'; ping_ms = 1 }
+                [pscustomobject]@{ player_id = $ids[1]; ready = $true; connection_type = 'direct_lan'; ping_ms = 1 }
+            ) }
+        online_resources = [pscustomobject]@{ connectivity = [pscustomobject]@{
+                phase = 'COMPLETE'; network_epoch = 4; check_epoch = 7; candidate_count = 1; peer_candidate_count = 1
+                results = @([pscustomobject]@{ room_id = 'room'; network_epoch = 4; check_epoch = 7
+                        peer_id = $ids[1 - $Index]; candidate_type = 'host' })
+            } }
+    }
+}
+foreach ($case in @('valid', 'probing', 'no-result', 'relay', 'old-room', 'old-network', 'old-check', 'wrong-peer', 'wrong-player', 'changed-roster', 'duplicate', 'missing')) {
+    $control = New-DirectControl 0
+    $probe = $control.online_resources.connectivity
+    switch ($case) {
+        'probing' { $probe.phase = 'PROBING' }
+        'no-result' { $probe.results = @() }
+        'relay' { $probe.results[0].candidate_type = 'relay' }
+        'old-room' { $probe.results[0].room_id = 'previous-room' }
+        'old-network' { $probe.results[0].network_epoch-- }
+        'old-check' { $probe.results[0].check_epoch-- }
+        'wrong-peer' { $probe.results[0].peer_id = 'another-peer' }
+        'wrong-player' { $control.player_id = 'another-player' }
+        'changed-roster' { $control.lobby.players[1].player_id = 'replacement' }
+        'duplicate' { $probe.results += $probe.results[0] }
+        'missing' { $control = $null }
+    }
+    $accepted = Test-OnlineDirectProbe -Control $control -RoomId 'room' -PlayerId 'host-id' -PeerId 'join-id'
+    if ($accepted -ne ($case -eq 'valid')) { throw "Direct probe provenance guard failed: $case" }
+}
+function Get-MpIntrospection {
+    param($Serial)
+    $index = if ($Serial -eq $EMU1) { 0 } else { 1 }
+    $control = New-DirectControl $index
+    if ($script:directPoll -lt (2 + $index) -or $script:neverDirect) {
+        $control.online_resources.connectivity.phase = 'PROBING'
+        $control.online_resources.connectivity.results = @()
+    }
+    if ($script:serverRelay) { $control.lobby.players[1].connection_type = 'relay' }
+    return $control
+}
+function Wait-ForCondition {
+    param($Description, $TimeoutSec, $PollMs, $Condition)
+    if ($TimeoutSec -ne 30 -or $PollMs -ne 500) { throw 'Direct wait must remain bounded' }
+    for ($poll = 1; $poll -le 3; $poll++) {
+        $script:directPoll = $poll
+        $ready = & $Condition
+        if ($ready -and $poll -lt 3) { throw 'A delayed peer probe was bypassed' }
+        if ($ready) { return $true }
+    }
+    return $false
+}
+$script:serverRelay = $false
+foreach ($never in @($false, $true)) {
+    $script:directPoll = 0; $script:neverDirect = $never; $failed = $false
+    try { Wait-OnlineDirectReadiness } catch { $failed = $true }
+    if ($failed -ne $never) { throw 'Direct owner did not distinguish delayed completion from unresolved probes' }
+}
+$script:neverDirect = $false; $script:directPoll = 3
+foreach ($relay in @($false, $true)) {
+    $script:serverRelay = $relay
+    if ((Test-AllLobbyPlayersReady -Serial $EMU1 -RequireDirect) -eq $relay) { throw 'Direct ready barrier ignored server connectivity result' }
+    if (-not (Test-AllLobbyPlayersReady -Serial $EMU1)) { throw 'Normal early-start readiness was changed' }
+}
+$source = $owner.Extent.Text
+$gate = $source.IndexOf('if ($PublicDirect) { Wait-OnlineDirectReadiness }', $source.IndexOf('--- Phase 7:'))
+$readyCommand = $source.IndexOf('Send-MpCommand -Serial $EMU1 -Command "set_ready"', $gate)
+$startCommand = $source.IndexOf('Send-MpCommand -Serial $EMU1 -Command "start_game"', $readyCommand)
+if ($gate -lt 0 -or $readyCommand -lt $gate -or $startCommand -lt $readyCommand -or
+    $source.Substring($readyCommand, $startCommand - $readyCommand) -notmatch 'Test-AllLobbyPlayersReady -Serial \$EMU1 -ExpectedPlayers 2 -RequireDirect:\$PublicDirect' -or
+    $source -notmatch '\$direct.relay_sessions -ne 0') { throw 'Direct gate ordering or zero-relay oracle changed' }
+Write-Host 'PASS: delayed current-pair probes gate direct startup; stale, missing and relay results fail without weakening normal ready or zero-relay checks'

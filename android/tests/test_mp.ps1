@@ -164,8 +164,69 @@ function Measure-InstallationWork {
     Write-Status "ONLINE_EVIDENCE installation work authenticated $sample fresh identities at difficulty 20 and passed 3 expensive device vectors" 'Green'
 }
 
+function Test-OnlineDirectProbe {
+    param($Control, [string]$RoomId, [string]$PlayerId, [string]$PeerId)
+    if (-not $Control -or -not $Control.PSObject.Properties['lobby'] -or -not $Control.lobby -or
+        $Control.lobby.lobby_id -cne $RoomId -or $Control.player_id -cne $PlayerId -or
+        -not $Control.PSObject.Properties['online_resources']) { return $false }
+    $roster = @($Control.lobby.players | ForEach-Object { $_.player_id })
+    if ($roster.Count -ne 2 -or $PlayerId -ceq $PeerId -or $PlayerId -cnotin $roster -or $PeerId -cnotin $roster) { return $false }
+    $resources = $Control.online_resources
+    if (-not $resources.PSObject.Properties['connectivity']) { return $false }
+    $probe = $resources.connectivity
+    foreach ($field in @('network_epoch', 'check_epoch', 'phase', 'results')) {
+        if (-not $probe -or -not $probe.PSObject.Properties[$field]) { return $false }
+    }
+    if ($probe.phase -cne 'COMPLETE' -or $probe.network_epoch -le 0 -or $probe.check_epoch -le 0) { return $false }
+    $results = @($probe.results)
+    if ($results.Count -ne 1) { return $false }
+    $result = $results[0]
+    foreach ($field in @('room_id', 'network_epoch', 'check_epoch', 'peer_id', 'candidate_type')) {
+        if (-not $result -or -not $result.PSObject.Properties[$field]) { return $false }
+    }
+    return ($result.room_id -ceq $RoomId -and $result.network_epoch -eq $probe.network_epoch -and
+        $result.check_epoch -eq $probe.check_epoch -and $result.peer_id -ceq $PeerId -and
+        $result.candidate_type -cin @('host', 'srflx', 'observed', 'upnp', 'predicted'))
+}
+
+function Wait-OnlineDirectReadiness {
+    $hostControl = Get-MpIntrospection -Serial $EMU1
+    $joinControl = Get-MpIntrospection -Serial $EMU2
+    if (-not $hostControl -or -not $joinControl -or -not $hostControl.lobby -or -not $joinControl.lobby -or
+        $hostControl.lobby.lobby_id -cne $joinControl.lobby.lobby_id) { throw 'Direct fixture has no shared current room' }
+    $script:directRoom = [string]$hostControl.lobby.lobby_id
+    $identities = @([string]$hostControl.player_id, [string]$joinControl.player_id)
+    $script:directIdentities = $identities
+    if (-not $script:directRoom -or -not $identities[0] -or -not $identities[1] -or $identities[0] -ceq $identities[1]) {
+        throw 'Direct fixture has no distinct current identities'
+    }
+    $complete = Wait-ForCondition -Description 'Both current peer probes complete directly' -TimeoutSec 30 -PollMs 500 -Condition {
+        $passed = $true
+        $serials = @($EMU1, $EMU2)
+        for ($i = 0; $i -lt 2; $i++) {
+            $control = Get-MpIntrospection -Serial $serials[$i]
+            $accepted = Test-OnlineDirectProbe -Control $control -RoomId $script:directRoom -PlayerId $identities[$i] -PeerId $identities[1 - $i]
+            # Bounded, address/key/token-free evidence retained before logcat is cleared
+            $phase = 'unavailable'; $epoch = 0; $check = 0; $candidates = 0; $peerCandidates = 0; $methods = 'none'
+            if ($control -and $control.PSObject.Properties['online_resources'] -and
+                $control.online_resources.PSObject.Properties['connectivity']) {
+                $probe = $control.online_resources.connectivity
+                if ($probe.phase -cin @('IDLE', 'STUN_DISCOVERY', 'STUN_COMPLETE', 'PROBING', 'COMPLETE', 'FAILED')) { $phase = $probe.phase }
+                $epoch = [long]$probe.network_epoch; $check = [long]$probe.check_epoch
+                $candidates = [int]$probe.candidate_count; $peerCandidates = [int]$probe.peer_candidate_count
+                $methods = (@($probe.results | ForEach-Object { $_.candidate_type } |
+                            Where-Object { $_ -cin @('host', 'srflx', 'observed', 'upnp', 'predicted', 'relay') } | Select-Object -First 2) -join ',')
+            }
+            Write-Status "ONLINE_DIRECT peer=$i accepted=$accepted phase=$phase network_epoch=$epoch check_epoch=$check candidates=$candidates peer_candidates=$peerCandidates methods=$methods" 'Gray'
+            $passed = $passed -and $accepted
+        }
+        return $passed
+    }
+    if (-not $complete) { throw 'Direct qualification failed: current pair probes did not complete directly; game was not started' }
+}
+
 function Test-AllLobbyPlayersReady {
-    param([string]$Serial, [int]$ExpectedPlayers = 2)
+    param([string]$Serial, [int]$ExpectedPlayers = 2, [switch]$RequireDirect)
 
     $mp = Get-MpIntrospection -Serial $Serial
     if (-not $mp -or -not $mp.PSObject.Properties['lobby'] -or -not $mp.lobby) {
@@ -178,11 +239,16 @@ function Test-AllLobbyPlayersReady {
     }
 
     $players = @($playersProperty.Value)
+    if ($RequireDirect -and ($mp.lobby.lobby_id -cne $script:directRoom -or $players.Count -ne $ExpectedPlayers)) { return $false }
     if ($players.Count -lt $ExpectedPlayers) {
         return $false
     }
 
     foreach ($player in $players) {
+        if ($RequireDirect -and $player.player_id -cnotin $script:directIdentities) { return $false }
+        if ($RequireDirect -and (-not $player.PSObject.Properties['connection_type'] -or
+                -not $player.PSObject.Properties['ping_ms'] -or $null -eq $player.ping_ms -or $player.ping_ms -lt 0 -or
+                $player.connection_type -cnotin @('direct_lan', 'direct_upnp', 'direct_holepunch', 'predicted_holepunch'))) { return $false }
         $readyProperty = $player.PSObject.Properties['ready']
         if (-not $readyProperty -or -not [bool]$readyProperty.Value) {
             return $false
@@ -442,9 +508,10 @@ function Start-OnlineRecoveryGame {
                 $control = Get-MpIntrospection -Serial $EMU2
                 return $control -and $control.PSObject.Properties['lobby'] -and $control.lobby.player_count -eq 2
             })) { throw 'Recovery join failed' }
+    if ($PublicDirect) { Wait-OnlineDirectReadiness }
     foreach ($serial in @($EMU1, $EMU2)) { Send-MpCommand -Serial $serial -Command 'set_ready' -Extras @('--es', 'ready', 'true') }
     if (-not (Wait-ForCondition -Description 'Recovery ready roster' -TimeoutSec 15 -PollMs 500 -Condition {
-                return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2
+                return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2 -RequireDirect:$PublicDirect
             })) { throw 'Recovery ready failed' }
     Send-MpCommand -Serial $EMU1 -Command 'start_game'
     foreach ($serial in @($EMU1, $EMU2)) {
@@ -957,12 +1024,14 @@ try {
     Write-Status ""
     Write-Status "--- Phase 7: Ready up and start game ---" "White"
 
+    # Probe reports precede Ready on each WebSocket; the ready broadcast then acknowledges server receipt
+    if ($PublicDirect) { Wait-OnlineDirectReadiness }
     Write-Status "Setting both players ready via MP_COMMAND"
     Send-MpCommand -Serial $EMU1 -Command "set_ready" -Extras @("--es", "ready", "true")
     Send-MpCommand -Serial $EMU2 -Command "set_ready" -Extras @("--es", "ready", "true")
 
     $bothReady = Wait-ForCondition -Description "Both players ready" -TimeoutSec 10 -PollMs 750 -Condition {
-        return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2
+        return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2 -RequireDirect:$PublicDirect
     }
     if (-not $bothReady) {
         $mp = Get-MpIntrospection -Serial $EMU1
@@ -1327,6 +1396,16 @@ try {
         }
         Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
         if ($PublicDirect) {
+            foreach ($serial in @($EMU1, $EMU2)) {
+                $control = Get-MpIntrospection -Serial $serial
+                $resources = $control.online_resources
+                $routes = @($resources.peers)
+                foreach ($route in $routes) {
+                    Write-Status "ONLINE_DIRECT_ROUTE slot=$([int]$route.slot) direct=$($route.route_kind -ceq 'direct') epoch=$([long]$route.route_epoch) gameplay=$([long]$route.gameplay_received)" 'Gray'
+                }
+                if ($routes.Count -ne 1 -or $routes[0].route_kind -cne 'direct' -or $routes[0].route_epoch -le 0 -or
+                    $routes[0].route_epoch -ne $resources.runtime_attempt_epoch) { throw 'Direct qualification has no current native direct route' }
+            }
             $direct = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/v1/ready' -TimeoutSec 2
             if ($direct.relay_sessions -ne 0) { throw 'Requested native direct-path qualification fell back to relay' }
             Write-Status 'ONLINE_EVIDENCE native direct pair advanced with zero relay leases' 'Green'

@@ -10,6 +10,80 @@ import org.junit.Test
 /** Runs the actual service's completed-join consumer; Android storage/GPGS/IPC are not simulated */
 class MatchmakingServiceFlowTest {
     @Test(timeout = 10000)
+    fun delayedProbeDiagnosticsBelongToCurrentRoomAndCheck() {
+        val service = MatchmakingService
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        val begin =
+            service.javaClass.getDeclaredMethod("launchConnectivityCheck", List::class.java).apply {
+                isAccessible =
+                    true
+            }
+        val received = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        val failure =
+            java.util.concurrent.atomic
+                .AtomicReference<Throwable?>()
+        val peer = java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress())
+        peer.soTimeout = 5000
+        val responder =
+            Thread {
+                try {
+                    val packet = java.net.DatagramPacket(ByteArray(12), 12)
+                    peer.receive(packet)
+                    received.countDown()
+                    check(release.await(3, java.util.concurrent.TimeUnit.SECONDS))
+                    java.nio.ByteBuffer
+                        .wrap(packet.data)
+                        .putShort(10, 2)
+                    peer.send(packet)
+                } catch (error: Throwable) {
+                    failure.set(error)
+                }
+            }.apply { isDaemon = true }
+        service.disconnect()
+        try {
+            MatchmakingStateHolder.update {
+                it.copy(currentLobby = CurrentLobbyState("owned-room"), playerId = "host")
+            }
+            field("candidateSocket").set(service, java.net.DatagramSocket(0))
+            val pairs = listOf(CandidatePair("joiner", "host", "host", "127.0.0.1:${peer.localPort}", 1))
+            responder.start()
+            synchronized(service) { begin.invoke(service, pairs) }
+            assertTrue(received.await(3, java.util.concurrent.TimeUnit.SECONDS))
+
+            fun diagnostics() = service.resourceDiagnostics()["connectivity"] as Map<*, *>
+            assertTrue((diagnostics()["results"] as List<*>).isEmpty())
+            val epoch = diagnostics()["check_epoch"] as Long
+            release.countDown()
+            kotlinx.coroutines.runBlocking {
+                kotlinx.coroutines.withTimeout(4000) {
+                    (field("connectivityCheckJob").get(service) as kotlinx.coroutines.Job).join()
+                }
+            }
+            failure.get()?.let { throw AssertionError("Owned probe responder failed", it) }
+            val done = diagnostics()
+            val result = (done["results"] as List<*>).single() as Map<*, *>
+            assertEquals("owned-room", result["room_id"])
+            assertEquals("joiner", result["peer_id"])
+            assertEquals("host", result["candidate_type"])
+            assertEquals(done["network_epoch"], result["network_epoch"])
+            assertEquals(epoch, result["check_epoch"])
+            synchronized(service) { begin.invoke(service, pairs) }
+            assertEquals(epoch + 1, diagnostics()["check_epoch"])
+            assertTrue((diagnostics()["results"] as List<*>).isEmpty())
+            service.disconnect()
+            assertTrue((diagnostics()["results"] as List<*>).isEmpty())
+            assertTrue((diagnostics()["network_epoch"] as Long) > (done["network_epoch"] as Long))
+        } finally {
+            release.countDown()
+            service.disconnect()
+            peer.close()
+            responder.join(1000)
+        }
+    }
+
+    @Test(timeout = 10000)
     fun staleInstallationCallbacksCannotSubmitOrRetryOnReplacement() {
         val service = MatchmakingService
 

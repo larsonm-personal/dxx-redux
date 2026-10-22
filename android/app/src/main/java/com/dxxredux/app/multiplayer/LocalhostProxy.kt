@@ -52,6 +52,7 @@ data class PeerProxyStats(
     val bytesReceived: Long,
     val relayBound: Boolean = true,
     val gameplayReceived: Long = 0,
+    val isRelay: Boolean = false,
 )
 
 class LocalhostProxy(
@@ -510,6 +511,7 @@ private class PeerProxy(
             relayBound =
                 relay?.bound ?: true,
             gameplayReceived = pdataForwarded + mdataForwarded,
+            isRelay = config.isRelay,
         )
 
     suspend fun run() {
