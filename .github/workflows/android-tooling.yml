@@ -38,7 +38,8 @@ jobs:
       matrix:
         os: [ubuntu-24.04, windows-2022]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    # Windows' passing suites take nearly 15 minutes including PS 5.1 and cleanup
+    timeout-minutes: ${{ matrix.os == 'windows-2022' && 20 || 15 }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:

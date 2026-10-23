@@ -31,6 +31,12 @@ dependency installation, cleanup/process lifetime, release operations, replay
 comparison and test-catalog/evidence handling. Catalog validation is only part
 of their coverage; it does not claim to execute the catalog's game tests
 
+The tooling job ceiling is 20 minutes on Windows and 15 minutes on Linux.
+Windows job `120313557247` completed every test step successfully but received
+GitHub's maximum-execution-time annotation at 15m01s, after upload and cleanup.
+The extra job headroom preserves the existing 180-second per-fixture pool limit
+and every test assertion, including the separate Windows PowerShell 5.1 suite
+
 The workflow now runs on PRs that change scripts, automation fixtures,
 dependency/extraction infrastructure, workflows, or the asset-loader contracts
 those tests inspect. Ordinary engine and launcher source edits no longer
