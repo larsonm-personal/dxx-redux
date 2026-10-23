@@ -622,7 +622,7 @@ class SweepTests(unittest.TestCase):
         self.assertIn("if: steps.selection.outputs.native_replay == 'true'", setup)
         self.assertIn("bash android/get_deps/helpers/get_linux_build_prereqs.sh", setup)
         self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
-        self.assertIn("timeout-minutes: 10", setup)
+        self.assertIn("timeout-minutes: 15", setup)
 
     @unittest.skipUnless(sys.platform == "linux", "Native replay setup uses Bash")
     def test_native_replay_setup_builds_only_selected_games_before_emulator_boot(self):

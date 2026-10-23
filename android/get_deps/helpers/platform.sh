@@ -119,11 +119,19 @@ get_platform_batch_name() {
 download_file() {
     local destination="$1"
     local url="$2"
+    # Large archives may select up to 30 minutes per attempt without losing a bound
+    local attempt_seconds="${3:-300}" retry_seconds total_seconds
+    if [[ ! "$attempt_seconds" =~ ^[1-9][0-9]{0,3}$ ]] || ((attempt_seconds > 1800)); then
+        echo "ERROR: download attempt deadline must be 1..1800 seconds" >&2
+        return 2
+    fi
+    retry_seconds=$((2 * attempt_seconds + 10))
+    total_seconds=$((3 * attempt_seconds + 5))
 
     if command -v curl >/dev/null 2>&1; then
         # At most three attempts, each bounded even if the server keeps sending
-        curl -fSL --progress-bar --connect-timeout 30 --max-time 300 \
-            --retry 2 --retry-delay 2 --retry-max-time 610 \
+        curl -fSL --progress-bar --connect-timeout 30 --max-time "$attempt_seconds" --speed-limit 1024 --speed-time 30 \
+            --retry 2 --retry-delay 2 --retry-max-time "$retry_seconds" \
             -o "$destination" "$url"
         return $?
     fi
@@ -134,7 +142,7 @@ download_file() {
             echo "ERROR: wget downloads require timeout; install curl or GNU coreutils" >&2
             return 1
         fi
-        timeout --kill-after=5 905 wget --tries=3 --timeout=30 --waitretry=2 \
+        timeout --kill-after=5 "$total_seconds" wget --tries=3 --timeout=30 --waitretry=2 \
             --retry-on-http-error=429,500,502,503,504 \
             --progress=dot:giga -O "$destination" "$url"
         return $?

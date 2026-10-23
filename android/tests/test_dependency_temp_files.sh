@@ -84,3 +84,27 @@ if download_text https://fixture.invalid/metadata; then
 fi
 unset -f curl
 echo 'PASS: transport errors propagate through conditional callers'
+
+# Large archives get a caller-specific bounded deadline, not a five-minute restart loop
+curl() {
+    local arguments=" $* "
+    [[ "$arguments" == *" --max-time 1800 "* ]] || return 99
+    [[ "$arguments" == *" --retry-max-time 3610 "* ]] || return 99
+    return 23
+}
+if download_file "$TEST_ROOT/large-download" https://fixture.invalid/large 1800; then
+    echo 'Large download helper swallowed transport failure' >&2
+    exit 1
+else
+    [ "$?" -eq 23 ]
+fi
+for deadline in 0 -1 invalid 1801; do
+    if download_file "$TEST_ROOT/invalid-deadline" https://fixture.invalid/archive "$deadline"; then
+        echo 'Download helper accepted an invalid deadline' >&2
+        exit 1
+    else
+        [ "$?" -eq 2 ]
+    fi
+done
+unset -f curl
+echo 'PASS: large-archive deadlines stay bounded and preserve transport errors'

@@ -138,8 +138,12 @@ Never disable TLS or change a pin to get past a failed download. Remove only the
 reported corrupt cache entry after investigating it, then rerun configuration
 
 Bootstrap file downloads use curl's transient HTTP/timeout retries (two retries,
-30 second connection and 300 second attempt deadlines; at most 910 seconds).
-The wget fallback requires GNU `timeout` and has the same outer 910 second limit.
+30 second connection/low-speed limits and 300 second attempt deadlines; at most 910 seconds).
+The NDK installer selects a 1800-second attempt budget for its 1.1 GB archive;
+its three-attempt ceiling is 5410 seconds, further bounded by the CI setup step.
+Other callers retain the 300-second default. The optional third `download_file`
+argument accepts only 1..1800 seconds. The wget fallback requires GNU `timeout`
+and enforces the same three-attempt total budget (910 seconds by default).
 Metadata requests have a 60 second deadline (65 including forced termination for
 wget) and do not retry streamed stdout, avoiding concatenated partial responses.
 SDK ZIP integrity is checked before extraction; a corrupt archive fails without
@@ -167,3 +171,54 @@ has not executed repository setup. Record its run ID separately and rerun only
 after checking platform status. Preserve branch/SHA, PR and diagnostic links at
 working checkpoints; use `.github/TASK_RECOVERY.md` to restore a clean workspace
 rather than repeatedly repairing an inaccessible one
+
+### Restoring a saved development workspace
+
+A desktop-only snapshot is not an Android bootstrap. The reviewed saved setup
+installed desktop libraries and PowerShell, left compiler selection to `/usr/bin/cc`,
+and never installed JDK/SDK/NDK components. On its Debian 13 image that selects
+GCC 14; the CI baseline is Ubuntu 24.04 with GCC 13. Use a fresh build directory
+when changing compilers: setting `CC` does not replace a compiler already cached
+by CMake. Do not suppress compiler errors to make provisioning look successful
+
+For a fresh writable workspace, use the existing pinned installers (no sudo):
+
+```sh
+printf '%s\n' /workspace/dxx-tools > dependency_base.txt
+bash android/get_deps/helpers/get_jdk.sh
+bash android/get_deps/helpers/get_sdk.sh
+bash android/get_deps/helpers/get_ndk.sh
+bash android/get_deps/helpers/get_cmake.sh
+bash android/get_deps/helpers/get_gradle_wrapper.sh
+source android/helpers/set_vars.sh
+export GRADLE_USER_HOME=/workspace/dxx-tools/gradle-cache
+bash android/get_deps/check_build_prereqs.sh
+```
+
+This provisions the pinned JDK, command-line tools, NDK, CMake and wrapper; it
+intentionally does not accept SDK licenses. `finalize.sh` automatically answers
+license prompts and must not be run where accepting new terms is prohibited.
+Full APK builds also need the pinned platform/build-tools packages in an already
+authorized SDK. A missing license directory is a setup blocker, not a build pass
+
+A proxy-only execution environment also needs JVM proxy configuration: Java does
+not automatically consume `HTTPS_PROXY`. Use the platform's approved JVM proxy
+and trust configuration. A Temurin `PKIX path building failed` error through the
+proxy means that trust provisioning is incomplete; do not disable certificate
+verification or silently import certificates to work around it
+
+The Android native CMake project can be configured with the installed NDK and
+CMake without SDK platform packages. Building its `SDL12` target verifies the
+actual Android shared-library path, but does not qualify an APK or launcher build
+
+On the reviewed Debian snapshot, workspace-local GCC/G++ 13 can compile the host
+code, but linking against the image's newer multimedia libraries also requires
+its newer system libstdc++ runtime. Select that runtime with linker search paths
+rather than replacing libraries or altering sources. Prefer the Ubuntu 24.04 CI
+image for a fresh environment to avoid this mixed-toolchain setup
+
+The Linux process supervisor requires `/proc/self/task/<pid>/children` and has no
+supported opt-out. If the kernel omits that interface, the supervised test runners
+must fail. Direct CMake builds and serial CTest remain supported and useful; they
+do not validate supervised process-cleanup behavior. Full tooling/launcher test
+qualification needs an execution environment exposing the required interface
