@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
+# Select exact releases in ../rust-toolchain.toml and rust_tools.conf before running
+# Discover candidates from the official Rust manifests and crates.io, then review
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+source ./rust_tools.conf
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+bash ../android/get_deps/helpers/get_rust.sh
+rustup toolchain install "$UDEPS_TOOLCHAIN" --profile minimal --no-self-update
+cargo install cargo-udeps --version "=$CARGO_UDEPS_VERSION" --locked
+cargo install cargo-edit --version "=$CARGO_EDIT_VERSION" --locked
+cargo install bindgen-cli --version "=$BINDGEN_VERSION" --locked
 
-# Exit trap: always pause unless called from parent script
-trap 'if [[ -z "$SKIP_PAUSE" ]]; then echo ""; echo "Press any key to exit..."; read -r -n1 -s; fi' EXIT
-
-set -e
-cd -- "$(dirname -- "$(readlink -f -- "$0")")" # change to script dir
-
-rustup update stable
-rustup toolchain install nightly
-cargo install cargo-udeps --locked #"as of rust 1.41, will do an update if available"
-cargo install cargo-edit
-cargo install bindgen-cli
-rustup component add clippy
-
-# print versions to a file
+# Replace inventory only after all installs and version checks succeed
+inventory="$(mktemp)"
+trap 'rm -f "$inventory"' EXIT
 {
     rustc --version
-    rustup --version # this also prints comments, which remain on stderr
+    rustup --version
     cargo --version
     cargo clippy --version
+    cargo fmt --version
     cargo udeps --version
     cargo upgrade --version
     bindgen --version
-} >rust_version.txt
+    rustup run "$UDEPS_TOOLCHAIN" rustc --version
+    printf 'udeps toolchain %s\n' "$UDEPS_TOOLCHAIN"
+} >"$inventory"
+cp "$inventory" rust_version.txt

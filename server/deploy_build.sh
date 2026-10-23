@@ -39,22 +39,13 @@ echo ""
 
 # --- 2. Rust toolchain ---
 echo "--- Checking Rust toolchain ---"
-if command -v rustup &>/dev/null; then
-    echo "rustup found, updating stable toolchain..."
-    rustup update stable
-else
-    echo "Rust not found. Installing via rustup..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-    # Source the environment so cargo is available in this session
-    . "$HOME/.cargo/env"
-fi
-rustc --version
-cargo --version
+bash "$SCRIPT_DIR/../android/get_deps/helpers/get_rust.sh"
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
 echo ""
 
 # --- 3. Build release binary ---
 echo "--- Building release binary ---"
-cargo build --release
+cargo build --release --locked
 BINARY="$SCRIPT_DIR/target/release/dxx-matchmaking"
 if [ ! -f "$BINARY" ]; then
     echo "ERROR: binary not found at $BINARY"

@@ -1,0 +1,65 @@
+name: Server Rust checks
+
+# Always emit the server check; gate Rust steps instead of filtering the workflow
+on:
+  pull_request:
+  push:
+    branches: [cmake]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Detect server changes
+        id: changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.event.after }}
+          DELETED: ${{ github.event.deleted }}
+        run: |
+          if [[ "$DELETED" == true ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$BASE" == 0000000000000000000000000000000000000000 ]]; then
+            BASE=$(git hash-object -t tree --stdin </dev/null)
+          else
+            git cat-file -e "$BASE^{commit}" || git fetch --no-tags --depth=1 origin "$BASE"
+          fi
+          # PR aggregate diff; pushes compare their before/after snapshots
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            BASE=$(git merge-base "$BASE" "$HEAD")
+          fi
+          status=0
+          git diff --quiet --no-renames "$BASE" "$HEAD" -- server/ || status=$?
+          case "$status" in
+            0) echo "changed=false" >> "$GITHUB_OUTPUT" ;;
+            1) echo "changed=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
+      - name: No server changes
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "No server changes; Rust installation, build and tests skipped"
+      - name: Install declared compiler and components
+        if: steps.changes.outputs.changed == 'true'
+        run: bash android/get_deps/helpers/get_rust.sh
+      - name: Build and test locked dependencies
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: server
+        run: |
+          cargo build --locked
+          cargo test --locked
+          cargo clippy --locked --all-targets
+          cargo fmt --check

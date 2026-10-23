@@ -7,13 +7,13 @@ set -e
 cd -- "$(dirname -- "$(readlink -f -- "$0")")" # change to script dir
 
 cargo fmt
-cargo fix --allow-dirty
-cargo clippy --fix --allow-dirty
+cargo fix --locked --allow-dirty
+cargo clippy --locked --fix --allow-dirty
 
-cargo build
-cargo test
+cargo build --locked
+cargo test --locked
 
 read -r -p "run yolo fixes? (y/N): " answer
 if [[ $answer == [Yy] ]]; then
-    __CARGO_FIX_YOLO=1 cargo clippy --fix --allow-dirty
+    __CARGO_FIX_YOLO=1 cargo clippy --locked --fix --allow-dirty
 fi
