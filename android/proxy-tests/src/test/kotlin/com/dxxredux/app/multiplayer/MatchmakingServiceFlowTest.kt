@@ -634,6 +634,16 @@ class MatchmakingServiceFlowTest {
         } finally {
             release.countDown()
             service.disconnect()
+            // Cancellation is asynchronous; finish this fixture's work before the next test
+            val scope = field("scope").get(service) as kotlinx.coroutines.CoroutineScope
+            kotlinx.coroutines.runBlocking {
+                kotlinx.coroutines.withTimeout(3000) {
+                    scope.coroutineContext[kotlinx.coroutines.Job]!!
+                        .children
+                        .toList()
+                        .forEach { it.join() }
+                }
+            }
         }
     }
 
