@@ -30,7 +30,7 @@ if [ -z "$build_dir" ] || [[ ! "$jobs" =~ ^[1-9][0-9]*$ ]]; then
 fi
 # The wrapper selects pinned tools and checks readiness before entering this child
 exec bash "$SCRIPT_DIR/../get_deps/build_tools.sh" --run -- bash -euo pipefail -c '
-    unset CPATH LIBRARY_PATH CMAKE_PREFIX_PATH CC CXX LDFLAGS
+    unset CPATH LIBRARY_PATH CMAKE_PREFIX_PATH CC CXX LDFLAGS CFLAGS CXXFLAGS CPPFLAGS
     cmake -S "$1/app/src/main/cpp" -B "$2" \
         -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake" \
         -DANDROID_ABI=x86_64 -DANDROID_PLATFORM=android-26 -DCMAKE_BUILD_TYPE=Debug

@@ -141,7 +141,7 @@ printf wrapper >"$fixture/android/gradle/wrapper/gradle-wrapper.jar"
 cat >"$managed/cmake-$CMAKE_VERSION/bin/cmake" <<'CMAKE'
 #!/bin/bash
 if [ "$1" = --version ]; then echo "cmake version $FIXTURE_CMAKE_VERSION"; exit 0; fi
-[ -z "${CPATH:-}${LIBRARY_PATH:-}${CMAKE_PREFIX_PATH:-}${CC:-}${CXX:-}${LDFLAGS:-}" ] || exit 99
+[ -z "${CPATH:-}${LIBRARY_PATH:-}${CMAKE_PREFIX_PATH:-}${CC:-}${CXX:-}${LDFLAGS:-}${CFLAGS:-}${CXXFLAGS:-}${CPPFLAGS:-}" ] || exit 99
 printf '%s\n' "$1" >>"$FIXTURE_CMAKE_CALLS"
 if [ "${FIXTURE_CMAKE_FAIL:-}" = "$1" ]; then exit 23; fi
 CMAKE
@@ -154,7 +154,7 @@ if DXX_DEPENDENCY_BASE="$TEST_ROOT/conflicting" bash "$deps/build_tools.sh" >"$T
 if FIXTURE_CMAKE_VERSION=wrong bash "$deps/build_tools.sh" >"$TEST_ROOT/version.log" 2>&1; then exit 1; fi
 if JAVA_HOME=/wrong bash "$deps/build_tools.sh" --run -- bash -c '[ "$JAVA_HOME" = "$DXX_DEPENDENCY_BASE/jdk-'"$JDK_MAJOR"'" ] || exit 99; exit 37' >"$TEST_ROOT/run.log"; then exit 1; else [ "$?" -eq 37 ]; fi
 if bash "$deps/check_build_prereqs.sh" >"$TEST_ROOT/apk.log" 2>&1; then exit 1; fi
-export CPATH=host LIBRARY_PATH=host CMAKE_PREFIX_PATH=host CC=host CXX=host LDFLAGS=host
+export CPATH=host LIBRARY_PATH=host CMAKE_PREFIX_PATH=host CC=host CXX=host LDFLAGS=host CFLAGS=host CXXFLAGS=host CPPFLAGS=host
 bash "$fixture/android/helpers/run_android_native_smoke.sh" --build-dir "$TEST_ROOT/smoke" >"$TEST_ROOT/smoke.log"
 printf '%s\n' -S --build >"$TEST_ROOT/expected.calls"
 cmp "$TEST_ROOT/expected.calls" "$FIXTURE_CMAKE_CALLS"
