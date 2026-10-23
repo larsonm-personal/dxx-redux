@@ -47,7 +47,7 @@ jobs:
     name: Run selected tests
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
-    timeout-minutes: 90
+    timeout-minutes: 105
     environment: ${{ inputs.retail_assets && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
     env:
       RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
@@ -241,7 +241,7 @@ jobs:
           } 2>&1 | tee results/setup/emulator-host-runtime.log
       - name: Provision dual-lane master host prerequisites
         if: inputs.lane == 'android-dual'
-        timeout-minutes: 10
+        timeout-minutes: 15
         shell: bash
         working-directory: target
         run: |
@@ -249,7 +249,7 @@ jobs:
           bash android/get_deps/helpers/get_linux_build_prereqs.sh 2>&1 | tee ../results/setup/dual-host-prerequisites.log
       - name: Provision selected auto-level replay prerequisites
         if: steps.selection.outputs.native_replay == 'true'
-        timeout-minutes: 10
+        timeout-minutes: 15
         shell: bash
         working-directory: target
         run: |

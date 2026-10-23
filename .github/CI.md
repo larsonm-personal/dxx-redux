@@ -2,7 +2,7 @@
 
 `Engine smoke` runs on every PR and can also be dispatched manually. Two
 independent Ubuntu 24.04 jobs build D1 and D2 in parallel. Each job has a
-20-minute ceiling, including dependency installation. Superseded runs cancel
+45-minute ceiling, including up to 15 minutes for dependency installation. Superseded runs cancel
 automatically. There is no second copy triggered by pushing the PR branch
 
 The normal CMake `all` target compiles and links the desktop game, headless
@@ -149,6 +149,9 @@ the SDK command-line archive still relies on the pinned build URL over TLS
 
 Apt uses native acquisition retries and 30 second HTTP/HTTPS stall timeouts.
 Index refreshes fail on acquisition errors instead of silently reusing stale lists.
+Native provisioning has a 15-minute step budget: a progressing 50 MB transfer at
+70 KB/s can exceed 12 minutes without ever hitting an inactivity timeout. Job
+budgets include this setup allowance; build and test step limits are unchanged.
 Workflow step/job deadlines remain the overall provisioning limit; a package or
 build error must still fail the job. Nightly SDK caches now include command-line
 and platform tools, with a new cache generation; installer/package checks still
