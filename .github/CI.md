@@ -181,53 +181,135 @@ GCC 14; the CI baseline is Ubuntu 24.04 with GCC 13. Use a fresh build directory
 when changing compilers: setting `CC` does not replace a compiler already cached
 by CMake. Do not suppress compiler errors to make provisioning look successful
 
-For a fresh writable workspace, bootstrap the native toolchain with the existing
-pinned installers (no sudo). This does not establish full Gradle/APK readiness:
+Run the recipes below in Bash from a clean repository checkout. Choose paths
+outside the checkout so generated tools and builds cannot enter source commits:
 
 ```sh
-printf '%s\n' /workspace/dxx-tools > dependency_base.txt
+repo_root="$PWD"
+recovery_root="${DXX_RECOVERY_ROOT:-$(dirname "$repo_root")/dxx-recovery}"
+tools_root="$recovery_root/tools"
+host_build="$recovery_root/host-d1"
+android_build="$recovery_root/android-x86_64"
+apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+```
+
+**Primary path: Ubuntu 24.04, matching CI.** Install the native package set and
+select GCC 13 explicitly. No mixed-runtime linker override is needed:
+
+```sh
+sudo apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update
+sudo apt-get "${apt_options[@]}" install -y --no-install-recommends \
+  build-essential gcc-13 g++-13 cmake ninja-build curl unzip zip \
+  libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev \
+  zlib1g-dev xvfb xauth libgl1-mesa-dri
+export CC=gcc-13 CXX=g++-13
+native_link_flags=""
+```
+
+**Optional Debian 13 snapshot recovery.** This alternative assumes desktop
+libraries are already installed or available in an extracted development sysroot.
+It reproduces the reviewed unprivileged compiler acquisition using signed Debian
+metadata and download-only apt, without installing system packages:
+
+```sh
+apt_root="$recovery_root/apt"
+mkdir -p "$apt_root"/{lists/partial,cache/archives/partial,empty} "$tools_root/gcc13"
+cat > "$apt_root/sources.list" <<'SOURCES'
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian trixie main
+SOURCES
+cat > "$apt_root/apt.conf" <<APT
+Dir::Etc::parts "$apt_root/empty";
+Dir::Etc::main "/dev/null";
+Dir::Etc::sourcelist "$apt_root/sources.list";
+Dir::Etc::sourceparts "$apt_root/empty";
+Dir::State::lists "$apt_root/lists";
+Dir::Cache "$apt_root/cache";
+Dir::Log "$apt_root";
+APT::Sandbox::User "$(id -un)";
+APT
+APT_CONFIG="$apt_root/apt.conf" apt-get "${apt_options[@]}" \
+  -o APT::Update::Error-Mode=any update
+APT_CONFIG="$apt_root/apt.conf" apt-get "${apt_options[@]}" \
+  -o Debug::NoLocking=true install --download-only --no-install-recommends -y gcc-13 g++-13
+for archive in "$apt_root"/cache/archives/*13*.deb; do
+  dpkg-deb -x "$archive" "$tools_root/gcc13"
+done
+export CC="$tools_root/gcc13/usr/bin/gcc-13"
+export CXX="$tools_root/gcc13/usr/bin/g++-13"
+# The reviewed amd64 Debian image's multimedia libraries need this newer runtime
+runtime_lib_dir=/usr/lib/gcc/x86_64-linux-gnu/14
+test -e "$runtime_lib_dir/libstdc++.so"
+native_link_flags="-L$runtime_lib_dir"
+```
+
+For an extracted desktop-library sysroot, set `DXX_HOST_SYSROOT` to its root
+(the reviewed snapshot used `/workspace/dxx-setup/sysroot`) and expose it only
+to native host builds:
+
+```sh
+if [ -n "${DXX_HOST_SYSROOT:-}" ]; then
+  export PATH="$DXX_HOST_SYSROOT/usr/bin:$PATH"
+  export CMAKE_PREFIX_PATH="$DXX_HOST_SYSROOT/usr"
+  export CPATH="$DXX_HOST_SYSROOT/usr/include:$DXX_HOST_SYSROOT/usr/include/x86_64-linux-gnu"
+  export LIBRARY_PATH="$DXX_HOST_SYSROOT/usr/lib/x86_64-linux-gnu"
+  export LD_LIBRARY_PATH="$LIBRARY_PATH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+```
+
+**Pinned tools and native validation, common to both paths.** These installers
+require no sudo and do not establish full Gradle/APK readiness:
+
+```sh
+printf '%s\n' "$tools_root" > dependency_base.txt
 bash android/get_deps/helpers/get_jdk.sh
 bash android/get_deps/helpers/get_sdk.sh
 bash android/get_deps/helpers/get_ndk.sh
 bash android/get_deps/helpers/get_cmake.sh
 bash android/get_deps/helpers/get_gradle_wrapper.sh
-source android/helpers/set_vars.sh
-export GRADLE_USER_HOME=/workspace/dxx-tools/gradle-cache
+source android/get_deps/tool_versions.conf
+export JAVA_HOME="$tools_root/jdk-$JDK_MAJOR"
+export ANDROID_HOME="$tools_root/android-sdk" ANDROID_SDK_ROOT="$tools_root/android-sdk"
+export ANDROID_NDK_ROOT="$tools_root/android-ndk-$NDK_VERSION"
+export GRADLE_USER_HOME="$tools_root/gradle-cache"
+export PATH="$tools_root/cmake-$CMAKE_VERSION/bin:$JAVA_HOME/bin:$PATH"
+# Use a fresh host_build path when changing compiler or runtime selection
+cmake -S "$repo_root/d1" -B "$host_build" \
+  -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
+  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+  '-DCMAKE_C_FLAGS_DEBUG=-O0 -g1' '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1' \
+  -DOPENGL=ON -DSDLMIXER=ON -DUDP=ON -DOpenGL_GL_PREFERENCE=LEGACY \
+  -DCMAKE_EXE_LINKER_FLAGS="$native_link_flags" \
+  -DCMAKE_SHARED_LINKER_FLAGS="$native_link_flags"
+cmake --build "$host_build" --parallel 4
+SDL_AUDIODRIVER=dummy SDL_VIDEODRIVER=dummy ctest --test-dir "$host_build" \
+  --output-on-failure --no-tests=error --parallel 1 --timeout 120
+# Keep desktop include/library/compiler overrides out of Android cross compilation
+env -u CPATH -u LIBRARY_PATH -u CMAKE_PREFIX_PATH -u CC -u CXX -u LDFLAGS \
+  cmake -S "$repo_root/android/app/src/main/cpp" -B "$android_build" \
+  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake" \
+  -DANDROID_ABI=x86_64 -DANDROID_PLATFORM=android-26 -DCMAKE_BUILD_TYPE=Debug
+cmake --build "$android_build" --target SDL12 --parallel 4
 # Diagnostic only: expected to fail while SDK-managed packages are absent
 bash android/get_deps/check_build_prereqs.sh
 ```
 
-This provisions the pinned JDK, command-line tools, NDK, CMake and wrapper; it
-intentionally does not accept SDK licenses. `get_cmake.sh` installs standalone
-CMake for direct native builds; it does not create the SDK-managed CMake package
-metadata required by the full Android prerequisite check. A fresh workspace is
-therefore expected to report missing platform/build-tools/platform-tools and SDK
-CMake packages and return nonzero. This is an honest diagnostic, not a failed
-native bootstrap or a claim that APK builds are ready. `finalize.sh` automatically answers
-license prompts and must not be run where accepting new terms is prohibited.
-Full APK builds also need the pinned platform/build-tools packages in an already
-authorized SDK. A missing license directory is a setup blocker, not a build pass
+The reviewed Debian workspace passed the full D1 build and 88/88 serial CTests,
+and produced an Android 26 x86-64 SDL12 shared library with NDK r30. This does not
+qualify an APK, launcher build, or supervised process-cleanup behavior
 
-A proxy-only execution environment also needs JVM proxy configuration: Java does
-not automatically consume `HTTPS_PROXY`. Use the platform's approved JVM proxy
-and trust configuration. A Temurin `PKIX path building failed` error through the
-proxy means that trust provisioning is incomplete; do not disable certificate
-verification or silently import certificates to work around it
+The bootstrap intentionally does not accept SDK licenses. `get_cmake.sh` installs
+standalone CMake, not the SDK-managed CMake metadata checked by the full Android
+prerequisite report. A fresh workspace therefore reports missing SDK platform,
+build-tools, platform-tools and CMake packages and returns nonzero. `finalize.sh`
+automatically answers license prompts and must not run where accepting new terms
+is prohibited. Full APK builds require those packages in an authorized SDK
 
-The Android native CMake project can be configured with the installed NDK and
-CMake without SDK platform packages. Building its `SDL12` target verifies the
-actual Android shared-library path, but does not qualify an APK or launcher build.
-The reviewed workspace passed this configuration/build and a full D1 native build
-with 88/88 serial CTests after the compiler/runtime setup described below
+Java does not automatically consume `HTTPS_PROXY`. Use the execution platform's
+approved JVM proxy and trust configuration; a Temurin `PKIX path building failed`
+error through the proxy indicates incomplete trust provisioning. Do not disable
+certificate verification or silently import certificates. No proxy credentials
+or trust-store modifications are part of these recipes
 
-On the reviewed Debian snapshot, workspace-local GCC/G++ 13 can compile the host
-code, but linking against the image's newer multimedia libraries also requires
-its newer system libstdc++ runtime. Select that runtime with linker search paths
-rather than replacing libraries or altering sources. Prefer the Ubuntu 24.04 CI
-image for a fresh environment to avoid this mixed-toolchain setup
-
-The Linux process supervisor requires `/proc/self/task/<pid>/children` and has no
-supported opt-out. If the kernel omits that interface, the supervised test runners
-must fail. Direct CMake builds and serial CTest remain supported and useful; they
-do not validate supervised process-cleanup behavior. Full tooling/launcher test
-qualification needs an execution environment exposing the required interface
+The Linux supervisor requires `/proc/self/task/<pid>/children` and has no supported
+opt-out. Direct CMake/CTest remains useful if that interface is missing, but full
+tooling/launcher qualification requires an execution environment exposing it
