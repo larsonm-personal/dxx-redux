@@ -47,6 +47,8 @@ impl<K: Eq + std::hash::Hash> WindowEntries<K> {
 pub struct RateLimiter {
     /// Per-IP connection attempts: max 64 per 60s (two full rooms plus two reconnect waves)
     ip_connections: Mutex<WindowEntries<IpAddr>>,
+    /// Login requests include challenge, exchange and logout; allow shared-NAT rooms
+    ip_logins: Mutex<WindowEntries<IpAddr>>,
     /// Per-IP auth failures: max 5 per 3600s
     ip_auth_fails: Mutex<WindowEntries<IpAddr>>,
     /// Per-player lobby creation: max 1 per 10s
@@ -61,6 +63,8 @@ pub struct RateLimiter {
     player_messages: Mutex<WindowEntries<Uuid>>,
     /// Per-session lobby list requests: max 5 per 10s
     lobby_lists: Mutex<WindowEntries<Uuid>>,
+    /// Per-identity candidate submissions across room/round changes: max 6 per 60s
+    candidate_submissions: Mutex<WindowEntries<Uuid>>,
 }
 
 impl Default for RateLimiter {
@@ -73,6 +77,7 @@ impl RateLimiter {
     pub fn new() -> Self {
         Self {
             ip_connections: Mutex::new(WindowEntries::new()),
+            ip_logins: Mutex::new(WindowEntries::new()),
             ip_auth_fails: Mutex::new(WindowEntries::new()),
             lobby_creates: Mutex::new(WindowEntries::new()),
             lobby_joins: Mutex::new(WindowEntries::new()),
@@ -80,11 +85,16 @@ impl RateLimiter {
             ws_messages: Mutex::new(WindowEntries::new()),
             player_messages: Mutex::new(WindowEntries::new()),
             lobby_lists: Mutex::new(WindowEntries::new()),
+            candidate_submissions: Mutex::new(WindowEntries::new()),
         }
     }
 
     pub fn check_ip_connection(&self, ip: IpAddr) -> bool {
         Self::check(&self.ip_connections, ip, 64, 60)
+    }
+
+    pub fn check_ip_login(&self, ip: IpAddr) -> bool {
+        Self::check(&self.ip_logins, ip, 64, 60)
     }
 
     pub fn record_auth_fail(&self, ip: IpAddr) -> bool {
@@ -113,6 +123,10 @@ impl RateLimiter {
 
     pub fn check_lobby_list(&self, session_id: Uuid) -> bool {
         Self::check(&self.lobby_lists, session_id, 5, 10)
+    }
+
+    pub fn check_candidate_submission(&self, player_id: Uuid) -> bool {
+        Self::check(&self.candidate_submissions, player_id, 6, 60)
     }
 
     pub fn release_connection(&self, connection: Uuid) {
@@ -162,6 +176,7 @@ impl RateLimiter {
     pub fn cleanup(&self) {
         let now = Instant::now();
         Self::cleanup_map(&self.ip_connections, now, 60);
+        Self::cleanup_map(&self.ip_logins, now, 60);
         Self::cleanup_map(&self.ip_auth_fails, now, 3600);
         Self::cleanup_map(&self.lobby_creates, now, 10);
         Self::cleanup_map(&self.lobby_joins, now, 60);
@@ -169,6 +184,7 @@ impl RateLimiter {
         Self::cleanup_map(&self.ws_messages, now, 1);
         Self::cleanup_map(&self.player_messages, now, 60);
         Self::cleanup_map(&self.lobby_lists, now, 10);
+        Self::cleanup_map(&self.candidate_submissions, now, 60);
     }
     fn cleanup_map<K: Eq + std::hash::Hash>(
         map: &Mutex<WindowEntries<K>>,
@@ -183,6 +199,45 @@ impl RateLimiter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn candidate_submission_budget_survives_connection_churn_and_recovers() {
+        let limiter = RateLimiter::new();
+        let id = Uuid::new_v4();
+        let now = Instant::now();
+        for _ in 0..6 {
+            assert!(RateLimiter::check_at(
+                &limiter.candidate_submissions,
+                id,
+                6,
+                60,
+                now
+            ));
+            limiter.release_connection(id);
+        }
+        assert!(!RateLimiter::check_at(
+            &limiter.candidate_submissions,
+            id,
+            6,
+            60,
+            now
+        ));
+        assert!(RateLimiter::check_at(
+            &limiter.candidate_submissions,
+            Uuid::new_v4(),
+            6,
+            60,
+            now
+        ));
+        assert!(RateLimiter::check_at(
+            &limiter.candidate_submissions,
+            id,
+            6,
+            60,
+            now + std::time::Duration::from_secs(60)
+        ));
+    }
+
     #[test]
     fn closed_connection_churn_releases_only_connection_owned_limits() {
         let limiter = RateLimiter::new();

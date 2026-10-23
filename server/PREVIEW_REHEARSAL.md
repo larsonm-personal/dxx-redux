@@ -1,9 +1,21 @@
 # Isolated online preview rehearsal
 
-Online release remains disabled. Protocol 3 requires matching server and client
-artifacts. Listener readiness is necessary, not a gameplay or authentication
+For an actual public VPS installation, see [INSTALL.md](INSTALL.md) and run
+`bash server/install.sh` from the repository root. The checks below are isolated
+rehearsals, not substitutes for certificate/DNS/provider-firewall setup.
+
+Online release remains disabled. Protocol 8 requires matching server and client
+artifacts and adds bounded relay lifetime with coordinated credential renewal.
+Listener readiness is necessary, not a gameplay or authentication
 qualification result. Do not run the existing installation/update scripts for a
 local rehearsal: they modify service and proxy configuration.
+
+Protocol 7 replaces client-declared candidates with `GATHER_CANDIDATES` challenges
+and UDP return-path receipts. Deploy matching server/client artifacts together;
+v6 candidate messages are not accepted. Both configured STUN addresses must reach
+this server's credentialed listeners. These are not general-purpose STUN/TURN
+endpoints. Internet matchmaking does not distribute private host candidates or
+guess neighboring ports; unavailable discovery falls back to the fixed-pair relay.
 
 ## Local gates
 
@@ -68,9 +80,11 @@ It selects only `test_mp_public_shareware`, builds the matching locked server
 with the repository-pinned Rust version, and stages hash-verified public D1
 shareware onto three verified disposable emulators. The runner owns loopback WS,
 HTTP, STUN and authenticated relay listeners with a synthetic in-memory database.
-It uses the production installation challenge/proof path with development
-authentication disabled. The preceding host test runs the actual Android service
-against the real local server with a deterministic test key. This is not a GPGS
+It uses the retained installation challenge/proof fixture with loopback-only
+development authentication explicitly enabled. Production requires Google sign-in and
+rejects this method even for previously registered keys. The preceding host test
+runs the actual Android service against the real local development server with a
+deterministic test key. This is not a Google sign-in
 provider or public TLS deployment qualification. Occupied test ports fail rather than killing unrelated
 processes, and this public variant makes no firewall changes.
 
@@ -114,7 +128,26 @@ matching Android build. Record SHA-256 hashes, tool versions, protocol version a
 configuration schema; retain the previous matching artifact pair. Validate the
 exact nginx identity-header configuration in an isolated namespace or owned
 staging instance. Only explicitly configured proxy peers may set X-Real-IP.
-Prove the real GPGS or approved direct-install producer, not a development bypass.
+Prove real Google sign-in authentication; installation/PoW fixtures cannot qualify production access.
+Configure GOOGLE_CLIENT_ID and GOOGLE_AUTH_ORIGIN, and route `/api/v1/auth/*` to
+the WebSocket listener on the same HTTPS origin. ID-token verification needs no
+OAuth client secret. Validate the updated nginx template before applying it.
+
+Existing account data is disposable pre-release state, as confirmed by the operator.
+This release creates Google-backed accounts without migrating or linking PGS
+identities. Use a fresh database when deploying the new release; startup does not
+automatically erase existing data. Do not rename PGS IDs into Google subjects or
+infer links from callsigns/email.
+
+Login cancellation uses POST `/api/v1/auth/cancel` with the original random
+`challenge`, including when the exchange response was lost. It prevents pending
+verification from issuing a credential and revokes a credential already issued
+for that challenge. Issued cancellation receipts live for five minutes and share
+the bounded challenge pool (1024 global, 16 per source); exchanges remain one-use.
+The client attempts cleanup with a five-second HTTP timeout even on coroutine
+cancellation. Cleanup is best-effort during network loss; the eight-session
+account cap and absolute 12-hour session expiry remain the fallback. Never log
+challenge capabilities, Google tokens or session credentials.
 
 Use a synthetic database and two/three owned clients. Cover all pairs at least
 once, then apply pairwise fault scenarios rather than every Cartesian combination:
@@ -146,14 +179,22 @@ Rollback is a matched artifact/configuration operation. Disable new admission,
 notify/drain the preview within the agreed bound, stop the service, preserve a
 private database snapshot, restore the previous reviewed binary/configuration and
 matching client artifact, then repeat readiness and a synthetic two-client game.
-Do not serve protocol 2 clients from protocol 3 or roll back only one endpoint.
+Do not mix protocol-9 Google-session clients with a pre-protocol-9 server or roll
+back only one endpoint.
 Restore a database snapshot only if schema compatibility requires it, and retain
 the failed-state snapshot for diagnosis. No rollback, deployment, firewall change,
 secret creation or live probe is executed by this document or the local tests.
 
 ## Installation identity contract
 
-The `p256_challenge` method uses a fresh connection-bound nonce and P-256 ECDSA
+Protocol 9 production accepts only `google_session`, using a credential issued by
+the same server's bounded Google ID-token exchange. The retained `p256_challenge`, `keypair`, and `dev`
+methods require `SKIP_GPGS_VERIFY=true` and an observed loopback source. The client
+only falls back to installation authentication in debug builds for literal
+loopback endpoints or the Android emulator's `10.0.2.2` host alias. A missing Google
+sign-in on a public endpoint produces a terminal sign-in error.
+
+The development `p256_challenge` method uses a fresh connection-bound nonce and P-256 ECDSA
 with SHA-256. The domain-separated transcript includes protocol version, nonce,
 public key, callsign, platform, audience and proof-of-work solution. Challenges
 are single-use and expire with the absolute authentication deadline. Replacing an
@@ -162,7 +203,8 @@ bounded client proof-of-work; known keys still require a fresh signature.
 
 Set `INSTALLATION_AUTH_AUDIENCE` to the exact client-visible `scheme://host:port`,
 including the port (for example the approved HTTPS hostname with `:443`). Empty
-configuration disables this method. The client derives the audience from its
+configuration disables this development method. Setting an audience never enables
+it in production. The client derives the audience from its
 actual connection URL, never from the challenge; the server checks its configured
 audience. The debug loopback campaign explicitly uses `http://10.0.2.2:9000`.
 Production Android connections require WSS with normal certificate validation.
@@ -170,6 +212,6 @@ Production Android connections require WSS with normal certificate validation.
 Installation keys are scoped to that origin and retained in private, non-backed-up
 app storage. App-data deletion loses the identity; this is not a cross-device
 account or an account-recovery mechanism. Installation identities remain unverified
-and do not satisfy GPGS-only room policy. The old timestamp-only keypair method
+and do not satisfy verified-account room policy. The old timestamp-only keypair method
 remains restricted to explicit loopback development mode. No live account or
 credential is created by the fixture tests.

@@ -12,14 +12,18 @@ impl Drop for OwnedChild {
 fn start(config: &serde_json::Value, root: &std::path::Path) -> OwnedChild {
     let path = root.join("config.json");
     std::fs::write(&path, serde_json::to_vec(config).unwrap()).unwrap();
+    let mut command = Command::new(env!("CARGO_BIN_EXE_dxx-matchmaking"));
+    command.env_clear();
+    // Preserve only the Windows OS location required by Winsock, never deployment settings
+    #[cfg(windows)]
+    command.env("SystemRoot", std::env::var_os("SystemRoot").unwrap());
     OwnedChild(
-        Command::new(env!("CARGO_BIN_EXE_dxx-matchmaking"))
-            .env_clear()
+        command
             .env("CONFIG_FILE", path)
             .current_dir(root)
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(std::fs::File::create(root.join("stdout.log")).unwrap())
+            .stderr(std::fs::File::create(root.join("stderr.log")).unwrap())
             .spawn()
             .unwrap(),
     )
@@ -79,7 +83,9 @@ async fn process_readiness_and_restart_with_synthetic_database() {
         loop {
             assert!(
                 process.0.try_wait().unwrap().is_none(),
-                "server exited before readiness"
+                "server exited before readiness\nstdout: {}\nstderr: {}",
+                std::fs::read_to_string(root.path().join("stdout.log")).unwrap_or_default(),
+                std::fs::read_to_string(root.path().join("stderr.log")).unwrap_or_default()
             );
             if let Ok(response) = client
                 .get(format!("http://{http_addr}/api/v1/ready"))

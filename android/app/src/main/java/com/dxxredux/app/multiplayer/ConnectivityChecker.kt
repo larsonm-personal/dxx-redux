@@ -3,6 +3,7 @@ package com.dxxredux.app.multiplayer
 import android.util.Log
 import java.net.DatagramPacket
 import java.net.DatagramSocket
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.security.SecureRandom
@@ -18,6 +19,26 @@ private const val PROBE_FLAG_RESPONSE: Short = 0x0002
 
 private const val PROBE_INTERVAL_MS = 200L
 private const val TOTAL_TIMEOUT_MS = 3000L
+private const val MAX_PROBE_REQUESTS = 15
+private const val MAX_PROBE_RECEIVES = 128
+private const val MAX_PROBE_ECHOES = 32
+
+/** Numeric IPv4 only: parsing an untrusted probe target must never trigger DNS */
+internal fun parseProbeEndpoint(value: String): InetSocketAddress? {
+    if (value.length > 21) return null
+    val parts = value.split(':')
+    if (parts.size != 2) return null
+    val port = parts[1].toIntOrNull()?.takeIf { it in 1..65535 } ?: return null
+    val octets = parts[0].split('.')
+    if (octets.size != 4) return null
+    val bytes = ByteArray(4)
+    for (index in octets.indices) {
+        bytes[index] = (octets[index].toIntOrNull()?.takeIf { it in 0..255 } ?: return null).toByte()
+    }
+    val address = InetAddress.getByAddress(bytes)
+    if (address.isAnyLocalAddress || address.isMulticastAddress || bytes.all { it == (-1).toByte() }) return null
+    return InetSocketAddress(address, port)
+}
 
 /** Result of connectivity checking for a single peer pair. */
 data class ConnectivityResult(
@@ -50,7 +71,7 @@ object ConnectivityChecker {
         checkActive: () -> Unit = {},
         diagnostics: (Map<String, Int>) -> Unit = {},
     ): ConnectivityResult? {
-        if (pairs.isEmpty()) return null
+        if (pairs.isEmpty() || pairs.size > 7 * NetworkConstants.MAX_CANDIDATE_PAIRS_PER_PEER) return null
 
         val ownsSocket = existingSocket == null
         val socket = existingSocket ?: DatagramSocket()
@@ -63,19 +84,20 @@ object ConnectivityChecker {
         try {
             val deadline = System.nanoTime() + TOTAL_TIMEOUT_MS * 1_000_000L
             var winner: ConnectivityResult? = null
-            val offeredEndpoints = pairs.mapNotNull { parseAddr(it.remoteAddr) }.toSet()
+            val offeredEndpoints = pairs.mapNotNull { parseProbeEndpoint(it.remoteAddr) }.toSet()
             var seq: Short = 0
             val sentTimes = mutableMapOf<Short, Pair<Long, CandidatePair>>()
+            var nextRequest = System.nanoTime()
 
             while (System.nanoTime() < deadline) {
                 checkActive()
-                if (winner == null) {
+                if (winner == null && seq < MAX_PROBE_REQUESTS && System.nanoTime() >= nextRequest) {
                     // Send a probe to the next pair in round-robin
                     val pairIndex = (seq.toInt() and 0xFFFF) % pairs.size
                     val pair = pairs[pairIndex]
 
                     val probePacket = buildProbe(token, seq, PROBE_FLAG_REQUEST)
-                    val addr = parseAddr(pair.remoteAddr)
+                    val addr = parseProbeEndpoint(pair.remoteAddr)
                     if (addr != null) {
                         val sendTime = System.nanoTime()
                         sentTimes[seq] = Pair(sendTime, pair)
@@ -87,17 +109,29 @@ object ConnectivityChecker {
                             Log.w(TAG, "Probe send failed to ${pair.remoteAddr}: ${e.message}")
                         }
                     }
+                    seq++
+                    nextRequest = System.nanoTime() + PROBE_INTERVAL_MS * 1_000_000L
                 }
 
                 // A local win does not prove the peer has received its own response
                 // Continue bounded echo service without sending more requests
                 val remainingMs = ((deadline - System.nanoTime()) / 1_000_000L).coerceAtLeast(1L)
                 socket.soTimeout = minOf(PROBE_INTERVAL_MS, remainingMs).toInt()
-                val r = receiveAndEcho(socket, token, sentTimes, offeredEndpoints, winner != null, ::count)
+                if ((counts["received"] ?: 0) >= MAX_PROBE_RECEIVES) {
+                    Thread.sleep(minOf(PROBE_INTERVAL_MS, remainingMs))
+                    continue
+                }
+                val r =
+                    receiveAndEcho(
+                        socket,
+                        token,
+                        sentTimes,
+                        offeredEndpoints,
+                        winner != null,
+                        (counts["echoes"] ?: 0) < MAX_PROBE_ECHOES,
+                        ::count,
+                    )
                 if (winner == null && r != null) winner = r
-
-                seq++
-                if (seq < 0) seq = 0 // unsigned wrap
             }
 
             checkActive()
@@ -118,19 +152,20 @@ object ConnectivityChecker {
         sentTimes: Map<Short, Pair<Long, CandidatePair>>,
         offeredEndpoints: Set<InetSocketAddress>,
         alreadyQualified: Boolean,
+        canEcho: Boolean,
         count: (String) -> Unit,
     ): ConnectivityResult? {
         try {
-            val buf = ByteArray(PROBE_SIZE)
+            val buf = ByteArray(PROBE_SIZE + 1)
             val pkt = DatagramPacket(buf, buf.size)
             socket.receive(pkt)
             count("received")
 
-            if (pkt.length < PROBE_SIZE) {
+            if (pkt.length != PROBE_SIZE) {
                 count("short_packets")
                 return null
             }
-            val bb = ByteBuffer.wrap(buf)
+            val bb = ByteBuffer.wrap(buf, 0, PROBE_SIZE)
             val magic = bb.int
             if (magic != PROBE_MAGIC) {
                 count("other_packets")
@@ -144,6 +179,10 @@ object ConnectivityChecker {
                 // An offer must never qualify by reflecting our own request
                 if (pktToken == ourToken) {
                     count("self_requests")
+                    return null
+                }
+                if (pkt.socketAddress !in offeredEndpoints || !canEcho) {
+                    count("echo_rejected")
                     return null
                 }
                 count("requests")
@@ -165,7 +204,7 @@ object ConnectivityChecker {
             if (flags == PROBE_FLAG_RESPONSE) count("responses")
             if (flags == PROBE_FLAG_RESPONSE && pktToken == ourToken) {
                 val entry = sentTimes[pktSeq] ?: return null
-                if (pkt.socketAddress != parseAddr(entry.second.remoteAddr)) {
+                if (pkt.socketAddress != parseProbeEndpoint(entry.second.remoteAddr)) {
                     count("wrong_source")
                     count(
                         if (pkt.socketAddress in
@@ -209,17 +248,5 @@ object ConnectivityChecker {
         buf.putShort(seq)
         buf.putShort(flags)
         return buf.array()
-    }
-
-    private fun parseAddr(addr: String): InetSocketAddress? {
-        val parts = addr.split(":")
-        if (parts.size != 2) return null
-        val port = parts[1].toIntOrNull() ?: return null
-        return try {
-            InetSocketAddress(parts[0], port)
-        } catch (e: Exception) {
-            Log.w(TAG, "Invalid address: $addr")
-            null
-        }
     }
 }

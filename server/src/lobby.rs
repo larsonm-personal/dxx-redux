@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 pub const HOLEPUNCH_TIMEOUT: Duration = Duration::from_secs(30);
+// Keep synchronized with the 3-second client ConnectivityChecker/proxy probe leases
+pub const CANDIDATE_PROBE_WINDOW: Duration = Duration::from_secs(3);
 
 /// Possible lobby states.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,7 +50,12 @@ pub struct LobbyPlayer {
     pub player_id: Uuid,
     pub callsign: String,
     pub ready: bool,
+    pub candidate_admission_id: Uuid,
+    #[serde(skip)]
+    pub candidate_requested: bool,
     pub candidates: Vec<crate::protocol::ConnectionCandidate>,
+    #[serde(skip)]
+    pub candidates_valid_until: Option<Instant>,
     /// Server-issued offers and accepted directional routes for the current candidate attempt
     #[serde(skip)]
     pub connectivity_checks: HashMap<Uuid, crate::protocol::CandidatePair>,
@@ -68,6 +75,17 @@ pub enum ConnectionType {
     DirectHolepunch,
     PredictedHolepunch,
     Relay,
+}
+
+impl LobbyPlayer {
+    /// Old observations may describe an existing route, but cannot authorize new blind probes
+    pub fn can_issue_probes(&self, now: Instant) -> bool {
+        !self.candidates.is_empty()
+            && self.candidates_valid_until.is_some_and(|deadline| {
+                now.checked_add(CANDIDATE_PROBE_WINDOW)
+                    .is_some_and(|end| end <= deadline)
+            })
+    }
 }
 
 impl ConnectionType {
@@ -102,7 +120,7 @@ pub struct Lobby {
     pub created_at_instant: Instant,
     /// Optional lobby code for invite-only sessions.
     pub code: Option<String>,
-    /// If true, only GPGS-verified players can join.
+    /// If true, only players with a verified matchmaking Google account can join
     pub verified_only: bool,
     /// Players kicked from this lobby (cannot rejoin).
     pub kicked_players: HashSet<Uuid>,
@@ -168,7 +186,10 @@ impl Lobby {
             player_id: host_player_id,
             callsign: host_callsign.clone(),
             ready: false,
+            candidate_admission_id: Uuid::new_v4(),
+            candidate_requested: false,
             candidates: Vec::new(),
+            candidates_valid_until: None,
             connectivity_checks: HashMap::new(),
             validated_routes: HashMap::new(),
             nat_type: None,
@@ -255,7 +276,10 @@ impl Lobby {
             player_id,
             callsign,
             ready: false,
+            candidate_admission_id: Uuid::new_v4(),
+            candidate_requested: false,
             candidates: Vec::new(),
+            candidates_valid_until: None,
             connectivity_checks: HashMap::new(),
             validated_routes: HashMap::new(),
             nat_type: None,

@@ -19,6 +19,17 @@ class MatchmakingDiagnosticsTest {
         // Serialization exceptions can include the complete input and nearby secrets
         assertNull(MatchmakingDiagnostics.parse(body.replace("\"slot\":2", "\"slot\":\"$session\"")))
         assertNull(MatchmakingDiagnostics.parse("{\"type\":\"AUTH_OK\",\"session_token\":\"$session\"}"))
+        assertNotNull(
+            MatchmakingDiagnostics.parse(
+                """{"type":"CANDIDATE_CHALLENGE","lobby_id":"room",
+            "admission_id":"admission","request_id":"request","attempt_id":"attempt","credential":"$session"}""",
+            ),
+        )
+        assertNull(
+            MatchmakingDiagnostics.parse(
+                """{"type":"CANDIDATE_CHALLENGE","request_id":"request","credential":"$session"}""",
+            ),
+        )
         val diagnostics = Log.entries + NetLog.entries
         assertTrue(diagnostics.any { it.contains("Invalid matchmaking message") })
         for (canary in listOf(send, receive, token, session)) {

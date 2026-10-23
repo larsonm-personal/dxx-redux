@@ -7,14 +7,27 @@ use uuid::Uuid;
 // message schema. Keep MIN_CLIENT_PROTOCOL at the oldest version the
 // server still accepts. Both values must stay in sync with the client
 // constant in NetworkConstants.kt.
-// v6 binds connectivity reports to server-issued candidate offers
-pub const CURRENT_PROTOCOL: u32 = 6;
-pub const MIN_CLIENT_PROTOCOL: u32 = 6;
+// v9 replaces production PGS admission with origin-bound Google login sessions
+pub const CURRENT_PROTOCOL: u32 = 9;
+pub const MIN_CLIENT_PROTOCOL: u32 = 9;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
 
+// Keep synchronized with NetworkConstants.kt
+pub const MAX_CANDIDATES: usize = 8;
+pub const MAX_CANDIDATE_PAIRS_PER_PEER: usize = 32;
+
 // -- Client -> Server messages --
+
+#[derive(Debug, Deserialize)]
+pub struct RelayRekeyAck {
+    pub lobby_id: Uuid,
+    pub game_epoch: Uuid,
+    pub old_token: u32,
+    pub new_token: u32,
+    pub new_epoch: Uuid,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type")]
@@ -26,6 +39,8 @@ pub enum ClientMessage {
         client_version: String,
         #[serde(default)]
         play_games_token: Option<String>,
+        #[serde(default)]
+        session_credential: Option<String>,
         callsign: String,
         platform: String,
         /// "gpgs" (default) or "keypair"
@@ -87,6 +102,12 @@ pub enum ClientMessage {
     #[serde(rename = "END_GAME")]
     EndGame {},
 
+    #[serde(rename = "RELAY_REKEY_READY")]
+    RelayRekeyReady {
+        #[serde(flatten)]
+        ack: RelayRekeyAck,
+    },
+
     #[serde(rename = "LIST_LOBBIES")]
     ListLobbies {
         #[serde(default)]
@@ -129,12 +150,15 @@ pub enum ClientMessage {
     #[serde(rename = "START_GAME")]
     StartGame {},
 
-    #[serde(rename = "STUN_RESULT")]
-    StunResult {
-        candidates: Vec<ConnectionCandidate>,
-        nat_type: String, // "full_cone", "address_restricted", "port_restricted_cone",
-                          // "symmetric", "symmetric_sequential", "unknown"
+    #[serde(rename = "GATHER_CANDIDATES")]
+    GatherCandidates {
+        lobby_id: Uuid,
+        admission_id: Uuid,
+        request_id: Uuid,
     },
+
+    #[serde(rename = "STUN_RESULT")]
+    StunResult(CandidateReceiptReport),
 
     #[serde(rename = "CONNECTIVITY_OK")]
     ConnectivityOk {
@@ -205,6 +229,13 @@ fn default_auth_method() -> String {
     "gpgs".into()
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CandidateReceiptReport {
+    pub attempt_id: Uuid,
+    pub receipts: Vec<Uuid>,
+}
+
 fn default_game_info() -> JsonValue {
     serde_json::json!({})
 }
@@ -212,8 +243,28 @@ fn default_game_info() -> JsonValue {
 // -- Server -> Client messages --
 
 #[derive(Debug, Serialize, Clone)]
+pub struct RelayRekeyScope {
+    pub lobby_id: Uuid,
+    pub game_epoch: Uuid,
+    pub old_token: u32,
+    pub old_epoch: Uuid,
+    pub new_token: u32,
+    pub new_epoch: Uuid,
+    pub peer_id: Uuid,
+    pub peer_slot: u8,
+}
+
+#[derive(Debug, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum ServerMessage {
+    #[serde(rename = "CANDIDATE_CHALLENGE")]
+    CandidateChallenge {
+        lobby_id: Uuid,
+        admission_id: Uuid,
+        request_id: Uuid,
+        attempt_id: Uuid,
+        credential: Uuid,
+    },
     #[serde(rename = "AUTH_OK")]
     AuthOk {
         player_id: Uuid,
@@ -299,6 +350,25 @@ pub enum ServerMessage {
         session_token: String,
     },
 
+    #[serde(rename = "RELAY_REKEY_OFFER")]
+    RelayRekeyOffer {
+        #[serde(flatten)]
+        scope: RelayRekeyScope,
+        credentials: crate::relay::RelayCredentials,
+        ready_timeout_ms: u64,
+    },
+    #[serde(rename = "RELAY_REKEY_COMMIT")]
+    RelayRekeyCommit {
+        #[serde(flatten)]
+        scope: RelayRekeyScope,
+        retire_after_ms: u64,
+    },
+    #[serde(rename = "RELAY_REKEY_ABORT")]
+    RelayRekeyAbort {
+        #[serde(flatten)]
+        scope: RelayRekeyScope,
+    },
+
     #[serde(rename = "ERROR")]
     Error { code: String, message: String },
 
@@ -379,6 +449,7 @@ pub enum ServerMessage {
     #[serde(rename = "LATE_JOIN_PROBE")]
     LateJoinProbe {
         joiner_id: Uuid,
+        admission_id: Uuid,
         joiner_callsign: String,
         /// Addresses to send blind probes to (opens NAT pinholes from shared socket).
         probe_addrs: Vec<String>,
@@ -437,6 +508,7 @@ pub struct LobbyPlayerInfo {
     pub player_id: Uuid,
     pub callsign: String,
     pub ready: bool,
+    pub candidate_admission_id: Uuid,
     pub ping_ms: Option<u32>,
     pub connection_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]

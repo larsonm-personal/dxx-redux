@@ -3,10 +3,13 @@
 package com.dxxredux.app.multiplayer
 
 // External Android/provider boundaries are deliberately unavailable in host tests
-object PlayGamesAuth {
+object GoogleMatchmakingAuth {
     val isConfigured = false
 
-    suspend fun getServerAuthCode(activity: android.app.Activity): String? = error("GPGS requires device qualification")
+    suspend fun signIn(
+        activity: android.app.Activity,
+        nonce: String,
+    ): String = error("Google sign-in requires device qualification")
 }
 
 class MultiplayerForegroundService

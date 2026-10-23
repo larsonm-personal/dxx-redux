@@ -44,6 +44,7 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
         .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
+        .route("/api/v1/admin/relay-usage", get(admin_relay_usage))
         .with_state(state)
 }
 
@@ -53,6 +54,7 @@ pub fn admin_router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
         .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
+        .route("/api/v1/admin/relay-usage", get(admin_relay_usage))
         .route("/api/v1/health", get(health))
         .route("/api/v1/ready", get(ready))
         .with_state(state)
@@ -218,6 +220,49 @@ async fn leaderboard_stub() -> (StatusCode, &'static str) {
 }
 
 // -- Admin endpoints --
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct RelayUsageQuery {
+    identity_offset: usize,
+    allocation_offset: usize,
+}
+
+async fn admin_relay_usage(
+    State(state): State<Arc<ServerState>>,
+    headers: HeaderMap,
+    Query(query): Query<RelayUsageQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, &'static str)> {
+    check_admin_token(&headers, &state.config.admin_token)?;
+    let accounting = state
+        .relay_economy
+        .lock()
+        .unwrap()
+        .snapshot(query.identity_offset, std::time::Instant::now());
+    // Keys/epochs and aggregate counters only, never payloads, endpoint addresses or credentials
+    let mut tokens: Vec<_> = state
+        .relay_sessions
+        .iter()
+        .map(|entry| *entry.key())
+        .collect();
+    tokens.sort_unstable();
+    let allocations: Vec<_> = tokens
+        .iter()
+        .skip(query.allocation_offset)
+        .take(100)
+        .filter_map(|token| {
+            state
+                .relay_sessions
+                .get(token)
+                .map(|session| session.usage())
+        })
+        .collect();
+    let next = query.allocation_offset.saturating_add(100);
+    Ok(Json(
+        serde_json::json!({"accounting":accounting,"allocations":allocations,
+        "allocation_offset":query.allocation_offset,"next_allocation_offset":(next < tokens.len()).then_some(next)}),
+    ))
+}
 
 fn check_admin_token(
     headers: &HeaderMap,

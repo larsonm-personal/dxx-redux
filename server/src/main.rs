@@ -53,7 +53,7 @@ async fn main() {
         listen_stun2 = %config.stun_listen_addr_alt,
         db = %config.db_path,
         tls = !config.tls_cert_path.is_empty(),
-        gpgs = !config.google_client_id.is_empty(),
+        google_login = !config.google_client_id.is_empty() && !config.google_auth_origin.is_empty(),
         relay_public = %config.relay_public_addr,
         stun_public = %config.stun_public_addrs,
         "starting dxx-matchmaking server"
@@ -100,7 +100,7 @@ async fn main() {
     let udp = Arc::clone(&state);
     tasks.spawn(async move { ("relay", relay::run(udp.config.relay_listen_addr, udp).await) });
     if !state.config.stun_public_addrs.is_empty() {
-        for (addr, bit) in [
+        for (listener, (addr, bit)) in [
             (
                 state.config.stun_listen_addr,
                 dxx_matchmaking::ListenerReady::STUN1,
@@ -109,13 +109,21 @@ async fn main() {
                 state.config.stun_listen_addr_alt,
                 dxx_matchmaking::ListenerReady::STUN2,
             ),
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let stun_state = Arc::clone(&state);
             tasks.spawn(async move {
                 let result: Result<(), Box<dyn std::error::Error + Send + Sync>> = async {
                     let socket = tokio::net::UdpSocket::bind(addr).await?;
                     let _ready = dxx_matchmaking::ListenerReady::new(Arc::clone(&stun_state), bit);
-                    stun::stun_loop(&socket, &stun_state.stun_allowlist).await;
+                    stun::authenticated_stun_loop(
+                        &socket,
+                        &stun_state.candidate_attempts,
+                        listener,
+                    )
+                    .await;
                     Ok(())
                 }
                 .await;

@@ -1,14 +1,19 @@
+pub mod candidate_auth;
 pub mod config;
 pub mod db;
 pub mod friends;
+pub mod google_http;
+pub mod google_identity;
+pub mod google_login;
 pub mod http_api;
-pub mod identity;
 pub mod lobby;
 pub mod nat_sim;
 pub mod pow;
 pub mod protocol;
 pub mod rate_limit;
 pub mod relay;
+pub mod relay_economy;
+pub mod relay_lifecycle;
 pub mod resource_budget;
 pub mod stats;
 pub mod stun;
@@ -16,7 +21,6 @@ pub mod tls;
 pub mod transport;
 pub mod ws_handler;
 
-use std::net::IpAddr;
 use std::sync::Arc;
 
 /// Shared server state accessible from all tasks.
@@ -26,8 +30,11 @@ pub struct ServerState {
     pub control_queue_bytes: Arc<tokio::sync::Semaphore>,
     pub control_egress: Arc<resource_budget::FairEgress>,
     pub relay_budget: std::sync::Mutex<resource_budget::RelayBudget>,
+    pub relay_economy: std::sync::Mutex<relay_economy::RelayEconomy>,
+    pub relay_renewals: std::sync::Mutex<std::collections::BTreeMap<u32, relay_lifecycle::Renewal>>,
     pub auth_work: std::sync::Mutex<resource_budget::WorkBudget>,
     pub auth_slots: tokio::sync::Semaphore,
+    pub google_login: Option<google_login::GoogleLogin>,
     pub public_slots: tokio::sync::Semaphore,
     pub public_egress: resource_budget::FairEgress,
     pub public_work: std::sync::Mutex<resource_budget::WorkBudget>,
@@ -43,7 +50,7 @@ pub struct ServerState {
     pub stats: stats::ServerStats,
     pub db: db::Database,
     pub rate_limiter: rate_limit::RateLimiter,
-    pub stun_allowlist: Arc<dashmap::DashMap<IpAddr, usize>>,
+    pub candidate_attempts: candidate_auth::CandidateAttempts,
     pub started_at: std::time::Instant,
 }
 
@@ -63,7 +70,41 @@ pub fn build_state(
         )
         .into());
     }
+    if !config.skip_gpgs_verify
+        && (config.db_path.trim().is_empty()
+            || config.db_path.eq_ignore_ascii_case(":memory:")
+            || config.db_path.to_ascii_lowercase().starts_with("file:"))
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Production requires a persistent SQLite filename, not a temporary database or URI",
+        )
+        .into());
+    }
+    if !config.relay_policy.validate()
+        || (!config.skip_gpgs_verify && config.relay_policy.allocation_lifetime_seconds < 3600)
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Invalid relay economic limits",
+        )
+        .into());
+    }
+    let google_login = if config.google_auth_origin.is_empty() {
+        None
+    } else {
+        Some(
+            google_login::GoogleLogin::new(&config.google_auth_origin, &config.google_client_id)
+                .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, error))?,
+        )
+    };
     let db = db::Database::open(&config.db_path)?;
+    let now = std::time::Instant::now();
+    let month = relay_economy::Month::current(now);
+    let mut economy = relay_economy::RelayEconomy::new(config.relay_policy.clone(), month, now);
+    if let Some((period, limit, wanted)) = economy.request_credit(month) {
+        economy.finish_credit(db.reserve_relay_egress(period, limit, wanted));
+    }
     Ok(Arc::new(ServerState {
         transport_slots: Arc::new(tokio::sync::Semaphore::new(64)),
         transport_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(128, 1)),
@@ -73,8 +114,11 @@ pub fn build_state(
             std::time::Duration::from_secs(1),
         )),
         relay_budget: std::sync::Mutex::new(resource_budget::RelayBudget::new()),
+        relay_economy: std::sync::Mutex::new(economy),
+        relay_renewals: Default::default(),
         auth_work: std::sync::Mutex::new(resource_budget::WorkBudget::new(64, 1)),
         auth_slots: tokio::sync::Semaphore::new(8),
+        google_login,
         public_slots: tokio::sync::Semaphore::new(32),
         public_egress: resource_budget::FairEgress::new(
             8 * 1024 * 1024,
@@ -92,7 +136,7 @@ pub fn build_state(
         stats: stats::ServerStats::new(),
         db,
         rate_limiter: rate_limit::RateLimiter::new(),
-        stun_allowlist: Arc::new(dashmap::DashMap::new()),
+        candidate_attempts: candidate_auth::CandidateAttempts::default(),
         started_at: std::time::Instant::now(),
     }))
 }

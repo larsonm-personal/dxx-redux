@@ -3,6 +3,7 @@
 //! terminates encryption; this is not end-to-end confidentiality from the server.
 use std::collections::{BTreeMap, HashMap};
 use std::net::{IpAddr, SocketAddr};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -24,6 +25,8 @@ pub const CHALLENGE: u8 = 2;
 pub const PROOF: u8 = 3;
 pub const BOUND: u8 = 4;
 const MAGIC: &[u8; 4] = b"DXR3";
+const CONSENT_REFRESH: Duration = Duration::from_secs(15);
+const CONSENT_LIFETIME: Duration = Duration::from_secs(30);
 
 /// Sliding replay window permits bounded packet reordering without nonce reuse
 #[derive(Clone, Copy, Default)]
@@ -61,6 +64,7 @@ pub struct RelayCredentials {
     pub send_key: String,
     pub receive_key: String,
     pub own_slot: u8,
+    pub allocation_epoch: Uuid,
 }
 
 impl std::fmt::Debug for RelayCredentials {
@@ -82,21 +86,42 @@ struct Peer {
     uplink: [u8; 32],
     downlink: [u8; 32],
     endpoint: Option<SocketAddr>,
+    proved_at: Option<Instant>,
     pending: Option<PendingBind>,
     replay: ReplayWindow,
     outgoing: u64,
     budget_start: Instant,
     budget_packets: u32,
     budget_bytes: usize,
+    forwarded_packets: u64,
+    forwarded_wire_bytes: u64,
+}
+impl Peer {
+    fn consented(&self, now: Instant) -> bool {
+        self.endpoint.is_some()
+            && self
+                .proved_at
+                .is_some_and(|proved| now.saturating_duration_since(proved) < CONSENT_LIFETIME)
+    }
 }
 struct RelayState {
     peers: BTreeMap<u8, Peer>,
     last_activity: Instant,
+    expires_at: Instant,
+}
+#[derive(Clone)]
+pub struct RelayOwnership {
+    pub game_epoch: Uuid,
+    pub members: [(u8, Uuid, Uuid); 2],
 }
 pub struct RelaySession {
     pub room_id: Uuid,
     /// New keys and epoch for every allocation, including restart and game start
     pub epoch: Uuid,
+    pub created_at: Instant,
+    pub owner: Option<RelayOwnership>,
+    pub primary: AtomicBool,
+    pub renewal_attempted: AtomicBool,
     inner: Mutex<RelayState>,
 }
 
@@ -162,6 +187,32 @@ pub fn open(key: &[u8; 32], packet: &[u8]) -> Option<Vec<u8>> {
 
 impl RelaySession {
     pub fn new(room_id: Uuid, members: [(u8, Uuid); 2], now: Instant) -> Self {
+        Self::create(room_id, members, now, Duration::from_secs(7200), None, true)
+    }
+    pub fn owned(
+        room_id: Uuid,
+        owner: RelayOwnership,
+        now: Instant,
+        lifetime: Duration,
+        primary: bool,
+    ) -> Self {
+        Self::create(
+            room_id,
+            owner.members.map(|(slot, player, _)| (slot, player)),
+            now,
+            lifetime,
+            Some(owner),
+            primary,
+        )
+    }
+    fn create(
+        room_id: Uuid,
+        members: [(u8, Uuid); 2],
+        now: Instant,
+        lifetime: Duration,
+        owner: Option<RelayOwnership>,
+        primary: bool,
+    ) -> Self {
         assert!(members[0].0 != members[1].0 && members.iter().all(|m| m.0 < 8));
         let peers = members
             .into_iter()
@@ -173,12 +224,15 @@ impl RelaySession {
                         uplink: random(),
                         downlink: random(),
                         endpoint: None,
+                        proved_at: None,
                         pending: None,
                         replay: ReplayWindow::default(),
                         outgoing: 0,
                         budget_start: now,
                         budget_packets: 0,
                         budget_bytes: 0,
+                        forwarded_packets: 0,
+                        forwarded_wire_bytes: 0,
                     },
                 )
             })
@@ -186,9 +240,14 @@ impl RelaySession {
         Self {
             room_id,
             epoch: Uuid::new_v4(),
+            created_at: now,
+            owner,
+            primary: AtomicBool::new(primary),
+            renewal_attempted: AtomicBool::new(false),
             inner: Mutex::new(RelayState {
                 peers,
                 last_activity: now,
+                expires_at: now + lifetime,
             }),
         }
     }
@@ -199,7 +258,31 @@ impl RelaySession {
             own_slot: slot,
             send_key: hex::encode(peer.uplink),
             receive_key: hex::encode(peer.downlink),
+            allocation_epoch: self.epoch,
         })
+    }
+    pub fn expires_at(&self) -> Instant {
+        self.inner.lock().unwrap().expires_at
+    }
+    pub fn retire_at(&self, deadline: Instant) {
+        let mut state = self.inner.lock().unwrap();
+        state.expires_at = state.expires_at.min(deadline);
+    }
+    pub fn both_bound(&self, now: Instant) -> bool {
+        self.inner
+            .lock()
+            .unwrap()
+            .peers
+            .values()
+            .all(|peer| peer.consented(now))
+    }
+    pub fn is_bound(&self, slot: u8, now: Instant) -> bool {
+        self.inner
+            .lock()
+            .unwrap()
+            .peers
+            .get(&slot)
+            .is_some_and(|p| p.consented(now))
     }
     pub fn contains_player(&self, player: Uuid) -> bool {
         self.inner
@@ -229,8 +312,11 @@ impl RelaySession {
         )
     }
     // Cheap routing checks are filters only; every admitted packet still needs AEAD
-    fn plausible_source(&self, packet: &[u8], source: SocketAddr) -> bool {
+    fn plausible_source(&self, packet: &[u8], source: SocketAddr, now: Instant) -> bool {
         let state = self.inner.lock().unwrap();
+        if now >= state.expires_at {
+            return false;
+        }
         let Some(peer) = state.peers.get(&packet[9]) else {
             return false;
         };
@@ -241,6 +327,7 @@ impl RelaySession {
             DATA => {
                 let mut replay = peer.replay;
                 peer.endpoint == Some(source)
+                    && peer.consented(now)
                     && replay.accept(u64::from_le_bytes(packet[11..19].try_into().unwrap()))
             }
             BIND => packet.len() == HEADER_LEN + 32,
@@ -252,13 +339,14 @@ impl RelaySession {
         }
     }
     /// No I/O under the lock; unproved or stale packets cannot mutate a route
-    pub fn process(
+    #[cfg(test)]
+    fn process(
         &self,
         packet: &[u8],
         source: SocketAddr,
         now: Instant,
     ) -> Option<(SocketAddr, Vec<u8>)> {
-        self.process_bounded(packet, source, now, None)
+        self.process_bounded(packet, source, now, None, None)
     }
     fn process_bounded(
         &self,
@@ -266,6 +354,7 @@ impl RelaySession {
         source: SocketAddr,
         now: Instant,
         budget: Option<&Mutex<crate::resource_budget::RelayBudget>>,
+        economy: Option<&Mutex<crate::relay_economy::RelayEconomy>>,
     ) -> Option<(SocketAddr, Vec<u8>)> {
         if packet.len() < HEADER_LEN + 16 || packet.len() > MAX_PACKET || &packet[..4] != MAGIC {
             return None;
@@ -274,6 +363,9 @@ impl RelaySession {
         let (kind, from, to) = (packet[8], packet[9], packet[10]);
         let seq = u64::from_le_bytes(packet[11..19].try_into().ok()?);
         let mut state = self.inner.lock().unwrap();
+        if now >= state.expires_at {
+            return None;
+        }
         if from == to || !state.peers.contains_key(&to) {
             return None;
         }
@@ -302,57 +394,79 @@ impl RelaySession {
         }
         sender.budget_packets += 1;
         sender.budget_bytes += packet.len();
-        match kind {
+        let sender_id = sender.player;
+        let result = match kind {
             BIND if payload.len() == 16 => {
                 // A reordered older bind must not replace a newer pending route
                 if seq != sender.replay.highest {
                     return None;
                 }
-                if sender.endpoint == Some(source) {
-                    let result =
-                        Self::reply(sender, token, BOUND, to, from, &[]).map(|p| (source, p));
-                    state.last_activity = now;
-                    return result;
+                if sender.endpoint == Some(source)
+                    && sender.proved_at.is_some_and(|proved| {
+                        now.saturating_duration_since(proved) < CONSENT_REFRESH
+                    })
+                {
+                    Self::reply(sender, token, BOUND, to, from, &[]).map(|p| (source, p))
+                } else {
+                    // One outstanding challenge for up to 5 seconds; no unbounded reflection
+                    if sender.pending.as_ref().is_some_and(|p| now < p.expires) {
+                        return None;
+                    }
+                    let challenge = random();
+                    sender.pending = Some(PendingBind {
+                        address: source,
+                        challenge,
+                        expires: now + Duration::from_secs(5),
+                        request_seq: seq,
+                    });
+                    Self::reply(sender, token, CHALLENGE, to, from, &challenge).map(|p| (source, p))
                 }
-                // One outstanding challenge for up to 5 seconds; no unbounded reflection
-                if sender.pending.as_ref().is_some_and(|p| now < p.expires) {
-                    return None;
-                }
-                let challenge = random();
-                sender.pending = Some(PendingBind {
-                    address: source,
-                    challenge,
-                    expires: now + Duration::from_secs(5),
-                    request_seq: seq,
-                });
-                Self::reply(sender, token, CHALLENGE, to, from, &challenge).map(|p| (source, p))
             }
             PROOF => {
                 let pending = sender.pending.as_ref()?;
                 if pending.address != source
                     || now >= pending.expires
                     || seq <= pending.request_seq
-                    || seq != sender.replay.highest
+                    || (sender.endpoint != Some(source) && seq != sender.replay.highest)
                     || payload != pending.challenge
                 {
                     return None;
                 }
                 sender.endpoint = Some(source);
+                sender.proved_at = Some(now);
                 sender.pending = None;
-                let result = Self::reply(sender, token, BOUND, to, from, &[]).map(|p| (source, p));
-                state.last_activity = now;
-                result
+                Self::reply(sender, token, BOUND, to, from, &[]).map(|p| (source, p))
             }
-            DATA if sender.endpoint == Some(source) => {
+            DATA if sender.endpoint == Some(source) && sender.consented(now) => {
                 let destination = state.peers.get_mut(&to)?;
+                if !destination.consented(now) {
+                    return None;
+                }
                 let addr = destination.endpoint?;
-                let result =
-                    Self::reply(destination, token, DATA, from, to, &payload).map(|p| (addr, p));
-                state.last_activity = now;
-                result
+                Self::reply(destination, token, DATA, from, to, &payload).map(|p| (addr, p))
             }
             _ => None,
+        }?;
+        let wire_bytes = result.1.len() + crate::relay_economy::WIRE_OVERHEAD;
+        if economy.is_some_and(|e| !e.lock().unwrap().reserve(sender_id, wire_bytes, now)) {
+            return None;
         }
+        let sender = state.peers.get_mut(&from)?;
+        sender.forwarded_packets = sender.forwarded_packets.saturating_add(1);
+        sender.forwarded_wire_bytes = sender
+            .forwarded_wire_bytes
+            .saturating_add(wire_bytes as u64);
+        if kind != BIND || (sender.endpoint == Some(source) && sender.consented(now)) {
+            state.last_activity = now;
+        }
+        Some(result)
+    }
+
+    pub fn usage(&self) -> serde_json::Value {
+        let state = self.inner.lock().unwrap();
+        serde_json::json!({"room_id": self.room_id, "allocation_epoch": self.epoch,
+            "peers": state.peers.values().map(|p| serde_json::json!({"player_id":p.player,
+                "forwarded_packets":p.forwarded_packets,"forwarded_wire_bytes":p.forwarded_wire_bytes})).collect::<Vec<_>>()})
     }
 }
 
@@ -360,11 +474,28 @@ pub fn revoke_room(state: &ServerState, room: Uuid) {
     state
         .relay_sessions
         .retain(|_, session| session.room_id != room);
+    state
+        .relay_renewals
+        .lock()
+        .unwrap()
+        .retain(|_, renewal| renewal.room_id != room);
 }
 pub fn revoke_player(state: &ServerState, player: Uuid) {
     state
         .relay_sessions
         .retain(|_, session| !session.contains_player(player));
+    state
+        .relay_renewals
+        .lock()
+        .unwrap()
+        .retain(|_, renewal| !renewal.owner.members.iter().any(|(_, p, _)| *p == player));
+}
+pub fn logical_sessions(state: &ServerState) -> usize {
+    state
+        .relay_sessions
+        .iter()
+        .filter(|entry| entry.primary.load(Ordering::Relaxed))
+        .count()
 }
 pub fn cleanup_stale_sessions(state: &ServerState) -> usize {
     cleanup_sessions_older_than(state, Duration::from_secs(120))
@@ -373,7 +504,8 @@ pub fn cleanup_sessions_older_than(state: &ServerState, cutoff: Duration) -> usi
     let before = state.relay_sessions.len();
     let now = Instant::now();
     state.relay_sessions.retain(|_, session| {
-        now.duration_since(session.inner.lock().unwrap().last_activity) < cutoff
+        let inner = session.inner.lock().unwrap();
+        now < inner.expires_at && now.saturating_duration_since(inner.last_activity) < cutoff
     });
     before - state.relay_sessions.len()
 }
@@ -423,11 +555,11 @@ impl CryptoAdmission {
             self.packets = 0;
             self.pairs.clear();
         }
-        // Production supports at most100 pairs: each has its own256-work allowance
+        // At most 100 logical pairs, each with one bounded replacement during renewal
         // The global ceiling equals their sum, so another pair cannot spend it
-        if self.packets >= 25_600
+        if self.packets >= 51_200
             || self.pairs.get(&token).copied().unwrap_or(0) >= 256
-            || (!self.pairs.contains_key(&token) && self.pairs.len() >= 100)
+            || (!self.pairs.contains_key(&token) && self.pairs.len() >= 200)
         {
             return false;
         }
@@ -440,6 +572,7 @@ impl CryptoAdmission {
 fn dispatch_packet(
     sessions: &dashmap::DashMap<u32, RelaySession>,
     budget: &Mutex<crate::resource_budget::RelayBudget>,
+    economy: Option<&Mutex<crate::relay_economy::RelayEconomy>>,
     admission: &mut CryptoAdmission,
     packet: &[u8],
     source: SocketAddr,
@@ -450,7 +583,7 @@ fn dispatch_packet(
     }
     let token = u32::from_le_bytes(packet[4..8].try_into().ok()?);
     sessions.get(&token).and_then(|session| {
-        if !session.plausible_source(packet, source) {
+        if !session.plausible_source(packet, source, now) {
             return None;
         }
         let allowed = if packet[8] == DATA {
@@ -461,7 +594,7 @@ fn dispatch_packet(
         if !allowed {
             return None;
         }
-        session.process_bounded(packet, source, now, Some(budget))
+        session.process_bounded(packet, source, now, Some(budget), economy)
     })
 }
 
@@ -477,6 +610,7 @@ pub async fn run_socket(socket: UdpSocket, state: Arc<ServerState>) -> std::io::
         let forward = dispatch_packet(
             &state.relay_sessions,
             &state.relay_budget,
+            Some(&state.relay_economy),
             &mut admission,
             &buf[..len],
             source,
@@ -532,7 +666,7 @@ mod tests {
         assert_eq!(reply[8], BOUND);
     }
     #[test]
-    fn maximum_supported_hostile_pairs_cannot_spend_a_survivor_reservation() {
+    fn maximum_supported_hostile_transports_cannot_spend_a_survivor_reservation() {
         let sessions = dashmap::DashMap::new();
         let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
         let mut admission = CryptoAdmission::new();
@@ -550,7 +684,7 @@ mod tests {
         bind(&survivor, 999, 1, 0, good_b, &mut gb, now);
         let key_good = key(&survivor.credentials(0).unwrap().send_key);
         sessions.insert(999, survivor);
-        for token in 0..99 {
+        for token in 0..199 {
             let a: SocketAddr = format!("127.0.0.{}:{}", 1 + token % 4, 22000 + token * 2)
                 .parse()
                 .unwrap();
@@ -568,31 +702,52 @@ mod tests {
             bind(&bad, token, 1, 0, b, &mut sb, now);
             sessions.insert(token, bad);
             let forged = seal(&[0; 32], token, DATA, 0, 1, sa + 1, b"forged").unwrap();
-            for _ in 0..2 {
+            for round in 0..2 {
                 for _ in 0..256 {
-                    assert!(
-                        dispatch_packet(&sessions, &budget, &mut admission, &forged, a, now)
-                            .is_none()
-                    );
+                    assert!(dispatch_packet(
+                        &sessions,
+                        &budget,
+                        None,
+                        &mut admission,
+                        &forged,
+                        a,
+                        now
+                    )
+                    .is_none());
+                }
+                if round == 1 {
+                    continue;
                 }
                 ga += 1;
                 let valid =
                     seal(&key_good, 999, DATA, 0, 1, ga, b"reserved survivor traffic").unwrap();
-                assert!(
-                    dispatch_packet(&sessions, &budget, &mut admission, &valid, good_a, now)
-                        .is_some()
-                );
+                assert!(dispatch_packet(
+                    &sessions,
+                    &budget,
+                    None,
+                    &mut admission,
+                    &valid,
+                    good_a,
+                    now
+                )
+                .is_some());
                 // Replays do not consume even the raw work reservation
                 let before = admission.packets;
-                assert!(
-                    dispatch_packet(&sessions, &budget, &mut admission, &valid, good_a, now)
-                        .is_none()
-                );
+                assert!(dispatch_packet(
+                    &sessions,
+                    &budget,
+                    None,
+                    &mut admission,
+                    &valid,
+                    good_a,
+                    now
+                )
+                .is_none());
                 assert_eq!(admission.packets, before);
             }
         }
-        assert_eq!(sessions.len(), 100);
-        assert_eq!(admission.packets, 99 * 256 + 198);
+        assert_eq!(sessions.len(), 200);
+        assert_eq!(admission.packets, 199 * 256 + 199);
     }
     #[test]
     fn two_full_rosters_at_forty_packets_per_path_share_one_nat() {
@@ -600,6 +755,19 @@ mod tests {
         let budget = Mutex::new(crate::resource_budget::RelayBudget::new());
         let mut admission = CryptoAdmission::new();
         let now = admission.started;
+        let month = crate::relay_economy::Month::current(now);
+        let mut economy = crate::relay_economy::RelayEconomy::new(
+            crate::relay_economy::RelayPolicy {
+                enforce_identity_quotas: true,
+                ..Default::default()
+            },
+            month,
+            now,
+        );
+        let db = crate::db::Database::open(":memory:").unwrap();
+        let (period, limit, wanted) = economy.request_credit(month).unwrap();
+        economy.finish_credit(db.reserve_relay_egress(period, limit, wanted));
+        let economy = Mutex::new(economy);
         let mut paths = Vec::new();
         for room_index in 0..2 {
             let room = Uuid::new_v4();
@@ -639,6 +807,7 @@ mod tests {
                     assert!(dispatch_packet(
                         &sessions,
                         &budget,
+                        Some(&economy),
                         &mut admission,
                         &packet,
                         address,
@@ -649,6 +818,10 @@ mod tests {
             }
         }
         assert_eq!(admission.packets, 4480);
+        let snapshot = economy.lock().unwrap().snapshot(0, now);
+        assert_eq!(snapshot.counters.forwarded_packets, 4480);
+        assert_eq!(snapshot.tracked_identities, 16);
+        assert_eq!(snapshot.counters.over_identity_quota_packets, 0);
     }
 
     #[test]
@@ -672,13 +845,15 @@ mod tests {
             let forged = seal(&[0; 32], token, DATA, 0, 1, sa + 1, &payload).unwrap();
             for _ in 0..32 {
                 assert!(session
-                    .process_bounded(&forged, a, now, Some(&budget))
+                    .process_bounded(&forged, a, now, Some(&budget), None)
                     .is_none());
             }
             for _ in 0..250 {
                 sa += 1;
                 let packet = seal(&key(&ca.send_key), token, DATA, 0, 1, sa, &payload).unwrap();
-                if let Some((_, reply)) = session.process_bounded(&packet, a, now, Some(&budget)) {
+                if let Some((_, reply)) =
+                    session.process_bounded(&packet, a, now, Some(&budget), None)
+                {
                     assert_eq!(open(&key(&cb.receive_key), &reply).unwrap(), payload);
                     forwarded += reply.len();
                 }
@@ -717,7 +892,8 @@ mod tests {
         let unknown = seal(&[0; 32], 99, DATA, 0, 1, 1, b"invalid").unwrap();
         for _ in 0..20000 {
             assert!(
-                dispatch_packet(&sessions, &budget, &mut admission, &unknown, a, now).is_none()
+                dispatch_packet(&sessions, &budget, None, &mut admission, &unknown, a, now)
+                    .is_none()
             );
         }
         assert_eq!(admission.packets, 0);
@@ -729,14 +905,24 @@ mod tests {
         drop(other);
         let bind_flood = seal(&[0; 32], 42, BIND, 0, 1, 1, &[0; 16]).unwrap();
         for _ in 0..20000 {
-            assert!(
-                dispatch_packet(&sessions, &budget, &mut admission, &bind_flood, a, now).is_none()
-            );
+            assert!(dispatch_packet(
+                &sessions,
+                &budget,
+                None,
+                &mut admission,
+                &bind_flood,
+                a,
+                now
+            )
+            .is_none());
         }
         assert_eq!(admission.packets, 0);
         let forged = seal(&[0; 32], 43, DATA, 0, 1, 3, b"invalid").unwrap();
         for _ in 0..20000 {
-            assert!(dispatch_packet(&sessions, &budget, &mut admission, &forged, a, now).is_none());
+            assert!(
+                dispatch_packet(&sessions, &budget, None, &mut admission, &forged, a, now)
+                    .is_none()
+            );
         }
         assert_eq!(admission.packets, 256);
         let valid = seal(
@@ -750,7 +936,7 @@ mod tests {
         )
         .unwrap();
         let (address, reply) =
-            dispatch_packet(&sessions, &budget, &mut admission, &valid, a, now).unwrap();
+            dispatch_packet(&sessions, &budget, None, &mut admission, &valid, a, now).unwrap();
         assert_eq!(address, b);
         assert_eq!(
             open(&key(&cb.receive_key), &reply).unwrap(),
@@ -864,16 +1050,133 @@ mod tests {
     fn every_supported_pair_has_a_bounded_crypto_reservation() {
         let mut budget = CryptoAdmission::new();
         let now = budget.started;
-        for token in 0..100 {
+        for token in 0..200 {
             for _ in 0..256 {
                 assert!(budget.accept(token, now));
             }
         }
-        assert_eq!(budget.packets, 25_600);
-        assert_eq!(budget.pairs.len(), 100);
-        assert!(!budget.accept(100, now));
+        assert_eq!(budget.packets, 51_200);
+        assert_eq!(budget.pairs.len(), 200);
+        assert!(!budget.accept(200, now));
         assert!(!budget.accept(0, now));
         assert!(budget.accept(100, now + Duration::from_secs(1)));
         assert_eq!(budget.pairs.len(), 1);
+    }
+
+    #[test]
+    fn active_keepalives_cannot_refresh_absolute_expiry_and_retirement_never_extends_it() {
+        let now = Instant::now();
+        let session = RelaySession::new(
+            Uuid::new_v4(),
+            [(0, Uuid::new_v4()), (1, Uuid::new_v4())],
+            now,
+        );
+        let a = "127.0.0.1:20001".parse().unwrap();
+        let b = "127.0.0.1:20002".parse().unwrap();
+        let mut sa = 0;
+        let mut sb = 0;
+        bind(&session, 42, 0, 1, a, &mut sa, now);
+        bind(&session, 42, 1, 0, b, &mut sb, now);
+        let credential = session.credentials(0).unwrap();
+        let keepalive = seal(&key(&credential.send_key), 42, BIND, 0, 1, sa + 1, &[0; 16]).unwrap();
+        assert!(session
+            .process(&keepalive, a, now + Duration::from_secs(7199))
+            .is_some());
+        let data = seal(
+            &key(&credential.send_key),
+            42,
+            DATA,
+            0,
+            1,
+            sa + 2,
+            b"expired",
+        )
+        .unwrap();
+        assert!(session
+            .process(&data, a, now + Duration::from_secs(7200))
+            .is_none());
+        session.retire_at(now + Duration::from_secs(5));
+        session.retire_at(now + Duration::from_secs(500));
+        assert_eq!(session.expires_at(), now + Duration::from_secs(5));
+    }
+
+    #[test]
+    fn consent_requires_periodic_return_path_proof_and_tolerates_same_route_proof_reordering() {
+        let now = Instant::now();
+        let session = RelaySession::new(
+            Uuid::new_v4(),
+            [(0, Uuid::new_v4()), (1, Uuid::new_v4())],
+            now,
+        );
+        let a = "127.0.0.1:20001".parse().unwrap();
+        let b = "127.0.0.1:20002".parse().unwrap();
+        let mut sa = 0;
+        let mut sb = 0;
+        bind(&session, 42, 0, 1, a, &mut sa, now);
+        bind(&session, 42, 1, 0, b, &mut sb, now);
+        let ca = session.credentials(0).unwrap();
+        let cb = session.credentials(1).unwrap();
+        let request = seal(&key(&ca.send_key), 42, BIND, 0, 1, 3, &[0; 16]).unwrap();
+        let (_, challenge) = session.process(&request, a, now + CONSENT_REFRESH).unwrap();
+        assert_eq!(challenge[8], CHALLENGE);
+        let receipt = open(&key(&ca.receive_key), &challenge).unwrap();
+        let proof = seal(&key(&ca.send_key), 42, PROOF, 0, 1, 4, &receipt).unwrap();
+        let data = seal(
+            &key(&ca.send_key),
+            42,
+            DATA,
+            0,
+            1,
+            5,
+            b"game while proof is in flight",
+        )
+        .unwrap();
+        assert!(session.process(&data, a, now + CONSENT_REFRESH).is_some());
+        assert!(session.process(&proof, a, now + CONSENT_REFRESH).is_some());
+        assert!(session.process(&proof, a, now + CONSENT_REFRESH).is_none());
+        let data = seal(
+            &key(&ca.send_key),
+            42,
+            DATA,
+            0,
+            1,
+            6,
+            b"expired destination",
+        )
+        .unwrap();
+        assert!(session.process(&data, a, now + CONSENT_LIFETIME).is_none());
+        bind(
+            &session,
+            42,
+            1,
+            0,
+            b,
+            &mut sb,
+            now + Duration::from_secs(31),
+        );
+        let data = seal(&key(&ca.send_key), 42, DATA, 0, 1, 7, b"fresh destination").unwrap();
+        let (_, reply) = session
+            .process(&data, a, now + Duration::from_secs(31))
+            .unwrap();
+        assert_eq!(
+            open(&key(&cb.receive_key), &reply).unwrap(),
+            b"fresh destination"
+        );
+        let data = seal(&key(&ca.send_key), 42, DATA, 0, 1, 8, b"expired sender").unwrap();
+        assert!(session
+            .process(&data, a, now + Duration::from_secs(45))
+            .is_none());
+        let request = seal(&key(&ca.send_key), 42, BIND, 0, 1, 9, &[0; 16]).unwrap();
+        assert_eq!(
+            session
+                .process(&request, a, now + Duration::from_secs(46))
+                .unwrap()
+                .1[8],
+            CHALLENGE
+        );
+        assert_eq!(
+            session.inner.lock().unwrap().last_activity,
+            now + Duration::from_secs(31)
+        );
     }
 }

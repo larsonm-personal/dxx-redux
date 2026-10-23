@@ -9,6 +9,129 @@ import org.junit.Test
 
 /** Runs the actual service's completed-join consumer; Android storage/GPGS/IPC are not simulated */
 class MatchmakingServiceFlowTest {
+    @Test(timeout = 6000)
+    fun receivedProbeFloodCannotAccelerateRequestsOrExceedEchoAndReceiveBudgets() {
+        val requestTimes = mutableListOf<Long>()
+        var echoes = 0
+        var reads = 0
+        var counts = emptyMap<String, Int>()
+        val peer = java.net.InetSocketAddress("127.0.0.1", 54321)
+        val request =
+            java.nio.ByteBuffer
+                .allocate(12)
+                .putInt(0x44585043)
+                .putInt(2222)
+                .putShort(0)
+                .putShort(1)
+                .array()
+        val socket =
+            object : java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()) {
+                override fun receive(packet: java.net.DatagramPacket) {
+                    reads++
+                    System.arraycopy(request, 0, packet.data, packet.offset, request.size)
+                    packet.length = request.size
+                    packet.socketAddress = peer
+                }
+
+                override fun send(packet: java.net.DatagramPacket) {
+                    if (java.nio.ByteBuffer
+                            .wrap(packet.data)
+                            .getShort(10)
+                            .toInt() ==
+                        1
+                    ) {
+                        requestTimes += System.nanoTime()
+                    } else {
+                        echoes++
+                    }
+                }
+            }
+        socket.use {
+            assertEquals(
+                null,
+                ConnectivityChecker.probe(
+                    listOf(CandidatePair("peer", "host", "host", "127.0.0.1:54321", 100, "offer")),
+                    token = 1111,
+                    existingSocket = socket,
+                    diagnostics = { counts = it },
+                ),
+            )
+        }
+        assertTrue(requestTimes.isNotEmpty() && requestTimes.size <= 15)
+        assertTrue(requestTimes.zipWithNext().all { (before, after) -> after - before >= 150_000_000L })
+        assertEquals(128, reads)
+        assertEquals(128, counts["received"])
+        assertEquals(32, echoes)
+        assertEquals(32, counts["echoes"])
+    }
+
+    @Test
+    fun installationFallbackRequiresDebugAndLiteralLocalEndpoint() {
+        for (host in listOf("localhost", "127.0.0.1", "127.0.0.2", "::1", "10.0.2.2")) {
+            assertTrue(host, allowsInstallationAuth(true, host))
+            assertEquals(host, false, allowsInstallationAuth(false, host))
+        }
+        for (host in listOf(
+            "fixture.invalid",
+            "192.168.1.2",
+            "10.0.0.1",
+            "169.254.1.1",
+            "127.0.0.999",
+            "127.example",
+        )) {
+            assertEquals(host, false, allowsInstallationAuth(true, host))
+            assertEquals(host, false, allowsInstallationAuth(false, host))
+        }
+    }
+
+    @Test
+    fun missingGoogleAuthenticationOnPublicServerStopsWithoutInstallationFallback() {
+        val service = MatchmakingService
+        val sent = mutableListOf<String>()
+        var cancelled = false
+        val socket =
+            object : WebSocket {
+                override fun request() = Request.Builder().url("https://fixture.invalid/ws").build()
+
+                override fun queueSize() = 0L
+
+                override fun send(text: String): Boolean {
+                    sent += text
+                    return true
+                }
+
+                override fun send(bytes: ByteString) = false
+
+                override fun close(
+                    code: Int,
+                    reason: String?,
+                ) = true
+
+                override fun cancel() {
+                    cancelled = true
+                }
+            }
+
+        fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
+        service.disconnect()
+        try {
+            field("webSocket").set(service, socket)
+            field("manualDisconnect").set(service, false)
+            service.sendAuthenticate("Fixture")
+            assertTrue(cancelled)
+            assertTrue(sent.isEmpty())
+            assertEquals(null, field("webSocket").get(service))
+            assertEquals(ConnectionStatus.DISCONNECTED, MatchmakingStateHolder.state.value.status)
+            assertTrue(
+                MatchmakingStateHolder.state.value.errorMessage!!
+                    .contains("choose Connect"),
+            )
+            assertEquals(0, service.resourceDiagnostics()["background_jobs"])
+        } finally {
+            service.disconnect()
+        }
+    }
+
     private class ObservedProbeSocket(
         private val token: Int,
     ) : java.net.DatagramSocket(0, java.net.InetAddress.getLoopbackAddress()) {
@@ -1134,8 +1257,8 @@ class MatchmakingServiceFlowTest {
             receive("""{"type":"JOIN_FRIEND_GAME_RESP","success":true,"lobby_id":"coded-room"}""")
             receive(
                 """{"type":"LOBBY_UPDATE","lobby_id":"coded-room","players":[
-                {"player_id":"accepted-friend","slot":0,"callsign":"Host","ready":false},
-                {"player_id":"joiner","slot":2,"callsign":"Joiner","ready":false}]}""",
+                {"player_id":"accepted-friend","slot":0,"callsign":"Host","ready":false,"candidate_admission_id":"host-admission"},
+                {"player_id":"joiner","slot":2,"callsign":"Joiner","ready":false,"candidate_admission_id":"joiner-admission"}]}""",
             )
             assertEquals(
                 "coded-room",

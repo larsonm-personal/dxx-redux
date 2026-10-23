@@ -149,7 +149,7 @@ class OnlineOutageOrderingTest {
               "relay_listen_addr":"127.0.0.1:$relayPort",
               "relay_public_addr":"127.0.0.1:${gate.front.localPort}",
               "stun_listen_addr":"127.0.0.1:0", "stun_listen_addr_alt":"127.0.0.1:0",
-              "db_path":":memory:", "skip_gpgs_verify":false, "force_relay":true,
+              "db_path":":memory:", "skip_gpgs_verify":true, "force_relay":true,
               "pow_difficulty":8, "installation_auth_audience":"$audience"
             }""",
         )
@@ -157,7 +157,10 @@ class OnlineOutageOrderingTest {
             ProcessBuilder(binary)
                 .directory(directory)
                 .apply {
+                    // Winsock provider initialization requires SystemRoot on Windows
+                    val systemRoot = environment()["SystemRoot"]
                     environment().clear()
+                    if (systemRoot != null) environment()["SystemRoot"] = systemRoot
                     environment()["CONFIG_FILE"] = config.absolutePath
                     redirectOutput(ProcessBuilder.Redirect.DISCARD)
                     redirectError(ProcessBuilder.Redirect.DISCARD)

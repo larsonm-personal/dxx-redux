@@ -19,6 +19,12 @@ sourceSets.test.kotlin {
     include 'com/dxxredux/app/multiplayer/OnlineAdmissionEnvelope.kt'
     include 'com/dxxredux/app/multiplayer/ProxyDiagnostics.kt'
     include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'
+    include 'com/dxxredux/app/multiplayer/GoogleLoginClient.kt'
+    include '**/GoogleLoginClientTest.kt'
+    include '**/GoogleLoginHttpsTest.kt'
+    include '**/GoogleMatchmakingFlowTest.kt'
+    include 'com/dxxredux/app/multiplayer/PlayGamesFeatureState.kt'
+    include '**/PlayGamesFeatureStateTest.kt'
     include '**/ProxyFailureTest.kt'
     include '**/RelayTransportTest.kt'
     include '**/MatchmakingDiagnosticsTest.kt'
@@ -26,9 +32,13 @@ sourceSets.test.kotlin {
     include 'com/dxxredux/app/multiplayer/MatchmakingService.kt'
     include 'com/dxxredux/app/multiplayer/MatchmakingState.kt'
     include 'com/dxxredux/app/multiplayer/StunClient.kt'
+    include 'com/dxxredux/app/multiplayer/StunProofClient.kt'
+    include '**/StunProofClientTest.kt'
+    include '**/CandidateProtocolFlowTest.kt'
     include 'com/dxxredux/app/multiplayer/ConnectivityChecker.kt'
     include 'com/dxxredux/app/multiplayer/UpnpClient.kt'
     include '**/HostAndroid*.kt'
+    include '**/HostRelayCodec.kt'
     include 'android/app/Activity.kt'
     include 'android/widget/Toast.kt'
     include 'com/dxxredux/app/BuildConfig.kt'
@@ -37,6 +47,7 @@ sourceSets.test.kotlin {
     include 'com/dxxredux/app/multiplayer/RuntimeGameStateBridge.kt'
     include '**/OnlineInstallationAuthTest.kt'
     include '**/OnlineOutageOrderingTest.kt'
+    include '**/OnlineCandidateDiscoveryTest.kt'
     include 'com/dxxredux/app/multiplayer/OnlineInstallationAuth.kt'
     include 'com/dxxredux/app/multiplayer/UdpReconnectStore.kt'
     include 'com/dxxredux/app/multiplayer/NetworkProtocol.kt'
@@ -93,7 +104,16 @@ tasks.withType(Test).configureEach {
     maxParallelForks = 1
     systemProperty 'dxx.compareProxyHistory', compareHistory
     systemProperty 'dxx.repoRoot', rootProject.projectDir.parentFile.absolutePath
-    if (project.hasProperty('onlineServerBinary')) systemProperty 'dxx.onlineServerBinary', project.property('onlineServerBinary')
-    timeout = java.time.Duration.ofMinutes(2)
+    if (project.hasProperty('googleFixtureBinary')) {
+        def fixtureBinary = project.file(project.property('googleFixtureBinary'))
+        systemProperty 'dxx.googleFixtureBinary', fixtureBinary.absolutePath
+        inputs.file(fixtureBinary).withPropertyName('googleFixtureBinary').withPathSensitivity(PathSensitivity.NONE)
+    }
+    if (project.hasProperty('onlineServerBinary')) {
+        def serverBinary = project.file(project.property('onlineServerBinary'))
+        systemProperty 'dxx.onlineServerBinary', serverBinary.absolutePath
+        inputs.file(serverBinary).withPropertyName('onlineServerBinary').withPathSensitivity(PathSensitivity.NONE)
+    }
+    timeout = java.time.Duration.ofMinutes(project.hasProperty('onlineServerBinary') ? 4 : 2)
     testLogging { events 'passed', 'failed'; showStandardStreams = true }
 }

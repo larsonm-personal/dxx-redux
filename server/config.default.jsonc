@@ -27,9 +27,9 @@
     // relay_public_addr: "YOUR_HOST:9001",
     // stun_public_addrs: "YOUR_HOST:3478,YOUR_HOST:3479",
 
-    // Google Play Games Services (GPGS) OAuth2
+    // Google ID-token audience and public HTTPS origin; no OAuth client secret is required
     // google_client_id: "",
-    // google_client_secret: "",
+    // google_auth_origin: "https://YOUR_HOST:443",
 
     // Admin bearer token for /api/v1/admin/* endpoints
     // admin_token: "CHANGE_ME",
@@ -47,7 +47,7 @@
     "max_relay_sessions": 100,
 
     // Maximum concurrent WebSocket connections (0 = unlimited)
-    "max_connections": 500,
+    "max_connections": 500
 
     // Dev/test mode -- NEVER enable in production
     // skip_gpgs_verify: false

@@ -117,8 +117,7 @@ internal class RelayTransport(
 
         // Never evict a used key: reconstructing an allocation must obtain fresh keys
         // A process restart also establishes a new authenticated control session
-        private val usedSendKeys = HashSet<String>()
-        private val usedReceiveKeys = HashSet<String>()
+        private val usedKeys = HashSet<String>()
 
         @Synchronized
         private fun claimKeys(
@@ -132,12 +131,12 @@ internal class RelayTransport(
                     .joinToString("") { "%02x".format(it) }
             val sending = fingerprint(send)
             val receiving = fingerprint(receive)
-            check(usedSendKeys.size < 4096) { "Relay allocation limit reached; restart the application" }
-            check(sending !in usedSendKeys && receiving !in usedReceiveKeys) {
+            check(usedKeys.size <= 8190) { "Relay allocation limit reached; restart the application" }
+            check(sending !in usedKeys && receiving !in usedKeys) {
                 "Relay allocation cannot be reused; reconnect for fresh credentials"
             }
-            usedSendKeys.add(sending)
-            usedReceiveKeys.add(receiving)
+            usedKeys.add(sending)
+            usedKeys.add(receiving)
         }
 
         fun senderSlot(

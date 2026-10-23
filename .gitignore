@@ -88,6 +88,8 @@ local.properties
 dependency_base.txt
 keystore.properties
 play-store-credentials.json
+# Local OAuth client exports (may contain client secrets)
+/android/credentials/
 auth_config.jsonc
 acoustid_config.jsonc
 *.keystore

@@ -158,7 +158,7 @@ class OnlineInstallationAuthTest {
             }
         }
 
-    @Test fun actualServiceAuthenticatesAndReconnectsToProductionServer() {
+    @Test fun actualServiceAuthenticatesAndReconnectsToLoopbackDevServer() {
         val binary = System.getProperty("dxx.onlineServerBinary")
         assumeTrue("Set onlineServerBinary to run the real server/service integration", binary != null)
         val directory = Files.createTempDirectory("online-installation-test").toFile()
@@ -182,13 +182,16 @@ class OnlineInstallationAuthTest {
         }
         val configuration = File(directory, "config.json")
         configuration.writeText(
-            """{"ws_listen_addr":"127.0.0.1:$wsPort","http_listen_addr":"127.0.0.1:$httpPort","relay_listen_addr":"127.0.0.1:0","db_path":":memory:","skip_gpgs_verify":false,"pow_difficulty":8,"installation_auth_audience":"$audience"}""",
+            """{"ws_listen_addr":"127.0.0.1:$wsPort","http_listen_addr":"127.0.0.1:$httpPort","relay_listen_addr":"127.0.0.1:0","db_path":":memory:","skip_gpgs_verify":true,"pow_difficulty":8,"installation_auth_audience":"$audience"}""",
         )
         val process =
             ProcessBuilder(binary)
                 .directory(directory)
                 .apply {
+                    // Winsock provider initialization requires SystemRoot on Windows
+                    val systemRoot = environment()["SystemRoot"]
                     environment().clear()
+                    if (systemRoot != null) environment()["SystemRoot"] = systemRoot
                     environment()["CONFIG_FILE"] = configuration.absolutePath
                     redirectOutput(ProcessBuilder.Redirect.DISCARD)
                     redirectError(ProcessBuilder.Redirect.DISCARD)

@@ -49,7 +49,7 @@ class RelayTransportTest {
 
     @Test fun crossLanguageAesGcmFixtureAndReplay() {
         val keyA = (0..31).joinToString("") { "%02x".format(it) }
-        val sender = RelayTransport(0x11223344u, 0, 2, keyA, keyB)
+        val sender = HostRelayCodec(0x11223344u, 0, 2, keyA, keyB)
         val receiver = RelayTransport(0x11223344u, 2, 0, keyB, keyA)
         val payload = ByteArray(32) { it.toByte() }
         val packet = sender.encode(RelayTransport.DATA, payload)
@@ -114,6 +114,11 @@ class RelayTransportTest {
                         DatagramSocket(0, loopback).use { stranger ->
                             server.soTimeout = 2000
                             val port = DatagramSocket(0, loopback).use { it.localPort }
+                            val oldEpoch =
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString()
+                            proxy.reconcileRoster(mapOf(2 to "renewal-peer"))
                             proxy.addPeer(
                                 PeerProxyConfig(
                                     2,
@@ -125,10 +130,11 @@ class RelayTransportTest {
                                     0,
                                     keyA,
                                     keyB,
+                                    relayEpoch = oldEpoch,
                                 ),
                             )
                             proxy.start()
-                            val remote = RelayTransport(42u, 2, 0, keyB, keyA)
+                            val remote = HostRelayCodec(42u, 2, 0, keyB, keyA)
                             val request = receive(server)
                             val address = InetSocketAddress(request.address, request.port)
                             assertEquals(RelayTransport.BIND, remote.decode(request.data, request.length)!!.kind)
@@ -179,6 +185,108 @@ class RelayTransportTest {
                             }
                             while (decoded?.kind != RelayTransport.DATA)
                             assertArrayEquals(payload, decoded.payload)
+                            val nextSend = freshKey()
+                            val nextReceive = freshKey()
+                            canaries.addAll(listOf(nextSend, nextReceive))
+                            val nextEpoch =
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString()
+                            val offer =
+                                RelayRekeyMsg(
+                                    "room",
+                                    "game",
+                                    42,
+                                    oldEpoch,
+                                    43,
+                                    nextEpoch,
+                                    "renewal-peer",
+                                    2,
+                                    RelayCredentialsMsg(0, nextSend, nextReceive, nextEpoch),
+                                    3000,
+                                )
+                            val ready =
+                                java.util.concurrent.atomic
+                                    .AtomicInteger()
+                            assertTrue(proxy.stageRelayRekey(offer) { ready.incrementAndGet() })
+                            assertTrue(proxy.stageRelayRekey(offer) { fail("Duplicate offer replaced callback") })
+                            val replacement = HostRelayCodec(43u, 2, 0, nextReceive, nextSend)
+                            while (ready.get() == 0) {
+                                val packet = receive(server)
+                                assertEquals(address, packet.socketAddress)
+                                val token =
+                                    java.nio.ByteBuffer
+                                        .wrap(
+                                            packet.data,
+                                        ).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                                        .getInt(4)
+                                val codec = if (token == 43) replacement else remote
+                                when (codec.decode(packet.data, packet.length)?.kind) {
+                                    RelayTransport.BIND -> {
+                                        send(
+                                            server,
+                                            address,
+                                            codec.encode(
+                                                if (token ==
+                                                    43
+                                                ) {
+                                                    RelayTransport.CHALLENGE
+                                                } else {
+                                                    RelayTransport.BOUND
+                                                },
+                                                if (token == 43) ByteArray(16) { 9 } else byteArrayOf(),
+                                            ),
+                                        )
+                                    }
+
+                                    RelayTransport.PROOF -> {
+                                        send(server, address, codec.encode(RelayTransport.BOUND, byteArrayOf()))
+                                    }
+                                }
+                                if (token == 43) Thread.sleep(10)
+                            }
+                            assertEquals(1, ready.get())
+                            // Receive the prepared generation before our control-side commit arrives
+                            send(server, address, replacement.encode(RelayTransport.DATA, payload))
+                            assertArrayEquals(payload, receive(engine).let { it.data.copyOf(it.length) })
+                            assertTrue(!proxy.commitRelayRekey(offer.scope().copy(newEpoch = "wrong"), 200))
+                            assertTrue(proxy.commitRelayRekey(offer.scope(), 200))
+                            assertTrue(proxy.commitRelayRekey(offer.scope(), 3000))
+                            proxy.abortRelayRekey(offer.scope())
+                            send(engine, InetSocketAddress(loopback, port), payload)
+                            do {
+                                val packet = receive(server)
+                                assertEquals(address, packet.socketAddress)
+                                decoded = replacement.decode(packet.data, packet.length)
+                            } while (decoded?.kind != RelayTransport.DATA)
+                            assertArrayEquals(payload, decoded.payload)
+                            Thread.sleep(250)
+                            send(server, address, remote.encode(RelayTransport.DATA, payload))
+                            noEngineDelivery(engine)
+                            assertTrue(!proxy.stageRelayRekey(offer) {})
+                            val expiringEpoch =
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString()
+                            val expiring =
+                                RelayRekeyMsg(
+                                    "room",
+                                    "game",
+                                    43,
+                                    nextEpoch,
+                                    44,
+                                    expiringEpoch,
+                                    "renewal-peer",
+                                    2,
+                                    RelayCredentialsMsg(0, freshKey(), freshKey(), expiringEpoch),
+                                    50,
+                                )
+                            assertTrue(proxy.stageRelayRekey(expiring) {})
+                            Thread.sleep(75)
+                            assertTrue(!proxy.commitRelayRekey(expiring.scope(), 0))
+                            assertTrue(!proxy.stageRelayRekey(expiring) {})
+                            send(server, address, replacement.encode(RelayTransport.DATA, payload))
+                            assertArrayEquals(payload, receive(engine).let { it.data.copyOf(it.length) })
                         }
                     }
                 }
@@ -242,7 +350,7 @@ class RelayTransportTest {
                         }
                     localField.set(peer, delayedClose)
                     proxy.start()
-                    val remote = RelayTransport(42u, 2, 0, keyB, keyA)
+                    val remote = HostRelayCodec(42u, 2, 0, keyB, keyA)
                     val request = receive(server)
                     val address = InetSocketAddress(request.address, request.port)
                     assertEquals(RelayTransport.BIND, remote.decode(request.data, request.length)!!.kind)
@@ -287,6 +395,16 @@ class RelayTransportTest {
         }
         val replacement = RelayTransport(42u, 0, 2, freshKey(), freshKey())
         assertNotNull(replacement.encode(RelayTransport.BIND, ByteArray(16)))
+        try {
+            RelayTransport(43u, 0, 2, keyB, freshKey())
+            fail("A receiving key was reused for sending")
+        } catch (_: IllegalStateException) {
+        }
+        try {
+            RelayTransport(43u, 0, 2, freshKey(), keyA)
+            fail("A sending key was reused for receiving")
+        } catch (_: IllegalStateException) {
+        }
     }
 
     @Test(timeout = 25_000)
@@ -298,7 +416,7 @@ class RelayTransportTest {
             val failed = kotlinx.coroutines.CompletableDeferred<String>()
             val proxy = LocalhostProxy(scope, network, onFailure = { failed.complete(it) })
             val ports = listOf(1, 2).associateWith { DatagramSocket(0, loopback).use { socket -> socket.localPort } }
-            val remotes = java.util.concurrent.ConcurrentHashMap<UInt, RelayTransport>()
+            val remotes = java.util.concurrent.ConcurrentHashMap<UInt, HostRelayCodec>()
             val proven =
                 java.util.concurrent.ConcurrentHashMap
                     .newKeySet<UInt>()
@@ -311,7 +429,7 @@ class RelayTransportTest {
             ) {
                 val uplink = freshKey()
                 val downlink = freshKey()
-                remotes[token] = RelayTransport(token, slot, 0, downlink, uplink)
+                remotes[token] = HostRelayCodec(token, slot, 0, downlink, uplink)
                 proxy.addPeer(
                     PeerProxyConfig(
                         slot,

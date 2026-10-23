@@ -71,7 +71,6 @@ import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetworkConstants
-import com.dxxredux.app.multiplayer.PlayGamesAuth
 import com.dxxredux.app.multiplayer.readCoopRestoreSlot
 import com.dxxredux.app.multiplayer.userLabel
 import kotlinx.coroutines.CoroutineScope
@@ -2911,8 +2910,6 @@ class SetupActivity : ComponentActivity() {
         com.dxxredux.app.multiplayer.NetLog
             .init(this)
 
-        // Initialize Google Play Games sign-in (no-op if not configured)
-        PlayGamesAuth.initialize(this)
         MatchmakingService.setActivity(this)
 
         // Load persisted callsign (or generate random on first run)
@@ -3424,6 +3421,7 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        MatchmakingService.clearActivity(this)
         if (ownsLaunch() && !multiplayerActivityStarted && !hasReturnableGameActivity()) {
             failGameLaunch("launcher_destroyed", "Game preparation was interrupted. Please try again.")
         }
@@ -4904,7 +4902,12 @@ private fun SetupScreen(
                     Button(
                         onClick = {
                             com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
-                                it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN)
+                                it.copy(
+                                    nav =
+                                        com.dxxredux.app.multiplayer.initialMultiplayerNav(
+                                            BuildConfig.ONLINE_MATCHMAKING,
+                                        ),
+                                )
                             }
                             showMultiplayerPage = true
                         },

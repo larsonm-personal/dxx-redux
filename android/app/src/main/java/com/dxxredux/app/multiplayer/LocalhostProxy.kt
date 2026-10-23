@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.DatagramPacket
@@ -92,9 +93,16 @@ class LocalhostProxy(
     private var nextDynamicSlot = 0
     private val maxDynamicPeers = 8
 
-    // When active, the shared receive loop echoes DXPC probe requests from
-    // unknown senders (for late-join NAT holepunching).
-    private val lateJoinProbeActive = AtomicBoolean(false)
+    // A roster identity gets one bounded probe job and echo lease until it departs
+    private class ProbeLease(
+        val endpoints: Set<InetSocketAddress>,
+    ) {
+        val expires = System.nanoTime() + 3_000_000_000L
+        var echoes = 0
+        var job: Job? = null
+    }
+
+    private val lateJoinProbes = mutableMapOf<String, ProbeLease>()
 
     init {
         diagnostics.event(
@@ -157,6 +165,10 @@ class LocalhostProxy(
                         (peerIdentities[proxy.slot] != null && peerIdentities[proxy.slot] != identities[proxy.slot])
                 }.map { it.slot }
         departed.forEach { removePeer(it) }
+        val members = identities.values.toSet()
+        lateJoinProbes.entries.removeAll { (identity, lease) ->
+            (identity !in members).also { if (it) lease.job?.cancel() }
+        }
         peerIdentities = identities.toMap()
     }
 
@@ -172,6 +184,29 @@ class LocalhostProxy(
             job.cancel()
         }
         proxy.close("peer departed")
+    }
+
+    @Synchronized
+    fun stageRelayRekey(
+        message: RelayRekeyMsg,
+        onReady: () -> Unit,
+    ): Boolean {
+        if (stopped.get() || peerIdentities[message.peerSlot] != message.peerId) return false
+        return peerProxies.firstOrNull { it.slot == message.peerSlot }?.stageRekey(message, onReady) ?: false
+    }
+
+    @Synchronized
+    fun commitRelayRekey(
+        scope: RelayRekeyScope,
+        retireAfterMs: Long,
+    ): Boolean {
+        if (stopped.get() || peerIdentities[scope.peerSlot] != scope.peerId) return false
+        return peerProxies.firstOrNull { it.slot == scope.peerSlot }?.commitRekey(scope, retireAfterMs) ?: false
+    }
+
+    @Synchronized
+    fun abortRelayRekey(scope: RelayRekeyScope) {
+        peerProxies.firstOrNull { it.slot == scope.peerSlot }?.abortRekey(scope)
     }
 
     private fun createPeer(
@@ -311,13 +346,13 @@ class LocalhostProxy(
                 }
 
                 // Unmatched: check for late-join probe echo
-                if (lateJoinProbeActive.get() && pkt.length == PROBE_SIZE) {
+                if (pkt.length == PROBE_SIZE) {
                     val bb = ByteBuffer.wrap(pkt.data, 0, PROBE_SIZE)
                     if (bb.int == PROBE_MAGIC) {
                         val token = bb.int
                         val seq = bb.short
                         val flags = bb.short
-                        if (flags == PROBE_FLAG_REQUEST) {
+                        if (flags == PROBE_FLAG_REQUEST && allowProbeEcho(InetSocketAddress(pkt.address, pkt.port))) {
                             // Echo back as RESPONSE
                             val resp = ByteArray(PROBE_SIZE)
                             val rb = ByteBuffer.wrap(resp)
@@ -330,8 +365,9 @@ class LocalhostProxy(
                                 diagnostics.send("probe-response-send", socket, DatagramPacket(resp, PROBE_SIZE, dest))
                             } catch (_: Exception) {
                             }
-                            continue
                         }
+                        // Probe packets never enter the dynamic/native gameplay path
+                        continue
                     }
                 }
 
@@ -375,30 +411,57 @@ class LocalhostProxy(
      * given addresses. This opens NAT pinholes for a late-joining player
      * and lets their ConnectivityChecker receive echo responses.
      */
-    fun sendLateJoinProbes(addrs: List<String>) {
+    @Synchronized
+    fun sendLateJoinProbes(
+        joinerId: String,
+        addrs: List<String>,
+    ) {
         val socket = sharedRealSocket ?: return
-        lateJoinProbeActive.set(true)
-        val token = java.security.SecureRandom().nextInt()
-        launchWorker("late-join probes", { true }) {
-            for (addrStr in addrs) {
-                val parts = addrStr.split(":")
-                if (parts.size != 2) continue
-                val port = parts[1].toIntOrNull() ?: continue
-                try {
-                    val addr = InetSocketAddress(InetAddress.getByName(parts[0]), port)
-                    val buf = ByteArray(PROBE_SIZE)
-                    val bb = ByteBuffer.wrap(buf)
-                    bb.putInt(PROBE_MAGIC)
-                    bb.putInt(token)
-                    bb.putShort(0) // seq
-                    bb.putShort(PROBE_FLAG_REQUEST) // flags
-                    diagnostics.send("probe-send", socket, DatagramPacket(buf, PROBE_SIZE, addr))
-                } catch (e: Exception) {
-                    Log.w(TAG, "Late-join blind probe failed to $addrStr: ${e.message}")
-                }
-            }
-            Log.i(TAG, "Sent ${addrs.size} late-join blind probes")
+        if (stopped.get() || joinerId !in peerIdentities.values || joinerId in lateJoinProbes ||
+            lateJoinProbes.size >= 7 || addrs.size > NetworkConstants.MAX_CANDIDATES
+        ) {
+            return
         }
+        val endpoints = addrs.mapNotNull(::parseProbeEndpoint).toSet()
+        if (endpoints.isEmpty()) return
+        val lease = ProbeLease(endpoints)
+        lateJoinProbes[joinerId] = lease
+        val token = java.security.SecureRandom().nextInt()
+        lease.job =
+            launchWorker("late-join probes", { true }) {
+                for (addr in endpoints) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    if (!synchronized(this@LocalhostProxy) {
+                            lateJoinProbes[joinerId] === lease && System.nanoTime() < lease.expires
+                        }
+                    ) {
+                        break
+                    }
+                    try {
+                        val buf = ByteArray(PROBE_SIZE)
+                        val bb = ByteBuffer.wrap(buf)
+                        bb.putInt(PROBE_MAGIC)
+                        bb.putInt(token)
+                        bb.putShort(0) // seq
+                        bb.putShort(PROBE_FLAG_REQUEST) // flags
+                        diagnostics.send("probe-send", socket, DatagramPacket(buf, PROBE_SIZE, addr))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Late-join blind probe failed to $addr: ${e.message}")
+                    }
+                }
+                Log.i(TAG, "Sent ${endpoints.size} late-join blind probes")
+            }
+    }
+
+    @Synchronized
+    private fun allowProbeEcho(source: InetSocketAddress): Boolean {
+        val now = System.nanoTime()
+        val lease =
+            lateJoinProbes.values.firstOrNull {
+                now < it.expires && it.echoes < 32 && source in it.endpoints
+            } ?: return false
+        lease.echoes++
+        return true
     }
 
     @Synchronized
@@ -415,6 +478,7 @@ class LocalhostProxy(
         jobs.clear()
         peerJobs.clear()
         peerIdentities = emptyMap()
+        lateJoinProbes.clear()
         retiredPorts.clear()
         peerProxies.clear()
         directPeersByAddr.clear()
@@ -435,6 +499,7 @@ data class PeerProxyConfig(
     val relaySendKey: String? = null,
     val relayReceiveKey: String? = null,
     val admissionId: String? = null,
+    val relayEpoch: String? = null,
 )
 
 /**
@@ -458,7 +523,7 @@ private class PeerProxy(
 
     fun matches(other: PeerProxyConfig): Boolean = config == other
 
-    private val relay =
+    @Volatile private var relay =
         if (config.isRelay) {
             RelayTransport(
                 config.relayToken,
@@ -470,6 +535,122 @@ private class PeerProxy(
         } else {
             null
         }
+
+    private data class StagedRelay(
+        val message: RelayRekeyMsg,
+        val transport: RelayTransport,
+        val deadline: Long,
+        val onReady: () -> Unit,
+        var ready: Boolean = false,
+    )
+
+    private var stagedRelay: StagedRelay? = null
+    private var retiredRelay: Pair<RelayTransport, Long>? = null
+    private var relayToken = config.relayToken
+    private var relayEpoch = config.relayEpoch
+    private var committedScope: RelayRekeyScope? = null
+    private var attemptedOldEpoch: String? = null
+
+    @Synchronized
+    private fun pruneRelayEpochs() {
+        val now = System.nanoTime()
+        if (stagedRelay?.let { now >= it.deadline } == true) stagedRelay = null
+        if (retiredRelay?.let { now >= it.second } == true) retiredRelay = null
+    }
+
+    @Synchronized
+    fun stageRekey(
+        message: RelayRekeyMsg,
+        onReady: () -> Unit,
+    ): Boolean {
+        pruneRelayEpochs()
+        val credentials = message.credentials ?: return false
+        if (!config.isRelay || message.oldToken !in 0..0xffff_ffffL || message.oldToken.toUInt() != relayToken ||
+            message.oldEpoch != relayEpoch ||
+            credentials.ownSlot != config.relayOwnSlot || credentials.allocationEpoch != message.newEpoch ||
+            message.newToken !in 0..0xffff_ffffL || message.newToken == message.oldToken ||
+            message.newEpoch == message.oldEpoch || message.readyTimeoutMs !in 1..15000 ||
+            retiredRelay != null
+        ) {
+            return false
+        }
+        val pending = stagedRelay
+        if (pending != null) {
+            return pending.message.scope() == message.scope() &&
+                pending.message.credentials?.sendKey == credentials.sendKey &&
+                pending.message.credentials.receiveKey == credentials.receiveKey
+        }
+        if (attemptedOldEpoch == relayEpoch) return false
+        val transport =
+            RelayTransport(
+                message.newToken.toUInt(),
+                config.relayOwnSlot,
+                config.peerSlot,
+                credentials.sendKey,
+                credentials.receiveKey,
+            )
+        stagedRelay = StagedRelay(message, transport, System.nanoTime() + message.readyTimeoutMs * 1_000_000L, onReady)
+        attemptedOldEpoch = relayEpoch
+        return true
+    }
+
+    @Synchronized
+    fun commitRekey(
+        scope: RelayRekeyScope,
+        retireAfterMs: Long,
+    ): Boolean {
+        pruneRelayEpochs()
+        if (committedScope == scope && relayToken == scope.newToken.toUInt()) return true
+        val pending = stagedRelay ?: return false
+        if (pending.message.scope() != scope || !pending.transport.bound || retireAfterMs !in 0..3000) return false
+        relay?.let { retiredRelay = it to (System.nanoTime() + retireAfterMs * 1_000_000L) }
+        relay = pending.transport
+        relayToken = scope.newToken.toUInt()
+        relayEpoch = scope.newEpoch
+        committedScope = scope
+        stagedRelay = null
+        return true
+    }
+
+    @Synchronized
+    fun abortRekey(scope: RelayRekeyScope) {
+        if (stagedRelay?.message?.scope() == scope) stagedRelay = null
+    }
+
+    private data class DecodedRelay(
+        val transport: RelayTransport,
+        val packet: RelayTransport.Packet,
+        val ready: (() -> Unit)?,
+    )
+
+    @Synchronized
+    private fun decodeRelay(
+        data: ByteArray,
+        length: Int,
+    ): DecodedRelay? {
+        pruneRelayEpochs()
+        val pending = stagedRelay
+        for (transport in listOfNotNull(relay, pending?.transport, retiredRelay?.first)) {
+            val packet = transport.decode(data, length) ?: continue
+            val ready =
+                if (transport === pending?.transport && packet.kind == RelayTransport.BOUND && transport.bound &&
+                    !pending.ready
+                ) {
+                    pending.ready = true
+                    pending.onReady
+                } else {
+                    null
+                }
+            return DecodedRelay(transport, packet, ready)
+        }
+        return null
+    }
+
+    @Synchronized
+    private fun bindingTransports(): List<RelayTransport> {
+        pruneRelayEpochs()
+        return listOfNotNull(relay, stagedRelay?.transport)
+    }
 
     private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId peer=${config.peerSlot} remote=${config.realAddr}")
@@ -570,11 +751,13 @@ private class PeerProxy(
             val payloadLen: Int
             if (config.isRelay) {
                 if (source != config.realAddr) return
-                val decoded = relay!!.decode(data, length) ?: return
+                val received = decodeRelay(data, length) ?: return
+                received.ready?.invoke()
+                val decoded = received.packet
                 when (decoded.kind) {
                     RelayTransport.CHALLENGE -> {
                         if (decoded.payload.size != 16) return
-                        val proof = relay.encode(RelayTransport.PROOF, decoded.payload)
+                        val proof = received.transport.encode(RelayTransport.PROOF, decoded.payload)
                         diagnostics.send(
                             "relay-bind-proof",
                             realSocket,
@@ -645,8 +828,9 @@ private class PeerProxy(
                     )
                 }
                 if (config.isRelay) {
-                    if (!relay!!.bound) continue
-                    val wrapped = relay.encode(RelayTransport.DATA, pkt.data.copyOfRange(0, pkt.length))
+                    val sending = relay ?: continue
+                    if (!sending.bound) continue
+                    val wrapped = sending.encode(RelayTransport.DATA, pkt.data.copyOfRange(0, pkt.length))
                     diagnostics.send(
                         "gameplay-send",
                         realSocket,
@@ -689,13 +873,27 @@ private class PeerProxy(
     private suspend fun keepalive() {
         var keepaliveCount = 0L
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
-            if (relay != null && System.nanoTime() - relay.lastAcknowledgementNanos > 10_000_000_000L) {
+            if (relay?.let { System.nanoTime() - it.lastAcknowledgementNanos > 10_000_000_000L } == true) {
                 throw IOException("Relay did not acknowledge the route within 10 seconds")
             }
             try {
                 if (relay == null) kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
-                val ping = relay?.encode(RelayTransport.BIND, ByteArray(16)) ?: byteArrayOf(0)
-                diagnostics.send("keepalive-send", realSocket, DatagramPacket(ping, ping.size, config.realAddr))
+                val transports = bindingTransports()
+                val pings =
+                    if (transports.isEmpty()) {
+                        listOf(byteArrayOf(0))
+                    } else {
+                        transports.map {
+                            it.encode(RelayTransport.BIND, ByteArray(16))
+                        }
+                    }
+                for (ping in pings) {
+                    diagnostics.send(
+                        "keepalive-send",
+                        realSocket,
+                        DatagramPacket(ping, ping.size, config.realAddr),
+                    )
+                }
                 if (relay != null) kotlinx.coroutines.delay(1000L)
                 keepaliveCount++
                 Log.i(TAG, "keepalive slot=${config.peerSlot} #$keepaliveCount sent=$packetsSent recv=$packetsReceived")

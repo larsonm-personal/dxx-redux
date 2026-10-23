@@ -42,10 +42,7 @@ class SweepTests(unittest.TestCase):
                 with patch("sys.stdout", io.StringIO()) as hidden:
                     sweep.print_public_jvm_failure(private_plan, lane, root)
                     self.assertEqual(hidden.getvalue(), "")
-            with (
-                patch.dict(os.environ, {"RETAIL_REQUESTED": "true"}),
-                patch("sys.stdout", io.StringIO()) as hidden,
-            ):
+            with patch.dict(os.environ, {"RETAIL_REQUESTED": "true"}), patch("sys.stdout", io.StringIO()) as hidden:
                 sweep.print_public_jvm_failure(plan, "jvm", root)
                 self.assertEqual(hidden.getvalue(), "")
 
@@ -307,11 +304,7 @@ class SweepTests(unittest.TestCase):
 
     def test_graphics_campaign_is_exact_public_and_within_lane_budget(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
-        names = (
-            "test_graphics_capabilities",
-            "test_graphics_context_loss",
-            "test_graphics_msaa_allocation_failure",
-        )
+        names = ("test_graphics_capabilities", "test_graphics_context_loss", "test_graphics_msaa_allocation_failure")
         catalog = {"schema": 1, "tests": [{"name": name} for name in names]}
         plan, _ = sweep.plan_batch(SHA, catalog, policy)
         chosen = sweep.select_public_campaign(plan, policy, catalog, "graphics-capabilities")
@@ -551,353 +544,6 @@ class SweepTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "asset-free"):
             sweep.select_public_campaign(plan, policy, catalog, "lan-smoke")
 
-    def three_player_plan(self):
-        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
-        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
-        plan, _ = sweep.plan_batch(SHA, catalog, policy)
-        plan = sweep.select_public_campaign(plan, policy, catalog, "lan-three-player")
-        return policy, plan, sweep.fresh_state(plan["target_sha"], plan["catalog_hash"])
-
-    def three_player_summary(self):
-        return {
-            "schema": 1,
-            "owner": "test_lan_three_player_startup",
-            "revision": SHA,
-            "category": "three_player_network",
-            "passed": True,
-            "coverage_complete": True,
-            "results": [{"id": name, "status": "PASS"} for name in sorted(sweep.THREE_PLAYER_CASES)],
-        }
-
-    def test_three_player_default_nightly_selection_has_its_own_resource_category(self):
-        policy, campaign, _ = self.three_player_plan()
-        (entry,) = campaign["tests"]
-        self.assertEqual(entry["id"], "master:test_lan_three_player_startup")
-        self.assertEqual(sweep.owner_category(entry), "three_player_network")
-        self.assertEqual(entry["requires"], "three_emulators")
-        self.assertEqual(entry["lane"], "android-dual")
-        self.assertEqual(entry["estimated_seconds"], 900)
-        self.assertNotIn("fixture", entry)
-        self.assertEqual(campaign["lanes"], ["android-dual"])
-        self.assertNotIn("retail_assets", campaign)
-        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
-        # The ordinary scheduled planner, without any campaign or recovery opt-in, admits it
-        for number in range(32):
-            plan, _ = sweep.plan_batch(f"{number:040x}", catalog, policy)
-            self.assertTrue(sweep.THREE_PLAYER_IDS <= {e["id"] for e in plan["tests"]})
-            sweep.validate_plan(plan, policy)
-        for ids in (sweep.VALIDATION_IDS, sweep.FIRST_PLAY_IDS, sweep.PUBLIC_LAN_IDS):
-            self.assertFalse(sweep.THREE_PLAYER_IDS & ids)
-
-    def test_three_player_policy_rejects_resource_category_and_budget_drift(self):
-        policy, _, _ = self.three_player_plan()
-        for key, value in (
-            ("requires", None),
-            ("requires", "two_emulators"),
-            ("category", "network"),
-            ("lane", "android-single"),
-            ("estimated_seconds", 901),
-        ):
-            bad = copy.deepcopy(policy)
-            next(e for e in bad["suites"] if e["id"] in sweep.THREE_PLAYER_IDS)[key] = value
-            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
-                sweep.policy_entries(bad)
-
-    def test_three_player_public_lane_defers_retail_without_losing_or_starving_it(self):
-        full_policy, campaign, _ = self.three_player_plan()
-        public = campaign["tests"][0]
-        retail = next(e for e in full_policy["suites"] if e["id"] == "master:test_lan")
-        host = {
-            "id": "master:retail-host",
-            "owner": "master",
-            "lane": "host",
-            "args": {"suite": "retail-host"},
-            "estimated_seconds": 100,
-            "fixture": "retail-base",
-        }
-        policy = {"schema": 1, "suites": [public, retail, host], "exclusions": []}
-        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
-        observed_groups = set()
-        with patch.object(sweep.retail, "validate_identity"):
-            for number in range(32):
-                sha = f"{number:040x}"
-                plan, state = sweep.plan_batch(sha, catalog, policy, retail_assets={"pinned-test-fixture": True})
-                selected = {e["id"] for e in plan["tests"]}
-                self.assertIn(host["id"], selected)
-                self.assertEqual(len(selected & {public["id"], retail["id"]}), 1)
-                self.assertEqual(plan["exclusions"], [])
-                self.assertEqual(state["excluded"], {})
-                self.assertEqual(plan["estimated_seconds"], 1000)
-                self.assertEqual(plan["lanes"], ["host", "android-dual"])
-                sweep.validate_plan(plan, policy)
-                observed_groups.update(selected)
-                completed = next(ident for ident in selected if ident != host["id"])
-                deferred = retail["id"] if completed == public["id"] else public["id"]
-                # A completed group yields the lane to pending work in the next batch
-                next_state = copy.deepcopy(state)
-                next_state["records"][completed] = {
-                    "status": "PASS",
-                    "run_url": "https://github.com/o/r/actions/runs/1",
-                }
-                next_plan, _ = sweep.plan_batch(
-                    sha, catalog, policy, next_state, retail_assets={"pinned-test-fixture": True}
-                )
-                self.assertIn(deferred, {e["id"] for e in next_plan["tests"]})
-                # A setup-blocked group also yields to untried work rather than starving it
-                next_state = copy.deepcopy(state)
-                next_state["retryable"][completed] = {"attempts": 1}
-                next_plan, _ = sweep.plan_batch(
-                    sha, catalog, policy, next_state, retail_assets={"pinned-test-fixture": True}
-                )
-                self.assertIn(deferred, {e["id"] for e in next_plan["tests"]})
-            self.assertEqual(observed_groups, {public["id"], retail["id"], host["id"]})
-            ordinary = {**policy, "suites": [retail, host]}
-            plan, _ = sweep.plan_batch(SHA, catalog, ordinary, retail_assets={"pinned-test-fixture": True})
-            self.assertEqual({e["id"] for e in plan["tests"]}, {retail["id"], host["id"]})
-            mixed = copy.deepcopy(plan)
-            mixed["tests"].append(public)
-            with self.assertRaisesRegex(ValueError, "asset-free lane"):
-                sweep.validate_plan(mixed, policy)
-
-    def test_three_player_campaign_is_exact_and_resets_prior_progress(self):
-        policy, plan, state = self.three_player_plan()
-        catalog = {"schema": 1, "tests": [{"name": "test_lan_three_player_startup"}]}
-        with self.assertRaisesRegex(ValueError, "absent"):
-            sweep.select_public_campaign(plan, policy, {"tests": []}, "lan-three-player")
-        bad = copy.deepcopy(policy)
-        next(e for e in bad["suites"] if e["id"] in sweep.THREE_PLAYER_IDS)["fixture"] = "retail-base"
-        with self.assertRaisesRegex(ValueError, "asset-free"):
-            sweep.select_public_campaign(plan, bad, catalog, "lan-three-player")
-        state["records"] = {
-            ident: {"status": "PASS", "run_url": "https://github.com/o/r/actions/runs/1"}
-            for ident in sweep.THREE_PLAYER_IDS
-        }
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            for name, value in (("policy", policy), ("catalog", catalog), ("previous", state)):
-                sweep.write(root / name, value)
-            common = [
-                "sweep",
-                "plan",
-                "--target-sha",
-                SHA,
-                "--catalog",
-                str(root / "catalog"),
-                "--policy",
-                str(root / "policy"),
-                "--state",
-                str(root / "previous"),
-                "--output",
-                str(root / "plan"),
-                "--state-output",
-                str(root / "state"),
-            ]
-            with (
-                patch.object(sys, "argv", common + ["--campaign", "lan-three-player"]),
-                patch("builtins.print"),
-                patch.object(sweep.retail, "configured_identity", return_value=None),
-            ):
-                self.assertEqual(sweep.main(), 0)
-            self.assertEqual({e["id"] for e in sweep.read(root / "plan")["tests"]}, sweep.THREE_PLAYER_IDS)
-            self.assertEqual(sweep.read(root / "state")["records"], {})
-            with (
-                patch.object(sys, "argv", common + ["--validation"]),
-                patch("builtins.print"),
-                patch.object(sweep.retail, "configured_identity", return_value=None),
-            ):
-                self.assertEqual(sweep.main(), 0)
-            self.assertFalse(sweep.THREE_PLAYER_IDS & {e["id"] for e in sweep.read(root / "plan")["tests"]})
-
-    def run_three_player_control(self, summary, journal_status="PASS", exit_code=0, stale=False):
-        policy, plan, state = self.three_player_plan()
-        with tempfile.TemporaryDirectory() as directory:
-            # Match the executor's canonical root, including Windows short-name temp paths
-            root = Path(directory).resolve()
-            output = root / "out"
-            source = root / "android/temp/lan-three-player-startup/three-player-summary.json"
-            destination = output / "three-player/three-player-summary.json"
-            if stale:
-                sweep.write(source, self.three_player_summary())
-                sweep.write(destination, self.three_player_summary())
-
-            def run(command, *args, **kwargs):
-                self.assertFalse(source.exists())
-                self.assertFalse(destination.exists())
-                self.assertEqual(command[:4], ["pwsh", "-NoProfile", "-File", str(root / "android/run_all_tests.ps1")])
-                self.assertEqual(
-                    sweep.read(command[command.index("-SelectedTestsPath") + 1]),
-                    ["test_lan_three_player_startup"],
-                )
-                self.assertEqual(command[command.index("-TestBudgetSeconds") + 1], "900")
-                self.assertIn("-FullSuite", command)
-                self.assertIn("-ExtendedMultiplayer", command)
-                self.assertNotIn("-HostOnly", command)
-                self.assertNotIn("run_parallel_startup_checks.ps1", " ".join(command))
-                if summary is not None:
-                    sweep.write(source, summary)
-                if journal_status is not None:
-                    (output / "journal.jsonl").write_text(
-                        json.dumps(
-                            {
-                                "name": "test_lan_three_player_startup",
-                                "commit": SHA,
-                                "status": journal_status,
-                                "attempted_tests": True,
-                                "phase": "tests",
-                            }
-                        )
-                        + "\n"
-                    )
-                return subprocess.CompletedProcess(command, exit_code)
-
-            with (
-                patch.object(sweep.subprocess, "check_output", return_value=SHA),
-                patch.object(sweep, "run_command", side_effect=run),
-            ):
-                execution = sweep.execute(plan, policy, "android-dual", root, output)
-            receipt = sweep.collect(plan, policy, "android-dual", output)
-            reconciled = sweep.reconcile(plan, policy, state, [receipt])
-            for name, value in (("plan", plan), ("policy", policy), ("state", state)):
-                sweep.write(output / name, value)
-            argv = [
-                "sweep",
-                "reconcile",
-                "--require-selected",
-                "--plan",
-                str(output / "plan"),
-                "--policy",
-                str(output / "policy"),
-                "--state",
-                str(output / "state"),
-                "--output",
-                str(output / "final"),
-                "--receipts",
-                str(output / "results.json"),
-            ]
-            with patch.object(sys, "argv", argv), patch("builtins.print"):
-                result = sweep.main()
-            return execution, receipt, reconciled, result
-
-    def test_three_player_normal_entrypoint_requires_current_four_case_evidence(self):
-        execution, receipt, state, result = self.run_three_player_control(self.three_player_summary(), stale=True)
-        self.assertFalse(execution["runner_failed"])
-        self.assertEqual(receipt["results"][0]["status"], "PASS")
-        self.assertEqual({case["id"] for case in receipt["results"][0]["cases"]}, sweep.THREE_PLAYER_CASES)
-        self.assertEqual(state["records"]["master:test_lan_three_player_startup"]["case_counts"]["PASS"], 4)
-        self.assertEqual(result, 0)
-
-    def test_three_player_missing_skipped_partial_or_stale_evidence_never_passes(self):
-        for status in (None, "SKIP", "NOT_RUN", "BLOCKED", "FAIL"):
-            with self.subTest(journal_status=status):
-                _, _, _, result = self.run_three_player_control(self.three_player_summary(), journal_status=status)
-                self.assertEqual(result, 1)
-        for change in (
-            "missing",
-            "wrong-revision",
-            "wrong-owner",
-            "wrong-category",
-            "missing-case",
-            "skip-case",
-            "duplicate-case",
-            "not-complete",
-            "not-passed",
-            "failed-case",
-        ):
-            summary = self.three_player_summary()
-            if change == "missing":
-                summary = None
-            elif change.startswith("wrong-"):
-                summary[change.removeprefix("wrong-")] = "wrong"
-            elif change == "missing-case":
-                summary["results"].pop()
-            elif change == "skip-case":
-                summary["results"][0]["status"] = "SKIP"
-            elif change == "duplicate-case":
-                summary["results"][0] = summary["results"][1]
-            elif change == "not-complete":
-                summary["coverage_complete"] = False
-            elif change == "not-passed":
-                summary["passed"] = False
-            elif change == "failed-case":
-                summary["results"][0]["status"] = "FAIL"
-            with self.subTest(change=change):
-                _, receipt, _, result = self.run_three_player_control(summary, stale=True)
-                self.assertEqual(receipt["results"][0]["status"], "FAIL")
-                self.assertEqual(result, 1)
-        _, receipt, _, result = self.run_three_player_control(self.three_player_summary(), exit_code=17)
-        self.assertEqual(receipt["results"][0]["status"], "FAIL")
-        self.assertEqual(result, 1)
-
-    def test_three_player_reconcile_independently_requires_complete_named_leaves(self):
-        policy, plan, state = self.three_player_plan()
-        receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id")}
-        receipt.update(
-            lane="android-dual",
-            results=[
-                {
-                    "id": "master:test_lan_three_player_startup",
-                    "status": "PASS",
-                    "run_url": "https://github.com/o/r/actions/runs/2",
-                }
-            ],
-        )
-        self.assertEqual(
-            sweep.selected_without_pass(plan, sweep.reconcile(plan, policy, state, [receipt])),
-            ["master:test_lan_three_player_startup"],
-        )
-        receipt["results"][0].update(cases=self.three_player_summary()["results"], coverage_complete=True)
-        self.assertEqual(sweep.selected_without_pass(plan, sweep.reconcile(plan, policy, state, [receipt])), [])
-
-    def test_three_player_workflow_binding_preserves_light_pr_and_independent_label_run(self):
-        root = Path(__file__).parents[2]
-        public = (root / ".github/workflows/public-lan-smoke.yml").read_text()
-        self.assertIn("types: [opened, synchronize, reopened, labeled]", public)
-        self.assertIn("options: [lan-smoke, lan-three-player]", public)
-        self.assertIn("default: lan-smoke", public)
-        self.assertIn(
-            "github.event.action == 'labeled' && github.event.label.name == 'test-three-player-network'",
-            public,
-        )
-        concurrency = public.split("concurrency:", 1)[1].split("jobs:", 1)[0]
-        self.assertIn("'lan-three-player' || 'ignored-label') || inputs.campaign || 'lan-smoke'", concurrency)
-        self.assertIn("'Require three-player LAN pass' || 'Require public LAN pass'", public)
-        # Label-only runs, even failed/skipped plans, cannot replace the ordinary PR check
-        self.assertIn(
-            "name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Require three-player LAN pass'",
-            public,
-        )
-        self.assertIn('--campaign "$CAMPAIGN"', public)
-        self.assertIn("'lan-three-player': ['master:test_lan_three_player_startup']", public)
-        self.assertIn("--require-selected --receipts", public)
-        self.assertIn("assert p['target_sha'] == os.environ['TARGET_SHA']", public)
-        self.assertIn("needs.plan.outputs.campaign != 'lan-three-player' && inputs.recovery_checks == true", public)
-        self.assertIn("ref: ${{ github.event.pull_request.head.sha || github.sha }}", public)
-        android = (root / ".github/workflows/android-nightly-tooling.yml").read_text()
-        for requirement in ("public_fixtures", "three_emulators"):
-            expression = next(
-                line.split(":", 1)[1].strip().rstrip(",")
-                for line in android.splitlines()
-                if "'" + requirement + "':" in line
-            )
-            _, plan, _ = self.three_player_plan()
-            self.assertTrue(eval(expression, {"selected": plan["tests"]}))
-            self.assertFalse(eval(expression, {"selected": []}))
-        self.assertIn(
-            "validate_plan(plan, json.load(open('control/android/tests/nightly_tooling_policy.json')))",
-            android,
-        )
-        self.assertIn("if plan['target_sha'] != os.environ['TARGET_SHA']:", android)
-        boot = android.split("      - name: Prepare isolated headless emulators", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("DXX_SELECTED_THREE_EMULATORS: ${{ steps.selection.outputs.three_emulators }}", boot)
-        self.assertIn("$env:DXX_SELECTED_THREE_EMULATORS -eq 'true' -or $experimentalThird", boot)
-        self.assertEqual(boot.count("Name = 'Nexus5X_Light_3'"), 1)
-        self.assertIn("DXX_THIRD_EMULATOR_SERIAL=emulator-5558", boot)
-        self.assertIn("$avds.Count", boot)
-        self.assertIn("pathlib.Path('results/three-player')", android)
-        nightly = (root / ".github/workflows/nightly-tooling-sweep.yml").read_text()
-        self.assertIn("  schedule:", nightly)
-        self.assertIn("default: nightly", nightly)
-        self.assertIn("validation=()", nightly)
     def test_online_campaign_rejects_absent_or_private_suite(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         catalog = {
@@ -921,6 +567,246 @@ class SweepTests(unittest.TestCase):
         next(e for e in policy["suites"] if e["id"] in sweep.PUBLIC_ONLINE_IDS)["fixture"] = "retail-base"
         with self.assertRaisesRegex(ValueError, "asset-free"):
             sweep.select_public_campaign(plan, policy, catalog, "online-preview")
+
+    def three_player_plan(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        plan = sweep.select_public_campaign(plan, policy, catalog, 'lan-three-player')
+        return policy, plan, sweep.fresh_state(plan['target_sha'], plan['catalog_hash'])
+
+    def three_player_summary(self):
+        return {'schema': 1, 'owner': 'test_lan_three_player_startup', 'revision': SHA,
+                'category': 'three_player_network', 'passed': True, 'coverage_complete': True,
+                'results': [{'id': name, 'status': 'PASS'} for name in sorted(sweep.THREE_PLAYER_CASES)]}
+
+    def test_three_player_default_nightly_selection_has_its_own_resource_category(self):
+        policy, campaign, _ = self.three_player_plan()
+        entry, = campaign['tests']
+        self.assertEqual(entry['id'], 'master:test_lan_three_player_startup')
+        self.assertEqual(sweep.owner_category(entry), 'three_player_network')
+        self.assertEqual(entry['requires'], 'three_emulators')
+        self.assertEqual(entry['lane'], 'android-dual')
+        self.assertEqual(entry['estimated_seconds'], 900)
+        self.assertNotIn('fixture', entry)
+        self.assertEqual(campaign['lanes'], ['android-dual'])
+        self.assertNotIn('retail_assets', campaign)
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        # The ordinary scheduled planner, without any campaign or recovery opt-in, admits it
+        for number in range(32):
+            plan, _ = sweep.plan_batch(f'{number:040x}', catalog, policy)
+            self.assertTrue(sweep.THREE_PLAYER_IDS <= {e['id'] for e in plan['tests']})
+            self.assertFalse((sweep.PUBLIC_ONLINE_IDS | sweep.PUBLIC_ONLINE_D2_IDS) & {e['id'] for e in plan['tests']})
+            sweep.validate_plan(plan, policy)
+        for ids in (sweep.VALIDATION_IDS, sweep.FIRST_PLAY_IDS, sweep.PUBLIC_LAN_IDS):
+            self.assertFalse(sweep.THREE_PLAYER_IDS & ids)
+
+    def test_three_player_policy_rejects_resource_category_and_budget_drift(self):
+        policy, _, _ = self.three_player_plan()
+        for key, value in (('requires', None), ('requires', 'two_emulators'), ('category', 'network'),
+                           ('lane', 'android-single'), ('estimated_seconds', 901)):
+            bad = copy.deepcopy(policy)
+            next(e for e in bad['suites'] if e['id'] in sweep.THREE_PLAYER_IDS)[key] = value
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                sweep.policy_entries(bad)
+
+    def test_three_player_public_lane_defers_retail_without_losing_or_starving_it(self):
+        full_policy, campaign, _ = self.three_player_plan()
+        public = campaign['tests'][0]
+        retail = next(e for e in full_policy['suites'] if e['id'] == 'master:test_lan')
+        host = {'id': 'master:retail-host', 'owner': 'master', 'lane': 'host',
+                'args': {'suite': 'retail-host'}, 'estimated_seconds': 100, 'fixture': 'retail-base'}
+        policy = {'schema': 1, 'suites': [public, retail, host], 'exclusions': []}
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        observed_groups = set()
+        with patch.object(sweep.retail, 'validate_identity'):
+            for number in range(32):
+                sha = f'{number:040x}'
+                plan, state = sweep.plan_batch(sha, catalog, policy, retail_assets={'pinned-test-fixture': True})
+                selected = {e['id'] for e in plan['tests']}
+                self.assertIn(host['id'], selected)
+                self.assertEqual(len(selected & {public['id'], retail['id']}), 1)
+                self.assertEqual(plan['exclusions'], [])
+                self.assertEqual(state['excluded'], {})
+                self.assertEqual(plan['estimated_seconds'], 1000)
+                self.assertEqual(plan['lanes'], ['host', 'android-dual'])
+                sweep.validate_plan(plan, policy)
+                observed_groups.update(selected)
+                completed = next(ident for ident in selected if ident != host['id'])
+                deferred = retail['id'] if completed == public['id'] else public['id']
+                # A completed group yields the lane to pending work in the next batch
+                next_state = copy.deepcopy(state)
+                next_state['records'][completed] = {'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/1'}
+                next_plan, _ = sweep.plan_batch(sha, catalog, policy, next_state, retail_assets={'pinned-test-fixture': True})
+                self.assertIn(deferred, {e['id'] for e in next_plan['tests']})
+                # A setup-blocked group also yields to untried work rather than starving it
+                next_state = copy.deepcopy(state)
+                next_state['retryable'][completed] = {'attempts': 1}
+                next_plan, _ = sweep.plan_batch(sha, catalog, policy, next_state, retail_assets={'pinned-test-fixture': True})
+                self.assertIn(deferred, {e['id'] for e in next_plan['tests']})
+            self.assertEqual(observed_groups, {public['id'], retail['id'], host['id']})
+            ordinary = {**policy, 'suites': [retail, host]}
+            plan, _ = sweep.plan_batch(SHA, catalog, ordinary, retail_assets={'pinned-test-fixture': True})
+            self.assertEqual({e['id'] for e in plan['tests']}, {retail['id'], host['id']})
+            mixed = copy.deepcopy(plan)
+            mixed['tests'].append(public)
+            with self.assertRaisesRegex(ValueError, 'asset-free lane'):
+                sweep.validate_plan(mixed, policy)
+
+    def test_three_player_campaign_is_exact_and_resets_prior_progress(self):
+        policy, plan, state = self.three_player_plan()
+        catalog = {'schema': 1, 'tests': [{'name': 'test_lan_three_player_startup'}]}
+        with self.assertRaisesRegex(ValueError, 'absent'):
+            sweep.select_public_campaign(plan, policy, {'tests': []}, 'lan-three-player')
+        bad = copy.deepcopy(policy)
+        next(e for e in bad['suites'] if e['id'] in sweep.THREE_PLAYER_IDS)['fixture'] = 'retail-base'
+        with self.assertRaisesRegex(ValueError, 'asset-free'):
+            sweep.select_public_campaign(plan, bad, catalog, 'lan-three-player')
+        state['records'] = {ident: {'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/1'}
+                            for ident in sweep.THREE_PLAYER_IDS}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, value in (('policy', policy), ('catalog', catalog), ('previous', state)):
+                sweep.write(root / name, value)
+            common = ['sweep', 'plan', '--target-sha', SHA, '--catalog', str(root / 'catalog'),
+                      '--policy', str(root / 'policy'), '--state', str(root / 'previous'),
+                      '--output', str(root / 'plan'), '--state-output', str(root / 'state')]
+            with patch.object(sys, 'argv', common + ['--campaign', 'lan-three-player']), patch('builtins.print'), patch.object(sweep.retail, 'configured_identity', return_value=None):
+                self.assertEqual(sweep.main(), 0)
+            self.assertEqual({e['id'] for e in sweep.read(root / 'plan')['tests']}, sweep.THREE_PLAYER_IDS)
+            self.assertEqual(sweep.read(root / 'state')['records'], {})
+            with patch.object(sys, 'argv', common + ['--validation']), patch('builtins.print'), patch.object(sweep.retail, 'configured_identity', return_value=None):
+                self.assertEqual(sweep.main(), 0)
+            self.assertFalse(sweep.THREE_PLAYER_IDS & {e['id'] for e in sweep.read(root / 'plan')['tests']})
+
+    def run_three_player_control(self, summary, journal_status='PASS', exit_code=0, stale=False):
+        policy, plan, state = self.three_player_plan()
+        with tempfile.TemporaryDirectory() as directory:
+            # Match the executor's canonical root, including Windows short-name temp paths
+            root = Path(directory).resolve()
+            output = root / 'out'
+            source = root / 'android/temp/lan-three-player-startup/three-player-summary.json'
+            destination = output / 'three-player/three-player-summary.json'
+            if stale:
+                sweep.write(source, self.three_player_summary())
+                sweep.write(destination, self.three_player_summary())
+            def run(command, *args, **kwargs):
+                self.assertFalse(source.exists())
+                self.assertFalse(destination.exists())
+                self.assertEqual(command[:4], ['pwsh', '-NoProfile', '-File', str(root / 'android/run_all_tests.ps1')])
+                self.assertEqual(sweep.read(command[command.index('-SelectedTestsPath') + 1]), ['test_lan_three_player_startup'])
+                self.assertEqual(command[command.index('-TestBudgetSeconds') + 1], '900')
+                self.assertIn('-FullSuite', command)
+                self.assertIn('-ExtendedMultiplayer', command)
+                self.assertNotIn('-HostOnly', command)
+                self.assertNotIn('run_parallel_startup_checks.ps1', ' '.join(command))
+                if summary is not None:
+                    sweep.write(source, summary)
+                if journal_status is not None:
+                    (output / 'journal.jsonl').write_text(json.dumps({'name': 'test_lan_three_player_startup',
+                        'commit': SHA, 'status': journal_status, 'attempted_tests': True, 'phase': 'tests'}) + '\n')
+                return subprocess.CompletedProcess(command, exit_code)
+            with patch.object(sweep.subprocess, 'check_output', return_value=SHA), patch.object(sweep, 'run_command', side_effect=run):
+                execution = sweep.execute(plan, policy, 'android-dual', root, output)
+            receipt = sweep.collect(plan, policy, 'android-dual', output)
+            reconciled = sweep.reconcile(plan, policy, state, [receipt])
+            for name, value in (('plan', plan), ('policy', policy), ('state', state)):
+                sweep.write(output / name, value)
+            argv = ['sweep', 'reconcile', '--require-selected', '--plan', str(output / 'plan'),
+                    '--policy', str(output / 'policy'), '--state', str(output / 'state'),
+                    '--output', str(output / 'final'), '--receipts', str(output / 'results.json')]
+            with patch.object(sys, 'argv', argv), patch('builtins.print'):
+                result = sweep.main()
+            return execution, receipt, reconciled, result
+
+    def test_three_player_normal_entrypoint_requires_current_four_case_evidence(self):
+        execution, receipt, state, result = self.run_three_player_control(self.three_player_summary(), stale=True)
+        self.assertFalse(execution['runner_failed'])
+        self.assertEqual(receipt['results'][0]['status'], 'PASS')
+        self.assertEqual({case['id'] for case in receipt['results'][0]['cases']}, sweep.THREE_PLAYER_CASES)
+        self.assertEqual(state['records']['master:test_lan_three_player_startup']['case_counts']['PASS'], 4)
+        self.assertEqual(result, 0)
+
+    def test_three_player_missing_skipped_partial_or_stale_evidence_never_passes(self):
+        for status in (None, 'SKIP', 'NOT_RUN', 'BLOCKED', 'FAIL'):
+            with self.subTest(journal_status=status):
+                _, _, _, result = self.run_three_player_control(self.three_player_summary(), journal_status=status)
+                self.assertEqual(result, 1)
+        for change in ('missing', 'wrong-revision', 'wrong-owner', 'wrong-category', 'missing-case', 'skip-case',
+                       'duplicate-case', 'not-complete', 'not-passed', 'failed-case'):
+            summary = self.three_player_summary()
+            if change == 'missing':
+                summary = None
+            elif change.startswith('wrong-'):
+                summary[change.removeprefix('wrong-')] = 'wrong'
+            elif change == 'missing-case':
+                summary['results'].pop()
+            elif change == 'skip-case':
+                summary['results'][0]['status'] = 'SKIP'
+            elif change == 'duplicate-case':
+                summary['results'][0] = summary['results'][1]
+            elif change == 'not-complete':
+                summary['coverage_complete'] = False
+            elif change == 'not-passed':
+                summary['passed'] = False
+            elif change == 'failed-case':
+                summary['results'][0]['status'] = 'FAIL'
+            with self.subTest(change=change):
+                _, receipt, _, result = self.run_three_player_control(summary, stale=True)
+                self.assertEqual(receipt['results'][0]['status'], 'FAIL')
+                self.assertEqual(result, 1)
+        _, receipt, _, result = self.run_three_player_control(self.three_player_summary(), exit_code=17)
+        self.assertEqual(receipt['results'][0]['status'], 'FAIL')
+        self.assertEqual(result, 1)
+
+    def test_three_player_reconcile_independently_requires_complete_named_leaves(self):
+        policy, plan, state = self.three_player_plan()
+        receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
+        receipt.update(lane='android-dual', results=[{'id': 'master:test_lan_three_player_startup',
+            'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/2'}])
+        self.assertEqual(sweep.selected_without_pass(plan, sweep.reconcile(plan, policy, state, [receipt])),
+                         ['master:test_lan_three_player_startup'])
+        receipt['results'][0].update(cases=self.three_player_summary()['results'], coverage_complete=True)
+        self.assertEqual(sweep.selected_without_pass(plan, sweep.reconcile(plan, policy, state, [receipt])), [])
+
+    def test_three_player_workflow_binding_preserves_light_pr_and_independent_label_run(self):
+        root = Path(__file__).parents[2]
+        public = (root / '.github/workflows/public-lan-smoke.yml').read_text()
+        self.assertIn('types: [opened, synchronize, reopened, labeled]', public)
+        self.assertIn('options: [lan-smoke, lan-three-player]', public)
+        self.assertIn('default: lan-smoke', public)
+        self.assertIn("github.event.action == 'labeled' && github.event.label.name == 'test-three-player-network'", public)
+        concurrency = public.split('concurrency:', 1)[1].split('jobs:', 1)[0]
+        self.assertIn("'lan-three-player' || 'ignored-label') || inputs.campaign || 'lan-smoke'", concurrency)
+        self.assertIn("'Require three-player LAN pass' || 'Require public LAN pass'", public)
+        # Label-only runs, even failed/skipped plans, cannot replace the ordinary PR check
+        self.assertIn("name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Require three-player LAN pass'", public)
+        self.assertIn('--campaign "$CAMPAIGN"', public)
+        self.assertIn("'lan-three-player': ['master:test_lan_three_player_startup']", public)
+        self.assertIn('--require-selected --receipts', public)
+        self.assertIn("assert p['target_sha'] == os.environ['TARGET_SHA']", public)
+        self.assertIn("needs.plan.outputs.campaign != 'lan-three-player' && inputs.recovery_checks == true", public)
+        self.assertIn("ref: ${{ github.event.pull_request.head.sha || github.sha }}", public)
+        android = (root / '.github/workflows/android-nightly-tooling.yml').read_text()
+        for requirement in ('public_fixtures', 'three_emulators'):
+            expression = next(line.split(':', 1)[1].strip().rstrip(',') for line in android.splitlines()
+                              if "'" + requirement + "':" in line)
+            _, plan, _ = self.three_player_plan()
+            self.assertTrue(eval(expression, {'selected': plan['tests']}))
+            self.assertFalse(eval(expression, {'selected': []}))
+        self.assertIn("validate_plan(plan, json.load(open('control/android/tests/nightly_tooling_policy.json')))", android)
+        self.assertIn("if plan['target_sha'] != os.environ['TARGET_SHA']:", android)
+        boot = android.split('      - name: Prepare isolated headless emulators', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('DXX_SELECTED_THREE_EMULATORS: ${{ steps.selection.outputs.three_emulators }}', boot)
+        self.assertIn("$env:DXX_SELECTED_THREE_EMULATORS -eq 'true' -or $experimentalThird", boot)
+        self.assertEqual(boot.count("Name = 'Nexus5X_Light_3'"), 1)
+        self.assertIn('DXX_THIRD_EMULATOR_SERIAL=emulator-5558', boot)
+        self.assertIn('$avds.Count', boot)
+        self.assertIn("pathlib.Path('results/three-player')", android)
+        nightly = (root / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        self.assertIn('  schedule:', nightly)
+        self.assertIn('default: nightly', nightly)
+        self.assertIn('validation=()', nightly)
 
     def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
@@ -960,11 +846,7 @@ class SweepTests(unittest.TestCase):
                     receipt.update(
                         lane=entry["lane"],
                         results=[
-                            {
-                                "id": entry["id"],
-                                "status": "PASS",
-                                "run_url": "https://github.com/o/r/actions/runs/2",
-                            }
+                            {"id": entry["id"], "status": "PASS", "run_url": "https://github.com/o/r/actions/runs/2"}
                         ],
                     )
                     sweep.write(root / relative, receipt)
@@ -1194,11 +1076,7 @@ class SweepTests(unittest.TestCase):
                 if p.is_file()
             }
             self.assertEqual(
-                files,
-                {
-                    "public-graphics-lifecycle-d2/manifest.json",
-                    "public-graphics-lifecycle-d2/logcat-crash.txt",
-                },
+                files, {"public-graphics-lifecycle-d2/manifest.json", "public-graphics-lifecycle-d2/logcat-crash.txt"}
             )
 
     def test_graphics_failure_snapshot_precedes_cleanup_without_changing_oracle(self):
@@ -1308,8 +1186,7 @@ class SweepTests(unittest.TestCase):
         state = sweep.reconcile(self.plan, self.policy, self.state, [self.receipt("FAIL")])
         self.assertEqual(state["records"]["master:first"]["status"], "FAIL")
         self.assertNotIn(
-            "master:first",
-            [e["id"] for e in sweep.plan_batch(SHA, self.catalog, self.policy, state)[0]["tests"]],
+            "master:first", [e["id"] for e in sweep.plan_batch(SHA, self.catalog, self.policy, state)[0]["tests"]]
         )
 
     def test_test_timeout_is_failed_attempt_not_success(self):
@@ -1321,8 +1198,7 @@ class SweepTests(unittest.TestCase):
         self.assertNotIn("master:first", state["records"])
         self.assertEqual(state["retryable"]["master:first"]["attempts"], 1)
         self.assertIn(
-            "master:first",
-            [e["id"] for e in sweep.plan_batch(SHA, self.catalog, self.policy, state)[0]["tests"]],
+            "master:first", [e["id"] for e in sweep.plan_batch(SHA, self.catalog, self.policy, state)[0]["tests"]]
         )
         self.assertEqual(sweep.reconcile(self.plan, self.policy, state, [self.receipt("BLOCKED")]), state)
 
@@ -1545,10 +1421,10 @@ class SweepTests(unittest.TestCase):
             )
             rows = sweep.collect(self.plan, self.policy, "host", directory)["results"]
             self.assertEqual([(r["status"], r["exit_code"]) for r in rows], [("PASS", 0), ("FAIL", 7)])
-            with patch.object(sweep.retail, "master_failure_diagnostics", side_effect=OSError("private path")):
-                failed_read = sweep.collect(self.plan, self.policy, "host", directory)["results"]
-            self.assertEqual([(r["status"], r["exit_code"]) for r in failed_read], [("PASS", 0), ("FAIL", 7)])
-            self.assertNotIn("private path", str(failed_read))
+            with patch.object(sweep.retail, 'master_failure_diagnostics', side_effect=OSError('private path')):
+                failed_read = sweep.collect(self.plan, self.policy, 'host', directory)['results']
+            self.assertEqual([(r['status'], r['exit_code']) for r in failed_read], [('PASS', 0), ('FAIL', 7)])
+            self.assertNotIn('private path', str(failed_read))
 
     def test_nonzero_master_exit_fails_lane_even_without_test_failures(self):
         argv = [
@@ -1761,15 +1637,7 @@ class SweepTests(unittest.TestCase):
 
     def test_attempt_must_match_batch_lane_and_github_run(self):
         with tempfile.TemporaryDirectory() as d:
-            for key in (
-                "target_sha",
-                "catalog_hash",
-                "batch_id",
-                "lane",
-                "run_id",
-                "run_attempt",
-                "repository",
-            ):
+            for key in ("target_sha", "catalog_hash", "batch_id", "lane", "run_id", "run_attempt", "repository"):
                 with self.subTest(key=key):
                     self.attempt(d)
                     attempt = sweep.read(Path(d, "attempt.json"))
@@ -1810,8 +1678,7 @@ class SweepTests(unittest.TestCase):
         self.assertEqual(state["records"], {})
         self.assertIn("master:first", state["excluded"])
         self.assertNotIn(
-            "master:first",
-            [e["id"] for e in sweep.plan_batch(SHA, self.catalog, self.policy, state)[0]["tests"]],
+            "master:first", [e["id"] for e in sweep.plan_batch(SHA, self.catalog, self.policy, state)[0]["tests"]]
         )
 
     def test_large_leaf_tracebacks_stay_out_of_permanent_ledger(self):
@@ -1848,14 +1715,14 @@ class SweepTests(unittest.TestCase):
                 sweep.run_command([sys.executable, "-c", "import time; time.sleep(60)"], d, log, timeout=0.1)
 
     def test_host_metadata_cli_bootstraps_before_private_inputs(self):
-        workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
-        host = workflow[workflow.index("  host:") : workflow.index("  android:")]
-        prerequisites = host.split("      - name: Install host prerequisites", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("timeout-minutes: 15", prerequisites)
-        self.assertIn("    timeout-minutes: 100", host.split("    steps:", 1)[0])
-        execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("timeout-minutes: 65", execution)
-        setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        host = workflow[workflow.index('  host:'):workflow.index('  android:')]
+        prerequisites = host.split('      - name: Install host prerequisites', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('timeout-minutes: 15', prerequisites)
+        self.assertIn('    timeout-minutes: 100', host.split('    steps:', 1)[0])
+        execution = host.split('      - name: Execute admitted host owners', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('timeout-minutes: 65', execution)
+        setup = host.split('      - name: Prepare asset-free metadata CLI', 1)[1].split('      - name:', 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
         self.assertIn("e.get('fixture') == 'retail-corpus'", setup)
@@ -1870,12 +1737,10 @@ class SweepTests(unittest.TestCase):
         )
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Prepare asset-free metadata CLI"))
         self.assertLess(
-            host.index("Prepare asset-free metadata CLI"),
-            host.index("Verify trusted retail checkout boundary"),
+            host.index("Prepare asset-free metadata CLI"), host.index("Verify trusted retail checkout boundary")
         )
         self.assertLess(
-            host.index("Prepare asset-free metadata CLI"),
-            host.index("Check out immutable private retail inputs"),
+            host.index("Prepare asset-free metadata CLI"), host.index("Check out immutable private retail inputs")
         )
         self.assertNotIn("secrets.", setup)
         self.assertIn("steps.metadata_cli_prerequisites.outcome == 'failure'", host)
@@ -1892,8 +1757,7 @@ class SweepTests(unittest.TestCase):
         self.assertIn("Recover completed receipts", workflow)
         self.assertEqual(workflow.count("> target/dependency_base.txt"), 2)
         self.assertLess(
-            workflow.index("> target/dependency_base.txt"),
-            workflow.index("Export authoritative master catalog"),
+            workflow.index("> target/dependency_base.txt"), workflow.index("Export authoritative master catalog")
         )
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Execute admitted host owners"))

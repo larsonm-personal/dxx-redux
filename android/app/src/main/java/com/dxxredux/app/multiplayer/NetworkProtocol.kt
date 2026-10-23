@@ -22,6 +22,7 @@ data class AuthenticateMsg(
     @SerialName("protocol_version") val protocolVersion: Int = NetworkConstants.PROTOCOL_VERSION,
     @SerialName("client_version") val clientVersion: String = NetworkConstants.CLIENT_VERSION,
     @SerialName("play_games_token") val playGamesToken: String? = null,
+    @SerialName("session_credential") val sessionCredential: String? = null,
     val callsign: String,
     val platform: String = NetworkConstants.PLATFORM,
     @SerialName("auth_method") val authMethod: String = "gpgs",
@@ -154,10 +155,27 @@ data class JoinFriendGameMsg(
 // -- Client -> Server: NAT traversal messages --
 
 @Serializable
+data class GatherCandidatesMsg(
+    val type: String = "GATHER_CANDIDATES",
+    @SerialName("lobby_id") val lobbyId: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("request_id") val requestId: String,
+)
+
+@Serializable
+data class CandidateChallengeMsg(
+    @SerialName("lobby_id") val lobbyId: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("request_id") val requestId: String,
+    @SerialName("attempt_id") val attemptId: String,
+    val credential: String,
+)
+
+@Serializable
 data class StunResultMsg(
     val type: String = "STUN_RESULT",
-    val candidates: List<ConnectionCandidate>,
-    @SerialName("nat_type") val natType: String,
+    @SerialName("attempt_id") val attemptId: String,
+    val receipts: List<String>,
 )
 
 @Serializable
@@ -247,6 +265,7 @@ data class LobbyPlayerInfo(
     @SerialName("player_id") val playerId: String,
     val callsign: String,
     val ready: Boolean,
+    @SerialName("candidate_admission_id") val candidateAdmissionId: String,
     @SerialName("ping_ms") val pingMs: Int? = null,
     @SerialName("connection_type") val connectionType: String = "unknown",
     @SerialName("mission_status") val missionStatus: MissionStatusReport? = null,
@@ -293,6 +312,45 @@ class RelayCredentialsMsg(
     @SerialName("own_slot") val ownSlot: Int,
     @SerialName("send_key") val sendKey: String,
     @SerialName("receive_key") val receiveKey: String,
+    @SerialName("allocation_epoch") val allocationEpoch: String? = null,
+)
+
+data class RelayRekeyScope(
+    val lobbyId: String,
+    val gameEpoch: String,
+    val oldToken: Long,
+    val oldEpoch: String,
+    val newToken: Long,
+    val newEpoch: String,
+    val peerId: String,
+    val peerSlot: Int,
+)
+
+@Serializable
+class RelayRekeyMsg(
+    @SerialName("lobby_id") val lobbyId: String,
+    @SerialName("game_epoch") val gameEpoch: String,
+    @SerialName("old_token") val oldToken: Long,
+    @SerialName("old_epoch") val oldEpoch: String,
+    @SerialName("new_token") val newToken: Long,
+    @SerialName("new_epoch") val newEpoch: String,
+    @SerialName("peer_id") val peerId: String,
+    @SerialName("peer_slot") val peerSlot: Int,
+    val credentials: RelayCredentialsMsg? = null,
+    @SerialName("ready_timeout_ms") val readyTimeoutMs: Long = 0,
+    @SerialName("retire_after_ms") val retireAfterMs: Long = 0,
+) {
+    fun scope() = RelayRekeyScope(lobbyId, gameEpoch, oldToken, oldEpoch, newToken, newEpoch, peerId, peerSlot)
+}
+
+@Serializable
+class RelayRekeyReadyMsg(
+    @SerialName("lobby_id") val lobbyId: String,
+    @SerialName("game_epoch") val gameEpoch: String,
+    @SerialName("old_token") val oldToken: Long,
+    @SerialName("new_token") val newToken: Long,
+    @SerialName("new_epoch") val newEpoch: String,
+    val type: String = "RELAY_REKEY_READY",
 )
 
 @Serializable
@@ -447,6 +505,7 @@ data class MaintenanceWarningMsg(
 @Serializable
 data class LateJoinProbeMsg(
     @SerialName("joiner_id") val joinerId: String,
+    @SerialName("admission_id") val admissionId: String,
     @SerialName("joiner_callsign") val joinerCallsign: String,
     @SerialName("probe_addrs") val probeAddrs: List<String>,
 )
@@ -459,6 +518,10 @@ data class LateJoinApprovedMsg(
 
 // Sealed class representing any server message, dispatched by "type" field
 sealed class ServerMessage {
+    data class CandidateChallengeReceived(
+        val data: CandidateChallengeMsg,
+    ) : ServerMessage()
+
     data class AuthOkMsg(
         val data: AuthOk,
     ) : ServerMessage()
@@ -529,6 +592,11 @@ sealed class ServerMessage {
 
     data class RelayAssignedReceived(
         val data: RelayAssignedMsg,
+    ) : ServerMessage()
+
+    class RelayRekeyReceived(
+        val type: String,
+        val data: RelayRekeyMsg,
     ) : ServerMessage()
 
     data class MaintenanceReceived(
@@ -655,6 +723,10 @@ sealed class ServerMessage {
                     RelayAssignedReceived(protocolJson.decodeFromString<RelayAssignedMsg>(text))
                 }
 
+                "RELAY_REKEY_OFFER", "RELAY_REKEY_COMMIT", "RELAY_REKEY_ABORT" -> {
+                    RelayRekeyReceived(type, protocolJson.decodeFromString<RelayRekeyMsg>(text))
+                }
+
                 "MAINTENANCE" -> {
                     MaintenanceReceived(protocolJson.decodeFromString<MaintenanceMsg>(text))
                 }
@@ -693,6 +765,10 @@ sealed class ServerMessage {
                     JoinFriendGameResponse(
                         protocolJson.decodeFromString<JoinFriendGameRespMsg>(text),
                     )
+                }
+
+                "CANDIDATE_CHALLENGE" -> {
+                    CandidateChallengeReceived(protocolJson.decodeFromString<CandidateChallengeMsg>(text))
                 }
 
                 "LATE_JOIN_PROBE" -> {

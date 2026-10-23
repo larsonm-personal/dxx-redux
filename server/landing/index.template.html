@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="dark" />
+        <meta name="referrer" content="no-referrer" />
+        <title>{{TITLE}}</title>
+        <style>
+            :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #111318; color: #e8eaf0; }
+            body { margin: 0; line-height: 1.65; }
+            main { max-width: 38rem; margin: 0 auto; padding: clamp(2rem, 8vw, 5rem) 1.5rem; }
+            h1 { font-size: clamp(2rem, 6vw, 2.8rem); line-height: 1.2; letter-spacing: -0.035em; margin: 0 0 1rem; }
+            h2 { font-size: 1.25rem; margin: 0 0 1.5rem; }
+            a { color: #9ac8ff; text-underline-offset: 0.22em; }
+            a:hover { color: #c8e1ff; }
+            a:focus-visible { outline: 2px solid #9ac8ff; outline-offset: 5px; border-radius: 2px; }
+            section { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #30343f; }
+            ol { padding-left: 1.5rem; margin: 0; }
+            li { padding-left: 0.5rem; margin-bottom: 1.75rem; }
+            li::marker { color: #9ca5b7; font-weight: 600; }
+            p { color: #b6bdca; margin: 0.5rem 0 0; }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>{{TITLE}}</h1>
+            <a href="{{GITHUB_URL}}">View on GitHub</a>
+            <section aria-labelledby="testing">
+                <h2 id="testing">Test the Android app</h2>
+                <ol>
+                    <li>
+                        <a href="{{GROUP_URL}}">Join the testers group</a>
+                        <p
+                            >Open the group while signed in to your Google account. You'll see "Join group" at the
+                            top.</p
+                        >
+                    </li>
+                    <li>
+                        <a href="{{TESTING_URL}}">Join testing on Google Play</a>
+                        <p>Join the Google group first, then open this link using the same Google account.</p>
+                    </li>
+                </ol>
+            </section>
+        </main>
+    </body>
+</html>

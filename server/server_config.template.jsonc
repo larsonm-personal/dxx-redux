@@ -3,7 +3,7 @@
 // All fields are optional -- defaults are shown below.
 // Environment variables override values in this file.
 {
-    // Exact client-visible scheme://host:port; empty disables installation auth
+    // Loopback dev installation proof audience; ignored for production authentication
     // Example shape only: "https://your-owned-hostname:443"
     // installation_auth_audience: "",
     // Exact trusted proxy peers; empty for direct/native TLS deployments
@@ -16,9 +16,12 @@
     // max_connections: 500,
     // Database
     // db_path: "dxx_matchmaking.db",
-    // Google Play Games Services (GPGS) OAuth2
+    // Google ID-token audience for ordinary Sign in with Google (no client secret needed)
     // google_client_id: "",
-    // google_client_secret: "",
+    // Public HTTPS origin for the Google ID-token login endpoints on the WS listener
+    // Empty disables the new endpoints during the coordinated client/server transition
+    // Set GOOGLE_AUTH_ORIGIN or this field to https://your-owned-hostname:443
+    // google_auth_origin: "",
     // Admin bearer token for /api/v1/admin/* endpoints
     // admin_token: "",
     // Optional separate listen address for admin-only HTTP endpoints.
@@ -37,7 +40,12 @@
     // relay_public_addr: "",
     // Maximum concurrent relay sessions (0 = unlimited, default 100)
     // max_relay_sessions: 100,
+    // Egress policy defaults are documented in RELAY_SECURITY.md
+    // Identity quotas observe initially; the durable monthly cap always enforces
+    // RELAY_POLICY_JSON overrides this entire object, with defaults for omitted fields
+    // relay_policy: {},
     // STUN server listeners (for self-hosted NAT discovery)
+    // Protocol 8 requires lobby admission credentials; this is not a public STUN/TURN service
     // stun_listen_addr: "0.0.0.0:3478",
     // stun_listen_addr_alt: "0.0.0.0:3479",
     // stun_public_addrs: "",   // e.g. "match.example.com:3478,match.example.com:3479"
@@ -46,7 +54,7 @@
     // Dev/test mode
     // Force game connections through the UDP relay, ignoring connectivity checks
     // force_relay: false,
-    // skip_gpgs_verify: false, // true = accept any token as identity (dev only!)
-    // Proof-of-work difficulty (leading zero bits for keypair registration)
+    // skip_gpgs_verify: false, // legacy setting name: true enables loopback dev auth only
+    // Proof-of-work difficulty for loopback dev installation/keypair registration
     // pow_difficulty: 20,
 }

@@ -38,10 +38,7 @@ PUBLIC_ONLINE_D2_IDS = {"master:test_mp_public_shareware_d2"}
 PUBLIC_LAN_IDS = {"master:test_lan_launch_preparation_public_shareware"}
 THREE_PLAYER_IDS = {"master:test_lan_three_player_startup"}
 THREE_PLAYER_CASES = {"d1/three-player", "d1/three-player-lost", "d2/three-player", "d2/three-player-lost"}
-BASIC_USE_IDS = {
-    "master:test_demo_import_public_basic_use",
-    "master:test_lan_launch_preparation_public_shareware",
-}
+BASIC_USE_IDS = {"master:test_demo_import_public_basic_use", "master:test_lan_launch_preparation_public_shareware"}
 
 FIRST_PLAY_IDS = {
     "master:test_demo_import_public_first_play",
@@ -99,11 +96,7 @@ def policy_entries(policy):
         ident = entry.get("id")
         if not isinstance(ident, str) or not re.fullmatch(r"[A-Za-z0-9_.:#-]{1,160}", ident) or ident in entries:
             raise ValueError("Invalid/duplicate suite ID")
-        if entry.get("lane") not in LANES or entry.get("owner") not in (
-            "master",
-            "host-adapter",
-            "shareware",
-        ):
+        if entry.get("lane") not in LANES or entry.get("owner") not in ("master", "host-adapter", "shareware"):
             raise ValueError("Unknown lane/owner")
         if type(entry.get("estimated_seconds")) is not int or not 1 <= entry["estimated_seconds"] <= 2700:
             raise ValueError("Estimate outside nightly budget")
@@ -119,13 +112,7 @@ def policy_entries(policy):
             entry["args"]["game"] not in ("d1", "d2") or entry["lane"] != "android-single"
         ):
             raise ValueError("Invalid public gameplay lane/game")
-        if entry.get("fixture") not in (
-            None,
-            "retail-base",
-            "retail-missions",
-            "retail-demos",
-            "retail-corpus",
-        ):
+        if entry.get("fixture") not in (None, "retail-base", "retail-missions", "retail-demos", "retail-corpus"):
             raise ValueError("Unknown fixture requirement")
         if entry.get("requires") not in (None, "three_emulators"):
             raise ValueError("Unknown explicit resource requirement")
@@ -221,15 +208,15 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     # Untried work precedes repeatedly blocked setup, so one lane cannot starve the rest.
     rings = {}
     for ident, entry in entries.items():
+        # Preview campaigns are explicit opt-ins; preserve the scheduled LAN budget
+        if ident in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS:
+            continue
         if ident in state["records"] or ident in state.get("excluded", {}):
             continue
         rings.setdefault((entry["lane"], owner_category(entry)), []).append((ident, entry))
     for ring in rings.values():
         ring.sort(
-            key=lambda item: (
-                state.get("retryable", {}).get(item[0], {}).get("attempts", 0),
-                digest([sha, item[0]]),
-            )
+            key=lambda item: (state.get("retryable", {}).get(item[0], {}).get("attempts", 0), digest([sha, item[0]]))
         )
     # Interleave existing owner families just like the runtime sampler's grouped rings.
     # A selection never changes progress; only reconciled execution receipts retire work.
@@ -302,9 +289,9 @@ def select_public_campaign(plan, policy, catalog, campaign):
         "graphics-capabilities": GRAPHICS_CAPABILITIES_IDS,
         "basic-use": BASIC_USE_IDS,
         "lan-smoke": PUBLIC_LAN_IDS,
-        "lan-three-player": THREE_PLAYER_IDS,
         "online-preview": PUBLIC_ONLINE_IDS,
         "online-preview-d2": PUBLIC_ONLINE_D2_IDS,
+        "lan-three-player": THREE_PLAYER_IDS,
     }[campaign]
     entries = policy_entries(policy)
     if not campaign_ids <= entries.keys():
@@ -360,12 +347,9 @@ def validate_plan(plan, policy):
         ident = entry.get("id")
         if ident in seen or entries.get(ident) != entry:
             raise ValueError("Unapproved or duplicate plan entry")
-        if entry.get("fixture") in (
-            "retail-base",
-            "retail-missions",
-            "retail-demos",
-            "retail-corpus",
-        ) and not plan.get("retail_assets"):
+        if entry.get("fixture") in ("retail-base", "retail-missions", "retail-demos", "retail-corpus") and not plan.get(
+            "retail_assets"
+        ):
             raise ValueError("Retail selection lacks pinned data identity")
         if entry.get("fixture") == "retail-demos" and not retail.demos_available(plan.get("retail_assets")):
             raise ValueError("Private demo selection lacks reviewed commit")
@@ -439,9 +423,7 @@ def three_player_result(row, output, sha):
     except (OSError, ValueError, TypeError) as error:
         if row.get("status") == "PASS":
             row.update(
-                status="FAIL",
-                reason="Missing or invalid three-player evidence: " + str(error),
-                coverage_complete=False,
+                status="FAIL", reason="Missing or invalid three-player evidence: " + str(error), coverage_complete=False
             )
     return row
 
@@ -768,13 +750,7 @@ def execute(plan, policy, lane, repo, output):
     output.mkdir(parents=True, exist_ok=True)
     selected = [e for e in plan["tests"] if e["lane"] == lane]
     # Only receipts produced after this attempt begins may be collected
-    for name in (
-        "attempt.json",
-        "journal.jsonl",
-        "master-process.json",
-        "results.json",
-        "execution-progress.json",
-    ):
+    for name in ("attempt.json", "journal.jsonl", "master-process.json", "results.json", "execution-progress.json"):
         (output / name).unlink(missing_ok=True)
     for entry in selected:
         if entry["owner"] != "master":
@@ -961,11 +937,7 @@ def execute(plan, policy, lane, repo, output):
         receipt["runner_failed"] = receipt.get("runner_failed", False) or process.returncode != 0
         if destination.exists():
             row = read(destination)
-            if row.get("suite") != entry["args"]["suite"] or row.get("status") not in (
-                "PASS",
-                "FAIL",
-                "BLOCKED",
-            ):
+            if row.get("suite") != entry["args"]["suite"] or row.get("status") not in ("PASS", "FAIL", "BLOCKED"):
                 raise ValueError("Invalid adapter result")
             if row["status"] == "PASS" and process.returncode != 0:
                 row.update(status="FAIL", reason=f"Owner process exited {process.returncode} despite PASS receipt")
@@ -1071,9 +1043,9 @@ def main():
             "graphics-capabilities",
             "basic-use",
             "lan-smoke",
-            "lan-three-player",
             "online-preview",
             "online-preview-d2",
+            "lan-three-player",
         ),
     )
     p.add_argument("--omit-pr-public-lan", action="store_true")

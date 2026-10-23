@@ -65,6 +65,8 @@ and country availability. Under Testing > Closed testing > Alpha, configure the
 tester email list or Google Group and retain the opt-in link for testers. Keep
 `play-store-credentials.json`, `keystore.properties` and the upload keystore private.
 
+See [Local credentials](CREDENTIALS.md) for the short signing and OAuth setup checklist.
+
 After upload, check Publishing overview and the Alpha release. The script requests
 a completed release; Google review or managed publishing may still delay tester
 availability. If Google requires `changesNotSentForReview`, the script reports that
@@ -179,16 +181,73 @@ short D1/D2 gameplay/automap check after setting the package/device variables.
 - https://support.google.com/googleplay/android-developer/answer/6112435
 - note on programmatic auth https://stackoverflow.com/questions/76541480/how-does-fully-create-an-internal-release-on-google-play-console-via-api
 
-## gpgs
+## Google matchmaking identity and optional Play Games
 
-- https://developer.android.com/games/pgs/start
+Production online matchmaking requires ordinary Sign in with Google, not a Play
+Games profile. Interactive login follows an explicit Connect/online-resume action;
+automatic reconnect uses an origin-scoped server session and never opens sign-in UI.
+Play and GitHub builds support Google sign-in; CI builds remain provider-free and LAN-only.
+Installation keys and
+proof-of-work are retained only for debug clients connecting to literal loopback
+addresses or the Android emulator host alias, with development authentication
+explicitly enabled on the loopback server. They cannot authenticate to production.
 
-1. Create a Play Games project in Google Play Console
-2. Configure OAuth consent screen
-3. Generate OAuth 2.0 client IDs:
-   - Android client ID (linked to app signing key SHA-1)
-   - Web/server client ID (for server-side token exchange)
-4. Add the Games project to the app's Play Console listing
+Set `matchmaking_google_client_id` in the ignored `auth_config.jsonc` to a web
+OAuth client ID. Register Android OAuth clients for the application ID and actual
+signing certificate (including Play app signing, debug and supported distribution
+signatures as appropriate). Set the same audience as `GOOGLE_CLIENT_ID` on the server,
+and set `GOOGLE_AUTH_ORIGIN` to its public HTTPS origin. The reverse proxy must route
+both `/ws` and `/api/v1/auth/*` to the WebSocket listener. Do not forward credentials
+through redirects or deploy a mismatched pre-protocol-9 client/server pair.
+
+The configuration loader accepts only `matchmaking_google_client_id` and
+`games_app_id`, both strings. Missing values and the shipped template leave the
+corresponding provider unconfigured. Obsolete `server_client_id`/secret fields,
+unknown fields and malformed values fail the build instead of enabling a fallback.
+The actual loader's regression tests run with `:app:testAuthenticationConfig`
+and are included in `tests/test_gradle_unit_tests.ps1`.
+
+Play Games is independent, default-off groundwork for future achievements. Its
+`games_app_id` configuration does not enable it. `PlayGamesFeatures` exposes explicit
+enable/disable, noninteractive refresh, and separate availability/consent/profile
+readiness. No achievements button or achievement synchronization is implemented yet.
+Startup does not initialize its SDK; consent is excluded from backup/transfer.
+Disabling our integration invalidates pending results, but does not sign out the
+platform account or unload an already initialized SDK. A PGS profile may belong to
+a different Google account; future progress uploads must retain explicit profile
+attribution and must never reset matchmaking bans or resource budgets.
+
+### Real-provider qualification still required
+
+Ordinary builds currently expose LAN multiplayer only. For an explicitly opted-in
+online qualification APK, build with `-PonlineMatchmaking=true` (for GitHub, also
+use `-PgithubRelease=true -PisolatedGithubBuild=true`). This makes the launcher
+Multiplayer button open the server browser; it does not initiate Google sign-in.
+Select a callsign, enter `wss://HOST/ws`, and choose Connect to begin sign-in.
+
+Use an owned Google-enabled device and a build whose application ID and signing
+certificate are registered in the same OAuth project as the configured web client
+ID. Supply the matching audience and public HTTPS origin on an owned test server.
+Do not put OAuth tokens, login challenges or server session credentials in reports.
+
+- With a Google account that has no Play Games profile, cold-launch the app, browse
+  multiplayer, play single-player and use LAN without a Google/PGS prompt
+- Choose Connect explicitly; verify Google account selection precedes the gameplay
+  connection and does not request creation of a PGS profile
+- Cancel the prompt, retry, rotate or close the activity during sign-in, and switch
+  server/account; only the current action may establish a session
+- Interrupt the control connection after successful login; reconnect must use its
+  existing server credential or ask the user to choose Connect, never open provider UI
+- Verify room join, friend join and a relayed game with PGS disabled; an account ban
+  must still reject login and close an existing session
+
+The optional PGS boundary currently has no shipping feature button. Before wiring
+achievements UI, qualify its explicit enable/disable and profile-switch behavior
+on device, including a process restart after opt-out. Host tests and manifest
+inspection alone do not establish the behavior of an initialized Google SDK.
+
+See [Google sign-in](https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation)
+and [PGS platform identity guidance](https://developer.android.com/games/pgs/platform-authentication).
 
 ## crash reports
 

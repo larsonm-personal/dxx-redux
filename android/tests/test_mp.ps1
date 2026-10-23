@@ -831,7 +831,8 @@ try {
     }
 
     # Set env vars for server, then launch with Start-Process for clean stderr capture
-    $env:SKIP_GPGS_VERIFY = if ($PublicShareware) { "false" } else { "true" }
+    # Installation/PoW authentication is only accepted by loopback development servers
+    $env:SKIP_GPGS_VERIFY = "true"
     $env:INSTALLATION_AUTH_AUDIENCE = if ($Tls) { "https://10.0.2.2:9000" } else { "http://10.0.2.2:9000" }
     $env:RUST_LOG = "info"
     # The public campaign owns a synthetic database and loopback-only listeners
@@ -1412,7 +1413,7 @@ try {
                 throw "Public online fixture did not prove native $Game engine selection"
             }
         }
-        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player production identity'
+        Assert-OnlinePeerMatrix -Serials @($EMU1, $EMU2) -Callsigns @($CALLSIGN1, $CALLSIGN2) -Slots @(0, 1) -Phase 'two-player loopback development identity'
         if ($PublicDirect) {
             foreach ($serial in @($EMU1, $EMU2)) {
                 $control = Get-MpIntrospection -Serial $serial

@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Sideloaded builds must see these packages for Google sign-in availability checks -->
+    <queries>
+        <package android:name="com.android.vending" />
+        <package android:name="com.google.android.gms" />
+    </queries>
+
     <!-- Android TV: touchscreen not required, controller supported -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
@@ -44,11 +50,12 @@
              a raw integer meta-data value during launcher startup. -->
         <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/games_app_id" />
 
-        <!-- The SDK also initializes itself before SetupActivity through this provider -->
+        <!-- Play Games is optional and must not initialize before explicit opt-in -->
+        <meta-data android:name="com.google.android.gms.games.SUPPRESS_GAME_PROFILE_CREATION" android:value="true" />
         <provider
             android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
             android:authorities="${applicationId}.playgamesinitprovider"
-            android:enabled="${playGamesEnabled}"
+            android:enabled="false"
             android:exported="false"
         />
 

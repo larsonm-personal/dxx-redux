@@ -14,7 +14,6 @@ use uuid::Uuid;
 
 use crate::db::{MatchPlayerData, MatchResultData};
 use crate::friends;
-use crate::identity;
 use crate::lobby::{game_info_str, Lobby, LobbyState, Presence};
 use crate::pow;
 use crate::protocol::*;
@@ -104,6 +103,7 @@ fn build_lobby_update(lobby: &Lobby) -> ServerMessage {
         .iter()
         .map(|p| LobbyPlayerInfo {
             slot: p.slot,
+            candidate_admission_id: p.candidate_admission_id,
             player_id: p.player_id,
             callsign: p.callsign.clone(),
             ready: p.ready,
@@ -195,7 +195,10 @@ fn validate_mission_requirement(game_info: &serde_json::Value) -> Result<(), &'s
     {
         return Err("invalid mission display name");
     }
-    if let Some(path) = requirement.get("descriptor_path") {
+    if let Some(path) = requirement
+        .get("descriptor_path")
+        .filter(|value| !value.is_null())
+    {
         let path = path.as_str().ok_or("invalid descriptor path")?;
         if path.len() > 512 || path.contains('\0') {
             return Err("invalid descriptor path");
@@ -423,8 +426,8 @@ pub struct PlayerSession {
     /// Measured ping to this player's WebSocket connection (ms).
     pub ping_ms: Option<u32>,
     /// True if the player authenticated via real GPGS verification.
-    pub gpgs_verified: bool,
-    /// Authentication method: "gpgs", "keypair", or "dev".
+    pub account_verified: bool,
+    /// Verified Google session or an explicitly local development method
     pub auth_method: String,
     /// Client's public IP as observed from the WebSocket TCP connection.
     /// Used to generate "observed" candidates for port-forwarding detection.
@@ -435,6 +438,7 @@ pub struct PlayerSession {
 pub fn ws_router(state: Arc<ServerState>) -> Router {
     Router::new()
         .route("/ws", get(ws_upgrade))
+        .merge(crate::google_http::routes())
         .with_state(state)
 }
 
@@ -463,7 +467,7 @@ impl Drop for ConnectionPermit {
     }
 }
 
-fn client_address(
+pub(crate) fn client_address(
     peer: SocketAddr,
     headers: &axum::http::HeaderMap,
     trusted: &[std::net::IpAddr],
@@ -592,12 +596,23 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     let mut pending_installation: Option<PendingInstallation> = None;
 
     let auth_deadline = tokio::time::Instant::now() + Duration::from_secs(20);
+    let mut read_deadline = auth_deadline;
+    let mut google_credential: Option<crate::google_login::CredentialHandle> = None;
+    let mut credential_check = tokio::time::interval(Duration::from_secs(1));
+    credential_check.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     // Authentication has an absolute deadline, including peers sending pings
-    while let Some(msg_result) = match tokio::select! {
+    'connection: while let Some(msg_result) = match tokio::select! {
         biased;
         _ = retired.notified() => Ok(None),
+        _ = credential_check.tick(), if google_credential.is_some() => {
+            let active = state.google_login.as_ref().is_some_and(|login|
+                login.is_active(google_credential.unwrap(), Instant::now()));
+            let allowed = player_id.is_some_and(|pid| !state.db.is_banned(&pid).unwrap_or(true));
+            if !active || !allowed { break 'connection; }
+            continue 'connection;
+        },
         result = tokio::time::timeout_at(if player_id.is_none() { auth_deadline } else {
-                tokio::time::Instant::now() + Duration::from_secs(120)
+                read_deadline
             }, ws_rx.next()) => result,
     } {
         Ok(Some(r)) => Some(r),
@@ -607,6 +622,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
             None // treat as disconnect
         }
     } {
+        read_deadline = tokio::time::Instant::now() + Duration::from_secs(120);
         let msg = match msg_result {
             Ok(Message::Text(text)) => text,
             Ok(Message::Close(_)) => break,
@@ -668,6 +684,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 protocol_version,
                 client_version,
                 play_games_token,
+                session_credential,
                 callsign,
                 platform,
                 auth_method,
@@ -714,12 +731,69 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
 
                 if !matches!(
                     auth_method.as_str(),
-                    "keypair" | "gpgs" | "dev" | "p256_challenge"
+                    "google_session" | "keypair" | "gpgs" | "dev" | "p256_challenge"
                 ) {
                     let _ = tx.send(ServerMessage::AuthFail {
                         reason: "Unsupported authentication method".into(),
                     });
                     break;
+                }
+                // Installation keys and PoW are local development fixtures only
+                if (!state.config.skip_gpgs_verify && auth_method != "google_session")
+                    || (state.config.skip_gpgs_verify && !addr.ip().is_loopback())
+                {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Google account authentication is required on this server".into(),
+                    });
+                    break;
+                }
+                if auth_method == "google_session" {
+                    let credential = session_credential.as_deref().unwrap_or_default();
+                    let identity = state
+                        .google_login
+                        .as_ref()
+                        .and_then(|login| login.credential(credential, Instant::now()));
+                    let Some(identity) = identity else {
+                        let _ = tx.send(ServerMessage::AuthFail {
+                            reason: "Sign in with Google to connect".into(),
+                        });
+                        break;
+                    };
+                    let pid = match state
+                        .db
+                        .find_or_create_player_by_google(&identity.subject, &callsign)
+                    {
+                        Ok(pid) => pid,
+                        Err(_) => {
+                            let _ = tx.send(ServerMessage::AuthFail {
+                                reason: "Authentication unavailable".into(),
+                            });
+                            break;
+                        }
+                    };
+                    if state.db.is_banned(&pid).unwrap_or(true) {
+                        let _ = tx.send(ServerMessage::AuthFail {
+                            reason: "Account unavailable".into(),
+                        });
+                        break;
+                    }
+                    google_credential = state
+                        .google_login
+                        .as_ref()
+                        .and_then(|login| login.handle(credential));
+                    complete_auth(
+                        &state,
+                        &tx,
+                        pid,
+                        &callsign,
+                        &platform,
+                        true,
+                        "google_session",
+                        session_id,
+                        addr,
+                    );
+                    player_id = Some(pid);
+                    continue;
                 }
                 if auth_method == "p256_challenge" {
                     let audience = auth_audience.unwrap_or_default();
@@ -774,28 +848,6 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         difficulty,
                     });
                     continue;
-                }
-                // The current keypair producer is local-test-only until challenge-bound
-                // authentication and the matching release client are qualified
-                if auth_method == "keypair"
-                    && (!state.config.skip_gpgs_verify || !addr.ip().is_loopback())
-                {
-                    let _ = tx.send(ServerMessage::AuthFail {
-                        reason: "Keypair authentication is unavailable for this preview".into(),
-                    });
-                    break;
-                }
-                if auth_method != "keypair"
-                    && ((state.config.skip_gpgs_verify && !addr.ip().is_loopback())
-                        || (!state.config.skip_gpgs_verify
-                            && (auth_method == "dev"
-                                || state.config.google_client_id.is_empty()
-                                || state.config.google_client_secret.is_empty())))
-                {
-                    let _ = tx.send(ServerMessage::AuthFail {
-                        reason: "Authentication method unavailable on this server".into(),
-                    });
-                    break;
                 }
                 if auth_method == "keypair" {
                     // -- Keypair authentication path --
@@ -888,7 +940,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         }
                     }
                 } else {
-                    // -- GPGS authentication path (existing) --
+                    // Legacy token-shaped local fixtures, never a production admission route
                     let token = play_games_token.unwrap_or_default();
                     if token.is_empty() || token.len() > 4096 {
                         let _ = tx.send(ServerMessage::AuthFail {
@@ -896,41 +948,10 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         });
                         break;
                     }
-                    let gpgs_id = if state.config.skip_gpgs_verify {
-                        debug!(%addr, "GPGS verification skipped (dev mode)");
-                        token.clone()
-                    } else {
-                        match tokio::time::timeout_at(
-                            auth_deadline,
-                            identity::verify_gpgs_token(
-                                auth_deadline,
-                                &state.config.google_client_id,
-                                &state.config.google_client_secret,
-                                &token,
-                            ),
-                        )
-                        .await
-                        {
-                            Ok(identity::VerifyResult::Ok { gpgs_player_id }) => gpgs_player_id,
-                            Ok(identity::VerifyResult::Failed { reason }) => {
-                                warn!(%addr, %reason, "GPGS authentication failed");
-                                let _ = tx.send(ServerMessage::AuthFail {
-                                    reason: "Google Play Games verification failed".into(),
-                                });
-                                break;
-                            }
-                            Err(_) => {
-                                let _ = tx.send(ServerMessage::AuthFail {
-                                    reason: "Authentication deadline exceeded".into(),
-                                });
-                                break;
-                            }
-                        }
-                    };
-                    let is_gpgs_verified =
-                        !state.config.skip_gpgs_verify && !state.config.google_client_id.is_empty();
-
-                    let pid = match state.db.find_or_create_player_by_gpgs(&gpgs_id, &callsign) {
+                    if !state.config.skip_gpgs_verify || !addr.ip().is_loopback() {
+                        break;
+                    }
+                    let pid = match state.db.find_or_create_player_by_gpgs(&token, &callsign) {
                         Ok(id) => id,
                         Err(e) => {
                             warn!(%e, "failed to look up/create player");
@@ -949,17 +970,8 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         break;
                     }
 
-                    let method = if is_gpgs_verified { "gpgs" } else { "dev" };
                     complete_auth(
-                        &state,
-                        &tx,
-                        pid,
-                        &callsign,
-                        &platform,
-                        is_gpgs_verified,
-                        method,
-                        session_id,
-                        addr,
+                        &state, &tx, pid, &callsign, &platform, false, "dev", session_id, addr,
                     );
                     player_id = Some(pid);
                 }
@@ -1207,6 +1219,11 @@ pub fn expire_pending_late_joins(state: &ServerState, now: Instant) {
 /// Leave a room under the control transition lock; host departure closes it
 fn leave_room(state: &ServerState, pid: Uuid) {
     crate::relay::revoke_player(state, pid);
+    if let Some(session) = state.sessions.get(&pid) {
+        state
+            .candidate_attempts
+            .revoke_connection(pid, session.connection_id);
+    }
     let room_id = state.sessions.get(&pid).and_then(|s| s.lobby_id);
     let Some(room_id) = room_id else {
         return;
@@ -1240,6 +1257,7 @@ fn leave_room(state: &ServerState, pid: Uuid) {
 /// Close a room once, fencing all memberships and allocations under control lock
 fn close_room(state: &ServerState, room_id: Uuid, requester: Uuid, code: &str, message: &str) {
     crate::relay::revoke_room(state, room_id);
+    state.candidate_attempts.revoke_lobby(room_id);
     if let Some((_, room)) = state.lobbies.remove(&room_id) {
         for peer in &room.players {
             if let Some(mut session) = state.sessions.get_mut(&peer.player_id) {
@@ -1268,16 +1286,6 @@ fn remove_session(state: &ServerState, pid: Uuid) {
     if let Some((_, old)) = state.sessions.remove(&pid) {
         old.tx.retired.notify_one();
         state.stats.player_disconnected();
-        // Atomic ref-count transition for multiple clients behind the same NAT
-        if let dashmap::mapref::entry::Entry::Occupied(mut entry) =
-            state.stun_allowlist.entry(old.public_ip)
-        {
-            if *entry.get() <= 1 {
-                entry.remove();
-            } else {
-                *entry.get_mut() -= 1;
-            }
-        }
         let _ = state
             .db
             .log_connection_event(Some(&pid), "disconnect", None);
@@ -1545,112 +1553,6 @@ fn send_connection_info(lobby: &crate::lobby::Lobby, state: &ServerState) {
     }
 }
 
-/// Generate predicted port candidates for symmetric NATs with sequential allocation.
-///
-/// If a player has 2+ srflx candidates from the same IP with ports that differ by
-/// a small delta, the NAT likely allocates ports sequentially. We predict the next
-/// few ports and add them as "predicted" candidates.
-fn generate_predicted_candidates(
-    candidates: &[ConnectionCandidate],
-    nat_type: &str,
-) -> Vec<ConnectionCandidate> {
-    if !nat_type.contains("symmetric") {
-        return Vec::new();
-    }
-    // Already has predicted candidates (client-generated)
-    if candidates.iter().any(|c| c.candidate_type == "predicted") {
-        return Vec::new();
-    }
-    // Collect srflx candidates, extract IP and port
-    let mut srflx_addrs: Vec<(&str, u16)> = Vec::new();
-    for c in candidates.iter().filter(|c| c.candidate_type == "srflx") {
-        if let Some((ip, port_str)) = c.addr.rsplit_once(':') {
-            if let Ok(port) = port_str.parse::<u16>() {
-                srflx_addrs.push((ip, port));
-            }
-        }
-    }
-    if srflx_addrs.len() < 2 {
-        return Vec::new();
-    }
-    // All srflx must share the same IP
-    let ip = srflx_addrs[0].0;
-    if !srflx_addrs.iter().all(|&(a, _)| a == ip) {
-        return Vec::new();
-    }
-    // Sort by port and compute deltas
-    let mut ports: Vec<u16> = srflx_addrs.iter().map(|&(_, p)| p).collect();
-    ports.sort();
-    let delta = ports[ports.len() - 1] as i32 - ports[0] as i32;
-    let step = delta / (ports.len() as i32 - 1);
-    // Only predict if delta per step is small and positive (sequential)
-    if !(1..=10).contains(&step) {
-        return Vec::new();
-    }
-    let last_port = ports[ports.len() - 1] as i32;
-    let mut predicted = Vec::new();
-    for i in 1..=2 {
-        let p = last_port + step * i;
-        if p > 0 && p <= 65535 {
-            predicted.push(ConnectionCandidate {
-                candidate_type: "predicted".into(),
-                addr: format!("{ip}:{p}"),
-            });
-        }
-    }
-    if !predicted.is_empty() {
-        debug!(
-            count = predicted.len(),
-            step, last_port, "generated predicted port candidates"
-        );
-    }
-    predicted
-}
-
-/// Generate "observed" candidates using the server-known public IP (from the
-/// WebSocket TCP connection) combined with each host candidate's port.
-///
-/// If a player has manually forwarded their game port at their router, the
-/// address public_ip:game_port is directly reachable. The connectivity checker
-/// will verify reachability. Skips if matching srflx candidates already exist.
-fn generate_observed_candidates(
-    candidates: &[ConnectionCandidate],
-    ws_ip: std::net::IpAddr,
-) -> Vec<ConnectionCandidate> {
-    let ws_ip_str = ws_ip.to_string();
-    // Don't inject for loopback (local testing) or link-local addresses
-    if ws_ip.is_loopback() {
-        return Vec::new();
-    }
-
-    // Collect existing srflx addrs to avoid duplicates
-    let srflx_addrs: std::collections::HashSet<String> = candidates
-        .iter()
-        .filter(|c| c.candidate_type == "srflx")
-        .map(|c| c.addr.clone())
-        .collect();
-
-    // Extract ports from host candidates
-    let host_ports: Vec<u16> = candidates
-        .iter()
-        .filter(|c| c.candidate_type == "host")
-        .filter_map(|c| c.addr.rsplit_once(':'))
-        .filter_map(|(_, port_str)| port_str.parse::<u16>().ok())
-        .collect();
-
-    let mut observed = Vec::new();
-    for port in host_ports {
-        let addr = format!("{ws_ip_str}:{port}");
-        if !srflx_addrs.contains(&addr) {
-            observed.push(ConnectionCandidate {
-                candidate_type: "observed".into(),
-                addr,
-            });
-        }
-    }
-    observed
-}
-
 /// Compute connection-check priority for a candidate pair.
 fn candidate_pair_priority(local_type: &str, remote_type: &str) -> u32 {
     match (local_type, remote_type) {
@@ -1667,6 +1569,35 @@ fn candidate_pair_priority(local_type: &str, remote_type: &str) -> u32 {
     }
 }
 
+/// The shared UDP socket needs only the highest-priority offer for each peer endpoint
+fn candidate_pairs(
+    player: &crate::lobby::LobbyPlayer,
+    peer: &crate::lobby::LobbyPlayer,
+) -> Vec<CandidatePair> {
+    let now = Instant::now();
+    if !player.can_issue_probes(now) || !peer.can_issue_probes(now) {
+        return Vec::new();
+    }
+    let mut pairs = Vec::new();
+    for local in &player.candidates {
+        for remote in &peer.candidates {
+            pairs.push(CandidatePair {
+                check_id: Uuid::new_v4(),
+                peer_id: peer.player_id,
+                local_type: local.candidate_type.clone(),
+                remote_type: remote.candidate_type.clone(),
+                remote_addr: remote.addr.clone(),
+                priority: candidate_pair_priority(&local.candidate_type, &remote.candidate_type),
+            });
+        }
+    }
+    pairs.sort_by_key(|p| std::cmp::Reverse(p.priority));
+    let mut endpoints = std::collections::HashSet::new();
+    pairs.retain(|pair| endpoints.insert(pair.remote_addr.clone()));
+    pairs.truncate(MAX_CANDIDATE_PAIRS_PER_PEER);
+    pairs
+}
+
 /// Build per-player CONNECTIVITY_CHECK_GO messages with prioritized candidate pairs.
 fn build_connectivity_check_messages(lobby: &mut Lobby) -> Vec<(Uuid, ServerMessage)> {
     let mut result = Vec::new();
@@ -1680,21 +1611,7 @@ fn build_connectivity_check_messages(lobby: &mut Lobby) -> Vec<(Uuid, ServerMess
             if peer.player_id == player.player_id {
                 continue;
             }
-            for local_cand in &player.candidates {
-                for remote_cand in &peer.candidates {
-                    pairs.push(CandidatePair {
-                        check_id: Uuid::new_v4(),
-                        peer_id: peer.player_id,
-                        local_type: local_cand.candidate_type.clone(),
-                        remote_type: remote_cand.candidate_type.clone(),
-                        remote_addr: remote_cand.addr.clone(),
-                        priority: candidate_pair_priority(
-                            &local_cand.candidate_type,
-                            &remote_cand.candidate_type,
-                        ),
-                    });
-                }
-            }
+            pairs.extend(candidate_pairs(player, peer));
         }
         pairs.sort_by_key(|p| std::cmp::Reverse(p.priority));
         result.push((
@@ -1812,13 +1729,22 @@ fn allocate_relay_session(
     state: &ServerState,
     relay_addr: &str,
     room_id: Uuid,
+    game_epoch: Uuid,
     pair: &RelayPair,
 ) -> Option<u32> {
     if relay_addr.is_empty() {
         return None;
     }
+    if !state
+        .relay_economy
+        .lock()
+        .unwrap()
+        .can_allocate(Instant::now())
+    {
+        return None;
+    }
     let max = state.config.max_relay_sessions;
-    if max > 0 && state.relay_sessions.len() >= max {
+    if max > 0 && crate::relay::logical_sessions(state) >= max {
         return None;
     }
     if !state.allocation_work.lock().unwrap().accept(
@@ -1829,15 +1755,37 @@ fn allocate_relay_session(
     ) {
         return None;
     }
+    let renewals = state.relay_renewals.lock().unwrap();
     let token = (0..16)
         .map(|_| Uuid::new_v4().as_u128() as u32)
-        .find(|token| !state.relay_sessions.contains_key(token))?;
+        .find(|token| {
+            !state.relay_sessions.contains_key(token)
+                && !renewals.contains_key(token)
+                && !renewals.values().any(|renewal| renewal.new_token == *token)
+        })?;
+    drop(renewals);
     state.relay_sessions.insert(
         token,
-        crate::relay::RelaySession::new(
+        crate::relay::RelaySession::owned(
             room_id,
-            [(pair.slot_a, pair.pid_a), (pair.slot_b, pair.pid_b)],
+            crate::relay::RelayOwnership {
+                game_epoch,
+                members: [
+                    (
+                        pair.slot_a,
+                        pair.pid_a,
+                        state.sessions.get(&pair.pid_a)?.connection_id,
+                    ),
+                    (
+                        pair.slot_b,
+                        pair.pid_b,
+                        state.sessions.get(&pair.pid_b)?.connection_id,
+                    ),
+                ],
+            },
             Instant::now(),
+            Duration::from_secs(state.config.relay_policy.allocation_lifetime_seconds),
+            true,
         ),
     );
     Some(token)
@@ -1863,7 +1811,7 @@ fn complete_auth(
     pid: Uuid,
     callsign: &str,
     platform: &str,
-    gpgs_verified: bool,
+    account_verified: bool,
     auth_method: &str,
     session_id: Uuid,
     addr: SocketAddr,
@@ -1883,19 +1831,12 @@ fn complete_auth(
             tx: tx.clone(),
             lobby_id: None,
             ping_ms: None,
-            gpgs_verified,
+            account_verified,
             auth_method: auth_method.to_string(),
             public_ip: addr.ip(),
         },
     );
     state.stats.player_connected();
-
-    // Add client IP to STUN allowlist (ref-counted for shared NAT IPs, D17 fix)
-    state
-        .stun_allowlist
-        .entry(addr.ip())
-        .and_modify(|c| *c += 1)
-        .or_insert(1);
 
     info!(%pid, %callsign, %platform, %auth_method, "player authenticated");
 
@@ -2028,6 +1969,7 @@ fn complete_late_join(
                     state,
                     &relay_addr,
                     lobby_id,
+                    lobby.game_epoch,
                     &RelayPair {
                         slot_a: existing.slot,
                         slot_b: joiner.slot,
@@ -2127,6 +2069,39 @@ fn complete_late_join(
     }
 }
 
+fn candidate_scope(
+    state: &ServerState,
+    player_id: Uuid,
+    lobby: &Lobby,
+) -> Option<crate::candidate_auth::AttemptScope> {
+    let session = state.sessions.get(&player_id)?;
+    if session.lobby_id != Some(lobby.id) {
+        return None;
+    }
+    let player = lobby.players.iter().find(|p| p.player_id == player_id)?;
+    Some(crate::candidate_auth::AttemptScope {
+        player_id,
+        connection_id: session.connection_id,
+        lobby_id: lobby.id,
+        admission_id: player.candidate_admission_id,
+        public_ip: session.public_ip,
+        local_development: state.config.skip_gpgs_verify && session.public_ip.is_loopback(),
+    })
+}
+
+fn candidate_admission_open(state: &ServerState, player_id: Uuid, lobby: &Lobby) -> bool {
+    lobby.state == LobbyState::Waiting
+        || (lobby.state == LobbyState::InGame
+            && state
+                .sessions
+                .get(&player_id)
+                .is_some_and(|s| matches!(s.presence, Presence::InLobby { .. }))
+            && lobby
+                .pending_late_joiners
+                .get(&player_id)
+                .is_some_and(|t| t.elapsed() < LATE_JOIN_TIMEOUT))
+}
+
 fn handle_authenticated_message(
     state: &Arc<ServerState>,
     player_id: Uuid,
@@ -2134,6 +2109,9 @@ fn handle_authenticated_message(
     tx: &BoundedSender,
 ) {
     match msg {
+        ClientMessage::RelayRekeyReady { ack } => {
+            crate::relay_lifecycle::ready(state, player_id, ack, Instant::now());
+        }
         ClientMessage::CreateLobby {
             game,
             max_players,
@@ -2337,6 +2315,7 @@ fn handle_authenticated_message(
                     }
                     if matches!(lobby.state, LobbyState::InGame | LobbyState::Starting) {
                         crate::relay::revoke_room(state, lobby_id);
+                        state.candidate_attempts.revoke_lobby(lobby_id);
                         state.stats.game_ended();
                         lobby.state = LobbyState::Waiting;
                         lobby.pending_late_joiners.clear();
@@ -2349,6 +2328,11 @@ fn handle_authenticated_message(
                         // Reset all players to not-ready
                         for p in &mut lobby.players {
                             p.ready = false;
+                            p.candidates.clear();
+                            p.candidates_valid_until = None;
+                            p.candidate_admission_id = Uuid::new_v4();
+                            p.candidate_requested = false;
+                            p.nat_type = None;
                             p.connectivity_checks.clear();
                             p.validated_routes.clear();
                             p.mission_status = None;
@@ -2394,13 +2378,12 @@ fn handle_authenticated_message(
                     let is_verified = state
                         .sessions
                         .get(&player_id)
-                        .map(|s| s.gpgs_verified)
+                        .map(|s| s.account_verified)
                         .unwrap_or(false);
                     if !is_verified {
                         let _ = tx.send(ServerMessage::Error {
                             code: "VERIFIED_ONLY".into(),
-                            message: "This lobby requires a verified Google Play Games account"
-                                .into(),
+                            message: "This lobby requires a verified Google account".into(),
                         });
                         return;
                     }
@@ -2638,7 +2621,13 @@ fn handle_authenticated_message(
                                     pid_a: lobby.players[i].player_id,
                                     pid_b: lobby.players[j].player_id,
                                 };
-                                match allocate_relay_session(state, &relay_addr, lobby_id, &pair) {
+                                match allocate_relay_session(
+                                    state,
+                                    &relay_addr,
+                                    lobby_id,
+                                    lobby.game_epoch,
+                                    &pair,
+                                ) {
                                     Some(token) => {
                                         relay_tokens.insert((i as u8, j as u8), token);
                                     }
@@ -2763,57 +2752,92 @@ fn handle_authenticated_message(
             }
         }
 
-        ClientMessage::StunResult {
-            candidates,
-            nat_type,
+        ClientMessage::GatherCandidates {
+            lobby_id,
+            admission_id,
+            request_id,
         } => {
-            if candidates.len() > 16
-                || nat_type.len() > 32
-                || candidates.iter().any(|c| {
-                    c.addr.len() > 128
-                        || !matches!(
-                            c.candidate_type.as_str(),
-                            "host" | "srflx" | "upnp" | "predicted"
-                        )
-                        || c.addr.parse::<SocketAddr>().map_or(true, |a| {
-                            a.port() == 0 || a.ip().is_unspecified() || a.ip().is_multicast()
-                        })
-                })
+            let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) else {
+                return;
+            };
+            let Some(scope) = candidate_scope(state, player_id, &lobby) else {
+                return;
+            };
+            if scope.admission_id != admission_id
+                || !candidate_admission_open(state, player_id, &lobby)
             {
-                let _ = tx.send(ServerMessage::Error {
-                    code: "INVALID_CANDIDATES".into(),
-                    message: "Invalid or excessive candidates".into(),
-                });
                 return;
             }
-            info!(%player_id, %nat_type, candidate_count = candidates.len(), "STUN result received");
-            let session_info = state.sessions.get(&player_id).map(|s| {
-                (
-                    s.public_ip,
-                    s.lobby_id,
-                    matches!(s.presence, Presence::InLobby { .. }),
-                )
-            });
-            if let Some((ws_ip, Some(lobby_id), awaiting_game)) = session_info {
-                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                    // Generate predicted port candidates for symmetric NATs
-                    let predicted = generate_predicted_candidates(&candidates, &nat_type);
-                    let mut all_candidates = candidates.clone();
-                    all_candidates.extend(predicted);
+            let player = lobby
+                .players
+                .iter_mut()
+                .find(|p| p.player_id == player_id)
+                .unwrap();
+            if player.nat_type.is_some() {
+                return;
+            }
+            if !player.candidate_requested {
+                if !state.rate_limiter.check_candidate_submission(player_id) {
+                    let _ = tx.send(ServerMessage::RateLimited {
+                        retry_after_ms: 60_000,
+                    });
+                    return;
+                }
+                player.candidate_requested = true;
+            }
+            if let Some(challenge) = state.candidate_attempts.issue(scope, Instant::now()) {
+                let _ = tx.send(ServerMessage::CandidateChallenge {
+                    lobby_id,
+                    admission_id,
+                    request_id,
+                    attempt_id: challenge.attempt_id,
+                    credential: challenge.credential,
+                });
+            }
+        }
 
-                    // Inject "observed" candidates: server-known public IP + each
-                    // host candidate's port. If the player port-forwarded, these
-                    // addresses will be directly reachable. The connectivity check
-                    // will verify. Skip if we already have a matching srflx.
-                    let observed = generate_observed_candidates(&all_candidates, ws_ip);
-                    if !observed.is_empty() {
-                        info!(
-                            %player_id,
-                            count = observed.len(),
-                            "injected observed candidates from WS IP"
-                        );
-                        all_candidates.extend(observed);
+        ClientMessage::StunResult(CandidateReceiptReport {
+            attempt_id,
+            receipts,
+        }) => {
+            let session_info = state
+                .sessions
+                .get(&player_id)
+                .map(|s| (s.lobby_id, matches!(s.presence, Presence::InLobby { .. })));
+            if let Some((Some(lobby_id), awaiting_game)) = session_info {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    if !candidate_admission_open(state, player_id, &lobby) {
+                        return;
                     }
+                    let Some(scope) = candidate_scope(state, player_id, &lobby) else {
+                        return;
+                    };
+                    if lobby
+                        .players
+                        .iter()
+                        .find(|p| p.player_id == player_id)
+                        .is_none_or(|p| p.nat_type.is_some())
+                    {
+                        return;
+                    }
+                    let Some(verified) = state.candidate_attempts.consume(
+                        scope,
+                        attempt_id,
+                        &receipts,
+                        Instant::now(),
+                    ) else {
+                        return;
+                    };
+                    let nat_type = verified.nat_type.to_string();
+                    // The wire has no candidate-address declarations; every destination comes from a redeemed UDP receipt
+                    let all_candidates: Vec<ConnectionCandidate> = verified
+                        .endpoints
+                        .into_iter()
+                        .map(|address| ConnectionCandidate {
+                            candidate_type: "srflx".into(),
+                            addr: address.to_string(),
+                        })
+                        .collect();
 
                     for player in &mut lobby.players {
                         if player.player_id == player_id {
@@ -2828,6 +2852,7 @@ fn handle_authenticated_message(
                     }
                     if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
                         p.candidates = all_candidates.clone();
+                        p.candidates_valid_until = verified.expires_at;
                         p.nat_type = Some(nat_type);
                     }
                     // Distribute sender's candidates to all other players in the lobby
@@ -2855,7 +2880,10 @@ fn handle_authenticated_message(
 
                     // Check if ALL players have submitted STUN results
                     let all_have_candidates = lobby.players.len() > 1
-                        && lobby.players.iter().all(|p| !p.candidates.is_empty())
+                        && lobby
+                            .players
+                            .iter()
+                            .all(|p| p.can_issue_probes(Instant::now()))
                         && lobby.state == LobbyState::Waiting;
                     let check_msgs = if all_have_candidates {
                         lobby.state = LobbyState::Holepunching;
@@ -2874,8 +2902,12 @@ fn handle_authenticated_message(
                                 .players
                                 .iter()
                                 .find(|p| p.player_id == lobby.host_player_id)
-                                .is_none_or(|p| p.candidates.is_empty())
-                            || all_candidates.is_empty());
+                                .is_none_or(|p| !p.can_issue_probes(Instant::now()))
+                            || lobby
+                                .players
+                                .iter()
+                                .find(|p| p.player_id == player_id)
+                                .is_none_or(|p| !p.can_issue_probes(Instant::now())));
 
                     // Late-join ICE: if lobby is InGame and the sender just got
                     // candidates, and the host has candidates, start pairwise ICE
@@ -2891,13 +2923,13 @@ fn handle_authenticated_message(
                             .players
                             .iter()
                             .find(|p| p.player_id == host_id)
-                            .map(|h| !h.candidates.is_empty())
+                            .map(|h| h.can_issue_probes(Instant::now()))
                             .unwrap_or(false)
                             && lobby
                                 .players
                                 .iter()
                                 .find(|p| p.player_id == player_id)
-                                .map(|j| !j.candidates.is_empty())
+                                .map(|j| j.can_issue_probes(Instant::now()))
                                 .unwrap_or(false);
                         if both_have_candidates {
                             // Now safe to borrow players immutably
@@ -2911,23 +2943,7 @@ fn handle_authenticated_message(
                                 .iter()
                                 .find(|p| p.player_id == player_id)
                                 .unwrap();
-                            let mut pairs: Vec<CandidatePair> = Vec::new();
-                            for local_cand in &j.candidates {
-                                for remote_cand in &h.candidates {
-                                    pairs.push(CandidatePair {
-                                        check_id: Uuid::new_v4(),
-                                        peer_id: host_id,
-                                        local_type: local_cand.candidate_type.clone(),
-                                        remote_type: remote_cand.candidate_type.clone(),
-                                        remote_addr: remote_cand.addr.clone(),
-                                        priority: candidate_pair_priority(
-                                            &local_cand.candidate_type,
-                                            &remote_cand.candidate_type,
-                                        ),
-                                    });
-                                }
-                            }
-                            pairs.sort_by_key(|p| std::cmp::Reverse(p.priority));
+                            let pairs = candidate_pairs(j, h);
                             let probe_addrs: Vec<String> =
                                 j.candidates.iter().map(|c| c.addr.clone()).collect();
                             let joiner_callsign = j.callsign.clone();
@@ -2982,6 +2998,7 @@ fn handle_authenticated_message(
                         if let Some(sess) = state.sessions.get(&host_id) {
                             let _ = sess.tx.send(ServerMessage::LateJoinProbe {
                                 joiner_id: player_id,
+                                admission_id: scope.admission_id,
                                 joiner_callsign,
                                 probe_addrs,
                             });
@@ -3115,6 +3132,11 @@ fn handle_authenticated_message(
                         broadcast_lobby_update(&lobby, state);
                     }
                     crate::relay::revoke_player(state, target);
+                    if let Some(session) = state.sessions.get(&target) {
+                        state
+                            .candidate_attempts
+                            .revoke_connection(target, session.connection_id);
+                    }
                     // Notify kicked player and update their session
                     if let Some(kicked_session) = state.sessions.get(&target) {
                         let _ = kicked_session.tx.send(ServerMessage::Error {
@@ -3346,14 +3368,13 @@ fn handle_authenticated_message(
                         let is_verified = state
                             .sessions
                             .get(&player_id)
-                            .map(|s| s.gpgs_verified)
+                            .map(|s| s.account_verified)
                             .unwrap_or(false);
                         if !is_verified {
                             let _ = tx.send(ServerMessage::JoinFriendGameResp {
                                 success: false,
                                 reason: Some(
-                                    "This lobby requires a verified Google Play Games account"
-                                        .into(),
+                                    "This lobby requires a verified Google account".into(),
                                 ),
                                 lobby_id: None,
                             });
@@ -3564,6 +3585,19 @@ mod tests {
                 info["mission_requirement"]["wrapper_filename"] = serde_json::json!("custom.zip");
             }
             assert!(validate_mission_requirement(&info).is_ok());
+            // Kotlin serializes absent optional descriptor paths as explicit JSON null
+            info["mission_requirement"]["descriptor_path"] = serde_json::Value::Null;
+            assert!(validate_mission_requirement(&info).is_ok());
+            for invalid_path in [
+                serde_json::json!(42),
+                serde_json::json!({}),
+                serde_json::json!("a".repeat(513)),
+                serde_json::json!("bad\0path"),
+            ] {
+                let mut changed = info.clone();
+                changed["mission_requirement"]["descriptor_path"] = invalid_path;
+                assert!(validate_mission_requirement(&changed).is_err());
+            }
             for invalid_hash in [serde_json::Value::Null, serde_json::json!("invalid")] {
                 let mut changed = info.clone();
                 changed["mission_requirement"]["sha256"] = invalid_hash;
@@ -3705,6 +3739,21 @@ mod tests {
     }
 
     #[test]
+    fn expired_observations_cannot_issue_probes_but_preserve_an_established_route() {
+        let mut a = make_player(vec![("srflx", "8.8.8.8:1234")], None);
+        let mut b = make_player(vec![("srflx", "1.1.1.1:1234")], None);
+        let pair = candidate_pairs(&a, &b).pop().unwrap();
+        a.validated_routes.insert(b.player_id, pair.clone());
+        b.candidates_valid_until = Some(Instant::now() - Duration::from_secs(1));
+        assert!(candidate_pairs(&a, &b).is_empty());
+        assert_eq!(validated_remote_addr(&a, &b), pair.remote_addr);
+        let now = Instant::now();
+        b.candidates_valid_until = Some(now + crate::lobby::CANDIDATE_PROBE_WINDOW);
+        assert!(b.can_issue_probes(now));
+        assert!(!b.can_issue_probes(now + Duration::from_nanos(1)));
+    }
+
+    #[test]
     fn expired_connectivity_attempt_rejects_delayed_report_and_allows_fresh_attempt() {
         let a = make_player(vec![("host", "10.0.2.16:41001")], None);
         let b = make_player(vec![("host", "10.0.2.17:41002")], None);
@@ -3785,6 +3834,9 @@ mod tests {
             player_id: Uuid::new_v4(),
             callsign: "test".into(),
             ready: false,
+            candidate_admission_id: Uuid::new_v4(),
+            candidate_requested: false,
+            candidates_valid_until: Some(Instant::now() + crate::candidate_auth::ATTEMPT_LIFETIME),
             candidates: candidates
                 .into_iter()
                 .map(|(t, a)| ConnectionCandidate {
@@ -4007,47 +4059,6 @@ mod tests {
     }
 
     // -- observed candidate tests --
-
-    #[test]
-    fn test_generate_observed_from_host_candidates() {
-        let candidates = vec![ConnectionCandidate {
-            candidate_type: "host".into(),
-            addr: "192.168.1.10:42424".into(),
-        }];
-        let ws_ip: std::net::IpAddr = "203.0.113.5".parse().unwrap();
-        let observed = generate_observed_candidates(&candidates, ws_ip);
-        assert_eq!(observed.len(), 1);
-        assert_eq!(observed[0].candidate_type, "observed");
-        assert_eq!(observed[0].addr, "203.0.113.5:42424");
-    }
-
-    #[test]
-    fn test_observed_skips_existing_srflx() {
-        let candidates = vec![
-            ConnectionCandidate {
-                candidate_type: "host".into(),
-                addr: "192.168.1.10:42424".into(),
-            },
-            ConnectionCandidate {
-                candidate_type: "srflx".into(),
-                addr: "203.0.113.5:42424".into(),
-            },
-        ];
-        let ws_ip: std::net::IpAddr = "203.0.113.5".parse().unwrap();
-        let observed = generate_observed_candidates(&candidates, ws_ip);
-        assert!(observed.is_empty(), "should skip when srflx matches");
-    }
-
-    #[test]
-    fn test_observed_skips_loopback() {
-        let candidates = vec![ConnectionCandidate {
-            candidate_type: "host".into(),
-            addr: "192.168.1.10:42424".into(),
-        }];
-        let ws_ip: std::net::IpAddr = "127.0.0.1".parse().unwrap();
-        let observed = generate_observed_candidates(&candidates, ws_ip);
-        assert!(observed.is_empty(), "should skip loopback IP");
-    }
 
     #[test]
     fn test_observed_candidate_enables_holepunch() {
