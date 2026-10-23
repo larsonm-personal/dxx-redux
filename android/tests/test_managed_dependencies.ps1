@@ -191,7 +191,8 @@ function Remove-Item {
     }
     Microsoft.PowerShell.Management\Remove-Item @PSBoundParameters
 }
-& $Cleaner -RepoRoot $Checkout -Apply
+$cleanupResults = @(& $Cleaner -RepoRoot $Checkout -Apply)
+Write-Host "Uninterrupted cleanup results: $($cleanupResults | ConvertTo-Json -Depth 4 -Compress)"
 throw 'Fixture never interrupted retirement'
 '@
     $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
@@ -205,11 +206,14 @@ throw 'Fixture never interrupted retirement'
     $child = [Diagnostics.Process]::Start($start)
     if (-not $child.WaitForExit(30000)) { throw 'Interrupted cleaner did not exit' }
     if ($child.ExitCode -eq 0) { throw 'Cleaner unexpectedly survived forced termination' }
+    $interruptedExitCode = $child.ExitCode
     $child.Dispose()
     $child = $null
     $ownershipFile = Join-Path $deps '.dxx-dependency-ownership.json'
     $state = Get-Content -LiteralPath $ownershipFile -Raw | ConvertFrom-Json
-    if (@($state.Retirements).Count -ne 1) { throw 'Interrupted cleanup lost its retirement journal' }
+    if (@($state.Retirements).Count -ne 1) {
+        throw "Interrupted cleanup lost its retirement journal; child exit code: $interruptedExitCode; retirements: $(ConvertTo-Json -InputObject @($state.Retirements) -Depth 4 -Compress)"
+    }
     $retired = Join-Path $deps ('.dxx-retired-' + $state.Retirements[0].Identity)
     if (-not (Test-Path -LiteralPath $retired) -or (Test-Path -LiteralPath (Join-Path $retired '.dxx-managed-install'))) {
         throw 'Fixture did not leave a partially deleted retirement'
