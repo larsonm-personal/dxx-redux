@@ -181,7 +181,8 @@ GCC 14; the CI baseline is Ubuntu 24.04 with GCC 13. Use a fresh build directory
 when changing compilers: setting `CC` does not replace a compiler already cached
 by CMake. Do not suppress compiler errors to make provisioning look successful
 
-For a fresh writable workspace, use the existing pinned installers (no sudo):
+For a fresh writable workspace, bootstrap the native toolchain with the existing
+pinned installers (no sudo). This does not establish full Gradle/APK readiness:
 
 ```sh
 printf '%s\n' /workspace/dxx-tools > dependency_base.txt
@@ -192,11 +193,17 @@ bash android/get_deps/helpers/get_cmake.sh
 bash android/get_deps/helpers/get_gradle_wrapper.sh
 source android/helpers/set_vars.sh
 export GRADLE_USER_HOME=/workspace/dxx-tools/gradle-cache
+# Diagnostic only: expected to fail while SDK-managed packages are absent
 bash android/get_deps/check_build_prereqs.sh
 ```
 
 This provisions the pinned JDK, command-line tools, NDK, CMake and wrapper; it
-intentionally does not accept SDK licenses. `finalize.sh` automatically answers
+intentionally does not accept SDK licenses. `get_cmake.sh` installs standalone
+CMake for direct native builds; it does not create the SDK-managed CMake package
+metadata required by the full Android prerequisite check. A fresh workspace is
+therefore expected to report missing platform/build-tools/platform-tools and SDK
+CMake packages and return nonzero. This is an honest diagnostic, not a failed
+native bootstrap or a claim that APK builds are ready. `finalize.sh` automatically answers
 license prompts and must not be run where accepting new terms is prohibited.
 Full APK builds also need the pinned platform/build-tools packages in an already
 authorized SDK. A missing license directory is a setup blocker, not a build pass
@@ -209,7 +216,9 @@ verification or silently import certificates to work around it
 
 The Android native CMake project can be configured with the installed NDK and
 CMake without SDK platform packages. Building its `SDL12` target verifies the
-actual Android shared-library path, but does not qualify an APK or launcher build
+actual Android shared-library path, but does not qualify an APK or launcher build.
+The reviewed workspace passed this configuration/build and a full D1 native build
+with 88/88 serial CTests after the compiler/runtime setup described below
 
 On the reviewed Debian snapshot, workspace-local GCC/G++ 13 can compile the host
 code, but linking against the image's newer multimedia libraries also requires
