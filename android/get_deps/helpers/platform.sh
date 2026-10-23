@@ -135,6 +135,7 @@ download_file() {
             return 1
         fi
         timeout --kill-after=5 905 wget --tries=3 --timeout=30 --waitretry=2 \
+            --retry-on-http-error=429,500,502,503,504 \
             --progress=dot:giga -O "$destination" "$url"
         return $?
     fi
