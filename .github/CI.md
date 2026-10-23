@@ -260,43 +260,36 @@ fi
 require no sudo and do not establish full Gradle/APK readiness:
 
 ```sh
-printf '%s\n' "$tools_root" > dependency_base.txt
-bash android/get_deps/helpers/get_jdk.sh
-bash android/get_deps/helpers/get_sdk.sh
-bash android/get_deps/helpers/get_ndk.sh
-bash android/get_deps/helpers/get_cmake.sh
-bash android/get_deps/helpers/get_gradle_wrapper.sh
-source android/get_deps/tool_versions.conf
-export JAVA_HOME="$tools_root/jdk-$JDK_MAJOR"
-export ANDROID_HOME="$tools_root/android-sdk" ANDROID_SDK_ROOT="$tools_root/android-sdk"
-export ANDROID_NDK_ROOT="$tools_root/android-ndk-$NDK_VERSION"
-export GRADLE_USER_HOME="$tools_root/gradle-cache"
-export PATH="$tools_root/cmake-$CMAKE_VERSION/bin:$JAVA_HOME/bin:$PATH"
+# If dependency_base.txt already exists, use its path or explicitly edit it first
+export DXX_DEPENDENCY_BASE="$tools_root"
+bash android/get_deps/build_tools.sh                 # Read-only bootstrap report
+# Explicit opt-in: five user-local installers, total deadline 5400 seconds
+bash android/get_deps/build_tools.sh --install
+# All tool selection applies only to the command child, not the caller's shell
 # Use a fresh host_build path when changing compiler or runtime selection
-cmake -S "$repo_root/d1" -B "$host_build" \
-  -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
-  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
-  '-DCMAKE_C_FLAGS_DEBUG=-O0 -g1' '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1' \
-  -DOPENGL=ON -DSDLMIXER=ON -DUDP=ON -DOpenGL_GL_PREFERENCE=LEGACY \
-  -DCMAKE_EXE_LINKER_FLAGS="$native_link_flags" \
-  -DCMAKE_SHARED_LINKER_FLAGS="$native_link_flags"
-cmake --build "$host_build" --parallel 4
-SDL_AUDIODRIVER=dummy SDL_VIDEODRIVER=dummy ctest --test-dir "$host_build" \
-  --output-on-failure --no-tests=error --parallel 1 --timeout 120
-# Keep desktop include/library/compiler overrides out of Android cross compilation
-env -u CPATH -u LIBRARY_PATH -u CMAKE_PREFIX_PATH -u CC -u CXX -u LDFLAGS \
-  cmake -S "$repo_root/android/app/src/main/cpp" -B "$android_build" \
-  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake" \
-  -DANDROID_ABI=x86_64 -DANDROID_PLATFORM=android-26 -DCMAKE_BUILD_TYPE=Debug
-env -u CPATH -u LIBRARY_PATH -u CMAKE_PREFIX_PATH -u CC -u CXX -u LDFLAGS \
-  cmake --build "$android_build" --target SDL12 --parallel 4
-# Diagnostic only: expected to fail while SDK-managed packages are absent
-bash android/get_deps/check_build_prereqs.sh
+LDFLAGS="$native_link_flags ${LDFLAGS:-}" bash android/get_deps/build_tools.sh --run -- \
+  bash ./run-linux-build.sh --test --target d1 --build-root "$host_build" --jobs 4
+bash android/helpers/run_android_native_smoke.sh --build-dir "$android_build" --jobs 4
+# Separate APK diagnostic: expected to fail while SDK-managed packages are absent
+bash android/get_deps/build_tools.sh --run -- bash android/get_deps/check_build_prereqs.sh
 ```
 
 The reviewed Debian workspace passed the full D1 build and 88/88 serial CTests,
 and produced an Android 26 x86-64 SDL12 shared library with NDK r30. This does not
 qualify an APK, launcher build, or supervised process-cleanup behavior
+
+The default check can fail on a fresh workspace; explicitly run `--install` to
+provision missing tools, then repeat it. Installation requires GNU `timeout` (or
+`gtimeout`); `DXX_INSTALL_TIMEOUT_SECONDS` may select a total budget from 1 to 7200
+seconds. Failure or timeout stops the sequence immediately. `--run -- COMMAND`
+checks bootstrap readiness first and preserves the child's exit status. It selects
+managed tools even when the parent has unrelated Java/Android environment values;
+`GRADLE_USER_HOME` remains overridable. A conflicting `DXX_DEPENDENCY_BASE` and
+`dependency_base.txt` is an error, never a silent configuration rewrite
+
+The smoke helper clears desktop compiler/include/link overrides for both configure
+and build, and builds only API 26 x86_64 SDL12. The native runner's `--build-root`
+is available only with `--test`, keeping normal replay build locations unchanged
 
 The bootstrap intentionally does not accept SDK licenses. `get_cmake.sh` installs
 standalone CMake, not the SDK-managed CMake metadata checked by the full Android

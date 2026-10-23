@@ -137,6 +137,19 @@ class LinuxBuildCliTest(unittest.TestCase):
             (stamps / f"{name}.stamp").write_text(f"original-{name}", encoding="utf-8")
         return {path: path.read_bytes() for path in stamps.iterdir()}
 
+    def test_external_test_build_root_preserves_stamps_and_serial_ctest(self):
+        stamps = self.seed_stamps()
+        build_root = self.work / "external builds"
+        self.run_cli("--test", "--target", "d1", "--build-root", str(build_root))
+        self.assertEqual([c["stage"] for c in self.calls], ["configure", "build", "ctest"])
+        for call in self.calls:
+            self.assertEqual(call["build_dir"], str(build_root / "buildd1-test"))
+        self.assert_option(self.calls[-1], "--parallel", "1")
+        for path, content in stamps.items():
+            self.assertEqual(path.read_bytes(), content)
+        self.run_cli("--build-root", str(build_root), success=False)
+        self.assertEqual(self.calls, [])
+
     def test_build_only_defaults_and_replay_stamps(self):
         self.run_cli()
         self.assertEqual([c["stage"] for c in self.calls], ["configure", "build"] * 2)

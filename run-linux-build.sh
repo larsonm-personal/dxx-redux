@@ -12,6 +12,7 @@ GENERATOR=""
 CMAKE_PATH=""
 CTEST_PATH=""
 NINJA_PATH=""
+BUILD_ROOT=""
 LIST_TOOLS=0
 SANITIZER="none"
 
@@ -30,6 +31,7 @@ Options:
   --test                  Build and run asset-free CTest tests in separate Debug trees
   --sanitizer {none|address}  Use a separate AddressSanitizer build tree
   --clean                 Delete the target build directory before configuring
+  --build-root PATH       Parent of test build trees (requires --test)
   --jobs N                Positive parallel build job count [default with --test: 4]
   --generator NAME        Override the CMake generator
   --cmake PATH            Use an explicit cmake executable
@@ -134,6 +136,11 @@ while [[ $# -gt 0 ]]; do
         CLEAN=1
         shift
         ;;
+    --build-root)
+        require_value "$@"
+        BUILD_ROOT="$2"
+        shift 2
+        ;;
     --jobs)
         require_value "$@"
         JOBS="$2"
@@ -186,6 +193,14 @@ none | address) ;;
     exit 1
     ;;
 esac
+
+if [[ -n "$BUILD_ROOT" ]]; then
+    if [[ "$RUN_TESTS" != 1 ]]; then
+        echo "--build-root requires --test to preserve replay build locations" >&2
+        exit 1
+    fi
+    if [[ "$BUILD_ROOT" != /* ]]; then BUILD_ROOT="$REPO_ROOT/$BUILD_ROOT"; fi
+fi
 
 if [[ -n "$JOBS" && ! "$JOBS" =~ ^[1-9][0-9]*$ ]]; then
     echo "Invalid --jobs '$JOBS'. Expected a positive integer" >&2
@@ -303,9 +318,10 @@ build_one() {
         # Instrumented trees are reusable, but a first build needs replacement headroom
         # shellcheck disable=SC1091
         source "$REPO_ROOT/android/get_deps/helpers/platform.sh"
-        assert_dependency_disk_space "$REPO_ROOT" 4
+        mkdir -p "${BUILD_ROOT:-$REPO_ROOT}"
+        assert_dependency_disk_space "${BUILD_ROOT:-$REPO_ROOT}" 4
     fi
-    build_dir="$REPO_ROOT/$build_dir_name"
+    build_dir="${BUILD_ROOT:-$REPO_ROOT}/$build_dir_name"
 
     if [[ "$CLEAN" -eq 1 && -d "$build_dir" ]]; then
         rm -rf "$build_dir"
