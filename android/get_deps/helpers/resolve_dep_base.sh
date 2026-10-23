@@ -12,15 +12,16 @@ _resolve_dep_base() {
     local repo_root
     repo_root="$(cd "$script_dir/../../.." && pwd)"
 
-    if [ ! -f "$repo_root/dependency_base.txt" ]; then
-        local default_base="${DXX_DEPENDENCY_BASE:-$(get_default_dependency_base)}"
-        printf '%s\n' "$default_base" >"$repo_root/dependency_base.txt"
-        echo "Created dependency_base.txt with $default_base"
-    fi
-
-    # Read the first line, trim whitespace and carriage returns
     local raw
-    raw="$(head -1 "$repo_root/dependency_base.txt" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    if [ -f "$repo_root/dependency_base.txt" ]; then
+        raw="$(head -1 "$repo_root/dependency_base.txt" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    else
+        raw="${DXX_DEPENDENCY_BASE:-$(get_default_dependency_base)}"
+        if [ "${DXX_DEPENDENCY_READ_ONLY:-0}" != 1 ]; then
+            printf '%s\n' "$raw" >"$repo_root/dependency_base.txt"
+            echo "Created dependency_base.txt with $raw"
+        fi
+    fi
 
     if [ -z "$raw" ]; then
         echo "ERROR: dependency_base.txt is empty" >&2
@@ -51,7 +52,7 @@ _resolve_dep_base() {
         LOCAL_DIR="$raw"
     fi
 
-    mkdir -p "$LOCAL_DIR"
+    if [ "${DXX_DEPENDENCY_READ_ONLY:-0}" != 1 ]; then mkdir -p "$LOCAL_DIR"; fi
     export LOCAL_DIR
 }
 

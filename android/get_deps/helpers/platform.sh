@@ -121,12 +121,21 @@ download_file() {
     local url="$2"
 
     if command -v curl >/dev/null 2>&1; then
-        curl -fSL --progress-bar -o "$destination" "$url"
+        # At most three attempts, each bounded even if the server keeps sending
+        curl -fSL --progress-bar --connect-timeout 30 --max-time 300 \
+            --retry 2 --retry-delay 2 --retry-max-time 610 \
+            -o "$destination" "$url"
         return $?
     fi
 
     if command -v wget >/dev/null 2>&1; then
-        wget --progress=dot:giga -O "$destination" "$url"
+        # wget has no total transfer deadline; require an outer deadline as well
+        if ! command -v timeout >/dev/null 2>&1; then
+            echo "ERROR: wget downloads require timeout; install curl or GNU coreutils" >&2
+            return 1
+        fi
+        timeout --kill-after=5 905 wget --tries=3 --timeout=30 --waitretry=2 \
+            --progress=dot:giga -O "$destination" "$url"
         return $?
     fi
 
@@ -144,7 +153,8 @@ download_text() {
         for header in "$@"; do
             curl_args+=(-H "$header")
         done
-        curl -fsSL "${curl_args[@]}" "$url"
+        # Do not retry streamed stdout: a partial response must not be concatenated
+        curl -fsSL --connect-timeout 30 --max-time 60 "${curl_args[@]}" "$url"
         return $?
     fi
 
@@ -154,7 +164,11 @@ download_text() {
         for header in "$@"; do
             wget_args+=(--header="$header")
         done
-        wget -qO- "${wget_args[@]}" "$url"
+        if ! command -v timeout >/dev/null 2>&1; then
+            echo "ERROR: wget downloads require timeout; install curl or GNU coreutils" >&2
+            return 1
+        fi
+        timeout --kill-after=5 60 wget --tries=1 --timeout=30 -qO- "${wget_args[@]}" "$url"
         return $?
     fi
 

@@ -55,6 +55,12 @@ EXTRACT_DIR="$DEPENDENCY_STAGE_DIR"
 echo "Downloading Android SDK command-line tools..."
 download_file "$TMPFILE" "$URL"
 
+echo "Validating command-line tools ZIP before staging..."
+if ! unzip -tq "$TMPFILE"; then
+    echo "ERROR: invalid SDK archive for build ${BUILD_ID:-unknown} from $URL; rerun get_sdk.sh to download again" >&2
+    exit 1
+fi
+
 echo "Extracting to $LATEST_DIR..."
 unzip -q -o "$TMPFILE" -d "$EXTRACT_DIR"
 if [ ! -x "$EXTRACT_DIR/cmdline-tools/bin/sdkmanager" ] && [ ! -f "$EXTRACT_DIR/cmdline-tools/bin/sdkmanager.bat" ]; then

@@ -190,7 +190,9 @@ jobs:
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platforms/android-${{ env.DXX_NIGHTLY_COMPILE_SDK }}*
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/build-tools/${{ env.DXX_NIGHTLY_BUILD_TOOLS }}
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmake/${{ env.DXX_NIGHTLY_CMAKE }}
-          key: nightly-android-tools-${{ runner.os }}-${{ hashFiles('target/android/get_deps/tool_versions.conf') }}
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmdline-tools/latest
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platform-tools
+          key: nightly-android-tools-v2-${{ runner.os }}-${{ hashFiles('target/android/get_deps/tool_versions.conf') }}
       - name: Restore Gradle and native dependencies
         id: dependencies
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -213,6 +215,7 @@ jobs:
             bash android/get_deps/helpers/finalize.sh
             bash android/get_deps/helpers/get_ndk.sh
             bash android/get_deps/helpers/get_gradle_wrapper.sh
+            bash android/get_deps/check_build_prereqs.sh
             java -version
             javac -version
             df -h .
@@ -233,8 +236,8 @@ jobs:
         run: |
           set -euo pipefail
           {
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends libpulse0
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends libpulse0
           } 2>&1 | tee results/setup/emulator-host-runtime.log
       - name: Provision dual-lane master host prerequisites
         if: inputs.lane == 'android-dual'
@@ -253,7 +256,7 @@ jobs:
           set -euo pipefail
           {
             bash android/get_deps/helpers/get_linux_build_prereqs.sh
-            sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends xvfb xauth libgl1-mesa-dri
             command -v xvfb-run
           } 2>&1 | tee ../results/setup/native-replay-prerequisites.log
       - name: Build selected native replay executables before test budget
@@ -370,8 +373,8 @@ jobs:
             expected='7:6.1.1-3ubuntu5'
             installed=$(dpkg-query -W -f='${Version}' ffmpeg 2>/dev/null || true)
             if [[ "$installed" != "$expected" ]]; then
-              sudo apt-get update
-              sudo apt-get install -y --no-install-recommends "ffmpeg=$expected"
+              sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
+              sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends "ffmpeg=$expected"
             fi
             [[ "$(dpkg-query -W -f='${Version}' ffmpeg)" == "$expected" ]]
             [[ "$(command -v ffmpeg)" == /usr/bin/ffmpeg ]]
@@ -615,6 +618,8 @@ jobs:
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platforms/android-${{ env.DXX_NIGHTLY_COMPILE_SDK }}*
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/build-tools/${{ env.DXX_NIGHTLY_BUILD_TOOLS }}
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmake/${{ env.DXX_NIGHTLY_CMAKE }}
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmdline-tools/latest
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platform-tools
           key: ${{ steps.tools.outputs.cache-primary-key }}
       - name: Save emulator components
         timeout-minutes: 5

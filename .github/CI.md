@@ -119,3 +119,48 @@ The normal master preflights/provisions the pair and validates the third before
 mutating any target. It does not stop a caller-owned third emulator. Evidence is
 in `android/temp/lan-three-player-startup/`, including the four case receipts
 and `three-player-summary.json`. CI retains it separately under `three-player/`.
+
+## Setup failures and recovery
+
+Before Android Gradle work, run `bash android/get_deps/check_build_prereqs.sh`.
+It reports the dependency base, Java/SDK/NDK paths, pinned command-line build
+marker and missing package metadata without creating directories or installing
+anything. `dependency_base.txt` takes precedence over `DXX_DEPENDENCY_BASE`;
+existing Java/Android environment overrides are reported and checked. A missing
+SDK in a restored workspace is an environment prerequisite failure, not a Gradle
+code failure. Run the named helpers, then repeat the check and the original build
+
+CMake dependency fetches retain the manifest SHA-256 cache keys, lock, verified
+cache admission and atomic rename. Transient connection/partial/timeout errors
+get three attempts of at most 120 seconds, with 2/4 second backoff and a 400 second
+lock wait. HTTP errors, TLS failures and checksum mismatches fail immediately.
+Never disable TLS or change a pin to get past a failed download. Remove only the
+reported corrupt cache entry after investigating it, then rerun configuration
+
+Bootstrap file downloads use curl's transient HTTP/timeout retries (two retries,
+30 second connection and 300 second attempt deadlines; at most 910 seconds).
+The wget fallback requires GNU `timeout` and has the same outer 910 second limit.
+Metadata requests have a 60 second deadline (65 including forced termination for
+wget) and do not retry streamed stdout, avoiding concatenated partial responses.
+SDK ZIP integrity is checked before extraction; a corrupt archive fails without
+replacing the existing installation. Rerun the same installer to use its existing
+staging/recovery protocol. ZIP CRC checks do not establish publisher identity;
+the SDK command-line archive still relies on the pinned build URL over TLS
+
+Apt uses native acquisition retries and 30 second HTTP/HTTPS stall timeouts.
+Index refreshes fail on acquisition errors instead of silently reusing stale lists.
+Workflow step/job deadlines remain the overall provisioning limit; a package or
+build error must still fail the job. Nightly SDK caches now include command-line
+and platform tools, with a new cache generation; installer/package checks still
+run on cache hits. Native dependency caches remain content-addressed and verified
+
+Run `python3 android/tests/test_verified_dependency_download.py` for disposable
+loopback HTTP tests of partial transfer recovery, bounded exhaustion, permanent
+HTTP errors, hash rejection, cache reuse and curl transient HTTP recovery. Existing
+installer fixtures cover corrupt SDK ZIP rollback and clean resumability
+
+A GitHub run that fails at startup with zero jobs and an unexpected service error
+has not executed repository setup. Record its run ID separately and rerun only
+after checking platform status. Preserve branch/SHA, PR and diagnostic links at
+working checkpoints; use `.github/TASK_RECOVERY.md` to restore a clean workspace
+rather than repeatedly repairing an inaccessible one

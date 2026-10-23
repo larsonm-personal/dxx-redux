@@ -112,7 +112,7 @@ run_install() {
 install_with_privilege() {
     if [[ $EUID -eq 0 ]]; then
         run_install "$@"
-    elif [[ "$DRY_RUN" -eq 1 ]] && command -v sudo >/dev/null 2>&1; then
+    elif [[ "$DRY_RUN" -eq 1 ]]; then
         run_install sudo "$@"
     elif command -v sudo >/dev/null 2>&1 && { [[ -t 0 ]] || sudo -n true 2>/dev/null; }; then
         run_install sudo "$@"
@@ -152,9 +152,10 @@ if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" u
         libglu1-mesa-dev
         zlib1g-dev
     )
-    install_with_privilege apt update
-    install_with_privilege apt install -y "${packages[@]}"
-    "$SCRIPT_DIR/get_rust.sh"
+    apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+    install_with_privilege apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update
+    install_with_privilege apt-get "${apt_options[@]}" install -y "${packages[@]}"
+    if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
     exit 0
 fi
 
@@ -190,7 +191,7 @@ if [[ "${ID:-}" == "fedora" || " ${ID_LIKE:-} " == *" fedora "* || " ${ID_LIKE:-
         zlib-devel
     )
     install_with_privilege dnf install -y "${packages[@]}"
-    "$SCRIPT_DIR/get_rust.sh"
+    if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
     exit 0
 fi
 
@@ -221,7 +222,7 @@ if [[ "${ID:-}" == "arch" || " ${ID_LIKE:-} " == *" arch "* ]]; then
         zlib
     )
     install_with_privilege pacman -S --needed --noconfirm "${packages[@]}"
-    "$SCRIPT_DIR/get_rust.sh"
+    if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
     exit 0
 fi
 
