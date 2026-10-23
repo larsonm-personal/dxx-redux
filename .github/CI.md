@@ -288,7 +288,8 @@ env -u CPATH -u LIBRARY_PATH -u CMAKE_PREFIX_PATH -u CC -u CXX -u LDFLAGS \
   cmake -S "$repo_root/android/app/src/main/cpp" -B "$android_build" \
   -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI=x86_64 -DANDROID_PLATFORM=android-26 -DCMAKE_BUILD_TYPE=Debug
-cmake --build "$android_build" --target SDL12 --parallel 4
+env -u CPATH -u LIBRARY_PATH -u CMAKE_PREFIX_PATH -u CC -u CXX -u LDFLAGS \
+  cmake --build "$android_build" --target SDL12 --parallel 4
 # Diagnostic only: expected to fail while SDK-managed packages are absent
 bash android/get_deps/check_build_prereqs.sh
 ```
