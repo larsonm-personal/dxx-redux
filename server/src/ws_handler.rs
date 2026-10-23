@@ -505,7 +505,7 @@ async fn ws_upgrade(
     let max_conn = state.config.max_connections;
     if state
         .connected_sockets
-        .fetch_update(
+        .try_update(
             std::sync::atomic::Ordering::Relaxed,
             std::sync::atomic::Ordering::Relaxed,
             |count| {

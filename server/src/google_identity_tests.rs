@@ -383,12 +383,13 @@ async fn google_http_source_rejections_preserve_global_login_budget() {
         200
     );
     // Only the two admitted requests consumed the shared budget
-    let mut budget = state.auth_work.lock().unwrap();
-    for _ in 0..62 {
-        assert!(budget.accept(std::time::Instant::now()));
+    {
+        let mut budget = state.auth_work.lock().unwrap();
+        for _ in 0..62 {
+            assert!(budget.accept(std::time::Instant::now()));
+        }
+        assert!(!budget.accept(std::time::Instant::now()));
     }
-    assert!(!budget.accept(std::time::Instant::now()));
-    drop(budget);
     assert_eq!(app.oneshot(request(other)).await.unwrap().status(), 429);
 }
 

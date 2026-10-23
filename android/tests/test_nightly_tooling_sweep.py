@@ -1715,14 +1715,14 @@ class SweepTests(unittest.TestCase):
                 sweep.run_command([sys.executable, "-c", "import time; time.sleep(60)"], d, log, timeout=0.1)
 
     def test_host_metadata_cli_bootstraps_before_private_inputs(self):
-        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        host = workflow[workflow.index('  host:'):workflow.index('  android:')]
-        prerequisites = host.split('      - name: Install host prerequisites', 1)[1].split('      - name:', 1)[0]
-        self.assertIn('timeout-minutes: 15', prerequisites)
-        self.assertIn('    timeout-minutes: 100', host.split('    steps:', 1)[0])
-        execution = host.split('      - name: Execute admitted host owners', 1)[1].split('      - name:', 1)[0]
-        self.assertIn('timeout-minutes: 65', execution)
-        setup = host.split('      - name: Prepare asset-free metadata CLI', 1)[1].split('      - name:', 1)[0]
+        workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        host = workflow[workflow.index("  host:") : workflow.index("  android:")]
+        prerequisites = host.split("      - name: Install host prerequisites", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("timeout-minutes: 15", prerequisites)
+        self.assertIn("    timeout-minutes: 100", host.split("    steps:", 1)[0])
+        execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("timeout-minutes: 65", execution)
+        setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
         self.assertIn("e.get('fixture') == 'retail-corpus'", setup)

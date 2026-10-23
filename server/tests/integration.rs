@@ -695,7 +695,7 @@ async fn test_auth_version_rejected() {
 #[tokio::test]
 async fn candidate_proof_schema_rejects_v5_v6_before_authentication_with_upgrade_message() {
     let server = TestServer::start().await;
-    assert!(MIN_CLIENT_PROTOCOL > 6);
+    const { assert!(MIN_CLIENT_PROTOCOL > 6) };
     let android = include_str!(
         "../../android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkConstants.kt"
     );
