@@ -172,6 +172,15 @@ immediately. No apt source, signature verification, or host configuration change
 are needed for this reduction; fresh local machines still need the full toolchain
 in the recovery recipes below
 
+The Debian/Ubuntu bootstrap helper used by LAN also reuses command tools on PATH.
+Its library preflight previously requested a full distro toolchain even when only
+library modules were missing (a 120 MB transaction in LAN run `39919889445`).
+It now requests compiler/Make, CMake, Ninja, Cargo and Rust packages only for missing
+tools; compiler/Make, CMake and Rust commands must also execute `--version`.
+All development library packages remain in the install list, and the existing Rust
+minimum-version check still runs after installation. Dry-run uses the same selection
+without installing anything; fresh hosts still receive their missing tool packages
+
 Run `python3 android/tests/test_verified_dependency_download.py` for disposable
 loopback HTTP tests of partial transfer recovery, bounded exhaustion, permanent
 HTTP errors, hash rejection, cache reuse and curl transient HTTP recovery. Existing

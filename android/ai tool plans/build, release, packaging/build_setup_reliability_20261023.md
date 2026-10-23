@@ -22,3 +22,9 @@ Reduce Engine smoke provisioning after the 15-minute Azure mirror timeout:
 - Verify the failing runner image's preinstalled tools against its software manifest
 - Reuse compiler, Make, CMake/CTest and Ninja; retain the library/display package set
 - Preserve setup/test deadlines and apt verification; qualify on the next PR run
+
+Apply the same evidence to LAN's existing Debian/Ubuntu prerequisite helper:
+
+- Select tool packages from the executable preflight, retaining all dev libraries
+- Verify dry-run selection for present, missing and broken command tools
+- Install pinned repository formatters and run scoped quality before publishing
