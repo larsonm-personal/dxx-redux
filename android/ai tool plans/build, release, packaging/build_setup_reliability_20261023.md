@@ -16,3 +16,9 @@ Persist the verified recovery entry points on the same PR:
 - Reuse the native runner with an external test build root; add a narrow Android SDL12 smoke helper
 - Keep the image-specific Debian compiler/runtime workaround in documentation only
 - Validate failure propagation with existing fixtures and real native/Android builds
+
+Reduce Engine smoke provisioning after the 15-minute Azure mirror timeout:
+
+- Verify the failing runner image's preinstalled tools against its software manifest
+- Reuse compiler, Make, CMake/CTest and Ninja; retain the library/display package set
+- Preserve setup/test deadlines and apt verification; qualify on the next PR run

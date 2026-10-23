@@ -161,6 +161,17 @@ build error must still fail the job. Nightly SDK caches now include command-line
 and platform tools, with a new cache generation; installer/package checks still
 run on cache hits. Native dependency caches remain content-addressed and verified
 
+Engine smoke (including ASan) checks and logs the hosted runner's compiler,
+Make, CMake/CTest and Ninja before installing library/display packages. It reuses
+those preinstalled tools instead of downloading duplicate apt tool packages.
+In run `39919889615`, CMake plus cmake-data alone cost 13.4 MB and about 4 minutes
+21 seconds on the slow Azure mirror; the full 50 MB transaction exceeded 15 minutes.
+The reduced package list retains every library and display dependency, with the
+same 15-minute setup bound and unchanged test budgets. Missing runner tools fail
+immediately. No apt source, signature verification, or host configuration changes
+are needed for this reduction; fresh local machines still need the full toolchain
+in the recovery recipes below
+
 Run `python3 android/tests/test_verified_dependency_download.py` for disposable
 loopback HTTP tests of partial transfer recovery, bounded exhaustion, permanent
 HTTP errors, hash rejection, cache reuse and curl transient HTTP recovery. Existing
