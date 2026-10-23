@@ -82,8 +82,10 @@ try {
         'FetchContent_Declare\([^\)]*URL_HASH\s+"SHA256=\$\{dependency_sha256\}"' `
         'centralized dependency archives have pinned hashes'
     $cmakeVerifier = Join-Path $repoRoot 'cmake\dxx-verified-dependencies.cmake'
-    Assert-Contains $cmakeVerifier 'EXPECTED_HASH\s+"SHA256=\$\{dependency_sha256\}"' `
-        'single-file downloads have pinned hashes'
+    Assert-Contains $cmakeVerifier 'file\(SHA256\s+"\$\{temporary_file\}"\s+downloaded_sha256\)' `
+        'completed downloads are hashed before publication'
+    Assert-Contains $cmakeVerifier 'if\(NOT downloaded_sha256 STREQUAL dependency_sha256\)' `
+        'download hashes must match the manifest pin'
     Assert-Contains $cmakeVerifier 'TLS_VERIFY\s+ON' 'CMake downloads explicitly verify TLS'
     Assert-Contains $cmakeVerifier 'file\(SHA256\s+"\$\{cached_file\}"' `
         'cached decoder sources are reverified'

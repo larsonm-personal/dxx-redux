@@ -69,6 +69,7 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
           bash android/get_deps/helpers/get_gradle_wrapper.sh
+          bash android/get_deps/check_build_prereqs.sh
           df -h .
 
       - name: Cache build dependencies

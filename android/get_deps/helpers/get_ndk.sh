@@ -27,7 +27,9 @@ TMPFILE="$DEPENDENCY_ARCHIVE"
 STAGE_DIR="$DEPENDENCY_STAGE_DIR"
 
 echo "Downloading Android NDK $NDK_VERSION (~1.1 GB)..."
-download_file "$TMPFILE" "$URL"
+# The 1.1 GB archive needs a larger budget on healthy lower-bandwidth links
+# Keep the transport retry count and outer provisioning deadline bounded
+download_file "$TMPFILE" "$URL" 1800
 
 echo "Extracting to $INSTALL_DIR..."
 unzip -q -o "$TMPFILE" -d "$STAGE_DIR"

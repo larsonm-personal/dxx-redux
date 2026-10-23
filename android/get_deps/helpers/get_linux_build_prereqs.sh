@@ -58,8 +58,15 @@ fi
 source /etc/os-release
 
 missing_commands=()
-for command_name in unzip zip tar xz gzip git python3 cc c++ make cmake cargo rustc flock; do
+for command_name in unzip zip tar xz gzip git python3 flock; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
+        missing_commands+=("$command_name")
+    fi
+done
+for command_name in cc c++ make cmake cargo rustc; do
+    if command -v "$command_name" >/dev/null 2>&1 && tool_version="$("$command_name" --version 2>/dev/null)"; then
+        printf 'Using %s: %s\n' "$(command -v "$command_name")" "${tool_version%%$'\n'*}"
+    else
         missing_commands+=("$command_name")
     fi
 done
@@ -112,7 +119,7 @@ run_install() {
 install_with_privilege() {
     if [[ $EUID -eq 0 ]]; then
         run_install "$@"
-    elif [[ "$DRY_RUN" -eq 1 ]] && command -v sudo >/dev/null 2>&1; then
+    elif [[ "$DRY_RUN" -eq 1 ]]; then
         run_install sudo "$@"
     elif command -v sudo >/dev/null 2>&1 && { [[ -t 0 ]] || sudo -n true 2>/dev/null; }; then
         run_install sudo "$@"
@@ -137,12 +144,7 @@ if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" u
         git
         python3
         python3-venv
-        build-essential
-        cmake
-        ninja-build
         pkgconf
-        cargo
-        rustc
         libphysfs-dev
         libsdl1.2-dev
         libsdl-mixer1.2-dev
@@ -152,9 +154,21 @@ if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" u
         libglu1-mesa-dev
         zlib1g-dev
     )
-    install_with_privilege apt update
-    install_with_privilege apt install -y "${packages[@]}"
-    "$SCRIPT_DIR/get_rust.sh"
+    # Hosted images often provide these outside dpkg; missing libraries must not
+    # trigger a second toolchain download. Fresh hosts still get missing tools
+    for feature in "${missing_commands[@]}"; do
+        case "$feature" in
+        cc | c++ | make) packages+=(build-essential) ;;
+        cmake) packages+=(cmake) ;;
+        ninja) packages+=(ninja-build) ;;
+        cargo) packages+=(cargo) ;;
+        rustc) packages+=(rustc) ;;
+        esac
+    done
+    apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+    install_with_privilege apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update
+    install_with_privilege apt-get "${apt_options[@]}" install -y "${packages[@]}"
+    if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
     exit 0
 fi
 
@@ -190,7 +204,7 @@ if [[ "${ID:-}" == "fedora" || " ${ID_LIKE:-} " == *" fedora "* || " ${ID_LIKE:-
         zlib-devel
     )
     install_with_privilege dnf install -y "${packages[@]}"
-    "$SCRIPT_DIR/get_rust.sh"
+    if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
     exit 0
 fi
 
@@ -221,7 +235,7 @@ if [[ "${ID:-}" == "arch" || " ${ID_LIKE:-} " == *" arch "* ]]; then
         zlib
     )
     install_with_privilege pacman -S --needed --noconfirm "${packages[@]}"
-    "$SCRIPT_DIR/get_rust.sh"
+    if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
     exit 0
 fi
 

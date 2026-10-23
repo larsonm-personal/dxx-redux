@@ -622,7 +622,7 @@ class SweepTests(unittest.TestCase):
         self.assertIn("if: steps.selection.outputs.native_replay == 'true'", setup)
         self.assertIn("bash android/get_deps/helpers/get_linux_build_prereqs.sh", setup)
         self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
-        self.assertIn("timeout-minutes: 10", setup)
+        self.assertIn("timeout-minutes: 15", setup)
 
     @unittest.skipUnless(sys.platform == "linux", "Native replay setup uses Bash")
     def test_native_replay_setup_builds_only_selected_games_before_emulator_boot(self):
@@ -1279,6 +1279,11 @@ class SweepTests(unittest.TestCase):
     def test_host_metadata_cli_bootstraps_before_private_inputs(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
         host = workflow[workflow.index('  host:'):workflow.index('  android:')]
+        prerequisites = host.split('      - name: Install host prerequisites', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('timeout-minutes: 15', prerequisites)
+        self.assertIn('    timeout-minutes: 100', host.split('    steps:', 1)[0])
+        execution = host.split('      - name: Execute admitted host owners', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('timeout-minutes: 65', execution)
         setup = host.split('      - name: Prepare asset-free metadata CLI', 1)[1].split('      - name:', 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)

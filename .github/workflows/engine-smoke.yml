@@ -15,7 +15,7 @@ jobs:
   engine:
     name: Linux ${{ matrix.game }} build and tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -29,11 +29,16 @@ jobs:
           persist-credentials: false
 
       - name: Install native dependencies
-        timeout-minutes: 3
+        # Reuse runner tools instead of downloading a second CMake/Ninja installation
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
+          for tool in cc c++ make cmake ctest ninja; do
+            command -v "$tool"
+            "$tool" --version
+          done
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+            libphysfs-dev libsdl1.2-dev \
             libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
             xvfb xauth libgl1-mesa-dri
 
@@ -42,6 +47,7 @@ jobs:
         run: |
           python3 android/tests/test_input_demo_assets.py
           python3 android/tests/test_linux_build_cli.py
+          python3 android/tests/test_verified_dependency_download.py
           python3 android/tests/test_d1_briefing_automation.py
           python3 android/tests/test_save_epoch_contract.py
           python3 android/tests/test_android_audio_lifecycle.py
@@ -116,7 +122,7 @@ jobs:
   public-sanitizers:
     name: Linux public ASan runtime
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       SDL_AUDIODRIVER: dummy
       SDL_VIDEODRIVER: x11
@@ -128,10 +134,15 @@ jobs:
         with:
           persist-credentials: false
       - name: Install native dependencies
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
+          for tool in cc c++ make cmake ctest ninja; do
+            command -v "$tool"
+            "$tool" --version
+          done
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+            libphysfs-dev libsdl1.2-dev \
             libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
             xvfb xauth libgl1-mesa-dri
       - name: Check public profile orchestration
