@@ -95,7 +95,8 @@ acoustid_config.jsonc
 *.keystore
 *.jks
 .gradle/
-android/gradle/
+android/gradle/*
+!android/gradle/auth-config.gradle
 *.apk
 *.aab
 .cxx*/

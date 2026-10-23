@@ -71,12 +71,13 @@ async fn admitted_login(peer: SocketAddr, state: &ServerState, request: Request)
         return StatusCode::BAD_REQUEST.into_response();
     };
     // Admission precedes body reads and JSON/crypto work; do not queue waiting for a slot
-    if !state
-        .auth_work
-        .lock()
-        .unwrap()
-        .accept(std::time::Instant::now())
-        || !state.rate_limiter.check_ip_login(source.ip())
+    // Rejected sources must not spend the shared capacity needed by other users
+    if !state.rate_limiter.check_ip_login(source.ip())
+        || !state
+            .auth_work
+            .lock()
+            .unwrap()
+            .accept(std::time::Instant::now())
     {
         return StatusCode::TOO_MANY_REQUESTS.into_response();
     }

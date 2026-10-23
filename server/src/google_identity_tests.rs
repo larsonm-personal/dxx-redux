@@ -345,6 +345,54 @@ async fn google_websocket_enforces_bans_and_live_credential_expiry() {
 }
 
 #[tokio::test]
+async fn google_http_source_rejections_preserve_global_login_budget() {
+    use axum::{body::Body, extract::ConnectInfo, http::Request};
+    use tower::ServiceExt;
+
+    let fixture = Fixture::new().await;
+    let mut state = login_server_state(fixture.verifier.clone());
+    Arc::get_mut(&mut state).unwrap().config.skip_gpgs_verify = false;
+    // Long fixture window makes the quota assertion independent of machine speed
+    *state.auth_work.lock().unwrap() = crate::resource_budget::WorkBudget::new(64, 3600);
+    let blocked: std::net::SocketAddr = "192.0.2.1:1234".parse().unwrap();
+    let other: std::net::SocketAddr = "192.0.2.2:1234".parse().unwrap();
+    for _ in 0..64 {
+        assert!(state.rate_limiter.check_ip_login(blocked.ip()));
+    }
+    let app = crate::ws_handler::ws_router(state.clone());
+    let request = |peer| {
+        Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/challenge")
+            .header("content-type", "application/json")
+            .extension(ConnectInfo(peer))
+            .body(Body::from("{}"))
+            .unwrap()
+    };
+    assert_eq!(
+        app.clone().oneshot(request(other)).await.unwrap().status(),
+        200
+    );
+    for _ in 0..64 {
+        let response = app.clone().oneshot(request(blocked)).await.unwrap();
+        assert_eq!(response.status(), 429);
+        assert_eq!(response.headers()["cache-control"], "no-store");
+    }
+    assert_eq!(
+        app.clone().oneshot(request(other)).await.unwrap().status(),
+        200
+    );
+    // Only the two admitted requests consumed the shared budget
+    let mut budget = state.auth_work.lock().unwrap();
+    for _ in 0..62 {
+        assert!(budget.accept(std::time::Instant::now()));
+    }
+    assert!(!budget.accept(std::time::Instant::now()));
+    drop(budget);
+    assert_eq!(app.oneshot(request(other)).await.unwrap().status(), 429);
+}
+
+#[tokio::test]
 async fn google_http_login_exchange_logout_and_admission() {
     use axum::http::StatusCode;
     use futures_util::{SinkExt, StreamExt};

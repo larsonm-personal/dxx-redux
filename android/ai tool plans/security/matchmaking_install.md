@@ -8,7 +8,8 @@ Validation: Bash syntax and shell lint; hermetic mocked-command integration cove
 
 ### Current goal continuation
 
-On 2026-10-22 the daemon was deployed and a real unchanged installer rerun passed. It runs as dedicated `dxxmatch`, with `/opt` binaries, `/etc` config, `/var/lib` data, loopback TCP 9000/18080/18081 and UDP 9001/3478/3479. The existing Snap Certbot account/certificate/timer were reused. A local Rust 1.94.1 musl build avoids installing compilers on the 1 GB VPS
+- Dot review follow-up: the original `android/gradle/auth-config.gradle` exists locally but the directory-wide ignore hid it from commits. Narrow the ignore rule to retain generated wrapper exclusions while exposing this exact source helper. Reproduce the HTTP login quota-order bug with the actual router, then check the per-source limit before shared work admission. The regression must prove unrelated-source admission survives 64 rejected requests and shared capacity still has its original bound. Run authentication/configuration tests and scoped formatting; do not deploy or push during this review fix
+  On 2026-10-22 the daemon was deployed and a real unchanged installer rerun passed. It runs as dedicated `dxxmatch`, with `/opt` binaries, `/etc` config, `/var/lib` data, loopback TCP 9000/18080/18081 and UDP 9001/3478/3479. The existing Snap Certbot account/certificate/timer were reused. A local Rust 1.94.1 musl build avoids installing compilers on the 1 GB VPS
 
 - Deployment initially failed because the shipped JSONC had a trailing comma. Real rollback restored nginx and disabled the failed service. Fixed the default and the formatter that reintroduced the comma; added a production-schema test of the actual shipped file. Six Linux config tests and eleven installer orchestration checks passed
 - Static release SHA256: `851a2caff8659ddbb637ad40904d2dd284de08f1e0f800d7be964cff36abe46d`
