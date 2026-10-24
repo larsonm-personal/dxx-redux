@@ -211,16 +211,18 @@ internal class XlCompatibilityViewChecks(
                 }
                 instrumentation.waitForIdleSync()
                 click("D2X-XL compatibility: cannot load")
-                awaitText("Supported fixture: 2")
-                awaitText("Wall teleports: 3")
-                awaitText("Water segments: 1")
+                awaitText("D2X-XL extensions")
+                scrollTo("Wall teleports: 3")
                 instrumentation.waitForIdleSync()
                 SystemClock.sleep(300)
                 val theme = if (dark) "dark" else "light"
                 capture("xl-feature-browser-$theme.png").recycle()
                 assertColor("Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
+                scrollTo("Water segments: 1")
                 assertColor("Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
+                scrollTo("Eligible fixture: 1")
                 assertColor("Eligible; runtime checks needed", if (dark) 0xFFB86C else 0x8A4B00)
+                scrollTo("Supported fixture: 2")
                 assertColor("Supported", if (dark) 0x81C995 else 0x216E39)
                 val waterBounds =
                     Rect().also(
@@ -239,8 +241,9 @@ internal class XlCompatibilityViewChecks(
                 scrollTo("Wall teleports: 3", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
                 click("Wall teleports: 3")
                 awaitText("What XL does")
-                scrollTo("Current Redux support")
                 awaitText("Unsupported")
+                scrollTo("Current Redux support")
+                scrollTo("Wall-trigger actions only; object actions are not decoded")
                 click("Back to features")
                 click("Close")
                 instrumentation.waitForIdleSync()
@@ -316,6 +319,7 @@ internal class XlCompatibilityViewChecks(
             }
             instrumentation.waitForIdleSync()
             click("D2X-XL compatibility: cannot load")
+            awaitText("D2X-XL extensions")
             click("Uninspected category 0")
             awaitText("No verified feature explanation is available")
             click("Back to features")
