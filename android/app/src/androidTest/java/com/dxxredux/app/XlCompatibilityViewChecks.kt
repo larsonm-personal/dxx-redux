@@ -21,17 +21,20 @@ internal class XlCompatibilityViewChecks(
         fun visit(
             node: AccessibilityNodeInfo,
             remaining: Int,
+            exact: Boolean,
         ): AccessibilityNodeInfo? {
-            if (node.text?.toString()?.contains(text) == true) return node
+            val label = node.text?.toString()
+            if (if (exact) label == text else label?.contains(text) == true) return node
             if (remaining <= 0) return null
             for (i in 0 until node.childCount) {
                 val child = node.getChild(i) ?: continue
-                visit(child, remaining - 1)?.let { return it }
+                visit(child, remaining - 1, exact)?.let { return it }
             }
             return null
         }
         val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
-        return visit(root, 30)
+        // Prefer the status label over a title such as "Supported fixture"
+        return visit(root, 30, true) ?: visit(root, 30, false)
     }
 
     private fun awaitText(text: String): AccessibilityNodeInfo {
@@ -51,12 +54,15 @@ internal class XlCompatibilityViewChecks(
         }
     }
 
-    private fun scrollTo(text: String): AccessibilityNodeInfo {
+    private fun scrollTo(
+        text: String,
+        direction: Int = AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+    ): AccessibilityNodeInfo {
         repeat(10) {
             find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
 
             fun scroll(node: AccessibilityNodeInfo): Boolean {
-                if (node.isScrollable && node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) return true
+                if (node.isScrollable && node.performAction(direction)) return true
                 for (index in 0 until node.childCount) {
                     val child = node.getChild(index) ?: continue
                     if (scroll(child)) return true
@@ -81,26 +87,33 @@ internal class XlCompatibilityViewChecks(
     }
 
     private fun assertColor(
-        bitmap: Bitmap,
         text: String,
         color: Int,
     ) {
-        val bounds = Rect().also(awaitText(text)::getBoundsInScreen)
-        check(bounds.intersect(0, 0, bitmap.width, bitmap.height)) { "Status outside screenshot: $text" }
-        var pixels = 0
-        for (y in bounds.top until bounds.bottom) {
-            for (x in bounds.left until bounds.right) {
-                val actual = bitmap.getPixel(x, y)
-                if (listOf(0, 8, 16).all { shift ->
-                        kotlin.math.abs(((actual shr shift) and 255) - ((color shr shift) and 255)) <
-                            20
+        val label = scrollTo(text)
+        val bounds = Rect().also(label::getBoundsInScreen)
+        instrumentation.waitForIdleSync()
+        SystemClock.sleep(150)
+        val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+        try {
+            check(bounds.intersect(0, 0, bitmap.width, bitmap.height)) { "Status outside screenshot: $text" }
+            var pixels = 0
+            for (y in bounds.top until bounds.bottom) {
+                for (x in bounds.left until bounds.right) {
+                    val actual = bitmap.getPixel(x, y)
+                    if (listOf(0, 8, 16).all { shift ->
+                            kotlin.math.abs(((actual shr shift) and 255) - ((color shr shift) and 255)) <
+                                20
+                        }
+                    ) {
+                        pixels++
                     }
-                ) {
-                    pixels++
                 }
             }
+            check(pixels > 2) { "Status color missing: $text; matched=${label.text}; bounds=$bounds" }
+        } finally {
+            bitmap.recycle()
         }
-        check(pixels > 2) { "Status color missing from rendered label: $text" }
     }
 
     fun run() {
@@ -165,15 +178,14 @@ internal class XlCompatibilityViewChecks(
                 instrumentation.waitForIdleSync()
                 SystemClock.sleep(300)
                 val theme = if (dark) "dark" else "light"
-                val bitmap = capture("xl-feature-browser-$theme.png")
-                try {
-                    assertColor(bitmap, "Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
-                    assertColor(bitmap, "Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
-                    assertColor(bitmap, "Supported", if (dark) 0x81C995 else 0x216E39)
-                } finally {
-                    bitmap.recycle()
-                }
-                val waterBounds = Rect().also(awaitText("Water segments: 1")::getBoundsInScreen)
+                capture("xl-feature-browser-$theme.png").recycle()
+                assertColor("Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
+                assertColor("Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
+                assertColor("Supported", if (dark) 0x81C995 else 0x216E39)
+                val waterBounds =
+                    Rect().also(
+                        scrollTo("Water segments: 1", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)::getBoundsInScreen,
+                    )
                 click("Water segments: 1")
                 awaitText("What XL does")
                 scrollTo("Current Redux support")
@@ -184,6 +196,7 @@ internal class XlCompatibilityViewChecks(
                 instrumentation.waitForIdleSync()
                 val restoredBounds = Rect().also(awaitText("Water segments: 1")::getBoundsInScreen)
                 check(restoredBounds == waterBounds) { "Explanation Back lost the feature-list position" }
+                scrollTo("Wall teleports: 3", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
                 click("Wall teleports: 3")
                 awaitText("What XL does")
                 scrollTo("Current Redux support")
