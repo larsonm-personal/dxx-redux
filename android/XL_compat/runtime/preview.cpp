@@ -31,6 +31,7 @@ extern "C" {
 #include "console.h"
 #include "mission.h"
 #include "gameseq.h"
+#include "game.h"
 #include "switch.h"
 #include "textures.h"
 #include "gameseg.h"
@@ -232,6 +233,12 @@ extern "C" const char *xl_preview_level_path(const char *filename)
 extern "C" int xl_preview_pilot_active(void)
 {
 	return admitted_pilot && source && Current_level_num == 1 && !(Game_mode & GM_MULTI);
+}
+
+extern "C" int xl_runtime_active(void)
+{
+	// Loaded XL extensions, not a particular mission or build capability
+	return source && Game_wind && !(Game_mode & GM_MULTI);
 }
 
 extern "C" void xl_preview_complete_pilot(void)

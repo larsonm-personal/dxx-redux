@@ -15,8 +15,10 @@ foreach(xl_target IN LISTS xl_targets)
     target_compile_definitions(${xl_target} PRIVATE DXX_XL_PILOT)
     target_include_directories(${xl_target} PRIVATE "${xl_runtime_dir}")
     target_sources(
-        ${xl_target} PRIVATE "${xl_runtime_dir}/preview.cpp" "${xl_runtime_dir}/../inventory.cpp"
-                             "${xl_runtime_dir}/../probe.cpp" "${xl_runtime_dir}/../lighting.cpp")
+        ${xl_target}
+        PRIVATE "${xl_runtime_dir}/preview.cpp" "${xl_runtime_dir}/../inventory.cpp"
+                "${xl_runtime_dir}/../probe.cpp" "${xl_runtime_dir}/../lighting.cpp"
+                "${xl_runtime_dir}/menu_indicator.c")
     if(NOT xl_target STREQUAL "dxx-redux-d2-headless-metadata")
         target_sources(${xl_target} PRIVATE "${xl_runtime_dir}/start.cpp")
     endif()

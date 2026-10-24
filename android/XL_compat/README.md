@@ -9,6 +9,12 @@ target only when the pilot is enabled. Stock source retains the small alpha and
 depth-policy integration hooks. D1 needs no matching XL hooks for this D2-format
 pilot; shared Android save infrastructure continues to serve both engines
 
+Game menus show `XL` in the screen's upper-right corner while a game with loaded
+XL extensions is active. This includes standard menus, list boxes, pause and
+control-binding screens. The indicator reflects runtime activation, not build
+capability or mission-name matching; it clears when the game closes or stock
+level data replaces the XL source. Drawing lives in `runtime/menu_indicator.c`
+
 `shared/mod_save_supported_data.h` is the existing production UUD presentation-pack
 allowlist, not a per-level XL database or pilot fixture. Save compatibility uses
 it to constrain audited presentation-only changes. Mission source identities are

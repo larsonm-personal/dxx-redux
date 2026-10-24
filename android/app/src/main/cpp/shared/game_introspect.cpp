@@ -2013,6 +2013,8 @@ extern "C" char *game_introspect_get_state(void)
 	j["current_level_name"] = Current_level_name;
 #ifdef DXX_XL_PILOT
 	j["xl_pilot"] = {
+		{ "runtime_active", xl_runtime_active() != 0 },
+		{ "menu_indicator_draws", xl_menu_indicator_draws() },
 		{ "active", xl_preview_pilot_active() != 0 },
 		{ "completed", xl_preview_pilot_completed() != 0 },
 		{ "shaded_vertices", xl_preview_vertex_calls() },

@@ -53,8 +53,10 @@
     },
     { "action": "set_debug", "field": "xl_pilot_persistence", "value": "verify" },
     { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "assert", "expect": { "xl_pilot.runtime_active": true, "xl_pilot.menu_indicator_draws": { "gt": 0 } } },
     { "action": "select", "text": "Abort Game", "timeout_ms": 5000 },
     { "action": "wait_for", "field": "in_game", "value": "false", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "xl_pilot.runtime_active": false } },
     { "action": "select", "text": "New game", "timeout_ms": 10000 },
     { "action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000 },
     { "action": "select", "text": "Ok", "timeout_ms": 10000 },
@@ -65,6 +67,7 @@
         "action": "assert",
         "expect": {
             "difficulty": 0,
+            "xl_pilot.runtime_active": false,
             "current_level_num": 1,
             "xl_pilot.active": false,
             "xl_pilot.completed": false,
