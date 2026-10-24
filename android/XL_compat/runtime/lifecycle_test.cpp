@@ -1098,7 +1098,11 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
 	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
-	if (escape) require(input_demo_start_quick_recording_common() != 0, "cannot record earned escape checkpoint");
+	if (escape) {
+		const int paused = game_is_time_paused();
+		require(input_demo_start_quick_recording_common() != 0, "cannot record earned escape checkpoint");
+		require(game_is_time_paused() == paused, "checkpoint recording changed the caller's pause state");
+	}
 	bool crossed = false, approached = cross_from < 0;
 	auto complete = [&] { return cross_from >= 0 ? crossed : visit >= 0 ? ConsoleObject->segnum == visit
 		                                                 : branch >= 0  ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch))
