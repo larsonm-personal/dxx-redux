@@ -5,9 +5,10 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
-$fields = @('title', 'github_url', 'group_url', 'testing_url')
+$fields = @('title', 'github_url', 'group_url')
 foreach ($name in $config.PSObject.Properties.Name) {
-    if ($name -notin $fields) { throw 'Unknown landing configuration field' }
+    # Older deployment configs may still include the now-unused testing link
+    if ($name -notin $fields -and $name -ne 'testing_url') { throw 'Unknown landing configuration field' }
 }
 foreach ($name in $fields) {
     $value = $config.$name
@@ -19,7 +20,7 @@ foreach ($name in $fields) {
     }
 }
 $template = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'index.template.html') -Raw
-$html = [regex]::Replace($template, '\{\{(TITLE|GITHUB_URL|GROUP_URL|TESTING_URL)\}\}', {
+$html = [regex]::Replace($template, '\{\{(TITLE|GITHUB_URL|GROUP_URL)\}\}', {
         param($match)
         [System.Net.WebUtility]::HtmlEncode($config.($match.Groups[1].Value.ToLowerInvariant()))
     })

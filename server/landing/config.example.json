@@ -1,6 +1,5 @@
 {
     "title": "Your game",
     "github_url": "https://github.com/OWNER/REPOSITORY",
-    "group_url": "https://groups.google.com/g/YOUR-TEST-GROUP",
-    "testing_url": "https://play.google.com/apps/internaltest/YOUR-TEST-ID"
+    "group_url": "https://groups.google.com/g/YOUR-TEST-GROUP"
 }
