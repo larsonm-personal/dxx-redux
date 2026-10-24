@@ -2,6 +2,19 @@ include("${CMAKE_CURRENT_LIST_DIR}/stock_probe.cmake")
 configure_file("${fixture}/xlprobe.rl2" "${fixture}/stockprobe.rl2" COPYONLY)
 configure_file("${LEVEL}" "${fixture}/d2leva-1.rl2" COPYONLY)
 set(mission_test_args)
+if(DEFINED CROSS_FROM)
+    if(NOT DEFINED BRANCH OR NOT DEFINED CROSS_TO OR DEFINED VISIT)
+        message(
+            FATAL_ERROR "Portal crossing requires an earned branch checkpoint and both endpoints")
+    endif()
+    list(APPEND mission_test_args -xl-test-cross "${CROSS_FROM}:${CROSS_TO}")
+endif()
+if(DEFINED VISIT)
+    if(NOT NAVIGATION OR ESCAPE OR DEFINED BRANCH)
+        message(FATAL_ERROR "Secret entry requires an earned key/reactor phase")
+    endif()
+    list(APPEND mission_test_args -xl-test-visit "${VISIT}")
+endif()
 if(DEFINED BRANCH)
     if(NOT NAVIGATION OR REACTOR OR ESCAPE)
         message(FATAL_ERROR "Branch coverage requires only the earned red-key phase")
@@ -45,6 +58,43 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "XL preview lifecycle failed: ${result}; see ${fixture}")
 endif()
 file(READ "${fixture}/preview.log" report)
+if(DEFINED CROSS_FROM AND NOT report MATCHES
+                          "Normal linked portal: from=${CROSS_FROM} to=${CROSS_TO} crossed=1")
+    message(FATAL_ERROR "Linked portal was not physically crossed")
+endif()
+if(DEFINED VISIT
+   AND NOT report MATCHES
+       "Normal secret entry: target=${VISIT} actual=${VISIT} frames=[1-9][0-9]* dead=0")
+    message(FATAL_ERROR "Normal-input physical secret entry was not established")
+endif()
+if(NOT report MATCHES "Corona geometry: visible=112 solid-wall controls=148; GPU output unverified")
+    message(FATAL_ERROR "Corona visibility and solid-wall controls did not finish")
+endif()
+if(NOT
+   report
+   MATCHES
+   "Texture emitters: total=112 chromatic=24; native light switching and texture/wall removal verified; rendering unverified"
+)
+    message(FATAL_ERROR "Authored texture emitter state coverage did not finish")
+endif()
+if(ESCAPE AND NOT report MATCHES
+              "Normal escape recording: earned checkpoint and ordered flight inputs exported")
+    message(FATAL_ERROR "Earned escape recording was not exported")
+endif()
+if(NOT
+   report
+   MATCHES
+   "XL multiplayer admission: original and translated preview rejected in network/cooperative modes, stock loader and single-player recovery passed"
+)
+    message(FATAL_ERROR "XL multiplayer admission boundary was not verified")
+endif()
+if(NOT
+   report
+   MATCHES
+   "All 14 authored-opacity illusions pass native AI/object visibility and weapon-object collision queries with solid-boundary controls"
+)
+    message(FATAL_ERROR "Authored-material targeting coverage did not finish")
+endif()
 if(DEFINED BRANCH)
     if(NOT report MATCHES
        "Normal branch persistence: trigger=${BRANCH} targets and earned resources restored"

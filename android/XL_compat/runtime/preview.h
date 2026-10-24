@@ -26,10 +26,29 @@ void xl_preview_reset_player_thrust(void);
 const char *xl_preview_level_path(const char *filename);
 unsigned xl_preview_unresolved_emitters(void);
 int xl_preview_pilot_active(void);
+int xl_runtime_active(void);
+void xl_draw_menu_indicator(void);
+uint64_t xl_menu_indicator_draws(void);
 void xl_preview_complete_pilot(void);
 int xl_preview_pilot_completed(void);
 void xl_preview_trigger_result(int trigger, int shot, int result);
 uint64_t xl_preview_trigger_mask(void);
+typedef struct xl_texture_emitter {
+	int texture;
+	float rgb[3];
+	float intensity;
+} xl_texture_emitter;
+// Live emitter eligibility/color; visibility and drawing are separate
+int xl_preview_texture_emitter(int segment, int side, xl_texture_emitter *emitter);
+int xl_preview_corona_geometry(int segment, int side, const int32_t eye[3], int eye_segment,
+                               int32_t center[3], int32_t *radius, float *facing);
+void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment);
+uint64_t xl_preview_corona_draws(void);
+void xl_preview_record_corona_depth(int enabled, int classic_requested);
+uint64_t xl_preview_corona_depth_failures(void);
+uint64_t xl_preview_corona_classic_requested_draws(void);
+int ogl_draw_xl_corona(const int32_t center[3], int32_t radius, const float rgb[3], float intensity);
+void ogl_record_xl_corona_depth(void);
 #ifdef __cplusplus
 }
 #endif

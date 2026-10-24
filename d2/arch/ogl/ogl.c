@@ -2166,6 +2166,15 @@ void ogl_set_blending()
 
 GLubyte *pixels = NULL;
 
+int ogl_use_classic_depth(void)
+{
+#ifdef DXX_XL_PILOT
+	/* Authored emitters need scene depth; preserve the user's stock preference */
+	if (xl_preview_pilot_active()) return 0;
+#endif
+	return GameCfg.ClassicDepth;
+}
+
 void ogl_start_frame(void){
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID
@@ -2224,7 +2233,7 @@ void ogl_start_frame(void){
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GEQUAL,0.02);
 
-	if (GameCfg.ClassicDepth)
+	if (ogl_use_classic_depth())
 		glDisable(GL_DEPTH_TEST);
 	else
 		glEnable(GL_DEPTH_TEST);

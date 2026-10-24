@@ -472,6 +472,10 @@ static int state_effect_has_runtime_override(int effect_num, fix64 effect_loop_t
 static void state_write_effect_runtime_state(PHYSFS_file *fp, fix64 effect_loop_time)
 {
 	int count, dynamic_flags, i;
+#ifdef DXX_XL_CHECKPOINT_EXPORT
+	extern void xl_checkpoint_effect_offset(struct PHYSFS_File *file);
+	xl_checkpoint_effect_offset(fp);
+#endif
 #ifdef __ANDROID__
 	mod_save_effect_offset(fp);
 #endif

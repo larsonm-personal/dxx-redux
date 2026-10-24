@@ -42,6 +42,14 @@ internal class XlCompatibilityViewChecks(
         error("Missing dialog text: $text")
     }
 
+    private fun click(text: String) {
+        var node: AccessibilityNodeInfo? = awaitText(text)
+        while (node != null && !node.isClickable) node = node.parent
+        check(node != null && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            "No clickable accessibility ancestor for: $text"
+        }
+    }
+
     private fun assertColor(
         bitmap: Bitmap,
         text: String,
@@ -118,8 +126,7 @@ internal class XlCompatibilityViewChecks(
                     }
                 }
                 instrumentation.waitForIdleSync()
-                val button = awaitText("D2X-XL compatibility: cannot load")
-                check(button.performAction(AccessibilityNodeInfo.ACTION_CLICK)) { "Compatibility button did not open" }
+                click("D2X-XL compatibility: cannot load")
                 awaitText("Supported fixture: 2")
                 awaitText("Unsupported fixture: 3")
                 awaitText("Partial fixture: 1")
@@ -139,7 +146,7 @@ internal class XlCompatibilityViewChecks(
                 } finally {
                     bitmap.recycle()
                 }
-                check(awaitText("Close").performAction(AccessibilityNodeInfo.ACTION_CLICK))
+                click("Close")
                 instrumentation.waitForIdleSync()
             }
             val unknownRows =
@@ -153,7 +160,7 @@ internal class XlCompatibilityViewChecks(
                     launcher.setContent { MaterialTheme { XlCompatibilityButton(listOf(report)) } }
                 }
                 instrumentation.waitForIdleSync()
-                check(awaitText("D2X-XL compatibility: unverified").performAction(AccessibilityNodeInfo.ACTION_CLICK))
+                click("D2X-XL compatibility: unverified")
                 if (rows.isEmpty()) {
                     awaitText("No feature inventory available; support is unknown")
                 } else {
@@ -162,7 +169,7 @@ internal class XlCompatibilityViewChecks(
                     awaitText("Absent fixture: 0")
                     awaitText("Not present")
                 }
-                check(awaitText("Close").performAction(AccessibilityNodeInfo.ACTION_CLICK))
+                click("Close")
                 instrumentation.waitForIdleSync()
             }
         } finally {
