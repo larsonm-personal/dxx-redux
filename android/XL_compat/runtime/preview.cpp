@@ -2,6 +2,7 @@
 #include "preview.h"
 #include "../probe.h"
 #include "../lighting.h"
+#include "texture_brightness.h"
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -9,6 +10,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <limits>
+#include <cmath>
 #include "picosha2.h"
 extern "C" {
 #include "inferno.h"
@@ -30,7 +32,11 @@ extern "C" {
 #include "console.h"
 #include "mission.h"
 #include "gameseq.h"
+#include "game.h"
 #include "switch.h"
+#include "textures.h"
+#include "gameseg.h"
+#include "fvi.h"
 #include "dxxerror.h"
 #include "digi.h"
 #include "sounds.h"
@@ -46,6 +52,9 @@ namespace
 {
 std::unique_ptr<xl_compat::Inventory> source;
 uint64_t vertex_calls = 0;
+uint64_t corona_draws = 0;
+uint64_t corona_depth_failures = 0;
+uint64_t corona_classic_requested_draws = 0;
 float face_alpha = -1;
 std::vector<xl_compat::DynamicVertexLight> dynamic_vertices;
 std::vector<float> brightness;
@@ -57,7 +66,7 @@ struct MuzzleLight {
 std::vector<MuzzleLight> muzzle_lights;
 vms_vector player_thrust{};
 std::string pending_level;
-bool admitted_pilot = false, completed_pilot = false;
+bool admitted_pilot = false, completed_pilot = false, admitted_water_arena = false;
 uint64_t activated_triggers = 0;
 constexpr const char *translated_path = "xl_preview_cache/pilot.rl2";
 // XL palette.h uses 31; stock GR_FADE_LEVELS is 34 and cannot be reused
@@ -127,10 +136,13 @@ const char *option(const char *name)
 
 extern "C" int xl_preview_load_level(const char *filename)
 {
-	admitted_pilot = completed_pilot = false;
+	admitted_pilot = completed_pilot = admitted_water_arena = false;
 	activated_triggers = 0;
 	source.reset();
 	vertex_calls = 0;
+	corona_draws = 0;
+	corona_depth_failures = 0;
+	corona_classic_requested_draws = 0;
 	face_alpha = -1;
 	dynamic_vertices.clear();
 	brightness.clear();
@@ -145,10 +157,15 @@ extern "C" int xl_preview_load_level(const char *filename)
 	const bool arena = option("-xl-water-arena") && Current_mission &&
 	                   !std::strcmp(Current_mission_filename, "rtarena") && !std::strcmp(base, "rtarena.rl2");
 	const bool original = arena || (option("-xl-pilot") && pilot_mission && !std::strcmp(base, "d2leva-1.rl2"));
+	const bool translated_preview = option("-xl-static-light-preview") && !std::strcmp(base, "xlprobe.rl2");
+	if ((original || translated_preview) && (Game_mode & GM_MULTI)) {
+		con_printf(CON_URGENT, "XL pilot rejected: multiplayer is outside the verified pilot scope\n");
+		return 1;
+	}
 	int result = 0;
 	if (!original) {
 		result = xl_stock_load_level(filename);
-		if (result || !option("-xl-static-light-preview") || std::strcmp(base, "xlprobe.rl2")) return result;
+		if (result || !translated_preview) return result;
 	}
 	try {
 		xl_compat::Bytes bytes;
@@ -208,6 +225,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		dynamic_vertices.resize(level->vertices.size());
 		source = std::move(level);
 		admitted_pilot = original && !arena;
+		admitted_water_arena = arena;
 		con_printf(CON_URGENT, "XL PREVIEW: dynamic lighting and face effects are unverified; not production support\n");
 		return result;
 	} catch (const std::exception &error) {
@@ -295,6 +313,12 @@ extern "C" int xl_preview_pilot_active(void)
 	return admitted_pilot && source && Current_level_num == 1 && !(Game_mode & GM_MULTI);
 }
 
+extern "C" int xl_runtime_active(void)
+{
+	// Loaded XL extensions, not a particular mission or build capability
+	return source && Game_wind && !(Game_mode & GM_MULTI);
+}
+
 extern "C" void xl_preview_complete_pilot(void)
 {
 	if (xl_preview_pilot_active()) completed_pilot = true;
@@ -318,6 +342,147 @@ extern "C" void xl_preview_trigger_result(int trigger, int shot, int result)
 extern "C" uint64_t xl_preview_trigger_mask(void)
 {
 	return activated_triggers;
+}
+
+extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, xl_texture_emitter *emitter)
+{
+	if (emitter) *emitter = {};
+	// The water pilot retains its previously qualified presentation profile
+	if (!emitter || !source || admitted_water_arena || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6) return 0;
+	const auto &side = Segments[segment_number].sides[side_number];
+	if (side.wall_num >= 0) {
+		if (side.wall_num >= Num_walls) return 0;
+		const auto &w = Walls[side.wall_num];
+		if (w.type == WALL_BLASTABLE || w.type == WALL_DOOR || w.type == WALL_OPEN || w.type == WALL_CLOAKED || w.flags & (WALL_BLASTED | WALL_ILLUSION_OFF)) return 0;
+	}
+	if (Light_subtracted[segment_number] & (1 << side_number)) return 0;
+	const auto light = [](int texture) {
+		for (const auto &entry : xl_compat::texture_brightness)
+			if (entry.texture == texture) return entry.brightness;
+		return int32_t(0);
+	};
+	int texture = side.tmap_num2 & 0x3fff;
+	float intensity = 1;
+	if (!texture || light(texture) < F1_0 / 8) {
+		texture = side.tmap_num;
+		if (!light(texture)) return 0;
+		intensity = 0.5f;
+	}
+	// Pinned XL FaceHasCorona exclusions and bright strip-light scale
+	switch (texture) {
+		case 0:
+		case 6:
+		case 302:
+		case 348:
+		case 349:
+		case 353:
+		case 356:
+		case 357:
+		case 358:
+		case 359:
+		case 360:
+		case 361:
+		case 432:
+		case 433:
+		case 434: return 0;
+		case 404:
+		case 405:
+		case 406:
+		case 407:
+		case 408:
+		case 409: intensity *= 2; break;
+		default: break;
+	}
+	if (texture < 0 || texture >= NumTextures || std::size_t(texture) >= source->texture_colors.size()) return 0;
+	const auto bitmap = Textures[texture].index;
+	if (bitmap >= Num_bitmap_files) return 0;
+	const char *name = piggy_game_bitmap_name(&GameBitmaps[bitmap]);
+	if (!name || std::strstr(name, "metl") || std::strstr(name, "rock") || std::strstr(name, "water")) return 0;
+	emitter->texture = texture;
+	emitter->intensity = intensity;
+	for (unsigned c = 0; c < 3; ++c) emitter->rgb[c] = float(source->texture_colors[texture].rgb[c]);
+	return 1;
+}
+
+extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, const int32_t eye[3], int eye_segment,
+                                          int32_t center[3], int32_t *radius, float *facing)
+{
+	if (!source || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6 || eye_segment < 0 || eye_segment >= Num_segments) return 0;
+	auto &seg = Segments[segment_number];
+	if (!(WALL_IS_DOORWAY(&seg, side_number) & WID_RENDER_FLAG)) return 0;
+	vms_vector point{}, inside{}, observer{ eye[0], eye[1], eye[2] }, direction{}, normals[2];
+	compute_center_point_on_side(&point, &seg, side_number);
+	compute_segment_center(&inside, &seg);
+#ifdef COMPACT_SEGS
+	get_side_normals(&seg, side_number, &normals[0], &normals[1]);
+#else
+	normals[0] = seg.sides[side_number].normals[0];
+	normals[1] = seg.sides[side_number].normals[1];
+#endif
+	vm_vec_normalized_dir(&direction, &observer, &point);
+	const fix cosine = (std::max) (vm_vec_dot(&direction, &normals[0]), vm_vec_dot(&direction, &normals[1]));
+	if (cosine <= 0) return 0;
+	// Place the sprite just inside the surface to avoid depth fighting
+	point.x += (inside.x - point.x) / 256;
+	point.y += (inside.y - point.y) / 256;
+	point.z += (inside.z - point.z) / 256;
+	fvi_query query{};
+	query.p0 = &observer;
+	query.p1 = &point;
+	query.startseg = eye_segment;
+	query.thisobjnum = -1;
+	query.flags = FQ_TRANSWALL;
+	fvi_info hit{};
+	if (find_vector_intersection(&query, &hit) != HIT_NONE) return 0;
+	int vertices[4];
+	get_side_verts(vertices, segment_number, side_number);
+	fix extent = (std::numeric_limits<fix>::max)();
+	for (unsigned i = 0; i < 4; ++i)
+		extent = (std::min) (extent, vm_vec_dist(&Vertices[vertices[i]], &Vertices[vertices[(i + 1) % 4]]));
+	if (extent <= 0) return 0;
+	center[0] = point.x;
+	center[1] = point.y;
+	center[2] = point.z;
+	*radius = extent / 2;
+	*facing = std::sqrt(float(cosine) / F1_0);
+	return 1;
+}
+
+extern "C" void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment)
+{
+	if (!source || Game_mode & GM_MULTI) return;
+	for (int i = 0; i < count; ++i) {
+		for (int side = 0; side < 6; ++side) {
+			xl_texture_emitter emitter{};
+			if (!xl_preview_texture_emitter(segments[i], side, &emitter)) continue;
+			int32_t center[3], radius;
+			float facing;
+			if (!xl_preview_corona_geometry(segments[i], side, eye, eye_segment, center, &radius, &facing)) continue;
+			ogl_record_xl_corona_depth();
+			corona_draws += ogl_draw_xl_corona(center, radius, emitter.rgb, emitter.intensity * facing * 0.5f);
+		}
+	}
+}
+
+extern "C" uint64_t xl_preview_corona_draws(void)
+{
+	return corona_draws;
+}
+
+extern "C" void xl_preview_record_corona_depth(int enabled, int classic_requested)
+{
+	if (!enabled) ++corona_depth_failures;
+	if (classic_requested) ++corona_classic_requested_draws;
+}
+
+extern "C" uint64_t xl_preview_corona_classic_requested_draws(void)
+{
+	return corona_classic_requested_draws;
+}
+
+extern "C" uint64_t xl_preview_corona_depth_failures(void)
+{
+	return corona_depth_failures;
 }
 
 extern "C" void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t *g, int32_t *b)

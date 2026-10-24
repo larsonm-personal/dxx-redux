@@ -102,6 +102,54 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/escape-tests -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
             set_tests_properties(xl_normal_escape PROPERTIES TIMEOUT 90)
+            # Linked portals not crossed by the existing branch and secret routes
+            foreach(crossing IN ITEMS "1,176,182" "2,193,194" "3,136,137" "5,5,185")
+                string(REPLACE "," ";" endpoints "${crossing}")
+                list(GET endpoints 0 trigger)
+                list(GET endpoints 1 cross_from)
+                list(GET endpoints 2 cross_to)
+                add_test(
+                    NAME xl_normal_portal_${cross_from}_${cross_to}
+                    COMMAND
+                        ${CMAKE_COMMAND} -DNAVIGATION=ON -DBRANCH=${trigger}
+                        -DCROSS_FROM=${cross_from} -DCROSS_TO=${cross_to} -DLEVEL=${XL_PILOT_LEVEL}
+                        -DPROBE=$<TARGET_FILE:xl_probe_fixture> -DENGINE=${XL_STOCK_METADATA}
+                        -DDATA=${XL_RETAIL_DATA} -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                        -DPILOT_HOG=${XL_PILOT_HOG} -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/portal-${cross_from}-${cross_to}-tests
+                        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+                set_tests_properties(xl_normal_portal_${cross_from}_${cross_to} PROPERTIES TIMEOUT
+                                                                                           90)
+            endforeach()
+            # Capture segments for all nine secret areas in the original pilot
+            foreach(
+                visit IN
+                ITEMS 4
+                      205
+                      206
+                      17
+                      81
+                      225
+                      14
+                      227
+                      199)
+                set(visit_reactor OFF)
+                if(visit EQUAL 199)
+                    # Reach the reactor-adjacent secret after the normal reactor fight
+                    set(visit_reactor ON)
+                endif()
+                add_test(
+                    NAME xl_normal_secret_${visit}
+                    COMMAND
+                        ${CMAKE_COMMAND} -DNAVIGATION=ON -DVISIT=${visit}
+                        -DREACTOR=${visit_reactor} -DLEVEL=${XL_PILOT_LEVEL}
+                        -DPROBE=$<TARGET_FILE:xl_probe_fixture> -DENGINE=${XL_STOCK_METADATA}
+                        -DDATA=${XL_RETAIL_DATA} -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                        -DPILOT_HOG=${XL_PILOT_HOG} -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/secret-${visit}-tests -P
+                        ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+                set_tests_properties(xl_normal_secret_${visit} PROPERTIES TIMEOUT 90)
+            endforeach()
             foreach(
                 branch IN
                 ITEMS 1

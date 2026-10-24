@@ -1,16 +1,50 @@
 # D2X-XL extension support catalog
 
-Production XL admission remains unsupported. The native 15/33 inventory,
-translation, partial lighting preview and normal-input progression are separate experiments.
-None grants mission compatibility. The executable catalog is `compatibility.cpp`;
+Production XL admission remains unsupported. The exact original Ahayweh Gate
+singleplayer pilot is now verified in the opt-in build; see its
+[acceptance record](evidence/pilot-acceptance-audit.md) and
+[requirement reconciliation](evidence/pilot-requirements.md). This does not grant
+campaign-wide compatibility. The executable catalog is `compatibility.cpp`;
 the Android browser displays its per-source evidence. Keep descriptions and
 support text synchronized with this catalog
 
-Pilot scope clarified by the user: faithful XL engine extensions, with Redux's
-classic behavior retained. Exact visual fidelity and XL retuning of features
-already present in 1996 are not acceptance requirements. Existing research into
-classic emitter formulas is not a requirement to port those formulas. Authored
+Pilot scope clarified by the user: faithful XL engine extensions; incidental
+XL retuning of classic gameplay (for example, wholesale flare speed) need not
+be copied. This does not mandate preserving every Redux gameplay choice.
+Authored warps, speed boosts and other extensions must work wherever present.
+Exact visual fidelity is not an acceptance requirement. Visual tweaks are
+allowed; research into classic emitter formulas can inform implementation
+without requiring exact image matching. Authored
 extension data and its gameplay consequences remain mandatory
+
+Latest pilot evidence: all 13 native trigger actions have host normal-input
+coverage, with non-exit target persistence checked. All 14 authored-opacity
+walls additionally pass native AI/object visibility and weapon-object queries
+with solid-boundary controls. The opt-in Android x86_64 runtime now builds and
+its explicit smoke test starts original Ahayweh Gate through normal menus,
+retaining 38 robots and active XL shading. Its 34-step extension also verifies
+quick-save/restore and pilot -> retail Counterstrike -> saved pilot isolation.
+Controlled changes to one light and wall 6 survive both restores, with every
+UVL/subtraction mask and restored material alpha checked. This is persistence
+coverage, not normal-input operation of those fixtures. These checks do not
+certify Android import or performance. A separate 22-step Android test now
+verifies native exit from an earned checkpoint, the real score screen and bonus,
+readiness-gated dismissal and usable main-menu return without level 2. The
+checkpoint retains the native source-definition trailer; Android validation
+was not weakened. This is not an uninterrupted Android playthrough.
+Texture-colored coronas are now implemented, with Android pixel/color, real-wall
+depth and object-pass depth checks. The reference `effects/glare.cpp` consumes
+texture RGB even though legacy baked-vertex lighting does not recompute ambient
+colors from that table. The isolated reference runtime now has enabled coronas
+and loaded corona/glare resources. These observations do not establish exact
+image parity, which is outside the requested scope. Current evidence and open
+requirements are maintained in the [acceptance audit](evidence/pilot-acceptance-audit.md)
+
+The experimental loader now explicitly rejects original and translated pilot
+loads in multiplayer. Host lifecycle checks cover network/cooperative modes,
+extension-state clearing, stock loading and subsequent single-player recovery.
+The full 14-test progression/lifecycle sweep passes after this guard. This
+closes a loader admission gap; multiplayer presentation remains unverified
 
 This revision incorporates Dot's survey, checked on 2026-10-23. See
 [evidence and qualifications](evidence/README.md) and the preserved
@@ -122,19 +156,40 @@ checks stock-state isolation. It does not prove every authored branch or
 interactive completion presentation. See the pilot plan for exact artifacts
 and superseded earlier runs
 
+All 12 non-exit trigger tests now pass twice, with native activation, observed
+linked-target passability and actual save/restore of target state and earned
+player resources. Together with the native exit, this covers all 13 authored
+actions. It does not establish physical traversal of every linked portal or
+an uninterrupted all-secrets run. The pilot plan preserves the earlier failures
+and the current passing artifacts; production admission remains unsupported
+
 The next qualification sequence is therefore:
 
-1. Verify interactive completion presentation for the single-level pilot.
-   Headless timed escape and native completion pass; level 2 remains outside
-   admission and the interactive path must return cleanly to the menu
-2. Account for all 13 wall triggers and their branches. Record activation,
-   expected target changes and persistence separately from simply visiting a
-   segment; classify any unexercised branch as unverified
-3. Close authored side/texture-color semantics and the remaining material
-   visibility, targeting and projectile checks. Loaded resources and geometric
-   passage checks do not establish these behaviors
-4. Verify the intended Android import, launch, save and return-to-stock path
-   before promoting Android admission. Windows experiments alone cannot do so
+1. Retain the verified interactive completion boundary: the Android 22-step
+   earned-checkpoint test passes, including score presentation and menu use.
+   Level 2 remains outside admission; broaden device/performance evidence
+   separately rather than treating the emulator result as universal
+2. Retain the verified activation, passability and persistence coverage for all
+   13 actions. Keep any unexercised physical branch traversal explicitly
+   unverified; visiting a segment alone is not activation evidence
+3. Close authored side/texture-color semantics. Retain the all-wall native
+   visibility/targeting/projectile-query checks, distinguishing their controlled
+   objects from live projectile damage. Loaded resources and geometric passage
+   alone do not establish those behaviors
+   The [pilot color audit](evidence/pilot-authored-colors.md) identifies 24
+   initial chromatic corona candidates and traces side-color registration.
+   The old reference screenshot has coronas disabled and remains insufficient;
+   later resource-backed observations and Android occlusion tests are separate
+   evidence. The two-segment ambient-state difference is now traced to the
+   reference's paged-out bitmap flags during startup. A controlled opaque-boundary
+   test reproduces it; Redux retains its existing PIG transparency flags rather
+   than copying this classic loading artifact
+4. Retain the Android ZIP import/startup evidence: the 15-step original-byte
+   import passes with manually staged files moved aside and extracted hashes
+   matching the source. The 34-step persistence/isolation test also passes
+   through this imported path, including retail Counterstrike and pilot restore.
+   Retain the private-fixture prerequisites and do not infer other campaign
+   levels or production compatibility approval from these results
 
 These gates refine the first pilot, not the corpus-wide implementation order.
 Do not port teleports, generators or wider tables merely because the survey
