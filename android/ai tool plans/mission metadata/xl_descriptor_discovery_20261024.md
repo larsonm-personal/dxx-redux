@@ -96,3 +96,20 @@ selection failure to resolving `Observatory XL` / `obsrv-xl`, then exits 1 with
 `XL descriptor loaded, but level gameplay remains unqualified`. It does not emit
 successful level analysis. Existing headless teardown allocation diagnostics remain;
 this is not a leak qualification. No emulator or audible/rendered output is claimed.
+
+## Review corrections
+
+Descriptor-only selection now skips the native mission asset service before it
+frees models or reads HAM/sound data. Skipping only the extra-HAM branch was
+insufficient: a companion HOG could shadow `descent2.ham` during base loading.
+A synthetic companion HOG containing an invalid stock-named HAM proves that the
+shadow is mounted yet not decoded; definitions/model payload and stock recovery
+remain intact. Direct HAM loading is likewise refused for XL descriptor identity.
+Normal mission resource loading is unchanged.
+
+XL names use complete bounded first-line validation and full title validation on
+mission load. An `A`, 80 spaces, then `B` cannot be accepted as a truncated `A`.
+Headers reaching the native line-buffer bound are rejected, even if a short title
+precedes a long comment. Indented mixed and repeated headers are rejected using
+consistent whitespace handling. Public title-boundary tests and native fixtures
+cover these cases.

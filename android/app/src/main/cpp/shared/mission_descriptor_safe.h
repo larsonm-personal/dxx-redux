@@ -29,6 +29,21 @@ static inline char *mission_descriptor_value(char *line)
 	return *value ? value : NULL;
 }
 
+static inline int mission_descriptor_copy_title(const char *value, char *output, size_t capacity)
+{
+	const char *end;
+	size_t length;
+	if (!value || !output || !capacity) return 0;
+	while (*value && isspace((unsigned char) *value)) ++value;
+	for (end = value; *end && *end != ';'; ++end) {}
+	while (end > value && isspace((unsigned char) end[-1])) --end;
+	length = (size_t) (end - value);
+	if (!length || length >= capacity) return 0;
+	memcpy(output, value, length);
+	output[length] = 0;
+	return 1;
+}
+
 static inline int mission_descriptor_parse_count(const char *text, int minimum, int maximum, int *result)
 {
 	char *end;

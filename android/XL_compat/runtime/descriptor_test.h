@@ -9,6 +9,7 @@ static int descriptor_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
 		const auto stock_definitions = gameplay_definitions();
+		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
 		for (int pass = 0; pass < 2; ++pass) {
 			require(load_base_mission("obsrv-xl", error, sizeof(error)), error);
@@ -16,7 +17,7 @@ static int descriptor_test(int argc, char **argv)
 			require(Current_mission->enhanced == MISSION_ENHANCED_XL, "XL descriptor identity lost");
 			require(Last_level == 1 && Last_secret_level == 0 && !std::strcmp(Level_names[0], "obsrv-xl.rl2"), "original level list differs");
 			require(!Current_mission->alternate_ham_file && bm_compatibility_warning_count() == 0, "XL descriptor was treated as stock extra-HAM");
-			require(gameplay_definitions() == stock_definitions, "descriptor changed gameplay definitions");
+			require(gameplay_definitions() == stock_definitions && arena_model() == stock_model, "descriptor changed gameplay definitions or model payload");
 			for (const auto &entry : { std::pair<const char *, int>{ "obsrv-xl.rl2", 52176 }, { "obsrv-xl.pog", 26144 } }) {
 				const char *resolved = PHYSFS_getRealDir(entry.first);
 				require(resolved && std::filesystem::path(resolved).filename() == "obsrv-xl.hog", "original companion HOG not selected");
@@ -61,10 +62,26 @@ static int descriptor_test(int argc, char **argv)
 			poison << "invalid HAM sentinel";
 		}
 		require(PHYSFS_getRealDir("xlcase.ham") != nullptr, "HAM negative control is not mounted");
+		// The companion HOG must be inspectable without decoding even stock-named assets
+		xl_compat::Bytes shadow{ 'D', 'H', 'F' };
+		const char member[13] = "descent2.ham";
+		shadow.insert(shadow.end(), member, member + sizeof(member));
+		shadow.insert(shadow.end(), { 4, 0, 0, 0, 'B', 'A', 'D', '!' });
+		write_bytes((root / "xlshadow.hog").string().c_str(), shadow);
+		fixture("xlshadow", "d2x-name = Shadow assets\nnum_levels = 1\nd2leva-1.rl2\n", true);
+		const char *shadow_dir = PHYSFS_getRealDir("descent2.ham");
+		require(shadow_dir && std::filesystem::path(shadow_dir).filename() == "xlshadow.hog", "stock-name HAM negative control is not active");
+		require(load_mission_ham() == 0 && gameplay_definitions() == stock_definitions && arena_model() == stock_model,
+		        "descriptor selection decoded or freed shadowed gameplay resources");
+		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "shadow HAM recovery failed");
 		fixture("xlcase", "  D2X-NaMe = Case test\ntype = normal\nnum_levels = 1\nd2leva-1.rl2\n", true);
 		fixture("xlmix", "name = Legacy title\nnum_levels = 1\nd2leva-1.rl2\nd2x-name = XL identity\n", false);
-		fixture("xlback", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\nname = Legacy identity\n", false);
-		fixture("xldup", "d2x-name = First\nd2x-name = Second\nnum_levels = 1\nd2leva-1.rl2\n", false);
+		fixture("xlback", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n  name = Legacy identity\n", false);
+		fixture("xldup", "d2x-name = First\n  d2x-name = Second\nnum_levels = 1\nd2leva-1.rl2\n", false);
+		const auto hidden_title = std::string("d2x-name = A") + std::string(80, ' ') + "B\nnum_levels = 1\nd2leva-1.rl2\n";
+		fixture("xlhidden", hidden_title.c_str(), false);
+		const auto truncated_title = std::string("d2x-name = A;") + std::string(PATH_MAX, 'x') + "\nnum_levels = 1\nd2leva-1.rl2\n";
+		fixture("xltrunc", truncated_title.c_str(), false);
 		fixture("xllong", "d2x-name = Title exceeding the twenty five character native limit\nnum_levels = 1\nd2leva-1.rl2\n", false);
 		fixture("xlfile", "d2x-name = Long filename\nnum_levels = 1\ntoolongfilename.rl2\n", false);
 		fixture("xlsecrt", "d2x-name = Secret mapping\nnum_levels = 2\nd2leva-1.rl2\nd2leva-2.rl2\nnum_secrets = 1\nd2leva-s.rl2,2\n", true);
