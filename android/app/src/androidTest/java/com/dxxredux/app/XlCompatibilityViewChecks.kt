@@ -59,7 +59,13 @@ internal class XlCompatibilityViewChecks(
         direction: Int = AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
     ): AccessibilityNodeInfo {
         repeat(10) {
-            find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
+            find(text)?.let { target ->
+                if (target.isVisibleToUser) return target
+                target.performAction(AccessibilityNodeInfo.ACTION_SHOW_ON_SCREEN)
+                instrumentation.waitForIdleSync()
+                SystemClock.sleep(250)
+                find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
+            }
 
             fun scroll(node: AccessibilityNodeInfo): Boolean {
                 if (node.isScrollable && node.performAction(direction)) return true
@@ -69,9 +75,33 @@ internal class XlCompatibilityViewChecks(
                 }
                 return false
             }
-            check(scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))) { "Cannot scroll to $text" }
+            val moved = scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))
             instrumentation.waitForIdleSync()
-            SystemClock.sleep(150)
+            SystemClock.sleep(250)
+            if (!moved) {
+                find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
+                // Only synthetic dialog text is rendered by this test; keep failure evidence bounded
+                val labels = mutableListOf<String>()
+
+                fun describe(
+                    node: AccessibilityNodeInfo,
+                    depth: Int,
+                ) {
+                    if (depth > 20 || labels.size >= 24) return
+                    if (node.text != null || node.isScrollable) {
+                        labels.add(
+                            "${node.text?.take(
+                                160,
+                            )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} bounds=${Rect().also(
+                                node::getBoundsInScreen,
+                            )}",
+                        )
+                    }
+                    for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
+                }
+                instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
+                error("Cannot scroll to $text: ${labels.joinToString(" | ")}")
+            }
         }
         error("Text not visible after bounded scroll: $text")
     }
@@ -152,6 +182,15 @@ internal class XlCompatibilityViewChecks(
                         teleports,
                         water,
                         XlCompatibilityRow(
+                            "Eligible fixture",
+                            "1",
+                            "XL-enabled build required",
+                            "eligible",
+                            "",
+                            1,
+                            true,
+                        ),
+                        XlCompatibilityRow(
                             "Supported fixture",
                             "2",
                             "Synthetic supported feature",
@@ -181,6 +220,7 @@ internal class XlCompatibilityViewChecks(
                 capture("xl-feature-browser-$theme.png").recycle()
                 assertColor("Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
                 assertColor("Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
+                assertColor("Eligible; runtime checks needed", if (dark) 0xFFB86C else 0x8A4B00)
                 assertColor("Supported", if (dark) 0x81C995 else 0x216E39)
                 val waterBounds =
                     Rect().also(
@@ -231,6 +271,26 @@ internal class XlCompatibilityViewChecks(
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
+            val sourceA =
+                XlCompatibilityReport("Source A", "eligible", "Assets still need checks", listOf(unknownRows[0]))
+            val sourceB = XlCompatibilityReport("Source B", "unknown", "Sibling not inspected", listOf(unknownRows[1]))
+            instrumentation.runOnMainSync {
+                launcher.setContent { MaterialTheme { XlCompatibilityButton(listOf(sourceA, sourceB)) } }
+            }
+            instrumentation.waitForIdleSync()
+            click("D2X-XL compatibility: unverified")
+            awaitText("Missing fixture: ?")
+            click("Source B")
+            awaitText("Absent fixture: 0")
+            awaitText("Sibling not inspected")
+            click("Close")
+            instrumentation.waitForIdleSync()
+            click("D2X-XL compatibility: unverified")
+            awaitText("Absent fixture: 0")
+            click("Source A")
+            awaitText("Missing fixture: ?")
+            click("Close")
+            instrumentation.waitForIdleSync()
             val catalog =
                 checkNotNull(
                     XlCompatibility.inspect("synthetic.mn2", "d2x-name = Synthetic UI fixture\n".toByteArray()),

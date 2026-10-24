@@ -76,6 +76,7 @@ internal fun compatibilityStatusLabel(status: String): String =
         "full" -> "Supported"
         "partial" -> "Experimental / partial"
         "blocked" -> "Unsupported"
+        "eligible" -> "Eligible; runtime checks needed"
         "not_required" -> "Not present"
         else -> "Not inspected"
     }
@@ -89,6 +90,12 @@ internal fun XlCompatibilityRow.reduxExplanation(): String =
     buildString {
         append(limitations.ifBlank { support }.ifBlank { "Support has not been verified." })
         when (status) {
+            "eligible" -> {
+                append(
+                    " Requires an XL-enabled build and mission/resource checks at load time; this is not verified gameplay or campaign support.",
+                )
+            }
+
             "unknown" -> {
                 append(" This feature has not been fully inspected for this source.")
             }
@@ -99,4 +106,12 @@ internal fun XlCompatibilityRow.reduxExplanation(): String =
                 )
             }
         }
+    }
+
+// Missing or unknown sibling evidence must not inherit another level's eligibility
+internal fun compatibilityGroupStatus(reports: List<XlCompatibilityReport>): String =
+    when {
+        reports.any { it.status == "blocked" } -> "blocked"
+        reports.isNotEmpty() && reports.all { it.status == "eligible" } -> "eligible"
+        else -> "unknown"
     }

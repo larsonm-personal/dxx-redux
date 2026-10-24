@@ -77,4 +77,26 @@ class XlCompatibilityTest {
             legacy.copy(status = "not_required").reduxExplanation().contains("does not qualify the level"),
         )
     }
+
+    @Test
+    fun eligibilityIsConditionalAndCannotQualifyUnknownSiblings() {
+        val eligible = XlCompatibility.parse(report(status = "eligible"))!!.copy(status = "eligible")
+        assertEquals("Eligible; runtime checks needed", compatibilityStatusLabel(eligible.rows.single().status))
+        org.junit.Assert.assertTrue(
+            eligible.rows
+                .single()
+                .reduxExplanation()
+                .contains("XL-enabled build"),
+        )
+        org.junit.Assert.assertTrue(
+            eligible.rows
+                .single()
+                .reduxExplanation()
+                .contains("not verified gameplay"),
+        )
+        assertEquals("eligible", compatibilityGroupStatus(listOf(eligible)))
+        assertEquals("unknown", compatibilityGroupStatus(listOf(eligible, eligible.copy(status = "unknown"))))
+        assertEquals("blocked", compatibilityGroupStatus(listOf(eligible, eligible.copy(status = "blocked"))))
+        assertEquals("unknown", compatibilityGroupStatus(emptyList()))
+    }
 }

@@ -1,4 +1,10 @@
+# Format detection is available even when the optional XL runtime is disabled
+add_library(dxx_xl_mission_label OBJECT ../../android/XL_compat/mission_label.cpp)
+target_compile_features(dxx_xl_mission_label PRIVATE cxx_std_17)
+set_target_properties(dxx_xl_mission_label PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 set(D2X_MAIN_SOURCES
+    $<TARGET_OBJECTS:dxx_xl_mission_label>
     ai.c
     ai2.c
     aipath.c

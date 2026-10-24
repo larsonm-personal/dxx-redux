@@ -1,7 +1,9 @@
 # D2X-XL extension support catalog
 
-Production XL admission remains unsupported. The exact original Ahayweh Gate
-singleplayer pilot is verified in the opt-in build; see its
+Optional XL builds now admit levels by detected requirements and runtime asset checks,
+without a mission-name or hash exception. Ordinary builds still disable XL.
+This is per-level eligibility, not campaign qualification. The original Ahayweh Gate
+singleplayer pilot is now verified in the opt-in build; see its
 [acceptance record](evidence/pilot-acceptance-audit.md) and
 [requirement reconciliation](evidence/pilot-requirements.md). This does not grant
 campaign-wide compatibility. The native 15/33 and 17/36 inventory, bounded 15/33

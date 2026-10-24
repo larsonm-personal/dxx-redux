@@ -7,7 +7,7 @@
     { "action": "skip_intro", "timeout_ms": 30000, "post_delay_ms": 500 },
     { "action": "select", "text": "${PILOT}", "timeout_ms": 10000, "post_delay_ms": 200 },
     { "action": "select", "text": "New game", "timeout_ms": 15000, "post_delay_ms": 200 },
-    { "action": "select_mission", "text": "D2-XL: Counterstrike!", "timeout_ms": 10000, "post_delay_ms": 200 },
+    { "action": "select_mission", "text": "XL: D2-XL: Counterstrike!", "timeout_ms": 10000, "post_delay_ms": 200 },
     { "action": "select", "text": "Ok", "timeout_ms": 10000, "post_delay_ms": 200 },
     { "action": "select", "text": "Hotshot", "timeout_ms": 10000, "post_delay_ms": 200 },
     { "action": "skip_briefing", "timeout_ms": 20000 },

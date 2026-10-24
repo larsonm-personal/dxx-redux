@@ -34,6 +34,7 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #undef main
 #undef PHYSFSX_init
 #include "preview.h"
+#include "asset_dependencies.h"
 #include "checkpoint_export.h"
 #include "../probe.h"
 #include "../lighting.h"
@@ -87,151 +88,8 @@ void require(bool condition, const char *message)
 }
 // Traverse loaded object-data references, including dependencies created after startup
 // This does not prove audible playback or override precedence
-struct ObjectDependencies {
-	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
-	void sound(int id)
-	{
-		if (id == -1 || id == 255) return;
-		const int resolved = digi_xlat_sound(id);
-		if (resolved < 0 || resolved >= MAX_SOUND_FILES)
-			throw std::runtime_error("dependency references unmapped sound " + std::to_string(id));
-		const auto &s = GameSounds[resolved];
-		require(s.data && s.data != reinterpret_cast<ubyte *>(-1) && s.length > 0,
-		        "dependency sound has no loaded sample");
-		sounds.insert(resolved);
-	}
-	void bitmap(int id)
-	{
-		require(id > 0 && id < Num_bitmap_files, "object dependency references missing bitmap");
-		if (!bitmaps.insert(id).second) return;
-		bitmap_index index{};
-		index.index = id;
-		PIGGY_PAGE_IN(index);
-		const auto &b = GameBitmaps[id];
-		require(!(b.bm_flags & BM_FLAG_PAGED_OUT) && b.bm_data && b.bm_w > 0 && b.bm_h > 0, "object dependency bitmap could not be paged in");
-	}
-	void clip(int id)
-	{
-		if (id == -1) return;
-		require(id >= 0 && id < Num_vclips, "object dependency references missing vclip");
-		if (!clips.insert(id).second) return;
-		const auto &v = Vclip[id];
-		sound(v.sound_num);
-		require(v.num_frames > 0 && v.num_frames <= VCLIP_MAX_FRAMES, "object dependency has empty/invalid vclip");
-		for (int i = 0; i < v.num_frames; ++i) bitmap(v.frames[i].index);
-	}
-	void effect(int id)
-	{
-		if (id == -1) return;
-		require(id >= 0 && id < Num_effects, "dependency references missing effect");
-		if (!effects.insert(id).second) return;
-		const auto &e = Effects[id];
-		require(e.vc.num_frames > 0 && e.vc.num_frames <= VCLIP_MAX_FRAMES, "effect frame count invalid");
-		for (int i = 0; i < e.vc.num_frames; ++i) bitmap(e.vc.frames[i].index);
-		sound(e.sound_num);
-		// Effect playback uses e.sound_num, not the embedded vclip's sound field
-		if (e.dest_bm_num >= 0) texture(e.dest_bm_num);
-		clip(e.dest_vclip);
-		effect(e.dest_eclip);
-		effect(e.crit_clip);
-	}
-	void texture(int id)
-	{
-		require(id >= 0 && id < NumTextures, "dependency references missing texture");
-		if (!textures.insert(id).second) return;
-		bitmap(Textures[id].index);
-		effect(TmapInfo[id].eclip_num);
-		if (TmapInfo[id].destroyed >= 0) texture(TmapInfo[id].destroyed);
-	}
-	void wall_clip(int id)
-	{
-		if (id == -1) return;
-		require(id >= 0 && id < Num_wall_anims, "dependency references missing wall animation");
-		if (!wall_clips.insert(id).second) return;
-		const auto &w = WallAnims[id];
-		require(w.num_frames > 0 && w.num_frames <= MAX_CLIP_FRAMES, "wall animation frame count invalid");
-		for (int i = 0; i < w.num_frames; ++i) texture(w.frames[i]);
-		sound(w.open_sound);
-		sound(w.close_sound);
-	}
-	void model(int id)
-	{
-		if (id == -1) return;
-		require(id >= 0 && id < N_polygon_models, "object dependency references missing model");
-		if (!models.insert(id).second) return;
-		const auto &p = Polygon_models[id];
-		require(p.model_data && p.model_data_size > 0 && p.n_models > 0 && p.n_models <= MAX_SUBMODELS, "object dependency model has no valid payload");
-		require(int(p.first_texture) + p.n_textures <= MAX_OBJ_BITMAPS, "model texture pointer range invalid");
-		for (int i = 0; i < p.n_textures; ++i) {
-			const int index = ObjBitmapPtrs[p.first_texture + i];
-			require(index >= 0 && index < N_ObjBitmaps, "model texture references missing object bitmap");
-			bitmap(ObjBitmaps[index].index);
-			for (int e = 0; e < Num_effects; ++e)
-				if (Effects[e].changing_object_texture == index || Effects[e].changing_object_texture == p.first_texture + i) effect(e);
-		}
-		model(Dying_modelnums[id]);
-		model(Dead_modelnums[id]);
-		if (p.simpler_model) model(p.simpler_model - 1);
-	}
-	void weapon(int id)
-	{
-		if (id == -1) return;
-		require(id >= 0 && id < N_weapon_types, "object dependency references missing weapon");
-		if (!weapons.insert(id).second) return;
-		const auto &w = Weapon_info[id];
-		sound(w.flash_sound);
-		sound(w.robot_hit_sound);
-		sound(w.wall_hit_sound);
-		clip(w.flash_vclip);
-		clip(w.robot_hit_vclip);
-		clip(w.wall_hit_vclip);
-		if (w.render_type == WEAPON_RENDER_POLYMODEL) {
-			model(w.model_num);
-			model(w.model_num_inner);
-		} else if (w.render_type == WEAPON_RENDER_VCLIP) clip(w.weapon_vclip);
-		else if (w.render_type == WEAPON_RENDER_BLOB || w.render_type == WEAPON_RENDER_LASER) bitmap(w.bitmap.index);
-		else require(w.render_type == WEAPON_RENDER_NONE, "unknown weapon rendering dependency");
-		weapon(w.children);
-	}
-	void powerup(int id)
-	{
-		require(id >= 0 && id < N_powerup_types, "object dependency references missing powerup");
-		if (powerups.insert(id).second) {
-			clip(Powerup_info[id].vclip_num);
-			sound(Powerup_info[id].hit_sound);
-		}
-	}
-	void contents(int type, int id)
-	{
-		if (type == OBJ_ROBOT) robot(id);
-		else if (type == OBJ_POWERUP) powerup(id);
-		else require(false, "unknown contained object dependency");
-	}
-	void robot(int id)
-	{
-		require(robot_info_is_usable(id), "object dependency references unusable robot");
-		if (!robots.insert(id).second) return;
-		const auto &r = Robot_info[id];
-		for (const int id : { r.exp1_sound_num, r.exp2_sound_num, r.see_sound, r.attack_sound, r.claw_sound, r.taunt_sound }) sound(id);
-		if (r.death_roll) sound(r.deathroll_sound);
-		model(r.model_num);
-		weapon(r.weapon_type);
-		weapon(r.weapon_type2);
-		clip(r.exp1_vclip_num);
-		clip(r.exp2_vclip_num);
-		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
-		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
-		require(!r.boss_flag, "boss spawn dependencies need a separate audit");
-		require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
-		for (int gun = 0; gun <= r.n_guns; ++gun)
-			for (int state = 0; state < N_ANIM_STATES; ++state) {
-				const auto &j = r.anim_states[gun][state];
-				require(j.n_joints >= 0 && j.offset >= 0 && j.offset + j.n_joints <= N_robot_joints, "robot joint range invalid");
-				for (int i = 0; i < j.n_joints; ++i)
-					require(Robot_joints[j.offset + i].jointnum >= 0 && Robot_joints[j.offset + i].jointnum < Polygon_models[r.model_num].n_models, "robot joint references missing submodel");
-			}
-	}
-};
+using xl_assets::ObjectDependencies;
+
 void object_dependencies()
 {
 	ObjectDependencies graph;
@@ -1580,6 +1438,37 @@ int main(int argc, char **argv)
 		require(load_base_mission(find_arg_value(argc, argv, "-mission"), error, sizeof(error)), error);
 		unchanged(vertex);
 		require(load_level("d2leva-1.rl2") == 0, "original XL pilot admission failed");
+		{
+			const int saved_robot_count = N_robot_types;
+			N_robot_types = 0;
+			const int accepted = xl_level_supported("d2leva-1.rl2", 0);
+			N_robot_types = saved_robot_count;
+			require(!accepted && std::strstr(xl_level_rejection(), "robot"), "missing robot dependency was not explained");
+			require(xl_preview_pilot_active(), "preflight rejection changed active XL state");
+			require(xl_level_supported("d2leva-1.rl2", 0), "dependency preflight did not recover");
+		}
+		{
+			auto renamed = bytes;
+			const auto palette_end = std::find(renamed.begin() + 23, renamed.end(), '\n');
+			require(palette_end != renamed.end(), "missing palette terminator");
+			renamed.at(std::size_t(palette_end - renamed.begin()) + 1) ^= 1;
+			const auto renamed_path = (std::filesystem::path(extra_dir) / "renamed.rl2").string();
+			write_bytes(renamed_path.c_str(), renamed);
+			char other_mission[] = "different";
+			char *saved_name = Current_mission->filename;
+			const int saved_level = Current_level_num;
+			Current_mission->filename = other_mission;
+			Current_level_num = 2;
+			const bool eligible = xl_level_supported("renamed.rl2", 0) != 0;
+			const int loaded = load_level("renamed.rl2");
+			const bool active = xl_preview_pilot_active() != 0;
+			Current_mission->filename = saved_name;
+			Current_level_num = saved_level;
+			require(eligible && !loaded && active, "feature-compatible renamed/rehashed level rejected");
+			require(!std::strcmp(Gamesave_current_filename, "renamed.rl2"), "renamed source identity lost");
+			std::cout << "XL detection admission: different mission, level name, level number and source hash accepted\n";
+			require(load_level("d2leva-1.rl2") == 0, "original level recovery failed");
+		}
 		require(!std::strcmp(Gamesave_current_filename, "d2leva-1.rl2"), "translation changed level identity");
 		colored(probe.source, vertex);
 		materials(probe.source);
@@ -1605,11 +1494,12 @@ int main(int argc, char **argv)
 		std::cout << "XL multiplayer admission: original and translated preview rejected in network/cooperative modes, stock loader and single-player recovery passed\n";
 		const auto original_copy = (std::filesystem::path(extra_dir) / "d2leva-1.rl2").string();
 		auto altered_original = bytes;
-		altered_original.back() ^= 1;
+		altered_original[4] = 16;
 		write_bytes(original_copy.c_str(), altered_original);
 		const int original_rejected = load_level("d2leva-1.rl2");
 		write_bytes(original_copy.c_str(), bytes);
-		require(original_rejected != 0, "unaudited original source accepted");
+		require(original_rejected != 0, "unsupported level version accepted");
+		require(std::strstr(xl_level_rejection(), "version"), "unsupported version rejection lacks a reason");
 		unchanged(vertex);
 		require(load_level("d2leva-1.rl2") == 0, "original pilot recovery failed");
 		std::cout << "Pilot ambient flags:";

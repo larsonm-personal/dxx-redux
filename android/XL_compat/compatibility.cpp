@@ -1,4 +1,5 @@
 #include "compatibility.h"
+#include "admission.h"
 #include "../app/src/main/cpp/shared/mission_descriptor_safe.h"
 #include <algorithm>
 #include <cctype>
@@ -15,8 +16,8 @@ struct Category {
 	const char *explanation;
 };
 const Category categories[] = {
-	{ "container", "Archive and descriptor dialect", "Standard DHF and XL descriptor discovery; extended HOG and XL gameplay unsupported", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
-	{ "serialization", "Level and game-data versions", "Production D2 loader accepts level versions 1-8; XL inspection is separate", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
+	{ "container", "Archive and descriptor dialect", "Standard DHF and XL descriptor discovery; extended HOG unsupported; d2x-name gameplay remains guarded", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
+	{ "serialization", "Level and game-data versions", "XL-enabled builds inspect version 15/game data 33 before translation", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported", "Larger mines can require wider references and more segments, vertices, walls, objects or triggers. A readable file can still exceed engine limits." },
 	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. They are distinct from a wall texture." },
 	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported", "Wall types and flags control doors, barriers and other surfaces. Visibility, collision and activation behavior must agree." },
@@ -24,11 +25,11 @@ const Category categories[] = {
 	{ "object_triggers", "Object-attached triggers", "Unsupported", "These actions are attached to objects rather than only to walls. Their activation rules and linked actions need separate inspection." },
 	{ "objects", "Objects and AI behavior", "Stock behavior only; XL behavior parity unverified", "Level objects include players, robots, pickups and effects. Knowing the object count does not establish its behavior or AI compatibility." },
 	{ "gameplay_assets", "Custom robot and weapon definitions", "XL gameplay asset formats and dependencies unverified", "Custom robot and weapon definitions can change behavior and refer to models, animations, projectiles and sounds. Those dependencies must resolve together." },
-	{ "baked_lighting", "Embedded colored lighting", "Parsed for inspection; not applied by production rendering", "Authored color tables describe lighting at vertices, sides and textures. Reading the numbers is separate from applying them in the renderer." },
-	{ "dynamic_lighting", "Dynamic lights and rendering modes", "XL lighting modes not implemented", "Live lighting responds to emitters, weapons and switched lights. Its behavior and presentation need runtime validation." },
+	{ "baked_lighting", "Embedded colored lighting", "Implemented in the optional XL runtime", "Authored color tables describe lighting at vertices, sides and textures. Reading the numbers is separate from applying them in the renderer." },
+	{ "dynamic_lighting", "Dynamic lights and rendering modes", "XL runtime implements vertex lighting and coronas; other rendering modes remain unverified", "Live lighting responds to emitters, weapons and switched lights. Its behavior and presentation need runtime validation." },
 	{ "visual_assets", "Texture and model formats", "XL asset formats require individual verification", "Textures and models give the mine its appearance. XL asset formats and their referenced resources need verification beyond level parsing." },
 	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified", "Exits, secret routes and objectives connect gameplay to mission progression. An arena with no exit has different completion criteria from a campaign level." },
-	{ "runtime", "Gameplay and presentation verification", "No XL mission has verified production support", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
+	{ "runtime", "Gameplay and presentation verification", "Static inspection is not gameplay qualification; runtime checks dependencies on every load", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
 	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
 	{ "generators", "Equipment generators and extended spawning", "Classic robot matcens exist; XL item generation and spawning unverified", "XL can generate equipment as well as robots. Spawn contents, timing, activation and saved state need matching behavior." },
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
@@ -57,7 +58,7 @@ std::vector<CountedFeature> counted_features()
 		{ "no_damage_segments", "No-damage segments", "XL damage and firing rules unsupported", "blocked", "Protected segments suppress damage and some firing or direct-contact behavior. They are not simply force-free zones: blast knockback can still occur." },
 		{ "colored_walls", "Colored walls", "XL colored-wall semantics unsupported", "blocked", "XL colored walls add authored surface color and transparency behavior. Rendering and physical interaction must be checked separately." },
 		{ "opacity_walls", "Wall opacity records", "Experimental pilot; nonzero serialized values are not proof of material parity", "partial", "These walls contain nonzero serialized opacity values. Their presence is not proof of a particular transparency, collision or visibility behavior." },
-		{ "chromatic_vertices", "Colored vertices", "Experimental embedded-lighting pilot; production rendering unqualified", "partial", "These vertices contain authored color channels that are not all equal. The count describes stored lighting data, not proof of correctly rendered colors." },
+		{ "chromatic_vertices", "Colored vertices", "Implemented in XL-enabled builds; rendered-scene and campaign parity require qualification", "partial", "These vertices contain authored color channels that are not all equal. The count describes stored lighting data, not proof of correctly rendered colors." },
 		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked", "Object-attached triggers hold actions linked to objects. A declared count is not trusted until the corresponding records and references are validated." },
 		{ "equipment_count", "Equipment generators", "XL item generation unsupported", "blocked", "Equipment generators spawn authored items. Their contents, activation, timing and persistence are separate from classic robot generators." },
 	};
@@ -105,10 +106,15 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 			detected = true;
 			status = "blocked";
 			summary = "Cannot load: extended level version " + std::to_string(version);
-			rows[1] = { "Level version " + std::to_string(version), "blocked", "Production loader maximum is 8" };
+			rows[1] = { "Level version " + std::to_string(version), "blocked", "Ordinary builds accept versions 1-8; XL-enabled builds require validated layouts and features" };
 			try {
 				const auto v = inspect_level(bytes);
 				count_features(features, v);
+				const auto blockers = runtime_blockers(v);
+				status = blockers.empty() ? "eligible" : "blocked";
+				summary = blockers.empty() ? "Detected features supported by XL-enabled builds; assets checked on load, campaign unverified" : blocker_message(blockers);
+				rows[1].status = blockers.empty() ? "eligible" : "blocked";
+				rows[1].detail = "Admission uses detected requirements, not mission identity";
 				rows[1].need += ", game data " + std::to_string(v.game_version);
 				rows[2].need = std::to_string(v.vertices.size()) + " vertices, " + std::to_string(v.segments.size()) + " segments, " + std::to_string(v.walls.size()) + " walls, " + std::to_string(v.objects.size()) + " objects, " + std::to_string(v.triggers.size()) + " triggers";
 				rows[3].need = "Segment functions and owner/group records present";
@@ -121,8 +127,8 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[16].need = std::to_string(opacity) + " walls with nonzero serialized cloak/opacity";
 				rows[16].detail = "Values alone do not establish material semantics or visibility/collision equivalence";
 				const auto colored = std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; });
-				rows[9] = { std::to_string(colored) + " chromatic vertex colors; side and texture color tables present", "blocked", "Preservation in an inspection report is not rendering support" };
-				for (const auto &issue : v.unsupported) {
+				rows[9] = { std::to_string(colored) + " chromatic vertex colors; side and texture color tables present", "eligible", "Implemented; this report does not verify the rendered scene" };
+				for (const auto &issue : blockers) {
 					std::size_t row = 13;
 					if (issue.feature.find("segment") != std::string::npos) row = 3;
 					else if (issue.feature.find("wall") != std::string::npos) row = 4;
@@ -145,9 +151,9 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 			while (std::getline(text, line)) {
 				if (mission_descriptor_key_is(line.c_str(), "d2x-name")) {
 					detected = true;
-					status = "blocked";
-					summary = "Cannot play: XL mission requires level and asset qualification";
-					rows[0] = { "d2x-name descriptor", "blocked", "Native title and level-list discovery supported; referenced levels and assets still need qualification" };
+					status = "unknown";
+					summary = "XL descriptor detected; inspect referenced levels and assets";
+					rows[0] = { "d2x-name descriptor", "unknown", "Native title and level-list discovery supported; descriptor gameplay remains guarded pending safe resource initialization" };
 				}
 			}
 		}

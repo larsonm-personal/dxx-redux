@@ -55,3 +55,9 @@ blurbs through JNI from a synthetic descriptor, then uses explicitly synthetic
 counts to exercise row rendering. It checks water/unsupported teleport dialogs,
 long text in light/dark themes, unknown/legacy fallback and return to a nonzero
 feature-list scroll position. It does not load a mission or qualify gameplay.
+
+## Approved refresh to 2c7b7b56
+
+Retain upstream mission labels and automatic per-level feature/resource admission, while keeping descriptor-only resource isolation and the original Robotech developer exception. The native catalog remains the single status source. Eligible means the serialized feature set is accepted by an XL-enabled build subject to mission and resource checks; it is orange, never globally supported/verified green. Unknown sibling reports do not inherit eligibility. Metadata analysis still rejects every detected XL report, including eligible and unknown descriptors, because its worker does not run the XL runtime. Ordinary builds remain limited to classic level formats. Lighting descriptions now acknowledge the optional runtime without claiming arbitrary rendered-scene or campaign parity.
+
+All counted rows, null-versus-zero trust rules, wall-only trigger scopes, and native tap explanations are retained. Instrumentation additionally covers eligible orange pixels, source switching and dismissal/reopening. The previous expanded run compiled both APKs and passed color checks, but failed accessibility scrolling to the final water caveat; navigation now requests the target through Android accessibility before bounded scrolling, and failed scrolls include bounded synthetic node diagnostics. A new aligned-head execution is required before claiming the expanded dialog passes.

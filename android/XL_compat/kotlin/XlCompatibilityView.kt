@@ -35,7 +35,7 @@ private fun compatibilityColor(status: String): Color {
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     return when (status) {
         "full" -> if (dark) Color(0xFF81C995) else Color(0xFF216E39)
-        "partial" -> if (dark) Color(0xFFFFB86C) else Color(0xFF8A4B00)
+        "partial", "eligible" -> if (dark) Color(0xFFFFB86C) else Color(0xFF8A4B00)
         "blocked" -> if (dark) Color(0xFFFFB4AB) else Color(0xFFB3261E)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -48,8 +48,12 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
     var selected by remember(reports) { mutableStateOf(0) }
     var explanation by remember(reports) { mutableStateOf<XlCompatibilityRow?>(null) }
     // Unscanned siblings cannot inherit a detected level's compatibility
-    val status = if (reports.any { it.status == "blocked" }) "blocked" else "unknown"
-    val label = if (status == "blocked") "D2X-XL compatibility: cannot load" else "D2X-XL compatibility: unverified"
+    val status = compatibilityGroupStatus(reports)
+    val label = when (status) {
+        "blocked" -> "D2X-XL compatibility: cannot load"
+        "eligible" -> "D2X-XL compatibility: runtime checks needed"
+        else -> "D2X-XL compatibility: unverified"
+    }
     OutlinedButton(
         onClick = { open = true },
         colors = ButtonDefaults.outlinedButtonColors(contentColor = compatibilityColor(status)),
@@ -63,7 +67,7 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
         text = {
             Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    "Green: supported feature. Orange: experimental or partial support. Red: unsupported feature. Gray: not inspected or not present. Feature support does not mean this level is playable.",
+                    "Green: supported feature. Orange: experimental, partial, or eligible pending runtime checks. Red: unsupported feature. Gray: not inspected or not present. Feature support does not mean this level is playable.",
                     fontSize = 12.sp,
                 )
                 Text(

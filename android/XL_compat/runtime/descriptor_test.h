@@ -53,7 +53,7 @@ static int descriptor_test(int argc, char **argv)
 			std::ofstream out(root / (std::string(name) + ".mn2"));
 			out << body;
 			out.close();
-			require(bool(load_base_mission(name, error, sizeof(error))) == accepted, "descriptor fixture acceptance differs");
+			require(bool(load_base_mission(name, error, sizeof(error))) == accepted, (std::string("descriptor fixture acceptance differs: ") + name).c_str());
 			if (accepted) require(Current_mission->enhanced == MISSION_ENHANCED_XL && load_level("d2leva-1.rl2") != 0, "fixture lost XL runtime guard");
 		};
 		// A stock enhanced-mission fallback must not try to decode this synthetic HAM
