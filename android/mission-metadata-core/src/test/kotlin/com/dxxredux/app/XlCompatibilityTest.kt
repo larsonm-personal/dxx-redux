@@ -50,4 +50,31 @@ class XlCompatibilityTest {
                 .count,
         )
     }
+
+    @Test
+    fun explanationsUseNativeCatalogAndKeepQualificationSeparate() {
+        val parsed =
+            XlCompatibility.parse(
+                report(
+                    ",\"id\":\"water_segments\",\"count\":1,\"explanation\":\"Whole water volume; conditional 75% motion\",\"limitations\":\"Bounded pilot only; visual parity unqualified\"",
+                    "partial",
+                ),
+            )!!
+        val row = parsed.rows.single()
+        assertEquals("water_segments", row.id)
+        assertEquals("Whole water volume; conditional 75% motion", row.xlExplanation())
+        assertEquals("Bounded pilot only; visual parity unqualified", row.reduxExplanation())
+        assertEquals("partial", row.status)
+        assertEquals("blocked", parsed.status)
+        val legacy = XlCompatibility.parse(report())!!.rows.single()
+        assertEquals("", legacy.id)
+        assertFalse(legacy.xlExplanation().contains("75%"))
+        org.junit.Assert.assertTrue(legacy.xlExplanation().contains("No verified feature explanation"))
+        org.junit.Assert.assertTrue(
+            legacy.copy(status = "unknown").reduxExplanation().contains("not been fully inspected"),
+        )
+        org.junit.Assert.assertTrue(
+            legacy.copy(status = "not_required").reduxExplanation().contains("does not qualify the level"),
+        )
+    }
 }

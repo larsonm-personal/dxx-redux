@@ -18,8 +18,8 @@ try {
         throw 'XL compatibility dialog instrumentation failed'
     }
 } finally {
-    foreach ($theme in @('light', 'dark')) {
-        try { Adb -AdbArgs @('pull', "/sdcard/Android/data/$($script:PACKAGE)/files/xl-feature-browser-$theme.png", $output) | Out-Null }
+    foreach ($theme in @('browser-light', 'browser-dark', 'water-light', 'water-dark')) {
+        try { Adb -AdbArgs @('pull', "/sdcard/Android/data/$($script:PACKAGE)/files/xl-feature-$theme.png", $output) | Out-Null }
         catch { Write-Warning "No $theme screenshot: $_" }
     }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

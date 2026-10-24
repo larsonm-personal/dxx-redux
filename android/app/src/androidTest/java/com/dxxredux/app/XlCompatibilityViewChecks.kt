@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.SystemClock
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -21,7 +22,7 @@ internal class XlCompatibilityViewChecks(
             node: AccessibilityNodeInfo,
             remaining: Int,
         ): AccessibilityNodeInfo? {
-            if (node.text?.toString() == text) return node
+            if (node.text?.toString()?.contains(text) == true) return node
             if (remaining <= 0) return null
             for (i in 0 until node.childCount) {
                 val child = node.getChild(i) ?: continue
@@ -48,6 +49,35 @@ internal class XlCompatibilityViewChecks(
         check(node != null && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
             "No clickable accessibility ancestor for: $text"
         }
+    }
+
+    private fun scrollTo(text: String): AccessibilityNodeInfo {
+        repeat(10) {
+            find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
+
+            fun scroll(node: AccessibilityNodeInfo): Boolean {
+                if (node.isScrollable && node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) return true
+                for (index in 0 until node.childCount) {
+                    val child = node.getChild(index) ?: continue
+                    if (scroll(child)) return true
+                }
+                return false
+            }
+            check(scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))) { "Cannot scroll to $text" }
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(150)
+        }
+        error("Text not visible after bounded scroll: $text")
+    }
+
+    private fun capture(name: String): Bitmap {
+        instrumentation.waitForIdleSync()
+        SystemClock.sleep(300)
+        val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+        File(instrumentation.targetContext.getExternalFilesDir(null), name).outputStream().use {
+            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+        }
+        return bitmap
     }
 
     private fun assertColor(
@@ -86,26 +116,28 @@ internal class XlCompatibilityViewChecks(
             }
             SystemClock.sleep(500)
             for (dark in listOf(false, true)) {
+                // Read explanations through the real JNI catalog using only a synthetic descriptor
+                val catalog =
+                    checkNotNull(
+                        XlCompatibility.inspect("synthetic.mn2", "d2x-name = Synthetic UI fixture\n".toByteArray()),
+                    )
+                check(catalog.rows.all { it.id.isNotBlank() && it.explanation.isNotBlank() })
+                val water =
+                    catalog.rows.single { it.id == "water_segments" }.copy(
+                        requirement = "1",
+                        count = 1,
+                        status = "partial",
+                    )
+                val teleports =
+                    catalog.rows.single { it.id == "wall_teleports" }.copy(
+                        requirement = "3",
+                        count = 3,
+                        status = "blocked",
+                    )
                 val rows =
                     listOf(
-                        XlCompatibilityRow(
-                            "Unsupported fixture",
-                            "3",
-                            "Synthetic wall actions",
-                            "blocked",
-                            "",
-                            3,
-                            true,
-                        ),
-                        XlCompatibilityRow(
-                            "Partial fixture",
-                            "1",
-                            "Synthetic experimental feature",
-                            "partial",
-                            "",
-                            1,
-                            true,
-                        ),
+                        teleports,
+                        water,
                         XlCompatibilityRow(
                             "Supported fixture",
                             "2",
@@ -128,24 +160,35 @@ internal class XlCompatibilityViewChecks(
                 instrumentation.waitForIdleSync()
                 click("D2X-XL compatibility: cannot load")
                 awaitText("Supported fixture: 2")
-                awaitText("Unsupported fixture: 3")
-                awaitText("Partial fixture: 1")
+                awaitText("Wall teleports: 3")
+                awaitText("Water segments: 1")
                 instrumentation.waitForIdleSync()
                 SystemClock.sleep(300)
-                val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+                val theme = if (dark) "dark" else "light"
+                val bitmap = capture("xl-feature-browser-$theme.png")
                 try {
-                    File(
-                        context.getExternalFilesDir(null),
-                        "xl-feature-browser-${if (dark) "dark" else "light"}.png",
-                    ).outputStream().use {
-                        check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
-                    }
                     assertColor(bitmap, "Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
                     assertColor(bitmap, "Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
                     assertColor(bitmap, "Supported", if (dark) 0x81C995 else 0x216E39)
                 } finally {
                     bitmap.recycle()
                 }
+                val waterBounds = Rect().also(awaitText("Water segments: 1")::getBoundsInScreen)
+                click("Water segments: 1")
+                awaitText("What XL does")
+                scrollTo("Current Redux support")
+                scrollTo("Feature support does not mean this level is playable.")
+                awaitText("audible playback and full visual parity remain unqualified")
+                capture("xl-feature-water-$theme.png").recycle()
+                instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+                instrumentation.waitForIdleSync()
+                val restoredBounds = Rect().also(awaitText("Water segments: 1")::getBoundsInScreen)
+                check(restoredBounds == waterBounds) { "Explanation Back lost the feature-list position" }
+                click("Wall teleports: 3")
+                awaitText("What XL does")
+                scrollTo("Current Redux support")
+                awaitText("Unsupported")
+                click("Back to features")
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
@@ -168,10 +211,48 @@ internal class XlCompatibilityViewChecks(
                     awaitText("Not inspected")
                     awaitText("Absent fixture: 0")
                     awaitText("Not present")
+                    click("Missing fixture: ?")
+                    awaitText("No verified feature explanation is available")
+                    click("Back to features")
                 }
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
+            val catalog =
+                checkNotNull(
+                    XlCompatibility.inspect("synthetic.mn2", "d2x-name = Synthetic UI fixture\n".toByteArray()),
+                )
+            val water =
+                catalog.rows.single { it.id == "water_segments" }.copy(
+                    requirement = "1",
+                    count = 1,
+                    status = "partial",
+                )
+            val longRows =
+                List(12) { XlCompatibilityRow("Uninspected category $it", "Unknown", "Unqualified", "unknown", "") } +
+                    water.copy(counted = false)
+            val longReport = XlCompatibilityReport("Synthetic long inventory", "blocked", "No gameplay claim", longRows)
+            instrumentation.runOnMainSync {
+                launcher.setContent {
+                    MaterialTheme {
+                        XlCompatibilityButton(
+                            listOf(longReport),
+                        )
+                    }
+                }
+            }
+            instrumentation.waitForIdleSync()
+            click("D2X-XL compatibility: cannot load")
+            click("Uninspected category 0")
+            awaitText("No verified feature explanation is available")
+            click("Back to features")
+            val before = Rect().also(scrollTo("Water segments")::getBoundsInScreen)
+            click("Water segments")
+            awaitText("What XL does")
+            click("Back to features")
+            val after = Rect().also(awaitText("Water segments")::getBoundsInScreen)
+            check(before == after) { "Closing an explanation lost a scrolled inventory position" }
+            click("Close")
         } finally {
             instrumentation.runOnMainSync { launcher.finish() }
         }

@@ -12,52 +12,54 @@ struct Category {
 	const char *id;
 	const char *label;
 	const char *support;
+	const char *explanation;
 };
 const Category categories[] = {
-	{ "container", "Archive and descriptor dialect", "Standard DHF and XL descriptor discovery; extended HOG and XL gameplay unsupported" },
-	{ "serialization", "Level and game-data versions", "Production D2 loader accepts level versions 1-8; XL inspection is separate" },
-	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported" },
-	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified" },
-	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported" },
-	{ "triggers", "Stateful events and geometry triggers", "Stock actions only; XL master chains, scheduling, flags and persistence unsupported" },
-	{ "object_triggers", "Object-attached triggers", "Unsupported" },
-	{ "objects", "Objects and AI behavior", "Stock behavior only; XL behavior parity unverified" },
-	{ "gameplay_assets", "Custom robot and weapon definitions", "XL gameplay asset formats and dependencies unverified" },
-	{ "baked_lighting", "Embedded colored lighting", "Parsed for inspection; not applied by production rendering" },
-	{ "dynamic_lighting", "Dynamic lights and rendering modes", "XL lighting modes not implemented" },
-	{ "visual_assets", "Texture and model formats", "XL asset formats require individual verification" },
-	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified" },
-	{ "runtime", "Gameplay and presentation verification", "No XL mission has verified production support" },
-	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported" },
-	{ "generators", "Equipment generators and extended spawning", "Classic robot matcens exist; XL item generation and spawning unverified" },
-	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified" },
-	{ "effect_objects", "Particles, lightning and ambient sounds", "XL payloads, activation and audio cues require individual verification" },
-	{ "resource_scope", "Mission resource precedence and isolation", "Standard HXM/extra-HAM and HMQ paths exist; XL override semantics and transition cleanup unverified" },
+	{ "container", "Archive and descriptor dialect", "Standard DHF and XL descriptor discovery; extended HOG and XL gameplay unsupported", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
+	{ "serialization", "Level and game-data versions", "Production D2 loader accepts level versions 1-8; XL inspection is separate", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
+	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported", "Larger mines can require wider references and more segments, vertices, walls, objects or triggers. A readable file can still exceed engine limits." },
+	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. They are distinct from a wall texture." },
+	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported", "Wall types and flags control doors, barriers and other surfaces. Visibility, collision and activation behavior must agree." },
+	{ "triggers", "Stateful events and geometry triggers", "Stock actions only; XL master chains, scheduling, flags and persistence unsupported", "Triggers activate linked actions. XL adds action types, flags and event chains whose live state can matter after save/load." },
+	{ "object_triggers", "Object-attached triggers", "Unsupported", "These actions are attached to objects rather than only to walls. Their activation rules and linked actions need separate inspection." },
+	{ "objects", "Objects and AI behavior", "Stock behavior only; XL behavior parity unverified", "Level objects include players, robots, pickups and effects. Knowing the object count does not establish its behavior or AI compatibility." },
+	{ "gameplay_assets", "Custom robot and weapon definitions", "XL gameplay asset formats and dependencies unverified", "Custom robot and weapon definitions can change behavior and refer to models, animations, projectiles and sounds. Those dependencies must resolve together." },
+	{ "baked_lighting", "Embedded colored lighting", "Parsed for inspection; not applied by production rendering", "Authored color tables describe lighting at vertices, sides and textures. Reading the numbers is separate from applying them in the renderer." },
+	{ "dynamic_lighting", "Dynamic lights and rendering modes", "XL lighting modes not implemented", "Live lighting responds to emitters, weapons and switched lights. Its behavior and presentation need runtime validation." },
+	{ "visual_assets", "Texture and model formats", "XL asset formats require individual verification", "Textures and models give the mine its appearance. XL asset formats and their referenced resources need verification beyond level parsing." },
+	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified", "Exits, secret routes and objectives connect gameplay to mission progression. An arena with no exit has different completion criteria from a campaign level." },
+	{ "runtime", "Gameplay and presentation verification", "No XL mission has verified production support", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
+	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
+	{ "generators", "Equipment generators and extended spawning", "Classic robot matcens exist; XL item generation and spawning unverified", "XL can generate equipment as well as robots. Spawn contents, timing, activation and saved state need matching behavior." },
+	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
+	{ "effect_objects", "Particles, lightning and ambient sounds", "XL payloads, activation and audio cues require individual verification", "Particles, lightning and ambient sound objects add effects to the mine. Their payloads, activation and presentation require separate qualification." },
+	{ "resource_scope", "Mission resource precedence and isolation", "Standard HXM/extra-HAM and HMQ paths exist; XL override semantics and transition cleanup unverified", "A mission can override stock resources. The right definitions must load for that mission and be cleared or restored when switching missions." },
 };
 struct Evidence {
 	std::string need = "Unknown - not inspected", status = "unknown", detail;
 };
 // Counts describe serialized records, not executable route edges or gameplay admission
 struct CountedFeature {
-	const char *id, *label, *support, *present_status;
+	const char *id, *label, *support, *present_status, *explanation;
+	const char *limitations = nullptr;
 	int count = -1;
 };
 std::vector<CountedFeature> counted_features()
 {
 	return {
-		{ "wall_teleports", "Wall teleports", "Wall-trigger actions only; object actions are not decoded", "blocked" },
-		{ "speed_boosts", "Wall speed boosts", "XL movement actions unsupported", "blocked" },
-		{ "cameras", "Wall camera triggers", "XL camera actions unsupported", "blocked" },
-		{ "master_triggers", "Wall master triggers", "XL event chains unsupported", "blocked" },
-		{ "water_segments", "Water segments", "Experimental hash-pinned arena pilot only; other levels unqualified", "partial" },
-		{ "lava_segments", "Lava segments", "XL segment lava semantics unqualified", "blocked" },
-		{ "blocked_segments", "Blocked segments", "XL movement restrictions unsupported", "blocked" },
-		{ "no_damage_segments", "No-damage segments", "XL damage and firing rules unsupported", "blocked" },
-		{ "colored_walls", "Colored walls", "XL colored-wall semantics unsupported", "blocked" },
-		{ "opacity_walls", "Wall opacity records", "Experimental pilot; nonzero serialized values are not proof of material parity", "partial" },
-		{ "chromatic_vertices", "Colored vertices", "Experimental embedded-lighting pilot; production rendering unqualified", "partial" },
-		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked" },
-		{ "equipment_count", "Equipment generators", "XL item generation unsupported", "blocked" },
+		{ "wall_teleports", "Wall teleports", "Wall-trigger actions only; object actions are not decoded", "blocked", "Wall-trigger teleports move a ship to an authored destination. Position, orientation and collision behavior need to remain consistent. This count excludes object-attached actions." },
+		{ "speed_boosts", "Wall speed boosts", "XL movement actions unsupported", "blocked", "Wall-trigger speed boosts change a ship's motion. Their direction, activation and release rules matter for traversing the mine. This count excludes object-attached actions." },
+		{ "cameras", "Wall camera triggers", "XL camera actions unsupported", "blocked", "Wall camera triggers activate authored views. A parsed trigger does not establish that the correct view is displayed. This count excludes object-attached actions." },
+		{ "master_triggers", "Wall master triggers", "XL event chains unsupported", "blocked", "Wall master triggers activate linked triggers, allowing chains of actions. Order and saved event state can matter. This count excludes object-attached actions." },
+		{ "water_segments", "Water segments", "Experimental hash-pinned arena pilot only; other levels unqualified", "partial", "Water fills a whole segment, not just a watery-looking wall. With fluid physics enabled and normal speed settings, motion runs at 75% speed, including weapons and other moving objects. Player ships and robots experience mild turbulence. Submerged movement has different sound behavior from touching a waterfall. XL can give the volume a translucent blue appearance. Water itself does not inflict fluid damage; lava does.", "Experimental Robotech Arena pilot only: water motion, boundary/collision behavior and native save/replay are validated. Sound distinctions have logic checks; audible playback and full visual parity remain unqualified. Other levels are not qualified" },
+		{ "lava_segments", "Lava segments", "XL segment lava semantics unqualified", "blocked", "Lava is a whole-volume fluid property that can inflict damage and alter motion with fluid physics enabled. It is distinct from a lava-looking wall texture." },
+		{ "blocked_segments", "Blocked segments", "XL movement restrictions unsupported", "blocked", "Blocked segment properties restrict movement through a volume. The precise object and collision rules need qualification; a count alone does not establish them." },
+		{ "no_damage_segments", "No-damage segments", "XL damage and firing rules unsupported", "blocked", "Protected segments suppress damage and some firing or direct-contact behavior. They are not simply force-free zones: blast knockback can still occur." },
+		{ "colored_walls", "Colored walls", "XL colored-wall semantics unsupported", "blocked", "XL colored walls add authored surface color and transparency behavior. Rendering and physical interaction must be checked separately." },
+		{ "opacity_walls", "Wall opacity records", "Experimental pilot; nonzero serialized values are not proof of material parity", "partial", "These walls contain nonzero serialized opacity values. Their presence is not proof of a particular transparency, collision or visibility behavior." },
+		{ "chromatic_vertices", "Colored vertices", "Experimental embedded-lighting pilot; production rendering unqualified", "partial", "These vertices contain authored color channels that are not all equal. The count describes stored lighting data, not proof of correctly rendered colors." },
+		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked", "Object-attached triggers hold actions linked to objects. A declared count is not trusted until the corresponding records and references are validated." },
+		{ "equipment_count", "Equipment generators", "XL item generation unsupported", "blocked", "Equipment generators spawn authored items. Their contents, activation, timing and persistence are separate from classic robot generators." },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
@@ -158,6 +160,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 		if (i) out << ',';
 		out << "\n    {\"id\": " << json_string(categories[i].id) << ", \"feature\": " << json_string(categories[i].label)
 		    << ", \"requirement\": " << json_string(rows[i].need) << ", \"support\": " << json_string(categories[i].support)
+		    << ", \"explanation\": " << json_string(categories[i].explanation)
 		    << ", \"status\": " << json_string(rows[i].status) << ", \"evidence\": " << json_string(rows[i].detail) << '}';
 	}
 	for (const auto &feature : features) {
@@ -166,7 +169,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 		out << ",\n    {\"id\": " << json_string(feature.id) << ", \"feature\": " << json_string(feature.label)
 		    << ", \"count\": " << (feature.count < 0 ? "null" : std::to_string(feature.count))
 		    << ", \"requirement\": " << json_string(feature.count < 0 ? "Not inspected" : std::to_string(feature.count))
-		    << ", \"support\": " << json_string(feature.support) << ", \"status\": " << json_string(state)
+		    << ", \"support\": " << json_string(feature.support) << ", \"explanation\": " << json_string(feature.explanation) << ", \"limitations\": " << json_string(feature.limitations ? feature.limitations : feature.support) << ", \"status\": " << json_string(state)
 		    << ", \"evidence\": " << json_string(feature.count < 0 ? "Requires successful bounded level inspection" : "Serialized record count; does not establish playability") << '}';
 	}
 	out << "\n  ]\n}\n";

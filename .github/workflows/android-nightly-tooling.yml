@@ -606,10 +606,11 @@ jobs:
               for source in temporary.glob(pattern):
                   if source.is_dir() and not source.is_symlink():
                       shutil.copytree(source, destination / source.name, dirs_exist_ok=True, symlinks=True)
-          # Only the two bounded synthetic-dialog images, never arbitrary app files
+          # Only the four bounded synthetic-dialog images, never arbitrary app files
           browser = temporary / 'xl-feature-browser'
           if browser.is_dir() and not browser.is_symlink():
-              for name in ('xl-feature-browser-light.png', 'xl-feature-browser-dark.png'):
+              for name in ('xl-feature-browser-light.png', 'xl-feature-browser-dark.png',
+                           'xl-feature-water-light.png', 'xl-feature-water-dark.png'):
                   source = browser / name
                   if source.is_file() and not source.is_symlink() and source.stat().st_size <= 5242880:
                       target = pathlib.Path('results/xl-feature-browser') / name

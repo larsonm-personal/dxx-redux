@@ -10,6 +10,9 @@ internal data class XlCompatibilityRow(
     val evidence: String,
     val count: Int? = null,
     val counted: Boolean = false,
+    val id: String = "",
+    val explanation: String = "",
+    val limitations: String = "",
 )
 
 internal data class XlCompatibilityReport(
@@ -52,6 +55,9 @@ internal object XlCompatibility {
                         row.getString("evidence"),
                         count,
                         counted,
+                        row.optString("id", ""),
+                        row.optString("explanation", ""),
+                        row.optString("limitations", ""),
                     )
                 },
             )
@@ -72,4 +78,25 @@ internal fun compatibilityStatusLabel(status: String): String =
         "blocked" -> "Unsupported"
         "not_required" -> "Not present"
         else -> "Not inspected"
+    }
+
+internal fun XlCompatibilityRow.xlExplanation(): String =
+    explanation.ifBlank {
+        "No verified feature explanation is available in this report. Older or unrecognized metadata does not establish XL behavior or support."
+    }
+
+internal fun XlCompatibilityRow.reduxExplanation(): String =
+    buildString {
+        append(limitations.ifBlank { support }.ifBlank { "Support has not been verified." })
+        when (status) {
+            "unknown" -> {
+                append(" This feature has not been fully inspected for this source.")
+            }
+
+            "not_required" -> {
+                append(
+                    " No records of this scoped feature were found; this does not qualify the level for gameplay.",
+                )
+            }
+        }
     }

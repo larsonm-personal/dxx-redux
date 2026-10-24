@@ -141,6 +141,11 @@ void feature_contract()
 	bytes.at(inventory.mine_offset + 277) = 7;
 	row = feature_row(xl_compat::compatibility_json("water.rl2", bytes), "water_segments");
 	check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"partial\"") != std::string::npos, "water pilot generalized or missing");
+	check(row.find("75%") != std::string::npos && row.find("fluid physics enabled") != std::string::npos && row.find("whole segment") != std::string::npos, "water explanation lost its conditional volume semantics");
+	check(row.find("native save/replay") != std::string::npos && row.find("audible playback and full visual parity remain unqualified") != std::string::npos, "water explanation overclaims qualification");
+	check(feature_row(json, "wall_teleports").find("excludes object-attached actions") != std::string::npos, "teleport explanation lost count scope");
+	check(feature_row(json, "serialization").find("binary layout") != std::string::npos, "broad category has no explanation");
+	check(json.find("\"explanation\": \"\"") == std::string::npos, "catalog emitted an empty feature explanation");
 	bytes.pop_back();
 	row = feature_row(xl_compat::compatibility_json("broken.rl2", bytes), "wall_teleports");
 	check(row.find("\"count\": null") != std::string::npos, "failed parse leaked partial counts");
