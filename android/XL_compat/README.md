@@ -1,8 +1,14 @@
 # XL compatibility boundary
 
-This directory owns D2X-XL format knowledge and compatibility policy. The stock
-`d1/` and `d2/` engines do not depend on it. Do not add XL branches or relax
-validation in their loaders to make a file load
+This directory owns D2X-XL format knowledge and compatibility policy. Ordinary
+engine builds keep XL support disabled. The dedicated D2 pilot uses guarded
+`DXX_XL_PILOT` hooks; do not relax general loader validation to admit XL files
+
+The `XL compatibility contracts` workflow runs on pull requests and manual
+dispatch, building the standalone inventory/lighting checks on Linux and Windows
+and auditing the preserved survey ZIP. It needs no mission binaries. These
+checks establish parser/arithmetic contracts and evidence integrity, not pilot
+playability; private gameplay and reference-engine tests remain separate
 
 Current user scope: fully playable pilot with faithful XL engine extensions,
 using Redux behavior for classic Descent features. Pixel parity and XL tweaks to
