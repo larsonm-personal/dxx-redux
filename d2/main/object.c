@@ -2550,14 +2550,25 @@ void object_move_one( object * obj )
 						if ((type=check_volatile_wall(obj,obj->segnum,sidenum,&obj->pos))!=0) {
 							int sound = (type==1)?SOUND_LAVAFALL_HISS:SOUND_SHIP_IN_WATERFALL;
 							under_lavafall = 1;
+#ifdef DXX_XL_PILOT
+							sound = xl_preview_water_sound(obj-Objects, sidenum, sound);
+							lavafall_hiss_playing[obj->id] = xl_preview_fluid_loop(obj-Objects, sound, lavafall_hiss_playing[obj->id]);
+#else
 							if (!lavafall_hiss_playing[obj->id]) {
 								digi_link_sound_to_object3( sound, obj-Objects, 1, F1_0, i2f(256), -1, -1);
 								lavafall_hiss_playing[obj->id] = 1;
 							}
+#endif
 						}
 					}
 			}
 	
+#ifdef DXX_XL_PILOT
+			if (!under_lavafall && xl_preview_water_frame(obj-Objects)) {
+				under_lavafall = 1;
+				lavafall_hiss_playing[obj->id] = xl_preview_fluid_loop(obj-Objects, SOUND_SHIP_IN_WATER, lavafall_hiss_playing[obj->id]);
+			}
+#endif
 			if (!under_lavafall && lavafall_hiss_playing[obj->id]) {
 				digi_kill_sound_linked_to_object( obj-Objects);
 				lavafall_hiss_playing[obj->id] = 0;

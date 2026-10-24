@@ -99,6 +99,21 @@ int main()
 	try {
 		const auto bytes = fixture();
 		const auto out = xl_compat::inspect_level(bytes);
+		const std::size_t mine = bytes[8];
+		auto legacy = bytes;
+		legacy.at(mine + 103) = 64;
+		check(xl_compat::inventory_json(xl_compat::inspect_level(legacy)) == xl_compat::inventory_json(out), "ignored legacy child marker changed inventory");
+		legacy.at(mine + 103) = 128;
+		rejects([&] { xl_compat::inspect_level(legacy); });
+		auto water = bytes;
+		water.at(mine + 277) = 7;
+		rejects([&] { xl_compat::prepare_gameplay_probe(water); });
+		const auto water_probe = xl_compat::prepare_gameplay_probe(water, true);
+		check(water_probe.source.segments.at(0).function == 7, "water source property lost");
+		check(water_probe.stock_level == xl_compat::prepare_gameplay_probe(bytes).stock_level, "water leaked into stock segment enum");
+		water.at(mine + 277) = 8;
+		rejects([&] { xl_compat::prepare_gameplay_probe(water, true); });
+
 		const auto compatibility = xl_compat::compatibility_json("pilot.rl2", bytes);
 		check(compatibility.find("\"status\": \"blocked\"") != std::string::npos, "XL level must not gain production admission");
 		check(compatibility.find("\"playable\": false") != std::string::npos, "compatibility must remain nonplayable");

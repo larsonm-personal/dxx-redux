@@ -1,10 +1,17 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
+#include <algorithm>
+#include <cmath>
+#include <set>
+#include <iostream>
+#include <iterator>
 #include <filesystem>
 #include <stdexcept>
 #include <cstring>
 extern "C" {
 #include "physfsx.h"
 }
+#undef min
+#undef max
 static void xl_test_filesystem_init(int argc, char **argv)
 {
 	PHYSFSX_init(argc, argv);
@@ -1287,8 +1294,11 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 }
 } // namespace
 
+#include "arena_test.h"
+
 int main(int argc, char **argv)
 {
+	if (find_arg_value(argc, argv, "-arena-test")) return arena_test(argc, argv);
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
 	try {
 		const auto source_path = find_arg_value(argc, argv, "-xl-source");

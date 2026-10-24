@@ -390,3 +390,21 @@ shading with exact FX-call accounting and unchanged simulation state. This
 preserves the formula and sample range, not XL's libc random sequence or its
 global RNG coupling. Matched captures must control samples or compare flicker
 behavior rather than demand identical unconstrained frames
+
+## Separate water arena experiment
+
+The opt-in runtime also offers `-xl-preview-start -xl-water-arena` for the
+hash-pinned original Robotech Arena (`rtarena` mission, `rtarena.rl2`). This does
+not broaden production admission or the active Counterstrike campaign. Its one
+additional semantic area is the old-format water segment: the fluid-enabled
+profile uses 75-percent movement time, thrust turbulence, water contact and the
+stock ship-in-water sound. Source properties are reconstructed on save restore
+and cleared on every unrelated level load. Multiplayer is explicitly refused.
+
+Configure `XL_ARENA_HOG`, `XL_ARENA_DESCRIPTOR`, `XL_PREVIEW_LIFECYCLE` and
+`XL_RETAIL_DATA` for the private `xl_water_arena` CTest. It verifies original
+resource loading, real physics, ordinary-input entry/exit, checkpoint replay and
+arena/stock isolation. The arena has no reactor or exit; this is not campaign
+completion. Android, interactive rendering/audio and alternate XL/fog profiles
+remain unqualified. See the [expansion plan](../ai%20tool%20plans/mission%20metadata/xl_level_expansion_20261024.md)
+for source pins, ordered level gates, measurements and limitations.
