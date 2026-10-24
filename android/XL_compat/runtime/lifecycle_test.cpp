@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <stdexcept>
 #include <cstring>
+// Parse JSON types before engine headers select byte packing on MSVC
+#include <nlohmann/json.hpp>
 extern "C" {
 #include "physfsx.h"
 }
@@ -32,6 +34,7 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #undef main
 #undef PHYSFSX_init
 #include "preview.h"
+#include "checkpoint_export.h"
 #include "../probe.h"
 #include "../lighting.h"
 #include <iterator>
@@ -51,16 +54,23 @@ extern "C" {
 #include "timer.h"
 #include "controls.h"
 #include "kconfig.h"
+#include "config.h"
+#include "ogl_init.h"
 #include "rng_shared.h"
 #include "state.h"
+#include "playsave.h"
 #include "input_demo_start.h"
+#include "input_demo_newdemo_shared.h"
+#include "input_demo_hooks.h"
 #include "fvi.h"
 #include "gameseg.h"
 #include "textures.h"
+#include "ai.h"
 extern fix flash_scale, Seismic_tremor_magnitude;
 extern int Do_dynamic_light;
 void GameProcessFrame(void);
 void do_weapon_n_item_stuff(void);
+void set_ambient_sound_flags(void);
 }
 
 extern "C" void xl_preview_before_swap(void)
@@ -273,9 +283,24 @@ void object_dependencies()
 	Robot_info[robot].weapon_type = original_weapon;
 	require(rejected, "missing transitive robot weapon was not rejected");
 }
+void depth_policy(bool pilot)
+{
+	const int saved = GameCfg.ClassicDepth;
+	for (const int requested : { 0, 1 }) {
+		GameCfg.ClassicDepth = requested;
+		require(ogl_use_classic_depth() == (pilot ? 0 : requested), "incorrect pilot/stock depth pipeline");
+		require(GameCfg.ClassicDepth == requested, "depth policy changed stored preference");
+	}
+	GameCfg.ClassicDepth = saved;
+}
 void unchanged(int vertex)
 {
 	require(!xl_preview_pilot_active() && !xl_preview_pilot_completed(), "pilot admission/completion leaked into stock level");
+	depth_policy(false);
+	xl_texture_emitter emitter{};
+	require(!xl_preview_texture_emitter(3, 2, &emitter), "XL texture emitter leaked into inactive state");
+	require(xl_preview_corona_draws() == 0, "XL corona diagnostics leaked into inactive state");
+	require(xl_preview_corona_depth_failures() == 0, "XL depth diagnostics leaked into inactive state");
 	xl_preview_begin_face(99, 4);
 	require(xl_preview_alpha(0.73f) == 0.73f, "XL material state leaked into stock level");
 	xl_preview_end_face();
@@ -345,6 +370,152 @@ void material_passage(const xl_compat::Inventory &source)
 	}
 	require(checked == 14, "pilot collision material fixture changed");
 	std::cout << "All 14 authored-opacity illusions pass point, small and player-radius traces with closed-wall negative controls; object collisions and combat unverified\n";
+}
+// Controlled probes, separate from the untouched normal-input progression runs
+void texture_emitters(const xl_compat::Inventory &source)
+{
+	int colored_count = 0, total = 0;
+	int visible = 0, blocked_controls = 0;
+	for (int segment = 0; segment < Num_segments; ++segment) {
+		for (int side = 0; side < 6; ++side) {
+			xl_texture_emitter emitter{};
+			if (!xl_preview_texture_emitter(segment, side, &emitter)) continue;
+			++total;
+			const auto &rgb = source.texture_colors.at(emitter.texture).rgb;
+			for (unsigned c = 0; c < 3; ++c)
+				require(emitter.rgb[c] == float(rgb[c]), "live emitter lost authored texture RGB");
+			if (rgb[0] != rgb[1] || rgb[1] != rgb[2]) ++colored_count;
+			const auto original = emitter;
+			vms_vector eye{};
+			compute_segment_center(&eye, &Segments[segment]);
+			const int32_t eye_position[3] = { eye.x, eye.y, eye.z };
+			int32_t center[3], radius;
+			float facing;
+			if (xl_preview_corona_geometry(segment, side, eye_position, segment, center, &radius, &facing)) {
+				++visible;
+				require(radius > 0 && facing > 0, "visible corona has invalid geometry");
+			}
+			for (int portal = 0; portal < 6; ++portal) {
+				const int neighbor = Segments[segment].children[portal];
+				if (neighbor < 0 || neighbor >= Num_segments) continue;
+				int opposite = -1;
+				for (int s = 0; s < 6; ++s)
+					if (Segments[neighbor].children[s] == segment) opposite = s;
+				if (opposite < 0 || Segments[neighbor].sides[opposite].wall_num >= 0) continue;
+				compute_segment_center(&eye, &Segments[neighbor]);
+				const int32_t neighbor_eye[3] = { eye.x, eye.y, eye.z };
+				if (!xl_preview_corona_geometry(segment, side, neighbor_eye, neighbor, center, &radius, &facing)) continue;
+				require(Num_walls < MAX_WALLS, "no temporary wall slot for corona occlusion control");
+				const int slot = Num_walls++;
+				Walls[slot] = {};
+				Walls[slot].segnum = neighbor;
+				Walls[slot].sidenum = opposite;
+				Walls[slot].type = WALL_CLOSED;
+				Segments[neighbor].sides[opposite].wall_num = slot;
+				const int seen = xl_preview_corona_geometry(segment, side, neighbor_eye, neighbor, center, &radius, &facing);
+				Segments[neighbor].sides[opposite].wall_num = -1;
+				--Num_walls;
+				require(!seen, "solid intervening wall did not occlude corona");
+				++blocked_controls;
+			}
+			subtract_light(segment, side);
+			require(!xl_preview_texture_emitter(segment, side, &emitter), "subtracted light retained its emitter");
+			add_light(segment, side);
+			require(xl_preview_texture_emitter(segment, side, &emitter), "restored light lost its emitter");
+			require(emitter.texture == original.texture && emitter.intensity == original.intensity, "light restoration changed emitter selection");
+			auto &surface = Segments[segment].sides[side];
+			const auto base = surface.tmap_num, overlay = surface.tmap_num2;
+			surface.tmap_num = surface.tmap_num2 = 0;
+			require(!xl_preview_texture_emitter(segment, side, &emitter), "removed luminous textures retained their emitter");
+			surface.tmap_num = base;
+			surface.tmap_num2 = overlay;
+			if (surface.wall_num >= 0) {
+				auto &w = Walls[surface.wall_num];
+				const auto flags = w.flags;
+				w.flags |= WALL_ILLUSION_OFF;
+				require(!xl_preview_texture_emitter(segment, side, &emitter), "disabled illusion retained its emitter");
+				w.flags = flags;
+				const auto type = w.type;
+				w.type = WALL_CLOAKED;
+				require(!xl_preview_texture_emitter(segment, side, &emitter), "cloaked wall retained its emitter");
+				w.type = type;
+			}
+		}
+	}
+	std::cout << "Texture emitters: total=" << total << " chromatic=" << colored_count << "; native light switching and texture/wall removal verified; rendering unverified\n";
+	// Independent native inventory plus pinned default brightness audit predicts 24
+	require(colored_count == 24, "authored chromatic emitter candidates differ from source audit");
+	std::cout << "Corona geometry: visible=" << visible << " solid-wall controls=" << blocked_controls << "; GPU output unverified\n";
+	require(visible > 0 && blocked_controls > 0, "corona geometry controls did not exercise visible and occluded paths");
+}
+
+void material_targeting(const xl_compat::Inventory &source)
+{
+	int robot_id = -1, parent = -1;
+	std::vector<int> ignored;
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		if (Objects[i].type == OBJ_ROBOT) robot_id = Objects[i].id;
+		if (Objects[i].type == OBJ_PLAYER) parent = i;
+		ignored.push_back(i);
+	}
+	ignored.push_back(-1);
+	require(robot_id >= 0 && parent >= 0, "material targeting requires pilot robot and player definitions");
+	const auto previous_belief = Believed_player_pos;
+	int checked = 0;
+	for (const auto &w : source.walls) {
+		if (!w.cloak) continue;
+		auto &segment = Segments[w.segment];
+		const auto child = segment.children[w.side];
+		vms_vector start{}, end{}, direction{};
+		compute_segment_center(&start, &segment);
+		compute_segment_center(&end, &Segments[child]);
+		vm_vec_normalized_dir(&direction, &end, &start);
+		vms_matrix facing{};
+		vm_vector_2_matrix(&facing, &direction, nullptr, nullptr);
+		const int observer = obj_create(OBJ_ROBOT, robot_id, w.segment, &start, &facing, F1_0, CT_AI, MT_NONE, RT_NONE);
+		const int target = obj_create(OBJ_ROBOT, robot_id, child, &end, &facing, F1_0, CT_NONE, MT_NONE, RT_NONE);
+		const int projectile = obj_create(OBJ_WEAPON, 0, w.segment, &start, &facing, F1_0 / 8, CT_WEAPON, MT_NONE, RT_NONE);
+		require(observer >= 0 && target >= 0 && projectile >= 0, "cannot allocate controlled material probes");
+		Objects[projectile].ctype.laser_info.parent_type = OBJ_PLAYER;
+		Objects[projectile].ctype.laser_info.parent_num = parent;
+		Objects[projectile].ctype.laser_info.parent_signature = Objects[parent].signature;
+		// Only the controlled target participates in the projectile query
+		ignored.insert(ignored.end() - 1, observer);
+		Believed_player_pos = end;
+		auto eye = start;
+		const int visible = player_is_visible_from_object(&Objects[observer], &eye, 0, &direction);
+		const int object_visible = object_to_object_visibility(&Objects[observer], &Objects[target], FQ_TRANSWALL);
+		fvi_query query{};
+		query.p0 = &start;
+		query.p1 = &end;
+		query.startseg = w.segment;
+		query.rad = Objects[projectile].size;
+		query.thisobjnum = projectile;
+		query.ignore_obj_list = ignored.data();
+		query.flags = FQ_CHECK_OBJS | FQ_TRANSPOINT;
+		fvi_info hit{};
+		const int fate = find_vector_intersection(&query, &hit);
+		const int hit_object = hit.hit_object;
+		// Remove the portal for the control, guaranteeing a solid boundary even
+		// when the original texture has transparent pixels or authored opacity
+		segment.children[w.side] = -1;
+		const int blocked_visibility = player_is_visible_from_object(&Objects[observer], &eye, 0, &direction);
+		const int blocked_object_visibility = object_to_object_visibility(&Objects[observer], &Objects[target], FQ_TRANSWALL);
+		const int blocked_fate = find_vector_intersection(&query, &hit);
+		segment.children[w.side] = child;
+		ignored.erase(ignored.end() - 2);
+		obj_delete(projectile);
+		obj_delete(target);
+		obj_delete(observer);
+		require(visible == 2 && object_visible == 1, "authored illusion blocked native AI/object visibility");
+		require(fate == HIT_OBJECT && hit_object == target, "weapon query did not hit the controlled target through authored illusion");
+		require(blocked_visibility == 0 && blocked_object_visibility == 0 && blocked_fate == HIT_WALL && hit.hit_side_seg == w.segment && hit.hit_side == w.side,
+		        "material targeting negative control did not stop at the solid boundary");
+		++checked;
+	}
+	Believed_player_pos = previous_belief;
+	require(checked == 14, "pilot targeting material fixture changed");
+	std::cout << "All 14 authored-opacity illusions pass native AI/object visibility and weapon-object collision queries with solid-boundary controls; controlled fixtures, not live combat\n";
 }
 void colored(const xl_compat::Inventory &source, int vertex)
 {
@@ -871,9 +1042,12 @@ void verify_branch_checkpoint(int branch)
 	std::cout << "Normal branch persistence: trigger=" << branch << " targets and earned resources restored\n";
 }
 
-void navigate_objective(bool reactor, bool escape = false, int branch = -1)
+void navigate_objective(bool reactor, bool escape = false, int branch = -1, int visit = -1, int cross_from = -1)
 {
 	require(Num_triggers == 13 && branch >= -1 && branch < Num_triggers, "unexpected pilot trigger scope");
+	require(visit >= -1 && visit <= Highest_segment_index, "invalid visit objective");
+	require(cross_from >= -1 && cross_from <= Highest_segment_index, "invalid crossing origin");
+	const bool exploring = branch >= 0 || visit >= 0;
 	if (branch >= 0 && (route_activated_triggers & route_passable_targets & (uint64_t(1) << branch))) {
 		require(!Player_is_dead, "prior branch coverage ended dead");
 		std::cout << "Normal branch navigation: trigger=" << branch << " frames=0 dead=0 activated=1 targets_passable=1; exercised on key route\n";
@@ -882,19 +1056,22 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 	}
 	if (reactor) {
 		const auto shields = Players[Player_num].shields, energy = Players[Player_num].energy;
-		char key_checkpoint[] = "xl-normal-key.sav", reactor_checkpoint[] = "xl-normal-reactor.sav";
-		char *checkpoint = escape ? reactor_checkpoint : key_checkpoint;
+		char key_checkpoint[] = "xl-normal-key.sav", reactor_checkpoint[] = "xl-normal-reactor.sav", branch_checkpoint[] = "xl-normal-branch.sav";
+		const bool after_reactor = escape || (visit >= 0 && Control_center_destroyed);
+		char *checkpoint = cross_from >= 0 ? branch_checkpoint : after_reactor ? reactor_checkpoint
+		                                                                       : key_checkpoint;
 		const auto countdown = Countdown_timer;
 		require(state_restore_all_sub(checkpoint, 0) != 0, "normal key checkpoint restore failed");
 		require((Players[Player_num].flags & KEY_RED) && (Players[Player_num].shields == shields && Players[Player_num].energy == energy),
 		        "normal key checkpoint changed earned inventory");
-		if (escape) require(Control_center_destroyed && Countdown_timer == countdown && countdown > 0, "earned reactor countdown changed on restore");
+		if (after_reactor) require(Control_center_destroyed && Countdown_timer == countdown && countdown > 0, "earned reactor countdown changed on restore");
 	} else {
 		route_activated_triggers = route_passable_targets = 0;
 		d_srand_stream(D_RNG_SIM, 1);
 		d_srand_stream(D_RNG_FX, 1);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
+		xl_checkpoint_capture_sources("d2leva-1.rl2");
 	}
 	int key = -1;
 	int robots = 0;
@@ -917,14 +1094,27 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
 	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
-	auto complete = [&] { return branch >= 0 ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch)) : escape ? bool(xl_preview_pilot_completed())
-		                                                                                                                        : reactor  ? bool(Control_center_destroyed)
-		                                                                                                                                   : bool(Players[Player_num].flags & KEY_RED); };
+	if (escape) require(input_demo_start_quick_recording_common() != 0, "cannot record earned escape checkpoint");
+	bool crossed = false, approached = cross_from < 0;
+	auto complete = [&] { return cross_from >= 0 ? crossed : visit >= 0 ? ConsoleObject->segnum == visit
+		                                                 : branch >= 0  ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch))
+		                                                 : escape       ? bool(xl_preview_pilot_completed())
+		                                                 : reactor      ? bool(Control_center_destroyed)
+		                                                                : bool(Players[Player_num].flags & KEY_RED); };
 	int remainder = 0, frames = 0, last_segment = -1;
-	for (; frames < (branch >= 0 ? 36000 : 10800) && !Player_is_dead && !complete(); ++frames) {
+	const int entry_lives = Players[Player_num].lives;
+	for (; frames < (exploring ? 36000 : 10800) && !Player_is_dead && !complete(); ++frames) {
 		const int start = ConsoleObject->segnum;
-		int goal = branch >= 0 ? Walls[branch_wall].segnum : escape ? Walls[exit_wall].segnum
-		                                                            : Objects[key].segnum,
+		if (start == cross_from) approached = true;
+		// Keep the last naturally reached state before crossing the actual exit
+		if (escape && start == Walls[exit_wall].segnum) {
+			char checkpoint[] = "xl-normal-exit-approach.sav", description[] = "Earned exit approach";
+			require(state_save_all_sub(checkpoint, description) != 0, "cannot save earned exit approach");
+		}
+		int goal = !approached ? cross_from : visit >= 0 ? visit
+		                                  : branch >= 0  ? Walls[branch_wall].segnum
+		                                  : escape       ? Walls[exit_wall].segnum
+		                                                 : Objects[key].segnum,
 		    pickup = key, switch_wall = -1;
 		std::vector<int> parent(Highest_segment_index + 1, -1), queue{ start };
 		std::vector<int> steps(Highest_segment_index + 1, -1);
@@ -935,6 +1125,9 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 			for (int side = 0; side < 6; ++side) {
 				const int child = Segments[seg].children[side];
 				if (child < 0 || parent[child] >= 0) continue;
+				// The reactor/wreck obstructs the narrow center route; use the side loop
+				// for exploration rather than treating a flyable portal as a clear corridor
+				if (visit >= 0 && child != visit && Objects[key].type == OBJ_CNTRLCEN && child == Objects[key].segnum) continue;
 				bool pass = WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG;
 				const int wall = Segments[seg].sides[side].wall_num;
 				if (!pass && wall >= 0) {
@@ -949,14 +1142,14 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 				}
 			}
 		}
-		int pickup_steps = escape ? 0 : branch >= 0                                                                                               ? 4
+		int pickup_steps = escape ? 0 : exploring                                                                                                 ? 4
 		                            : reactor && (Players[Player_num].shields < i2f(50) || (branch >= 0 && Players[Player_num].energy < i2f(50))) ? Highest_segment_index + 1
 		                                                                                                                                          : 6;
 		for (int i = 0; i <= Highest_object_index; ++i) {
 			const auto &o = Objects[i];
 			if (o.type != OBJ_POWERUP || o.segnum < 0 || steps[o.segnum] < 0 || steps[o.segnum] >= pickup_steps) continue;
 			if ((o.id == POW_SHIELD_BOOST && Players[Player_num].shields < i2f(90)) ||
-			    (branch >= 0 && o.id == POW_ENERGY && Players[Player_num].energy < i2f(80)) ||
+			    (exploring && o.id == POW_ENERGY && Players[Player_num].energy < i2f(80)) ||
 			    (o.id == POW_LASER && Players[Player_num].laser_level < MAX_LASER_LEVEL)) {
 				pickup = i;
 				goal = o.segnum;
@@ -965,9 +1158,9 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		}
 		auto switch_approach = [&](int wall) {
 			const auto &host = Walls[wall];
-			if (branch >= 0 && host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) return -1;
+			if (exploring && host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) return -1;
 			if (parent[host.segnum] >= 0) return host.segnum;
-			if (branch < 0) return -1;
+			if (!exploring) return -1;
 			vms_vector target;
 			compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
 			int best = -1;
@@ -1029,6 +1222,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		int blocking_wall = -1;
 		vms_vector target{};
 		if (escape) compute_center_point_on_side(&target, &Segments[goal], Walls[exit_wall].sidenum);
+		else if (visit >= 0 && pickup == key) compute_segment_center(&target, &Segments[goal]);
 		else target = Objects[pickup].pos;
 		if (switch_wall >= 0) {
 			const auto &host = Walls[switch_wall];
@@ -1038,7 +1232,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 			else {
 				compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
 				// Shoot different parts of the authored switch face; its center may be transparent
-				if (branch >= 0 && start == goal) {
+				if (exploring && start == goal) {
 					int verts[4];
 					get_side_verts(verts, host.segnum, host.sidenum);
 					const int sample = (frames / 90) % 25;
@@ -1062,7 +1256,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 			vms_vector portal, inward, center;
 			compute_center_point_on_side(&portal, &Segments[start], crossing);
 			const int portal_wall = Segments[start].sides[crossing].wall_num;
-			if (branch >= 0 && portal_wall >= 0 && Walls[portal_wall].type == WALL_BLASTABLE &&
+			if (exploring && portal_wall >= 0 && Walls[portal_wall].type == WALL_BLASTABLE &&
 			    !(WALL_IS_DOORWAY(&Segments[start], crossing) & WID_FLY_FLAG)) blocking_wall = portal_wall;
 			compute_segment_center(&center, &Segments[next]);
 			vm_vec_sub(&inward, &center, &portal);
@@ -1112,7 +1306,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		for (int i = 0; !escape && i <= Highest_object_index; ++i) {
 			if (Objects[i].type == OBJ_ROBOT) {
 				if (Robot_info[Objects[i].id].companion) continue;
-			} else if (!reactor || branch >= 0 || Objects[i].type != OBJ_CNTRLCEN) continue;
+			} else if (!reactor || branch >= 0 || Control_center_destroyed || Objects[i].type != OBJ_CNTRLCEN) continue;
 			vms_vector delta;
 			vm_vec_sub(&delta, &Objects[i].pos, &ConsoleObject->pos);
 			const fix range = vm_vec_normalize(&delta);
@@ -1143,7 +1337,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		Controls.heading_time = input(std::atan2(x, z) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.y) / F1_0 * 1.5);
 		Controls.pitch_time = input(-std::atan2(y, std::hypot(x, z)) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.x) / F1_0 * 1.5);
 		const bool fighting = nearest < i2f(100);
-		const bool shoot_switch = branch >= 0 && switch_wall >= 0 && start == goal &&
+		const bool shoot_switch = exploring && switch_wall >= 0 && start == goal &&
 		                          !(WALL_IS_DOORWAY(&Segments[Walls[switch_wall].segnum], Walls[switch_wall].sidenum) & WID_FLY_FLAG);
 		double approach = (std::max) (0.0, double(distance) / F1_0 - (shoot_switch ? 20.0 : blocking_wall >= 0 ? 8.0
 		                                                                                                       : 0.0));
@@ -1154,7 +1348,8 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 			vm_vec_sub(&direction, &firing_position, &ConsoleObject->pos);
 			approach = double(vm_vec_normalize(&direction)) / F1_0;
 		}
-		const double speed = fighting ? 0.0 : (std::min) (25.0, approach * 2);
+		// Keep moving through a narrow portal while engaging a distant defender
+		const double speed = fighting ? (cross_from >= 0 && nearest > i2f(60) ? (std::min) (15.0, approach * 2) : 0.0) : (std::min) (25.0, approach * 2);
 		const auto &velocity = ConsoleObject->mtype.phys_info.velocity;
 		Controls.forward_thrust_time = input((dot(direction, orientation.fvec) * speed - dot(velocity, orientation.fvec)) / 12);
 		const double dodge = fighting ? (frames / 90 % 2 ? 20.0 : -20.0) : 0.0;
@@ -1170,7 +1365,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 			fvi_info hit{};
 			if (find_vector_intersection(&query, &hit) == HIT_WALL && hit.hit_side_seg >= 0 && hit.hit_side >= 0) {
 				const int wall = Segments[hit.hit_side_seg].sides[hit.hit_side].wall_num;
-				barrier = branch < 0 || (wall >= 0 && (Walls[wall].type == WALL_DOOR || Walls[wall].type == WALL_BLASTABLE));
+				barrier = !exploring || (wall >= 0 && (Walls[wall].type == WALL_DOOR || Walls[wall].type == WALL_BLASTABLE));
 			}
 		}
 		bool switch_visible = true;
@@ -1187,12 +1382,21 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		}
 		Controls.fire_primary_state = (fighting || barrier || (switch_wall >= 0 && start == goal)) && z > (nearest < i2f(40) ? 0.995 : 0.999) && switch_visible;
 		Controls.fire_secondary_state = fighting && z > 0.999 && nearest > i2f(20);
+		if (escape) input_demo_record_input_sample();
+		const fix shields_before_frame = Players[Player_num].shields;
 		do_weapon_n_item_stuff();
 		calc_game_time();
 		GameProcessFrame();
+		if (cross_from >= 0 && Players[Player_num].shields < shields_before_frame)
+			std::cout << "Portal damage: frame=" << frames << " segment=" << ConsoleObject->segnum << " shields=" << double(Players[Player_num].shields) / F1_0
+			          << " enemy_range=" << double(nearest) / F1_0 << " primary=" << int(Controls.fire_primary_state) << " secondary=" << int(Controls.fire_secondary_state) << '\n';
 		observe_route_triggers();
+		if (cross_from >= 0 && start == cross_from && ConsoleObject->segnum == visit) crossed = true;
+		if (cross_from >= 0 && !crossed && ConsoleObject->segnum == visit) approached = false;
+		if (visit >= 0) require(Players[Player_num].lives == entry_lives && !Reactor_countdown_paused,
+			                    "secret entry lost a life or paused the native countdown");
 		if (ConsoleObject->segnum != last_segment || frames % 600 == 0) {
-			if (branch >= 0 && frames % 600 == 0 && start != next) {
+			if (exploring && frames % 600 == 0 && start != next) {
 				for (int side = 0; side < 6; ++side) {
 					if (Segments[start].children[side] != next) continue;
 					const int wall = Segments[start].sides[side].wall_num;
@@ -1211,6 +1415,15 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		}
 	}
 	std::memset(&Controls, 0, sizeof(Controls));
+	if (visit >= 0) {
+		if (cross_from >= 0) std::cout << "Normal linked portal: from=" << cross_from << " to=" << visit << " crossed=" << crossed << '\n';
+		std::cout << "Normal secret entry: target=" << visit << " actual=" << ConsoleObject->segnum << " frames=" << frames
+		          << " dead=" << Player_is_dead << " shields=" << Players[Player_num].shields
+		          << " reactor=" << Control_center_destroyed << " countdown=" << Countdown_timer << '\n';
+		require(!Player_is_dead && frames > 0 && complete() && find_point_seg(&ConsoleObject->pos, visit) == visit,
+		        "normal-input secret entry incomplete");
+		return;
+	}
 	std::cout << "Normal route trigger coverage:";
 	for (int t = 0; t < Num_triggers; ++t)
 		std::cout << " " << t << "=" << bool(route_activated_triggers & (uint64_t(1) << t))
@@ -1225,6 +1438,25 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1)
 		return;
 	}
 	if (escape) {
+		input_demo_stop_quick_recording_common();
+		const auto recordings = std::filesystem::path(PHYSFS_getWriteDir()) / "input_demo_recordings" / "new";
+		bool recorded = false;
+		if (std::filesystem::is_directory(recordings))
+			for (const auto &entry : std::filesystem::directory_iterator(recordings))
+				if (entry.path().extension() == ".dximdemo") {
+					std::ifstream file(entry.path());
+					std::string line;
+					std::getline(file, line);
+					const auto header = nlohmann::json::parse(line);
+					require(header.at("mission") == "d2-xl" && header.at("start_mode") == "save_checkpoint" && header.at("frame_count") == frames,
+					        "escape recording lacks the earned checkpoint or complete frame count");
+					std::filesystem::copy_file(entry.path(), recordings.parent_path().parent_path() / "xl-normal-escape.dximdemo", std::filesystem::copy_options::overwrite_existing);
+					recorded = true;
+				}
+		require(recorded, "earned escape input recording was not written");
+		require(xl_checkpoint_finish_export("xl-normal-exit-approach.sav") != 0, "cannot append native source definitions to exit checkpoint");
+		require(write_player_file() == 0, "cannot export the recorded native player profile");
+		std::cout << "Normal escape recording: earned checkpoint and ordered flight inputs exported; replay and interactive completion unverified\n";
 		std::cout << "Normal escape navigation: frames=" << frames << " dead=" << Player_is_dead
 		          << " completed=" << xl_preview_pilot_completed() << " level=" << Current_level_num
 		          << " countdown=" << Countdown_timer << " shields=" << Players[Player_num].shields << '\n';
@@ -1270,6 +1502,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 	const auto stock_lights = face_lights();
 	require(load_base_mission("d2-xl", error, sizeof(error)), error);
 	start_level();
+	depth_policy(true);
 	const auto pilot_definitions = gameplay_definitions();
 	const auto pilot_lights = face_lights();
 	colored(source, vertex);
@@ -1337,6 +1570,25 @@ int main(int argc, char **argv)
 		colored(probe.source, vertex);
 		materials(probe.source);
 		material_passage(probe.source);
+		material_targeting(probe.source);
+		texture_emitters(probe.source);
+		// Controlled light subtraction can clamp UVLs; reload before later assertions
+		require(load_level("d2leva-1.rl2") == 0, "pilot reload after emitter probes failed");
+		const int previous_mode = Game_mode;
+		for (const int mode : { GM_NETWORK, GM_NETWORK | GM_MULTI_COOP | GM_MULTI_ROBOTS }) {
+			Game_mode = mode;
+			require(load_level("d2leva-1.rl2") != 0, "original pilot accepted multiplayer loading");
+			unchanged(vertex);
+			require(load_level("xlprobe.rl2") != 0, "translated preview bypassed multiplayer rejection");
+			unchanged(vertex);
+			require(load_level("stockprobe.rl2") == 0, "XL admission guard blocked a stock-format multiplayer level");
+			unchanged(vertex);
+		}
+		Game_mode = previous_mode;
+		require(load_level("d2leva-1.rl2") == 0, "single-player pilot did not recover after multiplayer rejection");
+		colored(probe.source, vertex);
+		materials(probe.source);
+		std::cout << "XL multiplayer admission: original and translated preview rejected in network/cooperative modes, stock loader and single-player recovery passed\n";
 		const auto original_copy = (std::filesystem::path(extra_dir) / "d2leva-1.rl2").string();
 		auto altered_original = bytes;
 		altered_original.back() ^= 1;
@@ -1346,6 +1598,51 @@ int main(int argc, char **argv)
 		require(original_rejected != 0, "unaudited original source accepted");
 		unchanged(vertex);
 		require(load_level("d2leva-1.rl2") == 0, "original pilot recovery failed");
+		std::cout << "Pilot ambient flags:";
+		for (int segment = 0; segment < Num_segments; ++segment)
+			std::cout << ' ' << int(Segment2s[segment].s2_flags);
+		std::cout << '\n';
+		std::vector<int> loaded_ambient;
+		for (int segment = 0; segment < Num_segments; ++segment) loaded_ambient.push_back(Segment2s[segment].s2_flags);
+		set_ambient_sound_flags();
+		std::cout << "Pilot ambient flags after active-material recompute:";
+		for (int segment = 0; segment < Num_segments; ++segment) {
+			std::cout << ' ' << int(Segment2s[segment].s2_flags);
+			require(Segment2s[segment].s2_flags == loaded_ambient[segment], "active material recompute changed ambient regions");
+			Segment2s[segment].s2_flags = loaded_ambient[segment];
+		}
+		std::cout << '\n';
+		for (int segment = 80; segment <= 87; ++segment)
+			for (int side = 0; side < 6; ++side) {
+				const auto &s = Segments[segment].sides[side];
+				std::cout << "Ambient side: segment=" << segment << " side=" << side << " texture=" << s.tmap_num << " overlay=" << (s.tmap_num2 & 0x3fff)
+				          << " texture_flags=" << int(TmapInfo[s.tmap_num].flags) << " overlay_flags=" << int(TmapInfo[s.tmap_num2 & 0x3fff].flags)
+				          << " doorway=" << WALL_IS_DOORWAY(&Segments[segment], side) << '\n';
+			}
+		// ar12 computes ambience before texture 269 is paged in. Its then-opaque
+		// boundary is a diagnostic control, not a material rule to copy into Redux
+		require(!(TmapInfo[175].flags & (TMI_VOLATILE | TMI_WATER)), "ambient control texture emits sound");
+		std::vector<side *> ambient_control_sides;
+		for (int segment = 0; segment < Num_segments; ++segment)
+			for (auto &side : Segments[segment].sides)
+				if (side.tmap_num == 269) {
+					ambient_control_sides.push_back(&side);
+					side.tmap_num = 175;
+				}
+		require(!(WALL_IS_DOORWAY(&Segments[83], 4) & WID_RENDPAST_FLAG), "ambient negative control remains transparent");
+		set_ambient_sound_flags();
+		int ambient_differences = 0;
+		for (int segment = 0; segment < Num_segments; ++segment) {
+			const int expected = segment == 81 || segment == 82 ? loaded_ambient[segment] & ~S2F_AMBIENT_LAVA : loaded_ambient[segment];
+			require(Segment2s[segment].s2_flags == expected, "opaque boundary changed unexpected ambient region");
+			const int reference = probe.source.segments[segment].flags | ((segment == 51 || segment == 111) ? S2F_AMBIENT_LAVA : 0);
+			require(Segment2s[segment].s2_flags == reference, "opaque boundary does not reproduce pinned ar12 ambient flags");
+			ambient_differences += Segment2s[segment].s2_flags != loaded_ambient[segment];
+			Segment2s[segment].s2_flags = loaded_ambient[segment];
+		}
+		for (auto side : ambient_control_sides) side->tmap_num = 269;
+		require(ambient_differences == 2, "ambient boundary control did not isolate both regions");
+		std::cout << "Ambient boundary control: only segments 81/82 lose lava flags with texture 269 opaque; original textures and flags restored\n";
 		if (const auto hog = find_arg_value(argc, argv, "-pilot-hog"); hog && *hog) {
 			require(PHYSFS_addToSearchPath(hog, 0) != 0, "cannot mount original pilot HOG");
 			const auto resolved = PHYSFS_getRealDir("d2leva-1.rl2");
@@ -1387,6 +1684,13 @@ int main(int argc, char **argv)
 				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-navigation"); })) navigate_objective(false);
 				if (const char *branch = find_arg_value(argc, argv, "-xl-test-branch")) navigate_objective(true, false, std::stoi(branch));
 				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-reactor"); })) navigate_objective(true);
+				if (const char *visit = find_arg_value(argc, argv, "-xl-test-visit")) navigate_objective(true, false, -1, std::stoi(visit));
+				if (const char *cross = find_arg_value(argc, argv, "-xl-test-cross")) {
+					const std::string edge(cross);
+					const auto separator = edge.find(':');
+					require(separator != std::string::npos, "crossing requires from:to");
+					navigate_objective(true, false, -1, std::stoi(edge.substr(separator + 1)), std::stoi(edge.substr(0, separator)));
+				}
 				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-escape"); })) {
 					navigate_objective(true, true);
 					mission_isolation(probe.source, vertex);

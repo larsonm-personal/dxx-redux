@@ -1,9 +1,9 @@
 /* Android presentation compatibility, independent of installed/enabled UI rows */
+#include <nlohmann/json.hpp>
 #include "mod_save_compat.h"
 #include "input_demo_codec.h"
 #include "mod_save_supported_data.h"
 #include "picosha2.h"
-#include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -180,7 +180,9 @@ bool reject(const std::string &message)
 	status = "incompatible";
 	reason = message.substr(0, 240);
 	debug_log_force(DLOG_GAME, "Mod save incompatible: %s", reason.c_str());
+#ifdef __ANDROID__
 	android_restore_phase(reason.c_str());
+#endif
 	return false;
 }
 void write_u32(rewind_file *file, uint32_t value)
@@ -374,7 +376,13 @@ void mod_save_effect_offset(rewind_file *file)
 int mod_save_write(rewind_file *file)
 {
 	// Rewind is frequent and cannot change assets; retain its compact exact layout
-	if (rewind_file_is_memory(file) && !state_checkpoint_writes_file()) return 1;
+	if (rewind_file_is_memory(file)) {
+#ifdef __ANDROID__
+		if (!state_checkpoint_writes_file()) return 1;
+#else
+		return 1;
+#endif
+	}
 	try {
 		check(definitions.is_object() && level_sources.is_object() && extra_ham.is_object(), "No source definitions for gameplay save");
 		auto block = definitions;

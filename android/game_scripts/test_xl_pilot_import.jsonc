@@ -1,0 +1,39 @@
+// Private original-mission ZIP import and startup check, not campaign qualification
+// Requires -PxlPilot=true, retail D2 data and an existing player pilot
+// Stage unchanged HOG + descriptor as files/xl-original-import.zip; use -PreserveState
+// Preserve and move aside manually staged d2-xl files from d2x-redux/missions
+[
+    { "_info": { "games": ["d2"] } },
+    { "action": "enter_launcher" },
+    { "action": "setup_command", "command": "pause_route_metadata_precompute", "post_delay_ms": 250 },
+    {
+        "action": "import_mission_zip",
+        "path": "xl-original-import.zip",
+        "label": "xl-pilot",
+        "display_name": "XL original pilot investigation",
+    },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000, "post_delay_ms": 500 },
+    { "action": "select", "text": "player", "timeout_ms": 10000, "post_delay_ms": 200 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000, "post_delay_ms": 200 },
+    { "action": "select_mission", "text": "D2-XL: Counterstrike!", "timeout_ms": 10000, "post_delay_ms": 200 },
+    { "action": "select", "text": "Ok", "timeout_ms": 10000, "post_delay_ms": 200 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 10000, "post_delay_ms": 200 },
+    { "action": "skip_briefing", "timeout_ms": 20000 },
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000 },
+    { "action": "wait_ms", "ms": 1000 },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "current_level_name": "Ahayweh Gate",
+            "player.robots_level": 38,
+            "player.invulnerable": false,
+            "xl_pilot.active": true,
+            "xl_pilot.completed": false,
+            "xl_pilot.shaded_vertices": { "gt": 0 },
+            "xl_pilot.unresolved_emitters": 0,
+        },
+    },
+    { "action": "introspect" },
+]

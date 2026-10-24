@@ -150,3 +150,24 @@ scrape applies a small shove, so this is not a frictionless slide oracle. This
 case finishes with a collision-free remainder and does not cover the final
 collision-velocity reconstruction branch; that factor remains source-reviewed
 and separately arithmetic-tested. No stronger branch-coverage claim is made.
+
+## Alignment with the published Counterstrike pilot
+
+The approved history-preserving integration pins upstream
+`fcb2c803d393e62231e064923112d0ee8a0ce896`. Merge it into the water branch,
+then propagate the resulting tips through inspection, descriptors and browser.
+Do not merge pull requests, rewrite published history or update the upstream branch.
+
+Preserve the new Counterstrike completion, Android opt-in, save/export, corona and
+XL menu behavior. Robotech remains a distinct arena pilot: it must not acquire
+Counterstrike completion identity. Its new texture-corona emission remains off
+until separately qualified; this preserves the water slice's previous presentation.
+The original arena contract checks every side for that exclusion, in addition to
+its existing native save/replay, source rejection and stock-transition assertions.
+Both opt-in pilot paths reject multiplayer early. The generic XL menu indicator
+continues to identify a loaded XL source, including the arena.
+
+Retain bounded inventory/compiler fixes and descriptor admission guards. Metadata
+feature colors describe feature support, not production admission of arbitrary
+levels. Validate native contracts and both pilot paths, then run exact-head CI
+for each updated pull request and the actual synthetic Android browser dialog.

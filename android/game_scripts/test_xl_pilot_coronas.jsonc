@@ -1,0 +1,184 @@
+// Controlled rendering pose, not normal-input progression or full pilot qualification
+// Requires -PxlPilot=true, imported original d2-xl mission, retail data and player pilot
+// Segment 40 center faces authored orange texture 405; no saves are changed
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "vars": {
+                "d2": {
+                    "PILOT": "player",
+                },
+            },
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "select",
+        "text": "${PILOT}",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select_mission",
+        "text": "D2-XL: Counterstrike!",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "current_level_name": "Ahayweh Gate",
+            "player.robots_level": 38,
+            "player.invulnerable": false,
+            "xl_pilot.active": true,
+            "xl_pilot.completed": false,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+            "xl_pilot.unresolved_emitters": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_corona_pixels",
+        "value": "verify",
+    },
+    {
+        "action": "pose_view",
+        "segment": 26,
+        "x": 0.0059375762939453125,
+        "y": 7.35004997253418,
+        "z": 277.8879089355469,
+        "heading": -5000,
+        "pitch": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_corona_objects",
+        "value": "request",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_corona_objects",
+        "value": "verify",
+    },
+    {
+        "action": "pose_view",
+        "segment": 40,
+        "x": 0.0062274932861328125,
+        "y": -12.668704986572266,
+        "z": 278.82593727111816,
+        "heading": 65534,
+        "pitch": 15409,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.corona_depth_failures": 0,
+            "xl_pilot.corona_draws": {
+                "gt": 0,
+            },
+            "position.segment": 40,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_option",
+        "value": "classic_depth:1",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_corona_scene",
+        "value": "request",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.classic_depth_requested": true,
+            "xl_pilot.corona_classic_requested_draws": { "gt": 0 },
+            "xl_pilot.classic_depth_effective": false,
+            "xl_pilot.corona_depth_failures": 0,
+            "xl_pilot.corona_draws": { "gt": 0 },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_corona_scene",
+        "value": "verify",
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_option",
+        "value": "classic_depth:0",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.classic_depth_requested": false,
+            "xl_pilot.classic_depth_effective": false,
+            "xl_pilot.corona_depth_failures": 0,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]
