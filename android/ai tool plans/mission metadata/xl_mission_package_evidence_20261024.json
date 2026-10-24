@@ -1,0 +1,703 @@
+{
+    "schema": 1,
+    "redux_revision": "8acea2079c8c7f5724da52796854cee7e9f03bc1",
+    "asset_revision": "d9fbeaf6eb059fd4504308bfd6364734775b7cba",
+    "upstream_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "method": "libarchive outer file headers; SHA-256 of complete archive bytes; nested payloads not recursively inspected; external mods/ file contents streamed through SHA-256 with a 32 MiB per-entry audit bound; no extracted binaries retained",
+    "archives": [
+        {
+            "archive": "d2xxl_downloads/D1-levelpack.7z",
+            "sha256": "216002b68379ccb9193ec7cc87420696f00cee6e5342a70436f9aae53b900b68",
+            "file_count": 51,
+            "extensions": {
+                ".hog": 17,
+                ".mn2": 1,
+                ".msn": 16,
+                ".txt": 17
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/bahagad.7z",
+            "sha256": "3480fb02a6890c3bbf309571c32c12c456d4063bb25ecdaf2e6fea8ebc152386",
+            "file_count": 59,
+            "extensions": {
+                ".hog": 2,
+                ".light": 18,
+                ".lmap5": 18,
+                ".mesh": 18,
+                ".mn2": 2,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/diehard.7z",
+            "sha256": "9c1cadeaa45e1ff47b7ef935944e1ebdbd6df80e3970a8f3a2e9fbf45575cd4a",
+            "file_count": 60,
+            "extensions": {
+                ".hog": 1,
+                ".light": 19,
+                ".lmap5": 19,
+                ".mesh": 19,
+                ".mn2": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/eaf.7z",
+            "sha256": "5c84f123edb1d9d593b22f136b092fe57fc0934f0c782f0e341b2356f5944ead",
+            "file_count": 18,
+            "extensions": {
+                ".hog": 1,
+                ".light": 5,
+                ".lmap5": 5,
+                ".mesh": 5,
+                ".mn2": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/eaf2.7z",
+            "sha256": "1deba3452c2bd5122235b4e7a5fe04f4f839d7e19d8838709e6b77c8b789f03f",
+            "file_count": 34,
+            "extensions": {
+                ".hog": 1,
+                ".light": 10,
+                ".lmap5": 10,
+                ".mesh": 10,
+                ".mn2": 1,
+                ".sng": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [
+                {
+                    "path": "mods/eaf2/descent.sng",
+                    "bytes": 567,
+                    "filetype": 32768,
+                    "sha256": "84cc7215096de7110da149335942856f3600489f6bbbd70fda141e8395ff33f4"
+                }
+            ],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/entropy.7z",
+            "sha256": "be4249df3f613b273aed0bec107b8cc8426b7db2fdcb9e5e5b1420dfae478288",
+            "file_count": 4,
+            "extensions": {
+                ".hog": 1,
+                ".mn2": 1,
+                ".txt": 2
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/harqyjia.7z",
+            "sha256": "69c6efbd1fa9b94130d203fbd0952fcd1f4c0740abec4c1681bf35127154a81c",
+            "file_count": 3,
+            "extensions": {
+                ".hog": 1,
+                ".mn2": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/ironblade.7z",
+            "sha256": "1cdd7e50f42d757357cf0d2f15925724180939836901e7b4e1fca1054887941f",
+            "file_count": 26,
+            "extensions": {
+                ".hog": 1,
+                ".light": 8,
+                ".lmap5": 8,
+                ".mesh": 8,
+                ".msn": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/ironstar.7z",
+            "sha256": "05707fb678d4de8cf5fdf6e7d1022e0ef66a2949ae221d24c129828a6ede96bd",
+            "file_count": 35,
+            "extensions": {
+                ".hog": 1,
+                ".light": 11,
+                ".lmap5": 11,
+                ".mesh": 11,
+                ".msn": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z",
+            "sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "file_count": 918,
+            "extensions": {
+                ".bat": 11,
+                ".bmp": 1,
+                ".doc": 2,
+                ".dtx": 1,
+                ".exe": 1,
+                ".gif": 1,
+                ".ham": 4,
+                ".hog": 314,
+                ".htm": 2,
+                ".jpg": 1,
+                ".mn2": 280,
+                ".msn": 34,
+                ".nfo": 1,
+                ".pcx": 2,
+                ".po2": 2,
+                ".pog": 2,
+                ".rdl": 1,
+                ".rep": 4,
+                ".sng": 8,
+                ".tga": 31,
+                ".txb": 4,
+                ".txt": 208,
+                ".wav": 2,
+                ".xls": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [
+                {
+                    "path": "mods/drgpit/sounds/boss01.wav",
+                    "bytes": 540556,
+                    "filetype": 32768,
+                    "sha256": "f448d3506def983bd2ba3e9d79a24386930ff7aeba956f2eaed666b443201480"
+                },
+                {
+                    "path": "mods/drgpit/sounds/boss02.wav",
+                    "bytes": 482356,
+                    "filetype": 32768,
+                    "sha256": "91fa0e3fb5ff3187929e6511ebfebff002b8ef47c3225d5b99be42fd67571f3d"
+                },
+                {
+                    "path": "mods/boilpnt/textures/ceil002.bmp",
+                    "bytes": 5174,
+                    "filetype": 32768,
+                    "sha256": "d801f9bb7858a868497a5136523407bfd1caafc01e168f4f3edf304454dee268"
+                },
+                {
+                    "path": "mods/250/250.ham",
+                    "bytes": 244146,
+                    "filetype": 32768,
+                    "sha256": "2e7c945cbe808c90f25b312d53f5bda1d688a9ebcdc1deeb08b452f09271c8a7"
+                },
+                {
+                    "path": "mods/lostlvls/lostlvls.ham",
+                    "bytes": 1359568,
+                    "filetype": 32768,
+                    "sha256": "ac5ad06714c89155a3e4ee76d32512c5101a39e0d428adfb1cf17c86092433c2"
+                },
+                {
+                    "path": "mods/lostlvls/lostlvls.sng",
+                    "bytes": 1230,
+                    "filetype": 32768,
+                    "sha256": "eb665c632bd70e9c18ffe380896b330d6c12ca079becea6dec649077f6297e14"
+                },
+                {
+                    "path": "mods/boilpnt/textures/ceil002.tga",
+                    "bytes": 17445,
+                    "filetype": 32768,
+                    "sha256": "150c3603749fc87d877c9a0c97218431605b845098a89338a632252402635c3b"
+                },
+                {
+                    "path": "mods/boilpnt/textures/ceil031.tga",
+                    "bytes": 13349,
+                    "filetype": 32768,
+                    "sha256": "4b6b3b60922eb48ad277e2e24ad89f43b4bce245b6b687f71ffc72956bde6bfe"
+                },
+                {
+                    "path": "mods/boilpnt/textures/ceil032.tga",
+                    "bytes": 13349,
+                    "filetype": 32768,
+                    "sha256": "73881a5d88ae9d9d9f60bf7a5cbc07e3b36a56d93be4526f267be8bfbb82c9e5"
+                },
+                {
+                    "path": "mods/ewithin/textures/COCKPITB.TGA",
+                    "bytes": 1229861,
+                    "filetype": 32768,
+                    "sha256": "6e21996bcdf70efb83569fe0c472fb031ea31021b99a8d8c19fdddd807141508"
+                },
+                {
+                    "path": "mods/boilpnt/textures/door53#0.tga",
+                    "bytes": 1049637,
+                    "filetype": 32768,
+                    "sha256": "b8de6bca114401a30af53f445d50dc027c5475414833711b23c04203b8686c3a"
+                },
+                {
+                    "path": "mods/boilpnt/textures/fan03.tga",
+                    "bytes": 263205,
+                    "filetype": 32768,
+                    "sha256": "8b51c97b97074f09260647b6db29f6df99939959397572c2f5dacb1d3d705799"
+                },
+                {
+                    "path": "mods/boilpnt/textures/force01#0.tga",
+                    "bytes": 295973,
+                    "filetype": 32768,
+                    "sha256": "ce0ed3f3874c1e01fb27c46a2eb2cfba0034559fc3464052e40fa2fa4ac73dac"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl015.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "25851a0ac332299a7f1bec29a75e5de005417f97840e34cf3f556c266af5c2b3"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl024.tga",
+                    "bytes": 13349,
+                    "filetype": 32768,
+                    "sha256": "91f111c5bb23dd171cdaee835948a59878e9520649690255465498228c7ffef9"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl036.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "5dc91187d8283e2cecaf70b8fee0050fd3a693ff10993af0edb7811abfd1ea1a"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl048.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "d4a2dc999b83c9f1438fedf0dd6bd7e2709c2881c0c81bb1844f5b9602ffc699"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl060.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "9ad2eab3b3e1e1d00350e999f96266f839b44ea0a73b11b02750da8314aabeb9"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl065.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "e656dbbf30bf5796929dce2b3e5534c0dcde580ba28e7af24de1f2fa98a0d9b2"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl096.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "b6815ae4c7716f137817589b25283ebb8388db0df20cee48941caebe22edff59"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl100.tga",
+                    "bytes": 65554,
+                    "filetype": 32768,
+                    "sha256": "a8456586d275e9a9bf4fbb07dd410a692f3cecf6517653dd804b36b0091cf901"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl109.tga",
+                    "bytes": 13349,
+                    "filetype": 32768,
+                    "sha256": "d78cedaf581e665a617269a363ca59224e43475addbed0beece8e111a2bd6be5"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl111.tga",
+                    "bytes": 65554,
+                    "filetype": 32768,
+                    "sha256": "ea33609f5c6afb2b4a3e451a4a1838ae4b291a1f65ad6fa3a96a0be9f5ee2875"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl128.tga",
+                    "bytes": 65554,
+                    "filetype": 32768,
+                    "sha256": "eb42443d17ded80e3b45985d55bd08e023736d69f9028066cfd6d4429198f73c"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl129.tga",
+                    "bytes": 17445,
+                    "filetype": 32768,
+                    "sha256": "73dd80fa910ded11902de4767ad244e09dbd4ec387e10f92f897bed55bc649f7"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl130.tga",
+                    "bytes": 17445,
+                    "filetype": 32768,
+                    "sha256": "df08397f09506e55732764947cf228387134ab0e89ee93da48db95eb2ac412b2"
+                },
+                {
+                    "path": "mods/boilpnt/textures/metl145.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "036ff314d77c4b8ecc89c5fd05201556777f6ed3cb7171a75bb0f7b8c5c3f8e1"
+                },
+                {
+                    "path": "mods/boilpnt/textures/misc002.tga",
+                    "bytes": 17445,
+                    "filetype": 32768,
+                    "sha256": "cf10923204cab235e28abdba22761808e3ef730338a2fbcffd54a1390264a069"
+                },
+                {
+                    "path": "mods/boilpnt/textures/misc019.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "a033020f0985794d54495b53c00a7084538bdd855ec654ada3cc76b92011ac8e"
+                },
+                {
+                    "path": "mods/boilpnt/textures/misc042.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "ee3a8eaf51263987f2cfa8684620fd22b87dd9f03d58aa010894113ca1768c8a"
+                },
+                {
+                    "path": "mods/boilpnt/textures/misc059.tga",
+                    "bytes": 13349,
+                    "filetype": 32768,
+                    "sha256": "3702bebe094ae3126a7c2920ba35c9a73954f34851ea6d21df7af93c084a00fd"
+                },
+                {
+                    "path": "mods/boilpnt/textures/misc075.tga",
+                    "bytes": 263205,
+                    "filetype": 32768,
+                    "sha256": "82b67fa245c804174bfba321d7296778819440d675c57c168aa5d20fef532c7c"
+                },
+                {
+                    "path": "mods/boilpnt/textures/misc081.tga",
+                    "bytes": 50213,
+                    "filetype": 32768,
+                    "sha256": "6c507da07eeda220a3616033be23e6332e67f37b2ae754bc377b7e05ed3cabb3"
+                },
+                {
+                    "path": "mods/boilpnt/textures/redgoal#0.tga",
+                    "bytes": 393234,
+                    "filetype": 32768,
+                    "sha256": "73f9547cfd47b59d2d5f7abea0482631b8e96e40f1069fefd9befcbc57971407"
+                },
+                {
+                    "path": "mods/boilpnt/textures/rock059.tga",
+                    "bytes": 197669,
+                    "filetype": 32768,
+                    "sha256": "fd8b04b39443e08e62eb249740419cedbed01c06546e6ef4c44025d18fde96de"
+                },
+                {
+                    "path": "mods/boilpnt/textures/rock162.tga",
+                    "bytes": 17445,
+                    "filetype": 32768,
+                    "sha256": "452b34a2de2685df5a4c90cfc272f54c30bba3120a8a074feb8b3cc1ba4fe110"
+                },
+                {
+                    "path": "mods/ewithin/textures/STATUSB.TGA",
+                    "bytes": 285221,
+                    "filetype": 32768,
+                    "sha256": "7ffa2470cf6af8bad923239b25bc249aca4f978fa814c57038ad836b8e09972c"
+                },
+                {
+                    "path": "mods/lostlvls/lostlvls.txb",
+                    "bytes": 14771,
+                    "filetype": 32768,
+                    "sha256": "2bc6f61255f6bc3d76b3e7954661fa5bb6e4de289246a4797cfc793bab6d9eb9"
+                }
+            ],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/maximum.7z",
+            "sha256": "0c9438f99b44394ed9eddd3a16a76f3a742f28ef2e7b9b0dc80a0b88d515f52b",
+            "file_count": 95,
+            "extensions": {
+                ".hog": 2,
+                ".light": 30,
+                ".lmap5": 30,
+                ".mesh": 30,
+                ".mn2": 2,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/norep.7z",
+            "sha256": "0edc96ac860514c8b949b1c26d0db68f0c03fa826d3df210831ebc046ff792b8",
+            "file_count": 5,
+            "extensions": {
+                ".hog": 1,
+                ".light": 1,
+                ".lmap5": 1,
+                ".mesh": 1,
+                ".mn2": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/orionneb.7z",
+            "sha256": "6520d028aad59b3231f32d9fd9153e3aba392d70fda5794393b3dcdb8e778551",
+            "file_count": 7,
+            "extensions": {
+                ".bat": 2,
+                ".hog": 1,
+                ".msn": 1,
+                ".sng": 1,
+                ".txt": 2
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/phobos-e.7z",
+            "sha256": "275fdeca3549c53224e118ae5a8f760d69e44b27d2d64a913ed9c65ae70eac42",
+            "file_count": 23,
+            "extensions": {
+                ".hog": 1,
+                ".light": 6,
+                ".lmap5": 6,
+                ".mesh": 6,
+                ".mn2": 1,
+                ".rep": 1,
+                ".txt": 2
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/po2.7z",
+            "sha256": "ede6996e708a91764a954a977c857b213c868cd35522cdb9ffc7ef430997bfb0",
+            "file_count": 45,
+            "extensions": {
+                ".docx": 1,
+                ".hog": 3,
+                ".light": 11,
+                ".lmap5": 11,
+                ".mesh": 11,
+                ".mn2": 3,
+                ".pmh": 1,
+                ".pti": 1,
+                ".s11": 1,
+                ".s22": 1,
+                ".sng": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [
+                {
+                    "path": "mods/pluton2/pluton2.pmh",
+                    "bytes": 1401730,
+                    "filetype": 32768,
+                    "sha256": "64e0c3acf34f1120bedbaeda5bb4ddb79056f373fe89224534c626320d50876c"
+                },
+                {
+                    "path": "mods/pluton2/pluton2.pti",
+                    "bytes": 14714,
+                    "filetype": 32768,
+                    "sha256": "63ae4126af2cfb6e1e6dabeb0cde5f5d563a23ee1ac7ecc2739e8836ae8b0fc3"
+                },
+                {
+                    "path": "mods/pluton2/pluton2.s11",
+                    "bytes": 4827489,
+                    "filetype": 32768,
+                    "sha256": "61459c2a9c59b0f550207e95597c05e0da40fcd0efc4e0fb6c987a849e62494c"
+                },
+                {
+                    "path": "mods/pluton2/pluton2.s22",
+                    "bytes": 9629353,
+                    "filetype": 32768,
+                    "sha256": "64bf5642a9fd56ba541a5e2bf0fbddce9dd9190ad0203d0966381a4d6b69a3a9"
+                },
+                {
+                    "path": "mods/pluton2/descent.sng",
+                    "bytes": 583,
+                    "filetype": 32768,
+                    "sha256": "c4ff679859ba4ef9b10e3672b78e1f645c6678ca3d3c11d7112f66ead6735eb4"
+                }
+            ],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/revodrav.7z",
+            "sha256": "eefc98bf6f70a951289881130f74510083b62f31fe0cce8cec61ccdb69b35191",
+            "file_count": 92,
+            "extensions": {
+                ".hog": 1,
+                ".light": 30,
+                ".lmap5": 30,
+                ".mesh": 30,
+                ".msn": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/saturn.7z",
+            "sha256": "9e10ba35be233ec9ad6723ec5767992c00c11fe67781f113ffa903ca4a184535",
+            "file_count": 5,
+            "extensions": {
+                ".bat": 1,
+                ".hog": 1,
+                ".mn2": 1,
+                ".txt": 2
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/tt.7z",
+            "sha256": "f1a07c3b0197f40626346e732b4a5f144d6949f56d23d20e7cfc512da28f8ce2",
+            "file_count": 2,
+            "extensions": {
+                ".hog": 1,
+                ".mn2": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "d2xxl_downloads/vignettes.7z",
+            "sha256": "e51c3a8fe91dcc967ec4d76b324508b29e7a0ecdcac0cb044fcb81527db75cc1",
+            "file_count": 84,
+            "extensions": {
+                ".hog": 1,
+                ".light": 27,
+                ".lmap5": 27,
+                ".mesh": 27,
+                ".msn": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "Disint_Beta_3.zip",
+            "sha256": "9acb7c048490a9063af84778d6d76b2ec84cd7342bebd3f2b8b9fd05c94afc1e",
+            "file_count": 3,
+            "extensions": {
+                ".hog": 1,
+                ".mn2": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "Entropy.zip",
+            "sha256": "61c797f80275fbd4463da41618e703c1d7c0e01bbd795c4631a9018a1e4cff76",
+            "file_count": 5,
+            "extensions": {
+                ".hog": 1,
+                ".inf": 1,
+                ".mn2": 1,
+                ".rep": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "EAF.zip",
+            "sha256": "7d8832a03b0cb90aa3c8753ca77393e0fbdb17fb12fa18e14d897663accd41f7",
+            "file_count": 3,
+            "extensions": {
+                ".hog": 1,
+                ".mn2": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "ironblade.zip",
+            "sha256": "99ba360e7946d8298d537c905c7d20e2d25de7bb79cb45f8ae5f73370b8fd40b",
+            "file_count": 2,
+            "extensions": {
+                ".hog": 1,
+                ".msn": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "Uneasy4.zip",
+            "sha256": "7721851ec28d7f554ed8f5790f861602bf081f58dd76125bb7b29fb5a8454968",
+            "file_count": 3,
+            "extensions": {
+                ".dxa": 1,
+                ".hog": 1,
+                ".mn2": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [
+                {
+                    "path": "Uneasy4.dxa",
+                    "bytes": 30794814,
+                    "filetype": 32768
+                }
+            ],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        },
+        {
+            "archive": "levigen.zip",
+            "sha256": "d5c4368783fe00e7bbe077ce679f41f1000e2dc943f930450ad26ca1e5edb0b0",
+            "file_count": 4,
+            "extensions": {
+                ".dxa": 1,
+                ".hog": 1,
+                ".mn2": 1,
+                ".txt": 1
+            },
+            "casefold_duplicate_paths": [],
+            "nested_archives": [
+                {
+                    "path": "LEVIGEN.DXA",
+                    "bytes": 9992246,
+                    "filetype": 32768
+                }
+            ],
+            "external_mod_resources": [],
+            "ordinal_scope_paths": []
+        }
+    ]
+}
