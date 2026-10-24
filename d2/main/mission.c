@@ -940,7 +940,8 @@ int load_mission(mle *mission)
 			Current_mission->enhanced = MISSION_ENHANCED_XL;
 			continue;
 		}
-		char *header = buf + strspn(buf," \t\r\n");
+		char *header = buf;
+		while (*header && isspace((unsigned char)*header)) ++header;
 		if (istok(header,"name") || istok(header,"xname") || istok(header,"zname") || istok(header,"!name")) {
 			if (Current_mission->enhanced == MISSION_ENHANCED_XL) {
 				parse_error = 1;
@@ -950,7 +951,7 @@ int load_mission(mle *mission)
 		}
 		/* Alternate archives and critical directives need separate XL qualification */
 		if (Current_mission->enhanced == MISSION_ENHANCED_XL &&
-		    (mission_descriptor_key_is(buf,"hog") || buf[strspn(buf," \t\r\n")] == '!')) {
+		    (mission_descriptor_key_is(buf,"hog") || *header == '!')) {
 			parse_error = 1;
 			break;
 		}

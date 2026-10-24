@@ -77,6 +77,9 @@ static int descriptor_test(int argc, char **argv)
 		fixture("xlcase", "  D2X-NaMe = Case test\ntype = normal\nnum_levels = 1\nd2leva-1.rl2\n", true);
 		fixture("xlmix", "name = Legacy title\nnum_levels = 1\nd2leva-1.rl2\nd2x-name = XL identity\n", false);
 		fixture("xlback", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n  name = Legacy identity\n", false);
+		fixture("xlff", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n\fname = Legacy identity\n", false);
+		fixture("xlvt", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n\vzname = Legacy identity\n", false);
+		fixture("xlvtcrit", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n\v!ham = other.ham\n", false);
 		fixture("xldup", "d2x-name = First\n  d2x-name = Second\nnum_levels = 1\nd2leva-1.rl2\n", false);
 		const auto hidden_title = std::string("d2x-name = A") + std::string(80, ' ') + "B\nnum_levels = 1\nd2leva-1.rl2\n";
 		fixture("xlhidden", hidden_title.c_str(), false);
