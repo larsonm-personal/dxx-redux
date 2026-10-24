@@ -5,7 +5,8 @@ if(ANDROID)
     add_subdirectory(android)
 endif()
 
-add_library(xl_inventory STATIC inventory.cpp probe.cpp compatibility.cpp lighting.cpp)
+add_library(xl_inventory STATIC inventory.cpp probe.cpp compatibility.cpp lighting.cpp
+                                mission_label.cpp admission.cpp)
 target_compile_features(xl_inventory PUBLIC cxx_std_17)
 target_include_directories(xl_inventory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(xl_inspect inspect.cpp)
@@ -24,6 +25,9 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(xl_mission_label_test tests/mission_label_test.cpp)
+    target_link_libraries(xl_mission_label_test PRIVATE xl_inventory)
+    add_test(NAME xl_mission_labels COMMAND xl_mission_label_test)
     set(XL_REFERENCE_RENDERLIB "" CACHE FILEPATH
                                         "Pinned local XL renderlib.cpp for arithmetic oracle")
     if(XL_REFERENCE_RENDERLIB)

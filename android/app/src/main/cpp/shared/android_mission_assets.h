@@ -15,6 +15,8 @@ int android_mission_assets_activate(void);
 void android_mission_assets_free_begin(void);
 void android_mission_assets_free_end(void);
 int android_mission_assets_discover(const char *descriptor);
+/* Resolve a discovery alias without activating or mounting its mission */
+int android_mission_assets_descriptor_source(const char *alias, char *path, size_t capacity);
 const char *android_mission_assets_owner(void);
 const char *android_mission_assets_key(void);
 /* Snapshot consumed by RouteMetadataBackground and jni_level_metadata */

@@ -1,6 +1,7 @@
 #include "inventory.h"
 #include "probe.h"
 #include "compatibility.h"
+#include "admission.h"
 
 #include <functional>
 #include <fstream>
@@ -221,7 +222,7 @@ int main(int argc, char **argv)
 		rejects([&] { xl_compat::prepare_gameplay_probe(water, true); });
 
 		const auto compatibility = xl_compat::compatibility_json("pilot.rl2", bytes);
-		check(compatibility.find("\"status\": \"blocked\"") != std::string::npos, "XL level must not gain production admission");
+		check(compatibility.find("\"status\": \"eligible\"") != std::string::npos, "supported features should be eligible for runtime validation");
 		check(compatibility.find("\"playable\": false") != std::string::npos, "compatibility must remain nonplayable");
 		check(compatibility.find("Object-attached triggers") != std::string::npos, "catalog missing category");
 		for (const auto id : { "navigation", "generators", "wall_materials", "effect_objects", "resource_scope" }) {
@@ -250,6 +251,16 @@ int main(int argc, char **argv)
 		const auto probe = xl_compat::prepare_gameplay_probe(bytes);
 		check(probe.stock_level[4] == 8 && probe.stock_level.size() < bytes.size(), "probe stock envelope");
 		check(probe.source.vertex_colors.size() == 8 && probe.source.texture_colors.size() == 910, "probe must retain lighting evidence");
+		check(xl_compat::runtime_blockers(probe.source).empty(), "implemented XL features rejected");
+		auto unsupported = probe.source;
+		unsupported.unsupported.push_back({ "trigger_type", 2, "teleport action is not implemented" });
+		check(xl_compat::blocker_message(xl_compat::runtime_blockers(unsupported)).find("teleport") != std::string::npos, "missing actionable trigger rejection");
+		unsupported = probe.source;
+		unsupported.unknown.push_back({ "unrecognized_feature", 5, "unknown serialized semantics" });
+		check(!xl_compat::runtime_blockers(unsupported).empty(), "unknown feature silently admitted");
+		unsupported = probe.source;
+		unsupported.triggers.resize(101);
+		check(!xl_compat::runtime_blockers(unsupported).empty(), "runtime trigger capacity ignored");
 		for (const auto n : { std::size_t(0), std::size_t(15), std::size_t(20), bytes.size() - 1 }) {
 			rejects([&] { xl_compat::inspect_level(Bytes(bytes.begin(), bytes.begin() + n)); });
 		}

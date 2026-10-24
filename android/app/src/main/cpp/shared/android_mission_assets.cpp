@@ -184,6 +184,19 @@ const char *android_mission_assets_owner(void)
 	return active < 0 ? "base" : catalog[active].owner.c_str();
 }
 
+int android_mission_assets_descriptor_source(const char *alias, char *path, size_t capacity)
+{
+	if (!enabled) return 0;
+	for (const auto &candidate : catalog) {
+		if (!same_path(candidate.alias, alias)) continue;
+		const auto source = candidate.mounts.front() + "/" + candidate.descriptor;
+		if (source.size() >= capacity) return 0;
+		std::memcpy(path, source.c_str(), source.size() + 1);
+		return 1;
+	}
+	return 0;
+}
+
 unsigned android_mission_assets_generation(void)
 {
 	return generation;

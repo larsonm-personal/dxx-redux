@@ -44,6 +44,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "bm.h"
 #include "piggy.h"
+#include "../../android/XL_compat/mission_label.h"
 #include "d1_in_d2/d1_in_d2.h"
 
 //values that describe where a mission is located
@@ -59,6 +60,7 @@ typedef struct mle {
 	int     builtin_hogsize;    // if it's the built-in mission, used for determining the version
 	char    mission_name[MISSION_NAME_LEN+1];
 	ubyte   descent_version;    // descent 1 or descent 2?
+	ubyte   requires_xl;
 	ubyte   anarchy_only_flag;  // if true, mission is anarchy only
 	char	*path;				// relative file path
 	enum mle_loc	location;           // where the mission is
@@ -421,6 +423,7 @@ int read_mission_file(mle *mission, char *filename, int location)
 
 		mission->path = d_strdup(temp);
 		mission->anarchy_only_flag = 0;
+		mission->requires_xl = 0;
 		mission->filename = mission->path + (p - temp);
 		mission->location = location;
 
@@ -439,6 +442,10 @@ int read_mission_file(mle *mission, char *filename, int location)
 		if (!p) {       //try extensible-enhanced mission!
 			PHYSFSX_fseek(mfile,0,SEEK_SET);
 			p = get_parm_value("!name",mfile);
+		}
+		if (!p) {
+			PHYSFSX_fseek(mfile,0,SEEK_SET);
+			p = get_parm_value("d2x-name",mfile);
 		}
 
 		if (!p && mission->descent_version == 2) {
@@ -478,6 +485,17 @@ int read_mission_file(mle *mission, char *filename, int location)
 			mission->anarchy_only_flag = istok(p,"anarchy");
 
 		PHYSFS_close(mfile);
+
+		if (mission->descent_version == 2) {
+			char source_path[PATH_MAX];
+#ifdef __ANDROID__
+			if (android_mission_assets_descriptor_source(filename2, source_path, sizeof(source_path)))
+				mission->requires_xl = xl_mission_requires_extensions(source_path);
+			else
+#endif
+			if (PHYSFSX_getRealPath(filename2, source_path))
+				mission->requires_xl = xl_mission_requires_extensions(source_path);
+		}
 
 		return 1;
 	}
@@ -531,6 +549,7 @@ void add_d1_builtin_mission_to_list(mle *mission)
 	}
 
 	mission->descent_version = 1;
+	mission->requires_xl = 0;
 	mission->anarchy_only_flag = 0;
 	mission->builtin_hogsize = 0;
 	mission->path = mission->filename;
@@ -572,6 +591,7 @@ void add_builtin_mission_to_list(mle *mission, char *name)
 	strcpy(name, mission->filename);
     mission->builtin_hogsize = size;
 	mission->descent_version = 2;
+	mission->requires_xl = 0;
 	mission->anarchy_only_flag = 0;
 	num_missions++;
 }
@@ -828,7 +848,11 @@ int load_mission(mle *mission)
 #endif
 		return 0;
 	}
-	*(mle *) Current_mission = *mission;
+	/* List-only presentation flags must not change the runtime mission layout */
+	Current_mission->builtin_hogsize = mission->builtin_hogsize;
+	memcpy(Current_mission->mission_name, mission->mission_name, sizeof(Current_mission->mission_name));
+	Current_mission->descent_version = mission->descent_version;
+	Current_mission->anarchy_only_flag = mission->anarchy_only_flag;
 	Current_mission->path = d_strdup(mission->path);
 	Current_mission->filename = Current_mission->path + (mission->filename - mission->path);
 	Current_mission->n_secret_levels = 0;
@@ -1162,6 +1186,8 @@ static void mission_display_name(mle *mission, char *display_name)
 {
 	if (mission->descent_version == 1)
 		snprintf(display_name, MISSION_NAME_LEN + 6, "D1: %s", mission->mission_name);
+	else if (mission->requires_xl)
+		snprintf(display_name, MISSION_NAME_LEN + 6, "XL: %s", mission->mission_name);
 	else
 		snprintf(display_name, MISSION_NAME_LEN + 6, "%s", mission->mission_name);
 }
