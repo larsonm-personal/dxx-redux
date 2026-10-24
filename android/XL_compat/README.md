@@ -4,6 +4,26 @@ This directory owns D2X-XL format knowledge and compatibility policy. Ordinary
 engine builds keep XL support disabled. The dedicated D2 pilot uses guarded
 `DXX_XL_PILOT` hooks; do not relax general loader validation to admit XL files
 
+XL OpenGL drawing is in `runtime/corona_renderer.c`, compiled into D2's OpenGL
+target only when the pilot is enabled. Stock source retains the small alpha and
+depth-policy integration hooks. D1 needs no matching XL hooks for this D2-format
+pilot; shared Android save infrastructure continues to serve both engines
+
+`shared/mod_save_supported_data.h` is the existing production UUD presentation-pack
+allowlist, not a per-level XL database or pilot fixture. Save compatibility uses
+it to constrain audited presentation-only changes. Mission source identities are
+captured at runtime. The XL checkpoint exporter reuses that validator; the only
+data-formatting change splits the same JSON payload into MSVC-sized literals.
+Do not generate another registry for each XL level
+
+Original Ahayweh Gate is now verified playable in the opt-in singleplayer pilot.
+The [acceptance record](evidence/pilot-acceptance-audit.md) and
+[19-category requirement checklist](evidence/pilot-requirements.md) identify the
+exact source/APK, authored extensions and evidence limits. All 36 private host
+tests pass; the current Android rendering suite passes 28/28 twice. This does
+not qualify the full campaign or change the production browser's unsupported
+status. The pilot completes level 1 and returns to the menu
+
 The `XL compatibility contracts` workflow runs on pull requests and manual
 dispatch, building the standalone inventory/lighting checks on Linux and Windows
 and auditing the preserved survey ZIP. It needs no mission binaries. These
@@ -14,21 +34,145 @@ The private `xl_normal_escape` CTest extends the normal key/reactor run: it
 restores the earned reactor checkpoint, drives ordinary inputs to the exit
 under the unchanged countdown, and requires native completion while alive.
 The opt-in pilot awards normal completion bonuses and stops at level 1 instead
-of admitting the remaining campaign. Headless tests skip only the score dialog;
-interactive completion presentation and Android qualification remain unverified
+of admitting the remaining campaign. Headless tests skip only the score dialog.
+The explicit Android `test_xl_pilot_completion.jsonc` now passes 22 steps from
+an earned exit-approach checkpoint: native exit, actual score screen/bonus,
+readiness-gated dismissal, and a usable main menu with completion retained.
+It does not certify Android import or an uninterrupted Android playthrough
+
+The separate explicit-only `test_xl_pilot_import.jsonc` verifies ZIP import and
+startup using unchanged original HOG/descriptor bytes. Stage their ZIP as
+`files/xl-original-import.zip`, preserve and move aside any manually installed
+`d2-xl` files in `files/d2x-redux/missions`, then run through the same Android
+test helper with `-PreserveState`. The 15-step check passes on emulator-5554;
+extracted hashes match the source and startup has active XL rendering with no
+unresolved emitters. The imported descriptor still describes the full campaign;
+only the exact pilot level is admitted by the opt-in engine. Import success
+does not qualify the other levels or promote production compatibility status
+
+The 34-step runtime persistence/isolation test also passes with this imported
+copy: authored state survives saves, retail Counterstrike clears the XL state,
+and restoring the pilot brings its state back. The previous quick slot was
+preserved and restored. Authored side/texture-color semantics remain open
+
+`test_xl_pilot_coronas.jsonc` is a separate controlled rendering test: after
+startup it repositions the camera to an authored orange emitter and checks
+corona draw submissions. It also reads back a controlled owned framebuffer
+using the real renderer and normal clockwise/back-face culling. All 28 steps
+pass: authored orange pixels are visible, a nearer half-depth mask blocks only
+that half, and a full mask blocks all pixels. This caught and corrected a
+counterclockwise fan that submitted draws but produced no pixels. The
+procedural halo consumes live texture/light/wall state; host tests exercise 112
+visible emitters and 148 solid-wall occlusion controls. The actual scene/object
+checks below supplement these isolated controls. The active pilot uses the
+depth-buffered mine/object path even if classic depth ordering is requested;
+this preserves the stored preference, which takes effect again in stock levels.
+The same effective choice controls native custom-model depth toggles. This camera pose
+is not evidence of normal-input progression
+
+The test switches the requested classic-depth setting on and back off without
+persisting it, and requires actual halo draws with depth testing enabled while
+classic is requested. Native lifecycle checks verify both preference values
+across pilot/stock transitions. The tested selection policy does not establish
+real-scene depth contents or object-silhouette occlusion
+
+An explicit scene hook now also tests actual wall depth immediately before
+normal halo rendering. With color/depth writes disabled, GPU sample queries
+see the original emitter, reject the same halo moved behind its opaque wall,
+and see that behind-wall control again with depth disabled. The 24-step test
+passes with zero GL errors. This verifies wall occlusion at the controlled
+view. Object-pass verification follows below
+
+A second explicit hook brackets the real object pass. At the controlled
+segment-26 view, a small diagnostic halo behind an existing robot is visible
+before objects, hidden afterward, and visible with depth disabled. The same-frame
+GPU queries pass with zero errors and without moving/replacing robots or writing
+scene pixels. Combined with the wall test, this verifies actual scene/object
+depth on the tested emulator path, not every model/device or full reference
+equivalence. The test still does not prove normal-input progression
+
+The escape fixture exports `preview-user/xl-normal-escape.dximdemo`, the native
+`XLTest.plr` profile and `xl-normal-exit-approach.sav`. The last save includes
+the real source-definition trailer required by Android; the private export
+hook is not enabled in ordinary builds. For the completion script, preserve
+the emulator's existing `Players/save_sets/single/player/d2-xl/player.sg3`,
+stage the approach save there, verify matching SHA-256, then run the script
+with `-Game d2 -Serial emulator-5554 -PreserveState -LeaveRunning` through
+`android/helpers/run_test.ps1`. Restore the previous slot afterward. See the
+pilot plan for exact tested artifacts and the preserved failed attempts
 
 Private `xl_normal_branch_1` through `xl_normal_branch_12` tests separately
-observe native trigger activation and linked-target passability. Current tests
-for 3, 4, 5 and 6 fail; keep those failures visible. Trigger 12 is covered on
-the normal key route before restoring its save. Passing branch checks do not
-yet establish physical traversal of every linked portal or branch-specific save
-persistence. Exact current artifacts are recorded in the pilot plan
+verify trigger activation/target state. The nine `xl_normal_secret_*` tests add
+actual ship entry into each reported secret area using normal controls from
+earned checkpoints. Eight follow the red-key route; the reactor-adjacent secret
+follows the normal reactor fight and reaches its room with 27.48 seconds left.
+Life-count and countdown assertions reject respawned or paused runs. Together
+with the existing navigation/lifecycle checks, all 25 pass. This is individual
+host entry coverage, not one uninterrupted Android all-secrets run
+
+The branch tests separately
+observe native trigger activation and linked-target passability, then verify
+the actual target and player state through save/restore. All 12 pass twice,
+along with lifecycle and timed escape. Trigger 12 is covered on the normal key
+route before restoring its save. These checks do not establish physical
+traversal of every linked portal or an uninterrupted all-secrets playthrough.
+Exact current artifacts are recorded in the pilot plan
+
+Four `xl_normal_portal_*` checks now extend those routes with explicit adjacent
+segment crossings (176 -> 182, 193 -> 194, 136 -> 137, 5 -> 185), starting from
+earned branch saves. They require an actual frame transition across the selected
+edge, an alive player, unchanged life count and an unpaused countdown. Together
+with the prior route logs these cover the physical portals represented by all
+17 linked-target records. This does not assert both travel directions or a
+separate crossing after every trigger that shares a target
 
 Current user scope: fully playable pilot with faithful XL engine extensions,
-using Redux behavior for classic Descent features. Pixel parity and XL tweaks to
-features already present in 1996 are not required. The historical lighting
-experiments below are optional research, not prerequisites for support. Authored
+without requiring incidental XL retuning of classic Descent gameplay (for
+example, a wholesale flare-speed change). This is not a requirement to preserve
+every Redux gameplay choice. Authored extensions such as warps and speed boosts
+must work wherever present. Pixel parity is not required; visual tweaks are allowed.
+The historical lighting experiments below can inform implementation without
+making exact image matching a prerequisite for support. Authored
 XL colors/opacity and gameplay-affecting extension data must still work correctly
+
+Android developer builds can opt in with
+`gradlew.bat :app:assembleDebug -PciTestAbi=x86_64 -PxlPilot=true`. The ordinary
+build remains OFF. The enabled D2 library retains its JNI name and receives the
+same exact-hash pilot admission flag; D1 does not receive it. This does not
+enable the launcher's compatibility approval. Guarded `xl_pilot` introspection
+reports admission, completion, shaded-vertex calls, unresolved emitters and
+observed trigger activations. The x86_64 APK builds and the original mission
+starts on emulator-5554 through the normal menus. The bounded emulator pilot
+is qualified; physical-device and full-campaign claims remain separate
+
+With that APK, retail D2 data, original descriptor/HOG staged under
+`files/d2x-redux/missions`, and an existing `player` pilot, run:
+
+```powershell
+android/helpers/run_test.ps1 -ScriptName test_xl_pilot_runtime.jsonc -Game d2 -Serial emulator-5554 -PreserveState -LeaveRunning -TimeoutSeconds 240
+```
+
+This explicit-only runtime test passes all 34 steps, checking Ahayweh Gate,
+38 robots, no invulnerability, active XL shading and zero unresolved emitters.
+It quick-saves, changes difficulty, restores the saved difficulty and XL state,
+then loads retail Counterstrike and requires XL diagnostics to clear before
+quick-loading the pilot again. A controlled fixture additionally switches one
+actual light and changes wall 6 opacity, saves them, deliberately disturbs them,
+and checks all 5,472 UVLs, 228 subtraction masks and the restored material alpha
+after both restores. This establishes controlled persistence, not natural
+operation of that light/wall. It does not certify import, completion or all
+authored visuals. The test leaves its controlled save/level state in place
+The initial manual run encountered an emulator System UI ANR; that screenshot
+is retained separately from the later unobstructed capture in the pilot plan
+
+Material tests now cover all 14 authored-opacity illusions through native AI
+visibility, object visibility and weapon-object collision queries, each with
+a solid-boundary negative control. These controlled fixtures do not claim live
+projectile damage. The full host lifecycle/escape/12-branch sweep still passes
+
+Texture-color audit caveat: XL's legacy mode retains baked vertex colors, but
+`effects/glare.cpp` also consumes texture RGB for coronas. Vertex arithmetic
+tests alone do not establish this presentation behavior or other lighting modes
 
 The dedicated runtime build now offers `-xl-pilot` for the original
 `d2leva-1.rl2`, including when it resolves from the original mission HOG. Admission
@@ -42,6 +186,11 @@ follow stock validation; this is not general version-15 admission
 With the original mission installed in the dedicated build's mission directory,
 `-xl-preview-start -xl-pilot` starts D2-XL level 1 without a pretranslated fixture
 or `-xl-source`. It remains an unverified developer pilot, not production support.
+The loader rejects original pilot and explicit translated-preview admission in
+multiplayer before loading. Lifecycle checks cover network/cooperative rejection,
+stock-format loading and recovery to single player with authored colors/materials.
+This does not qualify multiplayer UI behavior or cooperative pilot support.
+
 The lifecycle test covers direct and original-HOG admission, original filename
 preservation, one-bit source rejection, recovery and subsequent stock isolation
 

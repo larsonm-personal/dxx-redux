@@ -334,12 +334,16 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	char *resume_callsign = NULL;
 	char *pilot_callsign = NULL;
 	char *startup_profile = NULL;
-	char *argv_startup[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+	char *argv_startup[9] = { NULL };
 	int argc = 1;
 	androidInit.jnienv = (void *) env;
 	androidInit.context = (void *) thiz; /* Activity is a valid Context */
 
 	argv_startup[0] = (char *) &androidInit;
+#ifdef DXX_XL_PILOT
+	/* Explicit pilot builds admit only the audited mission/level hash */
+	argv_startup[argc++] = "-xl-pilot";
+#endif
 	startup_profile = android_consume_activity_string(env, thiz, "consumeStartupProfile");
 	if ((*env)->ExceptionCheck(env)) goto startup_failed;
 	if (startup_profile)

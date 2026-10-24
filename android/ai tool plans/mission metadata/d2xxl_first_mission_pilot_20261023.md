@@ -1,6 +1,48 @@
 # D2X-XL first mission pilot
 
+## Final pilot acceptance (2026-10-24)
+
+The requested original Ahayweh Gate singleplayer pilot is verified playable in
+the opt-in build, including its required authored XL extensions. See the final
+[acceptance record](../../XL_compat/evidence/pilot-acceptance-audit.md) and
+[19-category reconciliation](../../XL_compat/evidence/pilot-requirements.md).
+These supersede historical open-gate statements below; earlier failures remain
+preserved as evidence, not current status
+
+Final host suite: 36/36, 162.27 seconds,
+`temp/xl-pilot-current-full-suite.log`. Final Android rendering checks: 28/28
+twice, runs `4bf6a9725f774329bd2169bd2c6761d0` (26252 ms) and
+`84c203681f214ac9ae9a21e4a99c1c92` (25349 ms). The current test-only object
+probe uses projected-body samples rather than assuming an opaque robot center;
+9/10 of 25 initially visible samples become occluded by the real object pass,
+with same framebuffer and zero GL errors. Witness positions are in the
+`temp/xl-object-silhouette-report.json` and repeat-report artifacts. The earlier
+center-only failure is retained. No production rendering change was needed
+
+Android APK: `android/app/build/outputs/apk/debug/app-debug.apk`, SHA-256
+`0c34652882800e4593f8b57d70034e4afd8748f5ddb89f3b21ab2913fe33e977`.
+Build completed in 1m28s without new compiler warnings; scoped formatting/lint
+and diff checks pass. Installed on emulator-5554, using the previously imported
+original mission. Test runs changed no saves; app stopped after capture
+
+Acceptance retains the user's exclusions for exact images and incidental classic
+retuning. It does not certify other campaign levels, multiplayer, every optional
+XL renderer, physical Android devices, or an uninterrupted Android all-secrets
+run. Normal-input host routes, Android original import/persistence, native Android
+exit/score/menu checks and real rendered extension tests provide the stated
+bounded evidence. Ordinary builds remain off; campaign browser status remains
+unsupported. No required work remains for this selected pilot objective
+
 ## Decision
+
+Latest scope correction: the user excludes XL retuning of classic GAMEPLAY,
+not visual changes. Visual tweaks are allowed when they help deliver the pilot.
+Exact visual fidelity remains unnecessary; required XL engine extensions must
+be faithful. Incidental XL retuning of classic gameplay, such as a wholesale
+flare-speed change, need not be copied. This is not a requirement to preserve
+every Redux gameplay choice. Authored warps, speed boosts and other extensions
+must work wherever present. Earlier blanket exclusions of visual tuning and
+blanket requirements to preserve Redux gameplay are superseded
 
 Latest implementation constraint: the user explicitly permits ordinary guarded
 hooks in d1/d2 and rejects generated-source CMake substitution. This supersedes
@@ -29,12 +71,516 @@ entered the unsupported movie path. Custom override rollback remains separate
 Latest completion scope, clarified by the user on 2026-10-23: a fully playable,
 verified Ahayweh Gate port with faithful implementation of every XL engine
 extension used by the pilot. Exact visual fidelity and XL author's changes to
-features already present in 1996 are explicitly NOT requirements. Use Redux's
-classic behavior as the baseline. The inventory, assisted route and browser are
+incidental gameplay values already present in 1996 are explicitly NOT requirements.
+The inventory, assisted route and browser are
 intermediate deliverables only. This scope supersedes stricter visual-parity
 requirements in the historical checkpoints below
 
 ## Current acceptance boundary after user clarification
+
+Physical secret entry (2026-10-24, nine cases verified): extend
+the existing normal-controls navigator with a segment-entry objective. Each
+case first earns the red key (and the reactor objective for segment 199),
+restores that unchanged earned checkpoint, then
+flies/fights/opens barriers with ordinary inputs until the ship is physically
+in the target segment, alive. Nine explicit cases use the original metadata's
+capture segments: 4, 205, 206, 17, 81, 225, 14, 227, 199. The ship's runtime
+segment and native point-in-segment lookup must both agree. No teleporting,
+ghosting, health grants or robot removals are introduced. Individual entry
+tests will not establish a single uninterrupted all-secrets playthrough
+
+All 25 normal-navigation/lifecycle tests pass in 63.03 seconds, including the
+nine new `xl_normal_secret_*` cases, existing key/reactor/escape and 12 branch
+tests. Evidence: `temp/xl-secret-entry-regression.log` and
+`temp/xl-secret-entry-summary.json`, which links each current native run log.
+The eight pre-reactor entries retain 33-57 shields (segment 17: 51.56);
+segment 199 is entered after the normally earned reactor fight with 86.87
+shields and 27.48 seconds still on the unchanged countdown. Each frame rejects
+life loss and countdown pausing; physical entry requires actual ship segment
+and native point-in-segment agreement. No engine combat/physics changes
+
+Preserved failures exposed controller limitations: the first segment-199 route
+ignored the reactor and died; the retry kept firing at the destroyed reactor;
+the next attempt stalled against its wreck until countdown death, which the
+new life-count invariant caught. The side route reaches the secret doorway,
+but a close-range reactor fight causes fatal blast damage. The final case uses
+the existing normal reactor objective first, then flies the side loop around
+the wreck under its earned timer. Logs retain `xl-secret-entry-tests`,
+`xl-secret-entry-199-fixed`, `xl-secret-entry-final-tests`,
+`xl-secret-entry-side-loop-tests` and `xl-secret-entry-earned-reactor-tests`
+prefixes under `temp/`. A separate first contract-tools build used x86 setup
+for an x64 build tree; the correctly selected x64 retry passes. Scoped
+formatting/lint and diff checks pass. These are host tests; no Android build
+or new Android traversal claim is made by this slice
+
+Acceptance audit (2026-10-24): see
+[`pilot-acceptance-audit.md`](../../XL_compat/evidence/pilot-acceptance-audit.md).
+All 23 private tests pass in 129.64 seconds, including reference arithmetic,
+full archive inspection, gameplay objectives and all trigger branches. A fresh
+resource-backed ar12 run reaches level 1; read-only process inspection confirms
+active coronas and successfully loaded corona/glare bitmaps. The old baseline
+remains intact. This closes the missing reference-resource prerequisite, not
+reference-image equivalence. A concrete remaining gameplay gap is physical
+entry into all reachable branches/secrets: current branch assertions stop at
+activation plus linked-target passability. Extend normal-input coverage rather
+than treating those states as proof of actual visitation
+
+Object-depth follow-up (2026-10-24, controlled check passed): an explicit
+Android probe brackets the real object pass, before translucent geometry.
+It positions small diagnostic halos behind existing robot centers along the
+current view ray, retains only samples visible against wall depth, and requires
+at least one to disappear after object rendering while remaining visible with
+depth disabled. Color/depth writes are disabled for diagnostics; robot/world
+state is untouched. The test uses a controlled segment-26 camera toward the
+original robot in segment 36. This is rasterized object-depth evidence, not
+normal gameplay progression or an authored emitter attached to that robot
+
+Run `5ce89588721f4c4997deb399596be57f` passes all 28 steps in 24634 ms.
+One robot-anchored test halo (sample object index 89) is visible before objects,
+hidden afterward, and visible again with depth disabled; both phases use the
+same framebuffer and GL errors are zero. The index identifies the halo's robot
+anchor; the depth difference is attributable to the intervening object pass.
+Evidence: `temp/xl-object-depth-report.json`, `temp/xl-object-depth-result.json`,
+`temp/xl-object-depth-test.log`. The prior color/partial-depth/wall/preference
+checks also pass in this run. Android builds in 1m12s with no compiler warnings,
+APK SHA-256 `6b888da430cdc8e3aaaa28a80b56ffe60ce16fed9587ed263f9063dab4759c9f`.
+Both desktop pilot targets rebuild, both catalogs and scoped formatting pass.
+No saves were written, robots were not moved/replaced, and the app was stopped
+after capture. This closes the concrete object-depth gap for the tested path;
+it does not establish every model/device combination or reference equivalence
+
+Actual-scene depth probe (2026-10-24, wall check passed): added an explicit
+Android-only request consumed immediately before normal halo rendering. GPU
+sample queries draw the authored texture-405 halo with color/depth writes
+disabled against the current scene framebuffer. Require its visible position
+to rasterize with depth both on/off; move the test halo farther along the
+camera ray behind its opaque wall and require samples only with depth off.
+This uses actual scene depth rather than an artificial cleared-depth mask.
+It leaves the world/camera and framebuffer contents unchanged. Negative-control
+draws are excluded from the production depth-state counters. Object silhouettes
+and complete-resource reference observations remain separate follow-ups
+
+Android run `37e68e95b5374cacbc596fc174de4f83` passes 24/24 steps in 26796 ms.
+Both normal-position controls report rasterized samples. The behind-wall
+control reports samples with depth disabled and none with actual scene depth;
+GL errors are zero. Evidence: `temp/xl-scene-depth-report.json`,
+`temp/xl-scene-depth-result.json`, `temp/xl-scene-depth-test.log`. This proves
+wall occlusion for the controlled original-level view, not general object
+silhouettes or every rendering configuration. Android build passes in 57s,
+APK SHA-256 `fa2413319af2104897b3e2b30e8f62172b0ff5f461b1ffd4b8190171f0108d60`.
+Both desktop pilot targets build, lifecycle passes in 2.14s, both automation
+catalogs and scoped formatting pass. The only Android compiler warnings are
+existing unused declarations in `gr.c`. The app was stopped after capture
+
+Depth-pipeline follow-up (2026-10-24, verified selection/state): source review
+confirms classic depth disables scene depth testing, so merely enabling depth
+for the final halo pass cannot provide correct occlusion. The active pilot now
+selects the existing depth-buffered mine/object pipeline through
+`ogl_use_classic_depth`; the saved `GameCfg.ClassicDepth` preference is not
+modified. Stock levels retain their requested pipeline. Both native custom-model
+depth toggles use the same effective choice. Native pilot/stock lifecycle checks
+cover both requested values, and the Android controlled-view test actually
+draws with classic depth requested while counting disabled-depth halo draws.
+Actual object silhouettes and scene-buffer contents remain a separate
+verification step; this policy alone does not prove pixel occlusion
+
+The extended Android test passes 22/22, run
+`78b8caa470dd49c2a50b8f5d87411401` (28845 ms). Final state records 339 scene
+draw submissions, 75 depth checks while classic was requested, and zero
+disabled-depth draws. Requested preference is false again at completion;
+the test's graphics setters do not persist configuration. Evidence:
+`temp/xl-depth-policy-android-{test.log,result.json,state.json}`. APK SHA-256
+`d3ecd43ddc35f33f1ccd9163a55103be31d0af5e020d96c4c1a2e77491cd0dcf`.
+Both desktop pilot targets and stock `buildd2` with `DXX_XL_PILOT=OFF` build;
+native lifecycle passes in 2.83 seconds, including actual pilot -> stock ->
+pilot transitions. Both automation catalogs and scoped formatting pass.
+Android build passes in 1m23s; warnings are in existing unrelated code, with
+none introduced by this change. The emulator app was stopped after capture
+
+Framebuffer regression and correction (2026-10-24): the initial pixel probe
+disabled culling and missed a real defect. Matching normal clockwise front
+faces/back-face culling made the old halo fan disappear despite successful draw
+submissions and zero GL errors. Negative run `ad8f37814a494e46b402288c4c1d3561`
+fails at step 12 with zero visible pixels. The renderer now winds clockwise.
+The unchanged stricter test passes 16/16, run
+`6d396ff0f87d461787764516f44160e6`, 19539 ms: visible halves 854/854 pixels,
+nearer left-half depth 0/854, fully blocked 0/0. All lit pixels match authored
+orange within quantization tolerance; depth writes are restored and GL errors
+remain zero. See `temp/xl-corona-culling-{negative,fixed}-pixels.json`,
+corresponding `-result.json` and `-test.log` files. Android build passes (52 s),
+APK SHA-256 `72d9ae17a4aeb3885407d036e5d7666561fb3a711be50e3739a9ff49c60b8386`;
+both desktop pilot targets rebuild successfully. This supersedes the older
+pixel-output gap below, but actual scene/object occlusion, classic-depth mode,
+and complete-resource reference observations remain open. The controlled FBO
+does not prove those behaviors. The app was stopped after capture; no save
+slots were changed
+
+Corona rendering connected (2026-10-24): ordinary `DXX_XL_PILOT` hooks draw
+procedural soft halos after the mine/object passes, using live emitter RGB and
+state. The renderer preserves blend mode and depth-write state, uses the
+existing depth test for partial occlusion, and rejects back-facing or
+wall-occluded centers through native FVI. It does not alter baked vertex light
+or require external artwork. Native lifecycle coverage sees all 112 emitters
+from their own segment centers and checks 148 intervening solid-wall negative
+controls. These geometric queries are distinct from framebuffer verification
+
+Android `test_xl_pilot_coronas.jsonc` passes 15/15 steps on emulator-5554, run
+`9bcb4879cf594c398e95137e5e111578`, 20446 ms. It performs normal imported-mission
+startup, then deliberately repositions the camera to segment 40 facing authored
+texture 405. This is a controlled rendering pose, not gameplay progression.
+Introspection reports 157 corona draw submissions, active pilot, and zero
+unresolved emitters. Evidence: `temp/xl-android-corona-final.log`,
+`temp/xl-android-corona-result.json`, `temp/xl-android-corona-state.json`.
+The screenshot `temp/xl-android-corona-final.png` was inspected, but the bright
+lava texture makes it inconclusive about the halo's pixel contribution; an
+isolated framebuffer comparison remains required before closing this gate
+
+Preserved first attempt: `temp/xl-android-corona-test.log` failed on the wrong
+assertion field `player.segment` (correct: `position.segment`), after native
+rendering reported 98 submissions. Its delayed screenshot caught the player
+after death and is not stable-view evidence. No engine behavior was changed
+for that test correction
+
+Both desktop pilot targets build, and all 14 lifecycle/escape/branch tests pass
+(40.28 seconds). Android D1/D2 build passes in 52 seconds, installed APK SHA-256
+`62ec2500c92631aabd22a480d64c798fd970dfefeddbb419baa8bb19a3a650e9`.
+The unchanged `gr.c` unused declarations still warn; new code adds no warnings.
+Classic-depth partial occlusion, object occlusion, framebuffer color, and
+complete-resource reference observations remain unverified; no support status
+is promoted
+
+The ordinary `buildd2` target also rebuilds with `DXX_XL_PILOT:BOOL=OFF`
+(`temp/xl-corona-stock-build.log`). Its first attempt was stopped by sandbox
+denial of an existing vcpkg cache write; the authorized retry passes. Both
+automation catalogs pass (374 top-level entries, 431 support scripts), scoped
+formatting and diff whitespace checks pass. The emulator app was stopped after
+the rendering test; no saves were written by that test
+
+Live texture-emitter state implemented (2026-10-24): the opt-in query now uses
+the source RGB, reference default brightness, current base/overlay textures,
+bitmap names, native wall flags/types and light-subtraction mask. Its 94-entry
+sparse brightness table reconstructs all 3640 bytes of the reference member
+exactly. Native lifecycle coverage observes 112 emitters, 24 chromatic, checks
+light switching and texture/wall removal for every eligible face, and rejects
+emitters in inactive/stock state. Both desktop targets build, and lifecycle
+passes (1.90 seconds). The query is preparation for the renderer: it does not
+draw coronas or establish occlusion. See the linked audit for provenance and
+the remaining reference-render prerequisite; admission remains unsupported
+
+The complete 14-test host lifecycle/escape/branch sweep also passes (42.17
+seconds). The new controlled emitter checks are required by the CTest wrapper,
+so an older fixture executable cannot silently omit them. Scoped formatting
+and diff whitespace checks pass
+
+Android D1/D2 opt-in build passes in 1m 42s
+(`temp/xl-android-emitter-build.log`), APK SHA-256
+`f2d3d95d0bd5d0dc66d908d08d0e5e50d2955526028eb111d26a4dc3dc6ad24f`.
+This APK was not installed or used for the earlier Android checks. Two existing
+unused-declaration warnings in unchanged `d2/arch/ogl/gr.c` remain; the emitter
+changes introduce no compiler warnings
+
+Authored-color audit refined (2026-10-24): see
+[the source/resource audit](../../XL_compat/evidence/pilot-authored-colors.md).
+Side colors register the colored-level flag, already set by 440 fractional
+vertex colors; no direct side-array rendering consumer was found in the pinned
+source. Texture colors remain an implementation gap: seven chromatic texture
+IDs yield 24 initial corona candidates after the reference brightness and wall
+filters; texture 353's 12 uses are explicitly excluded by the reference.
+These are static candidates, not verified render results
+
+The audit found that the old reference screenshot has coronas disabled and
+lacks the optional XL data pack. The reference's "found hog file" log is emitted
+even if opening fails. Extracted the missing data HOG and corona/glare images
+from the existing local 1.18.77 distribution without executing it. Exact hashes,
+resource/version distinctions and failed historical downloads are retained in
+the audit. Next: enable an explicit complete-resource reference comparison and
+implement authored emitters with light state and occlusion, without double
+counting the baked ambient light. No compatibility status is promoted
+
+Android ZIP import/startup verified (2026-10-24): the 15-step import test passes
+on emulator-5554, run `38ee731aef94466ab562f04a3825a4ee`, 23237 ms. The ZIP
+contains the unchanged original HOG and descriptor. Manually staged mission
+files were moved to `files/xl-manual-fixture-backup` before launch; the normal
+`files/d2x-redux/missions` directory remains empty. The launcher imports and
+enables the stored ZIP, discovers 24 normal and six secret levels, extracts it
+under the active set's `.content/mod_support/mods/.extracted_mission_zips`,
+and launches Ahayweh Gate through normal mission/difficulty menus. Assertions
+confirm level 1, 38 robots, no invulnerability, active pilot shading and zero
+unresolved emitters. This is import/startup evidence, not campaign qualification
+
+Device-extracted SHA-256 matches the source for both files: HOG
+`7491c45d217831509a840d934641bf1791e029ae6c1bcbe3e4efba2847d53d32`,
+descriptor `cfd619db7eff6a37663188905aec1a1c96d50567613d07ac1dcfd97b621bb8ea`.
+Evidence: `temp/xl-android-zip-import.log`, `temp/xl-android-zip-import-result.json`,
+`temp/xl-android-zip-import-state.json`, `temp/xl-android-zip-manifest.json`.
+The test is retained as explicit-only `test_xl_pilot_import.jsonc`; source ZIP
+and mission bytes stay private. No compatibility status was promoted
+
+The existing 34-step `test_xl_pilot_runtime.jsonc` then passes against that
+imported mission, run `14987059725b4155b9548bbf83c36db2`, 81793 ms. It verifies
+the controlled authored-light/opacity save round trip, switches to retail
+Counterstrike with all XL state cleared, and restores the pilot save with the
+same authored state. Evidence: `temp/xl-android-imported-runtime.log`,
+`temp/xl-android-imported-runtime-result.json` and
+`temp/xl-android-imported-runtime-state.json`. The app was stopped after the test
+and the original quick slot restored from the private backup; both hashes match
+`9100b0c247b7333c2fdb16ba0edd5d2348ab9b49d10293c6ec6bd86c8c519295`.
+The imported ZIP remains enabled and the manual mission files remain preserved
+outside the engine mission directory. These runs close import/startup and
+imported-save/isolation checks, not the outstanding authored-color audit
+
+Android interactive completion verified (2026-10-24):
+`test_xl_pilot_completion.jsonc` passes 22/22 steps on emulator-5554, run
+`710b245820084495831ed1dc81857b2a`, 25358 ms. It loads an earned checkpoint at
+the actual exit approach; saved velocity crosses the native exit without an
+endlevel command, teleport, resource changes or replay interception. The real
+score screen identifies Ahayweh Gate, retains 50.9 shields/alive status and
+awards the normal 5750 bonus (10850 -> 16600). After input suppression expires,
+the normal advance request returns to the main menu. Options opens and closes
+successfully. Final state: one window, no game, level 0 (normal Android cleanup),
+XL inactive/completed, zero render diagnostics. Level 2 is not entered
+
+Evidence: `temp/xl-android-completion-ready-test.log`,
+`temp/xl-android-completion-result.json`, `temp/xl-android-completion-state.json`.
+`temp/xl-android-score.png` visibly shows the title and bonuses; it was captured
+from the preceding run that failed to wait for input readiness, not the final
+passing run. The final installed APK SHA-256 is
+`ae98fb2c174df49f3b40309dda49cd74c520ad0bac891741aade1e8fdf59529a`;
+its build passes in 1m 55s (`temp/xl-android-checkpoint-build.log`). A warning in
+the unchanged save-signature initializer at `d2/main/state.c:1516` remains
+
+The checkpoint comes from
+`temp/xl-compat-ninja/escape-tests/21cb2abcd971/preview-user/xl-normal-exit-approach.sav`,
+SHA-256 `4a224622fd3b87cdaddb436937201e3c009ee7089eb616b96bc2b6ede3ab1f53`,
+matched against the staged Android quick slot. The host fixture retains the
+last naturally reached state in the exit's segment. Its private exporter uses
+the real `mod_save_write` source-definition writer, captured from the loaded
+mission before progression, plus the native effect-section offset. An ordinary
+`DXX_XL_CHECKPOINT_EXPORT` hook is enabled only for the private host target.
+It does not relax Android validation, alter saved world bytes or make desktop
+saves generally Android-compatible. The original slot was preserved and restored
+after the run; restored device SHA-256 is
+`9100b0c247b7333c2fdb16ba0edd5d2348ab9b49d10293c6ec6bd86c8c519295`
+
+Preserved failures: the first unannotated desktop save was correctly rejected
+for missing source definitions (`temp/xl-android-completion-test.log`). The
+next run reached the score/menu but incorrectly expected level 1 after Android
+cleanup (`temp/xl-android-completion-with-sources-test.log`). The following run
+sent advance before suppression elapsed (`temp/xl-android-completion-final-test.log`).
+The final test explicitly waits for `screen_advance_can_activate`; no production
+input behavior was changed to satisfy it
+
+Desktop replay also now passes after loading the native exported `XLTest.plr`:
+`temp/xl-escape-replay-result.json` reports terminal level exit at frame 407.
+Every recorded result field matches except the expected exit-reporting fields:
+recording stops before endlevel presentation (`endlevel_completed=false`),
+while replay reports `terminal_exit=level_exit` and completion true. The source
+recording is `escape-tests/0c58f275f059/preview-user/xl-normal-escape.dximdemo`.
+This replay evidence is distinct from the Android score/menu test above
+
+Both desktop targets and Android build; all 14 host lifecycle/escape/branch
+tests pass (46.50 seconds), scoped lint passes, and both automation catalogs
+pass (372 top-level entries, 431 support scripts). The mod-save generated table
+was split into MSVC-compatible literals: its 28836 payload bytes are unchanged,
+SHA-256 `3356bfba0b9b5a2c948d7dc03d5a4abd751a3e77798c8d33f8dac7a55e986a10`.
+The later ZIP import check above supersedes this run's import gap;
+authored side/texture-color semantics remain open;
+production mission admission remains unsupported
+
+Interactive-completion preparation (2026-10-24): the normal escape fixture now
+records the earned reactor checkpoint and all 407 ordered flight-input frames
+through the standard quick recorder. It verifies mission, checkpoint start mode
+and full frame count, and exports `preview-user/xl-normal-escape.dximdemo` in
+the private escape fixture. Recording does not replace gameplay: the same native
+timed exit must still complete alive, with no resource or transform assignment.
+
+This exposed an MSVC fixture defect: including `physfsx.h` before the metadata
+entry point's JSON header applied engine byte packing to shared JSON types.
+Staging the first recording operation crashed. Including JSON before engine
+headers fixes it; the standard recorder and timed escape then pass. The initial
+debug capture is `temp/xl-escape-debug.log`; the passing standard recording is
+under `temp/xl-compat-ninja/escape-tests/d07c5e337daf/preview-user/`.
+
+Do not claim interactive completion from this export alone. Earlier desktop replay attempts
+exit with status 1 before writing an actual result. A PTY run identifies the
+startup rejection: recorded missile view is disabled, while the desktop profile
+enables it. Other projection fields match (640x480, aspect 65536, zoom 36864,
+depth 9000, classic depth off). The subsequent passing run above matches the
+real native profile without rewriting the recording header. Windows `inferno.c`
+reopens stdout/stderr on `CON`, so redirected log files did not expose the error
+Also, normal replay intercepts level exit before interactive score presentation,
+so replay success alone cannot close that gate. The rendered score/menu path
+is separately verified by the Android checkpoint run above. No production admission changed
+
+Verification for the earlier recording slice: scoped formatting/lint and whitespace checks
+pass, both desktop targets build, and all 14 lifecycle/escape/branch tests pass
+in 36.36 seconds. The recording export assertion is required by the escape
+CTest. Android runtime sources are unchanged by this slice
+
+Current slice extends Android persistence to changed authored state. An explicit
+automation-only fixture in `XL_compat/runtime/persistence_probe.cpp` switches
+off an actual pilot light, snapshots every UVL and light-subtraction mask, and
+changes wall 6 opacity. After quick-save it deliberately changes those values
+again. Both immediate restore and pilot -> stock -> saved pilot must recover
+the snapshot and deliver the restored opacity through the material adapter.
+The helper is compiled only into the opt-in Android runtime; it is not called
+by normal gameplay. This remains controlled persistence evidence, not a claim
+that the navigator operated that light or wall naturally
+
+That slice passes 34/34 steps on emulator-5554, run
+`d8be973a6ce24757bb664894512324a9`, 73237 ms. Both `verify` operations pass,
+covering 5,472 UVLs, 228 subtraction masks and wall 6's restored 20/31 material
+alpha after immediate restore and the stock-mission round trip. The build and
+scoped formatter/linter pass. Logs: `temp/xl-android-extension-build.log` and
+`temp/xl-android-extension-test.log`; durable result:
+`temp/xl-android-authored-result.json`. The actual copied save is
+`temp/xl-android-authored-save.sg3`, verified against the device SHA-256
+`3684e89cc74b2903e35211fefaf14a9e2012f5afacc25c9854c7c54929068670`.
+APK SHA-256 is
+`99d974df0a5db1f3e53d8f92dc49782f30e04961e5af176b1bab35a1846f7f46`
+
+Infrastructure qualification: the first launcher startup timed out and the
+harness recovery could not write its SDK lock; the second normal launch
+succeeded and ran the full test. Preserve that log rather than interpreting
+the pass as performance certification. The emulator and quick-save retain the
+explicitly altered fixture state after this test
+
+Admission boundary fixed: the loader now rejects both original pilot admission
+and the explicit translated-preview path in multiplayer before translation or
+stock loading. It clears extension state first. The real-loader lifecycle test
+checks network and cooperative modes, stock-format loading in both modes, and
+single-player recovery with authored colors/materials. The rebuilt host passes
+all 14 lifecycle, timed-escape and branch tests (36.60 seconds), including the
+required admission marker. This verifies the loader boundary, not multiplayer
+UI presentation or support for playing the pilot cooperatively
+
+Android follow-through for the guard: opt-in x86_64 APK build passes in 1m 33s,
+SHA-256 `2644b45e8dc9344417ae90ac649e34ffe67f102ef4a920d1d0dca5c62aada823`.
+Installed on emulator-5554; the unchanged runtime/persistence script passes
+34/34 steps, run `c5a73780261e47cbb1da4f9c71f88b4c`, 67003 ms. Evidence:
+`temp/xl-android-admission-build.log`, `temp/xl-android-admission-test.log` and
+`temp/xl-android-admission-result.json`. Final state is unpaused Ahayweh Gate,
+XL active/not completed, 2600 shaded vertices and zero unresolved emitters.
+This rechecks single-player startup, authored-state restore and mission
+isolation on the guard build; multiplayer rejection itself is host-tested.
+The controlled modified light/opacity save remains on the emulator. Interactive
+completion, ZIP import and authored texture-color semantics remain open
+
+Android persistence follow-up: the expanded runtime test passed 18/18 steps
+(run `f8e299cf00d54f799a24e30a64a581fa`, 33877 ms;
+`temp/xl-android-restore-test.log`). It creates a real quick-save, changes
+difficulty from 2 to 3 through the existing diagnostic API, then requires
+quick-load to restore difficulty 2, Ahayweh Gate/level 1, active XL shading,
+zero unresolved emitters, 38 robots, no invulnerability and an unpaused game
+window. This is a controlled persistence test, not normal-input progression
+
+The full 30-step extension passes (run `a9ea352c512542e585e4796bbcf0255f`,
+68493 ms; `temp/xl-android-isolation-test.log`). It switches to retail
+Counterstrike, requires all XL admission/render diagnostics to clear, then
+quick-loads the pilot again. This specifically exercises the shared
+`d2leva-1.rl2` filename on Android. The actual save is
+`Players/save_sets/single/player/d2-xl/player.sg3`, SHA-256
+`b489f910900592f5931fcf927195aaf95a944925288d59802db0b5e893525f21`.
+The copied save and final result/state are preserved as
+`temp/xl-android-pilot-save.sg3`, `temp/xl-android-isolation-result.json` and
+`temp/xl-android-isolation-state.json`. Retain separate evidence for import, timed completion and authored
+wall/light state changes; the initial-room restore does not establish those
+
+Android opt-in slice implemented: the same ordinary `DXX_XL_PILOT` hooks now
+build into the D2 shared library via explicit Gradle `-PxlPilot=true`, leaving
+the default OFF, D1 unflagged and the JNI library name intact. The startup JNI
+passes the exact-hash pilot flag only in that build. Guarded introspection
+exposes admission, completion, shaded vertices, unresolved emitters and trigger
+activation. Production launcher admission remains unsupported
+
+Android x86_64 debug build passes. APK SHA-256:
+`cbfbd07ed402f16c24b88f5cf6694027958d747a319d64c98a34794909c7f3a3`.
+Original HOG/descriptor were staged in the emulator's private
+`files/d2x-redux/missions`; this tests ordinary native mission selection, not
+the ZIP-import workflow. A manual startup smoke test passed, then the reusable
+`test_xl_pilot_runtime.jsonc` passed all 12 steps through `run_test.ps1`
+on emulator-5554 (run ID `f17884367541404e92ae52b04c5a3ed1`, 25945 ms).
+Assertions include Ahayweh Gate, level 1, 38 robots, no invulnerability,
+XL active/not completed, shaded vertices > 0 and zero unresolved emitters
+
+Evidence: `temp/xl-android-build.log`, `temp/xl-android-runtime-test.log`,
+`temp/xl-android-introspect.json`, `temp/xl-android-smoke-result.json`,
+`temp/xl-android-smoke.png` and `temp/xl-android-smoke-after-wait.png`.
+The first capture contains a System UI ANR dialog, which was dismissed with
+Wait; the later capture shows the unobstructed mine. Preserve that distinction:
+this establishes startup and rendering-hook execution, not performance or
+full Android qualification. Persistence, completion and import still need tests
+
+Validation for this slice: scoped formatting/lint and whitespace checks pass;
+the rebuilt host lifecycle, timed escape, inventory and lighting arithmetic
+checks pass. Automation catalog validation passes with 371 top-level entries
+and 431 support scripts. The Android smoke test is registered as explicit-only
+because it requires the opt-in APK and private mission fixtures
+
+The authored-material lifecycle now additionally checks native AI visibility,
+object-to-object visibility and weapon-object FVI queries across all 14 opacity
+walls. Each uses controlled objects and a solid-boundary negative control.
+The full 14-test lifecycle/escape/branch sweep passes (35.21 seconds). These are isolated targeting/collision-query
+fixtures, not evidence of live projectile damage or an uninterrupted playthrough
+
+Further lighting audit: pinned XL `effects/glare.cpp:317-334` directly reads
+texture RGB for coronas when ambient color is enabled. Thus texture colors are
+not globally unused even in the legacy profile. `3d/fastmodels.cpp:752` gates
+model light-manager use on `SHOW_DYN_LIGHT`; `lighting/light.cpp:737` similarly
+gates segment-color use for non-polygon objects. Baked vertex lighting remains
+valid for the legacy mode, but corona/texture-emitter presentation remains a
+separate gap; do not silently certify the texture table from vertex tests
+
+All 13 trigger actions now have normal-input coverage: 12 branch tests plus
+the native timed exit. The latest complete sweep ran `xl_preview_lifecycle`,
+`xl_normal_escape` and all 12 `xl_normal_branch_*` tests twice, with all 14 tests
+passing both runs (72.96 seconds total). Each branch also saves and restores its
+actual earned state, comparing linked-target texture IDs, wall type, flags,
+state, hitpoints, opacity, doorway flags and player shields/energy. Diagnostic
+activation history resets on restore rather than being mistaken for saved
+gameplay state. This supersedes the failing branch sweep below
+
+The controller now keeps firing distance from intact blastable walls and aims
+at multiple patches as damage exposes transparent holes. It limits supply
+detours during branch exploration. For the segment-52 puzzle, planning can
+consider a firing position across transparent walls, but actual firing still
+requires the native per-pixel projectile trace. It samples the switch face and
+physically crosses the opened barriers for triggers 5/6 after activating 4.
+No player transform, wall state, health, ammunition or trigger is assigned by
+the navigator. The ordinary key/reactor/escape input policy remains separate
+
+Latest passing artifacts (each directory contains `preview.log` and its earned
+`preview-user/xl-normal-branch.sav`) under `temp/xl-compat-ninja`:
+
+| Trigger | Branch frames | Artifact |
+| --- | --- | --- |
+| 1 | 5496 | `branch-1-tests/9275fca97d81` |
+| 2 | 5410 | `branch-2-tests/83a7356aaab4` |
+| 3 | 2968 | `branch-3-tests/9f786b71f994` |
+| 4 | 14626 | `branch-4-tests/a8b5e223ff6a` |
+| 5 | 14873 | `branch-5-tests/90e8145d8004` |
+| 6 | 14912 | `branch-6-tests/a5d6ad3653b5` |
+| 7 | 3319 | `branch-7-tests/c39bea15c74f` |
+| 8 | 2863 | `branch-8-tests/bc3ef49d467d` |
+| 9 | 2317 | `branch-9-tests/af1c95c2b2d7` |
+| 10 | 1808 | `branch-10-tests/bfb7fc98897f` |
+| 11 | 2956 | `branch-11-tests/f0b7587555d1` |
+| 12 | Already exercised on key route | `branch-12-tests/fc58be3f147b` |
+
+This proves activation, observed target passability and immediate save/restore
+for all non-exit actions, not physical traversal of every linked portal or a
+single uninterrupted all-secrets playthrough. Interactive completion, remaining
+authored color/material semantics and Android qualification are still open
+
+Lighting audit lead checked against local XL commit
+`11038eb53dd86f3bcdc027dddd3f93c60f02536e`: `ReadColor` at
+`gameio/loadgeometry.cpp:396` always reads RGB; its last argument only controls
+registration of `bColored`. `LoadTexColorsCompiled` passing lighting method 0
+does not discard texture colors. `CLightManager::AddGeometryLights` reads them
+for static emitters (`lighting/dynlight.cpp:961,970`). The exact
+`color.lights` member search finds only its side-table loader, but consumer and
+profile semantics still require a bounded audit. Do not waive texture-color
+support based on the registration flag or equate pixel parity with this issue
 
 Trigger coverage is now observed from the real `check_trigger` path, separately
 from linked-target passability sampled during normal frames. The guarded hook
@@ -50,12 +596,12 @@ The controller can shoot across a transparent barrier from a reachable firing
 position, sample different points on a switch face, and collect energy during
 branch exploration. These are input policies, not changes to engine rules
 
-Latest complete sweep: timed escape passes unchanged (407 frames, countdown
+Earlier sweep, superseded above: timed escape passes unchanged (407 frames, countdown
 2504568, shields 3333686; `escape-tests/db733127f8f0`). Eight branch tests pass
 with both native activation and linked-target passability; four fail. Earlier
-passes from other controller revisions do not replace the current failures:
+passes from other controller revisions did not replace those failures:
 
-| Trigger | Current result | Artifact under `temp/xl-compat-ninja` |
+| Trigger | Earlier result | Artifact under `temp/xl-compat-ninja` |
 | --- | --- | --- |
 | 1 | Pass, 5513 branch frames | `branch-1-tests/ee39d933aefb` |
 | 2 | Pass, 5460 branch frames | `branch-2-tests/66f9114e67ce` |
@@ -70,7 +616,7 @@ passes from other controller revisions do not replace the current failures:
 | 11 | Pass, 4422 branch frames | `branch-11-tests/2d0c5847f640` |
 | 12 | Pass on the earned key route | `branch-12-tests/43cdebe63d83` |
 
-The latest sweep is deliberately failing, not qualified. Trigger 4's host in
+That earlier sweep was deliberately failing, not qualified. Trigger 4's host in
 segment 52 is behind the two closed walls it opens; approach planning now tests
 projectile visibility rather than assuming the player can fly to every host.
 Triggers 5/6 are on those barriers. Their actual activation sequence remains
@@ -1052,3 +1598,149 @@ for the investigated normal single-player cases, but object illumination,
 resource closure, reference profiles/scenes, normal gameplay, save/replay and
 production admission still require evidence. A zero unresolved count certifies
 none of those gates
+
+## Linked-portal crossing checkpoint (2026-10-24)
+
+Reconciled increasing-frame segment transitions in the existing escape, branch
+and nine secret-entry logs against all 17 authored trigger-target records.
+The original audit covers 10 records. Seven missing records share four physical
+portals. Added private CTests for 176 -> 182 (trigger 1), 193 -> 194 (trigger 2),
+136 -> 137 (trigger 3), and 5 -> 185 (trigger 5; target also linked by trigger 6).
+Each restores the branch checkpoint earned with ordinary controls, verifies
+unchanged resources, and requires the exact adjacent segment transition during
+GameProcessFrame. Arrival must be alive with unchanged lives and no paused timer.
+This is undirected portal coverage, not both directions or every shared-trigger
+sequence, and not an uninterrupted all-secrets playthrough
+
+Initial run: 3/4 passed; 136 -> 137 died at frame 220. Preserved evidence:
+`temp/xl-portal-tests.log`, portal fixture `62b4b1e9157c`. Targeted damage logging
+in fixture `2cf04b5f8d60` showed incoming damage while engaging a defender about
+80 units away. The controller stopped forward motion during all fights, leaving
+it in a narrow passage. For portal-crossing objectives it now continues toward
+its waypoint at up to 15 units/second while the defender is over 60 units away.
+It still uses normal thrust, rotation and firing; no world/resource/AI/damage
+changes. The crossing then finishes at frame 126 with its earned shields intact
+
+Final validation: all 29 navigation/lifecycle tests pass in 74.64 seconds,
+`temp/xl-portal-regression.log`. Explicit crossing frames: 150, 242, 126, 3049.
+`temp/xl-portal-crossing-final.json` links all target records to prior transition
+logs or explicit crossing assertions and includes arrival/resource reports.
+The original incomplete audit remains `temp/xl-portal-crossing-audit.json`.
+Scoped formatting/lint and diff whitespace checks pass. Host engine and standalone
+contract builds pass without new compiler warnings. No Android engine changes,
+APK rebuild, production support promotion, or completion claim in this slice
+
+Next: reconcile remaining extension/reference behavior requirements against the
+current acceptance audit; keep image matching separate from required extension
+semantics. Public asset-free CI remains insufficient for pilot qualification
+
+## Ambient runtime comparison checkpoint (2026-10-24)
+
+The prior six serialized-versus-loaded differences were not a reference runtime
+comparison. Captured all 228 segment flags from the exact ar12 executable using
+read-only process introspection, with offsets established from its retained
+SetAmbientSoundFlagsCommon disassembly. gameData is read through RVA 0x445a60;
+segment pointer is +0x450, last index +0x1ee8, stride 0x5f0, flags byte +0x5ae.
+The reader requires the pinned executable hash and last segment 227. It never
+writes process memory. The isolated reference has the previously verified
+1.18.77 resources; its options and corona resources are captured again. The
+owned process 44128 was stopped after capture. No baseline profile was changed
+
+Evidence: `evidence/pilot-ambient-flags.json`, private reference files
+`temp/xl-reference-complete/{ambient-runtime-state.json,read-ambient.ps1,
+ambient-disassembly.txt,ambient-level-load.log}` and native diagnostic log
+`temp/xl-compat-ninja/preview-tests/6e680d6b72e8/preview.log`.
+The current host lifecycle test passes in 1.95 seconds and reports all native
+segment flags. Build and scoped formatting pass
+
+Results: 226/228 runtime flags agree. Serialized-zero segments 51 and 111 become
+2 in BOTH runtimes. Segments 81 and 82 are 2 in Redux and 0 in ar12. Bit 2 is
+ambient lava (not water); bit 1 is ambient water. Preserve this as unresolved
+sound behavior. The two player-start orientation rounding differences remain a
+separate question. Do not hardcode these segment flags or waive the difference
+
+Next investigate source selection, transparency and resource/load timing around
+the 82 <-> 83 closed portal (wall 3/2, texture 269) and nearby sound sources.
+The XL transparency routine consults override bitmaps, layered base/overlay
+transparency and optional automatic transparency; the stock routine differs.
+No causal conclusion or production change is justified by the flags alone.
+The test was run with sound disabled: sound-flag evidence is not audible playback
+
+## Ambient discrepancy resolved as reference paging artifact (2026-10-24)
+
+Added read-only reference diagnostics for nearby faces, texture-info flags and
+bitmap flags, retaining exact-binary transparency disassembly. Both runtimes
+have the same nearby lava-source textures and the 82/83 boundary texture 269 is
+transparent after startup. Native recomputation after activating XL materials
+still produces the same flags, rejecting the hypothesis that late material
+activation caused the two differences
+
+A fresh startup sampled the reference every 2 ms without writing memory.
+`temp/xl-reference-complete/ambient-startup.json` records:
+- 833 ms: texture 269 maps to bitmap 1498, bitmap flags 16 (paged out only)
+- 2632 ms: last segment 227, segment 82 flags 0, bitmap still flags 16
+- 3299 ms: bitmap flags become 1 (transparent), segment 82 remains 0
+
+Source explains the timing: PiggyInitPigFile initializes resident bitmap flags
+with BM_FLAG_PAGED_OUT and stores the PIG transparency elsewhere. LoadLevelData
+calls SetAmbientSoundFlags before later palette/mod loading and texture caching.
+CSide::CheckTransparency reads the resident/override bitmap flags. Redux's
+piggy_bitmap_get_flags deliberately uses saved PIG flags while paged out
+
+The controlled native experiment temporarily substitutes non-emitting opaque
+texture 175 for texture 269 and recomputes ambience. Exactly segments 81/82 lose
+the lava flag; every resulting segment matches the pinned ar12 observation
+(serialized flags plus lava in 51/111). The test restores all original textures
+and flags and asserts that active-material recomputation does not change them.
+This causally reproduces the boundary effect without changing production code
+
+Classification: classic bitmap-paging/ambient-reachability artifact, not an XL
+mission extension. Retain Redux's transparency-aware ambience under the user's
+permission to omit incidental classic-behavior changes. Do not hardcode segment
+flags or suppress real sound cues to match the artifact. This closes the loader
+flag discrepancy; it does not claim audible output or exact reference sound timing
+
+Private readers: read-ambient-detail.ps1 and read-ambient-startup.ps1 beside the
+captured JSON and transparency-disassembly.txt. Owned reference processes were
+stopped; a first non-force Stop-Process attempt errored, and explicit Force plus
+process inventory confirmed cleanup. No other process was stopped. Native
+negative-control log: preview-tests/6176327d4832/preview.log (lifecycle passed in
+2.00 seconds). The checked-in pilot-ambient-flags.json retains original differing
+values, startup observations, scope and explanation
+
+Final regression: all 29 navigation/lifecycle cases pass in 74.42 seconds
+(`temp/xl-ambient-regression.log`), including the new all-228 reference flag
+comparison under the opaque-boundary control. Scoped formatting/lint and
+whitespace checks pass. The controlled native changes remain test-only
+
+Next acceptance review should explicitly reconcile object illumination under
+the selected legacy lighting profile and the category-by-category required-data
+closure, rather than treating old historical TODO text as current blockers.
+Pinned lighting/light.cpp:737 selects segment RGB for non-polygon objects only
+when nLightingMethod is nonzero; the tested reference profile uses zero. Confirm
+the rest of that consumer chain and record the supported profile explicitly
+
+## Current requirement reconciliation and Android repeat failure (2026-10-24)
+
+Added evidence/pilot-requirements.md mapping all 19 support categories to exact
+pilot requirements and current evidence. Rechecked original inventory, archive
+members and legacy object-light consumers. The reference method-zero path does
+not apply authored face/texture RGB to polygon models: objrender clears the
+object color index, SHOW_DYN_LIGHT is false, and the fallback is scalar classic
+lighting with white base color. Alternate renderer modes remain unclaimed.
+No need to port unrelated object-light tuning under the user's scope
+
+Fresh full host suite passes 36/36 in 162.27 seconds:
+`temp/xl-pilot-current-full-suite.log`. A new Android 28-step corona run fails
+at step 16: run eb9cd0d5073142d8b9f7b56757c8fdc1, 23630 ms. Original APK hash
+6b888da430cdc8e3aaaa28a80b56ffe60ce16fed9587ed263f9063dab4759c9f unchanged.
+Evidence: temp/xl-pilot-final-coronas.log and corresponding result JSON.
+Owned-FBO color/partial/full depth tests still pass. Object probe has one
+visible-before sample, zero fully blocked samples, same FBO and zero GL errors
+
+Hypothesis: robot bounding-sphere centers need not fall inside their animated
+silhouette. Revised test-only probe samples a 5x5 projected body grid with small
+halos behind existing robots. Every retained halo must be visible before objects;
+a witness must be hidden afterward and visible again with depth disabled in the
+same FBO. Record witness coordinates/radius/object ID. No robot, world or production
+renderer change. Build/test still required; do not treat this hypothesis as proof

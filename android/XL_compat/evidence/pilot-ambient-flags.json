@@ -1,0 +1,1436 @@
+{
+    "scope": "Initial loaded segment flags, not audible playback",
+    "level_sha256": "5e835e76e984c658531175640294a4b05f6127904884ba7acfd65c93165be5b2",
+    "reference_executable_sha256": "77db2a39a2293b10554986eeb0c6a4b664621cfc9839bf5686ad9bd402505e18",
+    "reference_resource_distribution": "1.18.77; executable ar12",
+    "reference_state": "temp/xl-reference-complete/ambient-runtime-state.json",
+    "reference_reader": "temp/xl-reference-complete/read-ambient.ps1",
+    "reference_offsets": "SetAmbientSoundFlagsCommon disassembly: gameData via RVA 0x445a60; segment pointer +0x450; last index +0x1ee8; stride 0x5f0; flags +0x5ae",
+    "redux_log": "temp/xl-compat-ninja/preview-tests/6e680d6b72e8/preview.log",
+    "ambient_water_mask": 1,
+    "ambient_lava_mask": 2,
+    "segments": [
+        {
+            "segment": 0,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 1,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 2,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 3,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 4,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 5,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 6,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 7,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 8,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 9,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 10,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 11,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 12,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 13,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 14,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 15,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 16,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 17,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 18,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 19,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 20,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 21,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 22,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 23,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 24,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 25,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 26,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 27,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 28,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 29,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 30,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 31,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 32,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 33,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 34,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 35,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 36,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 37,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 38,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 39,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 40,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 41,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 42,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 43,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 44,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 45,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 46,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 47,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 48,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 49,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 50,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 51,
+            "serialized": 0,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 52,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 53,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 54,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 55,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 56,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 57,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 58,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 59,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 60,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 61,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 62,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 63,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 64,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 65,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 66,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 67,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 68,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 69,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 70,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 71,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 72,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 73,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 74,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 75,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 76,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 77,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 78,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 79,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 80,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 81,
+            "serialized": 0,
+            "redux": 2,
+            "reference": 0
+        },
+        {
+            "segment": 82,
+            "serialized": 0,
+            "redux": 2,
+            "reference": 0
+        },
+        {
+            "segment": 83,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 84,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 85,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 86,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 87,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 88,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 89,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 90,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 91,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 92,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 93,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 94,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 95,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 96,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 97,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 98,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 99,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 100,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 101,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 102,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 103,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 104,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 105,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 106,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 107,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 108,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 109,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 110,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 111,
+            "serialized": 0,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 112,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 113,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 114,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 115,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 116,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 117,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 118,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 119,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 120,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 121,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 122,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 123,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 124,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 125,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 126,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 127,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 128,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 129,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 130,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 131,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 132,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 133,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 134,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 135,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 136,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 137,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 138,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 139,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 140,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 141,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 142,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 143,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 144,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 145,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 146,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 147,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 148,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 149,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 150,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 151,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 152,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 153,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 154,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 155,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 156,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 157,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 158,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 159,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 160,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 161,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 162,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 163,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 164,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 165,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 166,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 167,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 168,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 169,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 170,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 171,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 172,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 173,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 174,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 175,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 176,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 177,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 178,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 179,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 180,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 181,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 182,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 183,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 184,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 185,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 186,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 187,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 188,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 189,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 190,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 191,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 192,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 193,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 194,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 195,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 196,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 197,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 198,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 199,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 200,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 201,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 202,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 203,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 204,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 205,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 206,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 207,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 208,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 209,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 210,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 211,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 212,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 213,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 214,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 215,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 216,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 217,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 218,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 219,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 220,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 221,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 222,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 223,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 224,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 225,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        },
+        {
+            "segment": 226,
+            "serialized": 2,
+            "redux": 2,
+            "reference": 2
+        },
+        {
+            "segment": 227,
+            "serialized": 0,
+            "redux": 0,
+            "reference": 0
+        }
+    ],
+    "runtime_mismatches": [
+        {
+            "segment": 81,
+            "serialized": 0,
+            "redux": 2,
+            "reference": 0
+        },
+        {
+            "segment": 82,
+            "serialized": 0,
+            "redux": 2,
+            "reference": 0
+        }
+    ],
+    "resolution": {
+        "classification": "Reference startup bitmap paging artifact in classic ambient sound reachability; no new XL sound behavior",
+        "startup_samples": [
+            {
+                "ms": 22,
+                "last_segment": 0,
+                "texture269_bitmap": 0,
+                "bitmap_flags": 0,
+                "segment82_flags": -1
+            },
+            {
+                "ms": 833,
+                "last_segment": 0,
+                "texture269_bitmap": 1498,
+                "bitmap_flags": 16,
+                "segment82_flags": -1
+            },
+            {
+                "ms": 2632,
+                "last_segment": 227,
+                "texture269_bitmap": 1498,
+                "bitmap_flags": 16,
+                "segment82_flags": 0
+            },
+            {
+                "ms": 3299,
+                "last_segment": 227,
+                "texture269_bitmap": 1498,
+                "bitmap_flags": 1,
+                "segment82_flags": 0
+            }
+        ],
+        "startup_reader": "temp/xl-reference-complete/read-ambient-startup.ps1",
+        "detail_reader": "temp/xl-reference-complete/read-ambient-detail.ps1",
+        "detail_state": "temp/xl-reference-complete/ambient-detail.json",
+        "native_control_log": "temp/xl-compat-ninja/preview-tests/6176327d4832/preview.log",
+        "control": "Temporarily replace texture 269 with opaque, non-emitting texture 175; exactly segments 81/82 lose lava flags; restore original textures and flags",
+        "production_change": "None; retain transparency-aware classic ambience",
+        "limitation": "Read-only startup samples plus source load order and native boundary control; not a breakpoint inside reference ambient calculation or audible playback"
+    }
+}

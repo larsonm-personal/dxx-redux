@@ -20,6 +20,10 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#ifdef DXX_XL_PILOT
+#include "persistence_probe.h"
+#include "corona_probe.h"
+#endif
 
 using json = nlohmann::json;
 
@@ -6830,6 +6834,44 @@ extern "C" void game_automate_tick(void)
 				} else stop_script_fail("Unknown snapshot probe action");
 #else
 				stop_script_fail("Snapshot probe requires Android D2");
+#endif
+			} else if (s.field == "xl_corona_objects") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (s.value == "request") xl_corona_object_probe_request();
+				else if (s.value == "verify") {
+					const auto report = json::parse(xl_corona_object_probe_result());
+					LOGI("XL corona object probe: %s", xl_corona_object_probe_result());
+					if (!report.is_object() || !report.value("passed", false)) stop_script_fail("XL corona object-depth verification failed");
+				} else stop_script_fail("Unknown XL corona object probe action");
+#else
+				stop_script_fail("XL corona object probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_corona_scene") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (s.value == "request") xl_corona_scene_probe_request();
+				else if (s.value == "verify") {
+					const auto report = json::parse(xl_corona_scene_probe_result());
+					LOGI("XL corona scene probe: %s", xl_corona_scene_probe_result());
+					if (!report.is_object() || !report.value("passed", false)) stop_script_fail("XL corona scene-depth verification failed");
+				} else stop_script_fail("Unknown XL corona scene probe action");
+#else
+				stop_script_fail("XL corona scene probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_corona_pixels") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				xl_corona_pixel_probe();
+				const auto report = json::parse(xl_corona_pixel_probe_result());
+				LOGI("XL corona pixel probe: %s", xl_corona_pixel_probe_result());
+				if (!report.value("passed", false)) stop_script_fail("XL corona framebuffer verification failed");
+#else
+				stop_script_fail("XL corona framebuffer probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_pilot_persistence") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (const char *failure = xl_pilot_persistence_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled persistence %s passed", s.value.c_str());
+#else
+				stop_script_fail("XL persistence fixture requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "save_probe") {
 #ifdef __ANDROID__

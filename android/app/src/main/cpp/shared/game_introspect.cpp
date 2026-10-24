@@ -23,6 +23,9 @@
 #include "mod_save_compat.h"
 #include "android_mod_bitmaps.h"
 #include "android_texture_usage.h"
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 
 using json = nlohmann::json;
 
@@ -2008,6 +2011,20 @@ extern "C" char *game_introspect_get_state(void)
 	};
 	j["current_level_num"] = Current_level_num;
 	j["current_level_name"] = Current_level_name;
+#ifdef DXX_XL_PILOT
+	j["xl_pilot"] = {
+		{ "active", xl_preview_pilot_active() != 0 },
+		{ "completed", xl_preview_pilot_completed() != 0 },
+		{ "shaded_vertices", xl_preview_vertex_calls() },
+		{ "corona_draws", xl_preview_corona_draws() },
+		{ "corona_depth_failures", xl_preview_corona_depth_failures() },
+		{ "corona_classic_requested_draws", xl_preview_corona_classic_requested_draws() },
+		{ "classic_depth_requested", GameCfg.ClassicDepth != 0 },
+		{ "classic_depth_effective", ogl_use_classic_depth() != 0 },
+		{ "unresolved_emitters", xl_preview_unresolved_emitters() },
+		{ "activated_triggers", xl_preview_trigger_mask() },
+	};
+#endif
 	{
 		int active_wall_transition_count = 0;
 		for (int i = 0; i < Num_walls; i++)
