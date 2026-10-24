@@ -1,0 +1,53 @@
+package com.dxxredux.app
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class XlCompatibilityTest {
+    private fun report(
+        extra: String = "",
+        status: String = "blocked",
+    ) =
+        """{"detected":true,"source":"test.rl2","status":"blocked","summary":"Cannot load","rows":[{"feature":"Wall teleports","requirement":"3","support":"Unsupported","status":"$status","evidence":"Serialized records"$extra}]}"""
+
+    @Test
+    fun countsAndSupportRemainDistinctFromLevelAdmission() {
+        val report = XlCompatibility.parse(report(",\"count\":3"))!!
+        assertEquals("blocked", report.status)
+        assertEquals("Wall teleports: 3", report.rows.single().shortTitle())
+        assertEquals("Unsupported", compatibilityStatusLabel(report.rows.single().status))
+        assertEquals("Experimental / partial", compatibilityStatusLabel("partial"))
+        assertEquals("Supported", compatibilityStatusLabel("full"))
+    }
+
+    @Test
+    fun unknownAndAbsentAreDifferent() {
+        val unknown = XlCompatibility.parse(report(",\"count\":null", "unknown"))!!.rows.single()
+        val absent = XlCompatibility.parse(report(",\"count\":0", "not_required"))!!.rows.single()
+        assertEquals("Wall teleports: ?", unknown.shortTitle())
+        assertEquals("Not inspected", compatibilityStatusLabel(unknown.status))
+        assertEquals("Wall teleports: 0", absent.shortTitle())
+        assertEquals("Not present", compatibilityStatusLabel(absent.status))
+        assertEquals("Not inspected", compatibilityStatusLabel("future-status"))
+    }
+
+    @Test
+    fun oldMissingAndMalformedMetadataNeverInventCounts() {
+        val old = XlCompatibility.parse(report())!!.rows.single()
+        assertFalse(old.counted)
+        assertNull(old.count)
+        assertEquals("Wall teleports", old.shortTitle())
+        assertNull(XlCompatibility.parse("{}"))
+        assertNull(XlCompatibility.parse("broken"))
+        assertNull(XlCompatibility.parse("""{"detected":false}"""))
+        assertNull(
+            XlCompatibility
+                .parse(report(",\"count\":-1"))!!
+                .rows
+                .single()
+                .count,
+        )
+    }
+}

@@ -8,6 +8,8 @@ internal data class XlCompatibilityRow(
     val support: String,
     val status: String,
     val evidence: String,
+    val count: Int? = null,
+    val counted: Boolean = false,
 )
 
 internal data class XlCompatibilityReport(
@@ -25,8 +27,13 @@ internal object XlCompatibility {
         bytes: ByteArray,
     ): XlCompatibilityReport? {
         if (!available) return null
-        return runCatching {
-            val json = JSONObject(nativeInspect(name, bytes) ?: return null)
+        val raw = runCatching { nativeInspect(name, bytes) }.getOrNull() ?: return null
+        return parse(raw)
+    }
+
+    internal fun parse(raw: String): XlCompatibilityReport? =
+        runCatching {
+            val json = JSONObject(raw)
             if (!json.getBoolean("detected")) return null
             val rows = json.getJSONArray("rows")
             XlCompatibilityReport(
@@ -35,20 +42,34 @@ internal object XlCompatibility {
                 json.getString("summary"),
                 List(rows.length()) { index ->
                     val row = rows.getJSONObject(index)
+                    val counted = row.has("count")
+                    val count = (row.opt("count") as? Int)?.takeIf { it >= 0 }
                     XlCompatibilityRow(
                         row.getString("feature"),
                         row.getString("requirement"),
                         row.getString("support"),
-                        row.getString("status"),
+                        if (counted && count == null) "unknown" else row.getString("status"),
                         row.getString("evidence"),
+                        count,
+                        counted,
                     )
                 },
             )
         }.getOrNull()
-    }
 
     private external fun nativeInspect(
         name: String,
         bytes: ByteArray,
     ): String?
 }
+
+internal fun XlCompatibilityRow.shortTitle(): String = if (counted) "$feature: ${count?.toString() ?: "?"}" else feature
+
+internal fun compatibilityStatusLabel(status: String): String =
+    when (status) {
+        "full" -> "Supported"
+        "partial" -> "Experimental / partial"
+        "blocked" -> "Unsupported"
+        "not_required" -> "Not present"
+        else -> "Not inspected"
+    }

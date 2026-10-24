@@ -60,7 +60,7 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
         text = {
             Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    "Green: verified full support. Orange: verified gameplay with presentation differences. Red: unsupported requirement. Gray: unknown or not required.",
+                    "Green: supported feature. Orange: experimental or partial support. Red: unsupported feature. Gray: not inspected or not present. Feature support does not mean this level is playable.",
                     fontSize = 12.sp,
                 )
                 Text(
@@ -87,42 +87,44 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
                 }
                 val report = reports[selected]
                 Text(report.summary, color = compatibilityColor(report.status), fontWeight = FontWeight.Bold)
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Extension", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                    Text("This source needs", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                    Text("Our support", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                }
-                report.rows.forEach { row ->
+                if (report.rows.isEmpty()) Text("No feature inventory available; support is unknown", fontSize = 12.sp)
+                report.rows.sortedByDescending { it.counted }.forEach { row ->
                     HorizontalDivider()
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(row.feature, Modifier.weight(1f), fontSize = 12.sp)
-                        Text(row.requirement, Modifier.weight(1f), fontSize = 12.sp)
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                when (row.status) {
-                                    "blocked" -> "Unsupported"
-                                    "full" -> "Verified"
-                                    "partial" -> "Partial"
-                                    "not_required" -> "Not required"
-                                    else -> "Unverified"
-                                },
-                                color = compatibilityColor(row.status),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                            )
-                            Text(row.support, fontSize = 12.sp)
-                            if (row.evidence.isNotBlank()) {
+                    if (row.counted) {
+                        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(row.shortTitle(), Modifier.weight(1f), fontWeight = FontWeight.Bold)
                                 Text(
-                                    row.evidence,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    compatibilityStatusLabel(row.status),
+                                    color = compatibilityColor(row.status),
+                                    fontSize = 12.sp,
                                 )
+                            }
+                            if (row.count == null) Text("Not inspected", fontSize = 12.sp)
+                            if (row.count != 0) Text(row.support, fontSize = 12.sp)
+                        }
+                    } else {
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(row.shortTitle(), Modifier.weight(1f), fontSize = 12.sp)
+                            Text(row.requirement, Modifier.weight(1f), fontSize = 12.sp)
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    compatibilityStatusLabel(row.status),
+                                    color = compatibilityColor(row.status),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                )
+                                Text(row.support, fontSize = 12.sp)
+                                if (row.evidence.isNotBlank()) {
+                                    Text(
+                                        row.evidence,
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }

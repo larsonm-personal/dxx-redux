@@ -102,6 +102,41 @@ Bytes fixture(int version = 15)
 	return b;
 }
 
+std::string feature_row(const std::string &json, const char *id)
+{
+	const auto begin = json.find(std::string("\"id\": \"") + id + "\"");
+	check(begin != std::string::npos, "feature row missing");
+	return json.substr(begin, json.find('}', begin) - begin);
+}
+void feature_contract()
+{
+	auto bytes = fixture();
+	const auto inventory = xl_compat::inspect_level(bytes);
+	const auto game = inventory.game_offset;
+	// Append three wall teleports plus one boost and one camera, with neutral targets
+	bytes.resize(bytes.size() - 4);
+	for (const int type : { 14, 14, 14, 15, 16 }) {
+		put(bytes, type, 1);
+		bytes.resize(bytes.size() + 51);
+	}
+	put(bytes, 0, 4);
+	patch(bytes, game + 75, 5);
+	auto json = xl_compat::compatibility_json("features.rl2", bytes);
+	auto row = feature_row(json, "wall_teleports");
+	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "wall teleports not counted or falsely supported");
+	check(feature_row(json, "speed_boosts").find("\"count\": 1") != std::string::npos, "boost count");
+	check(feature_row(json, "master_triggers").find("\"status\": \"not_required\"") != std::string::npos, "absent feature not distinct");
+	bytes.at(inventory.mine_offset + 277) = 7;
+	row = feature_row(xl_compat::compatibility_json("water.rl2", bytes), "water_segments");
+	check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"partial\"") != std::string::npos, "water pilot generalized or missing");
+	bytes.pop_back();
+	row = feature_row(xl_compat::compatibility_json("broken.rl2", bytes), "wall_teleports");
+	check(row.find("\"count\": null") != std::string::npos, "failed parse leaked partial counts");
+	patch(bytes, 4, 23);
+	row = feature_row(xl_compat::compatibility_json("newer.rl2", bytes), "wall_teleports");
+	check(row.find("\"count\": null") != std::string::npos, "unsupported version reported false zero");
+}
+
 void version_17_contract()
 {
 	const auto bytes = fixture(17);
@@ -180,6 +215,10 @@ void original_observatory(const char *path)
 	const auto level = std::find_if(members.begin(), members.end(), [](const auto &member) { return member.name == "obsrv-xl.rl2"; });
 	check(level != members.end() && level->bytes.size() == 52176, "original Observatory level missing");
 	const auto v = xl_compat::inspect_level(level->bytes);
+	const auto report = xl_compat::compatibility_json("obsrv-xl.rl2", level->bytes);
+	check(feature_row(report, "no_damage_segments").find("\"count\": 26") != std::string::npos, "original no-damage UI count");
+	check(feature_row(report, "wall_teleports").find("\"count\": 0") != std::string::npos, "original teleport UI count");
+	check(feature_row(report, "opacity_walls").find("\"count\": 41") != std::string::npos, "original opacity UI count");
 	check(v.vertices.size() == 328 && v.segments.size() == 110 && v.walls.size() == 54 && v.objects.size() == 44, "original Observatory counts differ");
 	check(v.mine_offset == 86 && v.game_offset == 43377 && v.sections.at(0).offset == 45741 && v.sections.at(1).offset == 50832, "original Observatory section boundaries differ");
 	check(v.triggers.empty() && v.object_triggers == 0 && v.object_trigger_heads.empty() && v.light_indices.empty() && v.delta_lights.empty(), "original Observatory neutral sections differ");
@@ -203,6 +242,7 @@ int main(int argc, char **argv)
 		check(argc == 1 || argc == 2, "expected optional original Observatory HOG path");
 		if (argc == 2) original_observatory(argv[1]);
 		version_17_contract();
+		feature_contract();
 		const auto bytes = fixture();
 		const auto out = xl_compat::inspect_level(bytes);
 		const std::size_t mine = bytes[8];

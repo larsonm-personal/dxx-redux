@@ -37,6 +37,46 @@ const Category categories[] = {
 struct Evidence {
 	std::string need = "Unknown - not inspected", status = "unknown", detail;
 };
+// Counts describe serialized records, not executable route edges or gameplay admission
+struct CountedFeature {
+	const char *id, *label, *support, *present_status;
+	int count = -1;
+};
+std::vector<CountedFeature> counted_features()
+{
+	return {
+		{ "wall_teleports", "Wall teleports", "Wall-trigger actions only; object actions are not decoded", "blocked" },
+		{ "speed_boosts", "Speed boosts", "XL movement actions unsupported", "blocked" },
+		{ "cameras", "Camera triggers", "XL camera actions unsupported", "blocked" },
+		{ "master_triggers", "Master triggers", "XL event chains unsupported", "blocked" },
+		{ "water_segments", "Water segments", "Experimental hash-pinned arena pilot only; other levels unqualified", "partial" },
+		{ "lava_segments", "Lava segments", "XL segment lava semantics unqualified", "blocked" },
+		{ "blocked_segments", "Blocked segments", "XL movement restrictions unsupported", "blocked" },
+		{ "no_damage_segments", "No-damage segments", "XL damage and firing rules unsupported", "blocked" },
+		{ "colored_walls", "Colored walls", "XL colored-wall semantics unsupported", "blocked" },
+		{ "opacity_walls", "Wall opacity records", "Experimental pilot; nonzero serialized values are not proof of material parity", "partial" },
+		{ "chromatic_vertices", "Colored vertices", "Experimental embedded-lighting pilot; production rendering unqualified", "partial" },
+		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked" },
+		{ "equipment_count", "Equipment generators", "XL item generation unsupported", "blocked" },
+	};
+}
+void count_features(std::vector<CountedFeature> &features, const Inventory &v)
+{
+	const int trigger_types[] = { 14, 15, 16, 31 };
+	for (std::size_t i = 0; i < 4; ++i)
+		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
+	const int segment_types[] = { 7, 8, 12, 13 };
+	for (std::size_t i = 0; i < 4; ++i)
+		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) { return s.function == segment_types[i]; }));
+	features[8].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.type == 8; }));
+	features[9].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; }));
+	features[10].count = static_cast<int>(std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; }));
+	if (std::none_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature == "object_triggers"; })) features[11].count = v.object_triggers;
+	// Game 33 has no separate equipment-generator section
+	features[12].count = 0;
+	for (const auto &section : v.sections)
+		if (section.name == "equipment") features[12].count = section.count;
+}
 bool prefix(const Bytes &b, const char *s)
 {
 	return b.size() >= 3 && b[0] == s[0] && b[1] == s[1] && b[2] == s[2];
@@ -46,6 +86,7 @@ bool prefix(const Bytes &b, const char *s)
 std::string compatibility_json(const std::string &name, const Bytes &bytes)
 {
 	Evidence rows[sizeof(categories) / sizeof(categories[0])];
+	auto features = counted_features();
 	bool detected = false;
 	std::string status = "unknown", summary = "Insufficient evidence";
 	if (prefix(bytes, "D2X")) {
@@ -63,12 +104,14 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 			rows[1] = { "Level version " + std::to_string(version), "blocked", "Production loader maximum is 8" };
 			try {
 				const auto v = inspect_level(bytes);
+				count_features(features, v);
 				rows[1].need += ", game data " + std::to_string(v.game_version);
 				rows[2].need = std::to_string(v.vertices.size()) + " vertices, " + std::to_string(v.segments.size()) + " segments, " + std::to_string(v.walls.size()) + " walls, " + std::to_string(v.objects.size()) + " objects, " + std::to_string(v.triggers.size()) + " triggers";
 				rows[3].need = "Segment functions and owner/group records present";
 				rows[4].need = std::to_string(v.walls.size()) + " walls";
 				rows[5].need = std::to_string(v.triggers.size()) + " geometry triggers";
 				rows[6] = v.object_triggers ? Evidence{ std::to_string(v.object_triggers) + " object triggers", "blocked", "No production implementation" } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
+				if (std::any_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature == "object_triggers"; })) rows[6] = {};
 				rows[7].need = std::to_string(v.objects.size()) + " objects; behavior unverified";
 				const auto opacity = std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; });
 				rows[16].need = std::to_string(opacity) + " walls with nonzero serialized cloak/opacity";
@@ -114,6 +157,15 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 		out << "\n    {\"id\": " << json_string(categories[i].id) << ", \"feature\": " << json_string(categories[i].label)
 		    << ", \"requirement\": " << json_string(rows[i].need) << ", \"support\": " << json_string(categories[i].support)
 		    << ", \"status\": " << json_string(rows[i].status) << ", \"evidence\": " << json_string(rows[i].detail) << '}';
+	}
+	for (const auto &feature : features) {
+		const std::string state = feature.count < 0 ? "unknown" : feature.count == 0 ? "not_required"
+		                                                                             : feature.present_status;
+		out << ",\n    {\"id\": " << json_string(feature.id) << ", \"feature\": " << json_string(feature.label)
+		    << ", \"count\": " << (feature.count < 0 ? "null" : std::to_string(feature.count))
+		    << ", \"requirement\": " << json_string(feature.count < 0 ? "Not inspected" : std::to_string(feature.count))
+		    << ", \"support\": " << json_string(feature.support) << ", \"status\": " << json_string(state)
+		    << ", \"evidence\": " << json_string(feature.count < 0 ? "Requires successful bounded level inspection" : "Serialized record count; does not establish playability") << '}';
 	}
 	out << "\n  ]\n}\n";
 	return out.str();

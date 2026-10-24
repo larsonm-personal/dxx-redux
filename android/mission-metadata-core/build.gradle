@@ -10,10 +10,17 @@ kotlin {
     jvmToolchain(21)
 }
 
+// Test the production XL JSON/presentation model without loading JNI or Android UI
+sourceSets.test.kotlin {
+    srcDir '../XL_compat/kotlin'
+    exclude 'XlCompatibilityView.kt', 'XlCompatibilityTarget.kt'
+}
+
 dependencies {
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"
     implementation "org.tukaani:xz:${toolVersions['XZ_VERSION']}"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
+    testImplementation "org.json:json:${toolVersions['ORG_JSON_VERSION']}"
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }
 
