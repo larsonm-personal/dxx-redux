@@ -1,8 +1,12 @@
 use serde::Serialize;
 use serde_json::Value as JsonValue;
-use std::collections::HashSet;
-use std::time::Instant;
+use std::collections::{HashMap, HashSet};
+use std::time::{Duration, Instant};
 use uuid::Uuid;
+
+pub const HOLEPUNCH_TIMEOUT: Duration = Duration::from_secs(30);
+// Keep synchronized with the 3-second client ConnectivityChecker/proxy probe leases
+pub const CANDIDATE_PROBE_WINDOW: Duration = Duration::from_secs(3);
 
 /// Possible lobby states.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,10 +46,21 @@ impl Presence {
 /// A player within a lobby.
 #[derive(Debug, Clone, Serialize)]
 pub struct LobbyPlayer {
+    pub slot: u8,
     pub player_id: Uuid,
     pub callsign: String,
     pub ready: bool,
+    pub candidate_admission_id: Uuid,
+    #[serde(skip)]
+    pub candidate_requested: bool,
     pub candidates: Vec<crate::protocol::ConnectionCandidate>,
+    #[serde(skip)]
+    pub candidates_valid_until: Option<Instant>,
+    /// Server-issued offers and accepted directional routes for the current candidate attempt
+    #[serde(skip)]
+    pub connectivity_checks: HashMap<Uuid, crate::protocol::CandidatePair>,
+    #[serde(skip)]
+    pub validated_routes: HashMap<Uuid, crate::protocol::CandidatePair>,
     pub nat_type: Option<String>,
     pub connection_type: ConnectionType,
     pub ping_ms: Option<u32>,
@@ -60,6 +75,17 @@ pub enum ConnectionType {
     DirectHolepunch,
     PredictedHolepunch,
     Relay,
+}
+
+impl LobbyPlayer {
+    /// Old observations may describe an existing route, but cannot authorize new blind probes
+    pub fn can_issue_probes(&self, now: Instant) -> bool {
+        !self.candidates.is_empty()
+            && self.candidates_valid_until.is_some_and(|deadline| {
+                now.checked_add(CANDIDATE_PROBE_WINDOW)
+                    .is_some_and(|end| end <= deadline)
+            })
+    }
 }
 
 impl ConnectionType {
@@ -94,7 +120,7 @@ pub struct Lobby {
     pub created_at_instant: Instant,
     /// Optional lobby code for invite-only sessions.
     pub code: Option<String>,
-    /// If true, only GPGS-verified players can join.
+    /// If true, only players with a verified matchmaking Google account can join
     pub verified_only: bool,
     /// Players kicked from this lobby (cannot rejoin).
     pub kicked_players: HashSet<Uuid>,
@@ -112,11 +138,39 @@ pub struct Lobby {
     pub runtime_game_status: Option<u8>,
     /// Last time the host sent an UPDATE_GAME_STATE.
     pub last_state_update: Option<Instant>,
-    /// Players currently going through late-join ICE (joiner player_ids).
-    pub pending_late_joiners: HashSet<Uuid>,
+    /// Late joiners awaiting launch, with fixed admission deadlines.
+    pub pending_late_joiners: HashMap<Uuid, Instant>,
+    pub game_epoch: Uuid,
+    /// Assignment remains pending until the current host confirms native acceptance
+    pub assigned_late_joiners: HashMap<Uuid, AssignedAdmission>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AssignedAdmission {
+    pub id: Uuid,
+    pub host_connection: Uuid,
+    pub assigned: Instant,
+    pub slot: u8,
 }
 
 impl Lobby {
+    /// Expire unused offers; accepted routes remain valid until peer/candidate ownership changes
+    pub fn expire_connectivity_attempt(&mut self, now: Instant) -> bool {
+        if self.state != LobbyState::Holepunching
+            || !self
+                .holepunch_started_at
+                .is_some_and(|started| now.saturating_duration_since(started) >= HOLEPUNCH_TIMEOUT)
+        {
+            return false;
+        }
+        self.state = LobbyState::Waiting;
+        self.holepunch_started_at = None;
+        for player in &mut self.players {
+            player.connectivity_checks.clear();
+        }
+        true
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         host_player_id: Uuid,
@@ -128,10 +182,16 @@ impl Lobby {
         game_info: JsonValue,
     ) -> Self {
         let host = LobbyPlayer {
+            slot: 0,
             player_id: host_player_id,
             callsign: host_callsign.clone(),
             ready: false,
+            candidate_admission_id: Uuid::new_v4(),
+            candidate_requested: false,
             candidates: Vec::new(),
+            candidates_valid_until: None,
+            connectivity_checks: HashMap::new(),
+            validated_routes: HashMap::new(),
             nat_type: None,
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
@@ -156,7 +216,9 @@ impl Lobby {
             runtime_level: None,
             runtime_game_status: None,
             last_state_update: None,
-            pending_late_joiners: HashSet::new(),
+            pending_late_joiners: HashMap::new(),
+            game_epoch: Uuid::nil(),
+            assigned_late_joiners: HashMap::new(),
         }
     }
 
@@ -201,11 +263,25 @@ impl Lobby {
         if self.players.iter().any(|p| p.player_id == player_id) {
             return false; // already in lobby
         }
+        let Some(slot) =
+            (0..self.max_players).find(|slot| !self.players.iter().any(|p| p.slot == *slot))
+        else {
+            return false;
+        };
+        if self.state == LobbyState::InGame {
+            self.pending_late_joiners.insert(player_id, Instant::now());
+        }
         self.players.push(LobbyPlayer {
+            slot,
             player_id,
             callsign,
             ready: false,
+            candidate_admission_id: Uuid::new_v4(),
+            candidate_requested: false,
             candidates: Vec::new(),
+            candidates_valid_until: None,
+            connectivity_checks: HashMap::new(),
+            validated_routes: HashMap::new(),
             nat_type: None,
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
@@ -216,7 +292,14 @@ impl Lobby {
 
     pub fn remove_player(&mut self, player_id: &Uuid) {
         self.players.retain(|p| &p.player_id != player_id);
+        for player in &mut self.players {
+            player
+                .connectivity_checks
+                .retain(|_, pair| &pair.peer_id != player_id);
+            player.validated_routes.remove(player_id);
+        }
         self.pending_late_joiners.remove(player_id);
+        self.assigned_late_joiners.remove(player_id);
     }
 
     pub fn player_count(&self) -> u8 {

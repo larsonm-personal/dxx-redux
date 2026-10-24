@@ -19,6 +19,16 @@ function Test-SuiteMediaIndependentTest {
         $Test.Type -ceq 'ps1' -and $Test.Requires -ceq 'emulator') {
         return $arguments.Count -eq 1 -and $arguments[0] -ceq '-GeneratedAudio'
     }
+    if ($Test.Name -ceq 'test_mp_public_shareware_d2' -and
+        $Test.BaseName -ceq 'test_mp' -and $Test.Type -ceq 'ps1' -and
+        $Test.Requires -ceq 'two_emulators') {
+        return $arguments.Count -eq 4 -and ($arguments -join ',') -ceq '-PublicShareware,-PublicGame,d2,-PublicDirect'
+    }
+    if ($Test.Name -ceq 'test_mp_public_shareware' -and
+        $Test.BaseName -ceq 'test_mp' -and $Test.Type -ceq 'ps1' -and
+        $Test.Requires -ceq 'two_emulators') {
+        return $arguments.Count -eq 1 -and $arguments[0] -ceq '-PublicShareware'
+    }
     if ($Test.Name -ceq 'test_lan_launch_preparation_public_shareware' -and
         $Test.BaseName -ceq 'test_lan_launch_preparation' -and $Test.Type -ceq 'ps1' -and
         $Test.Requires -ceq 'two_emulators') {

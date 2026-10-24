@@ -87,6 +87,7 @@ data class GameLaunchInfo(
     val lanHostAddr: String? = null,
     val lanHostPort: Int = NetworkConstants.ENGINE_PORT,
     val isLan: Boolean = false,
+    val runtimeAttempt: String? = null,
     val hostCallsign: String? = null,
     val hostClientId: String? = null,
     val coopQol: Boolean = true,
@@ -102,6 +103,8 @@ data class GameLaunchInfo(
     // Launcher-only LAN preparation barrier, scoped to the host's lobby and attempt
     val lanLobbyId: String? = null,
     val lanLaunchId: Long = 0L,
+    // Initial ready roster may be smaller than room capacity reserved for late join
+    val startPlayers: Int = maxPlayers,
 )
 
 data class MatchmakingState(

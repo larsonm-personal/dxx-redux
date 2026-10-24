@@ -74,6 +74,33 @@ pub fn hash_pubkey(pubkey_hex: &str) -> String {
     hex::encode(hasher.finalize())
 }
 
+/// Canonical, domain-separated transcript shared with OnlineInstallationAuth.kt
+pub fn installation_transcript(
+    challenge: &str,
+    public_key: &str,
+    callsign: &str,
+    platform: &str,
+    audience: &str,
+    solution: &str,
+) -> String {
+    format!("dxx-online-p256-v1\n{}\n{challenge}\n{public_key}\n{callsign}\n{platform}\n{audience}\n{solution}", crate::protocol::CURRENT_PROTOCOL)
+}
+
+pub fn verify_installation_signature(public_key: &str, transcript: &[u8], signature: &str) -> bool {
+    let Ok(key) = hex::decode(public_key) else {
+        return false;
+    };
+    let Ok(signature) = hex::decode(signature) else {
+        return false;
+    };
+    key.len() == 65
+        && key[0] == 4
+        && signature.len() <= 72
+        && ring::signature::UnparsedPublicKey::new(&ring::signature::ECDSA_P256_SHA256_ASN1, key)
+            .verify(transcript, &signature)
+            .is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

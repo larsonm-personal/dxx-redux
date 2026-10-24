@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::{
-    extract::{Json, State},
+    extract::{Json, Query, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::get,
@@ -20,7 +20,12 @@ pub fn public_router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/status", get(status))
         .route("/api/v1/status/simple", get(status_simple))
         .route("/api/v1/health", get(health))
+        .route("/api/v1/ready", get(ready))
         .route("/api/v1/leaderboard", get(leaderboard_stub))
+        .route_layer(axum::middleware::from_fn_with_state(
+            Arc::clone(&state),
+            public_budget,
+        ))
         .with_state(state)
 }
 
@@ -30,10 +35,16 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/status", get(status))
         .route("/api/v1/status/simple", get(status_simple))
         .route("/api/v1/health", get(health))
+        .route("/api/v1/ready", get(ready))
         .route("/api/v1/leaderboard", get(leaderboard_stub))
+        .route_layer(axum::middleware::from_fn_with_state(
+            Arc::clone(&state),
+            public_budget,
+        ))
         .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
         .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
+        .route("/api/v1/admin/relay-usage", get(admin_relay_usage))
         .with_state(state)
 }
 
@@ -43,7 +54,9 @@ pub fn admin_router(state: Arc<ServerState>) -> Router {
         .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
         .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
         .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
+        .route("/api/v1/admin/relay-usage", get(admin_relay_usage))
         .route("/api/v1/health", get(health))
+        .route("/api/v1/ready", get(ready))
         .with_state(state)
 }
 
@@ -54,14 +67,15 @@ pub async fn run(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let use_public_only = state.config.admin_http_listen_addr.is_some();
     let app = if use_public_only {
-        public_router(state)
+        public_router(Arc::clone(&state))
     } else {
-        router(state)
+        router(Arc::clone(&state))
     };
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::HTTP);
     tracing::info!(%addr, public_only = use_public_only, "HTTP API listening");
-    axum::serve(listener, app).await?;
+    crate::transport::serve(listener, app, state, None).await?;
     Ok(())
 }
 
@@ -70,10 +84,11 @@ pub async fn run_admin(
     addr: SocketAddr,
     state: Arc<ServerState>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = admin_router(state);
+    let app = admin_router(Arc::clone(&state));
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    let _ready = crate::ListenerReady::new(Arc::clone(&state), crate::ListenerReady::ADMIN);
     tracing::info!(%addr, "Admin HTTP API listening");
-    axum::serve(listener, app).await?;
+    crate::transport::serve(listener, app, state, None).await?;
     Ok(())
 }
 
@@ -102,6 +117,7 @@ struct PlayerCounts {
 struct LobbySection {
     count: u32,
     games: Vec<LobbyInfo>,
+    next_cursor: Option<uuid::Uuid>,
 }
 
 #[derive(Serialize)]
@@ -110,37 +126,42 @@ struct AggregateStats {
     total_games_played: u64,
 }
 
-async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
+async fn public_budget(
+    State(state): State<Arc<ServerState>>,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    if !state
+        .public_work
+        .lock()
+        .unwrap()
+        .accept(std::time::Instant::now())
+    {
+        return StatusCode::TOO_MANY_REQUESTS.into_response();
+    }
+    let Ok(_slot) = state.public_slots.try_acquire() else {
+        return StatusCode::TOO_MANY_REQUESTS.into_response();
+    };
+    let response = next.run(request).await;
+    let (parts, body) = response.into_parts();
+    let Ok(bytes) = axum::body::to_bytes(body, 128 * 1024).await else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+    state.public_egress.wait(bytes.len()).await;
+    axum::response::Response::from_parts(parts, axum::body::Body::from(bytes))
+}
+
+#[derive(Deserialize)]
+struct LobbyQuery {
+    after: Option<uuid::Uuid>,
+}
+async fn status(
+    State(state): State<Arc<ServerState>>,
+    Query(query): Query<LobbyQuery>,
+) -> Json<StatusResponse> {
     let snap = state.stats.snapshot();
 
-    // Build lobby list
-    let games: Vec<LobbyInfo> = state
-        .lobbies
-        .iter()
-        .map(|entry| {
-            let lobby = entry.value();
-            LobbyInfo {
-                lobby_id: lobby.id,
-                host_callsign: lobby.host_callsign.clone(),
-                game: lobby.game.clone(),
-                player_count: lobby.player_count(),
-                max_players: lobby.max_players,
-                joinable: lobby.is_joinable(),
-                host_ping_ms: state
-                    .sessions
-                    .get(&lobby.host_player_id)
-                    .and_then(|s| s.ping_ms),
-                has_code: lobby.code.is_some(),
-                verified_only: lobby.verified_only,
-                game_info: lobby.game_info.clone(),
-                lobby_state: match lobby.state {
-                    crate::lobby::LobbyState::InGame => "in_progress".into(),
-                    _ => "waiting".into(),
-                },
-                current_level: lobby.runtime_level,
-            }
-        })
-        .collect();
+    let (games, next_cursor) = crate::ws_handler::lobby_page(&state, query.after);
 
     let total_unique = state.db.total_unique_players().unwrap_or(0);
     let total_games = state.db.total_games_played().unwrap_or(0);
@@ -159,6 +180,7 @@ async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
         lobbies: LobbySection {
             count: snap.lobbies,
             games,
+            next_cursor,
         },
         stats: AggregateStats {
             total_unique_players: total_unique,
@@ -198,6 +220,49 @@ async fn leaderboard_stub() -> (StatusCode, &'static str) {
 }
 
 // -- Admin endpoints --
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct RelayUsageQuery {
+    identity_offset: usize,
+    allocation_offset: usize,
+}
+
+async fn admin_relay_usage(
+    State(state): State<Arc<ServerState>>,
+    headers: HeaderMap,
+    Query(query): Query<RelayUsageQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, &'static str)> {
+    check_admin_token(&headers, &state.config.admin_token)?;
+    let accounting = state
+        .relay_economy
+        .lock()
+        .unwrap()
+        .snapshot(query.identity_offset, std::time::Instant::now());
+    // Keys/epochs and aggregate counters only, never payloads, endpoint addresses or credentials
+    let mut tokens: Vec<_> = state
+        .relay_sessions
+        .iter()
+        .map(|entry| *entry.key())
+        .collect();
+    tokens.sort_unstable();
+    let allocations: Vec<_> = tokens
+        .iter()
+        .skip(query.allocation_offset)
+        .take(100)
+        .filter_map(|token| {
+            state
+                .relay_sessions
+                .get(token)
+                .map(|session| session.usage())
+        })
+        .collect();
+    let next = query.allocation_offset.saturating_add(100);
+    Ok(Json(
+        serde_json::json!({"accounting":accounting,"allocations":allocations,
+        "allocation_offset":query.allocation_offset,"next_allocation_offset":(next < tokens.len()).then_some(next)}),
+    ))
+}
 
 fn check_admin_token(
     headers: &HeaderMap,
@@ -309,5 +374,28 @@ async fn admin_motd_stub() -> (StatusCode, &'static str) {
     (
         StatusCode::NOT_IMPLEMENTED,
         "MOTD update not yet implemented",
+    )
+}
+
+/// Readiness is separate from process liveness; it never exposes addresses or keys
+async fn ready(State(state): State<Arc<ServerState>>) -> (StatusCode, Json<serde_json::Value>) {
+    let active = state
+        .ready_listeners
+        .load(std::sync::atomic::Ordering::SeqCst);
+    let required = crate::ListenerReady::required(&state);
+    let ready = active & required == required;
+    (
+        if ready {
+            StatusCode::OK
+        } else {
+            StatusCode::SERVICE_UNAVAILABLE
+        },
+        Json(
+            serde_json::json!({ "ready": ready, "protocol_version": CURRENT_PROTOCOL,
+            "pending_transports": 64 - state.transport_slots.available_permits(),
+            "pending_and_authenticated_sockets": state.connected_sockets.load(std::sync::atomic::Ordering::SeqCst),
+            "relay_sessions": state.relay_sessions.len(), "rooms": state.lobbies.len(),
+            "pending_native_admissions": state.lobbies.iter().map(|r| r.assigned_late_joiners.len()).sum::<usize>() }),
+        ),
     )
 }

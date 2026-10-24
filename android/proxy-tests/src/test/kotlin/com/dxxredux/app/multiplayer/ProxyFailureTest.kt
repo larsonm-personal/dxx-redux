@@ -21,6 +21,149 @@ import java.util.concurrent.TimeUnit
 class ProxyFailureTest {
     private val loopback = InetAddress.getByName("127.0.0.1")
 
+    @Test(timeout = 10_000)
+    fun lateJoinProbesAreIdempotentRosterBoundAndEchoOnlyOfferedEndpointsWithinBudget() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val socket = DatagramSocket(0, loopback)
+        val proxy = LocalhostProxy(scope, socket)
+        val peer = DatagramSocket(0, loopback).apply { soTimeout = 200 }
+        val outsider = DatagramSocket(0, loopback).apply { soTimeout = 200 }
+        val endpoint = "127.0.0.1:${peer.localPort}"
+        val request =
+            java.nio.ByteBuffer
+                .allocate(12)
+                .putInt(0x44585043)
+                .putInt(7654)
+                .putShort(0)
+                .putShort(1)
+                .array()
+
+        fun read(socket: DatagramSocket): ByteArray {
+            val packet = DatagramPacket(ByteArray(64), 64)
+            socket.receive(packet)
+            return packet.data.copyOf(packet.length)
+        }
+
+        fun noPacket(socket: DatagramSocket) {
+            try {
+                read(socket)
+                throw AssertionError("Unexpected probe traffic")
+            } catch (_: SocketTimeoutException) {
+            }
+        }
+        try {
+            proxy.start()
+            proxy.sendLateJoinProbes("absent", listOf(endpoint))
+            noPacket(peer)
+            proxy.reconcileRoster(mapOf(1 to "joiner"))
+            val opened = System.nanoTime()
+            repeat(1000) { proxy.sendLateJoinProbes("joiner", listOf(endpoint, endpoint)) }
+            peer.soTimeout = 2000
+            val blind = read(peer)
+            peer.soTimeout = 200
+            assertEquals(
+                1,
+                java.nio.ByteBuffer
+                    .wrap(blind)
+                    .getShort(10)
+                    .toInt(),
+            )
+            noPacket(peer)
+            outsider.send(DatagramPacket(request, request.size, loopback, socket.localPort))
+            noPacket(outsider)
+            // The recognized peer can receive at most 32 echo responses in this lease
+            repeat(64) { peer.send(DatagramPacket(request, request.size, loopback, socket.localPort)) }
+            var echoes = 0
+            while (true) {
+                try {
+                    val reply = read(peer)
+                    assertEquals(
+                        2,
+                        java.nio.ByteBuffer
+                            .wrap(reply)
+                            .getShort(10)
+                            .toInt(),
+                    )
+                    echoes++
+                } catch (_: SocketTimeoutException) {
+                    break
+                }
+            }
+            assertEquals(32, echoes)
+            val waitMs = ((opened + 3_100_000_000L - System.nanoTime()) / 1_000_000L).coerceAtLeast(0)
+            Thread.sleep(waitMs)
+            peer.send(DatagramPacket(request, request.size, loopback, socket.localPort))
+            noPacket(peer)
+            proxy.sendLateJoinProbes("joiner", listOf(endpoint))
+            noPacket(peer)
+            // A roster removal retires the lease even if native admission never created a proxy
+            proxy.reconcileRoster(emptyMap())
+            proxy.sendLateJoinProbes("joiner", listOf(endpoint))
+            noPacket(peer)
+            proxy.reconcileRoster(mapOf(1 to "replacement"))
+            proxy.sendLateJoinProbes("joiner", listOf(endpoint))
+            noPacket(peer)
+            proxy.sendLateJoinProbes("replacement", listOf(endpoint))
+            peer.soTimeout = 2000
+            assertEquals(
+                1,
+                java.nio.ByteBuffer
+                    .wrap(read(peer))
+                    .getShort(10)
+                    .toInt(),
+            )
+            peer.send(DatagramPacket(request, request.size, loopback, socket.localPort))
+            assertEquals(
+                2,
+                java.nio.ByteBuffer
+                    .wrap(read(peer))
+                    .getShort(10)
+                    .toInt(),
+            )
+        } finally {
+            proxy.shutdown()
+            scope.cancel()
+            peer.close()
+            outsider.close()
+        }
+        assertTrue(socket.isClosed)
+    }
+
+    @Test(timeout = 5000)
+    fun lateJoinProbeLeaseExpiresBeforeItsEchoQuotaIsSpent() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val socket = DatagramSocket(0, loopback)
+        val proxy = LocalhostProxy(scope, socket)
+        try {
+            DatagramSocket(0, loopback).use { peer ->
+                peer.soTimeout = 200
+                proxy.reconcileRoster(mapOf(1 to "joiner"))
+                // A queued worker must not send after its original authorization expires
+                proxy.sendLateJoinProbes("joiner", listOf("127.0.0.1:${peer.localPort}"))
+                Thread.sleep(3100)
+                proxy.start()
+                val request =
+                    java.nio.ByteBuffer
+                        .allocate(
+                            12,
+                        ).putInt(0x44585043)
+                        .putInt(7654)
+                        .putShort(0)
+                        .putShort(1)
+                        .array()
+                peer.send(DatagramPacket(request, request.size, loopback, socket.localPort))
+                try {
+                    peer.receive(DatagramPacket(ByteArray(64), 64))
+                    throw AssertionError("Expired probe lease echoed a packet")
+                } catch (_: SocketTimeoutException) {
+                }
+            }
+        } finally {
+            proxy.shutdown()
+            scope.cancel()
+        }
+    }
+
     // Fail exactly one keepalive send, while every real loopback route stays usable
     private class KeepaliveFailureSocket : DatagramSocket(InetSocketAddress("127.0.0.1", 0)) {
         val injected = CountDownLatch(1)

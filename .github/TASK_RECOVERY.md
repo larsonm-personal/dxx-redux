@@ -169,6 +169,12 @@ Locate the failing stage and retain only a short sanitized error excerpt:
 - HTTP authentication failure: check the credential used by that request.
 - Proxy CONNECT failure: the tunnel failed; this alone does not prove bad auth.
 
+For a completed run, inspect an authorized whole-run log archive when individual
+job/blob downloads fail at transport. Reusable-workflow jobs can have nested log
+entries that an older CLI's `--log-failed` output omits; an aggregate failure alone
+is not the underlying test diagnosis. Reuse an already downloaded archive before
+requesting another download. Never retain signed download URLs in checkpoints.
+
 Do not bypass network restrictions or repeatedly edit allowlists without evidence
 that a permitted change addresses the failing destination. Use the working
 connector or the normal user access handoff when necessary.

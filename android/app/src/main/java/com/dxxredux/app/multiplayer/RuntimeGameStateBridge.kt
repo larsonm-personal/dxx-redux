@@ -22,7 +22,10 @@ internal const val RUNTIME_IPC_DIAGNOSTICS = 4
 internal const val RUNTIME_IPC_GAME_STOPPED = 5
 internal const val RUNTIME_IPC_ACTIVITY_VISIBILITY = 6
 internal const val RUNTIME_IPC_BACKGROUND_TIMEOUT = 7
+internal const val RUNTIME_IPC_NATIVE_ADMITTED = 8
 internal const val RUNTIME_IPC_KEY_HOST = "host"
+internal const val RUNTIME_IPC_KEY_ATTEMPT = "attempt"
+internal const val RUNTIME_IPC_KEY_BINDING = "binding"
 internal const val RUNTIME_IPC_KEY_STATE = "state"
 internal const val RUNTIME_IPC_KEY_DIAGNOSTICS = "diagnostics"
 internal const val RUNTIME_IPC_KEY_BACKGROUND = "background"
@@ -165,9 +168,15 @@ object RuntimeGameStateBridge {
     private const val DIAGNOSTIC_REQUEST_INTERVAL_MS = 500L
 
     private val handler = Handler(Looper.getMainLooper())
-    private val incoming =
+
+    private fun createIncoming(generation: Long) =
         Messenger(
             Handler(Looper.getMainLooper()) { message ->
+                if (generation != bindingGeneration ||
+                    message.data.getString(RUNTIME_IPC_KEY_ATTEMPT) != runtimeAttempt
+                ) {
+                    return@Handler true
+                }
                 if (message.what == RUNTIME_IPC_DIAGNOSTICS) {
                     val encoded = message.data.getString(RUNTIME_IPC_KEY_DIAGNOSTICS)
                     diagnostics =
@@ -190,9 +199,32 @@ object RuntimeGameStateBridge {
     @Volatile
     private var diagnostics = RuntimeDiagnosticsSnapshot()
     private var appContext: Context? = null
+    private var activityOwner = java.lang.ref.WeakReference<Context>(null)
+    private var activityAttempt: String? = null
+    private var bindingGeneration = 0L
+    private var connection: ServiceConnection? = null
+    private var incoming: Messenger? = null
+
+    /** Called only by Activity.onCreate, never by native callbacks */
+    fun claimActivity(
+        context: Context,
+        attempt: String?,
+    ) {
+        if (activityOwner.get() === context && activityAttempt == attempt) return
+        disconnect(runtimeAttempt)
+        activityOwner = java.lang.ref.WeakReference(context)
+        activityAttempt = attempt
+    }
+
+    fun ownsActivity(
+        context: Context,
+        attempt: String?,
+    ): Boolean = activityOwner.get() === context && activityAttempt == attempt
+
     private var service: Messenger? = null
     private var bound = false
     private var isHost = false
+    private var runtimeAttempt: String? = null
     private var nativeStateProvider: (() -> IntArray)? = null
     private var backgroundTimeoutHandler: (() -> Unit)? = null
     private var activityBackgrounded = false
@@ -216,12 +248,13 @@ object RuntimeGameStateBridge {
             }
         }
 
-    private val connection =
+    private fun createConnection(generation: Long): ServiceConnection =
         object : ServiceConnection {
             override fun onServiceConnected(
                 name: ComponentName,
                 binder: IBinder,
             ) {
+                if (generation != bindingGeneration || connection !== this) return
                 service = Messenger(binder)
                 send(
                     RUNTIME_IPC_REGISTER,
@@ -232,6 +265,7 @@ object RuntimeGameStateBridge {
             }
 
             override fun onServiceDisconnected(name: ComponentName) {
+                if (generation != bindingGeneration || connection !== this) return
                 service = null
                 diagnostics = RuntimeDiagnosticsSnapshot()
                 Log.w(TAG, "Multiplayer owner process disconnected")
@@ -249,26 +283,41 @@ object RuntimeGameStateBridge {
     fun connect(
         context: Context,
         host: Boolean,
+        attempt: String?,
         stateProvider: () -> IntArray,
         onBackgroundTimeout: () -> Unit,
-    ) {
-        disconnect()
+    ): Boolean {
+        if (!ownsActivity(context, attempt)) return false
+        if (bound) {
+            updateHost(host, attempt)
+            return true
+        }
+        val generation = ++bindingGeneration
+        val binding = createConnection(generation)
+        connection = binding
+        incoming = createIncoming(generation)
         val bindingContext = context.applicationContext
         appContext = bindingContext
         isHost = host
+        runtimeAttempt = attempt
         nativeStateProvider = stateProvider
         backgroundTimeoutHandler = onBackgroundTimeout
         bound =
             bindingContext.bindService(
                 Intent(bindingContext, MultiplayerForegroundService::class.java),
-                connection,
+                binding,
                 Context.BIND_AUTO_CREATE,
             )
         if (!bound) Log.e(TAG, "Could not bind multiplayer owner process")
-        if (host) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
+        if (host && bound) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
+        return bound
     }
 
-    fun updateHost(host: Boolean) {
+    fun updateHost(
+        host: Boolean,
+        attempt: String?,
+    ) {
+        if (attempt != runtimeAttempt) return
         if (isHost == host) return
         isHost = host
         handler.removeCallbacks(statePublisher)
@@ -276,24 +325,30 @@ object RuntimeGameStateBridge {
         if (host) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
     }
 
-    fun disconnect() {
+    fun disconnect(attempt: String? = runtimeAttempt): Boolean {
+        if (attempt != runtimeAttempt) return false
         handler.removeCallbacks(statePublisher)
         if (bound) {
             send(RUNTIME_IPC_GAME_STOPPED, Bundle().apply { putBoolean(RUNTIME_IPC_KEY_HOST, isHost) })
             try {
-                appContext?.unbindService(connection)
+                connection?.let { appContext?.unbindService(it) }
             } catch (_: IllegalArgumentException) {
             }
         }
+        bindingGeneration++
+        connection = null
+        incoming = null
         bound = false
         service = null
         appContext = null
         isHost = false
+        runtimeAttempt = null
         nativeStateProvider = null
         backgroundTimeoutHandler = null
         activityBackgrounded = false
         diagnostics = RuntimeDiagnosticsSnapshot()
         lastDiagnosticRequestMs = 0L
+        return true
     }
 
     fun noteActivityVisibility(background: Boolean) {
@@ -301,6 +356,21 @@ object RuntimeGameStateBridge {
         send(
             RUNTIME_IPC_ACTIVITY_VISIBILITY,
             Bundle().apply { putBoolean(RUNTIME_IPC_KEY_BACKGROUND, background) },
+        )
+    }
+
+    fun nativeAdmitted(
+        attempt: String?,
+        admissionId: String,
+        slot: Int,
+    ) {
+        if (attempt == null || attempt != runtimeAttempt || !isHost) return
+        send(
+            RUNTIME_IPC_NATIVE_ADMITTED,
+            Bundle().apply {
+                putString("admission_id", admissionId)
+                putInt("slot", slot)
+            },
         )
     }
 
@@ -329,7 +399,11 @@ object RuntimeGameStateBridge {
         try {
             destination.send(
                 Message.obtain(null, what).apply {
-                    this.data = data
+                    this.data =
+                        Bundle(data).apply {
+                            putString(RUNTIME_IPC_KEY_ATTEMPT, runtimeAttempt)
+                            putLong(RUNTIME_IPC_KEY_BINDING, bindingGeneration)
+                        }
                     replyTo = incoming
                 },
             )

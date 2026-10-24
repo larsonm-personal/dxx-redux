@@ -128,7 +128,10 @@ void net_join_wait_fail(const char *message)
 {
 	/* Keep the attempt guard until the outer join loop closes networking */
 	if (!active) return;
-	if (!failure) failure = message;
+	if (!failure) {
+		failure = message;
+		debug_log_force(DLOG_NETWORK, "ONLINE_ADMISSION event=join_wait_failure");
+	}
 	restart = 0;
 	Network_status = NETSTAT_MENU;
 }

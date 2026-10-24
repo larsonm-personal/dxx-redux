@@ -47,6 +47,12 @@ extern char auto_host_mission[64];
 extern int auto_host_mode;
 /* Max players (2-8). */
 extern int auto_host_max_players;
+/* Initial launch roster, separate from capacity reserved for late join */
+extern int auto_host_start_players;
+static inline int auto_net_host_start_count(int capacity)
+{
+	return auto_host_start_players >= 1 && auto_host_start_players <= capacity ? auto_host_start_players : capacity;
+}
 /* Starting level number. */
 extern int auto_host_level_num;
 /* Difficulty (0-4). */

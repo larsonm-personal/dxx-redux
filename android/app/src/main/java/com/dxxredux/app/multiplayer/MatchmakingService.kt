@@ -2,19 +2,22 @@ package com.dxxredux.app.multiplayer
 
 import android.app.Activity
 import android.util.Log
+import com.dxxredux.app.BuildConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -38,6 +41,29 @@ import kotlin.math.min
 
 private const val TAG = "MatchmakingService"
 private const val MAX_RECONNECT_ATTEMPTS = 15
+
+/** Only the explicit debug emulator host alias may translate an observed host-loopback endpoint */
+internal fun localDevelopmentEndpoint(
+    debug: Boolean,
+    controlHost: String?,
+    endpoint: String,
+): String {
+    if (!debug || controlHost != "10.0.2.2" || !endpoint.startsWith("127.0.0.1:")) return endpoint
+    val parsed = parseProbeEndpoint(endpoint) ?: return endpoint
+    return "10.0.2.2:${parsed.port}"
+}
+
+/** Retained PoW fixtures are limited to debug builds and literal local test endpoints */
+internal fun allowsInstallationAuth(
+    debug: Boolean,
+    host: String,
+): Boolean =
+    debug && (
+        host == "localhost" || host == "::1" || host == "10.0.2.2" ||
+            host.split('.').let { octets ->
+                octets.size == 4 && octets[0] == "127" && octets.all { it.toIntOrNull() in 0..255 }
+            }
+    )
 
 /** Normalize user input like "myserver.com" into a connectable WebSocket URL.
  *  Always defaults to wss:// (TLS). LAN self-signed certs are handled by lanClient.
@@ -93,7 +119,8 @@ private fun isPrivateAddress(host: String): Boolean =
     }
 
 object MatchmakingService {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Host integration tests replace this private scope to advance reconnect time deterministically
+    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val state get() = MatchmakingStateHolder
 
     private val client =
@@ -153,6 +180,17 @@ object MatchmakingService {
     @Volatile
     private var stunJob: Job? = null
 
+    private data class PendingCandidateChallenge(
+        val connection: WebSocket,
+        val generation: Long,
+        val lobbyId: String,
+        val admissionId: String,
+        val requestId: String,
+        val reply: CompletableDeferred<CandidateChallengeMsg>,
+    )
+
+    private var pendingCandidateChallenge: PendingCandidateChallenge? = null
+
     @Volatile
     private var stunCompleted = false
 
@@ -165,6 +203,10 @@ object MatchmakingService {
 
     @Volatile
     private var connectivityCheckJob: Job? = null
+    private var discoveredCandidates: List<ConnectionCandidate> = emptyList()
+    private var probeDiagnostics: Map<String, Int> = emptyMap()
+    private var connectivityCheckEpoch = 0L
+    private var connectivityResults: Map<String, Map<String, Any>> = emptyMap()
 
     // Host updates are published by MainActivity through the foreground-service
     // Binder because the native engine runs in the separate :game process.
@@ -200,6 +242,37 @@ object MatchmakingService {
 
     internal fun currentProxy(): LocalhostProxy? = localhostProxy
 
+    private var runtimeAttempt: String? = null
+    private var runtimeAttemptEpoch = 0L
+    private var gameEpoch: String? = null
+    private val pendingAdmissions = mutableMapOf<Int, String>()
+
+    @Synchronized
+    internal fun hostNativeAdmitted(
+        attempt: String,
+        admissionId: String,
+        slot: Int,
+    ) {
+        if (!ownsRuntimeAttempt(attempt) || pendingAdmissions[slot] != admissionId) return
+        val room = state.state.value.currentLobby ?: return
+        val epoch = gameEpoch ?: return
+        if (!room.isHost) return
+        send(
+            kotlinx.serialization.json
+                .buildJsonObject {
+                    put("type", kotlinx.serialization.json.JsonPrimitive("HOST_NATIVE_ADMITTED"))
+                    put("lobby_id", kotlinx.serialization.json.JsonPrimitive(room.lobbyId))
+                    put("game_epoch", kotlinx.serialization.json.JsonPrimitive(epoch))
+                    put("admission_id", kotlinx.serialization.json.JsonPrimitive(admissionId))
+                    put("slot", kotlinx.serialization.json.JsonPrimitive(slot))
+                }.toString(),
+        )
+        pendingAdmissions.remove(slot)
+    }
+
+    @Synchronized
+    internal fun ownsRuntimeAttempt(attempt: String): Boolean = runtimeAttempt == attempt
+
     @Synchronized
     internal fun networkAttempt(): Long = networkGeneration
 
@@ -221,7 +294,7 @@ object MatchmakingService {
             LocalhostProxy(scope, sharedSocket, dynamic) { message ->
                 synchronized(this) {
                     if (localhostProxy === proxy) {
-                        shutdownProxy()
+                        if (state.state.value.currentLobby != null) leaveLobby() else shutdownProxy()
                         state.update { it.copy(errorMessage = message, gameLaunchInfo = null) }
                         state.appendLog(message)
                         NetLog.log("ERROR", message)
@@ -235,6 +308,10 @@ object MatchmakingService {
                     }
                 }
             }
+        state.state.value.currentLobby?.let { lobby ->
+            val ownId = state.state.value.playerId
+            proxy.reconcileRoster(lobby.players.filter { it.playerId != ownId }.associate { it.slot to it.playerId })
+        }
         return proxy
     }
 
@@ -295,14 +372,91 @@ object MatchmakingService {
 
     // Unique per app process -- ensures two emulators/devices get different player IDs
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
-    private val devToken: String = "dev-${UUID.randomUUID()}"
+    private var installationAuth: OnlineInstallationAuth? = null
+    private var installationAuthJob: Job? = null
+    private var installationDeadlineJob: Job? = null
+    private var installationAttempts = 0
+    private var installationBudgetGeneration = 0L
+    private var installationDeadlineNanos = 0L
+
+    private fun clearInstallationBudget() {
+        installationBudgetGeneration++
+        installationDeadlineJob?.cancel()
+        installationDeadlineJob = null
+        installationAttempts = 0
+        installationDeadlineNanos = 0L
+    }
+
+    private fun installationTimeRemaining(): Boolean {
+        if (installationDeadlineJob != null && System.nanoTime() - installationDeadlineNanos >= 0) {
+            authenticationUnavailable("Installation authentication could not complete (TOTAL_DEADLINE)")
+            return false
+        }
+        return true
+    }
+
+    // This budget survives socket replacement; only explicit connect or AUTH_OK resets it
+    private fun beginInstallationWork(): Boolean {
+        if (!installationTimeRemaining()) return false
+        if (installationAttempts >= 3) {
+            authenticationUnavailable("Installation authentication could not complete (WORK_DEADLINE)")
+            return false
+        }
+        installationAttempts++
+        if (installationDeadlineJob == null) {
+            val budgetGeneration = installationBudgetGeneration
+            installationDeadlineNanos = System.nanoTime() + 45_000_000_000L
+            installationDeadlineJob =
+                scope.launch {
+                    delay(((installationDeadlineNanos - System.nanoTime()) / 1_000_000L).coerceAtLeast(0L))
+                    synchronized(this@MatchmakingService) {
+                        if (budgetGeneration == installationBudgetGeneration) {
+                            authenticationUnavailable("Installation authentication could not complete (TOTAL_DEADLINE)")
+                        }
+                    }
+                }
+        }
+        return true
+    }
+
+    private fun retryInstallationWork() {
+        if (!installationTimeRemaining()) return
+        if (installationAttempts >= 3) {
+            authenticationUnavailable("Installation authentication could not complete (WORK_DEADLINE)")
+            return
+        }
+        // A new socket obtains a new single-use challenge and a fresh server preauth deadline
+        val previous = webSocket
+        webSocket = null
+        previous?.cancel()
+        retireNetworkWork()
+        state.appendLog("Installation work expired; requesting a fresh challenge")
+        scheduleReconnect()
+    }
+
+    @Volatile private var installationWork: Map<String, Any> = emptyMap()
 
     // Weak reference to current activity for GPGS auth code requests.
     // Set by SetupActivity.onCreate(), cleared automatically by GC.
     private var activityRef: WeakReference<Activity>? = null
+    private var googleSignInJob: Job? = null
+    private var googleSession: GoogleServerSession? = null
 
+    @Synchronized
     fun setActivity(activity: Activity) {
+        if (activityRef?.get() !== activity && googleSignInJob?.isActive == true) {
+            authenticationUnavailable("Sign-in interrupted; choose Connect again")
+        }
         activityRef = WeakReference(activity)
+    }
+
+    @Synchronized
+    fun clearActivity(activity: Activity) {
+        if (activityRef?.get() !== activity) return
+        if (googleSignInJob?.isActive == true) {
+            authenticationUnavailable("Sign-in interrupted; choose Connect again")
+        }
+        activityRef = null
     }
 
     @Synchronized
@@ -310,7 +464,10 @@ object MatchmakingService {
         serverUrl: String,
         callsign: String,
     ) {
+        disconnect()
         reconnectAttempt = 0
+        clearInstallationBudget()
+        installationWork = emptyMap()
         lastLobbyId = null
         state.update {
             it.copy(
@@ -326,7 +483,59 @@ object MatchmakingService {
                 iceStatus = IceStatus(),
             )
         }
-        openConnection(serverUrl, callsign)
+        val normalized = normalizeServerUrl(serverUrl)
+        val request = runCatching { Request.Builder().url(normalized).build() }.getOrNull()
+        if (request == null) {
+            authenticationUnavailable("Invalid matchmaking server address")
+            return
+        }
+        if (allowsInstallationAuth(BuildConfig.DEBUG, request.url.host)) {
+            openConnection(serverUrl, callsign)
+            return
+        }
+        val activity = activityRef?.get()
+        if (activity == null || !GoogleMatchmakingAuth.isConfigured) {
+            authenticationUnavailable("Google sign-in is unavailable; LAN play remains available")
+            return
+        }
+        val login = runCatching { GoogleLoginClient(normalized) }.getOrNull()
+        if (login == null) {
+            authenticationUnavailable("Google sign-in requires a secure matchmaking server address")
+            return
+        }
+        manualDisconnect = false
+        val generation = connectionGeneration
+        state.update {
+            it.copy(
+                status = ConnectionStatus.CONNECTING,
+                serverUrl = serverUrl.trim(),
+                callsign = callsign,
+                errorMessage = null,
+            )
+        }
+        googleSignInJob =
+            scope.launch {
+                try {
+                    val session = login.signIn { nonce -> GoogleMatchmakingAuth.signIn(activity, nonce) }
+                    synchronized(this@MatchmakingService) {
+                        if (generation != connectionGeneration || manualDisconnect) {
+                            revokeGoogleSession(session)
+                        } else {
+                            googleSession = session
+                            googleSignInJob = null
+                            openConnection(serverUrl, callsign)
+                        }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    synchronized(this@MatchmakingService) {
+                        if (generation == connectionGeneration && !manualDisconnect) {
+                            authenticationUnavailable(googleLoginFailureMessage(error))
+                        }
+                    }
+                }
+            }
     }
 
     @Synchronized
@@ -334,6 +543,9 @@ object MatchmakingService {
         serverUrl: String,
         callsign: String,
     ) {
+        lobbyPageJob?.cancel()
+        lobbyPageRequest = null
+        lobbyListingId = null
         connectionGeneration++
         manualDisconnect = false
         reconnectJob?.cancel()
@@ -343,6 +555,21 @@ object MatchmakingService {
         retireNetworkWork()
 
         val normalizedUrl = normalizeServerUrl(serverUrl)
+        val endpoint = runCatching { Request.Builder().url(normalizedUrl).build() }.getOrNull()
+        if (endpoint == null) {
+            authenticationUnavailable("Invalid matchmaking server address")
+            return
+        }
+        if (!allowsInstallationAuth(BuildConfig.DEBUG, endpoint.url.host) &&
+            !runCatching { googleSession?.validFor(googleLoginOrigin(normalizedUrl)) == true }.getOrDefault(false)
+        ) {
+            authenticationUnavailable("Sign-in expired; choose Connect to sign in again")
+            return
+        }
+        if (!BuildConfig.DEBUG && !normalizedUrl.startsWith("wss://")) {
+            authenticationUnavailable("Online connections require TLS")
+            return
+        }
         // Store the raw URL so the text field and reconnect use what the user typed
         state.update {
             it.copy(
@@ -358,12 +585,17 @@ object MatchmakingService {
         val request = Request.Builder().url(normalizedUrl).build()
         // Use LAN-tolerant client (accepts self-signed certs) for private IPs
         val host = request.url.host
-        val httpClient = if (isPrivateAddress(host)) lanClient else client
+        val httpClient = if (BuildConfig.DEBUG && isPrivateAddress(host)) lanClient else client
         webSocket = httpClient.newWebSocket(request, Listener(callsign))
     }
 
     @Synchronized
     fun disconnect() {
+        clearGoogleSignIn()
+        clearInstallationBudget()
+        lobbyPageJob?.cancel()
+        lobbyPageRequest = null
+        lobbyListingId = null
         connectionGeneration++
         manualDisconnect = true
         lastLobbyId = null
@@ -399,54 +631,140 @@ object MatchmakingService {
             Log.w(TAG, "send() called with no active WebSocket")
             return
         }
-        Log.d(TAG, "TX: $json")
+        Log.d(TAG, "Sending matchmaking message")
         ws.send(json)
     }
 
     fun sendAuthenticate(callsign: String) {
         val connection = webSocket ?: return
-        val activity = activityRef?.get()
-        if (activity != null && PlayGamesAuth.isConfigured) {
-            // Try GPGS auth -- get a fresh server auth code
-            scope.launch {
-                // C12: timeout so we don't hang if Play Services is stuck
-                val authCode =
-                    kotlinx.coroutines.withTimeoutOrNull(5000L) {
-                        PlayGamesAuth.getServerAuthCode(activity)
-                    }
-                withConnection(connection) {
-                    if (authCode != null) {
-                        Log.i(TAG, "Using GPGS auth code")
-                        val msg =
-                            AuthenticateMsg(
-                                callsign = callsign,
-                                playGamesToken = authCode,
-                                authMethod = "gpgs",
-                            )
-                        send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
-                    } else {
-                        Log.i(TAG, "GPGS auth code unavailable, falling back to dev token")
-                        sendDevAuthenticate(callsign)
-                    }
+        withConnection(connection) {
+            if (allowsInstallationAuth(BuildConfig.DEBUG, connection.request().url.host)) {
+                sendInstallationAuthenticate(callsign)
+            } else {
+                val session = googleSession
+                val origin =
+                    runCatching {
+                        googleLoginOrigin(
+                            connection
+                                .request()
+                                .url
+                                .toString()
+                                .replaceFirst("https://", "wss://"),
+                        )
+                    }.getOrNull()
+                if (session == null || origin == null || !session.validFor(origin)) {
+                    authenticationUnavailable("Sign-in expired; choose Connect to sign in again")
+                } else {
+                    val msg =
+                        AuthenticateMsg(
+                            callsign = callsign,
+                            authMethod = "google_session",
+                            sessionCredential = session.credential,
+                        )
+                    send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
                 }
             }
-        } else {
-            withConnection(connection) { sendDevAuthenticate(callsign) }
         }
     }
 
-    private fun sendDevAuthenticate(callsign: String) {
-        val msg =
-            AuthenticateMsg(
-                callsign = callsign,
-                playGamesToken = devToken,
-                authMethod = "dev",
-            )
-        send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
+    private fun revokeGoogleSession(session: GoogleServerSession) {
+        scope.launch {
+            try {
+                GoogleLoginClient(session.origin.replaceFirst("https://", "wss://") + "/ws").revoke(session)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Local credential is already discarded; server expiry bounds failed logout
+            }
+        }
     }
 
+    private fun clearGoogleSignIn() {
+        googleSignInJob?.cancel()
+        googleSignInJob = null
+        googleSession?.let { revokeGoogleSession(it) }
+        googleSession = null
+    }
+
+    private fun authenticationUnavailable(message: String) {
+        connectionGeneration++
+        clearGoogleSignIn()
+        clearInstallationBudget()
+        manualDisconnect = true
+        lastLobbyId = null
+        reconnectJob?.cancel()
+        retireNetworkWork()
+        webSocket?.cancel()
+        webSocket = null
+        state.update {
+            it.copy(
+                status = ConnectionStatus.DISCONNECTED,
+                errorMessage = message,
+                playerId = null,
+                sessionToken = null,
+                currentLobby = null,
+                gameLaunchInfo = null,
+                nav = MultiplayerNav.BROWSER,
+            )
+        }
+    }
+
+    private fun sendInstallationAuthenticate(callsign: String) {
+        val connection = webSocket ?: return
+        check(allowsInstallationAuth(BuildConfig.DEBUG, connection.request().url.host))
+        val context = activityRef?.get()?.applicationContext
+        if (context == null) {
+            authenticationUnavailable("Installation identity storage is unavailable")
+            return
+        }
+        val url = connection.request().url
+        val host = if (url.host.contains(':')) "[${url.host}]" else url.host
+        val audience = "${url.scheme}://$host:${url.port}"
+        installationAuthJob?.cancel()
+        installationAuthJob =
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val producer = OnlineInstallationAuth.fromStorage(context.noBackupFilesDir, callsign, audience)
+                    withConnection(connection) {
+                        installationAuth = producer
+                        send(protocolJson.encodeToString(AuthenticateMsg.serializer(), producer.request()))
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    withConnection(connection) { authenticationUnavailable("Could not open installation identity") }
+                }
+            }
+    }
+
+    private var lobbyListingId: String? = null
+    private var lobbyPageRequest: ListLobbiesMsg? = null
+    private var lobbyPageJob: Job? = null
+
+    @Synchronized
     fun requestLobbyList() {
-        send(protocolJson.encodeToString(ListLobbiesMsg.serializer(), ListLobbiesMsg()))
+        lobbyPageJob?.cancel()
+        lobbyListingId = null
+        val request = ListLobbiesMsg()
+        lobbyPageRequest = request
+        send(protocolJson.encodeToString(ListLobbiesMsg.serializer(), request))
+    }
+
+    private fun scheduleLobbyPage(delayMs: Long) {
+        val request = lobbyPageRequest ?: return
+        val connection = webSocket ?: return
+        lobbyPageJob?.cancel()
+        lobbyPageJob =
+            scope.launch {
+                delay(delayMs)
+                withConnection(connection) {
+                    if (lobbyPageRequest ==
+                        request
+                    ) {
+                        send(protocolJson.encodeToString(ListLobbiesMsg.serializer(), request))
+                    }
+                }
+            }
     }
 
     fun createLobby(
@@ -476,6 +794,7 @@ object MatchmakingService {
 
     @Synchronized
     fun leaveLobby() {
+        lastLobbyId = null
         send(protocolJson.encodeToString(LeaveLobbyMsg.serializer(), LeaveLobbyMsg()))
         retireNetworkWork()
         state.update {
@@ -577,16 +896,18 @@ object MatchmakingService {
         RuntimeGameStateCodec.encode(arr)?.let(::send)
     }
 
-    fun runtimeGameProcessDisconnected(wasHost: Boolean) {
-        if (shouldEndHostedGame(
-                wasHost,
-                gameStateUpdatesEnabled,
-                state.state.value.currentLobby
-                    ?.isHost == true,
-            )
-        ) {
-            NetLog.log("GAME", "Host game process disconnected")
+    @Synchronized
+    fun runtimeGameProcessDisconnected(
+        attempt: String,
+        wasHost: Boolean,
+    ) {
+        if (!ownsRuntimeAttempt(attempt)) return
+        runtimeAttempt = null
+        if (wasHost) {
+            retireNetworkWork()
             endGame()
+        } else {
+            leaveLobby()
         }
     }
 
@@ -598,11 +919,11 @@ object MatchmakingService {
         send(protocolJson.encodeToString(SendMessageMsg.serializer(), msg))
     }
 
-    fun sendStunResult(
-        candidates: List<ConnectionCandidate>,
-        natType: String,
+    private fun sendStunResult(
+        attemptId: String,
+        receipts: List<String>,
     ) {
-        val msg = StunResultMsg(candidates = candidates, natType = natType)
+        val msg = StunResultMsg(attemptId = attemptId, receipts = receipts)
         send(protocolJson.encodeToString(StunResultMsg.serializer(), msg))
     }
 
@@ -658,8 +979,32 @@ object MatchmakingService {
         peerId: String,
         winningCandidateType: String,
         rttMs: Int,
+        checkId: String,
+        remoteAddr: String = "",
     ) {
-        val msg = ConnectivityOkMsg(peerId = peerId, winningCandidateType = winningCandidateType, rttMs = rttMs)
+        connectivityResults = connectivityResults + (
+            peerId to
+                mapOf(
+                    "room_id" to (
+                        state.state.value.currentLobby
+                            ?.lobbyId ?: ""
+                    ),
+                    "network_epoch" to networkGeneration,
+                    "check_epoch" to connectivityCheckEpoch,
+                    "peer_id" to peerId,
+                    "candidate_type" to winningCandidateType,
+                    "rtt_ms" to rttMs,
+                    "check_id" to checkId,
+                    "remote_addr" to remoteAddr,
+                )
+        )
+        val msg =
+            ConnectivityOkMsg(
+                checkId = checkId,
+                peerId = peerId,
+                winningCandidateType = winningCandidateType,
+                rttMs = rttMs,
+            )
         send(protocolJson.encodeToString(ConnectivityOkMsg.serializer(), msg))
     }
 
@@ -751,10 +1096,21 @@ object MatchmakingService {
     @Synchronized
     private fun retireNetworkWork() {
         networkGeneration++
+        discoveredCandidates = emptyList()
+        connectivityResults = emptyMap()
+        probeDiagnostics = emptyMap()
+        runtimeAttempt = null
+        gameEpoch = null
+        pendingAdmissions.clear()
+        installationAuthJob?.cancel()
+        installationAuthJob = null
+        installationAuth = null
         gameHandoffJob?.cancel()
         gameHandoffJob = null
         stunJob?.cancel()
         stunJob = null
+        pendingCandidateChallenge?.reply?.cancel()
+        pendingCandidateChallenge = null
         stunCompleted = false
         connectivityCheckJob?.cancel()
         connectivityCheckJob = null
@@ -763,6 +1119,51 @@ object MatchmakingService {
         cleanupUpnp()
         shutdownProxy()
     }
+
+    /** Aggregate Android test diagnostics; never includes keys, tokens or endpoint addresses */
+    @Synchronized
+    fun resourceDiagnostics(): Map<String, Any> =
+        mapOf(
+            "installation_work" to installationWork,
+            "connectivity" to
+                mapOf(
+                    "network_epoch" to networkGeneration,
+                    "check_epoch" to connectivityCheckEpoch,
+                    "phase" to state.state.value.iceStatus.phase.name,
+                    "candidate_count" to state.state.value.iceStatus.stunCandidateCount,
+                    "peer_candidate_count" to state.state.value.iceStatus.peerCandidatesReceived,
+                    "results" to connectivityResults.values.toList(),
+                    "probe_counts" to probeDiagnostics,
+                    "local_candidates" to
+                        discoveredCandidates.map { mapOf("type" to it.candidateType, "addr" to it.addr) },
+                    "pairs" to
+                        state.state.value.connectivityPairs.map {
+                            mapOf(
+                                "type" to it.remoteType,
+                                "addr" to it.remoteAddr,
+                            )
+                        },
+                ),
+            "runtime_attempt_epoch" to if (runtimeAttempt == null) 0L else runtimeAttemptEpoch,
+            "proxy_workers" to LocalhostProxy.activeWorkerCount(),
+            "candidate_socket" to (candidateSocket?.isClosed == false),
+            "upnp_mapping" to (upnpMapping != null),
+            "background_jobs" to (scope.coroutineContext[Job]?.children?.count { !it.isCompleted } ?: 0),
+            "game_state_updates" to gameStateUpdatesEnabled,
+            "peers" to (
+                localhostProxy?.getStats()?.map { peer ->
+                    mapOf(
+                        "slot" to peer.peerSlot,
+                        "sent" to peer.packetsSent,
+                        "received" to peer.packetsReceived,
+                        "bound" to peer.relayBound,
+                        "route_kind" to if (peer.isRelay) "relay" else "direct",
+                        "route_epoch" to runtimeAttemptEpoch,
+                        "gameplay_received" to peer.gameplayReceived,
+                    )
+                } ?: emptyList()
+            ),
+        )
 
     private fun cleanupUpnp() {
         upnpMapping?.let { mapping ->
@@ -781,100 +1182,132 @@ object MatchmakingService {
     @Synchronized
     private fun launchStunDiscovery() {
         if (gameHandoffJob?.isActive == true) return
+        val connection = webSocket ?: return
+        val lobby = state.state.value.currentLobby ?: return
+        val admission =
+            lobby.players.firstOrNull { it.playerId == state.state.value.playerId }?.candidateAdmissionId ?: return
         stunJob?.cancel()
         closeCandidateSocket()
+        connectivityResults = emptyMap()
+        probeDiagnostics = emptyMap()
+        discoveredCandidates = emptyList()
         val generation = ++networkGeneration
         val socket = DatagramSocket()
         candidateSocket = socket
         val addrs = stunOverrideAddrs ?: state.state.value.stunAddrs
         stunJob =
             scope.launch(start = CoroutineStart.LAZY) {
+                var issued: CandidateChallengeMsg? = null
                 withNetwork(generation) {
                     state.update { it.copy(iceStatus = IceStatus(phase = IcePhase.STUN_DISCOVERY)) }
-                    state.appendLog("Starting candidate discovery (${addrs.size} STUN servers)...")
-                    NetLog.log("STUN", "Starting candidate discovery (${addrs.size} STUN servers)")
                 }
                 try {
-                    // Create the shared candidate socket. It persists through STUN,
-                    // connectivity checking, and is handed to the first PeerProxy so
-                    // that the UPnP port mapping remains associated with an open socket.
-                    val candidatePort = socket.localPort
-
-                    // Run STUN and UPnP in parallel, both using the same port
-                    val stunDeferred =
-                        async(Dispatchers.IO) {
-                            StunClient.discover(addrs, socket)
-                        }
-                    val upnpDeferred =
-                        async(Dispatchers.IO) {
-                            val mapping = tryUpnpMapping(candidatePort)
-                            val work = currentCoroutineContext()[Job]!!
+                    // Map first so the short-lived proof observes the actual mapped port
+                    val work = currentCoroutineContext()[Job]!!
+                    val mapping =
+                        withContext(Dispatchers.IO) {
+                            val mapped = tryUpnpMapping(socket.localPort)
                             val accepted =
                                 synchronized(this@MatchmakingService) {
                                     if (generation == networkGeneration && work.isActive) {
-                                        upnpMapping = mapping
+                                        upnpMapping = mapped
                                         true
                                     } else {
                                         false
                                     }
                                 }
-                            if (!accepted && mapping != null) UpnpClient.removeMapping(mapping)
-                            mapping
+                            if (!accepted && mapped != null) UpnpClient.removeMapping(mapped)
+                            mapped
                         }
-
-                    val report = stunDeferred.await()
-                    val upnpResult = upnpDeferred.await()
                     currentCoroutineContext().ensureActive()
+                    val requestId = UUID.randomUUID().toString()
+                    val reply = CompletableDeferred<CandidateChallengeMsg>()
                     withNetwork(generation) {
-                        // Merge UPnP candidate into the report if mapping succeeded
-                        val allCandidates = report.candidates.toMutableList()
-                        if (upnpResult != null) {
-                            allCandidates.add(
-                                ConnectionCandidate("upnp", "${upnpResult.externalIp}:${upnpResult.externalPort}"),
+                        pendingCandidateChallenge =
+                            PendingCandidateChallenge(
+                                connection,
+                                generation,
+                                lobby.lobbyId,
+                                admission,
+                                requestId,
+                                reply,
                             )
-                            state.appendLog("UPnP: mapped ${upnpResult.externalIp}:${upnpResult.externalPort}")
-                            NetLog.log("UPNP", "Mapped ${upnpResult.externalIp}:${upnpResult.externalPort}")
+                        val request =
+                            GatherCandidatesMsg(lobbyId = lobby.lobbyId, admissionId = admission, requestId = requestId)
+                        connection.send(protocolJson.encodeToString(GatherCandidatesMsg.serializer(), request))
+                    }
+                    val challenge =
+                        withTimeoutOrNull(5000) { reply.await() } ?: error("Candidate challenge unavailable")
+                    issued = challenge
+                    val observations =
+                        withContext(Dispatchers.IO) {
+                            val servers =
+                                addrs.take(2).map { address ->
+                                    val parts = address.split(':')
+                                    require(parts.size == 2)
+                                    InetSocketAddress(parts[0], parts[1].toInt())
+                                }
+                            StunProofClient.discover(
+                                servers,
+                                UUID.fromString(challenge.credential),
+                                socket,
+                            ) { work.ensureActive() }
                         }
-
+                    currentCoroutineContext().ensureActive()
+                    val candidates =
+                        observations
+                            .map {
+                                ConnectionCandidate("srflx", "${it.endpoint.address.hostAddress}:${it.endpoint.port}")
+                            }.distinctBy { it.addr }
+                    val nat =
+                        when {
+                            observations.size < 2 -> "unknown"
+                            observations[0].endpoint == observations[1].endpoint -> "full_cone"
+                            else -> "symmetric"
+                        }
+                    withNetwork(generation) {
+                        discoveredCandidates = candidates
                         stunCompleted = true
                         state.update { s ->
                             s.copy(
                                 iceStatus =
                                     s.iceStatus.copy(
                                         phase = IcePhase.STUN_COMPLETE,
-                                        stunNatType = report.natType,
-                                        stunCandidateCount = allCandidates.size,
-                                        upnpMapped = upnpResult != null,
-                                        upnpAddr = upnpResult?.let { "${it.externalIp}:${it.externalPort}" },
+                                        stunNatType = nat,
+                                        stunCandidateCount = candidates.size,
+                                        upnpMapped = mapping != null,
+                                        upnpAddr = mapping?.let { "${it.externalIp}:${it.externalPort}" },
                                     ),
                             )
                         }
-                        state.appendLog("Discovery: ${report.natType}, ${allCandidates.size} candidates")
-                        NetLog.log("STUN", "Result: natType=${report.natType} candidates=${allCandidates.size}")
-                        sendStunResult(allCandidates, report.natType)
+                        // Addresses are diagnostic only; the server constructs destinations from receipts
+                        sendStunResult(challenge.attemptId, observations.map { it.receipt.toString() })
                     }
                 } catch (e: CancellationException) {
                     throw e
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     withNetwork(generation) {
-                        Log.e(TAG, "Candidate discovery failed", e)
+                        // Never log exceptions that could contain a malformed challenge credential
+                        Log.e(TAG, "Candidate discovery unavailable")
+                        state.appendLog("Candidate discovery unavailable; using relay")
                         state.update { s ->
                             s.copy(
                                 iceStatus =
                                     s.iceStatus.copy(
                                         phase = IcePhase.FAILED,
-                                        errorMessage = e.message,
+                                        errorMessage = "Candidate discovery unavailable",
                                     ),
                             )
                         }
-                        state.appendLog("Candidate discovery failed: ${e.message}")
-                        NetLog.log("ERROR", "Candidate discovery failed: ${e.message}")
-                        // Send minimal result so the server can proceed (will use relay)
                         stunCompleted = true
-                        sendStunResult(emptyList(), "unknown")
+                        issued?.let { sendStunResult(it.attemptId, emptyList()) }
                     }
                 } finally {
-                    withNetwork(generation) { stunJob = null }
+                    withNetwork(generation) {
+                        pendingCandidateChallenge?.reply?.cancel()
+                        pendingCandidateChallenge = null
+                        stunJob = null
+                    }
                 }
             }
         stunJob?.start()
@@ -901,6 +1334,9 @@ object MatchmakingService {
         if (gameHandoffJob?.isActive == true) return
         // C11: cancel previous check to avoid duplicates
         connectivityCheckJob?.cancel()
+        connectivityCheckEpoch++
+        connectivityResults = emptyMap()
+        probeDiagnostics = emptyMap()
         val generation = networkGeneration
         val socket = candidateSocket
         connectivityCheckJob =
@@ -914,6 +1350,11 @@ object MatchmakingService {
                                 pairs,
                                 existingSocket = socket,
                                 checkActive = { job.ensureActive() },
+                                diagnostics = { counts ->
+                                    withNetwork(generation) {
+                                        if (job.isActive) probeDiagnostics = counts
+                                    }
+                                },
                             )
                         }
                     withNetwork(generation) {
@@ -934,7 +1375,13 @@ object MatchmakingService {
                                 "HOLEPUNCH",
                                 "Direct: type=${result.winningCandidateType} rtt=${result.rttMs}ms peer=${result.peerId}",
                             )
-                            sendConnectivityOk(result.peerId, result.winningCandidateType, result.rttMs)
+                            sendConnectivityOk(
+                                result.peerId,
+                                result.winningCandidateType,
+                                result.rttMs,
+                                result.checkId,
+                                result.remoteAddr,
+                            )
                         } else {
                             state.update { s ->
                                 s.copy(
@@ -949,7 +1396,7 @@ object MatchmakingService {
                             NetLog.log("HOLEPUNCH", "No direct connection, falling back to relay")
                             // Notify the server for each unique peer so it allocates relay
                             pairs.map { it.peerId }.distinct().forEach { peerId ->
-                                sendConnectivityOk(peerId, "relay", 0)
+                                sendConnectivityOk(peerId, "relay", 0, pairs.first { it.peerId == peerId }.checkId)
                             }
                         }
                     }
@@ -973,7 +1420,7 @@ object MatchmakingService {
                         NetLog.log("ERROR", "Connectivity check failed: ${e.message}")
                         // Still notify the server so game launch isn't blocked
                         pairs.map { it.peerId }.distinct().forEach { peerId ->
-                            sendConnectivityOk(peerId, "relay", 0)
+                            sendConnectivityOk(peerId, "relay", 0, pairs.first { it.peerId == peerId }.checkId)
                         }
                     }
                 }
@@ -990,7 +1437,6 @@ object MatchmakingService {
         ) {
             withConnection(webSocket) {
                 Log.i(TAG, "WebSocket open")
-                reconnectAttempt = 0
                 state.update { it.copy(status = ConnectionStatus.AUTHENTICATING) }
                 state.appendLog("Connected. Authenticating as '$callsign'...")
                 NetLog.log("CONNECT", "WebSocket open")
@@ -1003,7 +1449,6 @@ object MatchmakingService {
             text: String,
         ) {
             withConnection(webSocket) {
-                Log.d(TAG, "RX: $text")
                 handleMessage(text)
             }
         }
@@ -1148,7 +1593,7 @@ object MatchmakingService {
         val proxy = newProxy(sharedSocket)
         try {
             for (peer in gs.peers) {
-                val addrParts = peer.addr.split(":")
+                val addrParts = reachableServerEndpoint(peer.addr).split(":")
                 if (addrParts.size != 2) {
                     state.appendLog("Bad peer addr: ${peer.addr}")
                     NetLog.log("ERROR", "Bad peer addr: ${peer.addr}")
@@ -1163,6 +1608,10 @@ object MatchmakingService {
                         isRelay = peer.isRelay,
                         relayToken = peer.relayToken?.toUInt() ?: 0u,
                         relayDestSlot = peer.relayDestSlot ?: peer.slot,
+                        relayOwnSlot = peer.relayCredentials?.ownSlot ?: -1,
+                        relaySendKey = peer.relayCredentials?.sendKey,
+                        relayReceiveKey = peer.relayCredentials?.receiveKey,
+                        relayEpoch = peer.relayCredentials?.allocationEpoch,
                     ),
                 )
             }
@@ -1183,14 +1632,23 @@ object MatchmakingService {
 
         // Determine if we're the host (slot 0 = host)
         val isHost = gs.yourSlot == 0
+        runtimeAttemptEpoch++
+        runtimeAttempt =
+            java.util.UUID
+                .randomUUID()
+                .toString()
+        gameEpoch = gs.gameEpoch
+        pendingAdmissions.clear()
         val launchInfo =
             GameLaunchInfo(
+                runtimeAttempt = runtimeAttempt,
                 game = gs.game,
                 mission = gs.gameInfo["mission"]?.jsonPrimitive?.content ?: "",
                 mode = gs.gameInfo["mode"]?.jsonPrimitive?.content ?: "",
                 difficulty = gs.gameInfo["difficulty"]?.jsonPrimitive?.intOrNull ?: 1,
                 levelNum = gs.currentLevel ?: gs.gameInfo["level_num"]?.jsonPrimitive?.intOrNull ?: 1,
                 maxPlayers = gs.maxPlayers,
+                startPlayers = gs.peers.size + 1,
                 yourSlot = gs.yourSlot,
                 isHost = isHost,
                 peers = gs.peers,
@@ -1243,10 +1701,70 @@ object MatchmakingService {
         }
     }
 
+    private fun reachableServerEndpoint(endpoint: String): String =
+        localDevelopmentEndpoint(BuildConfig.DEBUG, webSocket?.request()?.url?.host, endpoint)
+
+    private fun currentRekey(scope: RelayRekeyScope): Boolean {
+        val current = state.state.value
+        val lobby = current.currentLobby ?: return false
+        return scope.lobbyId == lobby.lobbyId && scope.gameEpoch == gameEpoch &&
+            scope.oldToken in 0..0xffff_ffffL && scope.newToken in 0..0xffff_ffffL &&
+            scope.oldToken != scope.newToken && scope.oldEpoch != scope.newEpoch && scope.peerSlot in 0..7 &&
+            lobby.players.any { it.slot == scope.peerSlot && it.playerId == scope.peerId }
+    }
+
+    private fun handleRelayRekey(
+        type: String,
+        message: RelayRekeyMsg,
+    ) {
+        val allocation = message.scope()
+        if (!currentRekey(allocation)) return
+        val connection = webSocket ?: return
+        val proxy = localhostProxy ?: return
+        val generation = networkGeneration
+        when (type) {
+            "RELAY_REKEY_OFFER" -> {
+                proxy.stageRelayRekey(message) {
+                    synchronized(this) {
+                        if (generation == networkGeneration && connection === webSocket && proxy === localhostProxy &&
+                            currentRekey(allocation)
+                        ) {
+                            val ready =
+                                RelayRekeyReadyMsg(
+                                    allocation.lobbyId,
+                                    allocation.gameEpoch,
+                                    allocation.oldToken,
+                                    allocation.newToken,
+                                    allocation.newEpoch,
+                                )
+                            send(protocolJson.encodeToString(RelayRekeyReadyMsg.serializer(), ready))
+                        }
+                    }
+                }
+            }
+
+            "RELAY_REKEY_COMMIT" -> {
+                proxy.commitRelayRekey(allocation, message.retireAfterMs)
+            }
+
+            "RELAY_REKEY_ABORT" -> {
+                proxy.abortRelayRekey(allocation)
+            }
+        }
+    }
+
     private fun handleMessage(text: String) {
         try {
-            when (val msg = ServerMessage.parse(text)) {
+            when (val msg = MatchmakingDiagnostics.parse(text) ?: return) {
                 is ServerMessage.AuthOkMsg -> {
+                    // The timer may be delayed; acceptance must still obey the monotonic budget
+                    if (!installationTimeRemaining()) return
+                    // An accepted socket is not a recovered authenticated session
+                    reconnectAttempt = 0
+                    clearInstallationBudget()
+                    lobbyPageJob?.cancel()
+                    lobbyListingId = null
+                    lobbyPageRequest = ListLobbiesMsg()
                     state.update {
                         it.copy(
                             status = ConnectionStatus.CONNECTED,
@@ -1272,20 +1790,67 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.AuthFailMsg -> {
-                    state.update {
-                        it.copy(
-                            status = ConnectionStatus.DISCONNECTED,
-                            errorMessage = "Auth failed: ${msg.data.reason}",
-                        )
+                    authenticationUnavailable("Auth failed: ${msg.data.reason}")
+                }
+
+                is ServerMessage.InstallationChallengeMsg -> {
+                    val connection = webSocket ?: return
+                    if (!allowsInstallationAuth(BuildConfig.DEBUG, connection.request().url.host)) {
+                        authenticationUnavailable("Google account authentication is required for online multiplayer")
+                        return
                     }
-                    state.appendLog("Auth failed: ${msg.data.reason}")
-                    NetLog.log("AUTH", "Auth failed: ${msg.data.reason}")
-                    manualDisconnect = true // don't auto-reconnect on auth failure
+                    val producer = installationAuth
+                    if (producer == null) {
+                        authenticationUnavailable("Unexpected installation challenge")
+                        return
+                    }
+                    if (!beginInstallationWork()) return
+                    installationAuth = null
+                    installationAuthJob?.cancel()
+                    installationAuthJob =
+                        scope.launch(Dispatchers.Default) {
+                            try {
+                                val proof =
+                                    producer.proof(msg.data.challenge, msg.data.difficulty) { work ->
+                                        withConnection(connection) {
+                                            installationWork =
+                                                mapOf(
+                                                    "attempt" to installationAttempts,
+                                                    "difficulty" to work.difficulty,
+                                                    "hashes" to work.hashes,
+                                                    "elapsed_ms" to work.elapsedMs,
+                                                    "solved" to work.solved,
+                                                )
+                                        }
+                                    }
+                                withConnection(
+                                    connection,
+                                ) {
+                                    if (installationTimeRemaining()) {
+                                        send(protocolJson.encodeToString(InstallationProofMsg.serializer(), proof))
+                                    }
+                                }
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                withConnection(
+                                    connection,
+                                ) {
+                                    val code = OnlineInstallationAuth.failureCode(e)
+                                    if (e is OnlineInstallationAuth.WorkDeadlineExceeded) {
+                                        retryInstallationWork()
+                                    } else {
+                                        authenticationUnavailable(
+                                            "Installation authentication could not complete ($code)",
+                                        )
+                                    }
+                                }
+                            }
+                        }
                 }
 
                 is ServerMessage.PowChallengeMsg -> {
-                    state.appendLog("PoW challenge received (not yet implemented)")
-                    NetLog.log("AUTH", "PoW challenge received (not yet implemented)")
+                    authenticationUnavailable("This client does not support the server authentication challenge")
                 }
 
                 is ServerMessage.ErrorMsg -> {
@@ -1293,9 +1858,12 @@ object MatchmakingService {
                     state.appendLog("Server error: ${msg.data.code} - ${msg.data.message}")
                     NetLog.log("ERROR", "Server: ${msg.data.code} - ${msg.data.message}")
                     // Kicked from lobby -- return to browser
-                    if (msg.data.code.contains("KICKED", ignoreCase = true) ||
+                    if (msg.data.code == "HOST_DISCONNECTED" ||
+                        msg.data.code.contains("KICKED", ignoreCase = true) ||
                         msg.data.code.contains("LOBBY", ignoreCase = true)
                     ) {
+                        lastLobbyId = null
+                        retireNetworkWork()
                         state.update {
                             it.copy(
                                 currentLobby = null,
@@ -1314,14 +1882,59 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.LobbyListReceived -> {
-                    state.update { it.copy(lobbies = msg.data.lobbies) }
-                    state.appendLog("Lobby list: ${msg.data.lobbies.size} lobbies")
-                    NetLog.log("SERVER", "Lobby list: ${msg.data.lobbies.size} lobbies")
+                    val page = msg.data
+                    if (page.reset) lobbyListingId = page.listingId
+                    if (page.listingId != lobbyListingId) return
+                    state.update {
+                        it.copy(
+                            lobbies =
+                                (if (page.reset) page.lobbies else it.lobbies + page.lobbies).distinctBy { lobby ->
+                                    lobby.lobbyId
+                                },
+                        )
+                    }
+                    lobbyPageRequest = page.nextCursor?.let { ListLobbiesMsg(cursor = it, listingId = page.listingId) }
+                    if (lobbyPageRequest != null) {
+                        scheduleLobbyPage(75)
+                    } else {
+                        state.appendLog("Lobby list: ${state.state.value.lobbies.size} lobbies")
+                    }
+                }
+
+                is ServerMessage.CandidateChallengeReceived -> {
+                    val pending = pendingCandidateChallenge
+                    val challenge = msg.data
+                    if (pending != null &&
+                        pending.connection === webSocket &&
+                        pending.generation == networkGeneration &&
+                        challenge.lobbyId == pending.lobbyId && challenge.admissionId == pending.admissionId &&
+                        challenge.requestId == pending.requestId
+                    ) {
+                        pending.reply.complete(challenge)
+                    }
                 }
 
                 is ServerMessage.LobbyUpdated -> {
                     val update = msg.data
                     val myId = state.state.value.playerId
+                    val previousRoom =
+                        state.state.value.currentLobby
+                            ?.lobbyId
+                    if (previousRoom != null && previousRoom != update.lobbyId) retireNetworkWork()
+                    val previousAdmission =
+                        state.state.value.currentLobby
+                            ?.players
+                            ?.firstOrNull {
+                                it.playerId == myId
+                            }?.candidateAdmissionId
+                    val nextAdmission = update.players.firstOrNull { it.playerId == myId }?.candidateAdmissionId
+                    if (previousAdmission != null && previousAdmission != nextAdmission) retireNetworkWork()
+                    localhostProxy?.reconcileRoster(
+                        update.players.filter { it.playerId != myId }.associate {
+                            it.slot to
+                                it.playerId
+                        },
+                    )
                     // First player in the list is the host
                     val hostId = update.players.firstOrNull()?.playerId
                     val isHost = myId != null && myId == hostId
@@ -1368,6 +1981,7 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.RateLimited -> {
+                    scheduleLobbyPage(msg.data.retryAfterMs.coerceIn(1000, 10000))
                     state.appendLog("Rate limited, retry in ${msg.data.retryAfterMs}ms")
                     NetLog.log("SERVER", "Rate limited, retry in ${msg.data.retryAfterMs}ms")
                 }
@@ -1378,7 +1992,7 @@ object MatchmakingService {
                     }
                     state.appendLog("Version rejected: ${msg.data.reason}")
                     NetLog.log("ERROR", "Version rejected: ${msg.data.reason}")
-                    manualDisconnect = true
+                    authenticationUnavailable("Version rejected: ${msg.data.reason}")
                 }
 
                 is ServerMessage.MessageReceived -> {
@@ -1427,7 +2041,7 @@ object MatchmakingService {
                 }
 
                 is ServerMessage.ConnectivityCheckGoReceived -> {
-                    val pairs = msg.data.peerAddrs
+                    val pairs = msg.data.peerAddrs.map { it.copy(remoteAddr = reachableServerEndpoint(it.remoteAddr)) }
                     state.update { s ->
                         s.copy(
                             connectivityPairs = pairs,
@@ -1443,23 +2057,45 @@ object MatchmakingService {
                     val relay = msg.data
                     state.update { it.copy(relayInfo = RelayInfo(relay.relayAddr, relay.sessionToken)) }
                     state.appendLog("Relay assigned: ${relay.relayAddr}")
-                    NetLog.log("RELAY", "Assigned: ${relay.relayAddr} token=${relay.sessionToken}")
+                    NetLog.log("RELAY", "Relay assigned")
+                }
+
+                is ServerMessage.RelayRekeyReceived -> {
+                    try {
+                        handleRelayRekey(msg.type, msg.data)
+                    } catch (_: Exception) {
+                        NetLog.log("ERROR", "Invalid relay renewal")
+                    }
                 }
 
                 is ServerMessage.LateJoinProbeReceived -> {
                     val probe = msg.data
+                    if (state.state.value.currentLobby?.players?.none {
+                            it.playerId == probe.joinerId &&
+                                it.candidateAdmissionId == probe.admissionId
+                        } !=
+                        false
+                    ) {
+                        return
+                    }
                     state.appendLog("Late-join probe: ${probe.joinerCallsign} (${probe.probeAddrs.size} addrs)")
                     NetLog.log("LATEJOIN", "Probe for ${probe.joinerCallsign}: ${probe.probeAddrs.size} addrs")
                     // Send blind probes from shared socket and enable probe echo
-                    localhostProxy?.sendLateJoinProbes(probe.probeAddrs)
+                    localhostProxy?.sendLateJoinProbes(probe.joinerId, probe.probeAddrs.map(::reachableServerEndpoint))
                 }
 
                 is ServerMessage.LateJoinApprovedReceived -> {
                     val peer = msg.data.peer
+                    val admission =
+                        msg.data.admissionId.takeIf {
+                            state.state.value.currentLobby
+                                ?.isHost == true
+                        }
+                    if (admission != null) pendingAdmissions[peer.slot] = admission
                     state.appendLog("Late-join approved: slot ${peer.slot} -> ${peer.addr}")
                     NetLog.log("LATEJOIN", "Approved: slot=${peer.slot} addr=${peer.addr} relay=${peer.isRelay}")
                     // Add the new peer to the existing proxy
-                    val addrParts = peer.addr.split(":")
+                    val addrParts = reachableServerEndpoint(peer.addr).split(":")
                     if (addrParts.size == 2) {
                         val port = addrParts[1].toIntOrNull()
                         if (port != null) {
@@ -1467,11 +2103,16 @@ object MatchmakingService {
                             localhostProxy?.addPeer(
                                 PeerProxyConfig(
                                     peerSlot = peer.slot,
+                                    admissionId = admission,
                                     localPort = NetworkConstants.PROXY_PORT_BASE + peer.slot,
                                     realAddr = addr,
                                     isRelay = peer.isRelay,
                                     relayToken = peer.relayToken?.toUInt() ?: 0u,
                                     relayDestSlot = peer.relayDestSlot ?: peer.slot,
+                                    relayOwnSlot = peer.relayCredentials?.ownSlot ?: -1,
+                                    relaySendKey = peer.relayCredentials?.sendKey,
+                                    relayReceiveKey = peer.relayCredentials?.receiveKey,
+                                    relayEpoch = peer.relayCredentials?.allocationEpoch,
                                 ),
                             )
                         }
@@ -1480,7 +2121,7 @@ object MatchmakingService {
 
                 is ServerMessage.Unknown -> {
                     state.appendLog("Unknown message type: ${msg.type}")
-                    NetLog.log("CONNECT", "Unknown message type: ${msg.type}")
+                    NetLog.log("CONNECT", "Unknown matchmaking message type")
                 }
 
                 is ServerMessage.MaintenanceReceived -> {
@@ -1547,7 +2188,8 @@ object MatchmakingService {
                     if (resp.success && resp.lobbyId != null) {
                         state.appendLog("Joining friend's lobby: ${resp.lobbyId}")
                         NetLog.log("SOCIAL", "Joining friend's lobby: ${resp.lobbyId}")
-                        joinLobby(resp.lobbyId)
+                        // The server already joined this room and follows with LOBBY_UPDATE
+                        lastLobbyId = null
                     } else {
                         state.appendLog("Cannot join friend's game: ${resp.reason ?: "unknown"}")
                         NetLog.log("ERROR", "Cannot join friend's game: ${resp.reason ?: "unknown"}")
@@ -1555,10 +2197,10 @@ object MatchmakingService {
                     }
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "handleMessage error", e)
-            state.appendLog("Internal error: ${e.message}")
-            NetLog.log("ERROR", "Internal error: ${e.message}")
+        } catch (_: Exception) {
+            Log.e(TAG, "Matchmaking message handling failed")
+            state.appendLog("Matchmaking message handling failed")
+            NetLog.log("ERROR", "Matchmaking message handling failed")
         }
     }
 }

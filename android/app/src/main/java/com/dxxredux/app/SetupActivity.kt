@@ -71,7 +71,6 @@ import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetworkConstants
-import com.dxxredux.app.multiplayer.PlayGamesAuth
 import com.dxxredux.app.multiplayer.readCoopRestoreSlot
 import com.dxxredux.app.multiplayer.userLabel
 import kotlinx.coroutines.CoroutineScope
@@ -2814,6 +2813,7 @@ class SetupActivity : ComponentActivity() {
                 .takeIf { it.isNotBlank() } ?: mpCallsign
         mpCallsign = launchCallsign
         val mpIntent = createGameLaunchIntent(info.game)
+        mpIntent.putExtra("mp_runtime_attempt", info.runtimeAttempt)
         mpIntent.putExtra("mp_callsign", launchCallsign)
         if (launchCallsign.isNotBlank()) {
             mpIntent.putExtra("pilot_callsign", launchCallsign)
@@ -2824,6 +2824,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_mission", info.mission)
             mpIntent.putExtra("mp_game_mode", NetworkConstants.gameModeToInt(info.mode))
             mpIntent.putExtra("mp_max_players", info.maxPlayers)
+            mpIntent.putExtra("mp_start_players", info.startPlayers)
             mpIntent.putExtra("mp_level_num", info.levelNum)
             mpIntent.putExtra("mp_difficulty", info.difficulty)
             mpIntent.putExtra("mp_coop_qol", info.coopQol)
@@ -2909,8 +2910,6 @@ class SetupActivity : ComponentActivity() {
         com.dxxredux.app.multiplayer.NetLog
             .init(this)
 
-        // Initialize Google Play Games sign-in (no-op if not configured)
-        PlayGamesAuth.initialize(this)
         MatchmakingService.setActivity(this)
 
         // Load persisted callsign (or generate random on first run)
@@ -3422,6 +3421,7 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        MatchmakingService.clearActivity(this)
         if (ownsLaunch() && !multiplayerActivityStarted && !hasReturnableGameActivity()) {
             failGameLaunch("launcher_destroyed", "Game preparation was interrupted. Please try again.")
         }
@@ -4902,7 +4902,12 @@ private fun SetupScreen(
                     Button(
                         onClick = {
                             com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
-                                it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN)
+                                it.copy(
+                                    nav =
+                                        com.dxxredux.app.multiplayer.initialMultiplayerNav(
+                                            BuildConfig.ONLINE_MATCHMAKING,
+                                        ),
+                                )
                             }
                             showMultiplayerPage = true
                         },

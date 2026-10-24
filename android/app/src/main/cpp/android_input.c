@@ -1050,6 +1050,32 @@ static void android_notify_multiplayer_state(int active, int is_host)
 		(*g_jvm)->DetachCurrentThread(g_jvm);
 }
 
+/* Host-native acceptance receipt; the ID was attached by the owned local proxy */
+void android_lifecycle_actions_online_admitted(const unsigned char id[16], unsigned slot)
+{
+	JNIEnv *env = NULL;
+	int attached = 0;
+	if (!g_jvm || !g_activity || slot < 1 || slot > 7) return;
+	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK) return;
+		attached = 1;
+	}
+	char uuid[37];
+	snprintf(uuid, sizeof(uuid),
+	         "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+	         id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7],
+	         id[8], id[9], id[10], id[11], id[12], id[13], id[14], id[15]);
+	jclass cls = (*env)->GetObjectClass(env, g_activity);
+	jmethodID method = cls ? (*env)->GetMethodID(env, cls, "onNativeOnlineAdmitted", "(Ljava/lang/String;I)V") : NULL;
+	if (method) {
+		jstring text = (*env)->NewStringUTF(env, uuid);
+		(*env)->CallVoidMethod(env, g_activity, method, text, (jint) slot);
+		(*env)->DeleteLocalRef(env, text);
+	}
+	if (cls) (*env)->DeleteLocalRef(env, cls);
+	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
+}
+
 void android_lifecycle_actions_multiplayer_started(int is_host)
 {
 	g_android_multiplayer_session_started = 1;

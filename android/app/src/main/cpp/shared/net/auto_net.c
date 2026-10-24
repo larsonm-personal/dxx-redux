@@ -70,6 +70,7 @@ int auto_host_my_port = 42424;
 char auto_host_mission[64] = "";
 int auto_host_mode = 0;
 int auto_host_max_players = 4;
+int auto_host_start_players = 0;
 int auto_host_level_num = 1;
 int auto_host_difficulty = 1;
 int auto_host_coop_qol = 1;

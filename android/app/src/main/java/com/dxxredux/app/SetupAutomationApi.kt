@@ -760,6 +760,13 @@ internal fun SetupActivity.writeMpIntrospectJson() {
     try {
         val s = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
         val root = JSONObject()
+        root.put(
+            "online_resources",
+            JSONObject(
+                com.dxxredux.app.multiplayer.MatchmakingService
+                    .resourceDiagnostics(),
+            ),
+        )
         root.put("status", s.status.name)
         root.put("callsign", s.callsign)
         root.put("player_id", s.playerId ?: JSONObject.NULL)
@@ -778,6 +785,9 @@ internal fun SetupActivity.writeMpIntrospectJson() {
                 pj.put("player_id", p.playerId)
                 pj.put("callsign", p.callsign)
                 pj.put("ready", p.ready)
+                pj.put("connection_type", p.connectionType)
+                pj.put("ping_ms", p.pingMs ?: JSONObject.NULL)
+                pj.put("slot", p.slot)
                 pArr.put(pj)
             }
             lj.put("players", pArr)

@@ -11,7 +11,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $tests = @(
     'test_lan_launch_preparation_profiles', 'test_lan_public_profiles', 'test_demo_import_first_play_profiles',
     'test_guidebot_simulation_runner',
-    'test_automation_result_evidence', 'test_gradle_unit_test_evidence',
+    'test_auto_level_demo_listing', 'test_automation_result_evidence', 'test_gradle_unit_test_evidence',
     'test_test_execution_evidence', 'test_download_verification', 'test_d2xxl_sound_format', 'test_d2xxl_tga_pixels',
     'test_dep_platform', 'test_clean_workspace', 'test_clean_old_artifacts',
     'test_host_process_cleanup', 'test_headless_process_pool', 'test_managed_dependencies',

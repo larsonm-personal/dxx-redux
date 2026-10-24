@@ -27,20 +27,138 @@ on:
       campaign:
         description: "Bounded test selection"
         type: choice
-        options: [nightly, first-play, graphics-capabilities, basic-use]
+        options: [nightly, first-play, graphics-capabilities, basic-use, online-preview, online-preview-d2]
         default: nightly
+      evidence_run_id:
+        description: "Read sanitized retained online receipt only; no tests or builds"
+        type: string
+        default: ""
+      evidence_kind:
+        description: "Fixed retained qualification artifact"
+        type: choice
+        options: [online, jvm-relay]
+        default: online
   workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || 'nightly-cmake-tooling-sweep' }}
+  group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
   cancel-in-progress: false
 
 jobs:
+  online_evidence:
+    if: github.event_name == 'workflow_dispatch' && inputs.evidence_run_id != ''
+    name: Inspect retained online receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Validate owned online run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.evidence_run_id }}
+          EVIDENCE_KIND: ${{ inputs.evidence_kind }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == larsonm-personal/dxx-redux ]]
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > source-run.json
+          if [[ "$EVIDENCE_KIND" == jvm-relay ]]; then
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/jobs?per_page=100" > source-jobs.json
+          fi
+          python3 - <<'PYTHON'
+          import json, os
+          run = json.load(open('source-run.json'))
+          kind = os.environ['EVIDENCE_KIND']
+          assert kind in ('online', 'jvm-relay')
+          assert run['head_branch'] == 'online-restoration'
+          assert run['path'] == '.github/workflows/nightly-tooling-sweep.yml'
+          assert run['event'] == ('pull_request' if kind == 'jvm-relay' else 'workflow_dispatch')
+          if kind == 'jvm-relay':
+              jobs = [job for job in json.load(open('source-jobs.json'))['jobs']
+                      if job['name'] == 'JVM tests / Run selected tests']
+              assert len(jobs) == 1 and jobs[0]['status'] == 'completed'
+          else:
+              assert run['status'] == 'completed'
+          print(json.dumps({key: run[key] for key in ('id', 'head_sha', 'conclusion')}))
+          PYTHON
+      - name: Read retained public receipt
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ inputs.evidence_kind == 'jvm-relay' && 'nightly-gradle-reports-jvm' || 'nightly-results-android-dual' }}
+          path: evidence
+          run-id: ${{ inputs.evidence_run_id }}
+          github-token: ${{ github.token }}
+      - name: Report bounded sanitized evidence
+        env:
+          EVIDENCE_KIND: ${{ inputs.evidence_kind }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, pathlib, re, xml.etree.ElementTree as ET
+          def scrub(line):
+              line = re.sub(r'\x1b\[[0-9;]*m', '', line)
+              line = re.sub(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}', '[redacted]', line)
+              return re.sub(r'[A-Za-z0-9_+/=-]{24,}', '[redacted]', line)[:500]
+          root = pathlib.Path('evidence')
+          if os.environ['EVIDENCE_KIND'] == 'jvm-relay':
+              paths = list(root.rglob('TEST-com.dxxredux.app.multiplayer.RelayTransportTest.xml'))
+              assert len(paths) == 1
+              path = paths[0]
+              assert not path.is_symlink() and path.stat().st_size < 5000000
+              for case in ET.parse(path).getroot().findall('testcase'):
+                  for failure in case.findall('failure'):
+                      print('JVM_CASE ' + scrub(case.attrib['name']))
+                      print('JVM_FAILURE ' + scrub(failure.attrib.get('message', '')))
+                      print('\n'.join(scrub(line) for line in (failure.text or '').splitlines()[:35]))
+              raise SystemExit(0)
+          receipt = json.loads((root / 'results.json').read_text())
+          # Fixed event categories only: never print raw native or authentication log bodies
+          event_markers = {
+              'refuse_stuff: prompting': 'host_approval_pending',
+              'refuse_stuff: ACCEPTED': 'host_approval_accepted',
+              'refuse_stuff: TIMEOUT': 'host_approval_timeout',
+              'refuse_stuff: REJECTED full': 'host_roster_full',
+              'welcome_player: REJECTED endlevel': 'native_endlevel_rejected',
+              'welcome_player: REJECTED level mismatch': 'native_level_rejected',
+              'read_object_packet: SYNC FAILED': 'native_object_sync_failed',
+              'sync rejected local identity': 'native_identity_rejected',
+              'event=admission_received': 'native_admission_received',
+              'event=initial_route_proven': 'native_route_proven',
+              'Late-join approved: slot': 'relay_route_assignment_received',
+          }
+          for serial in ('emulator-5554', 'emulator-5556', 'emulator-5558'):
+              path = root / 'setup' / (serial + '-logcat.log')
+              if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()) or path.stat().st_size > 10000000:
+                  continue
+              counts = {event: 0 for event in event_markers.values()}
+              for line in path.read_text(errors='replace').splitlines():
+                  for marker, event in event_markers.items():
+                      if marker in line:
+                          counts[event] += 1
+              print('ONLINE_NATIVE_EVENTS ' + json.dumps({'client': serial, 'retained_tail_counts': counts}))
+          print(json.dumps({'target_sha': receipt['target_sha'], 'results': [
+              {key: scrub(str(row.get(key, ''))) for key in ('id', 'status', 'reason')}
+              for row in receipt.get('results', [])
+          ]}))
+          markers = ('FAIL', 'EXCEPTION:', 'ONLINE_', 'ALL CHECKS PASSED', 'Error:', 'error:',
+                     'test_mp', 'timed out', 'Timeout', 'Phase ', 'at ', 'line:')
+          paths = [root / 'master.log']
+          paths.extend((root / 'master').rglob('*test_mp*.txt'))
+          paths.extend((root / 'master').rglob('*test_mp*.log'))
+          for path in paths:
+              if path.is_file() and not path.is_symlink() and path.stat().st_size < 10000000:
+                  print('RECEIPT_FILE ' + str(path.relative_to(root)))
+                  lines = [scrub(line) for line in path.read_text(errors='replace').splitlines()
+                           if path.name.startswith('test_mp_public_shareware') or any(marker in line for marker in markers)]
+                  print('\n'.join(lines[-300:]))
+          PYTHON
+
   plan:
-    if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'
+    if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
     name: Select tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -63,7 +181,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
-          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use') && github.sha || '' }}
+          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && github.sha || '' }}
         run: |
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
@@ -93,13 +211,19 @@ jobs:
           TARGET_SHA: ${{ steps.target.outputs.sha }}
           VALIDATION: ${{ github.event_name == 'pull_request' }}
           FIRST_PLAY: ${{ inputs.campaign == 'first-play' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'release-first-play')) }}
+          ONLINE_PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-preview' }}
+          ONLINE_PREVIEW_D2: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-preview-d2' }}
           BASIC_USE: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'basic-use' }}
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
           python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
           validation=()
-          if [[ "$BASIC_USE" == true ]]; then
+          if [[ "$ONLINE_PREVIEW" == true ]]; then
+            validation=(--campaign online-preview)
+          elif [[ "$ONLINE_PREVIEW_D2" == true ]]; then
+            validation=(--campaign online-preview-d2)
+          elif [[ "$BASIC_USE" == true ]]; then
             validation=(--campaign basic-use)
           elif [[ "$FIRST_PLAY" == true ]]; then
             validation=(--campaign first-play)
@@ -323,7 +447,7 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
-          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}
+          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}
         run: |
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
@@ -355,7 +479,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'basic-use' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
