@@ -75,35 +75,33 @@ internal class XlCompatibilityViewChecks(
                 }
                 return false
             }
-            val moved = scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))
+            scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))
             instrumentation.waitForIdleSync()
+            // A false action result can precede the accessibility update from the previous scroll
             SystemClock.sleep(250)
-            if (!moved) {
-                find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
-                // Only synthetic dialog text is rendered by this test; keep failure evidence bounded
-                val labels = mutableListOf<String>()
-
-                fun describe(
-                    node: AccessibilityNodeInfo,
-                    depth: Int,
-                ) {
-                    if (depth > 20 || labels.size >= 24) return
-                    if (node.text != null || node.isScrollable) {
-                        labels.add(
-                            "${node.text?.take(
-                                160,
-                            )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} bounds=${Rect().also(
-                                node::getBoundsInScreen,
-                            )}",
-                        )
-                    }
-                    for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
-                }
-                instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
-                error("Cannot scroll to $text: ${labels.joinToString(" | ")}")
-            }
         }
-        error("Text not visible after bounded scroll: $text")
+        find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
+        // Only synthetic dialog text is rendered by this test; keep failure evidence bounded
+        val labels = mutableListOf<String>()
+
+        fun describe(
+            node: AccessibilityNodeInfo,
+            depth: Int,
+        ) {
+            if (depth > 20 || labels.size >= 24) return
+            if (node.text != null || node.isScrollable) {
+                labels.add(
+                    "${node.text?.take(
+                        160,
+                    )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} bounds=${Rect().also(
+                        node::getBoundsInScreen,
+                    )}",
+                )
+            }
+            for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
+        }
+        instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
+        error("Text not visible after bounded scroll: $text: ${labels.joinToString(" | ")}")
     }
 
     private fun capture(name: String): Bitmap {
