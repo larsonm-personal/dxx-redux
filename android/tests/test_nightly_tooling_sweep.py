@@ -16,6 +16,25 @@ SHA = "0000000000000000000000000000000000000008"  # Stable first/second/third fi
 
 
 class SweepTests(unittest.TestCase):
+    def test_transport_campaign_is_explicit_and_preserves_scheduled_selection(self):
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        self.assertFalse(sweep.ONLINE_TRANSPORT_IDS & {e["id"] for e in plan["tests"]})
+        original = copy.deepcopy(policy)
+        original["suites"] = [e for e in original["suites"] if e["id"] not in sweep.ONLINE_TRANSPORT_IDS]
+        original_plan, _ = sweep.plan_batch(SHA, catalog, original)
+        self.assertEqual(plan["tests"], original_plan["tests"])
+        selected = sweep.select_public_campaign(plan, policy, catalog, "online-transports")
+        self.assertEqual({e["id"] for e in selected["tests"]}, sweep.ONLINE_TRANSPORT_IDS)
+        self.assertEqual(len(selected["tests"]), 3)
+        self.assertNotIn("retail_assets", selected)
+        with self.assertRaisesRegex(ValueError, "absent"):
+            sweep.select_public_campaign(plan, policy, {"tests": []}, "online-transports")
+
     def test_public_jvm_failure_exposes_bounded_owner_log(self):
         plan = {"tests": [{"id": "master:test_gradle_unit_tests", "lane": "jvm"}]}
         with tempfile.TemporaryDirectory() as temporary:
@@ -260,11 +279,11 @@ class SweepTests(unittest.TestCase):
     def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         self.assertIn(
-            "REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}",
+            "REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}",
             workflow,
         )
         self.assertIn(
-            "(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && github.sha",
+            "(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha",
             workflow,
         )
         self.assertIn(
@@ -811,8 +830,8 @@ class SweepTests(unittest.TestCase):
     def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         self.assertIn(
-            "options: [nightly, first-play, graphics-capabilities, basic-use, online-preview, online-preview-d2]",
-            workflow,
+            "options:[nightly,first-play,graphics-capabilities,basic-use,online-preview,online-preview-d2,online-transports]",
+            "".join(workflow.split()),
         )
         self.assertIn("default: nightly", workflow)
         self.assertIn(

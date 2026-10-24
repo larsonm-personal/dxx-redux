@@ -125,11 +125,11 @@ void read_colors(Reader &r, std::vector<Color> &colors, std::size_t count, bool 
 	}
 }
 
-const Section &section(const Inventory &out, const std::string &name)
+const Section &section(const Inventory &out, const char *name)
 {
 	for (const auto &s : out.sections)
 		if (s.name == name) return s;
-	throw std::runtime_error("missing section " + name);
+	throw std::runtime_error(std::string("missing section ") + name);
 }
 
 std::size_t section_end(const Inventory &out, const Section &s, std::size_t file_size)
@@ -569,7 +569,8 @@ std::string inventory_json(const Inventory &v)
 		array_json(s, o.last_position);
 		s << ", \"size\": " << o.size << ", \"shields\": " << o.shields << ", \"contains_type\": " << o.contains_type << ", \"contains_id\": " << o.contains_id
 		  << ", \"contains_count\": " << o.contains_count;
-		for (const auto &entry : { std::make_pair("movement_data", &o.movement_data), std::make_pair("control_data", &o.control_data), std::make_pair("render_data", &o.render_data) }) {
+		const std::pair<const char *, const std::vector<int> *> payloads[] = { { "movement_data", &o.movement_data }, { "control_data", &o.control_data }, { "render_data", &o.render_data } };
+		for (const auto &entry : payloads) {
 			s << ", " << json_string(entry.first) << ": [";
 			for (std::size_t j = 0; j < entry.second->size(); ++j) {
 				if (j) s << ", ";
@@ -595,7 +596,8 @@ std::string inventory_json(const Inventory &v)
 	rows_json(s, "matcens", v.matcens);
 	rows_json(s, "light_indices", v.light_indices);
 	rows_json(s, "delta_lights", v.delta_lights);
-	for (const auto &entry : { std::make_pair("vertex_colors", &v.vertex_colors), std::make_pair("side_colors", &v.side_colors), std::make_pair("texture_colors", &v.texture_colors) }) {
+	const std::pair<const char *, const std::vector<Color> *> colors[] = { { "vertex_colors", &v.vertex_colors }, { "side_colors", &v.side_colors }, { "texture_colors", &v.texture_colors } };
+	for (const auto &entry : colors) {
 		s << ",\n  " << json_string(entry.first) << ": [";
 		for (std::size_t i = 0; i < entry.second->size(); ++i) {
 			if (i) s << ',';

@@ -4,7 +4,7 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="dark" />
-        <meta name="referrer" content="no-referrer" />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
         <title>{{TITLE}}</title>
         <style>
             :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #111318; color: #e8eaf0; }
@@ -20,11 +20,14 @@
             li { padding-left: 0.5rem; margin-bottom: 1.75rem; }
             li::marker { color: #9ca5b7; font-weight: 600; }
             p { color: #b6bdca; margin: 0.5rem 0 0; }
+            .access-delay { color: #ff9393; }
+            iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; margin-top: 2rem; }
         </style>
     </head>
     <body>
         <main>
             <h1>{{TITLE}}</h1>
+            <p>DXX Revival is a new android port of Descent 1&amp;2 with many quality-of-life updates</p>
             <a href="{{GITHUB_URL}}">View on GitHub</a>
             <section aria-labelledby="testing">
                 <h2 id="testing">Test the Android app</h2>
@@ -35,13 +38,30 @@
                             >Open the group while signed in to your Google account. You'll see "Join group" at the
                             top.</p
                         >
+                        <p>Group joining is automatically approved. Don't worry about email warnings etc.</p>
+                        <p class="access-delay"
+                            >Allow 20-30 minutes after joining the group before app test access is available. This is
+                            also automatic but takes time.</p
+                        >
                     </li>
                     <li>
-                        <a href="{{TESTING_URL}}">Join testing on Google Play</a>
-                        <p>Join the Google group first, then open this link using the same Google account.</p>
+                        <a href="https://play.google.com/store/apps/details?id=com.dxxrevival.app"
+                            >Join testing on Android</a
+                        >
+                        <br />
+                        <a href="https://play.google.com/apps/testing/com.dxxrevival.app">Join testing on the web</a>
+                        <p>Join the Google group first, then open either link using the same Google account.</p>
                     </li>
                 </ol>
             </section>
+            <iframe
+                src="https://www.youtube-nocookie.com/embed/YdKIAm3QGD8"
+                title="DXX Revival gameplay video"
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+            ></iframe>
         </main>
     </body>
 </html>

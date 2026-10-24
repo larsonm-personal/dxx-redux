@@ -35,6 +35,11 @@ VALIDATION_IDS = {
 
 PUBLIC_ONLINE_IDS = {"master:test_mp_public_shareware"}
 PUBLIC_ONLINE_D2_IDS = {"master:test_mp_public_shareware_d2"}
+ONLINE_TRANSPORT_IDS = {
+    "master:test_mp_coop_d1_relay",
+    "master:test_mp_coop_d2_direct",
+    "master:test_mp_coop_d2_initial_fallback",
+}
 PUBLIC_LAN_IDS = {"master:test_lan_launch_preparation_public_shareware"}
 THREE_PLAYER_IDS = {"master:test_lan_three_player_startup"}
 THREE_PLAYER_CASES = {"d1/three-player", "d1/three-player-lost", "d2/three-player", "d2/three-player-lost"}
@@ -209,7 +214,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     rings = {}
     for ident, entry in entries.items():
         # Preview campaigns are explicit opt-ins; preserve the scheduled LAN budget
-        if ident in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS:
+        if ident in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS | ONLINE_TRANSPORT_IDS:
             continue
         if ident in state["records"] or ident in state.get("excluded", {}):
             continue
@@ -291,6 +296,7 @@ def select_public_campaign(plan, policy, catalog, campaign):
         "lan-smoke": PUBLIC_LAN_IDS,
         "online-preview": PUBLIC_ONLINE_IDS,
         "online-preview-d2": PUBLIC_ONLINE_D2_IDS,
+        "online-transports": ONLINE_TRANSPORT_IDS,
         "lan-three-player": THREE_PLAYER_IDS,
     }[campaign]
     entries = policy_entries(policy)
@@ -653,7 +659,7 @@ def collect(plan, policy, lane, output, blocked_reason=""):
             status = "BLOCKED"
             row = {"reason": blocked_reason}
         if (
-            entry["id"] in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS
+            entry["id"] in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS | ONLINE_TRANSPORT_IDS
             and status in ("FAIL", "TIMEOUT")
             and not row.get("reason")
         ):
@@ -1045,6 +1051,7 @@ def main():
             "lan-smoke",
             "online-preview",
             "online-preview-d2",
+            "online-transports",
             "lan-three-player",
         ),
     )

@@ -1,4 +1,9 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
+#include <algorithm>
+#include <cmath>
+#include <set>
+#include <iostream>
+#include <iterator>
 #include <filesystem>
 #include <stdexcept>
 #include <cstring>
@@ -7,6 +12,8 @@
 extern "C" {
 #include "physfsx.h"
 }
+#undef min
+#undef max
 static void xl_test_filesystem_init(int argc, char **argv)
 {
 	PHYSFSX_init(argc, argv);
@@ -33,6 +40,11 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #include "../lighting.h"
 #include <iterator>
 #include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <set>
+#include <iostream>
+#include <iterator>
 #include <filesystem>
 #include <stdexcept>
 #include <cstdlib>
@@ -769,6 +781,8 @@ void original_mission_save(const xl_compat::Inventory &source, int vertex)
 	const auto expected_energy = Players[Player_num].energy;
 	const auto expected_flags = Players[Player_num].flags;
 	char save[] = "xl-pilot-state.sav", description[] = "XL extension persistence";
+	// The native low-level save consumes its caller's pause
+	stop_time();
 	require(state_save_all_sub(save, description) != 0, "original mission save failed");
 	Walls[6].cloak_value = 30;
 	add_light(light[0], light[1]);
@@ -885,6 +899,8 @@ void verify_branch_checkpoint(int branch)
 	const auto before = target_state();
 	const auto shields = Players[Player_num].shields, energy = Players[Player_num].energy;
 	char checkpoint[] = "xl-normal-branch.sav", description[] = "Normal authored branch";
+	// The native low-level save consumes its caller's pause
+	stop_time();
 	require(state_save_all_sub(checkpoint, description) != 0, "branch checkpoint save failed");
 	require(state_restore_all_sub(checkpoint, 0) != 0, "branch checkpoint restore failed");
 	require(target_state() == before && Players[Player_num].shields == shields && Players[Player_num].energy == energy,
@@ -945,7 +961,11 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
 	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
-	if (escape) require(input_demo_start_quick_recording_common() != 0, "cannot record earned escape checkpoint");
+	if (escape) {
+		const int paused = game_is_time_paused();
+		require(input_demo_start_quick_recording_common() != 0, "cannot record earned escape checkpoint");
+		require(game_is_time_paused() == paused, "checkpoint recording changed the caller's pause state");
+	}
 	bool crossed = false, approached = cross_from < 0;
 	auto complete = [&] { return cross_from >= 0 ? crossed : visit >= 0 ? ConsoleObject->segnum == visit
 		                                                 : branch >= 0  ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch))
@@ -960,6 +980,8 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		// Keep the last naturally reached state before crossing the actual exit
 		if (escape && start == Walls[exit_wall].segnum) {
 			char checkpoint[] = "xl-normal-exit-approach.sav", description[] = "Earned exit approach";
+			// The native low-level save consumes its caller's pause
+			stop_time();
 			require(state_save_all_sub(checkpoint, description) != 0, "cannot save earned exit approach");
 		}
 		int goal = !approached ? cross_from : visit >= 0 ? visit
@@ -1321,6 +1343,8 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		          << " countdown=" << Countdown_timer << "; exit unverified\n";
 		require(!Player_is_dead && Control_center_destroyed && Countdown_timer > 0, "normal-input reactor objective incomplete");
 		char checkpoint[] = "xl-normal-reactor.sav", description[] = "Normal input reactor";
+		// The native low-level save consumes its caller's pause
+		stop_time();
 		require(state_save_all_sub(checkpoint, description) != 0, "normal reactor checkpoint failed");
 		return;
 	}
@@ -1329,6 +1353,8 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 	          << "; seed=1, reactor/exit unverified\n";
 	require(!Player_is_dead && (Players[Player_num].flags & KEY_RED), "normal-input red-key navigation incomplete");
 	char checkpoint[] = "xl-normal-key.sav", description[] = "Normal input red key";
+	// The native low-level save consumes its caller's pause
+	stop_time();
 	require(state_save_all_sub(checkpoint, description) != 0, "normal red-key checkpoint failed");
 }
 void mission_isolation(const xl_compat::Inventory &source, int vertex)
@@ -1347,7 +1373,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 	std::fputs("XL isolation: stock level started\n", stderr);
 	require(!std::strcmp(Current_mission_filename, "d2"), "stock mission selection failed");
 	const auto stock_archive = PHYSFS_getRealDir(Gamesave_current_filename);
-	require(stock_archive && std::filesystem::path(stock_archive).filename() == "descent2.hog", "stock level did not resolve from retail archive");
+	require(stock_archive && !d_stricmp(std::filesystem::path(stock_archive).filename().string().c_str(), "descent2.hog"), "stock level did not resolve from retail archive");
 	unchanged(vertex);
 	const auto stock_definitions = gameplay_definitions();
 	const auto stock_lights = face_lights();
