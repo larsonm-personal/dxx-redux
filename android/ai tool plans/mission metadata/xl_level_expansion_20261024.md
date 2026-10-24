@@ -171,3 +171,13 @@ Retain bounded inventory/compiler fixes and descriptor admission guards. Metadat
 feature colors describe feature support, not production admission of arbitrary
 levels. Validate native contracts and both pilot paths, then run exact-head CI
 for each updated pull request and the actual synthetic Android browser dialog.
+
+Alignment validation also exposed host-only integration gaps: all executable test
+consumers of the shared XL OpenGL library need the same hooks, and the save export
+must include its C++ dependencies before legacy min/max macros. The original pilot
+lifecycle assertions now accept the original retail archive's uppercase filename
+and supply the pause consumed by direct low-level save calls. The shared mid-level
+input-recording checkpoint had the same missing caller pause in both D1 and D2;
+its call site now balances that native contract. The earned escape test verifies
+that recording preserves the caller's pause state. No navigation/control policy
+or campaign qualification is broadened by these fixes.
