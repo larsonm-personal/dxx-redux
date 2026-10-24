@@ -443,10 +443,6 @@ int read_mission_file(mle *mission, char *filename, int location)
 			PHYSFSX_fseek(mfile,0,SEEK_SET);
 			p = get_parm_value("!name",mfile);
 		}
-		if (!p) {
-			PHYSFSX_fseek(mfile,0,SEEK_SET);
-			p = get_parm_value("d2x-name",mfile);
-		}
 
 		if (!p && mission->descent_version == 2) {
 			char line[PATH_MAX];
