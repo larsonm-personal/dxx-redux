@@ -2370,6 +2370,36 @@
             "coverage_scope": "Three owned Android emulators with pinned D2 demo, production installation authentication, native direct admission and control-loss recovery, then relay fault recovery; no WAN or physical-device claim."
         },
         {
+            "id": "master:test_mp_coop_d1_relay",
+            "owner": "master",
+            "lane": "android-dual",
+            "args": {
+                "suite": "test_mp_coop_d1_relay"
+            },
+            "estimated_seconds": 900,
+            "coverage_scope": "Opt-in two-player public co-op death/respawn reused from LAN; current per-peer transport and fresh native traffic, host closure and cleanup; initial fallback is not mid-game failover or WAN qualification."
+        },
+        {
+            "id": "master:test_mp_coop_d2_direct",
+            "owner": "master",
+            "lane": "android-dual",
+            "args": {
+                "suite": "test_mp_coop_d2_direct"
+            },
+            "estimated_seconds": 900,
+            "coverage_scope": "Opt-in two-player public co-op death/respawn reused from LAN; current per-peer transport and fresh native traffic, host closure and cleanup; initial fallback is not mid-game failover or WAN qualification."
+        },
+        {
+            "id": "master:test_mp_coop_d2_initial_fallback",
+            "owner": "master",
+            "lane": "android-dual",
+            "args": {
+                "suite": "test_mp_coop_d2_initial_fallback"
+            },
+            "estimated_seconds": 900,
+            "coverage_scope": "Opt-in two-player public co-op death/respawn reused from LAN; current per-peer transport and fresh native traffic, host closure and cleanup; initial fallback is not mid-game failover or WAN qualification."
+        },
+        {
             "id": "master:test_mp",
             "owner": "master",
             "lane": "android-dual",

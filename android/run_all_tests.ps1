@@ -946,6 +946,36 @@ $allTests += @{
     Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-PublicDirect')
 }
 
+$allTests += @{
+    Name = 'test_mp_coop_d1_relay'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicShareware', '-PublicGame', 'd1', '-TransportMode', 'AuthenticatedRelay')
+}
+
+$allTests += @{
+    Name = 'test_mp_coop_d2_direct'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-TransportMode', 'ServerDirect')
+}
+
+$allTests += @{
+    Name = 'test_mp_coop_d2_initial_fallback'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-TransportMode', 'InitialFallback')
+}
+
 # Exact public variants keep the original retail owners unchanged
 $allTests += @{
     Name = 'test_lan_launch_preparation_public_shareware'
@@ -1179,6 +1209,17 @@ if ($Filter) {
 
 $extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_probe")
 $profileSkipped = @()
+# Broad owner filters, FullSuite and IncludeManual must not enable transport faults
+if (-not $SelectedTestsPath) {
+    if ($Target45Minutes -and $Filter -cin (Get-TestSuiteOptInVariants)) {
+        throw 'Exact transport mode selection cannot combine with -Target45Minutes; remove -Target45Minutes to run the requested mode'
+    }
+    $allTests = @($allTests | Where-Object {
+            if ($_.Name -cnotin (Get-TestSuiteOptInVariants) -or $Filter -ceq $_.Name) { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'opt-in transport mode; use its exact -Filter name or -SelectedTestsPath' }
+            return $false
+        })
+}
 # IncludeManual and FullSuite do not implicitly opt in to a third device
 if (-not $SelectedTestsPath -and -not $Filter) {
     $allTests = @($allTests | Where-Object {
