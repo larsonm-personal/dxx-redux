@@ -32,6 +32,9 @@ extern "C" {
 #include "gameseq.h"
 #include "switch.h"
 #include "dxxerror.h"
+#include "digi.h"
+#include "sounds.h"
+#include "bm.h"
 #include <physfs.h>
 int xl_stock_load_level(const char *filename);
 int xl_stock_wall_is_doorway(segment *seg, int side);
@@ -252,6 +255,34 @@ extern "C" int xl_preview_water_frame(int object_index)
 	obj.mtype.phys_info.rotvel.x = (16383 - d_rand()) / divisor;
 	obj.mtype.phys_info.rotvel.z = (16383 - d_rand()) / divisor;
 	return 1;
+}
+
+// Stock type 2 means texture water; XL also uses it for segment water
+extern "C" int xl_preview_water_sound(int object_index, int side, int contact_sound)
+{
+	if (object_index < 0 || object_index > Highest_object_index) return contact_sound;
+	const auto &obj = Objects[object_index];
+	if (!xl_preview_water_segment(obj.segnum) || side < 0 || side >= 6) return contact_sound;
+	const auto texture = Segments[obj.segnum].sides[side].tmap_num;
+	if (TmapInfo[texture].damage || (TmapInfo[texture].flags & TMI_WATER)) return contact_sound;
+	const auto &thrust = obj.mtype.phys_info.thrust;
+	return thrust.x || thrust.y || thrust.z ? SOUND_SHIP_IN_WATER : -1;
+}
+
+extern "C" int xl_preview_fluid_loop(int object_index, int sound, int playing)
+{
+	if (object_index < 0 || object_index > Highest_object_index) return playing;
+	// Preserve the classic one-loop behavior outside water and on classic builds
+	if ((xl_preview_water_segment(Objects[object_index].segnum) || playing == SOUND_SHIP_IN_WATER + 1) &&
+	    playing && playing != sound + 1) {
+		digi_kill_sound_linked_to_object(object_index);
+		playing = 0;
+	}
+	if (sound >= 0 && !playing) {
+		digi_link_sound_to_object3(sound, object_index, 1, F1_0, i2f(256), -1, -1);
+		playing = sound + 1;
+	}
+	return playing;
 }
 
 extern "C" const char *xl_preview_level_path(const char *filename)

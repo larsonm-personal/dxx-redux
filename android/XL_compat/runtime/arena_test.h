@@ -85,6 +85,18 @@ static void arena_water_contract()
 	require(xl_preview_water_frame(Players[Player_num].objnum) && d_rand_get_stream_call_count(D_RNG_SIM) == calls + 2, "water turbulence RNG accounting");
 	const auto shields = Players[Player_num].shields;
 	require(check_volatile_wall(ConsoleObject, 187, 0, &ConsoleObject->pos) == 2 && Players[Player_num].shields == shields, "water wall contact damage/classification");
+	require(Segments[187].sides[1].wall_num == 17 && Segments[187].sides[1].tmap_num == 399 &&
+	            Walls[17].type == WALL_ILLUSION && (TmapInfo[399].flags & TMI_WATER),
+	        "original water portal changed");
+	require(xl_preview_water_sound(Players[Player_num].objnum, 1, SOUND_SHIP_IN_WATERFALL) == SOUND_SHIP_IN_WATERFALL, "texture waterfall sound lost");
+	require(xl_preview_water_sound(Players[Player_num].objnum, 0, SOUND_SHIP_IN_WATERFALL) == SOUND_SHIP_IN_WATER, "segment contact misclassified as waterfall");
+	int playing = xl_preview_fluid_loop(Players[Player_num].objnum, SOUND_SHIP_IN_WATERFALL, 0);
+	require(playing == SOUND_SHIP_IN_WATERFALL + 1, "waterfall loop bookkeeping");
+	playing = xl_preview_fluid_loop(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, playing);
+	require(playing == SOUND_SHIP_IN_WATER + 1, "waterfall to interior loop did not switch");
+	ConsoleObject->mtype.phys_info.thrust = {};
+	const int silent = xl_preview_water_sound(Players[Player_num].objnum, 0, SOUND_SHIP_IN_WATERFALL);
+	require(silent == -1 && xl_preview_fluid_loop(Players[Player_num].objnum, silent, playing) == 0, "idle segment contact retained fluid loop");
 	obj_relink(Players[Player_num].objnum, saved.segnum);
 	const int next = ConsoleObject->next, prev = ConsoleObject->prev;
 	*ConsoleObject = saved;
@@ -139,6 +151,7 @@ static int arena_test(int argc, char **argv)
 		require(custom_model != stock_model, "HXM did not replace stock model");
 		ObjectDependencies graph;
 		graph.sound(SOUND_SHIP_IN_WATER);
+		graph.sound(SOUND_SHIP_IN_WATERFALL);
 		for (int i = 0; i <= Highest_object_index; ++i) {
 			const auto &o = Objects[i];
 			if (o.type == OBJ_POWERUP) graph.powerup(o.id);
@@ -146,6 +159,14 @@ static int arena_test(int argc, char **argv)
 		}
 		for (const auto id : Primary_weapon_to_weapon_info) graph.weapon(id);
 		for (const auto id : Secondary_weapon_to_weapon_info) graph.weapon(id);
+		for (int id = LASER_ID_L1; id <= LASER_ID_L4; ++id) graph.weapon(id);
+		graph.weapon(LASER_ID_L5);
+		graph.weapon(LASER_ID_L6);
+		graph.weapon(FLARE_ID);
+		for (int wall = 0; wall < Num_walls; ++wall) {
+			require(Walls[wall].clip_num == -1, "arena wall animation inventory changed");
+			graph.wall_clip(Walls[wall].clip_num);
+		}
 		for (int seg = 0; seg < Num_segments; ++seg)
 			for (const auto &side : Segments[seg].sides) {
 				graph.texture(side.tmap_num);

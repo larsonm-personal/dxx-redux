@@ -71,10 +71,10 @@ stages copies in the build directory and checks input hashes again afterward.
 Configure `XL_ARENA_HOG`, `XL_ARENA_DESCRIPTOR`, `XL_PREVIEW_LIFECYCLE` and
 `XL_RETAIL_DATA`. No private bytes or runtime save files are committed.
 
-Observed original-resource graph: 20 models, 574 paged bitmaps and 22 sound
+Observed original-resource graph after review: 37 models, 603 paged bitmaps and 28 sound
 samples; zero compatibility warnings. The HXM replaces model 108 with a 17892-byte
 payload, distinct from stock. The graph includes placed pickups, player arsenal,
-models and every authored side texture/effect dependency. This establishes
+models, upgraded laser levels, flare, wall clips and every authored side texture/effect dependency. This establishes
 loaded resource closure, not audible playback or pixel-level override fidelity.
 
 Actual native physics checks require exactly 12288 fixed units of travel for
@@ -124,3 +124,21 @@ Published-base CI reviewed separately: Public LAN smoke succeeds; Windows XL
 contracts succeed. Linux XL contracts fail on the inventory warning corrected
 here. Linux tooling also has a pre-existing unexpected-success test verdict;
 this is unrelated to water and not classified as an engine gameplay failure.
+
+## Review follow-up
+
+Original arena objects are four player starts and 35 powerups. All 18 wall clip
+indices are -1. Segment 187 sides 0, 2, 3, 4 and 5 have no walls and use texture
+266 (non-water, zero damage); side 1 connects to segment 146 through illusion
+wall 17, texture 399 (native water), without overlays. The ordinary-illusion
+segment-water fallback is not exercised by this authored portal, but the native
+waterfall-to-interior transition is reachable. Fluid loop bookkeeping now retains
+the sound ID and switches within XL water, while preserving classic behavior.
+The native test checks texture waterfall selection, segment-contact selection,
+waterfall -> underwater loop switching and idle contact silence. This verifies
+selection and bookkeeping with headless audio, not audible output fidelity.
+
+The added resource roots include all six laser levels, flare, both water sounds
+and every wall clip. The original arena traversal still takes 1235 frames inward
+and 90 outward, with matching native save continuation. The original archive and
+descriptor remain unchanged.
