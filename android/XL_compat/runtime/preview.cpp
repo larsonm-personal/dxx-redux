@@ -1,7 +1,8 @@
-// Explicit static-light preview only; no production mission admission
+// Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
 #include "../probe.h"
 #include "../lighting.h"
+#include "../admission.h"
 #include "texture_brightness.h"
 #include <cstring>
 #include <fstream>
@@ -11,7 +12,10 @@
 #include <algorithm>
 #include <limits>
 #include <cmath>
+#include <sstream>
+#include <cctype>
 #include "picosha2.h"
+#include "asset_dependencies.h"
 extern "C" {
 #include "inferno.h"
 #include "segment.h"
@@ -31,6 +35,8 @@ extern "C" {
 #include "args.h"
 #include "console.h"
 #include "mission.h"
+#include "physfsx.h"
+#include "strutil.h"
 #include "gameseq.h"
 #include "game.h"
 #include "switch.h"
@@ -67,6 +73,7 @@ std::vector<MuzzleLight> muzzle_lights;
 vms_vector player_thrust{};
 std::string pending_level;
 bool admitted_pilot = false, completed_pilot = false, admitted_water_arena = false;
+std::string rejection;
 uint64_t activated_triggers = 0;
 constexpr const char *translated_path = "xl_preview_cache/pilot.rl2";
 // XL palette.h uses 31; stock GR_FADE_LEVELS is 34 and cannot be reused
@@ -132,7 +139,147 @@ const char *option(const char *name)
 		if (!std::strcmp(Args[i], name)) return i + 1 < Num_args ? Args[i + 1] : "";
 	return nullptr;
 }
+
+xl_compat::Bytes read_extended_level(const char *filename)
+{
+	std::string path = filename;
+	if (!PHYSFSX_exists(path.c_str(), 1)) path = std::string(MISSION_DIR) + filename;
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> input(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
+	if (!input) throw std::runtime_error("level file is missing: " + std::string(filename));
+	unsigned char header[8];
+	if (PHYSFS_read(input.get(), header, 1, 8) != 8) throw std::runtime_error("level header is truncated");
+	const uint32_t version = uint32_t(header[4]) | uint32_t(header[5]) << 8 | uint32_t(header[6]) << 16 | uint32_t(header[7]) << 24;
+	if (std::memcmp(header, "LVLP", 4) || version <= 8) return {};
+	const auto size = PHYSFS_fileLength(input.get());
+	if (size < 8 || size > 64 * 1024 * 1024) throw std::runtime_error("XL level exceeds the supported 64 MiB limit");
+	xl_compat::Bytes bytes(static_cast<std::size_t>(size));
+	PHYSFS_seek(input.get(), 0);
+	if (PHYSFS_read(input.get(), bytes.data(), 1, PHYSFS_uint32(bytes.size())) != size) throw std::runtime_error("XL level read failed");
+	return bytes;
+}
+
+// This exception preserves the separately tested developer arena, not general water admission
+bool water_arena(const char *filename, const xl_compat::Bytes &bytes, bool multiplayer)
+{
+	const char *base = std::strrchr(filename, '/');
+	base = base ? base + 1 : filename;
+	if (!option("-xl-water-arena") || !Current_mission || std::strcmp(Current_mission_filename, "rtarena") || std::strcmp(base, "rtarena.rl2")) return false;
+	if (multiplayer) throw std::runtime_error("water arena multiplayer is unqualified");
+	if (bytes.size() != 80598 || picosha2::hash256_hex_string(bytes) != "5d456eb26f603d942e565a7944c3837741613dccbed6573323bcd56874133392")
+		throw std::runtime_error("water arena source differs from audited level");
+	return true;
+}
+
+void validate_requirements(const xl_compat::Inventory &level, const char *filename, bool multiplayer)
+{
+	const auto blockers = xl_compat::runtime_blockers(level);
+	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
+	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
+	if (Current_mission && Current_mission->enhanced)
+		throw std::runtime_error("custom HAM definitions: XL gameplay-definition support is not verified");
+	if (Current_mission && Current_mission->path) {
+		std::string descriptor = std::string(Current_mission->path) + ".mn2";
+		if (!PHYSFSX_exists(descriptor.c_str(), 1)) descriptor = std::string(MISSION_DIR) + descriptor;
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> input(PHYSFSX_openReadBuffered(descriptor.c_str()), PHYSFS_close);
+		if (!input) throw std::runtime_error("mission descriptor unavailable for XL requirement checks");
+		char line[1024];
+		while (PHYSFSX_fgets(line, sizeof(line), input.get())) {
+			std::string text = line;
+			text = text.substr(0, text.find(';'));
+			const auto equals = text.find('=');
+			if (equals == std::string::npos) continue;
+			auto key = text.substr(0, equals);
+			key.erase(std::remove_if(key.begin(), key.end(), [](unsigned char c) { return std::isspace(c); }), key.end());
+			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+			if (key != "name" && key != "d2x-name" && key != "type" && key != "num_levels" && key != "num_secrets" && key != "briefing" && key != "ending")
+				throw std::runtime_error("unsupported mission descriptor option: " + key);
+		}
+	}
+	std::string hxm = filename;
+	const auto dot = hxm.find_last_of('.');
+	if (dot != std::string::npos) hxm.replace(dot, std::string::npos, ".hxm");
+	if (PHYSFSX_exists(hxm.c_str(), 1) || PHYSFSX_exists((std::string(MISSION_DIR) + hxm).c_str(), 1))
+		throw std::runtime_error("level-specific HXM definitions: XL override support is not verified");
+	if (level.palette.empty() || !PHYSFSX_exists(level.palette.c_str(), 1))
+		throw std::runtime_error("required palette is missing: " + level.palette);
+	std::string pig = level.palette;
+	const auto extension = pig.find_last_of('.');
+	if (extension != std::string::npos) pig.replace(extension, std::string::npos, ".pig");
+	if (!PHYSFSX_exists(pig.c_str(), 1)) throw std::runtime_error("required texture archive is missing: " + pig);
+	xl_assets::ObjectDependencies graph;
+	for (std::size_t i = 0; i < level.objects.size(); ++i) {
+		const auto &obj = level.objects[i];
+		// Cooperative starts are removed by singleplayer initialization
+		if (obj.type == OBJ_NONE || obj.type == OBJ_COOP) continue;
+		try {
+			if (obj.type == OBJ_ROBOT) graph.robot(obj.id);
+			if (obj.type == OBJ_POWERUP) graph.powerup(obj.id);
+			if (obj.type == OBJ_WEAPON) graph.weapon(obj.id);
+			if (obj.type == OBJ_CNTRLCEN) {
+				if (obj.id >= Num_reactors || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
+				graph.weapon(CONTROLCEN_WEAPON_NUM);
+			}
+			if (obj.contains_count > 0) graph.contents(obj.contains_type, obj.contains_id);
+			if (obj.render == RT_POLYOBJ || obj.render == RT_MORPH) {
+				const int saved = obj.render_data.at(0);
+				if (saved < 0 || std::size_t(saved) >= level.model_names.size()) throw std::runtime_error("model index outside level model table");
+				int resolved = -1;
+				if (obj.type == OBJ_PLAYER) resolved = Player_ship->model_num;
+				else if (obj.type == OBJ_ROBOT) resolved = Robot_info[obj.id].model_num;
+				else if (obj.type == OBJ_CNTRLCEN) resolved = saved;
+				for (int model = 0; resolved < 0 && model < N_polygon_models; ++model)
+					if (!d_stricmp(level.model_names[saved].c_str(), Pof_names[model])) {
+						resolved = model;
+						break;
+					}
+				if (resolved < 0) throw std::runtime_error("required model is missing: " + level.model_names[saved]);
+				graph.model(resolved);
+				const int texture = obj.render_data.back();
+				if (texture != -1) graph.texture(texture);
+			}
+			if (obj.render == RT_POWERUP || obj.render == RT_HOSTAGE || obj.render == RT_FIREBALL || obj.render == RT_WEAPON_VCLIP)
+				graph.clip(obj.render_data.at(0));
+		} catch (const std::exception &error) {
+			throw std::runtime_error("object " + std::to_string(i) + ": " + error.what());
+		}
+	}
+	for (const auto &matcen : level.matcens)
+		for (unsigned bit = 0; bit < 64; ++bit)
+			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) graph.robot(int(bit));
+	for (const auto &segment : level.segments)
+		for (const auto &side : segment.sides) {
+			if (side.texture >= 0) graph.texture(side.texture);
+			if (side.overlay > 0) graph.texture(side.overlay & 0x3fff);
+		}
+	for (const auto &wall : level.walls) graph.wall_clip(wall.clip);
+}
 } // namespace
+
+extern "C" const char *xl_level_rejection(void)
+{
+	return rejection.c_str();
+}
+
+extern "C" int xl_level_supported(const char *filename, int multiplayer)
+{
+	rejection.clear();
+	try {
+		const auto bytes = read_extended_level(filename);
+		if (bytes.empty()) return 1;
+		const bool arena = water_arena(filename, bytes, multiplayer != 0);
+		const auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
+		if (!arena) validate_requirements(probe.source, filename, multiplayer != 0);
+		return 1;
+	} catch (const std::exception &error) {
+		rejection = std::string(filename) + "\n" + error.what();
+		return 0;
+	}
+}
+
+extern "C" int xl_test_stop_after_level(void)
+{
+	return option("-fixture-path") && option("-xl-test-navigation");
+}
 
 extern "C" int xl_preview_load_level(const char *filename)
 {
@@ -150,46 +297,29 @@ extern "C" int xl_preview_load_level(const char *filename)
 	muzzle_lights.clear();
 	player_thrust = {};
 	pending_level.clear();
-	const char *base = std::strrchr(filename, '/');
-	base = base ? base + 1 : filename;
-	const bool pilot_mission = Current_mission && (!std::strcmp(Current_mission_filename, "d2-xl") ||
-	                                               (option("-fixture-path") && !std::strcmp(Current_mission_filename, "xlprobe")));
-	const bool arena = option("-xl-water-arena") && Current_mission &&
-	                   !std::strcmp(Current_mission_filename, "rtarena") && !std::strcmp(base, "rtarena.rl2");
-	const bool original = arena || (option("-xl-pilot") && pilot_mission && !std::strcmp(base, "d2leva-1.rl2"));
-	const bool translated_preview = option("-xl-static-light-preview") && !std::strcmp(base, "xlprobe.rl2");
-	if ((original || translated_preview) && (Game_mode & GM_MULTI)) {
-		con_printf(CON_URGENT, "XL pilot rejected: multiplayer is outside the verified pilot scope\n");
-		return 1;
-	}
+	rejection.clear();
+	const bool translated_preview = option("-xl-static-light-preview") && !std::strcmp(filename, "xlprobe.rl2");
 	int result = 0;
-	if (!original) {
-		result = xl_stock_load_level(filename);
-		if (result || !translated_preview) return result;
-	}
 	try {
-		xl_compat::Bytes bytes;
-		if (original) {
-			if (arena && (Game_mode & GM_MULTI)) throw std::runtime_error("water arena multiplayer is unqualified");
-			const unsigned expected_size = arena ? 80598 : 149235;
-			const char *expected_hash = arena ? "5d456eb26f603d942e565a7944c3837741613dccbed6573323bcd56874133392" : "5e835e76e984c658531175640294a4b05f6127904884ba7acfd65c93165be5b2";
-			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> input(PHYSFS_openRead(filename), PHYSFS_close);
-			if (!input || PHYSFS_fileLength(input.get()) != expected_size) throw std::runtime_error("pilot source size differs from audited level");
-			bytes.resize(expected_size);
-			if (PHYSFS_read(input.get(), bytes.data(), 1, PHYSFS_uint32(bytes.size())) != PHYSFS_sint64(bytes.size())) throw std::runtime_error("pilot source read failed");
-			if (picosha2::hash256_hex_string(bytes) != expected_hash) throw std::runtime_error("pilot source hash differs from audited level");
-		} else {
+		auto bytes = read_extended_level(filename);
+		const bool original = !bytes.empty();
+		if (!original) {
+			if (!translated_preview) return xl_stock_load_level(filename);
+			if (Game_mode & GM_MULTI) throw std::runtime_error("multiplayer: XL preview synchronization is not implemented");
 			const char *path = option("-xl-source");
-			if (!path || !*path) throw std::runtime_error("-xl-source is required");
+			if (!path || !*path) throw std::runtime_error("-xl-source is required for the developer preview");
 			std::ifstream stream(path, std::ios::binary | std::ios::ate);
-			if (!stream || stream.tellg() < 0 || stream.tellg() > 64 * 1024 * 1024)
-				throw std::runtime_error("cannot read bounded XL source");
+			if (!stream || stream.tellg() < 0 || stream.tellg() > 64 * 1024 * 1024) throw std::runtime_error("cannot read bounded XL source");
 			const auto size = stream.tellg();
 			stream.seekg(0);
 			bytes.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
 			if (stream.bad() || bytes.size() != std::size_t(size)) throw std::runtime_error("XL source read failed");
+			result = xl_stock_load_level(filename);
+			if (result) return result;
 		}
+		const bool arena = water_arena(filename, bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
+		if (!arena) validate_requirements(probe.source, filename, (Game_mode & GM_MULTI) != 0);
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> output(PHYSFS_openWrite(translated_path), PHYSFS_close);
@@ -226,11 +356,12 @@ extern "C" int xl_preview_load_level(const char *filename)
 		source = std::move(level);
 		admitted_pilot = original && !arena;
 		admitted_water_arena = arena;
-		con_printf(CON_URGENT, "XL PREVIEW: dynamic lighting and face effects are unverified; not production support\n");
+		con_printf(CON_NORMAL, arena ? "XL water arena: bounded developer pilot, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
 		return result;
 	} catch (const std::exception &error) {
 		pending_level.clear();
-		con_printf(CON_URGENT, "XL preview rejected: %s\n", error.what());
+		rejection = std::string(filename) + "\n" + error.what();
+		con_printf(CON_URGENT, "XL level rejected: %s\n", rejection.c_str());
 		return 1;
 	}
 }
@@ -310,7 +441,7 @@ extern "C" const char *xl_preview_level_path(const char *filename)
 
 extern "C" int xl_preview_pilot_active(void)
 {
-	return admitted_pilot && source && Current_level_num == 1 && !(Game_mode & GM_MULTI);
+	return admitted_pilot && source && !(Game_mode & GM_MULTI);
 }
 
 extern "C" int xl_runtime_active(void)
