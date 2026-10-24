@@ -268,6 +268,7 @@ void object_dependencies()
 }
 void unchanged(int vertex)
 {
+	require(!xl_preview_pilot_active() && !xl_preview_pilot_completed(), "pilot admission/completion leaked into stock level");
 	xl_preview_begin_face(99, 4);
 	require(xl_preview_alpha(0.73f) == 0.73f, "XL material state leaked into stock level");
 	xl_preview_end_face();
@@ -814,15 +815,75 @@ std::vector<unsigned char> gameplay_definitions()
 	append(Robot_joints, N_robot_joints);
 	return result;
 }
-void navigate_objective(bool reactor)
+uint64_t route_activated_triggers = 0, route_passable_targets = 0;
+void observe_route_triggers()
 {
+	const auto activated = xl_preview_trigger_mask();
+	route_activated_triggers |= activated;
+	for (int t = 0; t < Num_triggers; ++t) {
+		if (!(activated & (uint64_t(1) << t)) || Triggers[t].type == TT_EXIT) continue;
+		bool passable = Triggers[t].num_links > 0;
+		for (int link = 0; link < Triggers[t].num_links; ++link) {
+			const int seg = Triggers[t].seg[link], side = Triggers[t].side[link];
+			const auto &wall = Walls[Segments[seg].sides[side].wall_num];
+			const int doorway = WALL_IS_DOORWAY(&Segments[seg], side);
+			static int previous[MAX_TRIGGERS][MAX_WALLS_PER_LINK]{};
+			const int state = 1 + wall.type + 16 * wall.state + 256 * wall.flags + 65536 * doorway;
+			if (previous[t][link] != state) {
+				std::cout << "Trigger target: trigger=" << t << " segment=" << seg << " side=" << side
+				          << " type=" << int(wall.type) << " state=" << int(wall.state) << " flags=" << int(wall.flags) << " doorway=" << doorway << '\n';
+				previous[t][link] = state;
+			}
+			passable = passable && (doorway & WID_FLY_FLAG);
+		}
+		if (passable) route_passable_targets |= uint64_t(1) << t;
+	}
+}
+
+void verify_branch_checkpoint(int branch)
+{
+	auto target_state = [&] {
+		std::vector<int> values{ Triggers[branch].flags };
+		for (int link = 0; link < Triggers[branch].num_links; ++link) {
+			const int seg = Triggers[branch].seg[link], side = Triggers[branch].side[link];
+			const auto &surface = Segments[seg].sides[side];
+			const auto &wall = Walls[surface.wall_num];
+			values.insert(values.end(), { surface.wall_num, surface.tmap_num, surface.tmap_num2, wall.type, wall.flags,
+			                              wall.state, wall.hps, wall.cloak_value, WALL_IS_DOORWAY(&Segments[seg], side) });
+		}
+		return values;
+	};
+	const auto before = target_state();
+	const auto shields = Players[Player_num].shields, energy = Players[Player_num].energy;
+	char checkpoint[] = "xl-normal-branch.sav", description[] = "Normal authored branch";
+	require(state_save_all_sub(checkpoint, description) != 0, "branch checkpoint save failed");
+	require(state_restore_all_sub(checkpoint, 0) != 0, "branch checkpoint restore failed");
+	require(target_state() == before && Players[Player_num].shields == shields && Players[Player_num].energy == energy,
+	        "branch restore changed target walls or earned player resources");
+	require(xl_preview_trigger_mask() == 0, "diagnostic activation mask leaked across load");
+	std::cout << "Normal branch persistence: trigger=" << branch << " targets and earned resources restored\n";
+}
+
+void navigate_objective(bool reactor, bool escape = false, int branch = -1)
+{
+	require(Num_triggers == 13 && branch >= -1 && branch < Num_triggers, "unexpected pilot trigger scope");
+	if (branch >= 0 && (route_activated_triggers & route_passable_targets & (uint64_t(1) << branch))) {
+		require(!Player_is_dead, "prior branch coverage ended dead");
+		std::cout << "Normal branch navigation: trigger=" << branch << " frames=0 dead=0 activated=1 targets_passable=1; exercised on key route\n";
+		verify_branch_checkpoint(branch);
+		return;
+	}
 	if (reactor) {
 		const auto shields = Players[Player_num].shields, energy = Players[Player_num].energy;
-		char checkpoint[] = "xl-normal-key.sav";
+		char key_checkpoint[] = "xl-normal-key.sav", reactor_checkpoint[] = "xl-normal-reactor.sav";
+		char *checkpoint = escape ? reactor_checkpoint : key_checkpoint;
+		const auto countdown = Countdown_timer;
 		require(state_restore_all_sub(checkpoint, 0) != 0, "normal key checkpoint restore failed");
-		require((Players[Player_num].flags & KEY_RED) && Players[Player_num].shields == shields && Players[Player_num].energy == energy,
+		require((Players[Player_num].flags & KEY_RED) && (Players[Player_num].shields == shields && Players[Player_num].energy == energy),
 		        "normal key checkpoint changed earned inventory");
+		if (escape) require(Control_center_destroyed && Countdown_timer == countdown && countdown > 0, "earned reactor countdown changed on restore");
 	} else {
+		route_activated_triggers = route_passable_targets = 0;
 		d_srand_stream(D_RNG_SIM, 1);
 		d_srand_stream(D_RNG_FX, 1);
 		input_demo_set_skip_level_intro(1);
@@ -836,12 +897,28 @@ void navigate_objective(bool reactor)
 	require((reactor || robots == 38) && Difficulty_level == 2 && !cheats.enabled && !cheats.monsterdamage && !cheats.ghostphysics && !cheats.robotfiringsuspended,
 	        "normal navigation fixture has altered combat rules");
 	require(!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "normal navigation fixture is invulnerable");
-	require(key >= 0, "navigation fixture has no objective object");
-	auto complete = [&] { return reactor ? bool(Control_center_destroyed) : bool(Players[Player_num].flags & KEY_RED); };
+	require(xl_preview_pilot_active() && !xl_preview_pilot_completed(), "navigation did not start with fresh pilot admission");
+	int branch_wall = -1;
+	if (branch >= 0) {
+		require(branch < Num_triggers && Triggers[branch].type != TT_EXIT, "invalid branch objective");
+		for (int i = 0; i < Num_walls; ++i)
+			if (Walls[i].trigger == branch) branch_wall = i;
+		require(branch_wall >= 0, "branch has no authored host wall");
+	}
+	int exit_wall = -1;
+	if (escape)
+		for (int i = 0; i < Num_walls; ++i)
+			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
+	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
+	auto complete = [&] { return branch >= 0 ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch)) : escape ? bool(xl_preview_pilot_completed())
+		                                                                                                                        : reactor  ? bool(Control_center_destroyed)
+		                                                                                                                                   : bool(Players[Player_num].flags & KEY_RED); };
 	int remainder = 0, frames = 0, last_segment = -1;
-	for (; frames < 10800 && !Player_is_dead && !complete(); ++frames) {
+	for (; frames < (branch >= 0 ? 36000 : 10800) && !Player_is_dead && !complete(); ++frames) {
 		const int start = ConsoleObject->segnum;
-		int goal = Objects[key].segnum, pickup = key, switch_wall = -1;
+		int goal = branch >= 0 ? Walls[branch_wall].segnum : escape ? Walls[exit_wall].segnum
+		                                                            : Objects[key].segnum,
+		    pickup = key, switch_wall = -1;
 		std::vector<int> parent(Highest_segment_index + 1, -1), queue{ start };
 		std::vector<int> steps(Highest_segment_index + 1, -1);
 		parent[start] = start;
@@ -865,22 +942,65 @@ void navigate_objective(bool reactor)
 				}
 			}
 		}
-		int pickup_steps = reactor && Players[Player_num].shields < i2f(50) ? Highest_segment_index + 1 : 6;
+		int pickup_steps = escape ? 0 : branch >= 0                                                                                               ? 4
+		                            : reactor && (Players[Player_num].shields < i2f(50) || (branch >= 0 && Players[Player_num].energy < i2f(50))) ? Highest_segment_index + 1
+		                                                                                                                                          : 6;
 		for (int i = 0; i <= Highest_object_index; ++i) {
 			const auto &o = Objects[i];
 			if (o.type != OBJ_POWERUP || o.segnum < 0 || steps[o.segnum] < 0 || steps[o.segnum] >= pickup_steps) continue;
 			if ((o.id == POW_SHIELD_BOOST && Players[Player_num].shields < i2f(90)) ||
+			    (branch >= 0 && o.id == POW_ENERGY && Players[Player_num].energy < i2f(80)) ||
 			    (o.id == POW_LASER && Players[Player_num].laser_level < MAX_LASER_LEVEL)) {
 				pickup = i;
 				goal = o.segnum;
 				pickup_steps = steps[goal];
 			}
 		}
+		auto switch_approach = [&](int wall) {
+			const auto &host = Walls[wall];
+			if (branch >= 0 && host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) return -1;
+			if (parent[host.segnum] >= 0) return host.segnum;
+			if (branch < 0) return -1;
+			vms_vector target;
+			compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
+			int best = -1;
+			for (const int candidate : queue) {
+				if (best >= 0 && steps[candidate] >= steps[best]) continue;
+				vms_vector origin;
+				compute_segment_center(&origin, &Segments[candidate]);
+				if (vm_vec_dist(&origin, &target) > i2f(100)) continue;
+				fvi_query query{};
+				query.p0 = &origin;
+				query.p1 = &target;
+				query.startseg = candidate;
+				query.thisobjnum = Players[Player_num].objnum;
+				query.flags = FQ_TRANSWALL;
+				fvi_info hit{};
+				const int result = find_vector_intersection(&query, &hit);
+				if (result == HIT_NONE || (result == HIT_WALL && hit.hit_side_seg == host.segnum && hit.hit_side == host.sidenum)) best = candidate;
+			}
+			return best;
+		};
+		if (branch >= 0 && pickup == key) {
+			int objective_wall = branch_wall;
+			const auto &host = Walls[branch_wall];
+			if (host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) {
+				for (int wall = 0; wall < Num_walls; ++wall)
+					if (host.controlling_trigger >= 0 && Walls[wall].trigger == host.controlling_trigger) objective_wall = wall;
+			}
+			const int approach = switch_approach(objective_wall);
+			if (approach >= 0) {
+				switch_wall = objective_wall;
+				goal = approach;
+			}
+		}
 		if (parent[goal] < 0) {
 			int best = Highest_segment_index + 1;
 			for (int wall = 0; wall < Num_walls; ++wall) {
 				const auto &host = Walls[wall];
-				if (host.trigger >= Num_triggers || parent[host.segnum] < 0 || steps[host.segnum] >= best) continue;
+				if (host.trigger >= Num_triggers) continue;
+				const int approach = switch_approach(wall);
+				if (approach < 0 || steps[approach] >= best) continue;
 				const auto &trigger = Triggers[host.trigger];
 				if ((trigger.flags & TF_DISABLED) || (trigger.type != TT_OPEN_DOOR && trigger.type != TT_OPEN_WALL)) continue;
 				bool opens_frontier = false;
@@ -891,21 +1011,41 @@ void navigate_objective(bool reactor)
 				}
 				if (opens_frontier) {
 					switch_wall = wall;
-					best = steps[host.segnum];
+					best = steps[approach];
 				}
 			}
 			require(switch_wall >= 0, "objective requires a prerequisite not yet handled by input navigator");
-			goal = Walls[switch_wall].segnum;
+			goal = switch_approach(switch_wall);
 		}
 		int next = goal;
 		while (parent[next] != start && next != start) next = parent[next];
-		vms_vector target = Objects[pickup].pos;
+		int blocking_wall = -1;
+		vms_vector target{};
+		if (escape) compute_center_point_on_side(&target, &Segments[goal], Walls[exit_wall].sidenum);
+		else target = Objects[pickup].pos;
 		if (switch_wall >= 0) {
 			const auto &host = Walls[switch_wall];
 			const int child = Segments[host.segnum].children[host.sidenum];
 			if (child >= 0 && (WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG))
 				compute_segment_center(&target, &Segments[child]);
-			else compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
+			else {
+				compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
+				// Shoot different parts of the authored switch face; its center may be transparent
+				if (branch >= 0 && start == goal) {
+					int verts[4];
+					get_side_verts(verts, host.segnum, host.sidenum);
+					const int sample = (frames / 90) % 25;
+					const fix u = F1_0 * (1 + 2 * (sample % 5)) / 10;
+					const fix v = F1_0 * (1 + 2 * (sample / 5)) / 10;
+					vms_vector bottom, top, edge;
+					vm_vec_sub(&edge, &Vertices[verts[1]], &Vertices[verts[0]]);
+					vm_vec_scale_add(&bottom, &Vertices[verts[0]], &edge, u);
+					vm_vec_sub(&edge, &Vertices[verts[2]], &Vertices[verts[3]]);
+					vm_vec_scale_add(&top, &Vertices[verts[3]], &edge, u);
+					vm_vec_sub(&edge, &top, &bottom);
+					vm_vec_scale_add(&target, &bottom, &edge, v);
+				}
+			}
 		}
 		if (start != goal) {
 			int crossing = -1;
@@ -914,6 +1054,9 @@ void navigate_objective(bool reactor)
 			require(crossing >= 0, "navigation path lost adjacent portal");
 			vms_vector portal, inward, center;
 			compute_center_point_on_side(&portal, &Segments[start], crossing);
+			const int portal_wall = Segments[start].sides[crossing].wall_num;
+			if (branch >= 0 && portal_wall >= 0 && Walls[portal_wall].type == WALL_BLASTABLE &&
+			    !(WALL_IS_DOORWAY(&Segments[start], crossing) & WID_FLY_FLAG)) blocking_wall = portal_wall;
 			compute_segment_center(&center, &Segments[next]);
 			vm_vec_sub(&inward, &center, &portal);
 			const fix depth = vm_vec_normalize(&inward);
@@ -941,16 +1084,28 @@ void navigate_objective(bool reactor)
 			fvi_info hit{};
 			if (find_vector_intersection(&query, &hit) == HIT_WALL && (hit.hit_side_seg != start || hit.hit_side != crossing))
 				compute_segment_center(&target, &Segments[next]);
+			if (blocking_wall >= 0) {
+				target = portal;
+				// Damaged blastable textures have holes; aim at several remaining patches
+				const int sample = (frames / 180) % 5;
+				if (sample) {
+					int verts[4];
+					get_side_verts(verts, start, crossing);
+					vms_vector offset;
+					vm_vec_sub(&offset, &Vertices[verts[sample - 1]], &target);
+					vm_vec_scale_add2(&target, &offset, F1_0 / 2);
+				}
+			}
 		}
 		vms_vector direction;
 		vm_vec_sub(&direction, &target, &ConsoleObject->pos);
 		const fix distance = vm_vec_normalize(&direction);
 		vms_vector aim = direction;
 		fix nearest = i2f(100);
-		for (int i = 0; i <= Highest_object_index; ++i) {
+		for (int i = 0; !escape && i <= Highest_object_index; ++i) {
 			if (Objects[i].type == OBJ_ROBOT) {
 				if (Robot_info[Objects[i].id].companion) continue;
-			} else if (!reactor || Objects[i].type != OBJ_CNTRLCEN) continue;
+			} else if (!reactor || branch >= 0 || Objects[i].type != OBJ_CNTRLCEN) continue;
 			vms_vector delta;
 			vm_vec_sub(&delta, &Objects[i].pos, &ConsoleObject->pos);
 			const fix range = vm_vec_normalize(&delta);
@@ -981,13 +1136,24 @@ void navigate_objective(bool reactor)
 		Controls.heading_time = input(std::atan2(x, z) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.y) / F1_0 * 1.5);
 		Controls.pitch_time = input(-std::atan2(y, std::hypot(x, z)) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.x) / F1_0 * 1.5);
 		const bool fighting = nearest < i2f(100);
-		const double speed = fighting ? 0.0 : (std::min) (25.0, double(distance) / F1_0 * 2);
+		const bool shoot_switch = branch >= 0 && switch_wall >= 0 && start == goal &&
+		                          !(WALL_IS_DOORWAY(&Segments[Walls[switch_wall].segnum], Walls[switch_wall].sidenum) & WID_FLY_FLAG);
+		double approach = (std::max) (0.0, double(distance) / F1_0 - (shoot_switch ? 20.0 : blocking_wall >= 0 ? 8.0
+		                                                                                                       : 0.0));
+		if (shoot_switch && Walls[switch_wall].segnum != start) {
+			// The visibility query used this center, not the portal where we entered
+			vms_vector firing_position;
+			compute_segment_center(&firing_position, &Segments[start]);
+			vm_vec_sub(&direction, &firing_position, &ConsoleObject->pos);
+			approach = double(vm_vec_normalize(&direction)) / F1_0;
+		}
+		const double speed = fighting ? 0.0 : (std::min) (25.0, approach * 2);
 		const auto &velocity = ConsoleObject->mtype.phys_info.velocity;
 		Controls.forward_thrust_time = input((dot(direction, orientation.fvec) * speed - dot(velocity, orientation.fvec)) / 12);
 		const double dodge = fighting ? (frames / 90 % 2 ? 20.0 : -20.0) : 0.0;
 		Controls.sideways_thrust_time = input((dot(direction, orientation.rvec) * speed + dodge - dot(velocity, orientation.rvec)) / 12);
 		Controls.vertical_thrust_time = input((dot(direction, orientation.uvec) * speed - dot(velocity, orientation.uvec)) / 12);
-		bool barrier = false;
+		bool barrier = blocking_wall >= 0;
 		if (!fighting) {
 			fvi_query query{};
 			query.p0 = &ConsoleObject->pos;
@@ -995,21 +1161,70 @@ void navigate_objective(bool reactor)
 			query.startseg = start;
 			query.thisobjnum = Players[Player_num].objnum;
 			fvi_info hit{};
-			barrier = find_vector_intersection(&query, &hit) == HIT_WALL;
+			if (find_vector_intersection(&query, &hit) == HIT_WALL && hit.hit_side_seg >= 0 && hit.hit_side >= 0) {
+				const int wall = Segments[hit.hit_side_seg].sides[hit.hit_side].wall_num;
+				barrier = branch < 0 || (wall >= 0 && (Walls[wall].type == WALL_DOOR || Walls[wall].type == WALL_BLASTABLE));
+			}
 		}
-		Controls.fire_primary_state = (fighting || barrier || (switch_wall >= 0 && start == goal)) && z > (nearest < i2f(40) ? 0.995 : 0.999);
+		bool switch_visible = true;
+		if (shoot_switch) {
+			fvi_query query{};
+			query.p0 = &ConsoleObject->pos;
+			query.p1 = &target;
+			query.startseg = start;
+			query.thisobjnum = Players[Player_num].objnum;
+			query.flags = FQ_TRANSPOINT;
+			fvi_info hit{};
+			const int result = find_vector_intersection(&query, &hit);
+			switch_visible = result == HIT_NONE || (result == HIT_WALL && hit.hit_side_seg == Walls[switch_wall].segnum && hit.hit_side == Walls[switch_wall].sidenum);
+		}
+		Controls.fire_primary_state = (fighting || barrier || (switch_wall >= 0 && start == goal)) && z > (nearest < i2f(40) ? 0.995 : 0.999) && switch_visible;
 		Controls.fire_secondary_state = fighting && z > 0.999 && nearest > i2f(20);
 		do_weapon_n_item_stuff();
 		calc_game_time();
 		GameProcessFrame();
+		observe_route_triggers();
 		if (ConsoleObject->segnum != last_segment || frames % 600 == 0) {
+			if (branch >= 0 && frames % 600 == 0 && start != next) {
+				for (int side = 0; side < 6; ++side) {
+					if (Segments[start].children[side] != next) continue;
+					const int wall = Segments[start].sides[side].wall_num;
+					std::cout << "Navigation portal: segment=" << start << " side=" << side << " next=" << next
+					          << " doorway=" << WALL_IS_DOORWAY(&Segments[start], side) << " wall=" << wall;
+					if (wall >= 0) std::cout << " type=" << int(Walls[wall].type) << " flags=" << int(Walls[wall].flags) << " hp=" << Walls[wall].hps;
+					std::cout << " pos=" << ConsoleObject->pos.x << "," << ConsoleObject->pos.y << "," << ConsoleObject->pos.z
+					          << " target=" << target.x << "," << target.y << "," << target.z << " radius=" << ConsoleObject->size << '\n';
+				}
+			}
 			last_segment = ConsoleObject->segnum;
 			std::cout << "Normal navigation frame=" << frames << " segment=" << last_segment << " next=" << next
 			          << " shields=" << Players[Player_num].shields << " energy=" << Players[Player_num].energy
+			          << " goal=" << goal << " switch=" << switch_wall << " switch_visible=" << switch_visible
 			          << " aim_dot=" << z << " enemy_range=" << double(nearest) / F1_0 << " kills=" << Players[Player_num].num_kills_level << '\n';
 		}
 	}
 	std::memset(&Controls, 0, sizeof(Controls));
+	std::cout << "Normal route trigger coverage:";
+	for (int t = 0; t < Num_triggers; ++t)
+		std::cout << " " << t << "=" << bool(route_activated_triggers & (uint64_t(1) << t))
+		          << "/" << bool(route_passable_targets & (uint64_t(1) << t));
+	std::cout << " (activated/linked-targets-passable; exit has no links)\n";
+	if (branch >= 0) {
+		std::cout << "Normal branch navigation: trigger=" << branch << " frames=" << frames << " dead=" << Player_is_dead
+		          << " activated=" << bool(xl_preview_trigger_mask() & (uint64_t(1) << branch))
+		          << " targets_passable=" << bool(route_passable_targets & (uint64_t(1) << branch)) << '\n';
+		require(!Player_is_dead && complete(), "normal-input authored branch incomplete");
+		verify_branch_checkpoint(branch);
+		return;
+	}
+	if (escape) {
+		std::cout << "Normal escape navigation: frames=" << frames << " dead=" << Player_is_dead
+		          << " completed=" << xl_preview_pilot_completed() << " level=" << Current_level_num
+		          << " countdown=" << Countdown_timer << " shields=" << Players[Player_num].shields << '\n';
+		require(!Player_is_dead && xl_preview_pilot_completed() && Current_level_num == 1 && Countdown_timer > 0,
+		        "normal-input timed exit incomplete");
+		return;
+	}
 	if (reactor) {
 		std::cout << "Normal reactor navigation: frames=" << frames << " dead=" << Player_is_dead
 		          << " destroyed=" << Control_center_destroyed << " shields=" << Players[Player_num].shields
@@ -1158,7 +1373,12 @@ int main(int argc, char **argv)
 				normal_input_frames();
 				mission_isolation(probe.source, vertex);
 				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-navigation"); })) navigate_objective(false);
+				if (const char *branch = find_arg_value(argc, argv, "-xl-test-branch")) navigate_objective(true, false, std::stoi(branch));
 				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-reactor"); })) navigate_objective(true);
+				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-escape"); })) {
+					navigate_objective(true, true);
+					mission_isolation(probe.source, vertex);
+				}
 			}
 		return 0;
 	} catch (const std::exception &error) {

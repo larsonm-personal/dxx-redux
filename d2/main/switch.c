@@ -47,6 +47,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "guidebot_extensions.h"
 #include "route_confirmation.h"
@@ -750,6 +753,9 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 		int result = d1_in_d2_cross_trigger(trigger_num, seg, side, objnum, shot);
 		if (result < 0)
 			result = check_trigger_sub(trigger_num, Player_num, shot);
+#ifdef DXX_XL_PILOT
+		xl_preview_trigger_result(trigger_num, shot, result);
+#endif
 		if (result) {
 			input_demo_log_trigger_probe("sub_returned_skip", seg, side, objnum, shot, trigger_num);
 			return;

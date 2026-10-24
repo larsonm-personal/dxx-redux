@@ -79,6 +79,43 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/reactor-tests -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
             set_tests_properties(xl_normal_reactor PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_normal_escape
+                COMMAND
+                    ${CMAKE_COMMAND} -DNAVIGATION=ON -DREACTOR=ON -DESCAPE=ON
+                    -DLEVEL=${XL_PILOT_LEVEL} -DPROBE=$<TARGET_FILE:xl_probe_fixture>
+                    -DENGINE=${XL_STOCK_METADATA} -DDATA=${XL_RETAIL_DATA}
+                    -DPREVIEW=${XL_PREVIEW_LIFECYCLE} -DPILOT_HOG=${XL_PILOT_HOG}
+                    -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/escape-tests -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+            set_tests_properties(xl_normal_escape PROPERTIES TIMEOUT 90)
+            foreach(
+                branch IN
+                ITEMS 1
+                      2
+                      3
+                      4
+                      5
+                      6
+                      7
+                      8
+                      9
+                      10
+                      11
+                      12)
+                add_test(
+                    NAME xl_normal_branch_${branch}
+                    COMMAND
+                        ${CMAKE_COMMAND} -DNAVIGATION=ON -DBRANCH=${branch}
+                        -DLEVEL=${XL_PILOT_LEVEL} -DPROBE=$<TARGET_FILE:xl_probe_fixture>
+                        -DENGINE=${XL_STOCK_METADATA} -DDATA=${XL_RETAIL_DATA}
+                        -DPREVIEW=${XL_PREVIEW_LIFECYCLE} -DPILOT_HOG=${XL_PILOT_HOG}
+                        -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/branch-${branch}-tests -P
+                        ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+                set_tests_properties(xl_normal_branch_${branch} PROPERTIES TIMEOUT 90)
+            endforeach()
         endif()
     endif()
     if(XL_PILOT_LEVEL AND XL_STOCK_METADATA AND XL_RETAIL_DATA)

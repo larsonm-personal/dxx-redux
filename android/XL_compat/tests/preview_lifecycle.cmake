@@ -2,6 +2,18 @@ include("${CMAKE_CURRENT_LIST_DIR}/stock_probe.cmake")
 configure_file("${fixture}/xlprobe.rl2" "${fixture}/stockprobe.rl2" COPYONLY)
 configure_file("${LEVEL}" "${fixture}/d2leva-1.rl2" COPYONLY)
 set(mission_test_args)
+if(DEFINED BRANCH)
+    if(NOT NAVIGATION OR REACTOR OR ESCAPE)
+        message(FATAL_ERROR "Branch coverage requires only the earned red-key phase")
+    endif()
+    list(APPEND mission_test_args -xl-test-branch "${BRANCH}")
+endif()
+if(ESCAPE AND NOT REACTOR)
+    message(FATAL_ERROR "Escape coverage requires the earned reactor checkpoint")
+endif()
+if(ESCAPE)
+    list(APPEND mission_test_args -xl-test-escape)
+endif()
 if(REACTOR AND NOT NAVIGATION)
     message(FATAL_ERROR "Reactor coverage requires the earned red-key navigation checkpoint")
 endif()
@@ -33,6 +45,25 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "XL preview lifecycle failed: ${result}; see ${fixture}")
 endif()
 file(READ "${fixture}/preview.log" report)
+if(DEFINED BRANCH)
+    if(NOT report MATCHES
+       "Normal branch persistence: trigger=${BRANCH} targets and earned resources restored"
+       OR NOT EXISTS "${fixture}/preview-user/xl-normal-branch.sav")
+        message(FATAL_ERROR "Branch checkpoint persistence was not verified")
+    endif()
+endif()
+if(DEFINED BRANCH
+   AND NOT
+       report
+       MATCHES
+       "Normal branch navigation: trigger=${BRANCH} frames=[0-9]+ dead=0 activated=1 targets_passable=1"
+)
+    message(FATAL_ERROR "Authored branch did not activate with passable linked targets")
+endif()
+if(ESCAPE AND NOT report MATCHES
+              "Normal escape navigation: frames=[0-9]+ dead=0 completed=1 level=1")
+    message(FATAL_ERROR "Timed escape did not reach native completion within pilot scope")
+endif()
 if(REACTOR AND (NOT report MATCHES "Normal reactor navigation: frames=[0-9]+ dead=0 destroyed=1"
                 OR NOT EXISTS "${fixture}/preview-user/xl-normal-reactor.sav"))
     message(FATAL_ERROR "Normal reactor objective did not finish with its earned checkpoint")

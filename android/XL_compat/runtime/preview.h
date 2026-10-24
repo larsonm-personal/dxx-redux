@@ -19,6 +19,11 @@ void xl_preview_player_thrust(int player, int32_t x, int32_t y, int32_t z);
 void xl_preview_reset_player_thrust(void);
 const char *xl_preview_level_path(const char *filename);
 unsigned xl_preview_unresolved_emitters(void);
+int xl_preview_pilot_active(void);
+void xl_preview_complete_pilot(void);
+int xl_preview_pilot_completed(void);
+void xl_preview_trigger_result(int trigger, int shot, int result);
+uint64_t xl_preview_trigger_mask(void);
 #ifdef __cplusplus
 }
 #endif

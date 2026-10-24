@@ -36,13 +36,84 @@ requirements in the historical checkpoints below
 
 ## Current acceptance boundary after user clarification
 
-Next concrete gameplay gate: restore the earned reactor checkpoint and reach
-the native exit under its unchanged 45-second timer. Success requires the
-engine's exit/completion path, not a controller-assigned completion flag or
-direct trigger call. Level 2 remains outside admission; define and verify the
-single-level completion behavior before allowing the campaign transition
+Trigger coverage is now observed from the real `check_trigger` path, separately
+from linked-target passability sampled during normal frames. The guarded hook
+records successful native activations and resets on load; it never activates a
+trigger. Route evidence aggregates across the earned key/reactor saves. The
+original key/reactor/escape route covers only triggers 12, 9 and 0
 
-After escape, reconcile coverage against all 13 inventoried triggers, with
+Registered `xl_normal_branch_1` through `xl_normal_branch_12`. Each uses the
+normal earned key route and restores that save to explore a specific branch.
+Trigger 12 is already exercised on the key route, so its test retains that
+evidence instead of attempting to shoot an already destroyed switch again.
+The controller can shoot across a transparent barrier from a reachable firing
+position, sample different points on a switch face, and collect energy during
+branch exploration. These are input policies, not changes to engine rules
+
+Latest complete sweep: timed escape passes unchanged (407 frames, countdown
+2504568, shields 3333686; `escape-tests/db733127f8f0`). Eight branch tests pass
+with both native activation and linked-target passability; four fail. Earlier
+passes from other controller revisions do not replace the current failures:
+
+| Trigger | Current result | Artifact under `temp/xl-compat-ninja` |
+| --- | --- | --- |
+| 1 | Pass, 5513 branch frames | `branch-1-tests/ee39d933aefb` |
+| 2 | Pass, 5460 branch frames | `branch-2-tests/66f9114e67ce` |
+| 3 | Player dies before activation, frame 8754 | `branch-3-tests/7d9dddbba817` |
+| 4 | Alive at 36000-frame limit, no activation | `branch-4-tests/883dda3cc281` |
+| 5 | Alive at 36000-frame limit, no activation | `branch-5-tests/a4ad4bcb12b2` |
+| 6 | Player dies before activation, frame 16944 | `branch-6-tests/c83e9ac49e2f` |
+| 7 | Pass, 4206 branch frames | `branch-7-tests/54d091099323` |
+| 8 | Pass, 2763 branch frames | `branch-8-tests/86c33683d235` |
+| 9 | Pass, 2317 branch frames | `branch-9-tests/a20ec063ed05` |
+| 10 | Pass, 2555 branch frames | `branch-10-tests/6f438b5ad094` |
+| 11 | Pass, 4422 branch frames | `branch-11-tests/2d0c5847f640` |
+| 12 | Pass on the earned key route | `branch-12-tests/43cdebe63d83` |
+
+The latest sweep is deliberately failing, not qualified. Trigger 4's host in
+segment 52 is behind the two closed walls it opens; approach planning now tests
+projectile visibility rather than assuming the player can fly to every host.
+Triggers 5/6 are on those barriers. Their actual activation sequence remains
+unproven. Target logs distinguish door opening from the later flyable flag;
+trigger 8 now demonstrates both. These checks do not yet prove physical player
+traversal of every opened target or branch-specific save persistence
+
+Branch exploration initially changed the established reactor route and caused
+it to fail. Its additional supply/search policies are now confined to branch
+exploration, and the ordinary key/reactor/escape policy passes again. Investigate
+remaining failures from current position/goal/switch logs rather than selecting
+a favorable random seed or altering combat rules. Lifecycle checks, opt-in and
+default D2 game/metadata builds, scoped formatting/lint and whitespace checks
+pass; the four branch failures remain visible
+
+Timed native escape now passes in an initial run: `preview-tests/819174b41b20`
+restores the earned reactor save without changing shields, energy or countdown,
+then reaches native completion in 407 frames with countdown 2504568 fixed units
+(about 38.2 seconds) and shields 3333686 (about 50.9). The input controller skips
+supply/combat detours during escape; simulation, damage and the countdown remain
+normal. No trigger/completion handler is called by the controller
+
+The first run crashed after reaching the exit because headless startup has no
+game window and `start_endlevel_sequence` unconditionally dereferenced it. The
+ordinary live-exit visibility calls now check for a window. The guarded pilot
+completion hook runs from `AdvanceLevel`, awards normal bonuses, and ends the
+single-level session instead of trying unsupported level 2. Only the headless
+pilot skips the modal score presentation. Interactive score/menu behavior still
+needs runtime verification. `xl_normal_escape` is registered separately and
+requires both earned key/reactor checkpoints and native completion evidence
+
+Repeatability now passes: `escape-tests/656546d46f1e/preview.log` and
+`escape-tests/90b01acb943b/preview.log` report identical 407-frame results.
+Each then verifies completion/admission state clears through stock and returns
+fresh in the pilot. `xl_normal_escape`, `xl_preview_lifecycle` and
+`xl_stock_loader_probe` pass twice. Both opt-in game/metadata targets and normal
+XL-disabled D2 game/metadata targets build. Scoped formatting/lint passes;
+existing `weapon.c` return-path warnings are outside these changes
+
+This closes the timed-route gate, not all branch, authored extension,
+interactive or Android acceptance gates
+
+Next reconcile coverage against all 13 inventoried triggers, with
 activation and target-state evidence per branch. Keep authored side/texture
 color semantics, material targeting/projectile behavior and Android deployment
 as independent open gates. The Dot survey supplies fixture priorities and

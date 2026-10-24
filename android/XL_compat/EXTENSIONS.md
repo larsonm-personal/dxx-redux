@@ -116,14 +116,17 @@ and destroys the reactor while alive with the normal 45-second countdown.
 The recorded pair of runs agrees. These tests use ordinary movement, weapons,
 damage, pickups and physical trigger activation; the controller reads level
 topology to choose inputs, so this is automated gameplay evidence rather than
-a blind human playthrough. It does not prove timed escape or every authored
-branch. See the pilot plan for exact artifacts and superseded earlier runs
+a blind human playthrough. The subsequent `xl_normal_escape` test also reaches
+native completion alive in 407 frames with 38.2 seconds remaining, twice, then
+checks stock-state isolation. It does not prove every authored branch or
+interactive completion presentation. See the pilot plan for exact artifacts
+and superseded earlier runs
 
 The next qualification sequence is therefore:
 
-1. Escape from the earned reactor checkpoint within the unchanged countdown,
-   through the native exit trigger and completion path. Explicitly bound the
-   result to level 1; do not silently admit level 2
+1. Verify interactive completion presentation for the single-level pilot.
+   Headless timed escape and native completion pass; level 2 remains outside
+   admission and the interactive path must return cleanly to the menu
 2. Account for all 13 wall triggers and their branches. Record activation,
    expected target changes and persistence separately from simply visiting a
    segment; classify any unexercised branch as unverified

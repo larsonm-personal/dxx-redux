@@ -28,6 +28,8 @@ extern "C" {
 #include "args.h"
 #include "console.h"
 #include "mission.h"
+#include "gameseq.h"
+#include "switch.h"
 #include "dxxerror.h"
 #include <physfs.h>
 int xl_stock_load_level(const char *filename);
@@ -51,6 +53,8 @@ struct MuzzleLight {
 std::vector<MuzzleLight> muzzle_lights;
 vms_vector player_thrust{};
 std::string pending_level;
+bool admitted_pilot = false, completed_pilot = false;
+uint64_t activated_triggers = 0;
 constexpr const char *translated_path = "xl_preview_cache/pilot.rl2";
 // XL palette.h uses 31; stock GR_FADE_LEVELS is 34 and cannot be reused
 constexpr int xl_fade_levels = 31;
@@ -119,6 +123,8 @@ const char *option(const char *name)
 
 extern "C" int xl_preview_load_level(const char *filename)
 {
+	admitted_pilot = completed_pilot = false;
+	activated_triggers = 0;
 	source.reset();
 	vertex_calls = 0;
 	face_alpha = -1;
@@ -192,6 +198,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		brightness = xl_compat::vertex_brightness(*level);
 		dynamic_vertices.resize(level->vertices.size());
 		source = std::move(level);
+		admitted_pilot = original;
 		con_printf(CON_URGENT, "XL PREVIEW: dynamic lighting and face effects are unverified; not production support\n");
 		return result;
 	} catch (const std::exception &error) {
@@ -204,6 +211,36 @@ extern "C" int xl_preview_load_level(const char *filename)
 extern "C" const char *xl_preview_level_path(const char *filename)
 {
 	return !pending_level.empty() && pending_level == filename ? translated_path : filename;
+}
+
+extern "C" int xl_preview_pilot_active(void)
+{
+	return admitted_pilot && source && Current_level_num == 1 && !(Game_mode & GM_MULTI);
+}
+
+extern "C" void xl_preview_complete_pilot(void)
+{
+	if (xl_preview_pilot_active()) completed_pilot = true;
+}
+
+extern "C" int xl_preview_pilot_completed(void)
+{
+	return completed_pilot;
+}
+
+extern "C" void xl_preview_trigger_result(int trigger, int shot, int result)
+{
+	if (!xl_preview_pilot_active() || trigger < 0 || trigger >= Num_triggers || trigger >= 64) return;
+	if (result && !(Triggers[trigger].type == TT_EXIT && completed_pilot)) return;
+	const uint64_t bit = uint64_t(1) << trigger;
+	if (activated_triggers & bit) return;
+	activated_triggers |= bit;
+	con_printf(CON_DEBUG, "XL pilot trigger=%d type=%d shot=%d links=%d\n", trigger, Triggers[trigger].type, shot, Triggers[trigger].num_links);
+}
+
+extern "C" uint64_t xl_preview_trigger_mask(void)
+{
+	return activated_triggers;
 }
 
 extern "C" void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t *g, int32_t *b)

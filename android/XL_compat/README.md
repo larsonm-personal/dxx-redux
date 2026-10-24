@@ -10,6 +10,20 @@ and auditing the preserved survey ZIP. It needs no mission binaries. These
 checks establish parser/arithmetic contracts and evidence integrity, not pilot
 playability; private gameplay and reference-engine tests remain separate
 
+The private `xl_normal_escape` CTest extends the normal key/reactor run: it
+restores the earned reactor checkpoint, drives ordinary inputs to the exit
+under the unchanged countdown, and requires native completion while alive.
+The opt-in pilot awards normal completion bonuses and stops at level 1 instead
+of admitting the remaining campaign. Headless tests skip only the score dialog;
+interactive completion presentation and Android qualification remain unverified
+
+Private `xl_normal_branch_1` through `xl_normal_branch_12` tests separately
+observe native trigger activation and linked-target passability. Current tests
+for 3, 4, 5 and 6 fail; keep those failures visible. Trigger 12 is covered on
+the normal key route before restoring its save. Passing branch checks do not
+yet establish physical traversal of every linked portal or branch-specific save
+persistence. Exact current artifacts are recorded in the pilot plan
+
 Current user scope: fully playable pilot with faithful XL engine extensions,
 using Redux behavior for classic Descent features. Pixel parity and XL tweaks to
 features already present in 1996 are not required. The historical lighting
