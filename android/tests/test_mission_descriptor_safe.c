@@ -21,6 +21,13 @@ int main(void)
 	int value;
 	unsigned extra_origins;
 
+	expect(mission_descriptor_key_is("  D2X-Name \t= Arena", "d2x-name"), "XL key ignores case and surrounding whitespace");
+	expect(!mission_descriptor_key_is("d2x-name-extra = Arena", "d2x-name"), "XL key suffix rejected");
+	expect(!mission_descriptor_key_is("d2x-name", "d2x-name"), "XL key requires equals");
+	expect(!mission_descriptor_key_is("d2x", "d2x-name"), "truncated XL key rejected");
+	expect(!mission_descriptor_key_is(NULL, "d2x-name"), "null XL key rejected");
+	expect(!mission_descriptor_key_is("d2x-name = Arena", ""), "empty expected key rejected");
+
 	expect(!mission_descriptor_value(NULL), "null line has no value");
 	expect(!mission_descriptor_value(missing), "missing equals has no value");
 	expect(!mission_descriptor_value(empty), "empty value is rejected");

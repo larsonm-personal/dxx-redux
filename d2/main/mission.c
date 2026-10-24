@@ -406,6 +406,7 @@ int read_mission_file(mle *mission, char *filename, int location)
 	if (mfile) {
 		char *p;
 		char temp[PATH_MAX], *ext;
+		int xl_descriptor = 0;
 
 		strcpy(temp,filename);
 		p = strrchr(temp, '/');	// get the filename at the end of the path
@@ -441,13 +442,31 @@ int read_mission_file(mle *mission, char *filename, int location)
 			p = get_parm_value("!name",mfile);
 		}
 
+		if (!p && mission->descent_version == 2) {
+			char line[80];
+			PHYSFSX_fseek(mfile,0,SEEK_SET);
+			if (PHYSFSX_fgets(line,sizeof(line),mfile) && mission_descriptor_key_is(line,"d2x-name")) {
+				xl_descriptor = 1;
+				p = get_value(line);
+				if (p) {
+					/* Keep the value alive through the common name handling below */
+					snprintf(temp,sizeof(temp),"%s",p);
+					p = temp;
+				}
+			}
+		}
+
 		if (p) {
 			char *t;
 			if ((t=strchr(p,';'))!=NULL)
 				*t=0;
-			t = p + strlen(p)-1;
-			while (isspace(*t))
-				*t-- = 0; // remove trailing whitespace
+			t = p + strlen(p);
+			while (t > p && isspace((unsigned char)t[-1])) *--t = 0;
+			if (!*p || (xl_descriptor && strlen(p) > MISSION_NAME_LEN)) {
+				PHYSFS_close(mfile);
+				d_free(mission->path);
+				return 0;
+			}
 			if (strlen(p) > MISSION_NAME_LEN)
 				p[MISSION_NAME_LEN] = 0;
 			strncpy(mission->mission_name, p, MISSION_NAME_LEN + 1);
@@ -768,7 +787,7 @@ int load_mission_ham()
 		if (exists)
 			PHYSFSX_contfile_close(p);
 		return 1;
-	} else if (Current_mission->enhanced) {
+	} else if (Current_mission->enhanced && Current_mission->enhanced != MISSION_ENHANCED_XL) {
 		char t[50];
 		snprintf(t,sizeof(t),"%s.ham",Current_mission_filename);
 		bm_read_extra_robots(t, Current_mission->enhanced);
@@ -785,6 +804,7 @@ int load_mission(mle *mission)
 	PHYSFS_file *mfile;
 	char buf[PATH_MAX], *v;
 	int parse_error = 0;
+	int descriptor_name_seen = 0;
 #ifdef __ANDROID__
 	mle selected = *mission;
 	char requested[PATH_MAX], resolved[PATH_MAX];
@@ -914,6 +934,28 @@ int load_mission(mle *mission)
 	}
 
 	while (PHYSFSX_fgets(buf,sizeof(buf),mfile)) {
+		if (Current_mission->descent_version == 2 && mission_descriptor_key_is(buf,"d2x-name")) {
+			if (descriptor_name_seen) {
+				parse_error = 1;
+				break;
+			}
+			descriptor_name_seen = 1;
+			Current_mission->enhanced = MISSION_ENHANCED_XL;
+			continue;
+		}
+		if (istok(buf,"name") || istok(buf,"xname") || istok(buf,"zname") || istok(buf,"!name")) {
+			if (Current_mission->enhanced == MISSION_ENHANCED_XL) {
+				parse_error = 1;
+				break;
+			}
+			descriptor_name_seen = 1;
+		}
+		/* Alternate archives and critical directives need separate XL qualification */
+		if (Current_mission->enhanced == MISSION_ENHANCED_XL &&
+		    (mission_descriptor_key_is(buf,"hog") || buf[strspn(buf," \t\r\n")] == '!')) {
+			parse_error = 1;
+			break;
+		}
 		if (istok(buf,"name") && !Current_mission->enhanced) {
 			Current_mission->enhanced = 0;
 			continue;						//already have name, go to next line

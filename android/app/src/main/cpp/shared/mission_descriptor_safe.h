@@ -7,6 +7,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Exact key matching for new descriptor dialects; legacy token rules stay unchanged */
+static inline int mission_descriptor_key_is(const char *line, const char *key)
+{
+	if (!line || !key || !*key) return 0;
+	while (*line && isspace((unsigned char) *line)) ++line;
+	while (*key) {
+		if (tolower((unsigned char) *line) != tolower((unsigned char) *key)) return 0;
+		++line;
+		++key;
+	}
+	while (*line && isspace((unsigned char) *line)) ++line;
+	return *line == '=';
+}
+
 static inline char *mission_descriptor_value(char *line)
 {
 	char *value;

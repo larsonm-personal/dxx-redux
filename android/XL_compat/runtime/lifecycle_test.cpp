@@ -1295,9 +1295,11 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 } // namespace
 
 #include "arena_test.h"
+#include "descriptor_test.h"
 
 int main(int argc, char **argv)
 {
+	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);
 	if (find_arg_value(argc, argv, "-arena-test")) return arena_test(argc, argv);
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
 	try {
