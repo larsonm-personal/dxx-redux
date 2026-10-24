@@ -25,6 +25,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "dxxerror.h"
 #include "pstypes.h"
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 #include "gr.h"
 #include "window.h"
 #include "console.h"
@@ -1097,6 +1100,9 @@ int kconfig_handler(window *wind, d_event *event, kc_menu *menu)
 			else
 				timer_delay2(50);
 			kconfig_draw(menu);
+#ifdef DXX_XL_PILOT
+			xl_draw_menu_indicator();
+#endif
 			break;
 			
 		case EVENT_WINDOW_CLOSE:

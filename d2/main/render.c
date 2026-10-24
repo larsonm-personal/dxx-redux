@@ -1,5 +1,8 @@
 #ifdef DXX_XL_PILOT
 #include "preview.h"
+#ifdef __ANDROID__
+#include "corona_probe.h"
+#endif
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -2293,7 +2296,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 
 #ifdef OGL
-	if (GameCfg.ClassicDepth) {
+	if (ogl_use_classic_depth()) {
 #ifdef ANDROID
 		g_merged_wall_render_pass = 1;
 #endif
@@ -2424,6 +2427,12 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Second Pass: Objects
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+	if (Viewer == ConsoleObject) {
+		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
+		xl_corona_object_probe(0, eye);
+	}
+#endif
 #ifdef ANDROID
 	g_merged_wall_render_pass = 2;
 #endif
@@ -2483,6 +2492,12 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Third Pass - Render Transculent level geometry with normal Alpha-Func
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+	if (Viewer == ConsoleObject) {
+		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
+		xl_corona_object_probe(1, eye);
+	}
+#endif
 #ifdef ANDROID
 	g_merged_wall_render_pass = 3;
 #endif
@@ -2539,6 +2554,15 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 #endif
 
+#ifdef DXX_XL_PILOT
+	{
+		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
+#ifdef __ANDROID__
+		xl_corona_scene_probe(eye, Viewer->segnum);
+#endif
+		xl_preview_render_emitters(Render_list, N_render_segs, eye, Viewer->segnum);
+	}
+#endif
 	// -- commented out by mk on 09/14/94...did i do a good thing??  object_render_targets();
 	{
 		const input_demo_render_probe_lists probe_lists = {

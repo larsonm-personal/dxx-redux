@@ -26,6 +26,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdarg.h>
 
 #include "pstypes.h"
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 #include "window.h"
 #include "console.h"
 #include "inferno.h"
@@ -485,6 +488,9 @@ int pause_handler(window *wind, d_event *event, char *msg)
 
 		case EVENT_WINDOW_DRAW:
 			show_boxed_message(msg, 1);
+#ifdef DXX_XL_PILOT
+			xl_draw_menu_indicator();
+#endif
 			break;
 
 		case EVENT_WINDOW_CLOSE:

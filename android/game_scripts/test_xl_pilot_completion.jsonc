@@ -1,0 +1,60 @@
+// Explicit private-fixture test of the real score screen and single-level boundary
+// Requires the opt-in APK and original d2-xl mission, like test_xl_pilot_runtime
+// Stage the native escape fixture's xl-normal-exit-approach.sav as the player's
+// d2-xl quick slot (player.sg3), preserving the existing slot first
+// The checkpoint is earned by normal flight/combat; this script grants nothing
+[
+    { "_info": { "games": ["d2"], "vars": { "d2": { "PILOT": "player" } } } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000, "post_delay_ms": 500 },
+    { "action": "select", "text": "${PILOT}", "timeout_ms": 10000 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "D2-XL: Counterstrike!", "timeout_ms": 10000 },
+    { "action": "select", "text": "Ok", "timeout_ms": 10000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 10000 },
+    { "action": "skip_briefing", "timeout_ms": 20000 },
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000 },
+    { "action": "assert", "expect": { "xl_pilot.active": true, "xl_pilot.completed": false, "current_level_num": 1 } },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_load" },
+    // Saved velocity crosses the native exit; no endlevel command or replay interception
+    { "action": "wait_for", "field": "screen_advance_kind", "value": "levelcomplete", "timeout_ms": 20000 },
+    {
+        "action": "assert",
+        "expect": {
+            "menu_subtitle": { "contains": "Ahayweh Gate" },
+            "current_level_num": 1,
+            "player_dead": false,
+            "player.shields": { "gt": 0 },
+            "player.score": { "gt": 10850 },
+            "xl_pilot.active": true,
+            "xl_pilot.completed": false,
+        },
+    },
+    { "action": "wait_for", "field": "screen_advance_can_activate", "value": "true", "timeout_ms": 10000 },
+    { "action": "request_screen_advance", "generation": "current" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "in_game": false,
+            "xl_pilot.completed": true,
+            "current_level_num": 0,
+            "menu.items": { "contains_object": { "text": "New game" } },
+            "screen_advance_kind": "none",
+        },
+    },
+    { "action": "wait_ms", "ms": 1000 },
+    { "action": "assert", "expect": { "in_game": false, "xl_pilot.completed": true, "current_level_num": 0 } },
+    { "action": "select", "text": "Options", "timeout_ms": 5000, "post_delay_ms": 200 },
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "menu.items": { "contains_object": { "text": "New game" } },
+            "xl_pilot.completed": true,
+            "current_level_num": 0,
+        },
+    },
+    { "action": "introspect" },
+]

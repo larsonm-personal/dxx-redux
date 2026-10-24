@@ -61,6 +61,11 @@ static int arena_traverse(int goal)
 
 static void arena_water_contract()
 {
+	require(!xl_preview_pilot_active() && !xl_preview_pilot_completed(), "water arena acquired Counterstrike completion identity");
+	xl_texture_emitter emitter{};
+	for (int segment = 0; segment < Num_segments; ++segment)
+		for (int side = 0; side < 6; ++side)
+			require(!xl_preview_texture_emitter(segment, side, &emitter), "unqualified corona emitter enabled for water arena");
 	require(xl_preview_water_segment(187) && !xl_preview_water_segment(146) && !xl_preview_water_segment(-1) && !xl_preview_water_segment(188), "water segment bounds/identity");
 	require(xl_preview_motion_time(187, 1000) == 750 && xl_preview_motion_time(146, 1000) == 1000, "water motion scaling");
 	require(xl_preview_motion_time(187, INT32_MAX) == 1610612735, "water scale overflow");
