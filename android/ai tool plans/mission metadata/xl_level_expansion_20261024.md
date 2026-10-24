@@ -142,3 +142,11 @@ The added resource roots include all six laser levels, flare, both water sounds
 and every wall clip. The original arena traversal still takes 1235 frames inward
 and 90 outward, with matching native save continuation. The original archive and
 descriptor remain unchanged.
+
+A focused native collision check starts beside the original x=-25 solid wall,
+requires clipping at the ship radius and retained tangent motion/velocity, and
+checks exact boundary-turbulence samples and divisor with two SIM draws. Native
+scrape applies a small shove, so this is not a frictionless slide oracle. This
+case finishes with a collision-free remainder and does not cover the final
+collision-velocity reconstruction branch; that factor remains source-reviewed
+and separately arithmetic-tested. No stronger branch-coverage claim is made.

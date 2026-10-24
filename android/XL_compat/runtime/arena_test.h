@@ -79,10 +79,37 @@ static void arena_water_contract()
 	do_physics_sim(ConsoleObject);
 	require(ConsoleObject->pos.x - start.x == 12288 && ConsoleObject->pos.y == start.y && ConsoleObject->pos.z == start.z, "native water displacement differs from reference scale");
 	require(ConsoleObject->mtype.phys_info.velocity.x == F1_0, "water incorrectly scales stored free-flight velocity");
+	// Slide along the original solid x=-25 wall, with a nonzero tangent velocity
+	ConsoleObject->pos.x = -25 * F1_0 + ConsoleObject->size + F1_0 / 16;
+	const auto collision_start = ConsoleObject->pos;
+	ConsoleObject->mtype.phys_info.velocity = { -4 * F1_0, 0, F1_0 };
+	do_physics_sim(ConsoleObject);
+	vms_vector displacement;
+	vm_vec_sub(&displacement, &ConsoleObject->pos, &collision_start);
+	std::cout << "Water wall slide: segment=" << ConsoleObject->segnum << " size=" << ConsoleObject->size << " displacement=" << displacement.x << ',' << displacement.y << ',' << displacement.z
+	          << " velocity=" << ConsoleObject->mtype.phys_info.velocity.x << ',' << ConsoleObject->mtype.phys_info.velocity.y << ',' << ConsoleObject->mtype.phys_info.velocity.z << '\n';
+	require(ConsoleObject->segnum == 187 && displacement.x <= -F1_0 / 16 + 128 && displacement.x >= -F1_0 / 16 - 128 &&
+	            displacement.z > F1_0 / 8 && displacement.z <= F1_0 / 4 && std::abs(displacement.y) < F1_0 / 32,
+	        "native water wall slide did not collide and retain tangent motion");
+	require(ConsoleObject->mtype.phys_info.velocity.x == 0 && ConsoleObject->mtype.phys_info.velocity.z > F1_0 / 2 &&
+	            ConsoleObject->mtype.phys_info.velocity.z < 2 * F1_0,
+	        "native water wall slide lost projected tangent velocity");
+	compute_segment_center(&ConsoleObject->pos, &Segments[187]);
 	const auto calls = d_rand_get_stream_call_count(D_RNG_SIM);
 	require(!xl_preview_water_frame(Players[Player_num].objnum) && d_rand_get_stream_call_count(D_RNG_SIM) == calls, "idle water consumed RNG");
 	ConsoleObject->mtype.phys_info.thrust.x = F1_0;
 	require(xl_preview_water_frame(Players[Player_num].objnum) && d_rand_get_stream_call_count(D_RNG_SIM) == calls + 2, "water turbulence RNG accounting");
+	// An overlapping ship radius near the original solid wall selects boundary turbulence
+	ConsoleObject->pos.x = -25 * F1_0 + ConsoleObject->size / 2;
+	char boundary[] = "water boundary fixture";
+	require(get_seg_masks(&ConsoleObject->pos, 187, ConsoleObject->size, boundary, __LINE__).sidemask != 0, "water boundary fixture misses wall");
+	d_srand_stream(D_RNG_SIM, 1);
+	const int expected_x = (16383 - d_rand()) / 2, expected_z = (16383 - d_rand()) / 2;
+	d_srand_stream(D_RNG_SIM, 1);
+	const auto boundary_calls = d_rand_get_stream_call_count(D_RNG_SIM);
+	require(xl_preview_water_frame(Players[Player_num].objnum) && ConsoleObject->mtype.phys_info.rotvel.x == expected_x &&
+	            ConsoleObject->mtype.phys_info.rotvel.z == expected_z && d_rand_get_stream_call_count(D_RNG_SIM) == boundary_calls + 2,
+	        "near-boundary water turbulence differs from reference samples/divisor");
 	const auto shields = Players[Player_num].shields;
 	require(check_volatile_wall(ConsoleObject, 187, 0, &ConsoleObject->pos) == 2 && Players[Player_num].shields == shields, "water wall contact damage/classification");
 	require(Segments[187].sides[1].wall_num == 17 && Segments[187].sides[1].tmap_num == 399 &&
