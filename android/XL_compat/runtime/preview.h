@@ -7,6 +7,9 @@ extern "C" {
 void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t *g, int32_t *b);
 int xl_preview_start(void);
 int xl_preview_load_level(const char *filename);
+int xl_level_supported(const char *filename, int multiplayer);
+const char *xl_level_rejection(void);
+int xl_test_stop_after_level(void);
 int xl_preview_wall_is_doorway(int segment_index, int side);
 void xl_preview_before_swap(void);
 uint64_t xl_preview_vertex_calls(void);

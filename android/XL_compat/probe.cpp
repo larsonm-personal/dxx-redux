@@ -1,4 +1,5 @@
 #include "probe.h"
+#include "admission.h"
 
 #include <limits>
 #include <stdexcept>
@@ -42,11 +43,8 @@ GameplayProbe prepare_gameplay_probe(const Bytes &source)
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
-	for (const auto &i : v.unsupported)
-		require(i.feature == "embedded_lighting", i.feature + " at record " + std::to_string(i.record));
-	for (const auto &i : v.unknown)
-		require(i.feature == "object_dependencies" || i.feature == "runtime_semantics" || i.feature == "assets",
-		        i.feature + " at record " + std::to_string(i.record));
+	const auto blockers = runtime_blockers(v);
+	require(blockers.empty(), blocker_message(blockers));
 	require(v.object_triggers == 0, "object triggers have no stock equivalent");
 	// Current stock representation limits, checked again by the unchanged stock loader
 	require(v.walls.size() <= 255 && v.objects.size() <= 1000 && v.segments.size() <= 9000,

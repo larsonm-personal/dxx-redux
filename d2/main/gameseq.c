@@ -984,8 +984,14 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 	load_ret = load_level(level_name);		//actually load the data from disk!
 
-	if (load_ret)
+	if (load_ret) {
+#ifdef DXX_XL_PILOT
+		if (*xl_level_rejection())
+			Error("Cannot run XL level: %s", xl_level_rejection());
+		else
+#endif
 		Error("Couldn't load level file <%s>, error = %d",level_name,load_ret);
+	}
 
 	Current_level_num=level_num;
 #ifdef ANDROID
@@ -1628,6 +1634,14 @@ void EnterSecretLevel(void)
 	if (! (i<-Last_secret_level))		//didn't find level, so must be last
 		Next_level_num = Last_secret_level;
 
+#ifdef DXX_XL_PILOT
+	if (Next_level_num < 0 && !xl_level_supported(Secret_level_names[-Next_level_num - 1], 0)) {
+		nm_messagebox("Cannot enter XL secret level", 1, TXT_OK, "%s", xl_level_rejection());
+		if (Game_wind) window_set_visible(Game_wind, 1);
+		reset_time();
+		return;
+	}
+#endif
 	StartNewLevelSecret(Next_level_num, 1);
 
 	// do_cloak_invul_stuff();
@@ -1768,7 +1782,7 @@ void coop_finish_secret_campaign(void)
 void AdvanceLevel(int secret_flag)
 {
 #ifdef DXX_XL_PILOT
-	if (xl_preview_pilot_active()) {
+	if (xl_preview_pilot_active() && xl_test_stop_after_level()) {
 		DoEndLevelScoreGlitz(0);
 		xl_preview_complete_pilot();
 		if (Game_wind && !GameArg.SysInputDemoNoRender)
@@ -1834,6 +1848,14 @@ void AdvanceLevel(int secret_flag)
 
 	} else {
 		Next_level_num = Current_level_num + 1;
+
+#ifdef DXX_XL_PILOT
+		if (!xl_level_supported(Level_names[Next_level_num - 1], Game_mode & GM_MULTI)) {
+			nm_messagebox("Cannot continue to XL level", 1, TXT_OK, "%s", xl_level_rejection());
+			if (Game_wind) window_close(Game_wind);
+			return;
+		}
+#endif
 
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP)

@@ -109,6 +109,7 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
                                     "blocked" -> "Unsupported"
                                     "full" -> "Verified"
                                     "partial" -> "Partial"
+                                    "eligible" -> "Implemented; runtime checks required"
                                     "not_required" -> "Not required"
                                     else -> "Unverified"
                                 },

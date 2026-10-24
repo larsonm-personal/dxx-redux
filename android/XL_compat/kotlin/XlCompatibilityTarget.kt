@@ -5,12 +5,13 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 internal suspend fun xlCompatibilityAnalysisFailure(target: LevelMetadataTarget): LevelMetadataResult? {
-    val blockers = inspectXlCompatibilityTarget(target).filter { it.status == "blocked" }
+    // Metadata analysis has no XL runtime/assets; feature eligibility is not analysis support
+    val blockers = inspectXlCompatibilityTarget(target)
     if (blockers.isEmpty()) return null
     return LevelMetadataResult.failed(
         source = target.displayName,
         game = target.game,
-        problem = "Engine analysis requires unsupported D2X-XL features. See the compatibility table.",
+        problem = "XL metadata analysis is unavailable. See runtime eligibility in the compatibility table.",
         diagnostics = blockers.map { "${it.source}: ${it.summary}" },
         failureKind = "unsupported_format",
     )
