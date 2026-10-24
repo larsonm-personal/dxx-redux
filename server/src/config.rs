@@ -13,10 +13,10 @@ pub struct ServerConfig {
     pub relay_listen_addr: SocketAddr,
     /// Path to the SQLite database file
     pub db_path: String,
-    /// Google OAuth2 client ID for GPGS token verification
+    /// Google OAuth web client audience for matchmaking ID-token verification
     pub google_client_id: String,
-    /// Google OAuth2 client secret
-    pub google_client_secret: String,
+    /// Public HTTPS origin used to bind Google login challenges to this server
+    pub google_auth_origin: String,
     /// Admin bearer token for /api/v1/admin/* endpoints
     pub admin_token: String,
     /// MOTD displayed to clients on connect (empty = no MOTD)
@@ -40,14 +40,16 @@ pub struct ServerConfig {
     pub stun_public_addrs: String,
     /// Directory for log files (empty = no file logging, stdout only)
     pub log_dir: String,
-    /// Skip GPGS token verification (dev/test mode: use token as identity key directly)
+    /// Enable loopback-only dev/test authentication, including installation/PoW fixtures
     pub skip_gpgs_verify: bool,
     /// Proof-of-work difficulty (leading zero bits) for keypair registration.
     /// Default 20 (~200ms on phone, <1us to verify).
     pub pow_difficulty: u8,
-    /// Maximum number of concurrent relay sessions. 0 = unlimited.
+    /// Maximum concurrent relay pairs (production 1..=100; 0 unlimited only in dev mode).
     pub max_relay_sessions: usize,
-    /// Maximum concurrent WebSocket connections. 0 = unlimited.
+    /// Economic egress controls; identity quotas start in telemetry mode
+    pub relay_policy: crate::relay_economy::RelayPolicy,
+    /// Maximum concurrent WebSocket connections (production 1..=500; 0 unlimited only in dev mode).
     pub max_connections: usize,
     /// Optional separate listen address for admin-only HTTP endpoints.
     /// When set, admin routes are served on this port and the main HTTP port
@@ -57,6 +59,10 @@ pub struct ServerConfig {
     /// check results. Useful for testing where peers share a NAT gateway
     /// (e.g. two Android emulators on the same host).
     pub force_relay: bool,
+    /// Exact client-visible scheme://host:port for loopback dev installation proof binding
+    pub installation_auth_audience: String,
+    /// Exact proxy peers allowed to supply a single X-Real-IP header
+    pub trusted_proxy_ips: Vec<std::net::IpAddr>,
 }
 
 /// JSONC config file schema. All fields optional; env vars override file values.
@@ -69,7 +75,7 @@ struct ConfigFile {
     relay_listen_addr: Option<String>,
     db_path: Option<String>,
     google_client_id: Option<String>,
-    google_client_secret: Option<String>,
+    google_auth_origin: Option<String>,
     admin_token: Option<String>,
     motd: Option<String>,
     update_url: Option<String>,
@@ -83,9 +89,12 @@ struct ConfigFile {
     skip_gpgs_verify: Option<bool>,
     pow_difficulty: Option<u8>,
     max_relay_sessions: Option<usize>,
+    relay_policy: Option<crate::relay_economy::RelayPolicy>,
     max_connections: Option<usize>,
     admin_http_listen_addr: Option<String>,
     force_relay: Option<bool>,
+    installation_auth_audience: Option<String>,
+    trusted_proxy_ips: Option<Vec<std::net::IpAddr>>,
 }
 
 impl ServerConfig {
@@ -102,12 +111,15 @@ impl ServerConfig {
                     eprintln!("loaded config from {config_path}");
                     cfg
                 }
-                Err(e) => {
-                    eprintln!("warning: failed to parse {config_path}: {e}");
-                    ConfigFile::default()
-                }
+                Err(_) => panic!("Invalid server configuration; refusing defaults"),
             },
-            Err(_) => ConfigFile::default(),
+            Err(e)
+                if e.kind() == std::io::ErrorKind::NotFound
+                    && std::env::var("CONFIG_FILE").is_err() =>
+            {
+                ConfigFile::default()
+            }
+            Err(_) => panic!("Cannot read server configuration"),
         };
 
         // Helper: env var > file value > default
@@ -148,15 +160,28 @@ impl ServerConfig {
         };
 
         Self {
+            installation_auth_audience: resolve(
+                "INSTALLATION_AUTH_AUDIENCE",
+                &file_cfg.installation_auth_audience,
+                "",
+            ),
+            trusted_proxy_ips: match std::env::var("TRUSTED_PROXY_IPS") {
+                Ok(value) => value
+                    .split(',')
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.trim().parse().expect("Invalid trusted proxy IP"))
+                    .collect(),
+                Err(_) => file_cfg.trusted_proxy_ips.unwrap_or_default(),
+            },
             ws_listen_addr: resolve_addr(
                 "WS_LISTEN_ADDR",
                 &file_cfg.ws_listen_addr,
-                "0.0.0.0:9000",
+                "127.0.0.1:9000",
             ),
             http_listen_addr: resolve_addr(
                 "HTTP_LISTEN_ADDR",
                 &file_cfg.http_listen_addr,
-                "0.0.0.0:8080",
+                "127.0.0.1:8080",
             ),
             relay_listen_addr: resolve_addr(
                 "RELAY_LISTEN_ADDR",
@@ -165,11 +190,7 @@ impl ServerConfig {
             ),
             db_path: resolve("DB_PATH", &file_cfg.db_path, "dxx_matchmaking.db"),
             google_client_id: resolve("GOOGLE_CLIENT_ID", &file_cfg.google_client_id, ""),
-            google_client_secret: resolve(
-                "GOOGLE_CLIENT_SECRET",
-                &file_cfg.google_client_secret,
-                "",
-            ),
+            google_auth_origin: resolve("GOOGLE_AUTH_ORIGIN", &file_cfg.google_auth_origin, ""),
             admin_token: resolve("ADMIN_TOKEN", &file_cfg.admin_token, ""),
             motd: resolve("MOTD", &file_cfg.motd, ""),
             update_url: resolve("UPDATE_URL", &file_cfg.update_url, ""),
@@ -191,6 +212,10 @@ impl ServerConfig {
             skip_gpgs_verify: skip,
             pow_difficulty: pow,
             max_relay_sessions: max_relay,
+            relay_policy: match std::env::var("RELAY_POLICY_JSON") {
+                Ok(value) => serde_json::from_str(&value).expect("Invalid RELAY_POLICY_JSON"),
+                Err(_) => file_cfg.relay_policy.unwrap_or_default(),
+            },
             max_connections: max_conn,
             admin_http_listen_addr: {
                 let raw = resolve(
@@ -368,6 +393,76 @@ mod tests {
                 String::from_utf8_lossy(&output.stderr)
             );
         }
+    }
+
+    #[test]
+    fn relay_policy_precedence_and_invalid_overrides() {
+        const EXPECTED: &str = "DXX_TEST_RELAY_POLICY_EXPECTED";
+        if let Ok(expected) = std::env::var(EXPECTED) {
+            let config = super::ServerConfig::load();
+            assert!(config.relay_policy.validate());
+            assert_eq!(
+                format!(
+                    "{}:{}:{}",
+                    config.relay_policy.sustained_bytes_per_second,
+                    config.relay_policy.monthly_bytes,
+                    config.relay_policy.enforce_identity_quotas
+                ),
+                expected
+            );
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.jsonc");
+        let configured = r#"{"relay_policy":{"sustained_bytes_per_second":4000,"monthly_bytes":10000,"enforce_identity_quotas":true}}"#;
+        for (contents, override_json, expected) in [
+            ("{}", None, Some("262144:1099511627776:false")),
+            (configured, None, Some("4000:10000:true")),
+            (
+                configured,
+                Some(r#"{"monthly_bytes":20000}"#),
+                Some("262144:20000:false"),
+            ),
+            ("{}", Some("not-json"), None),
+            ("{}", Some(r#"{"monthly_bytes":-1}"#), None),
+            ("{}", Some(r#"{"monthly_bytes":0}"#), None),
+            ("{}", Some(r#"{"monthy_bytes":1000}"#), None),
+            ("{}", Some(r#"{"enforce_identity_quotas":"false"}"#), None),
+        ] {
+            std::fs::write(&path, contents).unwrap();
+            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+            command
+                .args([
+                    "--exact",
+                    "config::tests::relay_policy_precedence_and_invalid_overrides",
+                    "--nocapture",
+                ])
+                .env_clear()
+                .env("CONFIG_FILE", &path)
+                .env(EXPECTED, expected.unwrap_or("invalid"));
+            if let Some(json) = override_json {
+                command.env("RELAY_POLICY_JSON", json);
+            }
+            let output = command.output().unwrap();
+            assert_eq!(
+                output.status.success(),
+                expected.is_some(),
+                "{}\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+
+    #[test]
+    fn shipped_production_config_is_parseable() {
+        let clean = strip_jsonc_comments(include_str!("../config.default.jsonc"))
+            .expect("shipped configuration must be valid JSONC");
+        let config: ConfigFile = serde_json::from_str(&clean)
+            .expect("shipped configuration must deserialize using the production schema");
+        assert_eq!(config.max_connections, Some(500));
+        assert_eq!(config.max_relay_sessions, Some(100));
+        assert!(!config.skip_gpgs_verify.unwrap_or(false));
     }
 
     #[test]

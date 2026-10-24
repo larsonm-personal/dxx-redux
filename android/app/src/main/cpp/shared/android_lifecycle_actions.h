@@ -8,6 +8,7 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 void android_overlay_game_tick(void);
 void android_lifecycle_actions_multiplayer_started(int is_host);
 void android_lifecycle_actions_multiplayer_stopped(void);
+void android_lifecycle_actions_online_admitted(const unsigned char id[16], unsigned slot);
 int android_lifecycle_actions_prepare_multiplayer_close(void);
 void android_lifecycle_actions_request_wake(void);
 void androidaud_background_pause(void);

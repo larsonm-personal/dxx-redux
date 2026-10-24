@@ -56,12 +56,14 @@ class RecoveryInstrumentation : Instrumentation() {
     private var demoImportInterruption: Bundle? = null
     private var enemyWithinImportOnly = false
     private var controllerOverlayOnly = false
+    private var installationWorkOnly = false
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
             engineProbeHost = arguments.getString("host")
             engineProbeGame = arguments.getString("game") ?: "d2"
         }
+        installationWorkOnly = arguments?.getString("suite") == "installation_work"
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
         verifyPublishedDocuments = arguments?.getString("published") == "true"
         packageDocumentsOnly = arguments?.getString("suite") == "package_documents"
@@ -81,6 +83,14 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (installationWorkOnly) {
+                OnlineInstallationWorkChecks.run { line ->
+                    sendStatus(0, Bundle().apply { putString("stream", line + "\n") })
+                }
+                result.putString("stream", "PASS: installation work fixture and cancellation\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (packageDocumentsOnly) {
                 PackageDocumentChecks(this).run(verifyPublishedDocuments)
                 result.putString(

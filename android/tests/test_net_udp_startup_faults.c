@@ -40,6 +40,8 @@ static int sendto(int socket, const void *data, int len, unsigned flags, const s
 	return len;
 }
 #include "net_udp_startup_faults.h"
+#include "auto_net.h"
+int auto_host_start_players;
 #define CHECK(x)                                            \
 	do {                                                    \
 		if (!(x)) {                                         \
@@ -49,6 +51,18 @@ static int sendto(int socket, const void *data, int len, unsigned flags, const s
 	} while (0)
 int main(void)
 {
+	/* Two ready players start a capacity-three room; the spare slot stays available */
+	const int capacity = 3;
+	auto_host_start_players = 2;
+	CHECK(1 < auto_net_host_start_count(capacity));
+	CHECK(2 >= auto_net_host_start_count(capacity));
+	auto_host_start_players = 3;
+	CHECK(2 < auto_net_host_start_count(capacity));
+	for (int invalid = -1; invalid <= 4; ++invalid) {
+		if (invalid >= 1 && invalid <= capacity) continue;
+		auto_host_start_players = invalid;
+		CHECK(auto_net_host_start_count(capacity) == capacity);
+	}
 	struct sockaddr addr = { { 0 } };
 	for (int mode = 1; mode <= 7; ++mode) {
 		memset(&startup_fault, 0, sizeof(startup_fault));

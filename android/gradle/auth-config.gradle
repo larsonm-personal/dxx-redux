@@ -1,0 +1,59 @@
+// Shared production loader and build-time regression tests for independent provider settings
+ext.parseAuthenticationConfig = { String source ->
+    def parsed
+    try {
+        def json = source.replaceAll('(?m)//.*$', '').replaceAll(',\\s*([}\\]])', '$1')
+        parsed = new groovy.json.JsonSlurper().parseText(json)
+    } catch (Exception ignored) {
+        throw new GradleException('Invalid auth_config.jsonc syntax')
+    }
+    if (!(parsed instanceof Map) ||
+            !parsed.keySet().every { it in ['matchmaking_google_client_id', 'games_app_id'] }) {
+        throw new GradleException('auth_config.jsonc accepts only matchmaking_google_client_id and games_app_id')
+    }
+    def google = parsed.containsKey('matchmaking_google_client_id') ? parsed.matchmaking_google_client_id : ''
+    def games = parsed.containsKey('games_app_id') ? parsed.games_app_id : '000000000000'
+    if (!(google instanceof String) || !(games instanceof String)) {
+        throw new GradleException('Authentication configuration values must be strings')
+    }
+    // The distributed template must remain usable without enabling either provider
+    if (google == 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com') google = ''
+    if (google.length() > 512 || (google && !(google ==~ /[A-Za-z0-9_-]+\.apps\.googleusercontent\.com/))) {
+        throw new GradleException('matchmaking_google_client_id must be empty or a Google OAuth client ID')
+    }
+    if (!(games ==~ /[0-9]{1,32}/)) {
+        throw new GradleException('games_app_id must be a numeric string; use zeros when unconfigured')
+    }
+    [matchmaking_google_client_id: google, games_app_id: games]
+}
+
+tasks.register('testAuthenticationConfig') {
+    group = 'verification'
+    description = 'Exercise the actual authentication configuration parser without provider credentials'
+    doLast {
+        def parse = project.ext.parseAuthenticationConfig
+        assert parse('{}') == [matchmaking_google_client_id: '', games_app_id: '000000000000']
+        assert parse(rootProject.file('auth_config.template.jsonc').getText('UTF-8')) == parse('{}')
+        def google = '123456-fixture.apps.googleusercontent.com'
+        assert parse('{"matchmaking_google_client_id":"' + google + '"}').games_app_id == '000000000000'
+        assert parse('{"games_app_id":"123456"}').matchmaking_google_client_id == ''
+        assert parse('// owned fixture\n{"matchmaking_google_client_id":"' + google + '","games_app_id":"123456",}') ==
+            [matchmaking_google_client_id: google, games_app_id: '123456']
+        def invalid = [
+            '[]', 'null', '{', '{"server_client_id":"old-field"}',
+            '{"matchmaking_google_client_id":null}', '{"matchmaking_google_client_id":42}',
+            '{"matchmaking_google_client_id":true}', '{"matchmaking_google_client_id":{}}',
+            '{"matchmaking_google_client_id":"not-an-oauth-client"}',
+            '{"matchmaking_google_client_id":"quote\\\".apps.googleusercontent.com"}',
+            '{"matchmaking_google_client_id":"' + ('x' * 513) + '.apps.googleusercontent.com"}',
+            '{"games_app_id":123456}', '{"games_app_id":null}', '{"games_app_id":""}',
+            '{"games_app_id":"abc"}', '{"games_app_id":"' + ('1' * 33) + '"}',
+        ]
+        invalid.each { source ->
+            def rejected = false
+            try { parse(source) } catch (GradleException ignored) { rejected = true }
+            assert rejected : 'Malformed authentication fixture was accepted'
+        }
+        logger.lifecycle('Authentication configuration: independent defaults, template, valid settings and 16 rejection cases passed')
+    }
+}

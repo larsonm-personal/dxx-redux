@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.DatagramPacket
@@ -22,7 +23,6 @@ private const val TAG = "LocalhostProxy"
 // Must be >= UPID_MAX_SIZE (4096) in d1/main/net_udp.h and d2/main/net_udp.h
 private const val MAX_PACKET_SIZE = 4096
 private const val ENGINE_PORT = 42424
-private const val RELAY_HEADER_LEN = 5
 private const val KEEPALIVE_INTERVAL_MS = 15_000L
 
 // Connectivity probe constants (must match ConnectivityChecker)
@@ -43,8 +43,7 @@ private const val PROBE_FLAG_RESPONSE: Short = 0x0002
  * address (direct peers) or relay header from_slot (relay peers). This
  * keeps UPnP port mappings and NAT pinholes valid for all peers.
  *
- * Relay wrapping: [session_token:4LE][dest_slot:1][payload]
- * Relay unwrapping: strips the 5-byte [token:4LE][from_slot:1] header.
+ * Relay packets use the authenticated protocol in RelayTransport.
  */
 data class PeerProxyStats(
     val peerSlot: Int,
@@ -52,6 +51,9 @@ data class PeerProxyStats(
     val packetsReceived: Long,
     val bytesSent: Long,
     val bytesReceived: Long,
+    val relayBound: Boolean = true,
+    val gameplayReceived: Long = 0,
+    val isRelay: Boolean = false,
 )
 
 class LocalhostProxy(
@@ -60,10 +62,25 @@ class LocalhostProxy(
     private val allowDynamicPeers: Boolean = false,
     private val onFailure: (String) -> Unit = {},
 ) {
+    companion object {
+        // Mirror D1/D2 main/net_udp.h; the host producer-conformance test reads both headers
+        internal const val UPID_PDATA = 16
+        internal const val UPID_MDATA_PNORM = 17
+        internal const val UPID_MDATA_PNEEDACK = 18
+        private val activeWorkers =
+            java.util.concurrent.atomic
+                .AtomicInteger()
+
+        fun activeWorkerCount(): Int = activeWorkers.get()
+    }
+
     private val diagnosticId = ProxyDiagnostics.nextId()
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId")
     private val peerProxies = mutableListOf<PeerProxy>()
     private val jobs = mutableListOf<Job>()
+    private val peerJobs = mutableMapOf<Int, Job>()
+    private var peerIdentities = emptyMap<Int, String>()
+    private val retiredPorts = mutableSetOf<Int>()
     private val stopped = AtomicBoolean(false)
     private val failureReported = AtomicBoolean(false)
     private var started = false
@@ -76,9 +93,16 @@ class LocalhostProxy(
     private var nextDynamicSlot = 0
     private val maxDynamicPeers = 8
 
-    // When active, the shared receive loop echoes DXPC probe requests from
-    // unknown senders (for late-join NAT holepunching).
-    private val lateJoinProbeActive = AtomicBoolean(false)
+    // A roster identity gets one bounded probe job and echo lease until it departs
+    private class ProbeLease(
+        val endpoints: Set<InetSocketAddress>,
+    ) {
+        val expires = System.nanoTime() + 3_000_000_000L
+        var echoes = 0
+        var job: Job? = null
+    }
+
+    private val lateJoinProbes = mutableMapOf<String, ProbeLease>()
 
     init {
         diagnostics.event(
@@ -100,31 +124,124 @@ class LocalhostProxy(
     @Synchronized
     private fun launchWorker(
         name: String,
+        expectedStop: () -> Boolean = { false },
         block: suspend () -> Unit,
-    ) {
+    ): Job {
         val job =
             scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
+                activeWorkers.incrementAndGet()
                 try {
                     block()
-                    if (!stopped.get()) throw IOException("$name stopped unexpectedly")
+                    if (!stopped.get() && !expectedStop()) throw IOException("$name stopped unexpectedly")
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     Log.e(TAG, "Proxy $name failed", e)
                     diagnostics.failure("worker $name", sharedRealSocket, e)
-                    if (!stopped.get() && failureReported.compareAndSet(false, true)) {
+                    if (!stopped.get() && !expectedStop() && failureReported.compareAndSet(false, true)) {
                         shutdown()
                         onFailure("Network forwarding stopped: ${e.message ?: name}. Return to the lobby and retry.")
                     }
+                } finally {
+                    activeWorkers.decrementAndGet()
                 }
             }
         jobs.add(job)
+        job.invokeOnCompletion { synchronized(this) { jobs.remove(job) } }
         if (started) job.start()
+        return job
+    }
+
+    @Synchronized
+    private fun isCurrentPeer(proxy: PeerProxy) = peerProxies.any { it === proxy }
+
+    @Synchronized
+    fun reconcileRoster(identities: Map<Int, String>) {
+        require(identities.keys.all { it in 0..7 } && identities.values.toSet().size == identities.size)
+        val departed =
+            peerProxies
+                .filter { proxy ->
+                    proxy.slot !in identities ||
+                        (peerIdentities[proxy.slot] != null && peerIdentities[proxy.slot] != identities[proxy.slot])
+                }.map { it.slot }
+        departed.forEach { removePeer(it) }
+        val members = identities.values.toSet()
+        lateJoinProbes.entries.removeAll { (identity, lease) ->
+            (identity !in members).also { if (it) lease.job?.cancel() }
+        }
+        peerIdentities = identities.toMap()
+    }
+
+    @Synchronized
+    fun removePeer(slot: Int) {
+        val proxy = peerProxies.firstOrNull { it.slot == slot } ?: return
+        peerProxies.remove(proxy)
+        retiredPorts.add(proxy.localPort)
+        relayPeersBySlot.remove(slot, proxy)
+        directPeersByAddr.entries.removeIf { it.value === proxy }
+        peerJobs.remove(slot)?.let { job ->
+            jobs.remove(job)
+            job.cancel()
+        }
+        proxy.close("peer departed")
+    }
+
+    @Synchronized
+    fun stageRelayRekey(
+        message: RelayRekeyMsg,
+        onReady: () -> Unit,
+    ): Boolean {
+        if (stopped.get() || peerIdentities[message.peerSlot] != message.peerId) return false
+        return peerProxies.firstOrNull { it.slot == message.peerSlot }?.stageRekey(message, onReady) ?: false
+    }
+
+    @Synchronized
+    fun commitRelayRekey(
+        scope: RelayRekeyScope,
+        retireAfterMs: Long,
+    ): Boolean {
+        if (stopped.get() || peerIdentities[scope.peerSlot] != scope.peerId) return false
+        return peerProxies.firstOrNull { it.slot == scope.peerSlot }?.commitRekey(scope, retireAfterMs) ?: false
+    }
+
+    @Synchronized
+    fun abortRelayRekey(scope: RelayRekeyScope) {
+        peerProxies.firstOrNull { it.slot == scope.peerSlot }?.abortRekey(scope)
+    }
+
+    private fun createPeer(
+        config: PeerProxyConfig,
+        real: DatagramSocket,
+        ownsReal: Boolean,
+    ): PeerProxy {
+        // Closing a socket wakes blocked receivers asynchronously on some JVMs
+        val retryUntil = if (retiredPorts.remove(config.localPort)) System.nanoTime() + 250_000_000L else 0L
+
+        fun bindLocal(): DatagramSocket {
+            while (true) {
+                try {
+                    return DatagramSocket(config.localPort, InetAddress.getByName("127.0.0.1"))
+                } catch (e: java.net.BindException) {
+                    if (System.nanoTime() >= retryUntil) throw e
+                    Thread.sleep(5)
+                }
+            }
+        }
+        val local = bindLocal()
+        try {
+            return PeerProxy(config, real, ownsReal, diagnosticId, local)
+        } catch (e: Exception) {
+            local.close()
+            throw e
+        }
     }
 
     @Synchronized
     fun addPeer(peerConfig: PeerProxyConfig) {
         check(!stopped.get()) { "Proxy is closed" }
+        val existing = peerProxies.firstOrNull { it.slot == peerConfig.peerSlot }
+        if (existing?.matches(peerConfig) == true) return
+        removePeer(peerConfig.peerSlot)
         val realSocket: DatagramSocket
         val ownsRealSocket: Boolean
         if (sharedRealSocket != null) {
@@ -137,7 +254,7 @@ class LocalhostProxy(
 
         val proxy =
             try {
-                PeerProxy(peerConfig, realSocket, ownsRealSocket, diagnosticId)
+                createPeer(peerConfig, realSocket, ownsRealSocket)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to bind port ${peerConfig.localPort} for slot ${peerConfig.peerSlot}: ${e.message}")
                 if (ownsRealSocket) realSocket.close()
@@ -155,7 +272,8 @@ class LocalhostProxy(
             }
         }
 
-        launchWorker("peer ${peerConfig.peerSlot}") { proxy.run() }
+        peerJobs[peerConfig.peerSlot] =
+            launchWorker("peer ${peerConfig.peerSlot}", { !isCurrentPeer(proxy) }) { proxy.run() }
         Log.i(
             TAG,
             "Added peer proxy: slot=${peerConfig.peerSlot} " +
@@ -183,7 +301,7 @@ class LocalhostProxy(
             )
         val proxy =
             try {
-                PeerProxy(config, sharedRealSocket!!, ownsRealSocket = false, diagnosticId = diagnosticId)
+                createPeer(config, sharedRealSocket!!, false)
             } catch (e: java.net.BindException) {
                 Log.e(TAG, "Host-mode: failed to bind port $localPort for dynamic peer $realAddr: ${e.message}")
                 throw e
@@ -192,7 +310,7 @@ class LocalhostProxy(
         val addrKey = "${realAddr.address.hostAddress}:${realAddr.port}"
         directPeersByAddr[addrKey] = proxy
         // Start the local->real forwarding coroutine
-        launchWorker("dynamic peer $slot") { proxy.run() }
+        peerJobs[slot] = launchWorker("dynamic peer $slot", { !isCurrentPeer(proxy) }) { proxy.run() }
         Log.i(TAG, "Host-mode: dynamic peer slot=$slot local=127.0.0.1:$localPort -> $addrKey")
         return proxy
     }
@@ -204,7 +322,7 @@ class LocalhostProxy(
      */
     private suspend fun sharedReceiveLoop() {
         val socket = sharedRealSocket ?: return
-        val buf = ByteArray(MAX_PACKET_SIZE)
+        val buf = ByteArray(RelayTransport.MAX_PACKET + 1)
         val pkt = DatagramPacket(buf, buf.size)
 
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
@@ -219,24 +337,22 @@ class LocalhostProxy(
                     continue
                 }
 
-                // Relay peer: parse from_slot from relay header
-                if (pkt.length >= RELAY_HEADER_LEN) {
-                    val fromSlot = pkt.data[4].toInt() and 0xFF
-                    val relayProxy = relayPeersBySlot[fromSlot]
-                    if (relayProxy != null) {
-                        relayProxy.deliverIncoming(pkt.data, pkt.length)
-                        continue
-                    }
+                // Endpoint, allocation keys and replay window are checked before delivery
+                val relaySlot = RelayTransport.senderSlot(pkt.data, pkt.length)
+                val relayProxy = relaySlot?.let { relayPeersBySlot[it] }
+                if (relayProxy != null) {
+                    relayProxy.deliverIncoming(pkt.data, pkt.length, InetSocketAddress(pkt.address, pkt.port))
+                    continue
                 }
 
                 // Unmatched: check for late-join probe echo
-                if (lateJoinProbeActive.get() && pkt.length == PROBE_SIZE) {
+                if (pkt.length == PROBE_SIZE) {
                     val bb = ByteBuffer.wrap(pkt.data, 0, PROBE_SIZE)
                     if (bb.int == PROBE_MAGIC) {
                         val token = bb.int
                         val seq = bb.short
                         val flags = bb.short
-                        if (flags == PROBE_FLAG_REQUEST) {
+                        if (flags == PROBE_FLAG_REQUEST && allowProbeEcho(InetSocketAddress(pkt.address, pkt.port))) {
                             // Echo back as RESPONSE
                             val resp = ByteArray(PROBE_SIZE)
                             val rb = ByteBuffer.wrap(resp)
@@ -249,8 +365,9 @@ class LocalhostProxy(
                                 diagnostics.send("probe-response-send", socket, DatagramPacket(resp, PROBE_SIZE, dest))
                             } catch (_: Exception) {
                             }
-                            continue
                         }
+                        // Probe packets never enter the dynamic/native gameplay path
+                        continue
                     }
                 }
 
@@ -294,30 +411,57 @@ class LocalhostProxy(
      * given addresses. This opens NAT pinholes for a late-joining player
      * and lets their ConnectivityChecker receive echo responses.
      */
-    fun sendLateJoinProbes(addrs: List<String>) {
+    @Synchronized
+    fun sendLateJoinProbes(
+        joinerId: String,
+        addrs: List<String>,
+    ) {
         val socket = sharedRealSocket ?: return
-        lateJoinProbeActive.set(true)
-        val token = java.security.SecureRandom().nextInt()
-        scope.launch(Dispatchers.IO) {
-            for (addrStr in addrs) {
-                val parts = addrStr.split(":")
-                if (parts.size != 2) continue
-                val port = parts[1].toIntOrNull() ?: continue
-                try {
-                    val addr = InetSocketAddress(InetAddress.getByName(parts[0]), port)
-                    val buf = ByteArray(PROBE_SIZE)
-                    val bb = ByteBuffer.wrap(buf)
-                    bb.putInt(PROBE_MAGIC)
-                    bb.putInt(token)
-                    bb.putShort(0) // seq
-                    bb.putShort(PROBE_FLAG_REQUEST) // flags
-                    diagnostics.send("probe-send", socket, DatagramPacket(buf, PROBE_SIZE, addr))
-                } catch (e: Exception) {
-                    Log.w(TAG, "Late-join blind probe failed to $addrStr: ${e.message}")
-                }
-            }
-            Log.i(TAG, "Sent ${addrs.size} late-join blind probes")
+        if (stopped.get() || joinerId !in peerIdentities.values || joinerId in lateJoinProbes ||
+            lateJoinProbes.size >= 7 || addrs.size > NetworkConstants.MAX_CANDIDATES
+        ) {
+            return
         }
+        val endpoints = addrs.mapNotNull(::parseProbeEndpoint).toSet()
+        if (endpoints.isEmpty()) return
+        val lease = ProbeLease(endpoints)
+        lateJoinProbes[joinerId] = lease
+        val token = java.security.SecureRandom().nextInt()
+        lease.job =
+            launchWorker("late-join probes", { true }) {
+                for (addr in endpoints) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    if (!synchronized(this@LocalhostProxy) {
+                            lateJoinProbes[joinerId] === lease && System.nanoTime() < lease.expires
+                        }
+                    ) {
+                        break
+                    }
+                    try {
+                        val buf = ByteArray(PROBE_SIZE)
+                        val bb = ByteBuffer.wrap(buf)
+                        bb.putInt(PROBE_MAGIC)
+                        bb.putInt(token)
+                        bb.putShort(0) // seq
+                        bb.putShort(PROBE_FLAG_REQUEST) // flags
+                        diagnostics.send("probe-send", socket, DatagramPacket(buf, PROBE_SIZE, addr))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Late-join blind probe failed to $addr: ${e.message}")
+                    }
+                }
+                Log.i(TAG, "Sent ${endpoints.size} late-join blind probes")
+            }
+    }
+
+    @Synchronized
+    private fun allowProbeEcho(source: InetSocketAddress): Boolean {
+        val now = System.nanoTime()
+        val lease =
+            lateJoinProbes.values.firstOrNull {
+                now < it.expires && it.echoes < 32 && source in it.endpoints
+            } ?: return false
+        lease.echoes++
+        return true
     }
 
     @Synchronized
@@ -330,8 +474,12 @@ class LocalhostProxy(
         // C10: close sockets first to unblock receive() calls, then cancel jobs
         for (proxy in peerProxies) proxy.close("proxy shutdown")
         sharedRealSocket?.close()
-        for (job in jobs) job.cancel()
+        for (job in jobs.toList()) job.cancel()
         jobs.clear()
+        peerJobs.clear()
+        peerIdentities = emptyMap()
+        lateJoinProbes.clear()
+        retiredPorts.clear()
         peerProxies.clear()
         directPeersByAddr.clear()
         relayPeersBySlot.clear()
@@ -347,6 +495,11 @@ data class PeerProxyConfig(
     val isRelay: Boolean,
     val relayToken: UInt = 0u,
     val relayDestSlot: Int = 0,
+    val relayOwnSlot: Int = -1,
+    val relaySendKey: String? = null,
+    val relayReceiveKey: String? = null,
+    val admissionId: String? = null,
+    val relayEpoch: String? = null,
 )
 
 /**
@@ -363,9 +516,143 @@ private class PeerProxy(
     private val realSocket: DatagramSocket,
     private val ownsRealSocket: Boolean,
     diagnosticId: Long,
+    private val localSocket: DatagramSocket,
 ) {
+    val localPort: Int get() = config.localPort
+    val slot: Int get() = config.peerSlot
+
+    fun matches(other: PeerProxyConfig): Boolean = config == other
+
+    @Volatile private var relay =
+        if (config.isRelay) {
+            RelayTransport(
+                config.relayToken,
+                config.relayOwnSlot,
+                config.peerSlot,
+                requireNotNull(config.relaySendKey),
+                requireNotNull(config.relayReceiveKey),
+            )
+        } else {
+            null
+        }
+
+    private data class StagedRelay(
+        val message: RelayRekeyMsg,
+        val transport: RelayTransport,
+        val deadline: Long,
+        val onReady: () -> Unit,
+        var ready: Boolean = false,
+    )
+
+    private var stagedRelay: StagedRelay? = null
+    private var retiredRelay: Pair<RelayTransport, Long>? = null
+    private var relayToken = config.relayToken
+    private var relayEpoch = config.relayEpoch
+    private var committedScope: RelayRekeyScope? = null
+    private var attemptedOldEpoch: String? = null
+
+    @Synchronized
+    private fun pruneRelayEpochs() {
+        val now = System.nanoTime()
+        if (stagedRelay?.let { now >= it.deadline } == true) stagedRelay = null
+        if (retiredRelay?.let { now >= it.second } == true) retiredRelay = null
+    }
+
+    @Synchronized
+    fun stageRekey(
+        message: RelayRekeyMsg,
+        onReady: () -> Unit,
+    ): Boolean {
+        pruneRelayEpochs()
+        val credentials = message.credentials ?: return false
+        if (!config.isRelay || message.oldToken !in 0..0xffff_ffffL || message.oldToken.toUInt() != relayToken ||
+            message.oldEpoch != relayEpoch ||
+            credentials.ownSlot != config.relayOwnSlot || credentials.allocationEpoch != message.newEpoch ||
+            message.newToken !in 0..0xffff_ffffL || message.newToken == message.oldToken ||
+            message.newEpoch == message.oldEpoch || message.readyTimeoutMs !in 1..15000 ||
+            retiredRelay != null
+        ) {
+            return false
+        }
+        val pending = stagedRelay
+        if (pending != null) {
+            return pending.message.scope() == message.scope() &&
+                pending.message.credentials?.sendKey == credentials.sendKey &&
+                pending.message.credentials.receiveKey == credentials.receiveKey
+        }
+        if (attemptedOldEpoch == relayEpoch) return false
+        val transport =
+            RelayTransport(
+                message.newToken.toUInt(),
+                config.relayOwnSlot,
+                config.peerSlot,
+                credentials.sendKey,
+                credentials.receiveKey,
+            )
+        stagedRelay = StagedRelay(message, transport, System.nanoTime() + message.readyTimeoutMs * 1_000_000L, onReady)
+        attemptedOldEpoch = relayEpoch
+        return true
+    }
+
+    @Synchronized
+    fun commitRekey(
+        scope: RelayRekeyScope,
+        retireAfterMs: Long,
+    ): Boolean {
+        pruneRelayEpochs()
+        if (committedScope == scope && relayToken == scope.newToken.toUInt()) return true
+        val pending = stagedRelay ?: return false
+        if (pending.message.scope() != scope || !pending.transport.bound || retireAfterMs !in 0..3000) return false
+        relay?.let { retiredRelay = it to (System.nanoTime() + retireAfterMs * 1_000_000L) }
+        relay = pending.transport
+        relayToken = scope.newToken.toUInt()
+        relayEpoch = scope.newEpoch
+        committedScope = scope
+        stagedRelay = null
+        return true
+    }
+
+    @Synchronized
+    fun abortRekey(scope: RelayRekeyScope) {
+        if (stagedRelay?.message?.scope() == scope) stagedRelay = null
+    }
+
+    private data class DecodedRelay(
+        val transport: RelayTransport,
+        val packet: RelayTransport.Packet,
+        val ready: (() -> Unit)?,
+    )
+
+    @Synchronized
+    private fun decodeRelay(
+        data: ByteArray,
+        length: Int,
+    ): DecodedRelay? {
+        pruneRelayEpochs()
+        val pending = stagedRelay
+        for (transport in listOfNotNull(relay, pending?.transport, retiredRelay?.first)) {
+            val packet = transport.decode(data, length) ?: continue
+            val ready =
+                if (transport === pending?.transport && packet.kind == RelayTransport.BOUND && transport.bound &&
+                    !pending.ready
+                ) {
+                    pending.ready = true
+                    pending.onReady
+                } else {
+                    null
+                }
+            return DecodedRelay(transport, packet, ready)
+        }
+        return null
+    }
+
+    @Synchronized
+    private fun bindingTransports(): List<RelayTransport> {
+        pruneRelayEpochs()
+        return listOfNotNull(relay, stagedRelay?.transport)
+    }
+
     private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
-    private val localSocket = DatagramSocket(config.localPort, loopback)
     private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId peer=${config.peerSlot} remote=${config.realAddr}")
 
     init {
@@ -395,35 +682,57 @@ private class PeerProxy(
     @Volatile
     var mdataForwarded: Long = 0L
 
-    fun getStats() = PeerProxyStats(config.peerSlot, packetsSent, packetsReceived, bytesSent, bytesReceived)
+    fun getStats() =
+        PeerProxyStats(
+            config.peerSlot,
+            packetsSent,
+            packetsReceived,
+            bytesSent,
+            bytesReceived,
+            relayBound =
+                relay?.bound ?: true,
+            gameplayReceived = pdataForwarded + mdataForwarded,
+            isRelay = config.isRelay,
+        )
 
     suspend fun run() {
-        kotlinx.coroutines.coroutineScope {
-            suspend fun forward(
-                name: String,
-                block: suspend () -> Unit,
-            ) {
-                try {
-                    block()
-                    throw IOException("Peer ${config.peerSlot} forwarding loop stopped")
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    diagnostics.failure("worker $name", realSocket, e)
-                    throw e
-                } finally {
-                    // Unblock sibling receivers before coroutineScope waits for them
-                    close("worker $name finished")
+        val firstFailure =
+            java.util.concurrent.atomic
+                .AtomicReference<Exception>()
+        try {
+            kotlinx.coroutines.coroutineScope {
+                suspend fun forward(
+                    name: String,
+                    block: suspend () -> Unit,
+                ) {
+                    try {
+                        block()
+                        throw IOException("Peer ${config.peerSlot} forwarding loop stopped")
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // Record the cause before socket closure can fail a sibling worker
+                        firstFailure.compareAndSet(null, e)
+                        diagnostics.failure("worker $name", realSocket, e)
+                        throw e
+                    } finally {
+                        // Unblock sibling receivers before coroutineScope waits for them
+                        close("worker $name finished")
+                    }
                 }
+                // local -> real: engine sends to our local port, we forward to peer
+                launch { forward("local-to-real") { forwardLocalToReal() } }
+                // real -> local: only when we own the socket (non-shared mode)
+                if (ownsRealSocket) {
+                    launch { forward("real-to-local") { forwardRealToLocal() } }
+                }
+                // NAT keepalive (direct and relay)
+                launch { forward("keepalive") { keepalive() } }
             }
-            // local -> real: engine sends to our local port, we forward to peer
-            launch { forward("local-to-real") { forwardLocalToReal() } }
-            // real -> local: only when we own the socket (non-shared mode)
-            if (ownsRealSocket) {
-                launch { forward("real-to-local") { forwardRealToLocal() } }
-            }
-            // NAT keepalive (direct and relay)
-            launch { forward("keepalive") { keepalive() } }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw firstFailure.get() ?: e
         }
     }
 
@@ -434,32 +743,56 @@ private class PeerProxy(
     fun deliverIncoming(
         data: ByteArray,
         length: Int,
+        source: InetSocketAddress? = null,
     ) {
         diagnostics.received()
         try {
             val payload: ByteArray
             val payloadLen: Int
             if (config.isRelay) {
-                if (length < RELAY_HEADER_LEN) return
-                payloadLen = length - RELAY_HEADER_LEN
-                payload = data.copyOfRange(RELAY_HEADER_LEN, length)
+                if (source != config.realAddr) return
+                val received = decodeRelay(data, length) ?: return
+                received.ready?.invoke()
+                val decoded = received.packet
+                when (decoded.kind) {
+                    RelayTransport.CHALLENGE -> {
+                        if (decoded.payload.size != 16) return
+                        val proof = received.transport.encode(RelayTransport.PROOF, decoded.payload)
+                        diagnostics.send(
+                            "relay-bind-proof",
+                            realSocket,
+                            DatagramPacket(proof, proof.size, config.realAddr),
+                        )
+                        return
+                    }
+
+                    RelayTransport.DATA -> {
+                        payload = decoded.payload
+                        payloadLen = payload.size
+                    }
+
+                    else -> {
+                        return
+                    }
+                }
             } else {
                 payloadLen = length
                 payload = data.copyOfRange(0, length)
             }
             if (isTransportKeepalive(payload, payloadLen)) return
+            val delivered = OnlineAdmissionEnvelope.wrap(payload, config.admissionId, config.peerSlot)
             diagnostics.send(
                 "engine-delivery-send",
                 localSocket,
-                DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)),
+                DatagramPacket(delivered, delivered.size, InetSocketAddress(loopback, ENGINE_PORT)),
             )
             packetsReceived++
             bytesReceived += payloadLen
             if (payloadLen > 0) {
                 val upid = payload[0].toInt() and 0xFF
-                if (upid == 0x22) {
+                if (upid == LocalhostProxy.UPID_PDATA) {
                     pdataForwarded++
-                } else if (upid == 0x25 || upid == 0x26) {
+                } else if (upid == LocalhostProxy.UPID_MDATA_PNORM || upid == LocalhostProxy.UPID_MDATA_PNEEDACK) {
                     mdataForwarded++
                 }
             }
@@ -495,16 +828,9 @@ private class PeerProxy(
                     )
                 }
                 if (config.isRelay) {
-                    // Wrap: [token:4LE][dest_slot:1][payload]
-                    val wrapped =
-                        ByteBuffer
-                            .allocate(RELAY_HEADER_LEN + pkt.length)
-                            .apply {
-                                order(ByteOrder.LITTLE_ENDIAN)
-                                putInt(config.relayToken.toInt())
-                                put(config.relayDestSlot.toByte())
-                                put(pkt.data, 0, pkt.length)
-                            }.array()
+                    val sending = relay ?: continue
+                    if (!sending.bound) continue
+                    val wrapped = sending.encode(RelayTransport.DATA, pkt.data.copyOfRange(0, pkt.length))
                     diagnostics.send(
                         "gameplay-send",
                         realSocket,
@@ -528,70 +854,47 @@ private class PeerProxy(
     }
 
     private suspend fun forwardRealToLocal() {
-        val buf = ByteArray(MAX_PACKET_SIZE)
+        val buf = ByteArray(RelayTransport.MAX_PACKET + 1)
         val pkt = DatagramPacket(buf, buf.size)
-        val engineAddr = InetSocketAddress(loopback, ENGINE_PORT)
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
                 diagnostics.receive("network-receive", realSocket, pkt)
-                val payload: ByteArray
-                val payloadLen: Int
-                if (config.isRelay) {
-                    if (pkt.length < RELAY_HEADER_LEN) continue
-                    // Unwrap: skip [token:4][from_slot:1]
-                    payloadLen = pkt.length - RELAY_HEADER_LEN
-                    payload = pkt.data.copyOfRange(RELAY_HEADER_LEN, pkt.length)
-                } else {
-                    payloadLen = pkt.length
-                    payload = pkt.data.copyOfRange(0, pkt.length)
-                }
-                if (isTransportKeepalive(payload, payloadLen)) continue
-                diagnostics.send("engine-delivery-send", localSocket, DatagramPacket(payload, payloadLen, engineAddr))
-                packetsReceived++
-                bytesReceived += payloadLen
-                // Log UPID breakdown periodically to diagnose selective forwarding issues
-                if (payloadLen > 0) {
-                    val upid = payload[0].toInt() and 0xFF
-                    if (upid == 0x22) {
-                        pdataForwarded++
-                    } else if (upid == 0x25 || upid == 0x26) {
-                        mdataForwarded++
-                    }
-                }
-                if (packetsReceived % 500 == 0L) {
-                    Log.i(
-                        TAG,
-                        "real->local slot=${config.peerSlot} total=$packetsReceived pdata=$pdataForwarded mdata=$mdataForwarded",
-                    )
-                }
+                if (InetSocketAddress(pkt.address, pkt.port) != config.realAddr) continue
+                deliverIncoming(pkt.data, pkt.length, InetSocketAddress(pkt.address, pkt.port))
             } catch (e: java.net.SocketException) {
-                val msg = e.message ?: ""
-                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
-                Log.w(TAG, "real->local error: $msg")
+                if (realSocket.isClosed) break
+                Log.w(TAG, "network receive failed: ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "network receive failed", e)
             }
         }
     }
 
     private suspend fun keepalive() {
-        val ping =
-            if (config.isRelay) {
-                // Relay-wrapped keepalive: [token:4LE][dest_slot:1][0x00]
-                ByteBuffer
-                    .allocate(RELAY_HEADER_LEN + 1)
-                    .apply {
-                        order(ByteOrder.LITTLE_ENDIAN)
-                        putInt(config.relayToken.toInt())
-                        put(config.relayDestSlot.toByte())
-                        put(0.toByte())
-                    }.array()
-            } else {
-                byteArrayOf(0)
-            }
         var keepaliveCount = 0L
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
+            if (relay?.let { System.nanoTime() - it.lastAcknowledgementNanos > 10_000_000_000L } == true) {
+                throw IOException("Relay did not acknowledge the route within 10 seconds")
+            }
             try {
-                kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
-                diagnostics.send("keepalive-send", realSocket, DatagramPacket(ping, ping.size, config.realAddr))
+                if (relay == null) kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
+                val transports = bindingTransports()
+                val pings =
+                    if (transports.isEmpty()) {
+                        listOf(byteArrayOf(0))
+                    } else {
+                        transports.map {
+                            it.encode(RelayTransport.BIND, ByteArray(16))
+                        }
+                    }
+                for (ping in pings) {
+                    diagnostics.send(
+                        "keepalive-send",
+                        realSocket,
+                        DatagramPacket(ping, ping.size, config.realAddr),
+                    )
+                }
+                if (relay != null) kotlinx.coroutines.delay(1000L)
                 keepaliveCount++
                 Log.i(TAG, "keepalive slot=${config.peerSlot} #$keepaliveCount sent=$packetsSent recv=$packetsReceived")
             } catch (e: java.net.SocketException) {

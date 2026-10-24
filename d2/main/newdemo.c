@@ -592,7 +592,7 @@ static int nd_validate_trailer_state(void)
 	sbyte level = 0;
 	sbyte player_count = 0;
 	PHYSFS_sint64 trailer_start;
-	PHYSFS_sint64 frame_position;
+	int64_t frame_position;
 	int valid = 0;
 
 	if (saved_position < 0 || file_length < 4 || !PHYSFS_seek(infile, file_length - 2))
@@ -3914,7 +3914,7 @@ void newdemo_goto_beginning()
 static int nd_seek_back_frame_link(void)
 {
 	const PHYSFS_sint64 origin = PHYSFS_tell(infile);
-	PHYSFS_sint64 target;
+	int64_t target;
 	short last_frame_length;
 
 	if (origin < 10 || !PHYSFS_seek(infile, origin - 10))
@@ -3939,7 +3939,8 @@ void newdemo_goto_end(int to_rewrite)
 	ubyte energy=0, shield=0, primary_weapon=0, secondary_weapon=0;
 	int i=0, bint=0;
 	const PHYSFS_sint64 file_length = PHYSFS_fileLength(infile);
-	PHYSFS_sint64 loc=0, frame_position=0;
+	PHYSFS_sint64 loc=0;
+	int64_t frame_position=0;
 
 	if (file_length < 4 || !PHYSFS_seek(infile, file_length - 2))
 		nd_playback_v_bad_read = -1;

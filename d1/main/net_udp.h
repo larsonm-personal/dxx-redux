@@ -11,6 +11,7 @@
 #ifdef __ANDROID__
 #include "net/net_udp_reconnect_auth.h"
 #include "net/net_udp_join_wait.h"
+#include "net/online_admission.h"
 #include "coop/coop_gameplay_fence.h"
 #endif
 
@@ -192,6 +193,9 @@ typedef struct UDP_sequence_packet
 	netplayer_info  		player;
 #ifdef __ANDROID__
 	android_net_udp_reconnect_identity reconnect_identity;
+	/* Local host-proxy metadata; excluded from native wire serialization */
+	unsigned char online_admission[16];
+	unsigned char online_slot;
 	uint32_t join_attempt;
 	uint64_t join_visit;
 #endif

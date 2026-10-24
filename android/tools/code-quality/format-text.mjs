@@ -9,6 +9,8 @@ async function formatSource(source, file, parser) {
     return prettier.format(source, {
         filepath: file,
         parser,
+        // Server JSONC uses serde_json after comment removal, so trailing commas are invalid
+        trailingComma: parser === "jsonc" && /[\\/]server[\\/]/.test(file) ? "none" : "all",
         plugins: [xml],
         tabWidth: ["yaml", "markdown"].includes(parser) ? 2 : 4,
         printWidth: 120,

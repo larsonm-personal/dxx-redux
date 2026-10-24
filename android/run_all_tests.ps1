@@ -622,6 +622,7 @@ $extractTests = @(
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
     # These execute host tools or mocked transports, never the selected Android device
+    "test_auto_level_demo_listing",
     "test_acoustid_regeneration",
     "test_active_game_data_reset",
     "test_android_distributions",
@@ -765,6 +766,7 @@ $noInfraTests = @(
     "test_shareware_automation_profiles",
     "test_lan_launch_preparation_profiles",
     "test_lan_public_profiles",
+    "test_online_admission_profiles",
     "test_demo_import_first_play_profiles",
     "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",
@@ -922,6 +924,26 @@ $allTests += @{
     Requires = 'emulator'
     TimeoutSeconds = 360
     Arguments = @('-GeneratedAudio')
+}
+
+$allTests += @{
+    Name = 'test_mp_public_shareware'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 1800
+    Arguments = @('-PublicShareware')
+}
+
+$allTests += @{
+    Name = 'test_mp_public_shareware_d2'
+    BaseName = 'test_mp'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_mp.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 2100
+    Arguments = @('-PublicShareware', '-PublicGame', 'd2', '-PublicDirect')
 }
 
 # Exact public variants keep the original retail owners unchanged

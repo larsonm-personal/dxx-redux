@@ -91,17 +91,27 @@ pub struct StatsSnapshot {
 pub async fn periodic_tasks(state: Arc<ServerState>) {
     let mut snapshot_interval = tokio::time::interval(Duration::from_secs(300));
     let mut cleanup_interval = tokio::time::interval(Duration::from_secs(600));
-    let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(300));
+    let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(15));
     let mut lobby_cleanup_interval = tokio::time::interval(Duration::from_secs(60));
+    let mut late_join_interval = tokio::time::interval(Duration::from_secs(1));
+    let mut relay_credit_interval = tokio::time::interval(Duration::from_secs(1));
 
     loop {
         tokio::select! {
+            _ = relay_credit_interval.tick() => {
+                crate::relay_economy::replenish(Arc::clone(&state)).await;
+            }
             _ = snapshot_interval.tick() => {
                 let snap = state.stats.snapshot();
+                let relay = state.relay_economy.lock().unwrap().totals();
                 info!(
                     online = snap.online,
                     in_game = snap.in_game,
                     lobbies = snap.lobbies,
+                    relay_forwarded_wire_bytes = relay.forwarded_wire_bytes,
+                    relay_identity_overages = relay.over_identity_quota_packets,
+                    relay_monthly_drops = relay.denied_monthly_credit_packets,
+                    relay_persistence_failures = relay.persistence_failures,
                     "periodic stats snapshot"
                 );
                 let _ = state.db.insert_player_count_snapshot(
@@ -114,6 +124,10 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
             _ = relay_cleanup_interval.tick() => {
                 crate::relay::cleanup_stale_sessions(&state);
             }
+            _ = late_join_interval.tick() => {
+                crate::ws_handler::expire_pending_late_joins(&state, std::time::Instant::now());
+                crate::relay_lifecycle::tick(&state, std::time::Instant::now());
+            }
             _ = lobby_cleanup_interval.tick() => {
                 cleanup_stale_lobbies(&state);
             }
@@ -123,10 +137,11 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
 
 /// Reap lobbies stuck in non-Waiting states (D5) and revert Holepunching timeouts (D6)
 fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
+    let _transition = state.control.lock().unwrap();
     use crate::lobby::LobbyState;
     let now = std::time::Instant::now();
     let max_game_age = Duration::from_secs(5 * 60); // 5 minutes with no state update
-    let holepunch_timeout = Duration::from_secs(30);
+    let holepunch_timeout = crate::lobby::HOLEPUNCH_TIMEOUT;
 
     let mut to_remove = Vec::new();
     let mut to_revert = Vec::new();
@@ -136,7 +151,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
         // D6: revert Holepunching to Waiting after 30s
         if lobby.state == LobbyState::Holepunching {
             if let Some(started) = lobby.holepunch_started_at {
-                if now.duration_since(started) > holepunch_timeout {
+                if now.duration_since(started) >= holepunch_timeout {
                     to_revert.push(lobby.id);
                 }
             }
@@ -153,9 +168,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
 
     for lid in to_revert {
         if let Some(mut lobby) = state.lobbies.get_mut(&lid) {
-            if lobby.state == LobbyState::Holepunching {
-                lobby.state = LobbyState::Waiting;
-                lobby.holepunch_started_at = None;
+            if lobby.expire_connectivity_attempt(now) {
                 info!(lobby_id = %lid, "holepunching timed out, reverted to Waiting");
             }
         }
@@ -177,7 +190,9 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
                 }
             }
         }
+        crate::relay::revoke_room(state, lid);
         state.lobbies.remove(&lid);
+        state.candidate_attempts.revoke_lobby(lid);
         state.stats.lobby_closed();
         state.stats.game_ended();
         info!(lobby_id = %lid, "reaped stale lobby");

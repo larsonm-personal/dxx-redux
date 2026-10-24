@@ -775,6 +775,7 @@ class MainActivity :
         mission: String,
         mode: Int,
         maxPlayers: Int,
+        startPlayers: Int,
         levelNum: Int,
         difficulty: Int,
         coopQol: Boolean,
@@ -930,6 +931,9 @@ class MainActivity :
     }
 
     private var gameStarted = false
+
+    // Captured by onCreate before a Return to Game intent can replace Activity.intent
+    private val runtimeLaunchAttempt by lazy { intent.getStringExtra("mp_runtime_attempt") }
     private var multiplayerRuntimeStarted = false
     private var nativeMultiplayerActive = false
     private var nativeMultiplayerHost = false
@@ -1171,6 +1175,7 @@ class MainActivity :
         com.dxxredux.app.multiplayer.UdpReconnectIdentity
             .initialize(noBackupFilesDir)
         super.onCreate(savedInstanceState)
+        RuntimeGameStateBridge.claimActivity(this, runtimeLaunchAttempt)
 
         refreshTransientLaunchState(intent)
         if (shouldRedirectConsumedTransientLaunch()) {
@@ -1274,6 +1279,7 @@ class MainActivity :
             val mission = intent.getStringExtra("mp_mission") ?: "descent2"
             val mode = intent.getIntExtra("mp_game_mode", 0)
             val maxPlayers = intent.getIntExtra("mp_max_players", 4)
+            val startPlayers = intent.getIntExtra("mp_start_players", maxPlayers)
             val levelNum = intent.getIntExtra("mp_level_num", 1)
             val difficulty = intent.getIntExtra("mp_difficulty", 1)
             val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
@@ -1289,6 +1295,7 @@ class MainActivity :
                 mission,
                 mode,
                 maxPlayers,
+                startPlayers,
                 levelNum,
                 difficulty,
                 coopQol,
@@ -2516,8 +2523,9 @@ class MainActivity :
     }
 
     private fun startMultiplayerRuntime(host: Boolean) {
+        if (!RuntimeGameStateBridge.ownsActivity(this, runtimeLaunchAttempt)) return
         if (multiplayerRuntimeStarted) {
-            RuntimeGameStateBridge.updateHost(host)
+            RuntimeGameStateBridge.updateHost(host, runtimeLaunchAttempt)
             return
         }
         try {
@@ -2536,19 +2544,22 @@ class MainActivity :
                 .stop(this)
             return
         }
-        RuntimeGameStateBridge.connect(
-            context = this,
-            host = host,
-            stateProvider = { nativeGetNetgameState() },
-            onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
-        )
+        val connected =
+            RuntimeGameStateBridge.connect(
+                context = this,
+                host = host,
+                attempt = runtimeLaunchAttempt,
+                stateProvider = { nativeGetNetgameState() },
+                onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
+            )
+        if (!connected) return
         RuntimeGameStateBridge.noteActivityVisibility(background = !isActivityResumed)
         multiplayerRuntimeStarted = true
     }
 
     private fun stopMultiplayerRuntime() {
         if (!multiplayerRuntimeStarted) return
-        RuntimeGameStateBridge.disconnect()
+        if (!RuntimeGameStateBridge.disconnect(runtimeLaunchAttempt)) return
         com.dxxredux.app.multiplayer.MultiplayerGameService
             .stop(this)
         com.dxxredux.app.multiplayer.MultiplayerForegroundService
@@ -2556,11 +2567,30 @@ class MainActivity :
         multiplayerRuntimeStarted = false
     }
 
+    fun onNativeOnlineAdmitted(
+        admissionId: String,
+        slot: Int,
+    ) {
+        val attempt = runtimeLaunchAttempt
+        runOnUiThread {
+            if (RuntimeGameStateBridge.ownsActivity(this, attempt)) {
+                RuntimeGameStateBridge.nativeAdmitted(attempt, admissionId, slot)
+            }
+        }
+    }
+
     fun onNativeMultiplayerStateChanged(
         active: Boolean,
         host: Boolean,
     ) {
         runOnUiThread {
+            if (!RuntimeGameStateBridge.ownsActivity(
+                    this,
+                    runtimeLaunchAttempt,
+                )
+            ) {
+                return@runOnUiThread
+            }
             DebugLog.log(DebugLogCategory.DORMANCY, "native multiplayer state: active=$active host=$host")
             nativeMultiplayerActive = active
             nativeMultiplayerHost = host

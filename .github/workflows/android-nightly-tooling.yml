@@ -106,7 +106,8 @@ jobs:
               raise ValueError('Selected plan differs from exact target')
           selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
           requirements = {
-              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware', 'test_lan_three_player_startup') for test in selected),
+              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware', 'test_lan_three_player_startup', 'test_mp_public_shareware', 'test_mp_public_shareware_d2') for test in selected),
+              'online_preview': any(test.get('args', {}).get('suite') in ('test_mp_public_shareware', 'test_mp_public_shareware_d2') for test in selected),
               'three_emulators': any(test.get('requires') == 'three_emulators' for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
               'native_replay': any(test.get('owner') == 'shareware' and test.get('args', {}).get('suite') in ('test_auto_level_cheats', 'test_auto_level_demos') for test in selected),
@@ -115,6 +116,23 @@ jobs:
               for name, needed in requirements.items():
                   output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
+      - name: Prepare pinned local matchmaking server
+        if: steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(awk '$1 == "rustc" {print $2}' target/server/rust_version.txt)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          rustup toolchain install "$version" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$version" >> "$GITHUB_ENV"
+          cargo +"$version" build --locked --release --manifest-path target/server/Cargo.toml
+      - name: Rehearse owned TLS listener lifecycle
+        if: steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          python3 target/server/test_loopback_fault_proxy.py
+          python3 target/server/rehearse_preview.py \
+            --binary "$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking"
       - name: Prepare dependency locations
         shell: bash
         run: |
@@ -314,6 +332,13 @@ jobs:
           if not match or tuple(map(int, match.groups())) < (36, 5):
               raise SystemExit('BLOCKED: dual LAN tests require emulator 36.5+ shared Wi-Fi; isolated NAT is unsupported')
           PYTHON
+      - name: Qualify production installation identity with real service
+        if: steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          bash target/android/gradlew -p target/android -PhostJvmOnly=true \
+            -PonlineServerBinary="$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking" \
+            :proxy-tests:test --no-daemon --max-workers=2
       - name: Build emulator APKs before boot
         if: inputs.lane != 'jvm'
         id: apk
@@ -426,7 +451,7 @@ jobs:
           $avds = @(@{ Name = 'Nexus5X_Light_1'; Serial = 'emulator-5554' })
           if ($env:SWEEP_LANE -eq 'android-dual') { $avds += @{ Name = 'Nexus5X_Light_2'; Serial = 'emulator-5556' } }
           $experimentalThird = $env:DXX_RECOVERY_CHECKS -eq 'true' -and (-not $env:DXX_RECOVERY_CASES -or $env:DXX_RECOVERY_CASES -match '(^|,)three-player(-lost)?(,|$)')
-          if ($env:DXX_SELECTED_THREE_EMULATORS -eq 'true' -or $experimentalThird) {
+          if ('${{ steps.selection.outputs.online_preview }}' -eq 'true' -or $env:DXX_SELECTED_THREE_EMULATORS -eq 'true' -or $experimentalThird) {
             $avds += @{ Name = 'Nexus5X_Light_3'; Serial = 'emulator-5558' }
             'DXX_THIRD_EMULATOR_SERIAL=emulator-5558' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
@@ -491,6 +516,24 @@ jobs:
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane "$SWEEP_LANE" --output "$GITHUB_WORKSPACE/results" "${reason[@]}"
+      - name: Report sanitized online qualification receipt
+        if: always() && steps.selection.outputs.online_preview == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import json, pathlib
+          receipt = pathlib.Path('results/results.json')
+          if receipt.exists():
+              data = json.loads(receipt.read_text())
+              print(json.dumps({'target_sha': data.get('target_sha'), 'results': [
+                  {k: row.get(k) for k in ('id', 'status', 'reason')} for row in data.get('results', [])
+              ]}))
+          log = pathlib.Path('target/temp/mp_test_log.txt')
+          if log.exists():
+              for line in log.read_text(errors='replace').splitlines():
+                  if 'ONLINE_EVIDENCE ' in line or 'ONLINE_SAMPLE ' in line or 'ONLINE_WORK ' in line or 'ONLINE_WORK_VECTOR ' in line or 'ONLINE_WORK_RESULT ' in line or 'ONLINE_STATE ' in line or 'ONLINE_ADMISSION ' in line or 'ALL CHECKS PASSED' in line:
+                      print(line)
+          PYTHON
       - name: Collect emulator diagnostics
         if: always() && inputs.lane != 'jvm'
         shell: bash
@@ -564,6 +607,24 @@ jobs:
                       target = destination / name / filename
                       target.parent.mkdir(parents=True, exist_ok=True)
                       shutil.copyfile(path, target)
+          # Retain only bounded text from the public automatic-recording owner
+          recording_files = ('android.txt', 'guided-rejection.txt', 'recording-listing.json',
+                             'automation_result.json.diagnostic.json', 'automation_log.jsonl.diagnostic.json')
+          for source in temporary.glob('auto-level-demos-*'):
+              if not source.is_dir() or source.is_symlink():
+                  continue
+              for game in ('d1', 'd2', 'd1-in-d2'):
+                  scenario = source / game
+                  if scenario.is_symlink():
+                      continue
+                  for filename in recording_files:
+                      path = scenario / filename
+                      if path.is_file() and not path.is_symlink():
+                          target = pathlib.Path('results/auto-level-demos') / source.name / game / filename
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          with path.open('rb') as stream:
+                              stream.seek(max(0, path.stat().st_size - 65536))
+                              target.write_bytes(stream.read(65536))
           PYTHON
       - name: Upload execution evidence
         if: always() && !inputs.retail_assets

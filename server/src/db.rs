@@ -1,7 +1,7 @@
 use rusqlite::{
     named_params,
     types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef},
-    Connection,
+    Connection, TransactionBehavior,
 };
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -69,7 +69,9 @@ pub struct Database {
 impl Database {
     pub fn open(path: &str) -> Result<Self, rusqlite::Error> {
         let conn = Connection::open(path)?;
-        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+        conn.execute_batch(
+            "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;",
+        )?;
         let db = Self {
             conn: Mutex::new(conn),
         };
@@ -77,10 +79,54 @@ impl Database {
         Ok(db)
     }
 
+    /// Reserve before sending; crashes may waste credits but cannot refund emitted bytes
+    /// The single durable high-water month also rejects a backwards wall clock
+    pub fn reserve_relay_egress(
+        &self,
+        period: i32,
+        limit: u64,
+        wanted: u64,
+    ) -> rusqlite::Result<(i32, u64, u64)> {
+        if limit == 0 || limit > i64::MAX as u64 || wanted == 0 {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let old: Option<(i32, i64)> = tx
+            .query_row(
+                "SELECT period, reserved_bytes FROM relay_egress_budget WHERE singleton = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
+        let old = old
+            .map(|(month, used)| u64::try_from(used).map(|used| (month, used)))
+            .transpose()
+            .map_err(|_| rusqlite::Error::InvalidQuery)?;
+        let (stored_period, previous) = match old {
+            Some((stored, used)) if stored > period => return Ok((stored, used, 0)),
+            Some((stored, used)) if stored == period => (stored, used),
+            _ => (period, 0),
+        };
+        let grant = wanted.min(limit.saturating_sub(previous));
+        let committed = previous.saturating_add(grant);
+        tx.execute("INSERT INTO relay_egress_budget (singleton, period, reserved_bytes) VALUES (1, ?1, ?2)
+            ON CONFLICT(singleton) DO UPDATE SET period=excluded.period, reserved_bytes=excluded.reserved_bytes",
+            rusqlite::params![stored_period, committed as i64])?;
+        tx.commit()?;
+        Ok((stored_period, committed, grant))
+    }
+
     fn init_schema(&self) -> Result<(), rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch(
             "
+            CREATE TABLE IF NOT EXISTS relay_egress_budget (
+                singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+                period INTEGER NOT NULL,
+                reserved_bytes INTEGER NOT NULL CHECK (reserved_bytes >= 0)
+            );
+
             CREATE TABLE IF NOT EXISTS players (
                 player_id      TEXT PRIMARY KEY,
                 gpgs_player_id TEXT UNIQUE,
@@ -89,6 +135,11 @@ impl Database {
                 last_seen      TEXT NOT NULL DEFAULT (datetime('now')),
                 total_playtime INTEGER NOT NULL DEFAULT 0,
                 games_played   INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS google_identities (
+                subject TEXT PRIMARY KEY,
+                player_id TEXT NOT NULL UNIQUE REFERENCES players(player_id)
             );
 
             CREATE TABLE IF NOT EXISTS friends (
@@ -168,6 +219,46 @@ impl Database {
     }
 
     // -- Player operations --
+
+    /// Call only with a server-verified Google subject, never a client identity claim
+    /// Separate namespaces prevent accidental linking to a similarly named PGS account
+    pub fn find_or_create_player_by_google(
+        &self,
+        subject: &str,
+        callsign: &str,
+    ) -> Result<Uuid, rusqlite::Error> {
+        let mut conn = self.conn.lock().unwrap();
+        // Serialize lookup/create across independent connections as well as local tasks
+        let transaction =
+            conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let existing: Option<SqlUuid> = transaction
+            .query_row(
+                "SELECT player_id FROM google_identities WHERE subject = ?1",
+                [subject],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let pid = if let Some(existing) = existing {
+            transaction.execute(
+                "UPDATE players SET callsign = ?1, last_seen = datetime('now') WHERE player_id = ?2",
+                rusqlite::params![callsign, existing],
+            )?;
+            existing.0
+        } else {
+            let pid = Uuid::new_v4();
+            transaction.execute(
+                "INSERT INTO players (player_id, callsign) VALUES (?1, ?2)",
+                rusqlite::params![SqlUuid::from(pid), callsign],
+            )?;
+            transaction.execute(
+                "INSERT INTO google_identities (subject, player_id) VALUES (?1, ?2)",
+                rusqlite::params![subject, SqlUuid::from(pid)],
+            )?;
+            pid
+        };
+        transaction.commit()?;
+        Ok(pid)
+    }
 
     pub fn upsert_player(
         &self,
@@ -336,14 +427,21 @@ impl Database {
         let tx = conn.unchecked_transaction()?;
 
         // Flip the existing pending row (friend_id -> player_id) to accepted
-        tx.prepare_cached(
-            "UPDATE friends SET status = 'accepted'
-             WHERE player_id = :from AND friend_id = :to",
-        )?
-        .execute(named_params! {
-            ":from": SqlUuid::from(*friend_id),
-            ":to":   SqlUuid::from(*player_id),
-        })?;
+        let changed = tx
+            .prepare_cached(
+                "UPDATE friends SET status = 'accepted'
+             WHERE player_id = :from AND friend_id = :to AND status = 'pending'
+             AND NOT EXISTS (SELECT 1 FROM friends WHERE player_id = :to
+                 AND friend_id = :from AND status = 'blocked')",
+            )?
+            .execute(named_params! {
+                ":from": SqlUuid::from(*friend_id),
+                ":to":   SqlUuid::from(*player_id),
+            })?;
+
+        if changed != 1 {
+            return Err(rusqlite::Error::QueryReturnedNoRows);
+        }
 
         // Ensure the reverse row exists as accepted
         tx.prepare_cached(
@@ -530,3 +628,46 @@ impl Database {
 }
 
 use rusqlite::OptionalExtension;
+
+#[cfg(test)]
+mod google_account_tests {
+    use super::*;
+    use std::sync::{Arc, Barrier};
+
+    #[test]
+    fn google_mapping_survives_concurrent_connections_and_reopen() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("accounts.sqlite");
+        let path = path.to_str().unwrap();
+        let connections: Vec<_> = (0..8).map(|_| Database::open(path).unwrap()).collect();
+        let barrier = Arc::new(Barrier::new(connections.len()));
+        let tasks: Vec<_> = connections
+            .into_iter()
+            .enumerate()
+            .map(|(index, db)| {
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    barrier.wait();
+                    db.find_or_create_player_by_google(
+                        "verified-subject",
+                        &format!("pilot-{index}"),
+                    )
+                    .unwrap()
+                })
+            })
+            .collect();
+        let ids: Vec<_> = tasks.into_iter().map(|task| task.join().unwrap()).collect();
+        assert!(ids.iter().all(|id| *id == ids[0]));
+        let db = Database::open(path).unwrap();
+        assert_eq!(
+            db.find_or_create_player_by_google("verified-subject", "new-name")
+                .unwrap(),
+            ids[0]
+        );
+        let conn = db.conn.lock().unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM players", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+}

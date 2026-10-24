@@ -12,7 +12,7 @@ class MissionTransferResumeTest {
 
     @Test
     fun completedUnalignedFinalChunkRemainsResumable() {
-        val chunkSize = 1024
+        val chunkSize = MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES
         val bytes = ByteArray(chunkSize + 37) { index -> index.toByte() }
         val partial = temporaryFolder.newFile("complete.partial").apply { writeBytes(bytes) }
         val identity = MissionContentIdentity.compute(partial, chunkSize)
@@ -32,7 +32,7 @@ class MissionTransferResumeTest {
 
     @Test
     fun corruptChunkRollsBackToLastVerifiedBoundary() {
-        val chunkSize = 1024
+        val chunkSize = MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES
         val bytes = ByteArray(chunkSize * 2 + 31) { index -> index.toByte() }
         val source = temporaryFolder.newFile("source.zip").apply { writeBytes(bytes) }
         val identity = MissionContentIdentity.compute(source, chunkSize)

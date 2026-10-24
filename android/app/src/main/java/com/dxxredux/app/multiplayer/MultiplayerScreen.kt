@@ -54,7 +54,10 @@ import org.json.JSONObject
 import java.io.File
 import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
-private fun lanOnlyMultiplayerRelease(): Boolean = true
+private fun lanOnlyMultiplayerRelease(): Boolean = !com.dxxredux.app.BuildConfig.ONLINE_MATCHMAKING
+
+internal fun initialMultiplayerNav(onlineEnabled: Boolean): MultiplayerNav =
+    if (onlineEnabled) MultiplayerNav.BROWSER else MultiplayerNav.LAN
 
 @Composable
 fun MultiplayerScreen(

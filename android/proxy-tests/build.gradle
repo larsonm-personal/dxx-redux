@@ -1,5 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 def toolVersions = new Properties()
@@ -12,10 +13,47 @@ kotlin {
 // Compile the actual proxy with only Android logging replaced by host test sinks
 sourceSets.test.kotlin {
     srcDir '../app/src/main/java'
+    srcDir '../app/src/androidTest/java'
+    include 'com/dxxredux/app/OnlineInstallationWorkChecks.kt'
     include 'com/dxxredux/app/multiplayer/LocalhostProxy.kt'
+    include 'com/dxxredux/app/multiplayer/OnlineAdmissionEnvelope.kt'
     include 'com/dxxredux/app/multiplayer/ProxyDiagnostics.kt'
     include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'
+    include 'com/dxxredux/app/multiplayer/GoogleLoginClient.kt'
+    include '**/GoogleLoginClientTest.kt'
+    include '**/GoogleLoginHttpsTest.kt'
+    include '**/GoogleMatchmakingFlowTest.kt'
+    include 'com/dxxredux/app/multiplayer/PlayGamesFeatureState.kt'
+    include '**/PlayGamesFeatureStateTest.kt'
     include '**/ProxyFailureTest.kt'
+    include '**/RelayTransportTest.kt'
+    include '**/MatchmakingDiagnosticsTest.kt'
+    include 'com/dxxredux/app/multiplayer/MatchmakingDiagnostics.kt'
+    include 'com/dxxredux/app/multiplayer/MatchmakingService.kt'
+    include 'com/dxxredux/app/multiplayer/MatchmakingState.kt'
+    include 'com/dxxredux/app/multiplayer/StunClient.kt'
+    include 'com/dxxredux/app/multiplayer/StunProofClient.kt'
+    include '**/StunProofClientTest.kt'
+    include '**/CandidateProtocolFlowTest.kt'
+    include 'com/dxxredux/app/multiplayer/ConnectivityChecker.kt'
+    include 'com/dxxredux/app/multiplayer/UpnpClient.kt'
+    include '**/HostAndroid*.kt'
+    include '**/HostRelayCodec.kt'
+    include 'android/app/Activity.kt'
+    include 'android/widget/Toast.kt'
+    include 'com/dxxredux/app/BuildConfig.kt'
+    include '**/MatchmakingServiceFlowTest.kt'
+    include '**/RuntimeBridgeOwnershipTest.kt'
+    include 'com/dxxredux/app/multiplayer/RuntimeGameStateBridge.kt'
+    include '**/OnlineInstallationAuthTest.kt'
+    include '**/OnlineOutageOrderingTest.kt'
+    include '**/OnlineCandidateDiscoveryTest.kt'
+    include 'com/dxxredux/app/multiplayer/OnlineInstallationAuth.kt'
+    include 'com/dxxredux/app/multiplayer/UdpReconnectStore.kt'
+    include 'com/dxxredux/app/multiplayer/NetworkProtocol.kt'
+    include 'com/dxxredux/app/multiplayer/MissionContentProtocol.kt'
+    include 'com/dxxredux/app/MissionContentIdentity.kt'
+    include 'com/dxxredux/app/multiplayer/RelayTransport.kt'
     include '**/NetLog.kt'
     include '**/Log.kt'
     include '**/HistoricalLocalhostProxy.kt'
@@ -53,7 +91,11 @@ fun createHistoricalProxy(scope: CoroutineScope, socket: DatagramSocket, localPo
 if (compareHistory) tasks.named('compileTestKotlin') { dependsOn 'prepareHistoricalProxy' }
 
 dependencies {
+    testImplementation "org.json:json:${toolVersions['ORG_JSON_VERSION']}"
+    testImplementation "com.squareup.okhttp3:okhttp:${toolVersions['OKHTTP_VERSION']}"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }
 
@@ -61,6 +103,17 @@ tasks.withType(Test).configureEach {
     useJUnit()
     maxParallelForks = 1
     systemProperty 'dxx.compareProxyHistory', compareHistory
-    timeout = java.time.Duration.ofMinutes(2)
+    systemProperty 'dxx.repoRoot', rootProject.projectDir.parentFile.absolutePath
+    if (project.hasProperty('googleFixtureBinary')) {
+        def fixtureBinary = project.file(project.property('googleFixtureBinary'))
+        systemProperty 'dxx.googleFixtureBinary', fixtureBinary.absolutePath
+        inputs.file(fixtureBinary).withPropertyName('googleFixtureBinary').withPathSensitivity(PathSensitivity.NONE)
+    }
+    if (project.hasProperty('onlineServerBinary')) {
+        def serverBinary = project.file(project.property('onlineServerBinary'))
+        systemProperty 'dxx.onlineServerBinary', serverBinary.absolutePath
+        inputs.file(serverBinary).withPropertyName('onlineServerBinary').withPathSensitivity(PathSensitivity.NONE)
+    }
+    timeout = java.time.Duration.ofMinutes(project.hasProperty('onlineServerBinary') ? 4 : 2)
     testLogging { events 'passed', 'failed'; showStandardStreams = true }
 }

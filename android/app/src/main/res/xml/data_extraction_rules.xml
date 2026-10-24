@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <data-extraction-rules>
     <cloud-backup>
+        <exclude domain="sharedpref" path="play_games_features.xml" />
         <exclude domain="sharedpref" path="client_identity.xml" />
     </cloud-backup>
     <device-transfer>
+        <exclude domain="sharedpref" path="play_games_features.xml" />
         <exclude domain="sharedpref" path="client_identity.xml" />
     </device-transfer>
 </data-extraction-rules>

@@ -43,22 +43,16 @@ if (githubRelease && !ciApk && !keystorePropertiesFile.exists()) {
     throw new GradleException('GitHub APKs require android/keystore.properties for release signing')
 }
 
-// Load auth_config.jsonc if it exists (for GPGS sign-in)
-// Strip // comments and trailing commas to make it valid JSON, then parse.
+// Independent matchmaking OAuth audience and optional Play Games app configuration
+apply from: rootProject.file('gradle/auth-config.gradle')
 def authConfigFile = rootProject.file("auth_config.jsonc")
-def authServerClientId = ""
-def authGamesAppId = "000000000000"
+def authSettings = parseAuthenticationConfig(authConfigFile.exists() ? authConfigFile.getText('UTF-8') : '{}')
+def matchmakingGoogleClientId = authSettings.matchmaking_google_client_id
+def authGamesAppId = authSettings.games_app_id
 if (authConfigFile.exists()) {
-    def jsoncText = authConfigFile.text
-    def jsonText = jsoncText
-        .replaceAll('(?m)//.*$', '')       // strip line comments
-        .replaceAll(',\\s*([}\\]])', '$1') // strip trailing commas
-    def parsed = new groovy.json.JsonSlurper().parseText(jsonText)
-    authServerClientId = parsed.server_client_id ?: ""
-    authGamesAppId = parsed.games_app_id ?: "000000000000"
-    logger.lifecycle("auth_config.jsonc: server_client_id=${authServerClientId.take(20)}..., games_app_id=$authGamesAppId")
+    logger.lifecycle("Loaded optional Google matchmaking and Play Games configuration")
 } else {
-    logger.lifecycle("auth_config.jsonc not found — GPGS sign-in will be disabled (dev token fallback)")
+    logger.lifecycle("auth_config.jsonc not found - Google matchmaking and optional Play Games are unconfigured")
 }
 
 // The ignored root file is also consumed by repository maintenance scripts.
@@ -416,13 +410,14 @@ android {
             (githubRelease ? "com.dxxredux.app.github" : (project.findProperty('playApplicationId') ?: "com.dxxredux.app"))
         manifestPlaceholders = [
             launcherLabel: ciApk ? "${appBrandName} (CI)" : legacyRelease ? "${appBrandName} (Legacy)" : (githubRelease ? "${appBrandName} (GitHub)" : appBrandName),
-            playGamesEnabled: (!githubRelease).toString()
         ]
         minSdk distributionMinSdk
         targetSdk distributionTargetSdk
         versionCode gitVersionCode
         versionName project.findProperty('versionNameOverride') ?: "1.1"
         buildConfigField "boolean", "GITHUB_RELEASE", githubRelease.toString()
+        // Explicit qualification builds only; ordinary distributions remain LAN-only
+        buildConfigField "boolean", "ONLINE_MATCHMAKING", (project.findProperty('onlineMatchmaking') ?: 'false').toBoolean().toString()
         buildConfigField "boolean", "LEGACY_RELEASE", legacyRelease.toString()
         buildConfigField "int", "MIN_SDK", distributionMinSdk.toString()
         buildConfigField "int", "TARGET_SDK", distributionTargetSdk.toString()
@@ -432,7 +427,8 @@ android {
 
         def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
-        buildConfigField "String", "GPGS_SERVER_CLIENT_ID", "\"${authServerClientId}\""
+        buildConfigField "String", "PLAY_GAMES_APP_ID", "\"${authGamesAppId}\""
+        buildConfigField "String", "MATCHMAKING_GOOGLE_CLIENT_ID", "\"${matchmakingGoogleClientId}\""
         buildConfigField "boolean", "NATIVE_DEBUG_BUILD", "false"
 
         // GPGS APP_ID for AndroidManifest meta-data.
@@ -504,6 +500,7 @@ android {
     sourceSets {
         main {
             kotlin.srcDir(githubRelease ? 'src/directInstall/java' : 'src/playServices/java')
+            kotlin.srcDir(ciApk ? 'src/noGoogleIdentity/java' : 'src/googleIdentity/java')
             if (githubRelease) {
                 manifest.srcFile(directInstallManifest.get().asFile)
             }
@@ -569,7 +566,12 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:${toolVersions['OKHTTP_VERSION']}"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
 
-    // Google Play Games Services (GPGS v2) for player identity
+    // Separate Google matchmaking identity and optional Play Games platform features
+    if (!ciApk) {
+        implementation "androidx.credentials:credentials:${toolVersions['CREDENTIAL_MANAGER_VERSION']}"
+        implementation "androidx.credentials:credentials-play-services-auth:${toolVersions['CREDENTIAL_MANAGER_VERSION']}"
+        implementation "com.google.android.libraries.identity.googleid:googleid:${toolVersions['GOOGLE_ID_VERSION']}"
+    }
     if (!githubRelease) {
         implementation "com.google.android.gms:play-services-games-v2:${toolVersions['PLAY_SERVICES_GAMES_VERSION']}"
 
