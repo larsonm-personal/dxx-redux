@@ -11,7 +11,7 @@ $output = Join-Path $PSScriptRoot '../temp/xl-feature-browser'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 try {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
-    $result = Adb -Seconds 90 -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'xl_compatibility',
+    $result = Adb -Seconds 240 -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'xl_compatibility',
         "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation")
     Write-Output $result
     if ($result -notmatch 'PASS: XL compatibility dialog text and colors' -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {

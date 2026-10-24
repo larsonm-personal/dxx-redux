@@ -4,6 +4,7 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -148,6 +149,28 @@ internal class XlCompatibilityViewChecks(
         error("Text not visible after bounded scroll: $text: ${labels.joinToString(" | ")}")
     }
 
+    private fun settledBounds(text: String): Rect {
+        instrumentation.waitForIdleSync()
+        var previous: Rect? = null
+        var stable = 0
+        repeat(30) {
+            val node = find(text)
+            val current =
+                if (node?.isVisibleToUser ==
+                    true
+                ) {
+                    Rect().also(node::getBoundsInScreen).takeUnless { it.isEmpty }
+                } else {
+                    null
+                }
+            stable = if (current != null && current == previous) stable + 1 else 0
+            if (stable >= 3) return checkNotNull(current)
+            previous = current
+            SystemClock.sleep(100)
+        }
+        error("Dialog text did not settle: $text; last=$previous")
+    }
+
     private fun capture(name: String): Bitmap {
         instrumentation.waitForIdleSync()
         SystemClock.sleep(300)
@@ -188,6 +211,10 @@ internal class XlCompatibilityViewChecks(
         }
     }
 
+    private fun checkpoint(message: String) {
+        instrumentation.sendStatus(0, Bundle().apply { putString("stream", "XL dialog: $message\n") })
+    }
+
     fun run() {
         val context = instrumentation.targetContext
         val launcher =
@@ -201,6 +228,7 @@ internal class XlCompatibilityViewChecks(
             }
             SystemClock.sleep(500)
             for (dark in listOf(false, true)) {
+                checkpoint("theme dark=$dark")
                 // Read explanations through the real JNI catalog using only a synthetic descriptor
                 val catalog =
                     checkNotNull(
@@ -266,10 +294,8 @@ internal class XlCompatibilityViewChecks(
                 assertColor("Eligible; runtime checks needed", if (dark) 0xFFB86C else 0x8A4B00)
                 scrollTo("Supported fixture: 2")
                 assertColor("Supported", if (dark) 0x81C995 else 0x216E39)
-                val waterBounds =
-                    Rect().also(
-                        scrollTo("Water segments: 1", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)::getBoundsInScreen,
-                    )
+                scrollTo("Water segments: 1", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+                val waterBounds = settledBounds("Water segments: 1")
                 click("Water segments: 1")
                 awaitText("What XL does")
                 scrollTo("Current Redux support")
@@ -278,8 +304,12 @@ internal class XlCompatibilityViewChecks(
                 capture("xl-feature-water-$theme.png").recycle()
                 instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
                 instrumentation.waitForIdleSync()
-                val restoredBounds = Rect().also(awaitText("Water segments: 1")::getBoundsInScreen)
-                check(restoredBounds == waterBounds) { "Explanation Back lost the feature-list position" }
+                awaitText("D2X-XL extensions")
+                val restoredBounds = settledBounds("Water segments: 1")
+                check(restoredBounds == waterBounds) {
+                    "Explanation Back lost the feature-list position: before=$waterBounds after=$restoredBounds"
+                }
+                checkpoint("water Back preserved $restoredBounds")
                 scrollTo("Wall teleports: 3", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
                 click("Wall teleports: 3")
                 awaitText("What XL does")
@@ -290,6 +320,7 @@ internal class XlCompatibilityViewChecks(
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
+            checkpoint("light/dark explanations and colors passed")
             val unknownRows =
                 listOf(
                     XlCompatibilityRow("Missing fixture", "Not inspected", "Unknown", "unknown", "", null, true),
@@ -316,6 +347,7 @@ internal class XlCompatibilityViewChecks(
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
+            checkpoint("unknown/absent/empty states passed")
             val sourceA =
                 XlCompatibilityReport("Source A", "eligible", "Assets still need checks", listOf(unknownRows[0]))
             val sourceB = XlCompatibilityReport("Source B", "unknown", "Sibling not inspected", listOf(unknownRows[1]))
@@ -346,6 +378,7 @@ internal class XlCompatibilityViewChecks(
                     count = 1,
                     status = "partial",
                 )
+            checkpoint("source switching and reopen passed")
             val longRows =
                 List(12) { XlCompatibilityRow("Uninspected category $it", "Unknown", "Unqualified", "unknown", "") } +
                     water.copy(counted = false)
@@ -365,12 +398,16 @@ internal class XlCompatibilityViewChecks(
             click("Uninspected category 0")
             awaitText("No verified feature explanation is available")
             click("Back to features")
-            val before = Rect().also(scrollTo("Water segments")::getBoundsInScreen)
+            scrollTo("Water segments")
+            val before = settledBounds("Water segments")
             click("Water segments")
             awaitText("What XL does")
             click("Back to features")
-            val after = Rect().also(awaitText("Water segments")::getBoundsInScreen)
-            check(before == after) { "Closing an explanation lost a scrolled inventory position" }
+            awaitText("D2X-XL extensions")
+            val after = settledBounds("Water segments")
+            check(
+                before == after,
+            ) { "Closing an explanation lost a scrolled inventory position: before=$before after=$after" }
             click("Close")
         } finally {
             instrumentation.runOnMainSync { launcher.finish() }
