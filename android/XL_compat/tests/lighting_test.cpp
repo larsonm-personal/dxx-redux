@@ -17,6 +17,11 @@ void expect(const xl_compat::VertexLighting &input, xl_compat::Rgb expected, int
 int main()
 {
 	try {
+		if (xl_compat::flare_intensity(65536, 131072, 0) != 114688 ||
+		    xl_compat::flare_intensity(65536, 131072, 32767) != 131072 ||
+		    xl_compat::flare_intensity(65536, 32768, 0) != 57344 ||
+		    xl_compat::flare_intensity(65536, 0, 32767) != 0)
+			throw std::runtime_error("XL flare range/lifetime formula mismatch");
 		xl_compat::Inventory level;
 		level.level_version = 15;
 		level.game_version = 33;

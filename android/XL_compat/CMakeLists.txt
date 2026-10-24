@@ -29,6 +29,11 @@ if(BUILD_TESTING)
     if(XL_REFERENCE_RENDERLIB)
         include(tests/reference_lighting.cmake)
     endif()
+    set(XL_REFERENCE_LIGHT "" CACHE FILEPATH
+                                    "Pinned XL lighting/light.cpp for dynamic color oracle")
+    if(XL_REFERENCE_LIGHT)
+        include(tests/reference_dynamic.cmake)
+    endif()
     add_executable(xl_lighting_test tests/lighting_test.cpp)
     target_link_libraries(xl_lighting_test PRIVATE xl_inventory)
     add_test(NAME xl_lighting_calculation COMMAND xl_lighting_test)
@@ -38,6 +43,7 @@ if(BUILD_TESTING)
     set(XL_PILOT_HOG "" CACHE FILEPATH
                               "Original D2-XL Counterstrike HOG for private integration coverage")
     set(XL_PILOT_LEVEL "" CACHE FILEPATH "Original d2leva-1.rl2 for stock loader probe")
+    set(XL_PILOT_DESCRIPTOR "" CACHE FILEPATH "Original outer d2-xl.mn2 for mission/save testing")
     set(XL_STOCK_METADATA "" CACHE FILEPATH "Unmodified D2 headless metadata executable")
     set(XL_STOCK_ROUTE "" CACHE FILEPATH "Unmodified D2 headless route diagnostic executable")
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
@@ -48,9 +54,32 @@ if(BUILD_TESTING)
             COMMAND
                 ${CMAKE_COMMAND} -DLEVEL=${XL_PILOT_LEVEL} -DPROBE=$<TARGET_FILE:xl_probe_fixture>
                 -DENGINE=${XL_STOCK_METADATA} -DDATA=${XL_RETAIL_DATA}
-                -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                -DPREVIEW=${XL_PREVIEW_LIFECYCLE} -DPILOT_HOG=${XL_PILOT_HOG}
+                -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/preview-tests -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+        if(XL_PILOT_DESCRIPTOR AND XL_PILOT_HOG)
+            add_test(
+                NAME xl_normal_red_key
+                COMMAND
+                    ${CMAKE_COMMAND} -DNAVIGATION=ON -DLEVEL=${XL_PILOT_LEVEL}
+                    -DPROBE=$<TARGET_FILE:xl_probe_fixture> -DENGINE=${XL_STOCK_METADATA}
+                    -DDATA=${XL_RETAIL_DATA} -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                    -DPILOT_HOG=${XL_PILOT_HOG} -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/navigation-tests -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+            set_tests_properties(xl_normal_red_key PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_normal_reactor
+                COMMAND
+                    ${CMAKE_COMMAND} -DNAVIGATION=ON -DREACTOR=ON -DLEVEL=${XL_PILOT_LEVEL}
+                    -DPROBE=$<TARGET_FILE:xl_probe_fixture> -DENGINE=${XL_STOCK_METADATA}
+                    -DDATA=${XL_RETAIL_DATA} -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                    -DPILOT_HOG=${XL_PILOT_HOG} -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/reactor-tests -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+            set_tests_properties(xl_normal_reactor PROPERTIES TIMEOUT 90)
+        endif()
     endif()
     if(XL_PILOT_LEVEL AND XL_STOCK_METADATA AND XL_RETAIL_DATA)
         add_test(

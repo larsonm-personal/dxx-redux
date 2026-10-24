@@ -81,6 +81,13 @@ starts establish engine crash causality. No hub-world/non-cubic claims follow
 
 ## Changes to our strategy
 
+Follow-up reconciliation re-read the supplied conversation, REPORT.md and
+REPRODUCE.md directly from the Downloads archive and reran `audit_survey.py`
+with the existing native inventory and original pilot bytes. The downloaded and
+preserved ZIP hashes agree; all verifier checks pass. This does not add a fresh
+native parse, corpus scan or runtime result. The pilot plan now maps all ten
+survey areas to explicit pilot decisions and remaining behavioral evidence
+
 Keep Ahayweh Gate as the bounded first pilot. The same-hash corroboration supports
 that choice but uncovers another specific reference check: walls 6-17 have
 serialized cloak 21, walls 81-82 have 31, all type 3. Test segments 99-105,
@@ -92,7 +99,9 @@ scope into explicit browser rows; expand event semantics and capacity text.
 Keep new rows unknown until native evidence exists. Add cross-cutting save/replay,
 network and A -> stock -> B cleanup gates. Preserve separate loading, gameplay
 and fidelity claims. Grayscale is an intermediate option, not fulfillment of the
-user's requested lighting-verifiable pilot
+user's requested extension-faithful pilot. Exact visual matching and XL retuning
+of classic behavior are excluded by the later scope clarification; authored
+colors, opacity and their gameplay consequences remain required
 
 The [catalog](../EXTENSIONS.md) gives fixture priorities. The active
 [pilot plan](../../ai%20tool%20plans/mission%20metadata/d2xxl_first_mission_pilot_20261023.md)

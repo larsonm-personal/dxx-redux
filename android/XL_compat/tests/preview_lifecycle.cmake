@@ -1,10 +1,30 @@
 include("${CMAKE_CURRENT_LIST_DIR}/stock_probe.cmake")
 configure_file("${fixture}/xlprobe.rl2" "${fixture}/stockprobe.rl2" COPYONLY)
+configure_file("${LEVEL}" "${fixture}/d2leva-1.rl2" COPYONLY)
+set(mission_test_args)
+if(REACTOR AND NOT NAVIGATION)
+    message(FATAL_ERROR "Reactor coverage requires the earned red-key navigation checkpoint")
+endif()
+if(NAVIGATION)
+    if(NOT PILOT_DESCRIPTOR OR NOT PILOT_HOG)
+        message(FATAL_ERROR "Normal navigation requires the original mission descriptor and HOG")
+    endif()
+    list(APPEND mission_test_args -xl-test-navigation)
+    if(REACTOR)
+        list(APPEND mission_test_args -xl-test-reactor)
+    endif()
+endif()
+if(PILOT_DESCRIPTOR AND PILOT_HOG)
+    file(MAKE_DIRECTORY "${fixture}/missions")
+    configure_file("${PILOT_DESCRIPTOR}" "${fixture}/missions/d2-xl.mn2" COPYONLY)
+    file(CREATE_LINK "${PILOT_HOG}" "${fixture}/missions/d2-xl.hog" COPY_ON_ERROR)
+    list(APPEND mission_test_args -xl-test-save)
+endif()
 execute_process(
     COMMAND
-        "${PREVIEW}" -xl-static-light-preview -xl-source "${LEVEL}" -fixture-path
-        "${fixture}/xlprobe.rl2" -hogdir "${DATA}" -extra-dir "${fixture}" -mission xlprobe -userdir
-        "${fixture}/preview-user"
+        "${PREVIEW}" -xl-pilot -pilot-hog "${PILOT_HOG}" -xl-static-light-preview -xl-source
+        "${LEVEL}" -fixture-path "${fixture}/xlprobe.rl2" -hogdir "${DATA}" -extra-dir "${fixture}"
+        -mission xlprobe -userdir "${fixture}/preview-user" ${mission_test_args}
     RESULT_VARIABLE result
     TIMEOUT 60
     OUTPUT_FILE "${fixture}/preview.log"
@@ -13,8 +33,25 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "XL preview lifecycle failed: ${result}; see ${fixture}")
 endif()
 file(READ "${fixture}/preview.log" report)
+if(REACTOR AND (NOT report MATCHES "Normal reactor navigation: frames=[0-9]+ dead=0 destroyed=1"
+                OR NOT EXISTS "${fixture}/preview-user/xl-normal-reactor.sav"))
+    message(FATAL_ERROR "Normal reactor objective did not finish with its earned checkpoint")
+endif()
+if(NAVIGATION AND NOT report MATCHES "Normal red-key navigation: frames=[0-9]+ dead=0 red_key=1")
+    message(FATAL_ERROR "Normal red-key navigation did not establish a living key pickup")
+endif()
+if(NAVIGATION AND NOT EXISTS "${fixture}/preview-user/xl-normal-key.sav")
+    message(FATAL_ERROR "Normal navigation did not preserve its actual player checkpoint")
+endif()
 if(NOT report MATCHES "recover passed")
     message(FATAL_ERROR "XL preview lifecycle did not reach final assertion")
+endif()
+if(mission_test_args)
+    if(NOT report MATCHES "Original mission save: identity"
+       OR NOT EXISTS "${fixture}/preview-user/xl-pilot-state.sav")
+        message(
+            FATAL_ERROR "Original mission save coverage did not finish in isolated write directory")
+    endif()
 endif()
 file(SHA256 "${LEVEL}" after_source_hash)
 file(SHA256 "${fixture}/xlprobe.rl2" restored_hash)

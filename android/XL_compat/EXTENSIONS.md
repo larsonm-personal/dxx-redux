@@ -1,10 +1,16 @@
 # D2X-XL extension support catalog
 
 Production XL admission remains unsupported. The native 15/33 inventory,
-translation, static-light preview and assisted route are separate experiments.
+translation, partial lighting preview and normal-input progression are separate experiments.
 None grants mission compatibility. The executable catalog is `compatibility.cpp`;
 the Android browser displays its per-source evidence. Keep descriptions and
 support text synchronized with this catalog
+
+Pilot scope clarified by the user: faithful XL engine extensions, with Redux's
+classic behavior retained. Exact visual fidelity and XL retuning of features
+already present in 1996 are not acceptance requirements. Existing research into
+classic emitter formulas is not a requirement to port those formulas. Authored
+extension data and its gameplay consequences remain mandatory
 
 This revision incorporates Dot's survey, checked on 2026-10-23. See
 [evidence and qualifications](evidence/README.md) and the preserved
@@ -49,6 +55,17 @@ later stress fixture. Dynamic spawning needs headroom beyond serialized counts
 
 ## Qualification and browser policy
 
+Track four independent questions for each category: was the exact serialized
+requirement decoded, is its runtime behavior implemented, was that behavior
+exercised, and what presentation difference remains? A single support percentage
+cannot answer these questions. Record source hash, field/record location,
+reference version, test artifact and remaining uncertainty with each claim
+
+Use `not required` only after complete inspection of the relevant level and
+resource scope. A missing parser section is `unknown`; a decoded but unimplemented
+requirement is `unsupported`; an implemented path without behavioral evidence is
+`unverified`. These are evidence distinctions, not new browser status IDs
+
 - Loading, completable gameplay and presentation fidelity are separate claims,
   each bound to source hash, engine build, runtime profile and test scope
 - Green requires verified full production support for the selected scope
@@ -69,13 +86,67 @@ New categories remain unknown until native inspection provides specific evidence
 Survey records are research evidence, not browser lookups by mission title.
 Source blockers aggregate, but uninspected levels/assets remain unresolved
 
+For the pilot, retain these evidence boundaries when updating any row:
+
+| Evidence available                                       | What it establishes                                                   | Required next evidence                                                 |
+| -------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Survey and native inventory agree on exact source bytes  | Selected decoded fields corroborate each other                        | Resolve every required field and transitive resource dependency        |
+| Translated fixture loads and draws                       | A bounded experimental path reaches rendering                         | Original-source admission with validated behavior and failure handling |
+| Extracted reference arithmetic and lifecycle checks pass | Tested formulas and state transitions agree within their stated scope | Required authored extension behavior in live gameplay and persistence |
+| Assisted route reaches an exit                           | A route exists under the recorded assists                             | Ordinary combat, all pilot branches, countdown and native transition   |
+| One level meets its gates                                | That level and tested profile can qualify                             | Separate evidence for remaining campaign levels and multiplayer        |
+
+In particular, the current live lighting slice covers robot, debris, explicit
+light, ordinary weapon, marker, indexed explosion, muzzle-flash and normal
+single-player ship/headlight and flare sources. Alternate
+player profiles and multiplayer are unverified. An unresolved-emitter count of zero is not a
+rendering acceptance test. A saved reference profile is evidence of intended
+settings; verify the running reference before accepting frame comparisons.
+Frame parity and XL tuning of classic emitters are not pilot completion gates
+
+The isolated original-source admission and real mission save/restore checks now
+provide stronger evidence than translated-fixture loading alone. They preserve
+mission identity, robots, light state and opacity across a controlled restore.
+They do not establish ordinary combat, branch coverage or level completion, and
+do not promote the production browser's status
+
+Subsequent normal-input tests provide a separate, stronger progression result:
+the player earns the red key, restores that earned save without replenishment,
+and destroys the reactor while alive with the normal 45-second countdown.
+The recorded pair of runs agrees. These tests use ordinary movement, weapons,
+damage, pickups and physical trigger activation; the controller reads level
+topology to choose inputs, so this is automated gameplay evidence rather than
+a blind human playthrough. It does not prove timed escape or every authored
+branch. See the pilot plan for exact artifacts and superseded earlier runs
+
+The next qualification sequence is therefore:
+
+1. Escape from the earned reactor checkpoint within the unchanged countdown,
+   through the native exit trigger and completion path. Explicitly bound the
+   result to level 1; do not silently admit level 2
+2. Account for all 13 wall triggers and their branches. Record activation,
+   expected target changes and persistence separately from simply visiting a
+   segment; classify any unexercised branch as unverified
+3. Close authored side/texture-color semantics and the remaining material
+   visibility, targeting and projectile checks. Loaded resources and geometric
+   passage checks do not establish these behaviors
+4. Verify the intended Android import, launch, save and return-to-stock path
+   before promoting Android admission. Windows experiments alone cannot do so
+
+These gates refine the first pilot, not the corpus-wide implementation order.
+Do not port teleports, generators or wider tables merely because the survey
+finds them elsewhere; retain them as explicit later fixtures unless this pilot's
+complete requirement inventory demonstrates a dependency
+
 ## Implementation order and fixtures
 
 1. Finish Ahayweh Gate's exact 15/33 path, resource closure and state isolation.
-   Resolve the six loader differences against the reference. Do not defer pilot
+   Classify the six loader differences by whether they lose an XL extension or
+   reflect acceptable classic normalization; do not require incidental bit parity.
+   Do not defer pilot
    wall-opacity behavior or changing lights behind generic format work
 2. Verify ordinary combat, all 13 triggers/branches, key/reactor/countdown/exit,
-   matched lighting/material scenes, saves and return to stock. Keep assisted
+   authored lighting/material semantics, saves and return to stock. Keep assisted
    routing separate. A translated fixture alone cannot qualify production admission
 3. The Apocalyptic Factor XL's 15 v15 levels are a second candidate family after
    per-level/resource inventory. Both it and D2-XL's 30 levels screen favorably

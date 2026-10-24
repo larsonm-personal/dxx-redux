@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -136,7 +139,15 @@ int check_transparency( segment * seg, int side )
 //		WID_ILLUSORY_WALL			3	//	1/1/0		illusory wall
 //		WID_TRANSILLUSORY_WALL	7	//	1/1/1		transparent illusory wall
 //		WID_NO_WALL					5	//	1/0/1		no wall, can fly through
+#ifdef DXX_XL_PILOT
+int wall_is_doorway(segment *seg, int side)
+{
+	return xl_preview_wall_is_doorway(seg - Segments, side);
+}
+int xl_stock_wall_is_doorway(segment *seg, int side)
+#else
 int wall_is_doorway ( segment * seg, int side )
+#endif
 {
 	int flags, type;
 	int state;

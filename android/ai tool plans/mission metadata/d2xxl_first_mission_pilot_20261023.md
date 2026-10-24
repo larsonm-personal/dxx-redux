@@ -2,10 +2,267 @@
 
 ## Decision
 
-Completion scope clarified by the user on 2026-10-23: a fully playable, verified
-Ahayweh Gate port, including gameplay and lighting. The inventory, assisted route
-and compatibility browser are intermediate deliverables only. Do not close the
-goal when the browser is finished
+Latest implementation constraint: the user explicitly permits ordinary guarded
+hooks in d1/d2 and rejects generated-source CMake substitution. This supersedes
+the earlier no-base-edits constraint and historical overlay checkpoints. The
+runtime now uses opt-in `DXX_XL_PILOT` hooks with extension state kept in
+`android/XL_compat`; default engine behavior must remain unchanged
+
+Direct-hook verification: both `xl-render-preview` and `xl-preview-lifecycle`
+build from the ordinary engine sources with `DXX_XL_PILOT=ON`; the lifecycle
+suite passes. The normal `buildd2` game and metadata targets also rebuild with
+`DXX_XL_PILOT=OFF`. Runtime configuration no longer generates or substitutes
+engine C files. Scoped formatter/linter and diff whitespace checks pass. The
+normal rebuild reports an existing C4113 warning in untouched `texmap/ntmap.c`;
+the new hook sources add no compiler warnings
+
+Mission isolation uncovered a real admission bug: retail Counterstrike and the
+XL pilot share `d2leva-1.rl2`. Admission is now scoped to the `d2-xl` mission
+(or the explicit private `xlprobe` test fixture), as well as the original hash.
+The test renames its loose fixture copy before mission-level checks so it cannot
+shadow retail HOG members, and verifies retail resolution from `descent2.hog`.
+Pilot -> stock -> pilot passes fresh UVL/color/material checks and byte comparisons
+of loaded robot, weapon, powerup and joint definitions. Intro skipping is a
+consumed flag and must be set before each headless startup; failing to do so
+entered the unsupported movie path. Custom override rollback remains separate
+
+Latest completion scope, clarified by the user on 2026-10-23: a fully playable,
+verified Ahayweh Gate port with faithful implementation of every XL engine
+extension used by the pilot. Exact visual fidelity and XL author's changes to
+features already present in 1996 are explicitly NOT requirements. Use Redux's
+classic behavior as the baseline. The inventory, assisted route and browser are
+intermediate deliverables only. This scope supersedes stricter visual-parity
+requirements in the historical checkpoints below
+
+## Current acceptance boundary after user clarification
+
+Next concrete gameplay gate: restore the earned reactor checkpoint and reach
+the native exit under its unchanged 45-second timer. Success requires the
+engine's exit/completion path, not a controller-assigned completion flag or
+direct trigger call. Level 2 remains outside admission; define and verify the
+single-level completion behavior before allowing the campaign transition
+
+After escape, reconcile coverage against all 13 inventoried triggers, with
+activation and target-state evidence per branch. Keep authored side/texture
+color semantics, material targeting/projectile behavior and Android deployment
+as independent open gates. The Dot survey supplies fixture priorities and
+requirement leads; neither its parser agreement nor an exit run can close those
+gates by implication
+
+Normal reactor milestone now passes twice. `xl_normal_reactor` first earns the
+red key, restores that exact save without replenishment, then uses normal inputs
+to collect reachable supplies, cross authored door triggers and destroy the
+reactor. The controller now uses portal-aware waypoints with full player-radius
+checks; a recenter fallback that oscillated in segment 35 was replaced with a
+destination-center fallback. A secret-area detour required physically crossing
+an authored open-door trigger to get back out. The navigator reads trigger links
+to choose the route but never calls the trigger handler or assigns wall state
+
+Two consecutive runs agree: red key at frame 4887 with ten kills, then reactor
+destroyed after another 6819 frames, player alive with shields 3333686 fixed
+units (about 50.9) and countdown 2949120 (45 seconds). This updates the earlier
+red-key controller timing below. Evidence: `reactor-tests/9d0acf156549/preview.log`
+and `reactor-tests/70e9c8528af9/preview.log`. Each contains the earned
+`preview-user/xl-normal-reactor.sav` (322815 bytes). Lifecycle, red-key and reactor
+tests all pass twice; build and scoped formatting/lint pass. The countdown is
+not paused or extended. Timed exit and remaining branches are still unverified
+
+Normal red-key milestone now passes reproducibly with seed 1. The input
+controller's earlier failures below exposed slow target tracking, wasted firing,
+and a missing input-loop step: `do_weapon_n_item_stuff` handles missile/item
+inputs outside `GameProcessFrame`. The controller now uses that normal handler,
+aims ahead of moving robots, engages visible threats before advancing, strafes,
+and seeks nearby reachable shields/laser upgrades. All changes are input policy;
+the engine still enforces turn/thrust limits, collision, firing delay, ammunition,
+damage and pickup rules
+
+Registered `xl_normal_red_key` separately from the assisted route and lifecycle
+test. Two consecutive runs both finish at frame 4356 (72.6 seconds), with nine
+robot kills, red key held, player alive, 12 shields and level-2 lasers. The
+actual player checkpoint is `preview-user/xl-normal-key.sav`, 314487 bytes in
+both runs. Evidence: `navigation-tests/b20dccdcb87b/preview.log` and
+`navigation-tests/752c2e2ab257/preview.log`. The lifecycle test also passes twice;
+build and scoped formatting/lint pass. This supersedes the failing red-key
+controller result below, not the remaining reactor/exit/branch requirements
+
+Normal-input navigation investigation: an optional `NAVIGATION=ON` invocation
+of `tests/preview_lifecycle.cmake` adds `-xl-test-navigation`. It starts the real
+pilot with 38 robots and difficulty 2, checks combat cheats/invulnerability,
+finds a path across currently passable or normally openable doors, and drives
+only `Controls` through the normal frame loop. It uses ship rotation and thrust,
+aims at visible robots, and fires ordinary lasers. No transform, health, enemy,
+weapon damage, door or key state is assigned by the navigator
+
+The first untuned run reached the red key at frame 2487 with only 25804 fixed
+shield units remaining (`preview-tests/a5120ec209cc/preview.log`). That run did
+not explicitly seed the RNG and is not the reproducible acceptance baseline.
+With seed 1, the controller dies before the key. The current lead-aim/dodge
+version kills four robots but dies at frame 2943
+(`preview-tests/eb6360b2550b/preview.log`). The diagnostic returns failure and the
+CMake runner requires a living key-pickup result; it cannot silently pass by
+skipping navigation. Ordinary lifecycle CTest remains separate and passes.
+Improve controller combat/navigation from the logged aim, range and damage
+evidence; do not select a favorable seed or change gameplay rules to qualify
+the level. Reactor, exit and all required branches remain unverified
+
+| Required for the pilot                                                           | Not a completion blocker                                                                            |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Correct 15/33 decoding and guarded admission, no silently dropped XL fields      | Pixel-identical rendering, resolution, filtering, contrast, cockpit appearance                      |
+| Authored XL colors and opacity with their actual visibility/gameplay semantics   | XL changes to classic player thrust light, headlight cone, flare RNG or explosion palette averaging |
+| XL-only wall/trigger/segment/object/resource behavior if required by these bytes | Reproducing XL tweaks to classic AI, physics, damage, weapons or ordinary resource presentation     |
+| Normal Redux combat/progression through every required pilot branch and exit     | Bit-for-bit matching of incidental classic runtime normalization to XL                              |
+| Persistence of extension state and stock-state isolation                         | Identical random sequences or rendered frames between different engines                             |
+
+Do not confuse this exclusion with permission to discard extension data: a wall
+that changes targeting, a trigger that changes progression, or an authored color
+table still needs correct support. Classify discrepancies by their cause before
+waiving them. Keep evidence scoped to this level and single-player; campaign and
+multiplayer claims remain separate
+
+Guarded original-source admission and controlled save/load now have the evidence
+described below. Next work is required extension semantics, resource closure and
+normal unassisted progression. Stop adding classic renderer-parity
+adapters or aligning screenshots solely for visual matching. Existing experimental
+adapters and tests can remain evidence, but must not become mandatory production
+behavior merely because they were implemented before this clarification
+
+### Survey reconciliation and remaining qualification work
+
+Rechecked the supplied Dot conversation and downloaded evidence ZIP against the
+preserved bundle. The archive hash is identical. The repository verifier passes
+manifest, JSON/CSV and aggregate checks and the native same-hash pilot comparison.
+This rerun uses the existing native inventory; it is not a fresh corpus scan,
+new native parse or gameplay test. See `XL_compat/evidence/README.md` for provenance
+and the two excluded object sections
+
+Dot's ten areas map to the catalog's 19 rows. Apply them to the pilot as follows;
+corpus prevalence determines later fixture priorities, not pilot requirements:
+
+| Survey area | Pilot decision and next evidence |
+| --- | --- |
+| Formats and packaging | Keep exact-hash 15/33 admission; test original descriptor/HOG selection and reject unsupported sources. No blanket version admission |
+| Capacities and widths | Current serialized counts fit. Check reference bounds and runtime spawn headroom; widening all XL tables belongs to later fixtures |
+| Events and object triggers | Inventory has 13 classic wall actions and no object triggers. Exercise every action and branch; classic action IDs alone do not prove semantics |
+| Movement transitions | Do not implement corpus teleports/boosts for a pilot that does not require them. Confirm absence across decoded actions before marking not required |
+| Segment rules | Classify each serialized property using v15 semantics; distinguish required XL behavior from classic loader normalization |
+| Generators and spawning | No pilot matcens are inventoried. Validate contained-item/runtime spawn dependencies; do not infer all spawning is absent |
+| Wall materials | Test all 14 authored-opacity walls for rendering, actor/projectile passage and targeting independently; alpha and doorway flags alone are insufficient |
+| Lighting | Account for vertex, side and texture tables and changing-light persistence. Trace consumers in the pinned reference/profile; unused in one mode is not universally unused |
+| Effects and audio | Preserve object identity and validate referenced resources. Corpus effect counts do not establish pilot requirements or make missing cues cosmetic |
+| Resources and custom data | Close transitive dependencies and test failed-load rollback plus pilot -> stock -> pilot isolation; direct object references alone are insufficient |
+
+Maintain a requirement ledger with source hash, serialized location/value,
+reference consumer, implementation path, behavioral test and unresolved scope.
+For each non-neutral extension field, either demonstrate the behavior or document
+why the selected profile does not consume it. Do not turn an unexplained field
+into a silent default or a `not required` result
+
+Qualification order: finish the authored-material/color and dependency audit;
+exercise required semantics in the real engine; then complete ordinary combat,
+keys, all required branches, reactor, countdown and native exit with normal rules.
+Keep the existing assisted-route artifact explicitly separate. Controlled save
+mutation tests prove persistence only. Follow with stock-state isolation and
+the intended Android launch/import path before claiming Android support
+
+Single-player pilot qualification does not require implementing XL multiplayer,
+all 30 campaign levels or modern hub persistence. Those claims remain unverified
+and unavailable until separately tested. Grayscale or omitted cues may be useful
+diagnostic modes, but do not fulfill this pilot's authored-extension requirement
+
+### Original-source admission checkpoint
+
+Authored-material collision follow-up: the real-loader lifecycle test now traces
+from each of the 14 nonzero-opacity illusion walls' segment centers into their
+adjacent segments using `find_vector_intersection`. Point, small-radius and
+loaded-player-radius traces all reach the expected adjacent segment. Each trace
+also has a negative control: temporarily closing that same wall produces a hit
+on the exact tested side, then its original type is restored. This verifies wall
+passage independently of alpha and doorway bit assertions, for both serialized
+opacity values (21 and 31). The rebuilt Windows lifecycle test and scoped
+formatter pass. Objects are excluded from these geometric traces; weapon/object
+collisions, AI targeting and ordinary combat remain separate requirements
+
+Added `-xl-pilot` to the dedicated runtime target. The wrapper reads original
+`d2leva-1.rl2` through PhysicsFS, checks its exact size/hash, runs the bounded
+15/33 translator and verifies the private translated bytes before loading.
+A generated file-open hook substitutes only the level stream; it preserves the
+original filename used by engine mission/save logic. Extension state is enabled
+only after successful loading and geometry checks. This is opt-in pilot admission,
+not qualification or acceptance of other levels/versions
+
+Real-loader coverage passes for the original source, rejection of a one-bit
+source change, restoration, preserved Gamesave_current_filename, and original HOG
+resolution (verified with PHYSFS_getRealDir), followed by color/material checks
+and archive unmount. Existing unrelated-level isolation still passes. Evidence:
+`temp/xl-compat-ninja/preview-tests/09706a3229a9/preview.log`. Both runtime targets
+build; base d1/d2 sources remain unchanged. The startup helper can select the
+original d2-xl mission with -xl-preview-start -xl-pilot, but that full mission
+startup and ordinary gameplay are still to be exercised
+
+Next verify mission descriptor/resource precedence and run original-source
+progression/save checks without the assisted route's robot removal, invulnerability,
+boosted damage, paused countdown or position commits. Authored side/texture color
+semantics and opacity/collision interactions remain extension obligations. Classic
+renderer tuning and matched pixel images are not blockers under the latest scope
+
+### Original-mission save/restore checkpoint
+
+Resource traversal now also follows every side's base/overlay textures,
+destroyed-texture replacements, linked effects (including critical/destroyed
+variants), model texture effects and wall animation frames. Combat, pickup,
+effect and door sounds resolve through `digi_xlat_sound` to nonempty loaded
+samples. Passing totals are 136 textures, 25 effects, nine wall animations,
+56 vclips, 780 paged bitmaps and 51 resolved sound samples. An initial failure
+on sound 0 was a verifier error: effect playback consumes `eclip.sound_num`,
+not the sound field of its embedded vclip; `gameseq.c` ambient setup and
+`collide.c` effect destruction confirm that distinction. The check now follows
+the actual consumer. Headless dummy audio does not establish audible playback
+or spatial mixing. Override precedence/rollback and resource isolation still
+need their own evidence; these counts are not full mission qualification
+
+First normal-input simulation: after the persistence checks, restart the original
+mission and drive the real player for 600 frames at 60 Hz through `Controls`
+forward thrust and primary fire plus `calc_game_time`/`GameProcessFrame`. No route
+actor is started and no objects, positions, damage values or countdowns are
+changed. Reject combat cheats/invulnerability and require player movement,
+energy expenditure, player projectiles, robot projectiles and shield damage.
+The run passes: 82 observed player projectile signatures, 22 robot projectile
+signatures, player alive in segment 193 with shields 5916348 fixed-point units.
+This is live simulation under normal rules, not a rendered playthrough or route
+completion. Input navigation, all required branches and the reactor/exit remain
+unverified. Fixed forward/fire inputs alone are not a competent completion policy
+
+Loaded dependency follow-up: after real `StartNewGame(1)`, the lifecycle test
+traverses placed robots, contained robots/powerups, robot weapons and smart blobs,
+weapon children, the conservative full player arsenal, reactor shots, model
+variants, animation joint ranges and vclip frames. Referenced object bitmaps are
+actually paged in and checked for resident payloads and nonzero dimensions. A
+negative control replaces a reachable robot's weapon reference with an invalid
+ID and requires rejection, then restores the original field. Build, lifecycle
+test and scoped formatting pass. This closes those loaded-data reference checks,
+not the entire resource gate: audio, wall/effect texture chains, custom override
+precedence and failure rollback remain distinct obligations. It does not prove
+that all attacks, loot paths or animations have executed during ordinary play
+
+Added optional XL_PILOT_DESCRIPTOR coverage using the outer mission descriptor
+and original HOG. The embedded descriptor differs in displayed title and text
+line endings; the regular/secret level lists agree. Runtime checks confirm the
+outer D2-XL: Counterstrike! title wins, with 24 regular and six secret entries
+
+The real StartNewGame(1) path loads the original pilot, retains all 38 robots
+and does not grant invulnerability. The persistence test switches one light off,
+changes a live authored-opacity record, writes a normal engine save, changes the
+in-memory values, then restores. Mission/level identity, energy/flags, robot count,
+all UVLs, live wall opacity and XL ambient/material activation pass. These are
+controlled state changes, explicitly not combat/progression evidence
+
+The test uncovered that the included metadata initializer ignores -userdir.
+Selecting a write directory after initialization also fails because the console
+log is already open. The isolated test now selects and mounts its private
+directory immediately after PhysicsFS initialization, before console startup.
+CTest requires the save artifact in that directory as well as the final success
+message. The corrected run passes. Remaining gameplay and extension obligations
+are unchanged; classic renderer parity remains out of scope
 
 Rendering investigation: the pinned local XL source loads vertex RGB into
 `gameData.renderData.color.ambient` in `LoadVertLightsCompiled`. The static face
@@ -188,8 +445,8 @@ each feature, with evidence attached. Unknown is never equivalent to supported
    - Test rejection of truncation, unknown semantics and unrepresentable wall IDs
    - Verify stock D1/D2 loading and metadata remain unchanged
 3. **Verify level 1 gameplay**
-   - Establish expected behavior from a pinned D2X-XL reference run of these exact
-     bytes; stock Counterstrike is a secondary control, not the XL behavior oracle
+   - Establish XL-extension behavior from the pinned reference/source for these
+     exact bytes; retain Redux's behavior for classic features
    - Exercise every trigger and target, keyed doors, wall changes, robot combat,
      pickups, reactor/countdown and normal exit through gameplay actions
    - Check all reachable branches and secrets, not just a route to the exit
@@ -197,12 +454,12 @@ each feature, with evidence attached. Unknown is never equivalent to supported
    - Use introspection assertions and reusable automation; warping to the exit or
      directly setting completion state cannot prove playability
    - Verify leaving the mission restores stock assets and behavior
-4. **Verify presentation separately**
+4. **Verify authored extensions separately from visual fidelity**
    - Account for embedded colors, palette, textures, briefing, music and sounds
-   - Compare reference views/audio at selected checkpoints. A grayscale rendering
-     with correct geometry is a presentation gap, not faithful XL support
-   - Explicitly label any gameplay-only experimental milestone with remaining
-     presentation gaps; do not call it full support
+   - Verify authored colors, opacity and required resource semantics. Do not
+     require matched images/audio for changes to classic 1996 features
+   - Disclose visual differences, but do not block completion on filtering,
+     resolution, classic emitter tuning or other non-extension presentation choices
 5. **Expand only with evidence**
    - Level transitions, secret entry/return, all remaining levels and their assets
      need separate checks before a campaign claim
@@ -429,3 +686,298 @@ Current-state clarification: earlier 'no renderer hook' and 'images pending'
 paragraphs above describe historical checkpoints. The isolated preview now draws
 and has a verified image artifact; dynamic/material fidelity, normal gameplay and
 production admission remain open. The survey changes priorities, not support status
+
+## Pilot wall-material implementation checkpoint (2026-10-23)
+
+Source comparison found a concrete gap: XL `CWall::IsPassable` considers authored
+cloak values when deciding render-through, and `WallAlpha` applies textured
+opacity to ordinary XL walls. Stock Redux does neither for these pilot illusion
+walls. XL `palette.h` sets FADE_LEVELS to 31, unlike stock GR_FADE_LEVELS=34.
+Thus cloak 21 means alpha 10/31; cloak 31 means full opacity on this ordinary
+textured path. It must not be mapped to stock cloaking fades
+
+The isolated runtime now wraps doorway classification and textured face alpha,
+using current live wall state. A checked generated OpenGL overlay supplies the
+alpha to the three textured draw paths; per-face state clears after drawing and
+on every load. It does not modify `d1/` or `d2/`. The wrapper supplements the
+classic subset needed here; it is not a complete implementation of XL colored
+walls, player/key-specific passage, camera surfaces or all door-state semantics
+
+The real-loader lifecycle test passes with the added pilot assertions: twelve
+cloak-21 walls use 10/31 alpha and retain fly/render-through flags; two cloak-31
+walls remain opaque; per-face and stock-level state isolation holds. Both Windows
+preview targets build. This proves the tested numeric/flag paths, not full visual,
+collision or projectile equivalence
+
+`-xl-preview-wall 6` places the diagnostic camera at the wall's segment center,
+facing the side. It is explicitly repositioned visual evidence, not gameplay.
+The default material capture is `temp/xl-runtime-engine/main/screenshots/scrn0002.png`
+(SHA-256 f8921e835884735ae771e6e3fcc53448067280979929797ac02cb68ed205e9ae).
+`-xl-preview-stock-materials` disables both material adapters for investigation;
+its capture is `scrn0003.png`
+(SHA-256 10c3d22f8e300ab33a94eda33c0bbd19424078c097a0109056b60b2be3172b47).
+Both images were inspected. Animation/simulation timing differs, so their pixel
+difference is not a clean material-only metric. A matched-time XL reference scene
+and deterministic capture are still required. Both diagnostic processes stopped
+
+Remaining priorities: independent material/reference capture, changing-light
+integration, normal combat/progression, saved-state fidelity and production
+admission. Compatibility remains unsupported
+
+## Changing-light integration checkpoint (2026-10-23)
+
+The preview now passes live reactor/seismic state and the engine flash scale into
+XL vertex shading; previously its replacement RGB discarded those inputs. The
+reactor zero-scale case follows XL FlashFrame's minimum one fixed-point unit.
+This wires state into the arithmetic already compared against pinned XL source;
+it does not establish phase/timing parity, automap behavior or dynamic-source
+color generation. Stock and XL FlashFrame have additional lifecycle differences
+that still need runtime comparison
+
+Extended the real-loader test to exercise every one of the pilot's 70 light
+index records through stock subtract_light/add_light. Expected corner values are
+computed from the original source deltas using pinned XL light.cpp ChangeLight's
+legacy-mode formula: ordered +/- byte * 2048, clamped at zero after each update.
+All 70 sources change UVLs and pass exact comparisons, including repeated off/on
+no-op checks. Feeding the changed live UVLs to the XL hook changes 5878 tested
+colored corners. Add-back uses the post-clamp state; the test does not falsely
+assume subtraction/addition must recover the initial values after saturation
+
+The reactor/seismic test observes normal RGB 32426/32767/32305 and half-flash
+16213/16383/16152 on its selected pilot vertex. A one-unit fixed truncation is
+allowed at the expected 16384 peak. Both preview targets build; the lifecycle,
+analytical lighting and pinned-source arithmetic tests pass. Logs are in
+`temp/xl-compat-ninja/preview-tests/cb780d3f7acf/preview.log`
+
+Coverage limits: scalar UVLs and direct color-hook output, not a matched rendered
+on/off scene; not runtime reference light-manager behavior, object illumination,
+dynamic colored-light generation, save/restore, or normal combat/progression.
+All production compatibility gates remain open. This supersedes the earlier
+statement that the preview does not consume reactor/seismic flash state
+
+## Dynamic-light accumulation checkpoint (2026-10-23)
+
+XL legacy lighting does not store the same state as Redux's final RGB light sum.
+Its ApplyLight accumulates scalar fixed-point intensity separately; SetDynColor
+keeps a color-present flag and blends successive source colors by pairwise average.
+Unforced white colors are skipped; forced white colors participate. This is
+order-dependent and not recoverable by averaging or normalizing Redux RGB output
+
+Added `DynamicVertexLight` in the isolated lighting module with checked scalar
+accumulation and the XL color rule. This receives an already-attenuated contribution;
+it is not an emitter-intensity or distance calculation. A new optional
+`XL_REFERENCE_LIGHT` source oracle extracts unchanged InitDynColoring/SetDynColor
+from hash-pinned `lighting/light.cpp`:
+`ca95b9183729c7f3665ef0706206afce093b53b0d97aa6ba11379dd5fdf5f36f`.
+The test substitutes data containers, not color code, and compares 12288 steps
+across fresh accumulation sequences, source colors, force flags and missing colors.
+It passes on Windows x64 and Android x86_64 emulator-5556. Existing analytical and
+pinned vertex-lighting tests also pass
+
+The new state is not yet fed by the live emitter loop. Do not mark dynamic lights
+implemented or turn the preview's static output into a supported fallback. Next
+port the legacy ApplyLight path and its per-frame reset/visible-vertex selection,
+then feed the separate scalar/color state plus original vertex brightness into
+shade_vertex. Emission and attenuation must be ported from pinned XL rather than
+inferred from stock final RGB
+
+Specific source differences to preserve during that port:
+
+- XL uses CFixVector::Dist where stock uses quick distance estimates
+- XL robot emission uses lightcast as a gate and lighting as intensity; stock uses
+  lightcast itself as intensity
+- XL player emission uses thrust magnitude, unlike stock velocity-smoothed thrust
+- Weapon colors use XL's weapon color table; missiles use 1/0.3/0; flare emission
+  uses random intensity rather than stock's time/XOR pattern
+- Fireball colors average resolved animation-frame colors and normalize by their
+  maximum channel; resource overrides therefore matter to lighting
+- Powerup color/enable rules, dim-source segment-local attenuation, source order,
+  muzzle flashes and headlight cones must remain explicit
+
+These findings change the next implementation action; they do not certify a
+reference runtime, renderer, combat sequence or save. Dynamic generation and the
+pilot's existing gameplay/production-admission gates remain open
+
+## Partial live dynamic-light checkpoint (2026-10-23)
+
+The isolated render overlay now feeds robot, debris and explicit OBJ_LIGHT
+sources into separate scalar/color state each frame, then into XL vertex shading
+with original vertex brightness. It selects visible vertices for ordinary point
+sources and segment-local squared attenuation for dim sources. Both Windows
+preview targets build. The real-loader lifecycle test passes for an explicit
+point light reaching shading, state clearing on the next frame, and a weapon
+source being reported unresolved. This supersedes the previous checkpoint's
+statement that the accumulator has no live emitter connection
+
+This is a partial port, not dynamic-light qualification. Player, weapon, fireball
+and marker emitters are counted as unresolved. Muzzle flashes and headlights
+are not covered by that counter. Powerup lighting follows the saved reference
+profile's disabled setting; running-reference confirmation is still required.
+Distance math mode, attenuation boundaries, object illumination and matched
+frames remain unverified. Stock lighting still executes for stock consumers;
+avoid duplicate random-number draws and lifetime changes when porting emitters
+
+Before implementing player emission, preserve XL's distinction between local
+pre-scale player thrust and remote object thrust. Stock final physics thrust is
+not equivalent. Trace the raw controls, XL speed/damage multipliers and frame
+reset together, then test the adapter against pinned source. Weapon/fireball
+colors require resolved resources, so keep resource closure ahead of any claim
+that combat lighting is faithful. Follow with matched normal-play scenes and
+save/restore checks; none of the earlier gameplay gates is waived
+
+Rechecked the user-supplied survey ZIP using the repository verifier and the
+original pilot bytes. Manifest/CSV/JSON checks and selected native pilot fields
+pass; the report remains playable:false. EXTENSIONS.md now states an explicit
+evidence ladder from inventory through experimental loading, arithmetic, assisted
+routing and per-level qualification, preventing any one checkpoint from silently
+becoming a broader support claim. No full corpus rescan or new reference
+playthrough is implied by this reconciliation
+
+## Weapon and marker emission checkpoint (2026-10-23)
+
+Ported ordinary weapon emission into the isolated frame loop: resolved weapon
+intensity, forced source color, and the pinned CObject::InitTables missile
+classification including robot missiles. CWeaponData::Create initializes weapon
+colors to white; the inspected consumers do not assign a replacement table.
+Missiles use 1/0.3/0. Flare randomness and multiplayer omega suppression remain
+explicit unresolved cases rather than silently borrowing stock behavior
+
+Markers now use XL's 8 * abs(0.5 - fractional lifetime) intensity, 0.1/1/0.1
+color and segment-local squared attenuation regardless of intensity. Stock
+compute_light_emission already adds one second to their lifetime; that preserves
+the fractional bits used for emission. The XL hook runs afterward and does not
+repeat the mutation. This dependency must be preserved or replaced explicitly
+if the stock lighting loop is removed later
+
+The real-loader integration checks orange player/robot missiles versus white
+laser/mine sources, forced-white color mixing, strict point-source radius,
+visible-vertex selection, marker pulse, single lifetime mutation ownership and
+state clearing when dynamics are disabled. The checks use controlled weapon
+intensities, not proof of retail weapon-table or complete resource parity
+
+Next emission work remains local player thrust, headlight cones, flares, fireballs
+and muzzle flashes. A specific fireball resource distinction is now confirmed:
+XL CBitmap::GetAvgColor uses AvgColorIndex's nearest palette entry for indexed
+frames, then averages resolved animation frames and normalizes their maximum.
+Redux's avg_color_rgb is not equivalent. Decode/resolve the actual animation
+frames and compare this path before claiming explosion-light fidelity. No
+normal-combat, reference-image or production-admission gate is complete
+
+## Indexed explosion emission checkpoint (2026-10-23)
+
+Implemented indexed fireball frame resolution in the isolated preview. Source
+inspection of XL gameio/piggy.cpp confirms that nonzero average palette indices
+come from bitmap headers; GetAvgColor uses those before calculating a fallback.
+The fallback ignores pixel indices 0/254/255, averages palette channels with
+integer division, and selects the nearest palette entry among 0..254 with the
+first equal-distance entry retained. Stock's closest-color helper excludes 254,
+so it cannot be substituted. RLE and RLE_BIG frames are decoded by row through
+the stock scanline decoder. Colors are averaged across the actual animation
+frame IDs, normalized by maximum channel, and forced into the dynamic color
+accumulator. Lifetime attenuation follows the pinned ComputeLightIntensity path
+
+Controlled real-loader checks cover stored-index precedence over pixels,
+noncontiguous frame IDs, raw and RLE_BIG fallback, index 254 selection, and
+full/half intensity. Three retail clips (small explosion, player hit, volatile
+wall hit) also exercise resource resolution after restoring the real palette
+and bitmap tables. These tests do not prove exact reference resource resolution
+or visual parity. No persistent bitmap-color cache is introduced, avoiding stale
+palette/override state across loads while correctness is being established
+
+This path only handles indexed GameBitmaps; true-color/OOF/TGA overrides and
+XL-only explosion render modes remain outside its evidence. Player/headlight,
+flare and muzzle-flash emission remain incomplete. Keep resource closure,
+reference runtime comparisons and normal combat/progression gates open
+
+## Muzzle-flash integration checkpoint (2026-10-23)
+
+The dedicated build now generates a lighting.c overlay with a checked unique
+timestamp hook inside cast_muzzle_flash_light. It snapshots queue contributions
+before stock expiration, using exactly that loop's timestamp, then applies them
+before object lights in the XL accumulator. Flash sources use visible vertices,
+exact distance and minimum-distance clamping, with no source color. The stock
+queue remains the sole owner of expiration; the adapter only reads it and clears
+its private snapshot on load. No base d1/d2 files were edited
+
+Pinned XL CastMuzzleFlashLight and stock share the one-third-second duration,
+integer scale and signed 16-bit elapsed narrowing. Preserve that behavior,
+including its historical wrap, rather than silently improving one engine during
+a fidelity comparison. A runtime/reference timing comparison is still required
+
+Real-loader tests exercise zero-age, half-age, last-live-tick and expired
+contributions through colored shading, check that snapshotting does not mutate
+the queue, and run stock set_dynamic_light to verify actual expiration reaches
+the XL hook. Player thrust, headlights and flare randomness remain unfinished;
+normal-play, resource, image, save/replay and production-admission gates stay open
+
+## Local-player thrust light checkpoint (2026-10-23)
+
+Added checked generated controls.c/object.c overlays for raw thrust capture and
+player-reset clearing. The preview uses max(magnitude(raw thrust)/4, 2) + 0.5,
+with unforced white color, for the normal single-player ship. Load and death
+clear the vector. Headlight and multiplayer/hoard branches remain explicitly
+unresolved rather than using this formula for those modes
+
+The saved reference profile selects ship 0 and nDamageModel=0. XL's shipModifiers
+entry has speed 1, and SubSystemDamage returns 0.5 with damage disabled, making
+ApplyFlightControls' 2*DriveDamage multiplier one. This supports direct raw-vector
+capture for that profile, not general alternate ship or damage-model support
+
+Correction to the earlier investigation: updateobject.cpp's playerThrust zeroing
+is in StopPlayerMovement, not a per-frame reset. Do not clear this state merely
+because another render frame occurs. The adapter resets on lifecycle/control
+events. Reference pause, guided-missile, respawn and save behavior still require
+comparison; this checkpoint does not certify those paths
+
+The real-loader test invokes read_flying_controls with controlled input and ship
+thrust. It checks that final thrust doubles while the light uses the original
+vector (expected peak 28672, one-unit truncation tolerance), then checks death
+clearing reaches the 20480 baseline at the selected distance. Both preview
+targets build and the lifecycle test passes. Player reset overlay compilation
+does not itself prove respawn/save parity. Headlight and flare implementation,
+runtime profile confirmation and all ordinary gameplay gates remain open
+
+## Local headlight cone checkpoint (2026-10-23)
+
+Implemented the legacy single-player, non-darkness headlight branch from pinned
+ApplyLight. Its intensity is 10 fixed units; the radius test shifts distance by
+three; source color is forced white. Normalized forward dot below 0.5 uses
+intensity/(10*clamped distance); the cone uses fixed dot squared * intensity / 8.
+No multiplayer maxHeadlightDist restriction is applied to this single-player
+path. Multiplayer remains unresolved rather than borrowing local behavior
+
+The saved reference profile has headlight available, no loadout device, darkness
+off and lighting method zero. HeadlightIsOn therefore requires both possession
+and on bits. Tests exercise front/back/side, a 3-4-5 angled direction, a point
+beyond ordinary point-light range, the exclusive shifted radius, and each flag
+missing independently. Both preview builds and lifecycle checks pass
+
+This is face-light generation, not proof of reference rendering or object
+illumination. Darkness cone sizes, alternate lighting modes, remote obstruction
+tests and headlight energy-drain parity are not covered. Flare emission remains
+the immediate missing single-player emitter; normal gameplay and all original
+qualification gates remain open
+
+## Flare formula and RNG isolation checkpoint (2026-10-23)
+
+Inspection of pinned include/maths.h revealed that RandFloat(scale) divides by
+scale, rather than multiplying. Therefore ComputeLightIntensity's flare factor
+is 1.75..2.0. Added checked flare_intensity arithmetic to the standalone module
+and connected it to one 15-bit Redux FX sample per evaluated flare. Do not use
+the apparent but incorrect 1.75..5.75 range or stock's time/XOR flicker
+
+The analytical tests cover multiplier endpoints, lifetime capping and zero life.
+The real-loader test seeds the FX stream, verifies live color/intensity against
+the sampled result and checks exactly one FX call with unchanged simulation RNG
+state and call count. It restores FX state/count afterward. Multiplayer omega
+remains an explicit unresolved emitter; it replaces flare in that negative test
+
+Using Redux's FX stream is intentional integration, not a claim of exact XL libc
+random-sequence parity. XL's platform RAND_MAX and shared global random consumers
+can differ. Capture comparisons must control the random samples or assess the
+specified flicker range/behavior, and ordinary combat/replay must confirm that
+rendering does not perturb simulation. The emitter loop now has implementations
+for the investigated normal single-player cases, but object illumination,
+resource closure, reference profiles/scenes, normal gameplay, save/replay and
+production admission still require evidence. A zero unresolved count certifies
+none of those gates

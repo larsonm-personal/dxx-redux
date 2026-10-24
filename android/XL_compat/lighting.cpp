@@ -26,6 +26,32 @@ std::int32_t fixed(std::int64_t value)
 }
 } // namespace
 
+std::int32_t flare_intensity(std::int32_t light, std::int32_t life, unsigned sample)
+{
+	if (sample > 32767) throw std::runtime_error("Invalid XL flare random sample");
+	const float intensity = (1.75f + float(sample) / (32767.0f * 4.0f)) * std::min(light, life);
+	if (!std::isfinite(intensity) || double(intensity) < std::numeric_limits<std::int32_t>::min() || double(intensity) > std::numeric_limits<std::int32_t>::max())
+		throw std::runtime_error("XL flare intensity overflow");
+	return static_cast<std::int32_t>(intensity);
+}
+
+void DynamicVertexLight::add(std::int32_t contribution, const Rgb *source_color, bool force_color)
+{
+	const auto next_intensity = fixed(std::int64_t(intensity) + contribution);
+	if (source_color) {
+		for (const float channel : *source_color)
+			if (!std::isfinite(channel)) throw std::runtime_error("Invalid XL dynamic source color");
+		const bool white = (*source_color)[0] == 1 && (*source_color)[1] == 1 && (*source_color)[2] == 1;
+		if (force_color || !white) {
+			if (has_color) {
+				for (unsigned i = 0; i < 3; ++i) color[i] = (color[i] + (*source_color)[i]) / 2;
+			} else color = *source_color;
+			has_color = true;
+		}
+	}
+	intensity = next_intensity;
+}
+
 std::vector<float> vertex_brightness(const Inventory &level)
 {
 	if (level.level_version != 15 || level.game_version != 33)
