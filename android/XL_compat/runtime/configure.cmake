@@ -6,8 +6,8 @@ endif()
 get_property(xl_targets DIRECTORY "${PROJECT_SOURCE_DIR}/main" PROPERTY BUILDSYSTEM_TARGETS)
 foreach(xl_target IN LISTS xl_targets)
     get_target_property(xl_type ${xl_target} TYPE)
-    if(NOT xl_target MATCHES "^dxx-redux-d2" AND NOT xl_target MATCHES
-                                                 "^test_guidebot_(original|live)_navigation$")
+    if(NOT xl_target MATCHES "^dxx-redux-d2"
+       AND NOT xl_target MATCHES "^test_(guidebot_(original|live)_navigation|upstream_compat)$")
         continue()
     endif()
     if(NOT xl_type STREQUAL "EXECUTABLE" AND NOT xl_type STREQUAL "SHARED_LIBRARY")
