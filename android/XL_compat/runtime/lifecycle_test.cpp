@@ -1506,7 +1506,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 	std::fputs("XL isolation: stock level started\n", stderr);
 	require(!std::strcmp(Current_mission_filename, "d2"), "stock mission selection failed");
 	const auto stock_archive = PHYSFS_getRealDir(Gamesave_current_filename);
-	require(stock_archive && std::filesystem::path(stock_archive).filename() == "descent2.hog", "stock level did not resolve from retail archive");
+	require(stock_archive && !d_stricmp(std::filesystem::path(stock_archive).filename().string().c_str(), "descent2.hog"), "stock level did not resolve from retail archive");
 	unchanged(vertex);
 	const auto stock_definitions = gameplay_definitions();
 	const auto stock_lights = face_lights();
