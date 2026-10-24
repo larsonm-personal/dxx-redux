@@ -5,7 +5,9 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.SystemClock
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -54,11 +56,46 @@ internal class XlCompatibilityViewChecks(
         }
     }
 
+    private fun swipeScrollable(
+        node: AccessibilityNodeInfo,
+        direction: Int,
+    ) {
+        val bounds = Rect().also(node::getBoundsInScreen)
+        check(bounds.width() > 0 && bounds.height() > 0) { "Scrollable dialog has no touch bounds" }
+        val low = bounds.top + bounds.height() * 0.2f
+        val high = bounds.top + bounds.height() * 0.8f
+        val start = if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) low else high
+        val end = if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) high else low
+        val downTime = SystemClock.uptimeMillis()
+
+        fun inject(
+            action: Int,
+            y: Float,
+        ) {
+            val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, bounds.exactCenterX(), y, 0)
+            event.source = InputDevice.SOURCE_TOUCHSCREEN
+            try {
+                check(instrumentation.uiAutomation.injectInputEvent(event, true)) { "Dialog swipe injection failed" }
+            } finally {
+                event.recycle()
+            }
+        }
+        inject(MotionEvent.ACTION_DOWN, start)
+        for (step in 1..6) {
+            SystemClock.sleep(40)
+            inject(MotionEvent.ACTION_MOVE, start + (end - start) * step / 6f)
+        }
+        // Release at rest so later scroll-position assertions do not race a fling
+        SystemClock.sleep(180)
+        inject(MotionEvent.ACTION_MOVE, end)
+        inject(MotionEvent.ACTION_UP, end)
+    }
+
     private fun scrollTo(
         text: String,
         direction: Int = AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
     ): AccessibilityNodeInfo {
-        repeat(10) {
+        repeat(10) { attempt ->
             find(text)?.let { target ->
                 if (target.isVisibleToUser) return target
                 target.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
@@ -68,7 +105,14 @@ internal class XlCompatibilityViewChecks(
             }
 
             fun scroll(node: AccessibilityNodeInfo): Boolean {
-                if (node.isScrollable && node.performAction(direction)) return true
+                if (node.isScrollable && node.isVisibleToUser) {
+                    // Exercise the user's touch path too, when accessibility scrolling has not revealed the target
+                    if (attempt % 2 == 1) {
+                        swipeScrollable(node, direction)
+                        return true
+                    }
+                    if (node.performAction(direction)) return true
+                }
                 for (index in 0 until node.childCount) {
                     val child = node.getChild(index) ?: continue
                     if (scroll(child)) return true
