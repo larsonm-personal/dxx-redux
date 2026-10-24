@@ -61,7 +61,7 @@ internal class XlCompatibilityViewChecks(
         repeat(10) {
             find(text)?.let { target ->
                 if (target.isVisibleToUser) return target
-                target.performAction(AccessibilityNodeInfo.ACTION_SHOW_ON_SCREEN)
+                target.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
                 instrumentation.waitForIdleSync()
                 SystemClock.sleep(250)
                 find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
