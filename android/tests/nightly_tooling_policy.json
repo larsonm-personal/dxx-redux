@@ -1507,6 +1507,14 @@
             "estimated_seconds": 120
         },
         {
+            "id": "master:test_xl_feature_browser",
+            "owner": "master",
+            "lane": "android-single",
+            "args": { "suite": "test_xl_feature_browser" },
+            "estimated_seconds": 120,
+            "coverage_scope": "Synthetic XL detail dialog text, status colors and screenshots; no mission assets or engine launch."
+        },
+        {
             "id": "master:test_slider_navigation",
             "owner": "master",
             "lane": "android-single",

@@ -27,7 +27,7 @@ on:
       campaign:
         description: "Bounded test selection"
         type: choice
-        options: [nightly, first-play, graphics-capabilities, basic-use, online-preview, online-preview-d2]
+        options: [nightly, first-play, graphics-capabilities, xl-browser, basic-use, online-preview, online-preview-d2]
         default: nightly
       evidence_run_id:
         description: "Read sanitized retained online receipt only; no tests or builds"
@@ -181,7 +181,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
-          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && github.sha || '' }}
+          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && github.sha || '' }}
         run: |
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
@@ -214,6 +214,7 @@ jobs:
           ONLINE_PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-preview' }}
           ONLINE_PREVIEW_D2: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-preview-d2' }}
           BASIC_USE: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'basic-use' }}
+          XL_BROWSER: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-browser' }}
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
@@ -227,6 +228,8 @@ jobs:
             validation=(--campaign basic-use)
           elif [[ "$FIRST_PLAY" == true ]]; then
             validation=(--campaign first-play)
+          elif [[ "$XL_BROWSER" == true ]]; then
+            validation=(--campaign xl-browser)
           elif [[ "$GRAPHICS_CAPABILITIES" == true ]]; then
             validation=(--campaign graphics-capabilities)
           elif [[ "$VALIDATION" == true ]]; then
@@ -447,7 +450,7 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
-          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}
+          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' }}
         run: |
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
@@ -479,7 +482,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

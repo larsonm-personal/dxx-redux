@@ -46,9 +46,9 @@ std::vector<CountedFeature> counted_features()
 {
 	return {
 		{ "wall_teleports", "Wall teleports", "Wall-trigger actions only; object actions are not decoded", "blocked" },
-		{ "speed_boosts", "Speed boosts", "XL movement actions unsupported", "blocked" },
-		{ "cameras", "Camera triggers", "XL camera actions unsupported", "blocked" },
-		{ "master_triggers", "Master triggers", "XL event chains unsupported", "blocked" },
+		{ "speed_boosts", "Wall speed boosts", "XL movement actions unsupported", "blocked" },
+		{ "cameras", "Wall camera triggers", "XL camera actions unsupported", "blocked" },
+		{ "master_triggers", "Wall master triggers", "XL event chains unsupported", "blocked" },
 		{ "water_segments", "Water segments", "Experimental hash-pinned arena pilot only; other levels unqualified", "partial" },
 		{ "lava_segments", "Lava segments", "XL segment lava semantics unqualified", "blocked" },
 		{ "blocked_segments", "Blocked segments", "XL movement restrictions unsupported", "blocked" },
@@ -71,7 +71,9 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[8].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.type == 8; }));
 	features[9].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; }));
 	features[10].count = static_cast<int>(std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; }));
-	if (std::none_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature == "object_triggers"; })) features[11].count = v.object_triggers;
+	// The reader preserves positive declarations but does not decode their records
+	// Only a fully neutral object-trigger section establishes an inspected count
+	if (!v.object_triggers && std::none_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature.find("object_trigger") == 0; })) features[11].count = 0;
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;
 	for (const auto &section : v.sections)
@@ -110,8 +112,8 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[3].need = "Segment functions and owner/group records present";
 				rows[4].need = std::to_string(v.walls.size()) + " walls";
 				rows[5].need = std::to_string(v.triggers.size()) + " geometry triggers";
-				rows[6] = v.object_triggers ? Evidence{ std::to_string(v.object_triggers) + " object triggers", "blocked", "No production implementation" } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
-				if (std::any_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature == "object_triggers"; })) rows[6] = {};
+				rows[6] = v.object_triggers ? Evidence{ "Declared " + std::to_string(v.object_triggers) + " object triggers (records unverified)", "blocked", "Payload not decoded; no production implementation" } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
+				if (!v.object_triggers && features[11].count < 0) rows[6] = {};
 				rows[7].need = std::to_string(v.objects.size()) + " objects; behavior unverified";
 				const auto opacity = std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; });
 				rows[16].need = std::to_string(opacity) + " walls with nonzero serialized cloak/opacity";

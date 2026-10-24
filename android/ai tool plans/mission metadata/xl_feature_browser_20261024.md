@@ -17,3 +17,11 @@ Validate synthetic native records, malformed/unsupported formats, original Obser
 - No local emulator rendering qualification: `/dev/kvm` is absent. Compose presentation is source-reviewed; Android compilation remains a CI check
 - A missing JNI library or malformed JSON still produces no compatibility report, never zero counts or a green claim. Empty report rows explicitly say inventory unavailable
 - No mission binaries are committed; original resource provenance remains in the existing Observatory fixture and expansion plan
+
+## Review corrections and actual UI qualification
+
+Positive object-trigger declarations are not inspected record counts: the current reader does not decode their payload. The counted row stays unknown; the broader row explicitly labels declarations unverified. A malformed fixture declaring one object trigger with no payload must never display an inspected count. All four action counts explicitly say wall, since object actions are not decoded.
+
+A fixed `xl-browser` manual campaign reuses the existing Android instrumentation and emulator workflow. Its synthetic report checks the actual production dialog's text and red/orange/green label pixels in light/dark themes. Only two bounded synthetic PNG files are retained. No mission files or engine launch are needed. This campaign does not publish nightly progress or change existing LAN selection.
+
+Local automation catalog validation passes. The master catalog test encountered the container's unavailable `/proc/self/task/<pid>/children` process-supervisor interface; this is a host limitation, not a test pass. PowerShell lint package download returned HTTP403, so local PowerShell lint remains unavailable and must be checked in CI. Other scoped formatters pass. Full sweep-policy test results and actual render results are recorded with the final PR head.

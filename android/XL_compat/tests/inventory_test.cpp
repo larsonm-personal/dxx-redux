@@ -111,6 +111,17 @@ std::string feature_row(const std::string &json, const char *id)
 void feature_contract()
 {
 	auto bytes = fixture();
+	auto declared = bytes;
+	patch(declared, declared.size() - 4, 1);
+	const auto declaration_report = xl_compat::compatibility_json("declaration.rl2", declared);
+	check(feature_row(declaration_report, "attached_trigger_count").find("\"count\": null") != std::string::npos, "unvalidated object declaration became inspected count");
+	check(declaration_report.find("records unverified") != std::string::npos, "object declaration was not qualified");
+	auto nonempty_head = bytes;
+	nonempty_head.resize(bytes.size() + 1400, 255);
+	patch(nonempty_head, bytes.size(), 0, 2);
+	const auto head_report = xl_compat::compatibility_json("head.rl2", nonempty_head);
+	check(feature_row(head_report, "attached_trigger_count").find("\"count\": null") != std::string::npos, "nonempty object head reported absent");
+	check(feature_row(head_report, "object_triggers").find("\"status\": \"unknown\"") != std::string::npos, "broad object row reported false absence");
 	const auto inventory = xl_compat::inspect_level(bytes);
 	const auto game = inventory.game_offset;
 	// Append three wall teleports plus one boost and one camera, with neutral targets
@@ -124,6 +135,7 @@ void feature_contract()
 	auto json = xl_compat::compatibility_json("features.rl2", bytes);
 	auto row = feature_row(json, "wall_teleports");
 	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "wall teleports not counted or falsely supported");
+	check(json.find("Wall speed boosts") != std::string::npos && json.find("Wall camera triggers") != std::string::npos && json.find("Wall master triggers") != std::string::npos, "action counts lost wall-only scope");
 	check(feature_row(json, "speed_boosts").find("\"count\": 1") != std::string::npos, "boost count");
 	check(feature_row(json, "master_triggers").find("\"status\": \"not_required\"") != std::string::npos, "absent feature not distinct");
 	bytes.at(inventory.mine_offset + 277) = 7;

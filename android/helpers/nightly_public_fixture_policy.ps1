@@ -54,7 +54,7 @@ function Test-SuiteMediaIndependentTest {
     if ($Test.Name -cne $Test.BaseName) { return $false }
     $allowed = switch -CaseSensitive ("$($Test.Type):$($Test.Requires)") {
         'ps1:emulator' {
-            @('test_controller_overlay', 'test_package_documents', 'test_slider_navigation',
+            @('test_xl_feature_browser', 'test_controller_overlay', 'test_package_documents', 'test_slider_navigation',
                 'test_lobby_latency', 'test_host_dialog_loading',
                 'test_android_automap_route_policy',
                 'test_android_cd_preview_completion',
