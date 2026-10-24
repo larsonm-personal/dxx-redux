@@ -15,6 +15,12 @@ control-binding screens. The indicator reflects runtime activation, not build
 capability or mission-name matching; it clears when the game closes or stock
 level data replaces the XL source. Drawing lives in `runtime/menu_indicator.c`
 
+The mission-selection list prefixes detected XL missions with `XL: `, including
+in ordinary builds. `mission_label.cpp` inspects the descriptor, adjacent HOG
+and referenced loose level headers without activating a mission. The prefix
+identifies XL content; it does not claim that its features are supported. Original
+mission names, identities and ordering are retained; D1 keeps its `D1: ` prefix
+
 `shared/mod_save_supported_data.h` is the existing production UUD presentation-pack
 allowlist, not a per-level XL database or pilot fixture. Save compatibility uses
 it to constrain audited presentation-only changes. Mission source identities are
@@ -27,8 +33,8 @@ The [acceptance record](evidence/pilot-acceptance-audit.md) and
 [19-category requirement checklist](evidence/pilot-requirements.md) identify the
 exact source/APK, authored extensions and evidence limits. All 36 private host
 tests pass; the current Android rendering suite passes 28/28 twice. This does
-not qualify the full campaign or change the production browser's unsupported
-status. The pilot completes level 1 and returns to the menu
+not qualify the full campaign. Admission now checks requirements and dependencies
+per level; only explicit navigation fixtures stop after one level
 
 The `XL compatibility contracts` workflow runs on pull requests and manual
 dispatch, building the standalone inventory/lighting checks on Linux and Windows
@@ -39,8 +45,8 @@ playability; private gameplay and reference-engine tests remain separate
 The private `xl_normal_escape` CTest extends the normal key/reactor run: it
 restores the earned reactor checkpoint, drives ordinary inputs to the exit
 under the unchanged countdown, and requires native completion while alive.
-The opt-in pilot awards normal completion bonuses and stops at level 1 instead
-of admitting the remaining campaign. Headless tests skip only the score dialog.
+The runtime awards normal completion bonuses and preflights the next level.
+Explicit navigation fixtures stop after one level; headless tests skip the score dialog.
 The explicit Android `test_xl_pilot_completion.jsonc` now passes 22 steps from
 an earned exit-approach checkpoint: native exit, actual score screen/bonus,
 readiness-gated dismissal, and a usable main menu with completion retained.
@@ -53,7 +59,7 @@ startup using unchanged original HOG/descriptor bytes. Stage their ZIP as
 test helper with `-PreserveState`. The 15-step check passes on emulator-5554;
 extracted hashes match the source and startup has active XL rendering with no
 unresolved emitters. The imported descriptor still describes the full campaign;
-only the exact pilot level is admitted by the opt-in engine. Import success
+each level must pass detected-feature and runtime dependency checks. Import success
 does not qualify the other levels or promote production compatibility status
 
 The 34-step runtime persistence/isolation test also passes with this imported
@@ -144,7 +150,7 @@ XL colors/opacity and gameplay-affecting extension data must still work correctl
 Android developer builds can opt in with
 `gradlew.bat :app:assembleDebug -PciTestAbi=x86_64 -PxlPilot=true`. The ordinary
 build remains OFF. The enabled D2 library retains its JNI name and receives the
-same exact-hash pilot admission flag; D1 does not receive it. This does not
+same optional XL runtime flag; D1 does not receive it. This does not
 enable the launcher's compatibility approval. Guarded `xl_pilot` introspection
 reports admission, completion, shaded-vertex calls, unresolved emitters and
 observed trigger activations. The x86_64 APK builds and the original mission
@@ -180,15 +186,20 @@ Texture-color audit caveat: XL's legacy mode retains baked vertex colors, but
 `effects/glare.cpp` also consumes texture RGB for coronas. Vertex arithmetic
 tests alone do not establish this presentation behavior or other lighting modes
 
-The dedicated runtime build now offers `-xl-pilot` for the original
-`d2leva-1.rl2`, including when it resolves from the original mission HOG. Admission
-requires the exact audited source size and SHA-256, then the bounded translator's
-feature checks. A private `xl_preview_cache/pilot.rl2` supplies decoded stock
-records through an isolated file-open hook; the engine retains the original
-level filename for mission/save logic. Embedded extension state is activated only
-after the stock loader succeeds and loaded geometry agrees. Other levels still
-follow stock validation; this is not general version-15 admission
+The optional XL runtime detects extended LVLP headers and admits supported
+version-15/game-data-33 requirements under any mission or level name. There is
+no production name, level-number, size or hash allowlist. `admission.cpp` rejects
+unsupported/unknown serialized features and capacity overflows; runtime checks
+source object IDs and transitive resources before stock code can clamp them.
+Custom HAM/HXM definitions, unknown descriptor options, unaudited boss spawning
+and multiplayer remain rejected with specific reasons. A private translation
+retains original mission/save filenames and checks loaded geometry before XL
+state activates. New-game, progression and secret-entry preflights show the
+blocking reason. Other entry paths retain loader rejection diagnostics.
 
+Static compatibility reports mark supported features eligible, not gameplay
+verified. Assets are checked on load; subsequent levels are checked separately.
+The original Counterstrike pilot remains gameplay evidence, not an exception.
 With the original mission installed in the dedicated build's mission directory,
 `-xl-preview-start -xl-pilot` starts D2-XL level 1 without a pretranslated fixture
 or `-xl-source`. It remains an unverified developer pilot, not production support.
@@ -198,7 +209,8 @@ stock-format loading and recovery to single player with authored colors/material
 This does not qualify multiplayer UI behavior or cooperative pilot support.
 
 The lifecycle test covers direct and original-HOG admission, original filename
-preservation, one-bit source rejection, recovery and subsequent stock isolation
+preservation, renamed/rehashed admission, unsupported-version and missing-resource
+rejection, recovery and subsequent stock isolation
 
 Set `XL_PILOT_DESCRIPTOR` to the original outer `d2-xl.mn2` to enable the
 original-mission save/restore slice of that test. It starts level 1 normally,

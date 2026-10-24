@@ -181,3 +181,9 @@ input-recording checkpoint had the same missing caller pause in both D1 and D2;
 its call site now balances that native contract. The earned escape test verifies
 that recording preserves the caller's pause state. No navigation/control policy
 or campaign qualification is broadened by these fixes.
+
+## Second approved upstream alignment (2c7b7b56)
+
+The user approved merging the pinned mission-detection/admission commit through the existing stack without rewriting history. General XL runtime admission now uses upstream's shared feature and resource checks rather than a Counterstrike identity allowlist. This is feature eligibility, not campaign qualification. The separate explicit Robotech developer option still requires the original level hash, rejects multiplayer, and preserves its prior no-corona presentation profile. Only that bounded path permits water translation; the ordinary admission catalog continues to reject unqualified water levels. The original resource and native-save tests remain required. The shared upstream asset dependency checker replaces the duplicated lifecycle helper while retaining the arena's wall clips, upgraded lasers, flare, and sound roots.
+
+Inspection remains distinct from runtime admission: the subsequent 17/36 inspection slice must continue to reject gameplay. Descriptor and browser reconciliation must retain strict header validation, pre-load HAM isolation, and a non-green eligible status with XL-build and asset-validation caveats.

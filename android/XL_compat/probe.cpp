@@ -1,6 +1,8 @@
 #include "probe.h"
+#include "admission.h"
 
 #include <limits>
+#include <algorithm>
 #include <stdexcept>
 
 namespace xl_compat
@@ -42,12 +44,13 @@ GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments)
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
-	require(v.level_version == 15 && v.game_version == 33, "runtime translation remains limited to audited level 15/game 33");
-	for (const auto &i : v.unsupported)
-		require(i.feature == "embedded_lighting" || (water_segments && i.feature == "segment_function" && i.detail == "7"), i.feature + " at record " + std::to_string(i.record));
-	for (const auto &i : v.unknown)
-		require(i.feature == "object_dependencies" || i.feature == "runtime_semantics" || i.feature == "assets",
-		        i.feature + " at record " + std::to_string(i.record));
+	auto blockers = runtime_blockers(v);
+	// Only the explicitly selected, hash-pinned developer water pilot translates water
+	if (water_segments)
+		blockers.erase(std::remove_if(blockers.begin(), blockers.end(), [](const Issue &issue) {
+			return issue.feature == "segment_function" && issue.detail == "7";
+		}), blockers.end());
+	require(blockers.empty(), blocker_message(blockers));
 	require(v.object_triggers == 0, "object triggers have no stock equivalent");
 	// Current stock representation limits, checked again by the unchanged stock loader
 	require(v.walls.size() <= 255 && v.objects.size() <= 1000 && v.segments.size() <= 9000,
