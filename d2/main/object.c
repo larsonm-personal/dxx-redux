@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1042,6 +1045,9 @@ void check_and_fix_matrix(vms_matrix *m);
 
 void reset_player_object()
 {
+#ifdef DXX_XL_PILOT
+	xl_preview_reset_player_thrust();
+#endif
 	render_reset_gameplay_view_objects();
 	int i;
 

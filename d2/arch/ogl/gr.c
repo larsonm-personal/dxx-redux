@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
  *
  * OGL video functions. - Added 9/15/99 Matthew Mueller
@@ -155,6 +158,9 @@ void ogl_swap_buffers_internal(void)
 	eglSwapBuffers(eglDisplay, eglSurface);
 #endif
 #else
+#ifdef DXX_XL_PILOT
+	xl_preview_before_swap();
+#endif
 	SDL_GL_SwapBuffers();
 #endif
 }
@@ -1285,7 +1291,11 @@ void save_screen_shot(int automap_flag)
 		HUD_init_message(HM_DEFAULT, "%s '%s'", TXT_DUMPING_SCREEN, savename + strlen(SCRNS_DIR));
 
 #ifndef OGLES
+#ifdef DXX_XL_PILOT
+	glReadBuffer(GL_BACK);
+#else
 	glReadBuffer(GL_FRONT);
+#endif
 #endif
 
 	write_bmp(savename,grd_curscreen->sc_w,grd_curscreen->sc_h);

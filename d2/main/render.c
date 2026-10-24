@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -422,6 +425,10 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		}
 	}
 
+#ifdef DXX_XL_PILOT
+	xl_preview_begin_face(segnum, sidenum);
+	for (i = 0; i < nv; ++i) xl_preview_vertex(vp[i], uvlp[i].l, &dyn_light[i].r, &dyn_light[i].g, &dyn_light[i].b);
+#endif
 	if ( PlayerCfg.AlphaEffects && ( TmapInfo[tmap1].eclip_num == ECLIP_NUM_FUELCEN || TmapInfo[tmap1].eclip_num == ECLIP_NUM_FORCE_FIELD ) ) // set nice transparency/blending for some special effects (if we do more, we should maybe use switch here)
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_ADDITIVE_C);
 
@@ -445,6 +452,9 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		android_texture_debug_add_merged_labels((const g3s_point *const *)pointlist, nv, tmap1, tmap2);
 #endif
 
+#ifdef DXX_XL_PILOT
+	xl_preview_end_face();
+#endif
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL); // revert any transparency/blending setting back to normal
 
 #ifndef NDEBUG
@@ -2255,6 +2265,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 	if (eye_offset<=0) // Do for left eye or zero.
 		set_dynamic_light();
+#ifdef DXX_XL_PILOT
+		xl_preview_dynamic_frame();
+#endif
 
 	if (!_search_mode && Clear_window == 2) {
 		if (first_terminal_seg < N_render_segs) {

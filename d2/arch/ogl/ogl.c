@@ -1,3 +1,11 @@
+#ifdef DXX_XL_PILOT
+#define XL_FACE_ALPHA(value) xl_preview_alpha(value)
+#else
+#define XL_FACE_ALPHA(value) (value)
+#endif
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
  *
  * Graphics support functions for OpenGL.
@@ -1259,7 +1267,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 #ifdef ANDROID
 		android_texture_debug_log_render_bind(&r_etc2_render_log_count, bm);
 #endif
-		color_alpha = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
+		color_alpha = XL_FACE_ALPHA((grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0)));
 #if defined(ANDROID) && defined(OGL_MERGE)
 		cover_shader = "single";
 #endif
@@ -1492,7 +1500,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		color_array[index4]      = bmbot->bm_flags & BM_FLAG_NO_LIGHTING ? 1.0 : minf(1.0, f2glf(light_rgb[c].r));
 		color_array[index4+1]    = bmbot->bm_flags & BM_FLAG_NO_LIGHTING ? 1.0 : minf(1.0, f2glf(light_rgb[c].g));
 		color_array[index4+2]    = bmbot->bm_flags & BM_FLAG_NO_LIGHTING ? 1.0 : minf(1.0, f2glf(light_rgb[c].b));
-		color_array[index4+3]    = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
+		color_array[index4+3]    = XL_FACE_ALPHA((grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0)));
 		
 		vertex_array[index3]     = f2glf(pointlist[c]->p3_vec.x);
 		vertex_array[index3+1]   = f2glf(pointlist[c]->p3_vec.y);
@@ -1987,7 +1995,7 @@ bool g3_draw_bitmap_full(vms_vector *pos,fix width,fix height,grs_bitmap *bm,
 		color_array[i*4]    = r;
 		color_array[i*4+1]  = g;
 		color_array[i*4+2]  = b;
-		color_array[i*4+3]  = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
+		color_array[i*4+3]  = XL_FACE_ALPHA((grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0)));
 		
 		vertex_array[i*3]   = f2glf(pv.x);
 		vertex_array[i*3+1] = f2glf(pv.y);

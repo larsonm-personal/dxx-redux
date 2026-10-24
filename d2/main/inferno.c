@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -656,7 +659,11 @@ int main(int argc, char *argv[])
 		if (route_result < 0)
 		#endif
 		{
+#ifdef DXX_XL_PILOT
+		int replay_result = xl_preview_start();
+#else
 		int replay_result = input_demo_maybe_start_replay_from_cmdline();
+#endif
 
 		if (replay_result > 0) {
 			/* Startup failures must not open modal teardown warnings */

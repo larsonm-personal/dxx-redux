@@ -80,6 +80,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #include "sounds.h"
 #include "args.h"
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 #include "gameseq.h"
 #include "gamefont.h"
 #include "newmenu.h"
@@ -1289,6 +1292,11 @@ void DoEndLevelScoreGlitz(int network)
 
 	Assert(c <= N_GLITZITEMS);
 
+#ifdef DXX_XL_PILOT
+	if (xl_preview_pilot_active() && GameArg.SysInputDemoNoRender)
+		return;
+#endif
+
 #ifdef __ANDROID__
 	extern void game_flush_inputs(void);
 	game_flush_inputs();
@@ -1759,6 +1767,15 @@ void coop_finish_secret_campaign(void)
 //	Return true if game over.
 void AdvanceLevel(int secret_flag)
 {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_pilot_active()) {
+		DoEndLevelScoreGlitz(0);
+		xl_preview_complete_pilot();
+		if (Game_wind && !GameArg.SysInputDemoNoRender)
+			window_close(Game_wind);
+		return;
+	}
+#endif
 #ifdef NETWORK
 	int result;
 #endif

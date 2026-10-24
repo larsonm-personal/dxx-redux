@@ -42,16 +42,42 @@ internal object GameFileMetadata {
         val contents: List<EntrySummary>,
         val notes: List<String> = emptyList(),
         val problems: List<String> = emptyList(),
+        val xlCompatibility: List<XlCompatibilityReport> = emptyList(),
     )
 
     fun summarizeLocalFile(file: File): Summary? {
         if (!file.isFile) return null
         return when (GameFileFormats.extensionOf(file.name)) {
-            "hog" -> file.inputStream().use { summarizeHog(file.name, file.length(), it) }
-            "dxa" -> summarizeZipFile(file, "DXA", "Mod archive")
-            "pig" -> summarizePig(file.name, file.length()) { file.inputStream() }
-            "pog" -> summarizePog(file.name, file.length()) { file.inputStream() }
-            else -> null
+            "hog" -> {
+                file.inputStream().use { summarizeHog(file.name, file.length(), it) }
+            }
+
+            "dxa" -> {
+                summarizeZipFile(file, "DXA", "Mod archive")
+            }
+
+            "pig" -> {
+                summarizePig(file.name, file.length()) { file.inputStream() }
+            }
+
+            "pog" -> {
+                summarizePog(file.name, file.length()) { file.inputStream() }
+            }
+
+            "rl2", "mn2", "msn" -> {
+                val summary = file.inputStream().use { summarizeLevelOrDescriptor(file.name, it) }
+                val sibling = File(file.parentFile, "${file.nameWithoutExtension}.hog")
+                if (GameFileFormats.extensionOf(file.name) == "mn2" && sibling.isFile) {
+                    val archive = sibling.inputStream().use { summarizeHog(sibling.name, sibling.length(), it) }
+                    summary.copy(xlCompatibility = summary.xlCompatibility + archive.xlCompatibility)
+                } else {
+                    summary
+                }
+            }
+
+            else -> {
+                null
+            }
         }
     }
 
@@ -66,12 +92,45 @@ internal object GameFileMetadata {
             val size = entry.sizeBytes.coerceAtLeast(0)
             return zip.openInputStream(entry).use { input ->
                 when (GameFileFormats.extensionOf(displayName)) {
-                    "hog" -> summarizeHog(displayName, size, input)
-                    "dxa" -> summarizeZipStream(displayName, input, "DXA", "Mod archive")
-                    "pig" -> summarizePig(displayName, size) { zip.openInputStream(entry) }
-                    "pog" -> summarizePog(displayName, size) { zip.openInputStream(entry) }
-                    "mn2", "msn" -> summarizeMissionDescriptor(displayName, input)
-                    else -> null
+                    "hog" -> {
+                        summarizeHog(displayName, size, input)
+                    }
+
+                    "dxa" -> {
+                        summarizeZipStream(displayName, input, "DXA", "Mod archive")
+                    }
+
+                    "pig" -> {
+                        summarizePig(displayName, size) { zip.openInputStream(entry) }
+                    }
+
+                    "pog" -> {
+                        summarizePog(displayName, size) { zip.openInputStream(entry) }
+                    }
+
+                    "rl2", "mn2", "msn" -> {
+                        val summary = summarizeLevelOrDescriptor(displayName, input)
+                        val sibling =
+                            if (GameFileFormats.extensionOf(displayName) == "mn2") {
+                                zip.findEntry("${path.substringBeforeLast('.')}.hog")
+                            } else {
+                                null
+                            }
+                        if (sibling != null) {
+                            val archive =
+                                zip
+                                    .openInputStream(
+                                        sibling,
+                                    ).use { summarizeHog(sibling.path, sibling.sizeBytes, it) }
+                            summary.copy(xlCompatibility = summary.xlCompatibility + archive.xlCompatibility)
+                        } else {
+                            summary
+                        }
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
             }
         }
@@ -81,7 +140,8 @@ internal object GameFileMetadata {
         name: String,
         input: InputStream,
     ): Summary {
-        val mission = MissionZip.parseMissionDescriptor(name, input.readBytes())
+        val bytes = input.readBytes()
+        val mission = MissionZip.parseMissionDescriptor(name, bytes)
         val rows =
             buildList {
                 add("Title" to mission.displayName)
@@ -108,6 +168,24 @@ internal object GameFileMetadata {
             detailRows = rows,
             categories = emptyList(),
             contents = emptyList(),
+            xlCompatibility = listOfNotNull(XlCompatibility.inspect(name, bytes)),
+        )
+    }
+
+    private fun summarizeLevelOrDescriptor(
+        name: String,
+        input: InputStream,
+    ): Summary {
+        if (GameFileFormats.extensionOf(name) != "rl2") return summarizeMissionDescriptor(name, input)
+        val bytes = input.readBytesCapped(MAX_ENTRY_BYTES.toInt())
+        return Summary(
+            format = "D2 level",
+            scope = "Level metadata",
+            game = "Descent 2",
+            detailRows = emptyList(),
+            categories = emptyList(),
+            contents = emptyList(),
+            xlCompatibility = listOfNotNull(XlCompatibility.inspect(name, bytes)),
         )
     }
 
@@ -118,11 +196,19 @@ internal object GameFileMetadata {
     ): Summary {
         val entries = mutableListOf<EntrySummary>()
         val problems = mutableListOf<String>()
+        val compatibility = mutableListOf<XlCompatibilityReport>()
         var bytesRead = 0L
         val magic = input.readExact(3)
         bytesRead += magic.size
         if (magic.size != 3 || magic.toString(Charsets.US_ASCII) != "DHF") {
-            return problemSummary("HOG", "Mission or game archive", "Unknown", "Invalid HOG magic")
+            return problemSummary(
+                "HOG",
+                "Mission or game archive",
+                "Unknown",
+                "Invalid HOG magic",
+            ).copy(
+                xlCompatibility = listOfNotNull(XlCompatibility.inspect(name, magic)),
+            )
         }
         while (sizeBytes <= 0 || bytesRead < sizeBytes) {
             val nameBytes = input.readExact(13)
@@ -144,7 +230,16 @@ internal object GameFileMetadata {
                 break
             }
             entries += EntrySummary(entryName, entrySize, roleForEntry(entryName))
-            input.skipFully(entrySize)
+            if (GameFileFormats.extensionOf(entryName) in setOf("rl2", "mn2")) {
+                val bytes = input.readExact(entrySize.toInt())
+                if (bytes.size.toLong() != entrySize) {
+                    problems += "Truncated entry $entryName"
+                    break
+                }
+                XlCompatibility.inspect("$name/$entryName", bytes)?.let { compatibility += it }
+            } else {
+                input.skipFully(entrySize)
+            }
             bytesRead += entrySize
         }
         val game = detectGame(name, entries)
@@ -169,6 +264,7 @@ internal object GameFileMetadata {
             contents = entries,
             notes = inferEntryNotes(entries),
             problems = problems,
+            xlCompatibility = compatibility,
         )
     }
 

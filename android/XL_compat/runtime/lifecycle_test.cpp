@@ -1,0 +1,1388 @@
+// Exercise the real loader wrapper; no renderer or gameplay certification
+#include <filesystem>
+#include <stdexcept>
+#include <cstring>
+extern "C" {
+#include "physfsx.h"
+}
+static void xl_test_filesystem_init(int argc, char **argv)
+{
+	PHYSFSX_init(argc, argv);
+	const char *user_dir = nullptr, *extra_dir = nullptr;
+	for (int i = 1; i + 1 < argc; ++i) {
+		if (!std::strcmp(argv[i], "-userdir")) user_dir = argv[i + 1];
+		if (!std::strcmp(argv[i], "-extra-dir")) extra_dir = argv[i + 1];
+	}
+	if (!user_dir || !extra_dir || std::filesystem::weakly_canonical(user_dir) != std::filesystem::weakly_canonical(std::filesystem::path(extra_dir) / "preview-user"))
+		throw std::runtime_error("test write directory must be private to fixture");
+	std::filesystem::create_directories(user_dir);
+	if (!PHYSFS_setWriteDir(user_dir) || !PHYSFS_addToSearchPath(user_dir, 0))
+		throw std::runtime_error("cannot select isolated test write directory before log initialization");
+}
+#define PHYSFSX_init xl_test_filesystem_init
+#define main         stock_metadata_main
+#include "../../app/src/main/cpp/headless/headless_metadata_dump_main.cpp"
+#undef main
+#undef PHYSFSX_init
+#include "preview.h"
+#include "../probe.h"
+#include "../lighting.h"
+#include <iterator>
+#include <iostream>
+#include <filesystem>
+#include <stdexcept>
+#include <cstdlib>
+#include <set>
+#include <cmath>
+
+extern "C" {
+#include "render.h"
+#include "lighting.h"
+#include "weapon.h"
+#include "laser.h"
+#include "vclip.h"
+#include "timer.h"
+#include "controls.h"
+#include "kconfig.h"
+#include "rng_shared.h"
+#include "state.h"
+#include "input_demo_start.h"
+#include "fvi.h"
+#include "gameseg.h"
+#include "textures.h"
+extern fix flash_scale, Seismic_tremor_magnitude;
+extern int Do_dynamic_light;
+void GameProcessFrame(void);
+void do_weapon_n_item_stuff(void);
+}
+
+extern "C" void xl_preview_before_swap(void)
+{
+	std::fputs("Unexpected rendering in headless XL lifecycle test\n", stderr);
+	std::abort();
+}
+
+namespace
+{
+void require(bool condition, const char *message)
+{
+	if (!condition) throw std::runtime_error(message);
+}
+// Traverse loaded object-data references, including dependencies created after startup
+// This does not prove audible playback or override precedence
+struct ObjectDependencies {
+	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
+	void sound(int id)
+	{
+		if (id == -1 || id == 255) return;
+		const int resolved = digi_xlat_sound(id);
+		if (resolved < 0 || resolved >= MAX_SOUND_FILES)
+			throw std::runtime_error("dependency references unmapped sound " + std::to_string(id));
+		const auto &s = GameSounds[resolved];
+		require(s.data && s.data != reinterpret_cast<ubyte *>(-1) && s.length > 0,
+		        "dependency sound has no loaded sample");
+		sounds.insert(resolved);
+	}
+	void bitmap(int id)
+	{
+		require(id > 0 && id < Num_bitmap_files, "object dependency references missing bitmap");
+		if (!bitmaps.insert(id).second) return;
+		bitmap_index index{};
+		index.index = id;
+		PIGGY_PAGE_IN(index);
+		const auto &b = GameBitmaps[id];
+		require(!(b.bm_flags & BM_FLAG_PAGED_OUT) && b.bm_data && b.bm_w > 0 && b.bm_h > 0, "object dependency bitmap could not be paged in");
+	}
+	void clip(int id)
+	{
+		if (id == -1) return;
+		require(id >= 0 && id < Num_vclips, "object dependency references missing vclip");
+		if (!clips.insert(id).second) return;
+		const auto &v = Vclip[id];
+		sound(v.sound_num);
+		require(v.num_frames > 0 && v.num_frames <= VCLIP_MAX_FRAMES, "object dependency has empty/invalid vclip");
+		for (int i = 0; i < v.num_frames; ++i) bitmap(v.frames[i].index);
+	}
+	void effect(int id)
+	{
+		if (id == -1) return;
+		require(id >= 0 && id < Num_effects, "dependency references missing effect");
+		if (!effects.insert(id).second) return;
+		const auto &e = Effects[id];
+		require(e.vc.num_frames > 0 && e.vc.num_frames <= VCLIP_MAX_FRAMES, "effect frame count invalid");
+		for (int i = 0; i < e.vc.num_frames; ++i) bitmap(e.vc.frames[i].index);
+		sound(e.sound_num);
+		// Effect playback uses e.sound_num, not the embedded vclip's sound field
+		if (e.dest_bm_num >= 0) texture(e.dest_bm_num);
+		clip(e.dest_vclip);
+		effect(e.dest_eclip);
+		effect(e.crit_clip);
+	}
+	void texture(int id)
+	{
+		require(id >= 0 && id < NumTextures, "dependency references missing texture");
+		if (!textures.insert(id).second) return;
+		bitmap(Textures[id].index);
+		effect(TmapInfo[id].eclip_num);
+		if (TmapInfo[id].destroyed >= 0) texture(TmapInfo[id].destroyed);
+	}
+	void wall_clip(int id)
+	{
+		if (id == -1) return;
+		require(id >= 0 && id < Num_wall_anims, "dependency references missing wall animation");
+		if (!wall_clips.insert(id).second) return;
+		const auto &w = WallAnims[id];
+		require(w.num_frames > 0 && w.num_frames <= MAX_CLIP_FRAMES, "wall animation frame count invalid");
+		for (int i = 0; i < w.num_frames; ++i) texture(w.frames[i]);
+		sound(w.open_sound);
+		sound(w.close_sound);
+	}
+	void model(int id)
+	{
+		if (id == -1) return;
+		require(id >= 0 && id < N_polygon_models, "object dependency references missing model");
+		if (!models.insert(id).second) return;
+		const auto &p = Polygon_models[id];
+		require(p.model_data && p.model_data_size > 0 && p.n_models > 0 && p.n_models <= MAX_SUBMODELS, "object dependency model has no valid payload");
+		require(int(p.first_texture) + p.n_textures <= MAX_OBJ_BITMAPS, "model texture pointer range invalid");
+		for (int i = 0; i < p.n_textures; ++i) {
+			const int index = ObjBitmapPtrs[p.first_texture + i];
+			require(index >= 0 && index < N_ObjBitmaps, "model texture references missing object bitmap");
+			bitmap(ObjBitmaps[index].index);
+			for (int e = 0; e < Num_effects; ++e)
+				if (Effects[e].changing_object_texture == index || Effects[e].changing_object_texture == p.first_texture + i) effect(e);
+		}
+		model(Dying_modelnums[id]);
+		model(Dead_modelnums[id]);
+		if (p.simpler_model) model(p.simpler_model - 1);
+	}
+	void weapon(int id)
+	{
+		if (id == -1) return;
+		require(id >= 0 && id < N_weapon_types, "object dependency references missing weapon");
+		if (!weapons.insert(id).second) return;
+		const auto &w = Weapon_info[id];
+		sound(w.flash_sound);
+		sound(w.robot_hit_sound);
+		sound(w.wall_hit_sound);
+		clip(w.flash_vclip);
+		clip(w.robot_hit_vclip);
+		clip(w.wall_hit_vclip);
+		if (w.render_type == WEAPON_RENDER_POLYMODEL) {
+			model(w.model_num);
+			model(w.model_num_inner);
+		} else if (w.render_type == WEAPON_RENDER_VCLIP) clip(w.weapon_vclip);
+		else if (w.render_type == WEAPON_RENDER_BLOB || w.render_type == WEAPON_RENDER_LASER) bitmap(w.bitmap.index);
+		else require(w.render_type == WEAPON_RENDER_NONE, "unknown weapon rendering dependency");
+		weapon(w.children);
+	}
+	void powerup(int id)
+	{
+		require(id >= 0 && id < N_powerup_types, "object dependency references missing powerup");
+		if (powerups.insert(id).second) {
+			clip(Powerup_info[id].vclip_num);
+			sound(Powerup_info[id].hit_sound);
+		}
+	}
+	void contents(int type, int id)
+	{
+		if (type == OBJ_ROBOT) robot(id);
+		else if (type == OBJ_POWERUP) powerup(id);
+		else require(false, "unknown contained object dependency");
+	}
+	void robot(int id)
+	{
+		require(robot_info_is_usable(id), "object dependency references unusable robot");
+		if (!robots.insert(id).second) return;
+		const auto &r = Robot_info[id];
+		for (const int id : { r.exp1_sound_num, r.exp2_sound_num, r.see_sound, r.attack_sound, r.claw_sound, r.taunt_sound }) sound(id);
+		if (r.death_roll) sound(r.deathroll_sound);
+		model(r.model_num);
+		weapon(r.weapon_type);
+		weapon(r.weapon_type2);
+		clip(r.exp1_vclip_num);
+		clip(r.exp2_vclip_num);
+		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
+		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
+		require(!r.boss_flag, "boss spawn dependencies need a separate audit");
+		require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
+		for (int gun = 0; gun <= r.n_guns; ++gun)
+			for (int state = 0; state < N_ANIM_STATES; ++state) {
+				const auto &j = r.anim_states[gun][state];
+				require(j.n_joints >= 0 && j.offset >= 0 && j.offset + j.n_joints <= N_robot_joints, "robot joint range invalid");
+				for (int i = 0; i < j.n_joints; ++i)
+					require(Robot_joints[j.offset + i].jointnum >= 0 && Robot_joints[j.offset + i].jointnum < Polygon_models[r.model_num].n_models, "robot joint references missing submodel");
+			}
+	}
+};
+void object_dependencies()
+{
+	ObjectDependencies graph;
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		const auto &o = Objects[i];
+		if (o.type == OBJ_NONE) continue;
+		if (o.type == OBJ_ROBOT) graph.robot(o.id);
+		if (o.type == OBJ_POWERUP) graph.powerup(o.id);
+		if (o.type == OBJ_WEAPON) graph.weapon(o.id);
+		if (o.type == OBJ_CNTRLCEN) graph.weapon(CONTROLCEN_WEAPON_NUM);
+		if (o.contains_count > 0) graph.contents(o.contains_type, o.contains_id);
+		if (o.render_type == RT_POLYOBJ) graph.model(o.rtype.pobj_info.model_num);
+		if (o.render_type == RT_POWERUP || o.render_type == RT_HOSTAGE || o.render_type == RT_FIREBALL)
+			graph.clip(o.rtype.vclip_info.vclip_num);
+	}
+	// Conservative player arsenal coverage includes pickups and replacement loot
+	for (const auto id : Primary_weapon_to_weapon_info) graph.weapon(id);
+	for (const auto id : Secondary_weapon_to_weapon_info) graph.weapon(id);
+	for (int id = LASER_ID_L1; id <= LASER_ID_L4; ++id) graph.weapon(id);
+	graph.weapon(LASER_ID_L5);
+	graph.weapon(LASER_ID_L6);
+	graph.weapon(FLARE_ID);
+	graph.powerup(POW_ENERGY);
+	graph.powerup(POW_SHIELD_BOOST);
+	graph.powerup(POW_VULCAN_AMMO);
+	for (int seg = 0; seg <= Highest_segment_index; ++seg)
+		for (const auto &side : Segments[seg].sides) {
+			graph.texture(side.tmap_num);
+			if (side.tmap_num2) graph.texture(side.tmap_num2 & 0x3fff);
+		}
+	for (int wall = 0; wall < Num_walls; ++wall) graph.wall_clip(Walls[wall].clip_num);
+	std::cout << "Loaded object dependency graph: " << graph.robots.size() << " robots, " << graph.weapons.size() << " weapons, "
+	          << graph.powerups.size() << " powerups, " << graph.models.size() << " models, " << graph.clips.size() << " vclips, "
+	          << graph.bitmaps.size() << " bitmaps paged, " << graph.sounds.size() << " sound samples resolved; audible playback/override closure unverified\n";
+	std::cout << "Environment dependencies: " << graph.textures.size() << " textures, " << graph.effects.size()
+	          << " effects, " << graph.wall_clips.size() << " wall animations\n";
+	// Prove a missing transitive weapon fails even though the placed robot exists
+	require(!graph.robots.empty(), "pilot dependency fixture contains no robots");
+	const int robot = *graph.robots.begin();
+	const auto original_weapon = Robot_info[robot].weapon_type;
+	Robot_info[robot].weapon_type = 127;
+	bool rejected = false;
+	try {
+		ObjectDependencies invalid;
+		invalid.robot(robot);
+	} catch (const std::runtime_error &e) {
+		rejected = !std::strcmp(e.what(), "object dependency references missing weapon");
+	}
+	Robot_info[robot].weapon_type = original_weapon;
+	require(rejected, "missing transitive robot weapon was not rejected");
+}
+void unchanged(int vertex)
+{
+	require(!xl_preview_pilot_active() && !xl_preview_pilot_completed(), "pilot admission/completion leaked into stock level");
+	xl_preview_begin_face(99, 4);
+	require(xl_preview_alpha(0.73f) == 0.73f, "XL material state leaked into stock level");
+	xl_preview_end_face();
+	int32_t r = 101, g = 202, b = 303;
+	xl_preview_vertex(vertex, 65536, &r, &g, &b);
+	require(r == 101 && g == 202 && b == 303, "XL colors leaked into inactive state");
+}
+void materials(const xl_compat::Inventory &source)
+{
+	int translucent = 0, sentinel = 0;
+	for (const auto &w : source.walls) {
+		if (!w.cloak) continue;
+		xl_preview_begin_face(w.segment, w.side);
+		if (w.cloak == 21) {
+			require(xl_preview_alpha(1) == 10.0f / 31.0f, "authored opacity 21 did not use XL fade range");
+			const int doorway = WALL_IS_DOORWAY(&Segments[w.segment], w.side);
+			require((doorway & (WID_FLY_FLAG | WID_RENDPAST_FLAG)) == (WID_FLY_FLAG | WID_RENDPAST_FLAG), "translucent illusion lost traversal or visibility");
+			++translucent;
+		} else if (w.cloak == 31) {
+			require(xl_preview_alpha(0.25f) == 1, "XL opacity sentinel treated as transparent");
+			++sentinel;
+		}
+		xl_preview_end_face();
+		require(xl_preview_alpha(0.73f) == 0.73f, "material state leaked past face");
+	}
+	require(translucent == 12 && sentinel == 2, "pilot material fixture changed");
+}
+void material_passage(const xl_compat::Inventory &source)
+{
+	fix player_radius = 0;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type == OBJ_PLAYER) {
+			player_radius = Objects[i].size;
+			break;
+		}
+	require(player_radius > 0, "pilot has no player collision radius");
+	int checked = 0;
+	for (const auto &w : source.walls) {
+		if (!w.cloak) continue;
+		const int child = Segments[w.segment].children[w.side];
+		require(child >= 0 && child <= Highest_segment_index, "authored illusion has no destination segment");
+		const int wall = Segments[w.segment].sides[w.side].wall_num;
+		require(wall >= 0 && wall < Num_walls && Walls[wall].type == WALL_ILLUSION, "authored material is not the expected illusion");
+		vms_vector start{}, end{};
+		compute_segment_center(&start, &Segments[w.segment]);
+		compute_segment_center(&end, &Segments[child]);
+		for (const fix radius : { 0, F1_0 / 8, player_radius }) {
+			fvi_query query{};
+			query.p0 = &start;
+			query.p1 = &end;
+			query.startseg = w.segment;
+			query.rad = radius;
+			query.thisobjnum = -1;
+			query.flags = FQ_GET_SEGLIST;
+			fvi_info hit{};
+			require(find_vector_intersection(&query, &hit) == HIT_NONE && hit.hit_seg == child,
+			        "authored illusion blocked collision trace");
+			// The same trace must hit this boundary when it is a closed wall
+			const auto original_type = Walls[wall].type;
+			Walls[wall].type = WALL_CLOSED;
+			const int blocked = find_vector_intersection(&query, &hit);
+			Walls[wall].type = original_type;
+			require(blocked == HIT_WALL && hit.hit_side_seg == w.segment && hit.hit_side == w.side,
+			        "collision control did not hit the tested material boundary");
+		}
+		++checked;
+	}
+	require(checked == 14, "pilot collision material fixture changed");
+	std::cout << "All 14 authored-opacity illusions pass point, small and player-radius traces with closed-wall negative controls; object collisions and combat unverified\n";
+}
+void colored(const xl_compat::Inventory &source, int vertex)
+{
+	xl_compat::VertexLighting input;
+	for (unsigned i = 0; i < 3; ++i) input.ambient[i] = float(source.vertex_colors[vertex].rgb[i]);
+	input.static_light = 65536;
+	const auto expected = xl_compat::shade_vertex(input);
+	int32_t r = -1, g = -1, b = -1;
+	xl_preview_vertex(vertex, 65536, &r, &g, &b);
+	require(r == int32_t(expected.rgb[0] * 65536) && g == int32_t(expected.rgb[1] * 65536) && b == int32_t(expected.rgb[2] * 65536), "XL preview colors not applied");
+}
+void flash_lighting(int vertex)
+{
+	const auto previous_flash = flash_scale, previous_seismic = Seismic_tremor_magnitude;
+	const int previous_reactor = Control_center_destroyed;
+	Control_center_destroyed = 0;
+	Seismic_tremor_magnitude = 0;
+	flash_scale = 65536;
+	std::array<int32_t, 3> normal{}, dim{}, seismic{};
+	xl_preview_vertex(vertex, 32768, &normal[0], &normal[1], &normal[2]);
+	Control_center_destroyed = 1;
+	flash_scale = 32768;
+	xl_preview_vertex(vertex, 32768, &dim[0], &dim[1], &dim[2]);
+	std::cout << "XL flash probe normal=" << normal[0] << ',' << normal[1] << ',' << normal[2] << " dim=" << dim[0] << ',' << dim[1] << ',' << dim[2] << '\n';
+	const auto peak = *std::max_element(dim.begin(), dim.end());
+	// Float color normalization followed by fixed truncation can lose one unit
+	require(peak >= 16383 && peak <= 16384, "reactor flash did not reach colored light");
+	require(dim != normal, "reactor flash was discarded");
+	Control_center_destroyed = 0;
+	Seismic_tremor_magnitude = 65536;
+	xl_preview_vertex(vertex, 32768, &seismic[0], &seismic[1], &seismic[2]);
+	require(seismic == dim, "seismic flash used a different scalar path");
+	Control_center_destroyed = previous_reactor;
+	Seismic_tremor_magnitude = previous_seismic;
+	flash_scale = previous_flash;
+}
+void dynamic_lighting(const xl_compat::Inventory &source, int vertex)
+{
+	const auto first = Objects[0];
+	std::vector<int> types;
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		types.push_back(Objects[i].type);
+		Objects[i].type = OBJ_NONE;
+	}
+	const int previous_count = N_render_segs, previous_enabled = Do_dynamic_light;
+	std::vector<int> render_list(Render_list, Render_list + Num_segments);
+	N_render_segs = Num_segments;
+	for (int i = 0; i < Num_segments; ++i) Render_list[i] = i;
+	Do_dynamic_light = 1;
+	Objects[0].type = OBJ_LIGHT;
+	Objects[0].segnum = 0;
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].ctype.light_info.intensity = F1_0;
+	xl_preview_dynamic_frame();
+	require(xl_preview_unresolved_emitters() == 0, "controlled point emitter marked unresolved");
+	std::array<int32_t, 3> rgb{};
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	const auto peak = *std::max_element(rgb.begin(), rgb.end());
+	require(peak >= 16383 && peak <= 16384, "live point light did not reach colored shading");
+	Objects[0].type = OBJ_WEAPON;
+	Objects[0].id = OMEGA_ID;
+	const int mode_before_omega = Game_mode;
+	Game_mode |= GM_MULTI;
+	xl_preview_dynamic_frame();
+	Game_mode = mode_before_omega;
+	require(xl_preview_unresolved_emitters() == 1, "unsupported weapon emitter silently omitted");
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "dynamic light leaked across frames");
+	const auto brightness = xl_compat::vertex_brightness(source);
+	auto check_color = [&](int v, int32_t intensity, xl_compat::Rgb color) {
+		xl_compat::VertexLighting input;
+		for (unsigned c = 0; c < 3; ++c) input.ambient[c] = float(source.vertex_colors[v].rgb[c]);
+		input.dynamic_light = intensity;
+		input.dynamic_color = color;
+		input.has_dynamic_color = input.extra_game_info = true;
+		input.vertex_brightness = brightness[v];
+		const auto expected = xl_compat::shade_vertex(input);
+		xl_preview_vertex(v, 0, &rgb[0], &rgb[1], &rgb[2]);
+		for (unsigned c = 0; c < 3; ++c)
+			require(rgb[c] == int32_t(expected.rgb[c] * 65536), "live emitter intensity/color differs from reference rule");
+	};
+	unsigned fx_state = 0, sim_state = 0, sim_after = 0;
+	require(d_rand_get_stream_state(D_RNG_FX, &fx_state) && d_rand_get_stream_state(D_RNG_SIM, &sim_state), "RNG state unavailable for flare isolation check");
+	const auto fx_calls = d_rand_get_stream_call_count(D_RNG_FX), sim_calls = d_rand_get_stream_call_count(D_RNG_SIM);
+	const auto flare_light = Weapon_info[FLARE_ID].light;
+	Weapon_info[FLARE_ID].light = F1_0;
+	Objects[0].id = FLARE_ID;
+	for (int life : { 2 * F1_0, F1_0 / 2 }) {
+		Objects[0].lifeleft = life;
+		d_srand_stream(D_RNG_FX, 12345);
+		const unsigned sample = d_rand_stream(D_RNG_FX);
+		d_srand_stream(D_RNG_FX, 12345);
+		const auto calls = d_rand_get_stream_call_count(D_RNG_FX);
+		xl_preview_dynamic_frame();
+		require(xl_preview_unresolved_emitters() == 0, "flare emitter unresolved");
+		require(d_rand_get_stream_call_count(D_RNG_FX) == calls + 1, "flare did not consume exactly one FX sample");
+		check_color(vertex, xl_compat::flare_intensity(F1_0, life, sample) / 4, { 1, 1, 1 });
+	}
+	require(d_rand_get_stream_state(D_RNG_SIM, &sim_after) && sim_after == sim_state && d_rand_get_stream_call_count(D_RNG_SIM) == sim_calls, "flare rendering advanced simulation RNG");
+	d_rand_set_stream_state(D_RNG_FX, fx_state);
+	d_rand_set_stream_call_count(D_RNG_FX, fx_calls);
+	Weapon_info[FLARE_ID].light = flare_light;
+	// Controlled weapon-table intensity isolates color selection from retail values
+	for (int id : { int(CONCUSSION_ID), int(SUPER_MECH_MISS), int(LASER_ID), int(SUPERPROX_ID) }) {
+		const auto previous_light = Weapon_info[id].light;
+		Weapon_info[id].light = F1_0;
+		Objects[0].id = id;
+		xl_preview_dynamic_frame();
+		require(xl_preview_unresolved_emitters() == 0, "ordinary weapon emitter unresolved");
+		check_color(vertex, F1_0 / 4, id == CONCUSSION_ID || id == SUPER_MECH_MISS ? xl_compat::Rgb{ 1, 0.3f, 0 } : xl_compat::Rgb{ 1, 1, 1 });
+		Weapon_info[id].light = previous_light;
+	}
+	// Real frame resolution with controlled palette and noncontiguous frame IDs
+	const auto original_clip = Vclip[0];
+	const auto bitmap_one = GameBitmaps[1], bitmap_three = GameBitmaps[3];
+	std::array<ubyte, 768> palette;
+	std::copy(gr_palette, gr_palette + palette.size(), palette.begin());
+	std::fill(gr_palette, gr_palette + palette.size(), ubyte(63));
+	for (unsigned c = 0; c < 3; ++c) gr_palette[c] = 0;
+	auto set_color = [](int i, int r, int g, int b) { gr_palette[i * 3] = r; gr_palette[i * 3 + 1] = g; gr_palette[i * 3 + 2] = b; };
+	set_color(7, 0, 0, 40);
+	set_color(8, 20, 0, 0);
+	set_color(9, 0, 20, 0);
+	set_color(254, 10, 10, 0);
+	ubyte pixels[] = { 8, 9, 0, 255 };
+	for (int i : { 1, 3 }) {
+		GameBitmaps[i] = {};
+		GameBitmaps[i].bm_type = BM_LINEAR;
+		GameBitmaps[i].bm_w = GameBitmaps[i].bm_rowsize = 4;
+		GameBitmaps[i].bm_h = 1;
+		GameBitmaps[i].bm_data = pixels;
+	}
+	GameBitmaps[1].avg_color = 7;
+	Vclip[0].num_frames = 2;
+	Vclip[0].frames[0].index = 1;
+	Vclip[0].frames[1].index = 3;
+	Vclip[0].light_value = F1_0;
+	Vclip[0].play_time = 2 * F1_0;
+	Objects[0].type = OBJ_FIREBALL;
+	Objects[0].id = 0;
+	Objects[0].lifeleft = 4 * F1_0;
+	xl_preview_dynamic_frame();
+	require(xl_preview_unresolved_emitters() == 0, "indexed explosion unresolved");
+	check_color(vertex, F1_0 / 4, { 0.25f, 0.25f, 1 });
+	// Same fallback pixels encoded as RLE_BIG: transparent bytes require runs
+	ubyte encoded[] = { 13, 0, 0, 0, 7, 0, 8, 9, 0, 0xe1, 255, 0xe0, 0 };
+	GameBitmaps[3].bm_flags = BM_FLAG_RLE | BM_FLAG_RLE_BIG;
+	GameBitmaps[3].bm_data = encoded;
+	Objects[0].lifeleft = F1_0;
+	xl_preview_dynamic_frame();
+	check_color(vertex, F1_0 / 8, { 0.25f, 0.25f, 1 });
+	Vclip[0] = original_clip;
+	GameBitmaps[1] = bitmap_one;
+	GameBitmaps[3] = bitmap_three;
+	std::copy(palette.begin(), palette.end(), gr_palette);
+	for (int clip : { VCLIP_SMALL_EXPLOSION, VCLIP_PLAYER_HIT, VCLIP_VOLATILE_WALL_HIT }) {
+		Objects[0].id = clip;
+		xl_preview_dynamic_frame();
+		require(xl_preview_unresolved_emitters() == 0, "retail explosion resource unresolved");
+	}
+	// Point-source radius is exclusive; hidden vertices must not receive it
+	Objects[0].type = OBJ_LIGHT;
+	Objects[0].pos.x += 64 * F1_0;
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "point light reached exclusive radius boundary");
+	Objects[0].pos.x -= F1_0;
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(*std::max_element(rgb.begin(), rgb.end()) > 0, "point light missing inside radius");
+	Objects[0].pos = Vertices[vertex];
+	N_render_segs = 0;
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "point light reached hidden vertex");
+	// Marker sources use their own segment even outside the visible set
+	const int marker_vertex = Segments[0].verts[0];
+	Objects[0].type = OBJ_MARKER;
+	Objects[0].pos = Vertices[marker_vertex];
+	Objects[0].lifeleft = 100 * F1_0 + F1_0 / 4;
+	xl_preview_dynamic_frame();
+	require(xl_preview_unresolved_emitters() == 0, "marker emitter unresolved");
+	check_color(marker_vertex, F1_0 / 2, { 0.1f, 1, 0.1f });
+	require(Objects[0].lifeleft == 100 * F1_0 + F1_0 / 4, "XL hook extended marker lifetime twice");
+	Objects[0].lifeleft = 100 * F1_0 + F1_0 / 2;
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(marker_vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "marker pulse failed to reach zero at half cycle");
+	Objects[0].lifeleft = 100 * F1_0 + F1_0 / 4;
+	xl_preview_dynamic_frame();
+	Do_dynamic_light = 0;
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(marker_vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "disabled lighting retained marker state");
+	const auto previous_controls = Controls;
+	const auto previous_frame = FrameTime;
+	const auto previous_thrust = Player_ship->max_thrust;
+	const auto previous_flags = Players[Player_num].flags;
+	const auto previous_guided = Guided_missile[Player_num];
+	const int previous_dead = Player_is_dead, previous_mode = Game_mode;
+	Players[Player_num].flags = 0;
+	Player_is_dead = Game_mode = 0;
+	Guided_missile[Player_num] = nullptr;
+	Objects[0].type = OBJ_PLAYER;
+	Objects[0].id = Player_num;
+	Objects[0].mtype.phys_info.flags = 0;
+	Objects[0].orient = vmd_identity_matrix;
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.x += 8 * F1_0;
+	Controls = {};
+	Controls.forward_thrust_time = 12 * F1_0;
+	FrameTime = F1_0;
+	Player_ship->max_thrust = 2 * F1_0;
+	read_flying_controls(&Objects[0]);
+	require(Objects[0].mtype.phys_info.thrust.z == 24 * F1_0, "control fixture did not scale final thrust");
+	Do_dynamic_light = 1;
+	N_render_segs = Num_segments;
+	xl_preview_dynamic_frame();
+	require(xl_preview_unresolved_emitters() == 0, "local player light unresolved");
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	auto player_peak = *std::max_element(rgb.begin(), rgb.end());
+	require(player_peak >= 28671 && player_peak <= 28672, "player light used scaled thrust instead of raw control thrust");
+	Player_is_dead = 1;
+	read_flying_controls(&Objects[0]);
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	player_peak = *std::max_element(rgb.begin(), rgb.end());
+	require(player_peak >= 20479 && player_peak <= 20480, "dead player retained raw thrust light");
+	Player_is_dead = 0;
+	Players[Player_num].flags = PLAYER_FLAGS_HEADLIGHT | PLAYER_FLAGS_HEADLIGHT_ON;
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.z -= 8 * F1_0;
+	xl_preview_dynamic_frame();
+	require(xl_preview_unresolved_emitters() == 0, "local headlight unresolved");
+	check_color(vertex, 10 * F1_0 / 8, { 1, 1, 1 });
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.x -= 4 * F1_0;
+	Objects[0].pos.z -= 3 * F1_0;
+	xl_preview_dynamic_frame();
+	// Exact 3-4-5 triangle: fixed normalized forward dot=39321, squared branch=29490
+	check_color(vertex, 29490, { 1, 1, 1 });
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.z -= 8 * F1_0;
+	Objects[0].pos.z += 16 * F1_0;
+	xl_preview_dynamic_frame();
+	check_color(vertex, F1_0 / 8, { 1, 1, 1 });
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.x += 8 * F1_0;
+	xl_preview_dynamic_frame();
+	check_color(vertex, F1_0 / 8, { 1, 1, 1 });
+	// Cone reaches beyond an ordinary intensity-10 point light's 640-unit radius
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.z -= 1000 * F1_0;
+	xl_preview_dynamic_frame();
+	check_color(vertex, 10 * F1_0 / 8, { 1, 1, 1 });
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.z -= 5120 * F1_0;
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "headlight exceeded exclusive shifted radius");
+	Objects[0].pos = Vertices[vertex];
+	Objects[0].pos.z -= 8 * F1_0;
+	for (int flags : { int(PLAYER_FLAGS_HEADLIGHT), int(PLAYER_FLAGS_HEADLIGHT_ON) }) {
+		Players[Player_num].flags = flags;
+		xl_preview_dynamic_frame();
+		xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+		player_peak = *std::max_element(rgb.begin(), rgb.end());
+		require(player_peak >= 20479 && player_peak <= 20480, "headlight possession/on gate ignored");
+	}
+	xl_preview_reset_player_thrust();
+	Controls = previous_controls;
+	FrameTime = previous_frame;
+	Player_ship->max_thrust = previous_thrust;
+	Players[Player_num].flags = previous_flags;
+	Guided_missile[Player_num] = previous_guided;
+	Player_is_dead = previous_dead;
+	Game_mode = previous_mode;
+	std::array<muzzle_info, MUZZLE_QUEUE_MAX> muzzle;
+	std::copy(std::begin(Muzzle_data), std::end(Muzzle_data), muzzle.begin());
+	std::fill(std::begin(Muzzle_data), std::end(Muzzle_data), muzzle_info{});
+	Objects[0].type = OBJ_NONE;
+	Do_dynamic_light = 1;
+	N_render_segs = Num_segments;
+	constexpr int64_t now = 10 * F1_0;
+	constexpr int duration = F1_0 / 3, scale = 3 * F1_0 / duration;
+	for (int age : { 0, duration / 2, duration - 1, duration }) {
+		Muzzle_data[0].pos = Vertices[vertex];
+		Muzzle_data[0].segnum = 0;
+		Muzzle_data[0].create_time = now - age;
+		xl_preview_muzzle_snapshot(now);
+		require(Muzzle_data[0].create_time == now - age, "XL snapshot mutated muzzle queue");
+		xl_preview_dynamic_frame();
+		xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+		const auto peak = *std::max_element(rgb.begin(), rgb.end());
+		const int expected = age < duration ? (duration - age) * scale / 4 : 0;
+		require(peak >= expected - 1 && peak <= expected, "muzzle decay/expiration did not reach shading");
+	}
+	// Exercise the generated hook and stock-owned expiry, not only the snapshot API
+	Muzzle_data[0].create_time = timer_query() - duration - 1024;
+	set_dynamic_light();
+	require(Muzzle_data[0].create_time == 0, "stock muzzle expiration did not run");
+	xl_preview_dynamic_frame();
+	xl_preview_vertex(vertex, 0, &rgb[0], &rgb[1], &rgb[2]);
+	require(rgb == std::array<int32_t, 3>{}, "expired stock muzzle persisted in XL shading");
+	std::fill(std::begin(Muzzle_data), std::end(Muzzle_data), muzzle_info{});
+	xl_preview_muzzle_snapshot(now);
+	std::copy(muzzle.begin(), muzzle.end(), Muzzle_data);
+	for (int i = 0; i <= Highest_object_index; ++i) Objects[i].type = types[i];
+	Objects[0] = first;
+	std::copy(render_list.begin(), render_list.end(), Render_list);
+	N_render_segs = previous_count;
+	Do_dynamic_light = previous_enabled;
+}
+std::vector<int32_t> face_lights()
+{
+	std::vector<int32_t> values;
+	for (int seg = 0; seg < Num_segments; ++seg)
+		for (int side = 0; side < 6; ++side)
+			for (int corner = 0; corner < 4; ++corner)
+				values.push_back(Segments[seg].sides[side].uvls[corner].l);
+	return values;
+}
+void changing_lights(const xl_compat::Inventory &source)
+{
+	unsigned checked = 0, changed = 0, color_changes = 0;
+	for (const auto &light : source.light_indices) {
+		require(load_level("xlprobe.rl2") == 0, "light fixture reload failed");
+		std::fill(Light_subtracted, Light_subtracted + Num_segments, 0);
+		auto expected = face_lights();
+		const auto initial = expected;
+		// Pinned XL light.cpp ChangeLight legacy mode: ordered, clamped UVL deltas
+		auto apply_expected = [&](int direction) {
+			for (const auto &index : source.light_indices) {
+				if (index[0] != light[0] || index[1] != light[1]) continue;
+				for (int i = index[3]; i < index[3] + index[2]; ++i) {
+					const auto &delta = source.delta_lights.at(i);
+					for (int k = 0; k < 4; ++k) {
+						auto &value = expected.at(delta[0] * 24 + delta[1] * 4 + k);
+						value = (std::max) (0, value + direction * delta[3 + k] * 2048);
+					}
+				}
+			}
+		};
+		apply_expected(-1);
+		require(subtract_light(light[0], light[1]) == 1, "first subtraction ignored");
+		require(face_lights() == expected, "pilot light-off UVLs differ from reference formula");
+		require(subtract_light(light[0], light[1]) == 0 && face_lights() == expected, "repeated light-off changed state");
+		if (expected != initial) ++changed;
+		for (int seg = 0; seg < Num_segments; ++seg) {
+			for (int side = 0; side < 6; ++side) {
+				int vertices[4];
+				get_side_verts(vertices, seg, side);
+				for (int corner = 0; corner < 4; ++corner) {
+					const auto offset = seg * 24 + side * 4 + corner;
+					if (initial[offset] == expected[offset]) continue;
+					std::array<int32_t, 3> before{}, after{};
+					xl_preview_vertex(vertices[corner], initial[offset], &before[0], &before[1], &before[2]);
+					xl_preview_vertex(vertices[corner], Segments[seg].sides[side].uvls[corner].l, &after[0], &after[1], &after[2]);
+					if (before != after) ++color_changes;
+				}
+			}
+		}
+		apply_expected(1);
+		require(add_light(light[0], light[1]) == 1, "first addition ignored");
+		require(face_lights() == expected, "pilot light-on UVLs differ from reference formula");
+		require(add_light(light[0], light[1]) == 0 && face_lights() == expected, "repeated light-on changed state");
+		++checked;
+	}
+	require(checked == 70 && changed > 0 && color_changes > 0, "pilot changing-light coverage missing");
+	std::cout << "XL pilot light updates: " << checked << " sources checked, " << changed << " changed UVLs, " << color_changes << " colored corners changed; legacy scalar path only\n";
+	require(load_level("xlprobe.rl2") == 0, "final light fixture reload failed");
+	std::fill(Light_subtracted, Light_subtracted + Num_segments, 0);
+}
+void write_bytes(const char *path, const xl_compat::Bytes &bytes)
+{
+	std::ofstream out(path, std::ios::binary | std::ios::trunc);
+	out.write(reinterpret_cast<const char *>(bytes.data()), bytes.size());
+	out.close();
+	require(bool(out), "cannot write private fixture");
+}
+void original_mission_save(const xl_compat::Inventory &source, int vertex)
+{
+	char error[256] = {};
+	require(load_base_mission("d2-xl", error, sizeof(error)), error);
+	require(!std::strcmp(Current_mission_longname, "D2-XL: Counterstrike!"), "outer mission descriptor lost precedence");
+	require(Last_level == 24 && Last_secret_level == -6, "original mission list changed");
+	std::strcpy(Players[Player_num].callsign, "XLTest");
+	Difficulty_level = 2;
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	object_dependencies();
+	require(Current_level_num == 1 && !std::strcmp(Gamesave_current_filename, "d2leva-1.rl2"), "original mission startup failed");
+	auto robot_count = [] { int count = 0; for (int i = 0; i <= Highest_object_index; ++i) if (Objects[i].type == OBJ_ROBOT) ++count; return count; };
+	require(robot_count() == 38, "normal mission startup removed robots");
+	require(!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "normal mission startup granted invulnerability");
+	const auto &light = source.light_indices.front();
+	require(subtract_light(light[0], light[1]) == 1, "save fixture light did not switch off");
+	Walls[6].cloak_value = 11;
+	const auto expected_lights = face_lights();
+	const auto expected_energy = Players[Player_num].energy;
+	const auto expected_flags = Players[Player_num].flags;
+	char save[] = "xl-pilot-state.sav", description[] = "XL extension persistence";
+	require(state_save_all_sub(save, description) != 0, "original mission save failed");
+	Walls[6].cloak_value = 30;
+	add_light(light[0], light[1]);
+	Players[Player_num].energy = 1;
+	require(state_restore_all_sub(save, 0) != 0, "original mission restore failed");
+	require(!std::strcmp(Current_mission_filename, "d2-xl") && Current_level_num == 1, "restore selected wrong mission/level");
+	require(!std::strcmp(Gamesave_current_filename, "d2leva-1.rl2"), "restore lost original level identity");
+	require(Walls[6].cloak_value == 11, "restore lost live wall opacity");
+	require(face_lights() == expected_lights, "restore lost switched-light UVLs");
+	require(Players[Player_num].energy == expected_energy && Players[Player_num].flags == expected_flags, "restore lost player state");
+	require(robot_count() == 38, "restore lost live robots");
+	xl_preview_begin_face(Walls[6].segnum, Walls[6].sidenum);
+	require(xl_preview_alpha(1) == 20.0f / 31.0f, "restored opacity did not reach material adapter");
+	xl_preview_end_face();
+	colored(source, vertex);
+	std::cout << "Original mission save: identity, 38 robots, opacity, changed lights, player state and XL activation restored; progression unverified\n";
+}
+void normal_input_frames()
+{
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	require(!cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended,
+	        "normal input probe started with combat cheats");
+	require(!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "normal input probe started invulnerable");
+	const auto start_position = ConsoleObject->pos;
+	const auto start_energy = Players[Player_num].energy;
+	const auto start_shields = Players[Player_num].shields;
+	const auto start_time = GameTime64;
+	std::set<int> player_shots, robot_shots;
+	int remainder = 0, frames = 0;
+	for (; frames < 600 && !Player_is_dead; ++frames) {
+		remainder += F1_0;
+		FrameTime = remainder / 60;
+		remainder %= 60;
+		std::memset(&Controls, 0, sizeof(Controls));
+		Controls.forward_thrust_time = FrameTime;
+		Controls.fire_primary_state = 1;
+		calc_game_time();
+		GameProcessFrame();
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_WEAPON) {
+				const auto &o = Objects[i];
+				if (o.ctype.laser_info.parent_type == OBJ_PLAYER) player_shots.insert(o.signature);
+				if (o.ctype.laser_info.parent_type == OBJ_ROBOT) robot_shots.insert(o.signature);
+			}
+	}
+	std::memset(&Controls, 0, sizeof(Controls));
+	require(GameTime64 > start_time, "normal simulation did not advance");
+	require(!player_shots.empty() && Players[Player_num].energy < start_energy, "ordinary primary fire did not create charged shots");
+	require(!robot_shots.empty(), "normal pilot encounter did not exercise robot firing");
+	require(Players[Player_num].shields < start_shields, "normal pilot encounter did not exercise player damage");
+	require(vm_vec_dist(&start_position, &ConsoleObject->pos) > F1_0, "ordinary thrust did not move the player");
+	require(!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "normal input probe acquired unexplained invulnerability");
+	std::cout << "Normal input simulation: frames=" << frames << " player_shots=" << player_shots.size()
+	          << " robot_shots=" << robot_shots.size() << " shields=" << Players[Player_num].shields
+	          << " dead=" << Player_is_dead << " segment=" << ConsoleObject->segnum
+	          << "; fixed forward/fire inputs only, progression unverified\n";
+}
+std::vector<unsigned char> gameplay_definitions()
+{
+	std::vector<unsigned char> result;
+	auto append = [&](const auto *data, int count) {
+		const auto *bytes = reinterpret_cast<const unsigned char *>(data);
+		result.insert(result.end(), bytes, bytes + sizeof(*data) * count);
+	};
+	append(&N_robot_types, 1);
+	append(Robot_info, N_robot_types);
+	append(&N_weapon_types, 1);
+	append(Weapon_info, N_weapon_types);
+	append(&N_powerup_types, 1);
+	append(Powerup_info, N_powerup_types);
+	append(&N_robot_joints, 1);
+	append(Robot_joints, N_robot_joints);
+	return result;
+}
+uint64_t route_activated_triggers = 0, route_passable_targets = 0;
+void observe_route_triggers()
+{
+	const auto activated = xl_preview_trigger_mask();
+	route_activated_triggers |= activated;
+	for (int t = 0; t < Num_triggers; ++t) {
+		if (!(activated & (uint64_t(1) << t)) || Triggers[t].type == TT_EXIT) continue;
+		bool passable = Triggers[t].num_links > 0;
+		for (int link = 0; link < Triggers[t].num_links; ++link) {
+			const int seg = Triggers[t].seg[link], side = Triggers[t].side[link];
+			const auto &wall = Walls[Segments[seg].sides[side].wall_num];
+			const int doorway = WALL_IS_DOORWAY(&Segments[seg], side);
+			static int previous[MAX_TRIGGERS][MAX_WALLS_PER_LINK]{};
+			const int state = 1 + wall.type + 16 * wall.state + 256 * wall.flags + 65536 * doorway;
+			if (previous[t][link] != state) {
+				std::cout << "Trigger target: trigger=" << t << " segment=" << seg << " side=" << side
+				          << " type=" << int(wall.type) << " state=" << int(wall.state) << " flags=" << int(wall.flags) << " doorway=" << doorway << '\n';
+				previous[t][link] = state;
+			}
+			passable = passable && (doorway & WID_FLY_FLAG);
+		}
+		if (passable) route_passable_targets |= uint64_t(1) << t;
+	}
+}
+
+void verify_branch_checkpoint(int branch)
+{
+	auto target_state = [&] {
+		std::vector<int> values{ Triggers[branch].flags };
+		for (int link = 0; link < Triggers[branch].num_links; ++link) {
+			const int seg = Triggers[branch].seg[link], side = Triggers[branch].side[link];
+			const auto &surface = Segments[seg].sides[side];
+			const auto &wall = Walls[surface.wall_num];
+			values.insert(values.end(), { surface.wall_num, surface.tmap_num, surface.tmap_num2, wall.type, wall.flags,
+			                              wall.state, wall.hps, wall.cloak_value, WALL_IS_DOORWAY(&Segments[seg], side) });
+		}
+		return values;
+	};
+	const auto before = target_state();
+	const auto shields = Players[Player_num].shields, energy = Players[Player_num].energy;
+	char checkpoint[] = "xl-normal-branch.sav", description[] = "Normal authored branch";
+	require(state_save_all_sub(checkpoint, description) != 0, "branch checkpoint save failed");
+	require(state_restore_all_sub(checkpoint, 0) != 0, "branch checkpoint restore failed");
+	require(target_state() == before && Players[Player_num].shields == shields && Players[Player_num].energy == energy,
+	        "branch restore changed target walls or earned player resources");
+	require(xl_preview_trigger_mask() == 0, "diagnostic activation mask leaked across load");
+	std::cout << "Normal branch persistence: trigger=" << branch << " targets and earned resources restored\n";
+}
+
+void navigate_objective(bool reactor, bool escape = false, int branch = -1)
+{
+	require(Num_triggers == 13 && branch >= -1 && branch < Num_triggers, "unexpected pilot trigger scope");
+	if (branch >= 0 && (route_activated_triggers & route_passable_targets & (uint64_t(1) << branch))) {
+		require(!Player_is_dead, "prior branch coverage ended dead");
+		std::cout << "Normal branch navigation: trigger=" << branch << " frames=0 dead=0 activated=1 targets_passable=1; exercised on key route\n";
+		verify_branch_checkpoint(branch);
+		return;
+	}
+	if (reactor) {
+		const auto shields = Players[Player_num].shields, energy = Players[Player_num].energy;
+		char key_checkpoint[] = "xl-normal-key.sav", reactor_checkpoint[] = "xl-normal-reactor.sav";
+		char *checkpoint = escape ? reactor_checkpoint : key_checkpoint;
+		const auto countdown = Countdown_timer;
+		require(state_restore_all_sub(checkpoint, 0) != 0, "normal key checkpoint restore failed");
+		require((Players[Player_num].flags & KEY_RED) && (Players[Player_num].shields == shields && Players[Player_num].energy == energy),
+		        "normal key checkpoint changed earned inventory");
+		if (escape) require(Control_center_destroyed && Countdown_timer == countdown && countdown > 0, "earned reactor countdown changed on restore");
+	} else {
+		route_activated_triggers = route_passable_targets = 0;
+		d_srand_stream(D_RNG_SIM, 1);
+		d_srand_stream(D_RNG_FX, 1);
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+	}
+	int key = -1;
+	int robots = 0;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (reactor ? Objects[i].type == OBJ_CNTRLCEN : (Objects[i].type == OBJ_POWERUP && Objects[i].id == POW_KEY_RED)) key = i;
+		else if (Objects[i].type == OBJ_ROBOT) ++robots;
+	require((reactor || robots == 38) && Difficulty_level == 2 && !cheats.enabled && !cheats.monsterdamage && !cheats.ghostphysics && !cheats.robotfiringsuspended,
+	        "normal navigation fixture has altered combat rules");
+	require(!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "normal navigation fixture is invulnerable");
+	require(xl_preview_pilot_active() && !xl_preview_pilot_completed(), "navigation did not start with fresh pilot admission");
+	int branch_wall = -1;
+	if (branch >= 0) {
+		require(branch < Num_triggers && Triggers[branch].type != TT_EXIT, "invalid branch objective");
+		for (int i = 0; i < Num_walls; ++i)
+			if (Walls[i].trigger == branch) branch_wall = i;
+		require(branch_wall >= 0, "branch has no authored host wall");
+	}
+	int exit_wall = -1;
+	if (escape)
+		for (int i = 0; i < Num_walls; ++i)
+			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
+	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
+	auto complete = [&] { return branch >= 0 ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch)) : escape ? bool(xl_preview_pilot_completed())
+		                                                                                                                        : reactor  ? bool(Control_center_destroyed)
+		                                                                                                                                   : bool(Players[Player_num].flags & KEY_RED); };
+	int remainder = 0, frames = 0, last_segment = -1;
+	for (; frames < (branch >= 0 ? 36000 : 10800) && !Player_is_dead && !complete(); ++frames) {
+		const int start = ConsoleObject->segnum;
+		int goal = branch >= 0 ? Walls[branch_wall].segnum : escape ? Walls[exit_wall].segnum
+		                                                            : Objects[key].segnum,
+		    pickup = key, switch_wall = -1;
+		std::vector<int> parent(Highest_segment_index + 1, -1), queue{ start };
+		std::vector<int> steps(Highest_segment_index + 1, -1);
+		parent[start] = start;
+		steps[start] = 0;
+		for (std::size_t q = 0; q < queue.size(); ++q) {
+			const int seg = queue[q];
+			for (int side = 0; side < 6; ++side) {
+				const int child = Segments[seg].children[side];
+				if (child < 0 || parent[child] >= 0) continue;
+				bool pass = WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG;
+				const int wall = Segments[seg].sides[side].wall_num;
+				if (!pass && wall >= 0) {
+					const auto &w = Walls[wall];
+					pass = w.type == WALL_BLASTABLE || (w.type == WALL_DOOR && !(w.flags & WALL_DOOR_LOCKED) &&
+					                                    (w.keys == KEY_NONE || (w.keys & Players[Player_num].flags)));
+				}
+				if (pass) {
+					parent[child] = seg;
+					steps[child] = steps[seg] + 1;
+					queue.push_back(child);
+				}
+			}
+		}
+		int pickup_steps = escape ? 0 : branch >= 0                                                                                               ? 4
+		                            : reactor && (Players[Player_num].shields < i2f(50) || (branch >= 0 && Players[Player_num].energy < i2f(50))) ? Highest_segment_index + 1
+		                                                                                                                                          : 6;
+		for (int i = 0; i <= Highest_object_index; ++i) {
+			const auto &o = Objects[i];
+			if (o.type != OBJ_POWERUP || o.segnum < 0 || steps[o.segnum] < 0 || steps[o.segnum] >= pickup_steps) continue;
+			if ((o.id == POW_SHIELD_BOOST && Players[Player_num].shields < i2f(90)) ||
+			    (branch >= 0 && o.id == POW_ENERGY && Players[Player_num].energy < i2f(80)) ||
+			    (o.id == POW_LASER && Players[Player_num].laser_level < MAX_LASER_LEVEL)) {
+				pickup = i;
+				goal = o.segnum;
+				pickup_steps = steps[goal];
+			}
+		}
+		auto switch_approach = [&](int wall) {
+			const auto &host = Walls[wall];
+			if (branch >= 0 && host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) return -1;
+			if (parent[host.segnum] >= 0) return host.segnum;
+			if (branch < 0) return -1;
+			vms_vector target;
+			compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
+			int best = -1;
+			for (const int candidate : queue) {
+				if (best >= 0 && steps[candidate] >= steps[best]) continue;
+				vms_vector origin;
+				compute_segment_center(&origin, &Segments[candidate]);
+				if (vm_vec_dist(&origin, &target) > i2f(100)) continue;
+				fvi_query query{};
+				query.p0 = &origin;
+				query.p1 = &target;
+				query.startseg = candidate;
+				query.thisobjnum = Players[Player_num].objnum;
+				query.flags = FQ_TRANSWALL;
+				fvi_info hit{};
+				const int result = find_vector_intersection(&query, &hit);
+				if (result == HIT_NONE || (result == HIT_WALL && hit.hit_side_seg == host.segnum && hit.hit_side == host.sidenum)) best = candidate;
+			}
+			return best;
+		};
+		if (branch >= 0 && pickup == key) {
+			int objective_wall = branch_wall;
+			const auto &host = Walls[branch_wall];
+			if (host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) {
+				for (int wall = 0; wall < Num_walls; ++wall)
+					if (host.controlling_trigger >= 0 && Walls[wall].trigger == host.controlling_trigger) objective_wall = wall;
+			}
+			const int approach = switch_approach(objective_wall);
+			if (approach >= 0) {
+				switch_wall = objective_wall;
+				goal = approach;
+			}
+		}
+		if (parent[goal] < 0) {
+			int best = Highest_segment_index + 1;
+			for (int wall = 0; wall < Num_walls; ++wall) {
+				const auto &host = Walls[wall];
+				if (host.trigger >= Num_triggers) continue;
+				const int approach = switch_approach(wall);
+				if (approach < 0 || steps[approach] >= best) continue;
+				const auto &trigger = Triggers[host.trigger];
+				if ((trigger.flags & TF_DISABLED) || (trigger.type != TT_OPEN_DOOR && trigger.type != TT_OPEN_WALL)) continue;
+				bool opens_frontier = false;
+				for (int link = 0; link < trigger.num_links; ++link) {
+					const int seg = trigger.seg[link], side = trigger.side[link];
+					const int child = Segments[seg].children[side];
+					if (child >= 0 && ((parent[seg] >= 0) != (parent[child] >= 0))) opens_frontier = true;
+				}
+				if (opens_frontier) {
+					switch_wall = wall;
+					best = steps[approach];
+				}
+			}
+			require(switch_wall >= 0, "objective requires a prerequisite not yet handled by input navigator");
+			goal = switch_approach(switch_wall);
+		}
+		int next = goal;
+		while (parent[next] != start && next != start) next = parent[next];
+		int blocking_wall = -1;
+		vms_vector target{};
+		if (escape) compute_center_point_on_side(&target, &Segments[goal], Walls[exit_wall].sidenum);
+		else target = Objects[pickup].pos;
+		if (switch_wall >= 0) {
+			const auto &host = Walls[switch_wall];
+			const int child = Segments[host.segnum].children[host.sidenum];
+			if (child >= 0 && (WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG))
+				compute_segment_center(&target, &Segments[child]);
+			else {
+				compute_center_point_on_side(&target, &Segments[host.segnum], host.sidenum);
+				// Shoot different parts of the authored switch face; its center may be transparent
+				if (branch >= 0 && start == goal) {
+					int verts[4];
+					get_side_verts(verts, host.segnum, host.sidenum);
+					const int sample = (frames / 90) % 25;
+					const fix u = F1_0 * (1 + 2 * (sample % 5)) / 10;
+					const fix v = F1_0 * (1 + 2 * (sample / 5)) / 10;
+					vms_vector bottom, top, edge;
+					vm_vec_sub(&edge, &Vertices[verts[1]], &Vertices[verts[0]]);
+					vm_vec_scale_add(&bottom, &Vertices[verts[0]], &edge, u);
+					vm_vec_sub(&edge, &Vertices[verts[2]], &Vertices[verts[3]]);
+					vm_vec_scale_add(&top, &Vertices[verts[3]], &edge, u);
+					vm_vec_sub(&edge, &top, &bottom);
+					vm_vec_scale_add(&target, &bottom, &edge, v);
+				}
+			}
+		}
+		if (start != goal) {
+			int crossing = -1;
+			for (int side = 0; side < 6; ++side)
+				if (Segments[start].children[side] == next) crossing = side;
+			require(crossing >= 0, "navigation path lost adjacent portal");
+			vms_vector portal, inward, center;
+			compute_center_point_on_side(&portal, &Segments[start], crossing);
+			const int portal_wall = Segments[start].sides[crossing].wall_num;
+			if (branch >= 0 && portal_wall >= 0 && Walls[portal_wall].type == WALL_BLASTABLE &&
+			    !(WALL_IS_DOORWAY(&Segments[start], crossing) & WID_FLY_FLAG)) blocking_wall = portal_wall;
+			compute_segment_center(&center, &Segments[next]);
+			vm_vec_sub(&inward, &center, &portal);
+			const fix depth = vm_vec_normalize(&inward);
+			vm_vec_scale_add(&target, &portal, &inward, (std::min) (depth, ConsoleObject->size * 2));
+			object probe = *ConsoleObject;
+			probe.segnum = next;
+			probe.pos = target;
+			if (object_intersects_wall(&probe)) {
+				vms_vector offset;
+				vm_vec_sub(&offset, &center, &target);
+				for (int sample = 1; sample <= 16; ++sample) {
+					vm_vec_scale_add(&probe.pos, &target, &offset, sample * (F1_0 / 16));
+					if (find_point_seg(&probe.pos, next) == next && !object_intersects_wall(&probe)) {
+						target = probe.pos;
+						break;
+					}
+				}
+			}
+			fvi_query query{};
+			query.p0 = &ConsoleObject->pos;
+			query.p1 = &target;
+			query.startseg = start;
+			query.rad = ConsoleObject->size;
+			query.thisobjnum = Players[Player_num].objnum;
+			fvi_info hit{};
+			if (find_vector_intersection(&query, &hit) == HIT_WALL && (hit.hit_side_seg != start || hit.hit_side != crossing))
+				compute_segment_center(&target, &Segments[next]);
+			if (blocking_wall >= 0) {
+				target = portal;
+				// Damaged blastable textures have holes; aim at several remaining patches
+				const int sample = (frames / 180) % 5;
+				if (sample) {
+					int verts[4];
+					get_side_verts(verts, start, crossing);
+					vms_vector offset;
+					vm_vec_sub(&offset, &Vertices[verts[sample - 1]], &target);
+					vm_vec_scale_add2(&target, &offset, F1_0 / 2);
+				}
+			}
+		}
+		vms_vector direction;
+		vm_vec_sub(&direction, &target, &ConsoleObject->pos);
+		const fix distance = vm_vec_normalize(&direction);
+		vms_vector aim = direction;
+		fix nearest = i2f(100);
+		for (int i = 0; !escape && i <= Highest_object_index; ++i) {
+			if (Objects[i].type == OBJ_ROBOT) {
+				if (Robot_info[Objects[i].id].companion) continue;
+			} else if (!reactor || branch >= 0 || Objects[i].type != OBJ_CNTRLCEN) continue;
+			vms_vector delta;
+			vm_vec_sub(&delta, &Objects[i].pos, &ConsoleObject->pos);
+			const fix range = vm_vec_normalize(&delta);
+			if (range >= nearest) continue;
+			fvi_query query{};
+			query.p0 = &ConsoleObject->pos;
+			query.p1 = &Objects[i].pos;
+			query.startseg = start;
+			query.thisobjnum = Players[Player_num].objnum;
+			fvi_info hit{};
+			if (find_vector_intersection(&query, &hit) == HIT_NONE) {
+				vms_vector predicted = Objects[i].pos;
+				const fix flight = fixdiv(range, Weapon_info[LASER_ID_L1].speed[Difficulty_level]);
+				if (Objects[i].movement_type == MT_PHYSICS) vm_vec_scale_add2(&predicted, &Objects[i].mtype.phys_info.velocity, flight);
+				vm_vec_sub(&aim, &predicted, &ConsoleObject->pos);
+				vm_vec_normalize(&aim);
+				nearest = range;
+			}
+		}
+		remainder += F1_0;
+		FrameTime = remainder / 60;
+		remainder %= 60;
+		std::memset(&Controls, 0, sizeof(Controls));
+		const auto &orientation = ConsoleObject->orient;
+		auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
+		auto input = [&](double value) { return fix(std::clamp(value, -1.0, 1.0) * FrameTime); };
+		const double x = dot(aim, orientation.rvec), y = dot(aim, orientation.uvec), z = dot(aim, orientation.fvec);
+		Controls.heading_time = input(std::atan2(x, z) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.y) / F1_0 * 1.5);
+		Controls.pitch_time = input(-std::atan2(y, std::hypot(x, z)) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.x) / F1_0 * 1.5);
+		const bool fighting = nearest < i2f(100);
+		const bool shoot_switch = branch >= 0 && switch_wall >= 0 && start == goal &&
+		                          !(WALL_IS_DOORWAY(&Segments[Walls[switch_wall].segnum], Walls[switch_wall].sidenum) & WID_FLY_FLAG);
+		double approach = (std::max) (0.0, double(distance) / F1_0 - (shoot_switch ? 20.0 : blocking_wall >= 0 ? 8.0
+		                                                                                                       : 0.0));
+		if (shoot_switch && Walls[switch_wall].segnum != start) {
+			// The visibility query used this center, not the portal where we entered
+			vms_vector firing_position;
+			compute_segment_center(&firing_position, &Segments[start]);
+			vm_vec_sub(&direction, &firing_position, &ConsoleObject->pos);
+			approach = double(vm_vec_normalize(&direction)) / F1_0;
+		}
+		const double speed = fighting ? 0.0 : (std::min) (25.0, approach * 2);
+		const auto &velocity = ConsoleObject->mtype.phys_info.velocity;
+		Controls.forward_thrust_time = input((dot(direction, orientation.fvec) * speed - dot(velocity, orientation.fvec)) / 12);
+		const double dodge = fighting ? (frames / 90 % 2 ? 20.0 : -20.0) : 0.0;
+		Controls.sideways_thrust_time = input((dot(direction, orientation.rvec) * speed + dodge - dot(velocity, orientation.rvec)) / 12);
+		Controls.vertical_thrust_time = input((dot(direction, orientation.uvec) * speed - dot(velocity, orientation.uvec)) / 12);
+		bool barrier = blocking_wall >= 0;
+		if (!fighting) {
+			fvi_query query{};
+			query.p0 = &ConsoleObject->pos;
+			query.p1 = &target;
+			query.startseg = start;
+			query.thisobjnum = Players[Player_num].objnum;
+			fvi_info hit{};
+			if (find_vector_intersection(&query, &hit) == HIT_WALL && hit.hit_side_seg >= 0 && hit.hit_side >= 0) {
+				const int wall = Segments[hit.hit_side_seg].sides[hit.hit_side].wall_num;
+				barrier = branch < 0 || (wall >= 0 && (Walls[wall].type == WALL_DOOR || Walls[wall].type == WALL_BLASTABLE));
+			}
+		}
+		bool switch_visible = true;
+		if (shoot_switch) {
+			fvi_query query{};
+			query.p0 = &ConsoleObject->pos;
+			query.p1 = &target;
+			query.startseg = start;
+			query.thisobjnum = Players[Player_num].objnum;
+			query.flags = FQ_TRANSPOINT;
+			fvi_info hit{};
+			const int result = find_vector_intersection(&query, &hit);
+			switch_visible = result == HIT_NONE || (result == HIT_WALL && hit.hit_side_seg == Walls[switch_wall].segnum && hit.hit_side == Walls[switch_wall].sidenum);
+		}
+		Controls.fire_primary_state = (fighting || barrier || (switch_wall >= 0 && start == goal)) && z > (nearest < i2f(40) ? 0.995 : 0.999) && switch_visible;
+		Controls.fire_secondary_state = fighting && z > 0.999 && nearest > i2f(20);
+		do_weapon_n_item_stuff();
+		calc_game_time();
+		GameProcessFrame();
+		observe_route_triggers();
+		if (ConsoleObject->segnum != last_segment || frames % 600 == 0) {
+			if (branch >= 0 && frames % 600 == 0 && start != next) {
+				for (int side = 0; side < 6; ++side) {
+					if (Segments[start].children[side] != next) continue;
+					const int wall = Segments[start].sides[side].wall_num;
+					std::cout << "Navigation portal: segment=" << start << " side=" << side << " next=" << next
+					          << " doorway=" << WALL_IS_DOORWAY(&Segments[start], side) << " wall=" << wall;
+					if (wall >= 0) std::cout << " type=" << int(Walls[wall].type) << " flags=" << int(Walls[wall].flags) << " hp=" << Walls[wall].hps;
+					std::cout << " pos=" << ConsoleObject->pos.x << "," << ConsoleObject->pos.y << "," << ConsoleObject->pos.z
+					          << " target=" << target.x << "," << target.y << "," << target.z << " radius=" << ConsoleObject->size << '\n';
+				}
+			}
+			last_segment = ConsoleObject->segnum;
+			std::cout << "Normal navigation frame=" << frames << " segment=" << last_segment << " next=" << next
+			          << " shields=" << Players[Player_num].shields << " energy=" << Players[Player_num].energy
+			          << " goal=" << goal << " switch=" << switch_wall << " switch_visible=" << switch_visible
+			          << " aim_dot=" << z << " enemy_range=" << double(nearest) / F1_0 << " kills=" << Players[Player_num].num_kills_level << '\n';
+		}
+	}
+	std::memset(&Controls, 0, sizeof(Controls));
+	std::cout << "Normal route trigger coverage:";
+	for (int t = 0; t < Num_triggers; ++t)
+		std::cout << " " << t << "=" << bool(route_activated_triggers & (uint64_t(1) << t))
+		          << "/" << bool(route_passable_targets & (uint64_t(1) << t));
+	std::cout << " (activated/linked-targets-passable; exit has no links)\n";
+	if (branch >= 0) {
+		std::cout << "Normal branch navigation: trigger=" << branch << " frames=" << frames << " dead=" << Player_is_dead
+		          << " activated=" << bool(xl_preview_trigger_mask() & (uint64_t(1) << branch))
+		          << " targets_passable=" << bool(route_passable_targets & (uint64_t(1) << branch)) << '\n';
+		require(!Player_is_dead && complete(), "normal-input authored branch incomplete");
+		verify_branch_checkpoint(branch);
+		return;
+	}
+	if (escape) {
+		std::cout << "Normal escape navigation: frames=" << frames << " dead=" << Player_is_dead
+		          << " completed=" << xl_preview_pilot_completed() << " level=" << Current_level_num
+		          << " countdown=" << Countdown_timer << " shields=" << Players[Player_num].shields << '\n';
+		require(!Player_is_dead && xl_preview_pilot_completed() && Current_level_num == 1 && Countdown_timer > 0,
+		        "normal-input timed exit incomplete");
+		return;
+	}
+	if (reactor) {
+		std::cout << "Normal reactor navigation: frames=" << frames << " dead=" << Player_is_dead
+		          << " destroyed=" << Control_center_destroyed << " shields=" << Players[Player_num].shields
+		          << " countdown=" << Countdown_timer << "; exit unverified\n";
+		require(!Player_is_dead && Control_center_destroyed && Countdown_timer > 0, "normal-input reactor objective incomplete");
+		char checkpoint[] = "xl-normal-reactor.sav", description[] = "Normal input reactor";
+		require(state_save_all_sub(checkpoint, description) != 0, "normal reactor checkpoint failed");
+		return;
+	}
+	std::cout << "Normal red-key navigation: frames=" << frames << " dead=" << Player_is_dead
+	          << " red_key=" << bool(Players[Player_num].flags & KEY_RED) << " kills=" << Players[Player_num].num_kills_level
+	          << "; seed=1, reactor/exit unverified\n";
+	require(!Player_is_dead && (Players[Player_num].flags & KEY_RED), "normal-input red-key navigation incomplete");
+	char checkpoint[] = "xl-normal-key.sav", description[] = "Normal input red key";
+	require(state_save_all_sub(checkpoint, description) != 0, "normal red-key checkpoint failed");
+}
+void mission_isolation(const xl_compat::Inventory &source, int vertex)
+{
+	char error[256] = {};
+	auto start_level = [] {
+		// This flag is consumed by each startup, not a persistent test setting
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+	};
+	// Capture fresh stock definitions, then return through a modified pilot session
+	std::fputs("XL isolation: selecting stock mission\n", stderr);
+	require(load_base_mission("d2", error, sizeof(error)), error);
+	std::fputs("XL isolation: starting stock level\n", stderr);
+	start_level();
+	std::fputs("XL isolation: stock level started\n", stderr);
+	require(!std::strcmp(Current_mission_filename, "d2"), "stock mission selection failed");
+	const auto stock_archive = PHYSFS_getRealDir(Gamesave_current_filename);
+	require(stock_archive && std::filesystem::path(stock_archive).filename() == "descent2.hog", "stock level did not resolve from retail archive");
+	unchanged(vertex);
+	const auto stock_definitions = gameplay_definitions();
+	const auto stock_lights = face_lights();
+	require(load_base_mission("d2-xl", error, sizeof(error)), error);
+	start_level();
+	const auto pilot_definitions = gameplay_definitions();
+	const auto pilot_lights = face_lights();
+	colored(source, vertex);
+	materials(source);
+	const auto &light = source.light_indices.front();
+	require(subtract_light(light[0], light[1]) == 1, "isolation fixture light did not switch off");
+	Walls[6].cloak_value = 11;
+	require(load_base_mission("d2", error, sizeof(error)), error);
+	start_level();
+	unchanged(vertex);
+	require(gameplay_definitions() == stock_definitions, "pilot leaked gameplay definitions into stock mission");
+	require(face_lights() == stock_lights, "pilot leaked light state into stock mission");
+	require(load_base_mission("d2-xl", error, sizeof(error)), error);
+	start_level();
+	require(!std::strcmp(Gamesave_current_filename, "d2leva-1.rl2"), "pilot return lost original identity");
+	require(gameplay_definitions() == pilot_definitions, "pilot definitions changed across stock transition");
+	require(face_lights() == pilot_lights, "pilot return retained switched-off light state");
+	colored(source, vertex);
+	materials(source);
+	object_dependencies();
+	std::cout << "Mission isolation: pilot -> stock -> pilot restores fresh lighting/materials and robot/weapon/powerup/joint definitions; distinct custom override rollback unverified\n";
+}
+} // namespace
+
+int main(int argc, char **argv)
+{
+	std::setvbuf(stdout, nullptr, _IONBF, 0);
+	try {
+		const auto source_path = find_arg_value(argc, argv, "-xl-source");
+		const auto fixture_path = find_arg_value(argc, argv, "-fixture-path");
+		require(source_path && fixture_path, "requires original source and private fixture path");
+		const auto extra_dir = find_arg_value(argc, argv, "-extra-dir");
+		require(extra_dir != nullptr, "requires private fixture directory");
+		require(std::filesystem::weakly_canonical(fixture_path) == std::filesystem::weakly_canonical(std::filesystem::path(extra_dir) / "xlprobe.rl2"), "fixture path must identify the mounted test fixture");
+		require(!std::filesystem::equivalent(source_path, fixture_path), "original source cannot be the test fixture");
+		std::ifstream stream(source_path, std::ios::binary);
+		require(bool(stream), "cannot read original source");
+		const xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>() };
+		const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+		std::ifstream fixture_stream(fixture_path, std::ios::binary);
+		const xl_compat::Bytes fixture_bytes{ std::istreambuf_iterator<char>(fixture_stream), std::istreambuf_iterator<char>() };
+		require(fixture_bytes == probe.stock_level, "private fixture must initially match source translation");
+		fixture_stream.close();
+		int vertex = -1;
+		for (unsigned i = 0; i < probe.source.vertex_colors.size(); ++i) {
+			const auto &c = probe.source.vertex_colors[i].rgb;
+			if (c[0] != c[1] || c[1] != c[2]) {
+				vertex = int(i);
+				break;
+			}
+		}
+		require(vertex >= 0, "fixture has no chromatic vertex");
+		char error[256] = {};
+		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
+		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
+		require(load_base_mission(find_arg_value(argc, argv, "-mission"), error, sizeof(error)), error);
+		unchanged(vertex);
+		require(load_level("d2leva-1.rl2") == 0, "original XL pilot admission failed");
+		require(!std::strcmp(Gamesave_current_filename, "d2leva-1.rl2"), "translation changed level identity");
+		colored(probe.source, vertex);
+		materials(probe.source);
+		material_passage(probe.source);
+		const auto original_copy = (std::filesystem::path(extra_dir) / "d2leva-1.rl2").string();
+		auto altered_original = bytes;
+		altered_original.back() ^= 1;
+		write_bytes(original_copy.c_str(), altered_original);
+		const int original_rejected = load_level("d2leva-1.rl2");
+		write_bytes(original_copy.c_str(), bytes);
+		require(original_rejected != 0, "unaudited original source accepted");
+		unchanged(vertex);
+		require(load_level("d2leva-1.rl2") == 0, "original pilot recovery failed");
+		if (const auto hog = find_arg_value(argc, argv, "-pilot-hog"); hog && *hog) {
+			require(PHYSFS_addToSearchPath(hog, 0) != 0, "cannot mount original pilot HOG");
+			const auto resolved = PHYSFS_getRealDir("d2leva-1.rl2");
+			require(resolved && std::filesystem::equivalent(hog, resolved), "pilot did not resolve from original archive");
+			require(load_level("d2leva-1.rl2") == 0, "archived original pilot rejected");
+			colored(probe.source, vertex);
+			materials(probe.source);
+			require(PHYSFS_removeFromSearchPath(hog) != 0, "original pilot archive remained mounted");
+			std::cout << "Original HOG pilot: resolved, admitted, colors/materials retained, unmounted\n";
+		}
+		require(load_level("xlprobe.rl2") == 0, "valid preview load rejected");
+		colored(probe.source, vertex);
+		materials(probe.source);
+		flash_lighting(vertex);
+		dynamic_lighting(probe.source, vertex);
+		changing_lights(probe.source);
+		require(load_level("stockprobe.rl2") == 0, "stock alias load rejected");
+		unchanged(vertex);
+		require(load_level("xlprobe.rl2") == 0, "preview reload rejected");
+		colored(probe.source, vertex);
+		// Change a coordinate bit without changing counts or file size
+		auto corrupt = probe.stock_level;
+		corrupt.at(probe.source.mine_offset + 5) ^= 1;
+		write_bytes(fixture_path, corrupt);
+		const int rejected = load_level("xlprobe.rl2");
+		write_bytes(fixture_path, probe.stock_level);
+		require(rejected != 0, "mismatched source/fixture accepted");
+		unchanged(vertex);
+		require(load_level("xlprobe.rl2") == 0, "restored preview load rejected");
+		colored(probe.source, vertex);
+		std::cout << "XL preview lifecycle: activate, clear, reload, reject mismatch, recover passed; rendering/gameplay unverified\n";
+		for (int i = 1; i < argc; ++i)
+			if (!std::strcmp(argv[i], "-xl-test-save")) {
+				// Retail and XL use the same member name; remove loose-fixture shadowing
+				std::filesystem::rename(original_copy, std::filesystem::path(extra_dir) / "pilot-source-copy.rl2");
+				original_mission_save(probe.source, vertex);
+				normal_input_frames();
+				mission_isolation(probe.source, vertex);
+				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-navigation"); })) navigate_objective(false);
+				if (const char *branch = find_arg_value(argc, argv, "-xl-test-branch")) navigate_objective(true, false, std::stoi(branch));
+				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-reactor"); })) navigate_objective(true);
+				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-escape"); })) {
+					navigate_objective(true, true);
+					mission_isolation(probe.source, vertex);
+				}
+			}
+		return 0;
+	} catch (const std::exception &error) {
+		std::cerr << "XL lifecycle FAILED: " << error.what() << '\n';
+		return 1;
+	}
+}

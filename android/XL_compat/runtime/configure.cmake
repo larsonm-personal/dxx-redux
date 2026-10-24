@@ -1,0 +1,28 @@
+# Ordinary opt-in target configuration; engine hooks are guarded by DXX_XL_PILOT
+set(xl_runtime_dir "${CMAKE_CURRENT_LIST_DIR}")
+if(NOT OPENGL)
+    message(FATAL_ERROR "DXX_XL_PILOT currently requires the OpenGL runtime")
+endif()
+get_property(xl_targets DIRECTORY "${PROJECT_SOURCE_DIR}/main" PROPERTY BUILDSYSTEM_TARGETS)
+foreach(xl_target IN LISTS xl_targets)
+    get_target_property(xl_type ${xl_target} TYPE)
+    if(NOT xl_type STREQUAL "EXECUTABLE" OR NOT xl_target MATCHES "^dxx-redux-d2")
+        continue()
+    endif()
+    target_compile_definitions(${xl_target} PRIVATE DXX_XL_PILOT)
+    target_include_directories(${xl_target} PRIVATE "${xl_runtime_dir}")
+    target_sources(
+        ${xl_target} PRIVATE "${xl_runtime_dir}/preview.cpp" "${xl_runtime_dir}/../inventory.cpp"
+                             "${xl_runtime_dir}/../probe.cpp" "${xl_runtime_dir}/../lighting.cpp")
+    if(NOT xl_target STREQUAL "dxx-redux-d2-headless-metadata")
+        target_sources(${xl_target} PRIVATE "${xl_runtime_dir}/start.cpp")
+    endif()
+    target_compile_features(${xl_target} PRIVATE cxx_std_17)
+endforeach()
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE DXX_XL_PILOT)
+target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}")
+set_target_properties(dxx-redux-d2 PROPERTIES OUTPUT_NAME xl-render-preview)
+if(TARGET dxx-redux-d2-headless-metadata)
+    set_target_properties(dxx-redux-d2-headless-metadata PROPERTIES OUTPUT_NAME
+                                                                    xl-preview-lifecycle)
+endif()
