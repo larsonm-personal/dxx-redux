@@ -302,6 +302,15 @@ class SweepTests(unittest.TestCase):
                 self.assertEqual(sweep.main(), 1)
             self.assertEqual(sweep.read(root / "out")["records"], {})
 
+    def test_xl_dialog_diagnostic_is_bounded_and_selected_only(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("      - name: Report synthetic XL dialog result", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("!inputs.retail_assets", step)
+        self.assertIn("row.get('id') == 'master:test_xl_feature_browser'", step)
+        self.assertIn("glob('test_xl_feature_browser_*.log')", step)
+        self.assertIn("not path.is_symlink()", step)
+        self.assertIn("stream.read(16384)", step)
+
     def test_xl_browser_campaign_is_exact_and_asset_free(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         catalog = {"schema": 1, "tests": [{"name": "test_xl_feature_browser"}]}
