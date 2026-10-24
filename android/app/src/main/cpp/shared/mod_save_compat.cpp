@@ -1,9 +1,10 @@
 /* Android presentation compatibility, independent of installed/enabled UI rows */
 #include <nlohmann/json.hpp>
+// Standard-library dependencies must precede the legacy engine min/max macros
+#include "picosha2.h"
 #include "mod_save_compat.h"
 #include "input_demo_codec.h"
 #include "mod_save_supported_data.h"
-#include "picosha2.h"
 #include <algorithm>
 #include <array>
 #include <cstring>
