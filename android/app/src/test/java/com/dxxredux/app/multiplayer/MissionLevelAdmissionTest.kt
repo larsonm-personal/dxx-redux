@@ -86,8 +86,11 @@ class MissionLevelAdmissionTest {
         for (engine in listOf("d1", "d2")) {
             val before = MissionScanner.builtins(directory, engine).single { it.contentGame == "d1" }
             val requirement = MissionScanner.requirement(engine, before, false)
+            // Writing resets mtime, so advance from the previous cache key
+            val nextModified = hog.lastModified() + 2_000L
             hog.writeBytes(hog.readBytes().also { it[0] = (it[0] + 1).toByte() })
-            assertTrue(hog.setLastModified(hog.lastModified() + 2_000L))
+            assertTrue(hog.setLastModified(nextModified))
+            assertEquals(nextModified, hog.lastModified())
             val after = MissionScanner.builtins(directory, engine).single { it.contentGame == "d1" }
             assertEquals(before.levelCount, after.levelCount)
             assertEquals(before.contentSizeBytes, after.contentSizeBytes)
