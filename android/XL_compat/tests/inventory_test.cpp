@@ -234,6 +234,13 @@ int main(int argc, char **argv)
 		check(xl_compat::compatibility_json("D2X-XL stock.rl2", {}).find("\"detected\": false") != std::string::npos, "filename used as format evidence");
 		const std::string descriptor = " d2x-name = mission\n";
 		check(xl_compat::compatibility_json("mission.mn2", Bytes(descriptor.begin(), descriptor.end())).find("\"detected\": true") != std::string::npos, "XL descriptor not detected");
+		const auto descriptor_report = xl_compat::compatibility_json("mission.mn2", Bytes(descriptor.begin(), descriptor.end()));
+		check(descriptor_report.find("Native title and level-list discovery supported") != std::string::npos &&
+		          descriptor_report.find("\"playable\": false") != std::string::npos,
+		      "descriptor discovery must not imply gameplay admission");
+		const std::string invalid_key = "d2x -name = mission\n";
+		check(xl_compat::compatibility_json("mission.mn2", Bytes(invalid_key.begin(), invalid_key.end())).find("\"detected\": false") != std::string::npos,
+		      "descriptor detection must use the native exact-key rules");
 		check(out.vertices.size() == 8 && out.segments.size() == 1, "geometry counts");
 		check(out.segments[0].sides[5].texture == 6 && out.segments[0].sides[5].uvl[11] == 11, "side layout");
 		check(out.vertex_colors[0].rgb[0] == 1 && out.vertex_colors[0].rgb[2] == 0, "integer colors");

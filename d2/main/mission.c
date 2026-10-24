@@ -441,13 +441,26 @@ int read_mission_file(mle *mission, char *filename, int location)
 			p = get_parm_value("!name",mfile);
 		}
 
+		if (!p && mission->descent_version == 2) {
+			char line[PATH_MAX];
+			PHYSFSX_fseek(mfile,0,SEEK_SET);
+			if (PHYSFSX_fgets(line,sizeof(line),mfile) && strlen(line) < sizeof(line)-1 &&
+			    mission_descriptor_key_is(line,"d2x-name") &&
+			    mission_descriptor_copy_title(get_value(line),temp,MISSION_NAME_LEN+1))
+				p = temp;
+		}
+
 		if (p) {
 			char *t;
 			if ((t=strchr(p,';'))!=NULL)
 				*t=0;
-			t = p + strlen(p)-1;
-			while (isspace(*t))
-				*t-- = 0; // remove trailing whitespace
+			t = p + strlen(p);
+			while (t > p && isspace((unsigned char)t[-1])) *--t = 0; // remove trailing whitespace
+			if (!*p) {
+				PHYSFS_close(mfile);
+				d_free(mission->path);
+				return 0;
+			}
 			if (strlen(p) > MISSION_NAME_LEN)
 				p[MISSION_NAME_LEN] = 0;
 			strncpy(mission->mission_name, p, MISSION_NAME_LEN + 1);
@@ -740,6 +753,7 @@ void init_extra_robot_movie(char *filename);
 int load_mission_ham()
 {
 	void bm_read_extra_robots(const char *fname,int type);
+	if (Current_mission->enhanced == MISSION_ENHANCED_XL) return 0;
 	bm_reset_mission_compatibility_warnings();
 	piggy_load_mission_data();
 
@@ -785,6 +799,7 @@ int load_mission(mle *mission)
 	PHYSFS_file *mfile;
 	char buf[PATH_MAX], *v;
 	int parse_error = 0;
+	int descriptor_name_seen = 0;
 #ifdef __ANDROID__
 	mle selected = *mission;
 	char requested[PATH_MAX], resolved[PATH_MAX];
@@ -914,6 +929,32 @@ int load_mission(mle *mission)
 	}
 
 	while (PHYSFSX_fgets(buf,sizeof(buf),mfile)) {
+		if (Current_mission->descent_version == 2 && mission_descriptor_key_is(buf,"d2x-name")) {
+			char title[MISSION_NAME_LEN+1];
+			if (descriptor_name_seen || strlen(buf) == sizeof(buf)-1 ||
+			    !mission_descriptor_copy_title(get_value(buf),title,sizeof(title))) {
+				parse_error = 1;
+				break;
+			}
+			descriptor_name_seen = 1;
+			Current_mission->enhanced = MISSION_ENHANCED_XL;
+			continue;
+		}
+		char *header = buf;
+		while (*header && isspace((unsigned char)*header)) ++header;
+		if (istok(header,"name") || istok(header,"xname") || istok(header,"zname") || istok(header,"!name")) {
+			if (Current_mission->enhanced == MISSION_ENHANCED_XL) {
+				parse_error = 1;
+				break;
+			}
+			descriptor_name_seen = 1;
+		}
+		/* Alternate archives and critical directives need separate XL qualification */
+		if (Current_mission->enhanced == MISSION_ENHANCED_XL &&
+		    (mission_descriptor_key_is(buf,"hog") || *header == '!')) {
+			parse_error = 1;
+			break;
+		}
 		if (istok(buf,"name") && !Current_mission->enhanced) {
 			Current_mission->enhanced = 0;
 			continue;						//already have name, go to next line

@@ -1522,6 +1522,10 @@ int xl_stock_load_level(const char *filename_passed)
 int load_level(const char * filename_passed)
 #endif
 {
+	if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL) {
+		con_printf(CON_URGENT, "XL descriptor loaded, but level gameplay remains unqualified\n");
+		return 1;
+	}
 	level_texture_diagnostics_reset();
 #ifdef EDITOR
 	int use_compiled_level=1;

@@ -62,6 +62,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define FULL_10_MISSION_HOGSIZE     7107354 // v1.0
 #define MAC_FULL_MISSION_HOGSIZE    7110007 // v1.1 - 1.2
 
+#define MISSION_ENHANCED_XL 4 // Descriptor-only support; level admission remains blocked
+
 //where the missions go
 #define MISSION_DIR "missions/"
 
@@ -75,7 +77,7 @@ typedef struct {
 	ubyte	descent_version;	// descent 1 or descent 2?
 	ubyte   anarchy_only_flag;  // if true, mission is only for anarchy
 	char	*path;				// relative file path
-	ubyte	enhanced;	// 0: mission has "name", 1:"xname", 2:"zname"
+	ubyte	enhanced;	// 0:"name", 1:"xname", 2:"zname", 3:"!name", 4:"d2x-name"
 	d_fname	briefing_text_filename; // name of briefing file
 	d_fname	ending_text_filename; // name of ending file
 	ubyte	last_level;

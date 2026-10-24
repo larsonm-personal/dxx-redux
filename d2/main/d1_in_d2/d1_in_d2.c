@@ -146,6 +146,8 @@ void d1_in_d2_prepare_intro_assets(void)
 
 int d1_in_d2_load_mission_assets(void)
 {
+	/* Descriptor-only XL selection must not decode or free gameplay resources */
+	if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL) return 0;
 	const int leaving_d1 = d1_in_d2_has_native_assets();
 	int extra_robots;
 

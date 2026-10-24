@@ -1,4 +1,5 @@
 #include "compatibility.h"
+#include "../app/src/main/cpp/shared/mission_descriptor_safe.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
@@ -13,7 +14,7 @@ struct Category {
 	const char *support;
 };
 const Category categories[] = {
-	{ "container", "Archive and descriptor dialect", "Standard DHF only; extended HOG and XL descriptors unsupported" },
+	{ "container", "Archive and descriptor dialect", "Standard DHF and XL descriptor discovery; extended HOG and XL gameplay unsupported" },
 	{ "serialization", "Level and game-data versions", "Production D2 loader accepts level versions 1-8; XL inspection is separate" },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported" },
 	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified" },
@@ -95,16 +96,11 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 			std::istringstream text(std::string(bytes.begin(), bytes.end()));
 			std::string line;
 			while (std::getline(text, line)) {
-				const auto equal = line.find('=');
-				if (equal == std::string::npos) continue;
-				auto key = line.substr(0, equal);
-				key.erase(std::remove_if(key.begin(), key.end(), [](unsigned char c) { return std::isspace(c); }), key.end());
-				std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-				if (key == "d2x-name") {
+				if (mission_descriptor_key_is(line.c_str(), "d2x-name")) {
 					detected = true;
 					status = "blocked";
-					summary = "Cannot load: XL mission descriptor dialect";
-					rows[0] = { "d2x-name descriptor", "blocked", "Referenced levels and assets still need inspection" };
+					summary = "Cannot play: XL mission requires level and asset qualification";
+					rows[0] = { "d2x-name descriptor", "blocked", "Native title and level-list discovery supported; referenced levels and assets still need qualification" };
 				}
 			}
 		}

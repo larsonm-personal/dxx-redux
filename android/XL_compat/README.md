@@ -1,7 +1,7 @@
 # XL compatibility boundary
 
 This directory owns D2X-XL format knowledge and compatibility policy. Ordinary
-engine builds keep XL support disabled. The dedicated D2 pilot uses guarded
+engine builds keep XL gameplay disabled. The dedicated D2 pilot uses guarded
 `DXX_XL_PILOT` hooks; do not relax general loader validation to admit XL files
 
 The `XL compatibility contracts` workflow runs on pull requests and manual
@@ -430,3 +430,11 @@ not a gameplay unlock. Descriptor/resources, the flag bytes, runtime translation
 no-damage semantics and presentation still need separate qualification. The
 level has no exit trigger, so eventual arena qualification cannot establish
 campaign completion. No new runtime or save state is introduced here.
+
+Native D2 discovery recognizes exact `d2x-name` descriptors and resolves their
+ordinary level lists and companion DHF archives. XL identity remains distinct
+from stock extra-HAM missions, and all level loading under it is rejected. This
+does not qualify XL assets or gameplay. Alternate HOG and critical directives
+remain unsupported. Configure `XL_OBSERVATORY_DESCRIPTOR` together with
+`XL_OBSERVATORY_HOG`, `XL_PREVIEW_LIFECYCLE` and `XL_RETAIL_DATA` to run the
+private original-descriptor discovery, rejection and stock-isolation test.
