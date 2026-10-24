@@ -40,6 +40,11 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #include "../lighting.h"
 #include <iterator>
 #include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <set>
+#include <iostream>
+#include <iterator>
 #include <filesystem>
 #include <stdexcept>
 #include <cstdlib>
