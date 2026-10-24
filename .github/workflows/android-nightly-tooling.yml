@@ -106,8 +106,8 @@ jobs:
               raise ValueError('Selected plan differs from exact target')
           selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
           requirements = {
-              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware', 'test_lan_three_player_startup', 'test_mp_public_shareware', 'test_mp_public_shareware_d2') for test in selected),
-              'online_preview': any(test.get('args', {}).get('suite') in ('test_mp_public_shareware', 'test_mp_public_shareware_d2') for test in selected),
+              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware', 'test_lan_three_player_startup', 'test_mp_public_shareware', 'test_mp_public_shareware_d2', 'test_mp_coop_d1_relay', 'test_mp_coop_d2_direct', 'test_mp_coop_d2_initial_fallback') for test in selected),
+              'online_preview': any(test.get('args', {}).get('suite') in ('test_mp_public_shareware', 'test_mp_public_shareware_d2', 'test_mp_coop_d1_relay', 'test_mp_coop_d2_direct', 'test_mp_coop_d2_initial_fallback') for test in selected),
               'three_emulators': any(test.get('requires') == 'three_emulators' for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
               'native_replay': any(test.get('owner') == 'shareware' and test.get('args', {}).get('suite') in ('test_auto_level_cheats', 'test_auto_level_demos') for test in selected),
