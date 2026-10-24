@@ -3,6 +3,8 @@
 #include "compatibility.h"
 
 #include <functional>
+#include <fstream>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -31,11 +33,11 @@ void rejects(const std::function<void()> &action)
 	}
 	check(rejected, "malformed input accepted");
 }
-Bytes fixture()
+Bytes fixture(int version = 15)
 {
 	Bytes b;
 	put(b, 0x504c564c, 4);
-	put(b, 15, 4);
+	put(b, version, 4);
 	put(b, 16, 4);
 	put(b, 0, 4);
 	b.resize(23);
@@ -69,19 +71,25 @@ Bytes fixture()
 		put(b, 1073741824, 4);
 		put(b, 0, 4);
 	}
-	// 910 texture colors, IEEE 754 double values 1, 0, 0
+	// Texture colors switch from double to integer components after level 15
 	for (int i = 0; i < 910; ++i) {
 		put(b, 1, 1);
-		put(b, 0, 4);
-		put(b, 0x3ff00000, 4);
-		for (int j = 0; j < 4; ++j) put(b, 0, 4);
+		if (version == 15) {
+			put(b, 0, 4);
+			put(b, 0x3ff00000, 4);
+			for (int j = 0; j < 4; ++j) put(b, 0, 4);
+		} else {
+			put(b, 2147483647, 4);
+			put(b, 0, 4);
+			put(b, 0, 4);
+		}
 	}
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, 33, 2);
+	put(b, version == 15 ? 33 : 36, 2);
 	b.resize(b.size() + 31);
-	for (int i = 0; i < 9; ++i) {
+	for (int i = 0; i < (version == 15 ? 9 : 10); ++i) {
 		put(b, 0xffffffff, 4);
 		put(b, 0, 4);
 		put(b, 0, 4);
@@ -90,13 +98,111 @@ Bytes fixture()
 	put(b, 0, 2);
 	patch(b, game + 71, static_cast<std::uint32_t>(b.size()));
 	put(b, 0, 4);
+	if (version == 17) put(b, 0, 2);
 	return b;
+}
+
+void version_17_contract()
+{
+	const auto bytes = fixture(17);
+	const auto inventory = xl_compat::inspect_level(bytes);
+	check(inventory.level_version == 17 && inventory.game_version == 36 && inventory.sections.size() == 10, "17/36 header layout");
+	check(inventory.sections.back().name == "equipment" && inventory.sections.back().count == 0, "equipment section header lost");
+	check(inventory.texture_colors.at(909).rgb[0] == 1 && inventory.texture_colors.at(909).rgb[1] == 0, "17 integer texture colors");
+	check(inventory.object_trigger_heads.empty(), "empty sparse references changed inventory");
+	auto no_tail = bytes;
+	no_tail.resize(no_tail.size() - 2);
+	check(xl_compat::inspect_level(no_tail).object_trigger_heads.empty(), "omitted neutral sparse-reference tail rejected");
+	rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+	const auto compatibility = xl_compat::compatibility_json("fixture.rl2", bytes);
+	check(compatibility.find("\"status\": \"blocked\"") != std::string::npos && compatibility.find("\"playable\": false") != std::string::npos, "17 inspection granted production admission");
+	auto bad = bytes;
+	patch(bad, inventory.game_offset + 2, 33, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = bytes;
+	bad.pop_back();
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = bytes;
+	patch(bad, bad.size() - 2, 1, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = bytes;
+	bad.push_back(0);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = bytes;
+	patch(bad, inventory.game_offset + 35 + 9 * 12, inventory.game_offset);
+	patch(bad, inventory.game_offset + 39 + 9 * 12, 1);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	auto equipment = bytes;
+	patch(equipment, inventory.game_offset + 35 + 9 * 12, static_cast<std::uint32_t>(equipment.size()));
+	patch(equipment, inventory.game_offset + 39 + 9 * 12, 1);
+	equipment.resize(equipment.size() + 20);
+	const auto with_equipment = xl_compat::inspect_level(equipment);
+	check(std::any_of(with_equipment.unsupported.begin(), with_equipment.unsupported.end(), [](const auto &issue) { return issue.feature == "equipment_generators"; }), "equipment payload silently dropped");
+	equipment.pop_back();
+	rejects([&] { xl_compat::inspect_level(equipment); });
+
+	auto lights = bytes;
+	const auto index_offset = lights.size();
+	patch(lights, inventory.game_offset + 35 + 7 * 12, static_cast<std::uint32_t>(index_offset));
+	patch(lights, inventory.game_offset + 39 + 7 * 12, 1);
+	put(lights, 0, 2);
+	put(lights, (300 << 3) | 5, 2);
+	put(lights, 0, 2);
+	patch(lights, inventory.game_offset + 35 + 8 * 12, static_cast<std::uint32_t>(lights.size()));
+	patch(lights, inventory.game_offset + 39 + 8 * 12, 300);
+	for (int i = 0; i < 300; ++i) {
+		put(lights, 0, 2);
+		put(lights, 4, 1);
+		put(lights, 0, 1);
+		for (int corner = 0; corner < 4; ++corner) put(lights, corner + 1, 1);
+	}
+	const auto decoded = xl_compat::inspect_level(lights);
+	check(decoded.light_indices.at(0) == std::array<int, 4>{ 0, 5, 300, 0 } && decoded.delta_lights.size() == 300, "packed light count narrowed or side misdecoded");
+	bad = lights;
+	patch(bad, index_offset + 2, (300 << 3) | 7, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = lights;
+	patch(bad, index_offset + 2, (8191 << 3) | 5, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	lights.pop_back();
+	rejects([&] { xl_compat::inspect_level(lights); });
+}
+
+void original_observatory(const char *path)
+{
+	std::ifstream input(path, std::ios::binary | std::ios::ate);
+	check(input && input.tellg() == 82014, "original Observatory HOG size differs");
+	input.seekg(0);
+	Bytes bytes(82014);
+	input.read(reinterpret_cast<char *>(bytes.data()), bytes.size());
+	check(input && input.peek() == std::char_traits<char>::eof() && !input.bad(), "original Observatory HOG read failed");
+	const auto members = xl_compat::read_hog(bytes);
+	const auto level = std::find_if(members.begin(), members.end(), [](const auto &member) { return member.name == "obsrv-xl.rl2"; });
+	check(level != members.end() && level->bytes.size() == 52176, "original Observatory level missing");
+	const auto v = xl_compat::inspect_level(level->bytes);
+	check(v.vertices.size() == 328 && v.segments.size() == 110 && v.walls.size() == 54 && v.objects.size() == 44, "original Observatory counts differ");
+	check(v.mine_offset == 86 && v.game_offset == 43377 && v.sections.at(0).offset == 45741 && v.sections.at(1).offset == 50832, "original Observatory section boundaries differ");
+	check(v.triggers.empty() && v.object_triggers == 0 && v.object_trigger_heads.empty() && v.light_indices.empty() && v.delta_lights.empty(), "original Observatory neutral sections differ");
+	check(std::count_if(v.segments.begin(), v.segments.end(), [](const auto &segment) { return segment.function == 13; }) == 26, "no-damage properties were dropped");
+	check(v.unsupported.size() == 27 && v.unknown.size() == 40, "unexpected original Observatory structural findings");
+	for (const auto &issue : v.unsupported)
+		check(issue.feature == "embedded_lighting" || (issue.feature == "segment_function" && issue.detail == "13"), "unexpected original Observatory unsupported feature");
+	for (const auto &issue : v.unknown)
+		check(issue.feature == "segment_flags" || issue.feature == "object_dependencies" || issue.feature == "runtime_semantics" || issue.feature == "assets", "unconsumed original Observatory section data");
+	check(std::count_if(v.unknown.begin(), v.unknown.end(), [](const auto &issue) { return issue.feature == "segment_flags"; }) == 37 &&
+	          v.segments.at(0).flags == 65 && v.segments.at(4).flags == 202 && v.segments.at(106).flags == 255,
+	      "unaudited original segment flags were discarded");
+	rejects([&] { xl_compat::prepare_gameplay_probe(level->bytes); });
+	std::cout << "Original Observatory 17/36 inventory passed; 26 no-damage segments retained; gameplay remains blocked\n";
 }
 } // namespace
 
-int main()
+int main(int argc, char **argv)
 {
 	try {
+		check(argc == 1 || argc == 2, "expected optional original Observatory HOG path");
+		if (argc == 2) original_observatory(argv[1]);
+		version_17_contract();
 		const auto bytes = fixture();
 		const auto out = xl_compat::inspect_level(bytes);
 		const std::size_t mine = bytes[8];

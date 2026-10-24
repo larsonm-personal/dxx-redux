@@ -40,6 +40,17 @@ if(BUILD_TESTING)
     add_executable(xl_inventory_test tests/inventory_test.cpp)
     target_link_libraries(xl_inventory_test PRIVATE xl_inventory)
     add_test(NAME xl_inventory_contract COMMAND xl_inventory_test)
+    set(XL_OBSERVATORY_HOG "" CACHE FILEPATH
+                                    "Original Observatory XL HOG for private inspection coverage")
+    if(XL_OBSERVATORY_HOG)
+        add_test(
+            NAME xl_observatory_inventory
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_OBSERVATORY_HOG}
+                -DTEST=$<TARGET_FILE:xl_inventory_test> -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/observatory_inventory.cmake)
+        set_tests_properties(xl_observatory_inventory PROPERTIES TIMEOUT 30)
+    endif()
     set(XL_PILOT_HOG "" CACHE FILEPATH
                               "Original D2-XL Counterstrike HOG for private integration coverage")
     set(XL_PILOT_LEVEL "" CACHE FILEPATH "Original d2leva-1.rl2 for stock loader probe")
