@@ -3233,6 +3233,7 @@ private fun LevelMetadataDialog(
 ) {
     val context = LocalContext.current
     val dialogIdentity = remember(target) { Integer.toHexString(System.identityHashCode(Any())) }
+    var xlReports by remember(target) { mutableStateOf(emptyList<XlCompatibilityReport>()) }
     var movieScan by remember(target) { mutableStateOf<MissionMovieScan?>(null) }
     var movieScanning by remember(target) { mutableStateOf(false) }
     var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
@@ -3308,6 +3309,12 @@ private fun LevelMetadataDialog(
                 currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
             )
         movieScanning = true
+        xlReports = inspectXlCompatibilityTarget(target)
+        if (xlReports.any { it.status == "blocked" }) {
+            movieScanning = false
+            loading = false
+            return@LaunchedEffect
+        }
         movieScan = scanMissionMovies(context, target)
         movieScanning = false
         result =
@@ -3346,6 +3353,7 @@ private fun LevelMetadataDialog(
                             .verticalScroll(scrollState)
                             .padding(end = 8.dp),
                 ) {
+                    XlCompatibilityButton(xlReports)
                     if (movieScanning) {
                         ModDetailLine("Scanning movies...")
                     } else {
@@ -3372,17 +3380,26 @@ private fun LevelMetadataDialog(
                             }
                         }
                     }
-                    TextButton(enabled = !movieScanning && !loading, onClick = {
-                        scope.launch {
-                            movieScanning = true
-                            try {
-                                movieScan = scanMissionMovies(context, target)
-                            } finally {
-                                movieScanning = false
+                    TextButton(
+                        enabled =
+                            !movieScanning && !loading &&
+                                xlReports.none {
+                                    it.status == "blocked"
+                                },
+                        onClick = {
+                            scope.launch {
+                                movieScanning = true
+                                try {
+                                    movieScan = scanMissionMovies(context, target)
+                                } finally {
+                                    movieScanning = false
+                                }
                             }
-                        }
-                    }) { Text("Scan for missing movies") }
-                    if (loading) {
+                        },
+                    ) { Text("Scan for missing movies") }
+                    if (xlReports.any { it.status == "blocked" }) {
+                        Text("Engine analysis is unavailable because this source requires unsupported D2X-XL features.")
+                    } else if (loading) {
                         Text(
                             "This is a separate whole-mission report. Existing Guide-Bot route " +
                                 "caches are reused when available.",
@@ -4305,6 +4322,7 @@ private fun LevelMetadataRouteStep.routeOpenSummary(): String =
 @Composable
 private fun FileMetadataDetails(metadata: GameFileMetadata.Summary?) {
     metadata ?: return
+    XlCompatibilityButton(metadata.xlCompatibility)
     var showContentsDialog by remember(metadata) { mutableStateOf(false) }
     if (showContentsDialog) {
         MetadataContentsDialog(

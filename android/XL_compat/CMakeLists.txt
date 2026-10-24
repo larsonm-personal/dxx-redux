@@ -1,0 +1,84 @@
+cmake_minimum_required(VERSION 3.21)
+project(dxx_xl_compat LANGUAGES CXX)
+
+if(ANDROID)
+    add_subdirectory(android)
+endif()
+
+add_library(xl_inventory STATIC inventory.cpp probe.cpp compatibility.cpp lighting.cpp)
+target_compile_features(xl_inventory PUBLIC cxx_std_17)
+target_include_directories(xl_inventory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(xl_inspect inspect.cpp)
+target_link_libraries(xl_inspect PRIVATE xl_inventory)
+add_executable(xl_probe_fixture probe_main.cpp)
+target_link_libraries(xl_probe_fixture PRIVATE xl_inventory)
+if(MSVC)
+    target_compile_options(xl_inventory PRIVATE /W4 /WX)
+    target_compile_options(xl_inspect PRIVATE /W4 /WX)
+    target_compile_options(xl_probe_fixture PRIVATE /W4 /WX)
+else()
+    target_compile_options(xl_inventory PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(xl_inspect PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(xl_probe_fixture PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    set(XL_REFERENCE_RENDERLIB "" CACHE FILEPATH
+                                        "Pinned local XL renderlib.cpp for arithmetic oracle")
+    if(XL_REFERENCE_RENDERLIB)
+        include(tests/reference_lighting.cmake)
+    endif()
+    add_executable(xl_lighting_test tests/lighting_test.cpp)
+    target_link_libraries(xl_lighting_test PRIVATE xl_inventory)
+    add_test(NAME xl_lighting_calculation COMMAND xl_lighting_test)
+    add_executable(xl_inventory_test tests/inventory_test.cpp)
+    target_link_libraries(xl_inventory_test PRIVATE xl_inventory)
+    add_test(NAME xl_inventory_contract COMMAND xl_inventory_test)
+    set(XL_PILOT_HOG "" CACHE FILEPATH
+                              "Original D2-XL Counterstrike HOG for private integration coverage")
+    set(XL_PILOT_LEVEL "" CACHE FILEPATH "Original d2leva-1.rl2 for stock loader probe")
+    set(XL_STOCK_METADATA "" CACHE FILEPATH "Unmodified D2 headless metadata executable")
+    set(XL_STOCK_ROUTE "" CACHE FILEPATH "Unmodified D2 headless route diagnostic executable")
+    set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
+    set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
+    if(XL_PREVIEW_LIFECYCLE AND XL_PILOT_LEVEL AND XL_STOCK_METADATA AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_preview_lifecycle
+            COMMAND
+                ${CMAKE_COMMAND} -DLEVEL=${XL_PILOT_LEVEL} -DPROBE=$<TARGET_FILE:xl_probe_fixture>
+                -DENGINE=${XL_STOCK_METADATA} -DDATA=${XL_RETAIL_DATA}
+                -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/preview-tests -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+    endif()
+    if(XL_PILOT_LEVEL AND XL_STOCK_METADATA AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_stock_loader_probe
+            COMMAND
+                ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:xl_probe_fixture> -DLEVEL=${XL_PILOT_LEVEL}
+                -DENGINE=${XL_STOCK_METADATA} -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/stock-probes -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/stock_probe.cmake)
+        set_tests_properties(xl_stock_loader_probe PROPERTIES TIMEOUT 60)
+        if(XL_STOCK_ROUTE)
+            add_test(
+                NAME xl_route_checkpoint_probe
+                COMMAND
+                    ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:xl_probe_fixture>
+                    -DLEVEL=${XL_PILOT_LEVEL} -DENGINE=${XL_STOCK_METADATA}
+                    -DROUTE=${XL_STOCK_ROUTE} -DDATA=${XL_RETAIL_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/route-probes -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/route_probe.cmake)
+            set_tests_properties(xl_route_checkpoint_probe PROPERTIES TIMEOUT 180)
+        endif()
+    endif()
+    if(XL_PILOT_HOG)
+        add_test(
+            NAME xl_pilot_archive
+            COMMAND
+                ${CMAKE_COMMAND} -DINSPECT=$<TARGET_FILE:xl_inspect> -DHOG=${XL_PILOT_HOG}
+                -DREPORT=${CMAKE_CURRENT_BINARY_DIR}/pilot-inventory.json -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pilot_archive.cmake)
+    endif()
+endif()
