@@ -1,6 +1,7 @@
 """Bounded owned-socket controls for the emulator fault bridge."""
 
 import json
+import os
 from pathlib import Path
 import socket
 import subprocess
@@ -9,6 +10,64 @@ import tempfile
 import threading
 import time
 import unittest
+
+
+class ProbeFilterTest(unittest.TestCase):
+    def test_owned_filter_scope_rollback_and_input_guards(self):
+        script = Path(__file__).parents[1] / "android/helpers/online_probe_fault.sh"
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            log = root / "calls"
+            command = root / "iptables"
+            command.write_text(
+                '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$TEST_CALLS"\n'
+                'if [ -n "$TEST_FAIL" ] && [ "$1" = -A ]; then exit 1; fi\n'
+            )
+            command.chmod(0o755)
+            env = dict(
+                os.environ,
+                PATH=str(root) + os.pathsep + os.environ["PATH"],
+                TEST_CALLS=str(log),
+                TEST_FAIL="",
+            )
+
+            def run(operation, uid="10123", chain="DXX_T_1234abcd"):
+                return subprocess.run(
+                    ["sh", str(script), operation, uid, chain],
+                    env=env,
+                    capture_output=True,
+                    timeout=5,
+                )
+
+            self.assertEqual(run("install").returncode, 0)
+            calls = log.read_text().splitlines()
+            self.assertEqual(
+                calls,
+                [
+                    "-N DXX_T_1234abcd",
+                    "-A DXX_T_1234abcd -d 127.0.0.0/8 -j RETURN",
+                    "-A DXX_T_1234abcd -d 10.0.2.2 -p udp -m multiport --dports 3478,3479,9001 -j RETURN",
+                    "-A DXX_T_1234abcd -j DROP",
+                    "-I OUTPUT -p udp -m owner --uid-owner 10123 -j DXX_T_1234abcd",
+                ],
+            )
+            for uid, chain in [
+                ("0", "DXX_T_1234abcd"),
+                ("x", "DXX_T_1234abcd"),
+                ("10123", "OUTPUT"),
+            ]:
+                self.assertNotEqual(run("install", uid, chain).returncode, 0)
+            self.assertEqual(log.read_text().splitlines(), calls)
+            env["TEST_FAIL"] = "1"
+            self.assertNotEqual(run("install").returncode, 0)
+            self.assertEqual(
+                log.read_text().splitlines()[-3:],
+                [
+                    "-D OUTPUT -p udp -m owner --uid-owner 10123 -j DXX_T_1234abcd",
+                    "-F DXX_T_1234abcd",
+                    "-X DXX_T_1234abcd",
+                ],
+            )
 
 
 class BridgeTest(unittest.TestCase):

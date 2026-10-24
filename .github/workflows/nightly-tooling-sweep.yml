@@ -27,7 +27,8 @@ on:
       campaign:
         description: "Bounded test selection"
         type: choice
-        options: [nightly, first-play, graphics-capabilities, xl-browser, basic-use, online-preview, online-preview-d2]
+        options:
+          [nightly, first-play, graphics-capabilities, xl-browser, basic-use, online-preview, online-preview-d2, online-transports]
         default: nightly
       evidence_run_id:
         description: "Read sanitized retained online receipt only; no tests or builds"
@@ -44,7 +45,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
+  group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
   cancel-in-progress: false
 
 jobs:
@@ -181,7 +182,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
-          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2') && github.sha || '' }}
+          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha || '' }}
         run: |
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
@@ -213,6 +214,7 @@ jobs:
           FIRST_PLAY: ${{ inputs.campaign == 'first-play' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'release-first-play')) }}
           ONLINE_PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-preview' }}
           ONLINE_PREVIEW_D2: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-preview-d2' }}
+          ONLINE_TRANSPORTS: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-transports' }}
           BASIC_USE: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'basic-use' }}
           XL_BROWSER: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-browser' }}
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
@@ -224,6 +226,8 @@ jobs:
             validation=(--campaign online-preview)
           elif [[ "$ONLINE_PREVIEW_D2" == true ]]; then
             validation=(--campaign online-preview-d2)
+          elif [[ "$ONLINE_TRANSPORTS" == true ]]; then
+            validation=(--campaign online-transports)
           elif [[ "$BASIC_USE" == true ]]; then
             validation=(--campaign basic-use)
           elif [[ "$FIRST_PLAY" == true ]]; then
@@ -291,8 +295,15 @@ jobs:
         id: prerequisites
         timeout-minutes: 15
         run: |
+          # Reuse hosted tools, as in engine CI, rather than install a second toolchain
+          for tool in cc c++ make clang cmake ctest ninja; do
+            if ! command -v "$tool" || ! "$tool" --version; then
+              echo "::error::Hosted tool '$tool' is missing or cannot run"
+              exit 1
+            fi
+          done
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends build-essential clang cmake ninja-build \
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
             libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
             xvfb xauth libgl1-mesa-dri ffmpeg python3-venv
           python3 -m venv "$RUNNER_TEMP/dxx-nightly-python"
@@ -450,7 +461,7 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
-          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' }}
+          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' }}
         run: |
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
@@ -482,7 +493,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

@@ -426,9 +426,15 @@ function Get-TestSuiteCoveragePolicy {
     }
 }
 
+# These variants mutate owned emulator transport policy and require an exact opt-in
+function Get-TestSuiteOptInVariants {
+    return @('test_mp_coop_d1_relay', 'test_mp_coop_d2_direct', 'test_mp_coop_d2_initial_fallback')
+}
+
 function Select-TestSuiteCoverage {
     param([Parameter(Mandatory)][object[]]$Tests, [int]$Seed, [switch]$AllScenarios)
 
+    $Tests = @($Tests | Where-Object { $_.Name -cnotin (Get-TestSuiteOptInVariants) })
     $policy = Get-TestSuiteCoveragePolicy
     $families = @{}
     foreach ($family in $policy.Keys) {
