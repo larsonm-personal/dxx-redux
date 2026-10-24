@@ -54,8 +54,9 @@ The test selects its private write directory before console/log initialization
 and verifies the save exists there. Direct state changes make this persistence
 coverage, not evidence of normal progression or a completed playthrough
 
-The initial native library and command-line tool inspect exactly level version 15
-with game-data version 33. They read ordinary DHF HOGs or individual RL2 files.
+The native library and command-line tool inspect the bounded level/game pairs
+15/33 and 17/36. They read ordinary DHF HOGs or individual RL2 files. Runtime
+translation and the existing pilot remain restricted to 15/33.
 The inspection tool does not convert content, enable play or claim compatibility. Geometry, wall,
 trigger and embedded color values are emitted for comparison against an independent
 reference. Objects, header data, reactor targets, generators and delta lights are
@@ -77,7 +78,7 @@ identical regeneration preserves the previous file's modification time
 
 No game assets are committed here. Use the original local archive identified in
 [the pilot plan](../ai%20tool%20plans/mission%20metadata/d2xxl_first_mission_pilot_20261023.md)
-for real-content inspection. The CTest fixture is synthetic
+for real-content inspection. The public CTest fixtures are synthetic
 
 Configure `-DXL_PILOT_HOG=/absolute/path/to/d2-xl.hog` to register the private
 `xl_pilot_archive` integration test. It checks the source hash, all 30 levels,
@@ -408,3 +409,24 @@ arena/stock isolation. The arena has no reactor or exit; this is not campaign
 completion. Android, interactive rendering/audio and alternate XL/fog profiles
 remain unqualified. See the [expansion plan](../ai%20tool%20plans/mission%20metadata/xl_level_expansion_20261024.md)
 for source pins, ordered level gates, measurements and limitations.
+
+## Observatory serialization prerequisite
+
+Inspection of original Observatory XL now decodes its 17/36 header, integer
+texture colors and neutral sparse object-reference tail. Synthetic fixtures also
+check packed 13-bit light counts, including counts above the stock byte range,
+and reject malformed bounds and unsupported version pairs. Equipment payloads
+are bounded and reported unsupported rather than silently skipped. Nonempty
+game-36 sparse reference tables remain outside this bounded reader profile.
+
+Configure `XL_OBSERVATORY_HOG` with the original local archive to enable the
+hash-pinned `xl_observatory_inventory` test. It checks 328 vertices, 110 segments,
+54 walls and 44 objects, complete section endpoints, 26 preserved unsupported
+old-type-13 segments, and 37 preserved unaudited segment-flag records. The source
+archive is checked again after inspection. No private bytes enter public CI.
+
+This is the first [Observatory prerequisite](../ai%20tool%20plans/mission%20metadata/xl_observatory_prerequisite_20261024.md),
+not a gameplay unlock. Descriptor/resources, the flag bytes, runtime translation,
+no-damage semantics and presentation still need separate qualification. The
+level has no exit trigger, so eventual arena qualification cannot establish
+campaign completion. No new runtime or save state is introduced here.

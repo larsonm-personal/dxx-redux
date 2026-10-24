@@ -17,7 +17,9 @@ namespace
 
 // Layout reference: D2X-XL 11038eb53dd86f3bcdc027dddd3f93c60f02536e
 // gameio/loadgeometry.cpp, gameio/loadobjects.cpp, main/segment.cpp, main/side.cpp
-// This isolated reader supports exactly level 15 / game 33, not arbitrary XL
+// 17/36 checked against arbruijn/d2x-xl@2576a98b5de310e3ac7c9777df2677d1627b8bae
+// and the hash-pinned original Observatory archive
+// Bounded inspection pairs, not arbitrary XL or gameplay admission
 class Reader
 {
 	const Bytes &data;
@@ -191,7 +193,7 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader header(bytes, 0, bytes.size());
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
-	require(out.level_version == 15, "unsupported level version " + std::to_string(out.level_version));
+	require(out.level_version == 15 || out.level_version == 17, "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -199,9 +201,13 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader game(bytes, out.game_offset, bytes.size());
 	require(game.u16() == 0x6705, "invalid game data signature");
 	out.game_version = game.u16();
-	require(out.game_version == 33, "unsupported game version " + std::to_string(out.game_version));
+	require((out.level_version == 15 && out.game_version == 33) || (out.level_version == 17 && out.game_version == 36),
+	        "unsupported level/game version pair " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version));
 	game.skip(31);
-	for (const auto *name : { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights" }) {
+	const char *section_names[] = { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights", "equipment" };
+	const unsigned section_count = out.level_version == 17 ? 10 : 9;
+	for (unsigned i = 0; i < section_count; ++i) {
+		const auto *name = section_names[i];
 		Section s{ name, game.s32(), game.s32(), game.s32() };
 		require(s.count >= 0 && s.count <= 1000000, s.name + ": invalid count");
 		require(s.offset >= -1 && (s.offset == -1 || static_cast<std::size_t>(s.offset) <= bytes.size()), s.name + ": invalid offset");
@@ -294,7 +300,7 @@ Inventory inspect_level(const Bytes &bytes)
 	}
 	read_colors(mine, out.vertex_colors, vertex_count, false);
 	read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, false);
-	read_colors(mine, out.texture_colors, 910, true);
+	read_colors(mine, out.texture_colors, 910, out.level_version == 15);
 	if (mine.position() != static_cast<std::size_t>(out.game_offset)) issue(out.unknown, "mine_trailing_bytes", -1, std::to_string(out.game_offset - mine.position()));
 
 	const auto &walls = section(out, "walls");
@@ -340,7 +346,12 @@ Inventory inspect_level(const Bytes &bytes)
 		require(out.object_triggers >= 0, "negative object trigger count");
 		if (out.object_triggers) issue(out.unsupported, "object_triggers", -1, std::to_string(out.object_triggers));
 		const auto remaining = section_end(out, triggers, bytes.size()) - r.position();
-		if (!out.object_triggers && remaining == 1400) {
+		if (!out.object_triggers && out.game_version == 36) {
+			// Observed game-36 writers retain a sparse-reference count even when empty
+			// The reference also permits omitting this neutral tail entirely
+			if (remaining) require(r.u16() == 0, "nonempty game-36 object reference table is not supported");
+			require(r.position() == section_end(out, triggers, bytes.size()), "unexpected game-36 object reference tail");
+		} else if (!out.object_triggers && remaining == 1400) {
 			// Older writers retain the 700-entry object head table even with no triggers
 			for (int i = 0; i < 700; ++i) {
 				const auto head = r.s16();
@@ -450,10 +461,23 @@ Inventory inspect_level(const Bytes &bytes)
 		for (int i = 0; i < matcens.count; ++i) out.matcens.push_back({ r.s32(), r.s32(), r.s32(), r.s32(), r.s16(), r.s16() });
 	}
 	const auto &indices = section(out, "light_indices"), &deltas = section(out, "delta_lights");
+	if (out.level_version == 17) {
+		const auto &equipment = section(out, "equipment");
+		if (equipment.count) {
+			// Bound the payload without pretending to implement equipment generators
+			section_reader(bytes, out, equipment, 20);
+			issue(out.unsupported, "equipment_generators", -1, std::to_string(equipment.count));
+		}
+	}
 	if (indices.count) {
 		auto r = section_reader(bytes, out, indices, 6);
 		for (int i = 0; i < indices.count; ++i) {
 			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
+			if (out.game_version == 36) {
+				// XL packs side into 3 bits and count into the remaining 13 bits
+				values[2] = (values[2] << 5) | (values[1] >> 3);
+				values[1] &= 7;
+			}
 			require(values[0] >= 0 && values[0] < segment_count && values[1] < 6 && values[3] <= deltas.count && values[2] <= deltas.count - values[3], "invalid light index " + std::to_string(i));
 			out.light_indices.push_back(values);
 		}

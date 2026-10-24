@@ -42,6 +42,7 @@ GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments)
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
+	require(v.level_version == 15 && v.game_version == 33, "runtime translation remains limited to audited level 15/game 33");
 	for (const auto &i : v.unsupported)
 		require(i.feature == "embedded_lighting" || (water_segments && i.feature == "segment_function" && i.detail == "7"), i.feature + " at record " + std::to_string(i.record));
 	for (const auto &i : v.unknown)
