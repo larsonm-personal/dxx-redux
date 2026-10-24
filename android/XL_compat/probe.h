@@ -17,7 +17,7 @@ struct GameplayProbe {
 
 // Developer validation only, not mission admission
 // Lighting remains in source and must be integrated before faithful play is claimed
-GameplayProbe prepare_gameplay_probe(const Bytes &source);
+GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments = false);
 
 } // namespace xl_compat
 #ifdef _MSC_VER

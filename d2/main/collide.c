@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -504,6 +507,10 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 
 	d = TmapInfo[tmap_num].damage;
 	water = (TmapInfo[tmap_num].flags & TMI_WATER);
+#ifdef DXX_XL_PILOT
+	if (!d && !water && xl_preview_water_segment(segnum))
+		return xl_preview_water_contact(obj-Objects, segnum);
+#endif
 
 	if (d > 0 || water) {
 

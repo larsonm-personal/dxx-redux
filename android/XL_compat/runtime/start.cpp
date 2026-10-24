@@ -33,12 +33,13 @@ extern "C" int xl_preview_start(void)
 {
 	const bool option = has_option("-xl-preview-start");
 	if (!option) return input_demo_maybe_start_replay_from_cmdline();
-	if (!has_option("-xl-static-light-preview") && !has_option("-xl-pilot")) {
-		std::fprintf(stderr, "XL preview startup requires -xl-static-light-preview\n");
+	if (!has_option("-xl-static-light-preview") && !has_option("-xl-pilot") && !has_option("-xl-water-arena")) {
+		std::fprintf(stderr, "XL preview startup requires a lighting preview or pinned mission option\n");
 		return 1;
 	}
 	char mission[16];
-	std::strcpy(mission, has_option("-xl-pilot") ? "d2-xl" : "xlprobe");
+	std::strcpy(mission, has_option("-xl-water-arena") ? "rtarena" : has_option("-xl-pilot") ? "d2-xl"
+	                                                                                         : "xlprobe");
 	if (!load_mission_by_name(mission)) {
 		std::fprintf(stderr, "XL preview cannot load mission %s\n", mission);
 		return 1;

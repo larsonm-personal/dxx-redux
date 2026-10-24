@@ -37,13 +37,13 @@ int read_offset(const Bytes &bytes, std::size_t offset)
 }
 } // namespace
 
-GameplayProbe prepare_gameplay_probe(const Bytes &source)
+GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments)
 {
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
 	for (const auto &i : v.unsupported)
-		require(i.feature == "embedded_lighting", i.feature + " at record " + std::to_string(i.record));
+		require(i.feature == "embedded_lighting" || (water_segments && i.feature == "segment_function" && i.detail == "7"), i.feature + " at record " + std::to_string(i.record));
 	for (const auto &i : v.unknown)
 		require(i.feature == "object_dependencies" || i.feature == "runtime_semantics" || i.feature == "assets",
 		        i.feature + " at record " + std::to_string(i.record));
@@ -88,7 +88,8 @@ GameplayProbe prepare_gameplay_probe(const Bytes &source)
 		}
 	}
 	for (const auto &seg : v.segments) {
-		put(out, seg.function, 1);
+		// The runtime retains water in the source inventory, never in a stock enum
+		put(out, water_segments && seg.function == 7 ? 0 : seg.function, 1);
 		put(out, seg.producer, 1);
 		put(out, seg.value, 1);
 		put(out, seg.flags, 1);

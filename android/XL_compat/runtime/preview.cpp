@@ -13,6 +13,7 @@
 extern "C" {
 #include "inferno.h"
 #include "segment.h"
+#include "gameseg.h"
 #include "wall.h"
 #include "cntrlcen.h"
 #include "object.h"
@@ -138,7 +139,9 @@ extern "C" int xl_preview_load_level(const char *filename)
 	base = base ? base + 1 : filename;
 	const bool pilot_mission = Current_mission && (!std::strcmp(Current_mission_filename, "d2-xl") ||
 	                                               (option("-fixture-path") && !std::strcmp(Current_mission_filename, "xlprobe")));
-	const bool original = option("-xl-pilot") && pilot_mission && !std::strcmp(base, "d2leva-1.rl2");
+	const bool arena = option("-xl-water-arena") && Current_mission &&
+	                   !std::strcmp(Current_mission_filename, "rtarena") && !std::strcmp(base, "rtarena.rl2");
+	const bool original = arena || (option("-xl-pilot") && pilot_mission && !std::strcmp(base, "d2leva-1.rl2"));
 	int result = 0;
 	if (!original) {
 		result = xl_stock_load_level(filename);
@@ -147,11 +150,14 @@ extern "C" int xl_preview_load_level(const char *filename)
 	try {
 		xl_compat::Bytes bytes;
 		if (original) {
+			if (arena && (Game_mode & GM_MULTI)) throw std::runtime_error("water arena multiplayer is unqualified");
+			const unsigned expected_size = arena ? 80598 : 149235;
+			const char *expected_hash = arena ? "5d456eb26f603d942e565a7944c3837741613dccbed6573323bcd56874133392" : "5e835e76e984c658531175640294a4b05f6127904884ba7acfd65c93165be5b2";
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> input(PHYSFS_openRead(filename), PHYSFS_close);
-			if (!input || PHYSFS_fileLength(input.get()) != 149235) throw std::runtime_error("pilot source size differs from audited level");
-			bytes.resize(149235);
+			if (!input || PHYSFS_fileLength(input.get()) != expected_size) throw std::runtime_error("pilot source size differs from audited level");
+			bytes.resize(expected_size);
 			if (PHYSFS_read(input.get(), bytes.data(), 1, PHYSFS_uint32(bytes.size())) != PHYSFS_sint64(bytes.size())) throw std::runtime_error("pilot source read failed");
-			if (picosha2::hash256_hex_string(bytes) != "5e835e76e984c658531175640294a4b05f6127904884ba7acfd65c93165be5b2") throw std::runtime_error("pilot source hash differs from audited level");
+			if (picosha2::hash256_hex_string(bytes) != expected_hash) throw std::runtime_error("pilot source hash differs from audited level");
 		} else {
 			const char *path = option("-xl-source");
 			if (!path || !*path) throw std::runtime_error("-xl-source is required");
@@ -163,7 +169,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 			bytes.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
 			if (stream.bad() || bytes.size() != std::size_t(size)) throw std::runtime_error("XL source read failed");
 		}
-		auto probe = xl_compat::prepare_gameplay_probe(bytes);
+		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> output(PHYSFS_openWrite(translated_path), PHYSFS_close);
@@ -198,7 +204,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		brightness = xl_compat::vertex_brightness(*level);
 		dynamic_vertices.resize(level->vertices.size());
 		source = std::move(level);
-		admitted_pilot = original;
+		admitted_pilot = original && !arena;
 		con_printf(CON_URGENT, "XL PREVIEW: dynamic lighting and face effects are unverified; not production support\n");
 		return result;
 	} catch (const std::exception &error) {
@@ -206,6 +212,46 @@ extern "C" int xl_preview_load_level(const char *filename)
 		con_printf(CON_URGENT, "XL preview rejected: %s\n", error.what());
 		return 1;
 	}
+}
+
+// Water is immutable authored state reconstructed on every level load/save restore
+// Profile: legacy fluid physics enabled, speed scale zero; no general XL admission
+extern "C" int xl_preview_water_segment(int segment)
+{
+	return source && !(Game_mode & GM_MULTI) && segment >= 0 &&
+	       std::size_t(segment) < source->segments.size() && source->segments[segment].function == 7;
+}
+
+extern "C" int32_t xl_preview_motion_time(int segment, int32_t time)
+{
+	return xl_preview_water_segment(segment) ? int32_t(int64_t(time) * 75 / 100) : time;
+}
+
+extern "C" int xl_preview_water_contact(int object_index, int segment)
+{
+	if (!xl_preview_water_segment(segment) || object_index < 0 || object_index > Highest_object_index) return 0;
+	auto &obj = Objects[object_index];
+	const auto &thrust = obj.mtype.phys_info.thrust;
+	if (obj.type == OBJ_PLAYER && obj.id == Player_num && (thrust.x || thrust.y || thrust.z)) {
+		obj.mtype.phys_info.rotvel.x = (16383 - d_rand()) / 2;
+		obj.mtype.phys_info.rotvel.z = (16383 - d_rand()) / 2;
+	}
+	return 2;
+}
+
+extern "C" int xl_preview_water_frame(int object_index)
+{
+	if (object_index < 0 || object_index > Highest_object_index) return 0;
+	auto &obj = Objects[object_index];
+	if (obj.type != OBJ_PLAYER || obj.id != Player_num || !xl_preview_water_segment(obj.segnum)) return 0;
+	const auto &thrust = obj.mtype.phys_info.thrust;
+	if (!thrust.x && !thrust.y && !thrust.z) return 0;
+	// Physical turbulence affects orientation: use saved simulation RNG, never FX
+	char location[] = "XL water";
+	const int divisor = get_seg_masks(&obj.pos, obj.segnum, obj.size, location, __LINE__).sidemask ? 2 : 8;
+	obj.mtype.phys_info.rotvel.x = (16383 - d_rand()) / divisor;
+	obj.mtype.phys_info.rotvel.z = (16383 - d_rand()) / divisor;
+	return 1;
 }
 
 extern "C" const char *xl_preview_level_path(const char *filename)

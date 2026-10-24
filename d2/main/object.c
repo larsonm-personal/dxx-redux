@@ -2558,6 +2558,15 @@ void object_move_one( object * obj )
 					}
 			}
 	
+#ifdef DXX_XL_PILOT
+			if (!under_lavafall && xl_preview_water_frame(obj-Objects)) {
+				under_lavafall = 1;
+				if (!lavafall_hiss_playing[obj->id]) {
+					digi_link_sound_to_object3(SOUND_SHIP_IN_WATER, obj-Objects, 1, F1_0, i2f(256), -1, -1);
+					lavafall_hiss_playing[obj->id] = 1;
+				}
+			}
+#endif
 			if (!under_lavafall && lavafall_hiss_playing[obj->id]) {
 				digi_kill_sound_linked_to_object( obj-Objects);
 				lavafall_hiss_playing[obj->id] = 0;

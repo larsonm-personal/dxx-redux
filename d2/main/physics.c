@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -453,7 +456,11 @@ void do_physics_sim(object *obj)
 		//con_printf(CON_DEBUG, "Moving %d.\n", objnum); 
 
 		//Move the object
+#ifdef DXX_XL_PILOT
+		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, xl_preview_motion_time(orig_segnum, sim_time));
+#else
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, sim_time);
+#endif
 
 		if ( (frame_vec.x==0) && (frame_vec.y==0) && (frame_vec.z==0) )	
 			break;
@@ -856,7 +863,11 @@ void do_physics_sim(object *obj)
 	{	
 		vms_vector moved_vec;
 		vm_vec_sub(&moved_vec,&obj->pos,&start_pos);
+#ifdef DXX_XL_PILOT
+		vm_vec_copy_scale(&obj->mtype.phys_info.velocity,&moved_vec,xl_preview_motion_time(orig_segnum,fixdiv(f1_0,FrameTime)));
+#else
 		vm_vec_copy_scale(&obj->mtype.phys_info.velocity,&moved_vec,fixdiv(f1_0,FrameTime));
+#endif
 	}
 
 	fix_illegal_wall_intersection(obj, &start_pos);

@@ -48,6 +48,18 @@ if(BUILD_TESTING)
     set(XL_STOCK_ROUTE "" CACHE FILEPATH "Unmodified D2 headless route diagnostic executable")
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
+    set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
+    set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")
+    if(XL_ARENA_HOG AND XL_ARENA_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_water_arena
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_ARENA_HOG} -DDESCRIPTOR=${XL_ARENA_DESCRIPTOR}
+                -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/water-arena -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/water_arena.cmake)
+        set_tests_properties(xl_water_arena PROPERTIES TIMEOUT 120)
+    endif()
     if(XL_PREVIEW_LIFECYCLE AND XL_PILOT_LEVEL AND XL_STOCK_METADATA AND XL_RETAIL_DATA)
         add_test(
             NAME xl_preview_lifecycle
