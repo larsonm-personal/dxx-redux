@@ -232,6 +232,8 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 		PHYSFS_mkdir("Players");
 	snprintf(logical_path, SDL_arraysize(logical_path), "%s", save_name);
 	PHYSFS_delete(logical_path);
+	/* Both native save implementations consume their caller's pause */
+	stop_time();
 	if (!state_save_all_sub(logical_path, desc)) {
 		if (error && error_size)
 			snprintf(error, error_size, "%s", "could not create input demo checkpoint save");
