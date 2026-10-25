@@ -7,6 +7,9 @@ extern "C" {
 #include "merged_wall_debug.h"
 #include "segment.h"
 #include "xl_animation_phase.h"
+#include "mod_save_compat.h"
+#include "gameseq.h"
+#include "wall.h"
 }
 static void animation_pattern()
 {
@@ -224,6 +227,39 @@ static void test_animation(const char *owner)
 	// Shared first bitmap must not cause a stopped parent to animate either.
 	critical_effect.vc.frames[critical_effect.frame_count].index = effect.vc.frames[0].index;
 	render_phase(first_red, "stopped parent remains first frame with shared critical bitmap");
+	// Exercise the actual Android effect restore reader, including its inherited
+	// critical substitution for a stopped parent. Do not change that mapping.
+	for (bool shared_bitmap : { false, true }) {
+		critical_effect.vc.frames[1].index = shared_bitmap ? 10 : 21;
+		critical_effect.segnum = effect.segnum = -1;
+		Num_wall_anims = 0;
+		Highest_segment_index = 0;
+		mod_save_capture_definitions();
+		rewind_memory_buffer saved{};
+		rewind_file file;
+		rewind_file_init_memory_write(&file, &saved);
+		const int header[] = { 0, 0, 2 };
+		const int parent_record[] = { 0, 6144, 0, EF_STOPPED, -1, 0, 0 };
+		const int critical_record[] = { 1, 2048, 1, 0, -1, 0, 0 };
+		require(rewind_file_write(&file, header, 4, 3) == 3 &&
+		            rewind_file_write(&file, parent_record, 4, 7) == 7 &&
+		            rewind_file_write(&file, critical_record, 4, 7) == 7,
+		        "serialize stopped critical effect state");
+		rewind_file_init_memory_read(&file, saved.data, saved.size);
+		require(mod_save_prepare(&file, 1, 43, 0), "prepare native exact in-memory restore");
+		mod_save_read_effects(&file, 0, 1);
+		require(std::strcmp(mod_save_status(), "incompatible") && (effect.flags & EF_STOPPED) &&
+		            critical_effect.frame_count == 1 && critical_effect.time_left == 2048 &&
+		            Textures[0].index == critical_effect.vc.frames[1].index,
+		        "restore preserves inherited stopped-parent critical bitmap mapping");
+		rewind_memory_buffer_discard(&saved);
+		render_phase(first_red + 80, "restored stopped critical mapping uses observed replacement phase");
+		FrameTime = 4097;
+		do_special_effects();
+		render_phase(first_red + 80, "restored stopped parent holds applied phase while critical clock advances");
+		stop_effect(0);
+		render_phase(first_red, "explicit stop after restore reapplies parent first replacement frame");
+	}
 	ogl_freebmtexture(&GameBitmaps[20]);
 	ogl_freebmtexture(&GameBitmaps[21]);
 	// An actual exact nonzero name wins over the existing #0 fallback.

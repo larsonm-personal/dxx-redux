@@ -195,15 +195,11 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 	for (int i = 0; i < Num_effects; ++i) {
 		const eclip *effect = &Effects[i];
 		if (effect->changing_wall_texture != texture || (effect->flags & EF_CRITICAL)) continue;
-		struct xl_wall_phase phase;
-		if (effect->flags & EF_STOPPED) {
-			/* stop_effect maps the parent's first frame even with a critical clip */
-			phase = (struct xl_wall_phase) { 1, effect->vc.frames[0].index, effect->vc.num_frames,
-				                             effect->vc.frame_time, 0, effect->vc.frame_time, 1 };
-		} else {
-			if (xl_wall_phase_generation != android_mission_assets_generation() || strcmp(hog, xl_wall_phase_hog)) return original;
-			phase = xl_wall_phases[i];
-		}
+		if (xl_wall_phase_generation != android_mission_assets_generation() || strcmp(hog, xl_wall_phase_hog)) return original;
+		/* Follow the actual mapping, including the inherited restore behavior for
+		 * a stopped parent with a critical clip. stop_effect records its own
+		 * first frame separately; neither path changes simulation semantics. */
+		const struct xl_wall_phase phase = xl_wall_phases[i];
 		if (!phase.valid || phase.bitmap != Textures[texture].index ||
 		    dxx_xl_animation_frame(phase.frames, phase.frame_time, phase.frame, phase.time_left, phase.stopped, 1) < 0) return original;
 		struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original);
