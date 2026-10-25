@@ -58,10 +58,11 @@ static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int ext
 }
 static void mask_solid(grs_bitmap &bitmap, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255)
 {
-	unsigned char rgba[] = { r, g, b, a };
-	bitmap.bm_w = bitmap.bm_h = 1;
+	// Use an unpadded constant surface; 1x1 engine padding has a clear corner.
+	unsigned char rgba[] = { r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a };
+	bitmap.bm_w = bitmap.bm_h = 2;
 	bitmap.gltexture = ogl_get_free_texture();
-	ogl_init_texture(bitmap.gltexture, 1, 1, OGL_FLAG_ALPHA);
+	ogl_init_texture(bitmap.gltexture, 2, 2, OGL_FLAG_ALPHA);
 	require(!ogl_loadtexture(rgba, 0, 0, bitmap.gltexture, 0, 4, 0, nullptr), "solid layer upload");
 }
 static void test_masks(bool owned)
