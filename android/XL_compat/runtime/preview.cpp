@@ -190,8 +190,6 @@ void validate_mission_context()
 {
 	if (const char *reason = xl_resource_base_rejection(); *reason)
 		throw std::runtime_error(reason);
-	if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL)
-		throw std::runtime_error("d2x-name mission resources: base initialization is supported; descriptor gameplay and failed-selection rollback remain unqualified");
 }
 
 bool mission_has_companion(const char *extension)
@@ -222,7 +220,7 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
 	// Both callers checked mission context before reading or translating the level
-	if (Current_mission && Current_mission->enhanced)
+	if (Current_mission && (Current_mission->alternate_ham_file || (Current_mission->enhanced && Current_mission->enhanced != MISSION_ENHANCED_XL)))
 		throw std::runtime_error("custom HAM definitions: XL gameplay-definition support is not verified");
 	if (Current_mission && Current_mission->path) {
 		const char *descriptor = mission_descriptor_snapshot();
@@ -354,7 +352,11 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 	try {
 		validate_mission_context();
 		const auto bytes = read_extended_level(filename);
-		if (bytes.empty()) return 1;
+		if (bytes.empty()) {
+			if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL)
+				throw std::runtime_error("d2x-name mission resources: stock-format levels in XL descriptors are not qualified");
+			return 1;
+		}
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
 		XlPreparedResources resources(filename);
@@ -368,7 +370,11 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 
 extern "C" int xl_test_stop_after_level(void)
 {
+#ifdef DXX_XL_DEVELOPER_PROBE
 	return option("-fixture-path") && option("-xl-test-navigation") && !option("-xl-test-campaign");
+#else
+	return 0;
+#endif
 }
 
 extern "C" void xl_classic_lighting_release(void)
@@ -479,6 +485,8 @@ extern "C" int xl_preview_load_level(const char *filename)
 		auto bytes = read_extended_level(filename);
 		const bool original = !bytes.empty();
 		if (!original) {
+			if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL)
+				throw std::runtime_error("d2x-name mission resources: stock-format levels in XL descriptors are not qualified");
 			if (!translated_preview) {
 				xl_preview_clear_mission();
 				return xl_stock_load_level(filename);
@@ -711,6 +719,8 @@ extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, x
 	}
 	if (Light_subtracted[segment_number] & (1 << side_number)) return 0;
 	const auto light = [](int texture) {
+		int brightness = 0;
+		if (xl_prepared_texture_brightness(texture, &brightness)) return int32_t(brightness);
 		for (const auto &entry : xl_compat::texture_brightness)
 			if (entry.texture == texture) return entry.brightness;
 		return int32_t(0);

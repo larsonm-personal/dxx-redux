@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #ifdef __ANDROID__
 #include "corona_probe.h"
@@ -429,7 +429,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		}
 	}
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_preview_begin_face(segnum, sidenum);
 	for (i = 0; i < nv; ++i) xl_preview_vertex(vp[i], uvlp[i].l, &dyn_light[i].r, &dyn_light[i].g, &dyn_light[i].b);
 #endif
@@ -456,7 +456,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		android_texture_debug_add_merged_labels((const g3s_point *const *)pointlist, nv, tmap1, tmap2);
 #endif
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_preview_end_face();
 #endif
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL); // revert any transparency/blending setting back to normal
@@ -649,7 +649,7 @@ void render_side(segment *segp, int sidenum)
 		//	the face is, how normal to the surfaces the view is.
 		//	Now, if both dot products are close to 1.0, then render two triangles as a single quad.
 		v_dot_n1 = vm_vec_dot(&tvec, &normals[1]);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		if (xl_classic_legacy_fans_active() || xl_preview_reference_fans()) {
 			if (xl_preview_split_face_visible(segp-Segments, sidenum, Viewer_eye.x, Viewer_eye.y, Viewer_eye.z)) {
 #ifdef ANDROID
@@ -2289,7 +2289,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 	if (eye_offset<=0) // Do for left eye or zero.
 		set_dynamic_light();
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		xl_preview_dynamic_frame();
 #endif
 
@@ -2448,7 +2448,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Second Pass: Objects
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 	if (Viewer == ConsoleObject) {
 		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
 		xl_corona_object_probe(0, eye);
@@ -2513,7 +2513,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Third Pass - Render Transculent level geometry with normal Alpha-Func
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 	if (Viewer == ConsoleObject) {
 		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
 		xl_corona_object_probe(1, eye);
@@ -2575,7 +2575,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 #endif
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	{
 		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
 #ifdef __ANDROID__

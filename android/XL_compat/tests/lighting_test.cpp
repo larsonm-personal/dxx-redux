@@ -262,6 +262,10 @@ int main()
 		const std::vector<float> expected_brightness{ 0.125f, 0, 0.75f, 1, 65535.0f / 32768, 0, 0.5f, 0.5f };
 		if (xl_compat::vertex_brightness(level) != expected_brightness)
 			throw std::runtime_error("shared-vertex brightness mismatch");
+		level.level_version = 17;
+		level.game_version = 36;
+		if (xl_compat::vertex_brightness(level) != expected_brightness)
+			throw std::runtime_error("17/36 shared-vertex brightness mismatch");
 		// A wall on the same portal makes its serialized UVLs contribute
 		level.segments[0].sides[2].wall = 0;
 		if (xl_compat::vertex_brightness(level)[1] != 65535.0f / 32768)

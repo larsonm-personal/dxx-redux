@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -459,7 +459,7 @@ void do_physics_sim(object *obj)
 		//con_printf(CON_DEBUG, "Moving %d.\n", objnum); 
 
 		//Move the object
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, xl_preview_motion_time(orig_segnum, sim_time));
 #else
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, sim_time);
@@ -869,7 +869,7 @@ void do_physics_sim(object *obj)
 	int reconstruct_velocity =
 		((obj->type == OBJ_PLAYER) || (obj->type == OBJ_ROBOT) || (obj->type == OBJ_DEBRIS)) &&
 		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0));
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	// XL's fluid profile reconstructs all object types after wall/bad-start hits
 	if (xl_preview_water_segment(orig_segnum))
 		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
@@ -878,7 +878,7 @@ void do_physics_sim(object *obj)
 	{	
 		vms_vector moved_vec;
 		vm_vec_sub(&moved_vec,&obj->pos,&start_pos);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		vm_vec_copy_scale(&obj->mtype.phys_info.velocity,&moved_vec,xl_preview_motion_time(orig_segnum,fixdiv(f1_0,FrameTime)));
 #else
 		vm_vec_copy_scale(&obj->mtype.phys_info.velocity,&moved_vec,fixdiv(f1_0,FrameTime));

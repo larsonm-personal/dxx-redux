@@ -1,9 +1,9 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #define XL_FACE_ALPHA(value) xl_preview_alpha(value)
 #else
 #define XL_FACE_ALPHA(value) (value)
 #endif
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -75,7 +75,7 @@ static void android_clear_texture_replacement_path_cache(void);
 #include "piggy.h"
 #ifdef ANDROID
 #include "mission.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "resource_validation.h"
 #endif
 #endif
@@ -421,7 +421,7 @@ static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
 int g_cache_time_ms = 0; /* time spent in ogl_cache_level_textures */
 #endif
 
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 int ogl_allow_png(void);
 ogl_texture *ogl_get_free_texture(void);
 #include "xl_wall_animation.h"
@@ -442,7 +442,7 @@ void ogl_reset_texture_stats_internal(void){
 }
 
 void ogl_init_texture_list_internal(void){
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 	xl_wall_animation_clear();
 #endif
 	int i;
@@ -462,7 +462,7 @@ void ogl_init_texture_list_internal(void){
 }
 
 void ogl_smash_texture_list_internal(void){
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 	xl_wall_animation_clear();
 #endif
 	int i;
@@ -534,7 +534,7 @@ int ogl_allow_png(void){
 }
 
 void ogl_smash_png_textures(void){
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 	xl_wall_animation_clear();
 #endif
 	int i;
@@ -1239,7 +1239,7 @@ extern void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist);
  */ 
 bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light_rgb,grs_bitmap *bm)
 {
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 	if (tmap_drawer_ptr == draw_tmap) bm = xl_wall_animation_bitmap(bm, 0, 0);
 #endif
 	int c, index2, index3, index4;
@@ -1374,7 +1374,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	return 0;
 }
 
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 #include "xl_soft_base_pass_impl.h"
 #endif
 
@@ -1383,7 +1383,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
  */
 static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot, grs_bitmap *bmovl, int orient, int label_nv, const g3s_point **label_pointlist)
 {
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 	bmbot = xl_wall_animation_bitmap(bmbot, 0, 0);
 	bmovl = xl_wall_animation_bitmap(bmovl, 1, 0);
 #endif
@@ -1438,7 +1438,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 
-#if defined(ANDROID) && defined(DXX_XL_PILOT)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME)
 	if (!bmovl->gltexture->scoped_static && xl_soft_overlay_base_opaque(bmbot) &&
 	    grd_curcanv->cv_blend_func == GR_BLEND_NORMAL && grd_curcanv->cv_fade_level >= GR_FADE_OFF && XL_FACE_ALPHA(1.0f) == 1.0f) {
 		grs_bitmap *selected = xl_wall_animation_bitmap(bmovl, 1, 1);
@@ -2234,7 +2234,7 @@ GLubyte *pixels = NULL;
 
 int ogl_use_classic_depth(void)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	/* Authored emitters need scene depth; preserve the user's stock preference */
 	if (xl_preview_pilot_active()) return 0;
 #endif
@@ -3232,7 +3232,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		int png_loaded = 0;
 
 #ifdef ANDROID
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		const char *scoped_hog = !d1_in_d2_use_d1_gameplay() && xl_resource_texture_scope_enabled() ? mission_resource_archive() : NULL;
 #else
 		const char *scoped_hog = NULL;

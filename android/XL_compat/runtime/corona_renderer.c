@@ -1,4 +1,4 @@
-/* XL-only OpenGL backend; built into arch_ogl only with DXX_XL_PILOT */
+/* XL-only OpenGL backend; built into arch_ogl only with DXX_XL_RUNTIME */
 #ifdef _WIN32
 #include <winsock2.h>
 #endif

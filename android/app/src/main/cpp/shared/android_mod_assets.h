@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 void android_mod_sounds_reset(void);
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 void android_mod_sound_level_prepare(int ordinal);
 #endif
 void android_mod_sound_apply(int sample, const char *name, int content_game);

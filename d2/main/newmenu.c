@@ -24,7 +24,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <ctype.h>
 
 #include "pstypes.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 #include "dxxerror.h"
@@ -2167,7 +2167,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 #ifdef ANDROID
 	android_newmenu_publish_interactions(wind, menu);
 #endif
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_draw_menu_indicator();
 #endif
 
@@ -3279,7 +3279,7 @@ int listbox_draw(window *wind, listbox *lb)
 				&menu_scale, SWIDTH, SHEIGHT, 0, 0, NULL,
 				android_listbox_draw_scaled_contents, lb);
 			android_listbox_publish_interactions(wind, lb);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 			xl_draw_menu_indicator();
 #endif
 			return 1;
@@ -3294,7 +3294,7 @@ int listbox_draw(window *wind, listbox *lb)
 #ifdef ANDROID
 	android_listbox_publish_interactions(wind, lb);
 #endif
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_draw_menu_indicator();
 #endif
 

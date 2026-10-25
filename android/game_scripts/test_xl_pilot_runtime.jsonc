@@ -1,5 +1,5 @@
 // Explicit private-fixture startup and save/restore test, not full mission qualification
-// Requires -PxlPilot=true, original d2-xl.mn2/HOG in d2x-redux/missions,
+// Requires the normal OpenGL APK, original d2-xl.mn2/HOG in d2x-redux/missions,
 // retail D2 data and an existing player pilot; run with -PreserveState
 [
     { "_info": { "games": ["d2"], "vars": { "d2": { "PILOT": "player" } } } },

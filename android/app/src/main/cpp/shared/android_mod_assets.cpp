@@ -10,7 +10,7 @@
 #include <vector>
 #include <stdexcept>
 #include <SDL.h>
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 #include "../../../../../XL_compat/scoped_sound.h"
 #include "../../../../../XL_compat/wave.h"
 #include "android_mission_assets.h"
@@ -24,7 +24,7 @@ extern "C" {
 #include "android_log.h"
 #include "android_sound_trace.h"
 #include "sound_trace_fingerprint.h"
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 #include "mission.h"
 #include "gameseq.h"
 #include "error.h"
@@ -45,7 +45,7 @@ std::array<sound_overlay, MAX_SOUND_FILES> sounds;
 nlohmann::json presentation = nlohmann::json::array();
 bool dirty = true;
 Uint32 last_flush;
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 int scoped_ordinal;
 unsigned scoped_generation;
 std::string scoped_archive, scoped_identity, scoped_key;
@@ -91,7 +91,7 @@ int select_sound_source(const std::string (&origins)[2], const std::string &bank
 }
 } // namespace
 
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 void android_mod_sound_level_prepare(int ordinal)
 {
 	scoped_ordinal = ordinal;
@@ -221,7 +221,7 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 	auto &entry = sounds[sample];
 	auto &sound = GameSounds[sample];
 	if (!entry.bytes.empty()) return;
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 	if (content_game == 1 && apply_scoped_d1_sound(sample, name)) return;
 #endif
 #ifndef DXX_BUILD_DESCENT_II
@@ -325,7 +325,7 @@ nlohmann::json android_mod_usage_snapshot()
 		entries.push_back({ { "sample", i }, { "file", entry.path }, { "source", entry.origin }, { "bytes", entry.fingerprint.length }, { "hash", hash_text(entry.fingerprint) }, { "rate", GameSounds[i].freq }, { "played", entry.played }, { "resident", sound_trace_fingerprint_match(current, entry.fingerprint) == 1 }, { "scoped_selection", entry.selection } });
 	}
 	nlohmann::json result = { { "schema", 1 }, { "enabled", true }, { "sounds", std::move(entries) }, { "presentation", presentation } };
-#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 	const bool current = !scoped_identity.empty() && scoped_ordinal != 0 && scoped_ordinal == Current_level_num &&
 	                     scoped_generation == android_mission_assets_generation() &&
 	                     scoped_key == android_mission_assets_key() && scoped_archive == mission_resource_archive();

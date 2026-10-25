@@ -76,7 +76,7 @@ int N_active_sound_objects=0;
 
 int digi_sounds_initialized=0;
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "audio_state.h"
 #endif
 

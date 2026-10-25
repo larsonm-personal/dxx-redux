@@ -1,5 +1,5 @@
 // Private original-mission ZIP import and startup check, not campaign qualification
-// Requires -PxlPilot=true, retail D2 data and an existing player pilot
+// Requires the normal OpenGL APK, retail D2 data and an existing player pilot
 // Stage unchanged HOG + descriptor as files/xl-original-import.zip; use -PreserveState
 // Preserve and move aside manually staged d2-xl files from d2x-redux/missions
 [

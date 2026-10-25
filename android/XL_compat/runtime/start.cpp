@@ -43,6 +43,9 @@ bool has_option(const char *name)
 
 extern "C" int xl_preview_start(void)
 {
+#ifndef DXX_XL_DEVELOPER_PROBE
+	return input_demo_maybe_start_replay_from_cmdline();
+#else
 	const bool option = has_option("-xl-preview-start");
 	if (!option) return input_demo_maybe_start_replay_from_cmdline();
 	if (!has_option("-xl-static-light-preview") && !has_option("-xl-classic-light-preview") && !has_option("-xl-pilot") && !has_option("-xl-water-physics")) {
@@ -113,6 +116,7 @@ extern "C" int xl_preview_start(void)
 	}
 	running = true;
 	return 0;
+#endif
 }
 
 extern "C" int xl_preview_reference_fans(void)

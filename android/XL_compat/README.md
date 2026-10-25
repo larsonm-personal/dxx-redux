@@ -1,11 +1,12 @@
 # XL compatibility boundary
 
-This directory owns D2X-XL format knowledge and compatibility policy. Ordinary
-engine builds keep XL gameplay disabled. The dedicated D2 pilot uses guarded
-`DXX_XL_PILOT` hooks; do not relax general loader validation to admit XL files
+This directory owns D2X-XL format knowledge and compatibility policy. Normal OpenGL D2 builds include stock and supported XL gameplay in one binary.
+`DXX_XL_RUNTIME` marks renderer capability internally; it is not a build option.
+Runtime feature and resource checks decide admission. Software-renderer builds
+retain explicit rejection because XL rendering is not implemented there
 
 XL OpenGL drawing is in `runtime/corona_renderer.c`, compiled into D2's OpenGL
-target only when the pilot is enabled. Stock source retains the small alpha and
+target in normal OpenGL builds. Stock source retains the small alpha and
 depth-policy integration hooks. D1 needs no matching XL hooks for this D2-format
 pilot; shared Android save infrastructure continues to serve both engines
 
@@ -28,7 +29,7 @@ captured at runtime. The XL checkpoint exporter reuses that validator; the only
 data-formatting change splits the same JSON payload into MSVC-sized literals.
 Do not generate another registry for each XL level
 
-Original Ahayweh Gate is now verified playable in the opt-in singleplayer pilot.
+Original Ahayweh Gate is now verified playable in the OpenGL singleplayer runtime.
 The [acceptance record](evidence/pilot-acceptance-audit.md) and
 [19-category requirement checklist](evidence/pilot-requirements.md) identify the
 exact source/APK, authored extensions and evidence limits. All 36 private host
@@ -147,10 +148,9 @@ The historical lighting experiments below can inform implementation without
 making exact image matching a prerequisite for support. Authored
 XL colors/opacity and gameplay-affecting extension data must still work correctly
 
-Android developer builds can opt in with
-`gradlew.bat :app:assembleDebug -PciTestAbi=x86_64 -PxlPilot=true`. The ordinary
-build remains OFF. The enabled D2 library retains its JNI name and receives the
-same optional XL runtime flag; D1 does not receive it. This does not
+Build the normal Android APK with
+`gradlew.bat :app:assembleDebug -PciTestAbi=x86_64`. No XL property is needed.
+The D2 library retains its JNI name; D1 does not receive the D2 runtime hooks. This does not
 enable the launcher's compatibility approval. Guarded `xl_pilot` introspection
 reports admission, completion, shaded-vertex calls, unresolved emitters and
 observed trigger activations. The x86_64 APK builds and the original mission
@@ -223,7 +223,8 @@ coverage, not evidence of normal progression or a completed playthrough
 
 The native library and command-line tool inspect the bounded level/game pairs
 15/33 and 17/36. They read ordinary DHF HOGs or individual RL2 files. Runtime
-translation and the existing pilot remain restricted to 15/33.
+translation accepts bounded 15/33 and 17/36 requirements. Inspection still does
+not prove resource availability, rendered parity or mission completion.
 The inspection tool does not convert content, enable play or claim compatibility. Geometry, wall,
 trigger and embedded color values are emitted for comparison against an independent
 reference. Objects, header data, reactor targets, generators and delta lights are
@@ -399,7 +400,9 @@ unverified. Run it with `ctest --test-dir <compat-build> -R xl_normal_red_key
 
 ### Separate rendering preview build
 
-Configure a dedicated D2 build with `-DDXX_XL_PILOT=ON`. Ordinary guarded hooks
+Configure private diagnostics with `-DDXX_XL_DEVELOPER_TESTS=ON`.
+Normal builds keep the game and metadata executable names and entry points.
+Only the diagnostic build replaces metadata with the lifecycle harness. Ordinary guarded hooks
 in the engine call `runtime/preview.cpp`, which owns the extension policy and
 state. `runtime/configure.cmake` only attaches sources, include paths and compile
 definitions; it does not rewrite or substitute engine sources. The option defaults
@@ -446,7 +449,7 @@ state transfer are partial; full face setup and lightmaps remain unimplemented.
 This does not change playability
 
 `vertex_brightness` reconstructs the initial per-vertex maximum of decoded face
-UVL brightness, matching `CSide::Read` for the audited 15/33 geometry. Open portals
+UVL brightness, matching `CSide::Read` for the audited 15/33 and 17/36 geometry. Open portals
 without walls contribute nothing; portal walls do contribute. This value is
 required for XL's ambient/dynamic-color mixing and is not the ambient RGB maximum
 
@@ -583,7 +586,7 @@ for source pins, ordered level gates, measurements and limitations.
 
 The Android controlled probe is `android/tests/test_xl_water_runtime.ps1`, with
 explicit `-Serial`, `-Hog` and `-Descriptor` arguments for that original private
-fixture. It requires an installed `-PxlPilot=true` debug APK, retail D2 data and
+fixture. It requires an installed normal OpenGL debug APK, retail D2 data and
 the `player` pilot. It backs up and restores pilot/save/configuration and matching
 mission files. An interrupted restoration leaves `files/xl-water-runtime-backup`
 in app storage and the next run refuses to overwrite it.
@@ -625,20 +628,41 @@ archive is checked again after inspection. No private bytes enter public CI.
 This is the first [Observatory prerequisite](../ai%20tool%20plans/mission%20metadata/xl_observatory_prerequisite_20261024.md),
 not a gameplay unlock. The [17/36 flag audit](evidence/segment-flags-17-36.md)
 now identifies those high bits as preserved reserved data, with a compiled pinned
-reference oracle and all-byte inventory tests. Descriptor/resources, runtime translation,
-no-damage semantics and presentation still need separate qualification. The
+reference oracle and all-byte inventory tests. Bounded runtime translation now
+has Konflict acceptance coverage; Observatory's no-damage semantics and
+presentation still need separate qualification. The
 level has no exit trigger, so eventual arena qualification cannot establish
 campaign completion. No new runtime or save state is introduced here.
 
 Native D2 discovery recognizes exact `d2x-name` descriptors and resolves their
 ordinary level lists and companion DHF archives. XL identity remains distinct
-from stock extra-HAM missions, and all level loading under it is rejected. This
-does not qualify XL assets or gameplay. Alternate HOG and critical directives
+from stock extra-HAM missions. OpenGL builds apply per-level feature and owned-resource
+checks; default builds retain rejection. Alternate HOG and critical directives
 remain unsupported. Configure `XL_OBSERVATORY_DESCRIPTOR` together with
 `XL_OBSERVATORY_HOG`, `XL_PREVIEW_LIFECYCLE` and `XL_RETAIL_DATA` to run the
 private original-descriptor discovery, rejection and stock-isolation test.
 
 Configure `XL_REFERENCE_SEGMENT_FLAGS` with pinned `main/findsegment.cpp` to run
 the optional `xl_segment_flags_reference` oracle. Raw flags remain visible in
-inventory records and optional `observations`; the audit does not enable 17/36
-gameplay or widen the treatment of unaudited flags in other version profiles.
+inventory records and optional `observations`; reserved-bit acceptance does not
+widen the treatment of unaudited flags in other version profiles.
+
+### Konflict 17/36 acceptance
+
+The unchanged Konflict distribution exercises the bounded 17/36 translator and
+owned D2 LGT brightness overrides. Configure `XL_KONFLICT_HOG` and
+`XL_KONFLICT_DESCRIPTOR`, plus `XL_PREVIEW_LIFECYCLE` and `XL_RETAIL_DATA`, to
+enable the private `xl_konflict_features` CTest. Its hash checks identify test
+inputs only; runtime admission contains no mission-name or hash exception.
+It checks original geometry/light records, the 910-entry LGT snapshot, runtime
+emitters, changing-light save/restore, reactor/door behavior and stock isolation.
+Derived malformed/foreign/absent companion controls are reported separately.
+
+The explicit Android runner is `android/tests/test_xl_konflict_runtime.ps1`
+with `-Serial`, `-Hog` and `-Descriptor`. It requires an XL-enabled APK, retail D2
+and pilot `player`; backs up and restores test-touched state; and checks startup,
+render activity, quick-save/restore, the XL menu indicator, stock transitions and
+a controlled authored-light face with actual corona draws.
+It does not navigate the level or establish uninterrupted playthrough or visual
+equivalence with the reference engine. D2 CLR overrides and multiplayer remain
+rejected. See the [tranche record](../ai%20tool%20plans/mission%20metadata/xl_konflict_tranche_20261025.md).

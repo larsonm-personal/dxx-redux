@@ -124,6 +124,18 @@ if(BUILD_TESTING)
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     set(XL_OBSERVATORY_DESCRIPTOR "" CACHE FILEPATH "Original Observatory mission descriptor")
+    set(XL_KONFLICT_HOG "" CACHE FILEPATH "Original Konflict HOG for bounded 17/36 coverage")
+    set(XL_KONFLICT_DESCRIPTOR "" CACHE FILEPATH "Original Konflict mission descriptor")
+    if(XL_KONFLICT_HOG AND XL_KONFLICT_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_konflict_features
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_KONFLICT_HOG} -DDESCRIPTOR=${XL_KONFLICT_DESCRIPTOR}
+                -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/konflict-features -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/konflict_features.cmake)
+        set_tests_properties(xl_konflict_features PROPERTIES TIMEOUT 90)
+    endif()
     if(XL_DRAGON_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
             NAME xl_dragon_companion_ownership

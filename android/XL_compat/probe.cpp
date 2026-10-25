@@ -39,16 +39,14 @@ int read_offset(const Bytes &bytes, std::size_t offset)
 }
 } // namespace
 
-static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, bool serialization_17_36)
+static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, bool require_17_36)
 {
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
 	auto blockers = runtime_blockers(v);
-	if (serialization_17_36) {
-		require(v.level_version == 17 && v.game_version == 36, "layout qualification requires 17/36");
-		blockers.erase(std::remove_if(blockers.begin(), blockers.end(), [](const Issue &issue) { return issue.feature == "serialization"; }), blockers.end());
-	}
+	const bool serialization_17_36 = v.level_version == 17 && v.game_version == 36;
+	if (require_17_36) require(serialization_17_36, "layout qualification requires 17/36");
 	// Only the explicitly selected experimental fluid profile translates water
 	if (water_segments)
 		blockers.erase(std::remove_if(blockers.begin(), blockers.end(), [](const Issue &issue) {

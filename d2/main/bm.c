@@ -31,7 +31,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "bm.h"
 #include "u_mem.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "resource_validation.h"
 #endif
 #include "dxxerror.h"
@@ -587,7 +587,7 @@ void load_robot_replacements(char *level_name)
 
 	bm_reset_level_compatibility_warnings();
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_install_prepared_hxm(level_name)) return;
 #endif
 	change_filename_extension(ifile_name, level_name, ".HXM" );

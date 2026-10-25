@@ -171,9 +171,9 @@ void version_17_contract()
 	auto no_tail = bytes;
 	no_tail.resize(no_tail.size() - 2);
 	check(xl_compat::inspect_level(no_tail).object_trigger_heads.empty(), "omitted neutral sparse-reference tail rejected");
-	rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+	check(!xl_compat::prepare_gameplay_probe(bytes).stock_level.empty(), "audited 17/36 layout rejected");
 	const auto compatibility = xl_compat::compatibility_json("fixture.rl2", bytes);
-	check(compatibility.find("\"status\": \"blocked\"") != std::string::npos && compatibility.find("\"playable\": false") != std::string::npos, "17 inspection granted production admission");
+	check(compatibility.find("\"status\": \"eligible\"") != std::string::npos && compatibility.find("\"playable\": false") != std::string::npos, "17 inspection failed to distinguish eligibility from playability");
 	auto bad = bytes;
 	patch(bad, inventory.game_offset + 2, 33, 2);
 	rejects([&] { xl_compat::inspect_level(bad); });
@@ -341,12 +341,13 @@ void serialization_17_contract()
 			covered += chunk;
 		}
 		check(covered == unsigned(count), "17/36 light targets lost");
-		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+		check(xl_compat::prepare_gameplay_probe(bytes).stock_level == out, "normal admission differs from qualified 17/36 translation");
 		bytes.at(source.mine_offset + 277) = 13;
+		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
 		rejects([&] { xl_compat::prepare_serialization_probe_17_36(bytes); });
 	}
 	rejects([&] { xl_compat::prepare_serialization_probe_17_36(fixture()); });
-	std::cout << "17/36 layout qualification: header removal, retained offsets, packed counts 0..8191; runtime and no-damage remain blocked\n";
+	std::cout << "17/36 layout qualification: normal admission, header removal, retained offsets, packed counts 0..8191; no-damage remains blocked\n";
 }
 
 void segment_flags_contract()
@@ -361,8 +362,8 @@ void segment_flags_contract()
 			check(xl_compat::inventory_json(v).find("reserved_segment_flags") != std::string::npos, "reserved flags omitted from report");
 		}
 		const auto blockers = xl_compat::runtime_blockers(v);
-		check(std::any_of(blockers.begin(), blockers.end(), [](const auto &i) { return i.feature == "serialization"; }), "flag audit admitted unsupported serialization");
-		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+		check(blockers.empty(), "reserved flags blocked audited 17/36 serialization");
+		check(xl_compat::prepare_gameplay_probe(bytes).source.segments.at(0).flags == flags, "normal translation lost reserved flags");
 	}
 	const auto legacy_bytes = fixture(15, 255);
 	const auto legacy = xl_compat::inspect_level(legacy_bytes);

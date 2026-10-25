@@ -340,7 +340,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	androidInit.context = (void *) thiz; /* Activity is a valid Context */
 
 	argv_startup[0] = (char *) &androidInit;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	/* Explicit pilot builds retain detected capability admission */
 	argv_startup[argc++] = "-xl-pilot";
 	{
