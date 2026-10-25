@@ -216,7 +216,8 @@ int android_ogl_read_replacement(char *filename, size_t capacity, const char *mi
 			}
 		}
 		android_ogl_texture_clock_now(&start);
-		loaded = item->extension == 0 ? read_ktx2_file(item->path, ktx) : read_png(item->path, png);
+		loaded = item->extension == 0 ? read_ktx2_file(item->path, ktx) : item->scoped ? read_png_scoped_opaque(item->path, png)
+		                                                                               : read_png(item->path, png);
 		android_ogl_texture_clock_now(&end);
 		elapsed = android_ogl_texture_elapsed_us(&start, &end);
 		if (item->extension == 0) {
@@ -236,24 +237,6 @@ int android_ogl_read_replacement(char *filename, size_t capacity, const char *mi
 				free(png->data);
 				free(png->palette);
 				loaded = 0;
-			}
-			if (loaded && item->scoped) {
-				/* RGB/RGBA storage is permitted; translucent artwork is a later slice.
-				 * read_png has already bounded the decoded dimensions and allocation. */
-				int opaque = png->channels == 3 || png->channels == 4;
-				const size_t pixels = (size_t) png->width * png->height;
-				if (opaque)
-					for (size_t pixel = 0; pixel < pixels; ++pixel)
-						if ((png->alpha && png->data[pixel * png->channels + png->channels - 1] != 255) ||
-						    (png->data[pixel * png->channels] == 120 && png->data[pixel * png->channels + 1] == 88 && png->data[pixel * png->channels + 2] == 128)) {
-							opaque = 0;
-							break;
-						}
-				if (!opaque) {
-					free(png->data);
-					free(png->palette);
-					loaded = 0;
-				}
 			}
 			if (loaded) {
 				lookup->png_hit_slot = item->slot;

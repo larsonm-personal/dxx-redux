@@ -549,7 +549,7 @@ const char *android_texture_source(const char *filename)
 	return resolved ? PHYSFS_getRealDir(resolved) : NULL;
 }
 
-int read_png(const char *filename, png_data *pdata)
+static int read_png_policy(const char *filename, png_data *pdata, int scoped_opaque)
 {
 	PHYSFS_File *fp;
 	PHYSFS_sint64 fsize;
@@ -612,6 +612,23 @@ int read_png(const char *filename, png_data *pdata)
 
 	if (!pixels)
 		return 0;
+	/* Scoped XL admission examines original pixels: resizing can erase a key. */
+	if (scoped_opaque) {
+		int opaque = channels == 3 || channels == 4;
+		if (opaque)
+			for (size_t pixel = 0; pixel < (size_t) w * h; ++pixel) {
+				const unsigned char *color = pixels + pixel * channels;
+				if ((channels == 4 && color[3] != 255) ||
+				    (color[0] == 120 && color[1] == 88 && color[2] == 128)) {
+					opaque = 0;
+					break;
+				}
+			}
+		if (!opaque) {
+			free(pixels);
+			return 0;
+		}
+	}
 	pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	if (!pixels) return 0;
 
@@ -628,6 +645,16 @@ int read_png(const char *filename, png_data *pdata)
 	pdata->alpha = (channels == 4 || channels == 2) ? 1 : 0;
 
 	return 1;
+}
+
+int read_png(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 0);
+}
+
+int read_png_scoped_opaque(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 1);
 }
 
 /* Screenshots: on Android without libpng, gr.c falls back to TGA output

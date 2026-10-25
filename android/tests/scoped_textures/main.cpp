@@ -37,12 +37,12 @@ static void require(bool value, const char *message)
 		std::exit(1);
 	}
 }
-static void image(const char *path, unsigned char red, unsigned char alpha = 255, unsigned char green = 40, unsigned char blue = 30)
+static void image(const char *path, unsigned char red, unsigned char alpha = 255, unsigned char green = 40, unsigned char blue = 30, unsigned dimension = 4)
 {
 	std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-	std::vector<unsigned char> bytes(18 + 4 * 4 * 4);
+	std::vector<unsigned char> bytes(18 + dimension * dimension * 4);
 	bytes[2] = 2;
-	bytes[12] = bytes[14] = 4;
+	bytes[12] = bytes[14] = dimension;
 	bytes[16] = 32;
 	bytes[17] = 8;
 	for (size_t p = 18; p < bytes.size(); p += 4) {
@@ -79,6 +79,17 @@ int main(int argc, char **argv)
 	image("global/translucent.tga", 10);
 	image("a/mods/pilot/textures/keyed.tga", 120, 255, 88, 128);
 	image("global/keyed.tga", 10);
+	image("a/mods/pilot/textures/mixed.tga", 210, 255, 40, 30, 8);
+	{
+		std::fstream mixed("a/mods/pilot/textures/mixed.tga", std::ios::in | std::ios::out | std::ios::binary);
+		const unsigned char key[] = { 128, 88, 120, 255 };
+		mixed.seekp(18);
+		mixed.write(reinterpret_cast<const char *>(key), sizeof(key));
+		require(bool(mixed), "write single transparency key among opaque neighbors");
+	}
+	image("global/mixed.tga", 10);
+	image("a/mods/pilot/textures/fitted.tga", 210, 255, 40, 30, 8);
+	image("global/fitted.tga", 10);
 	image("global/broken.tga", 10);
 	std::ofstream("a/mods/pilot/textures/broken.tga") << "truncated";
 	std::ofstream("a/mods/pilot/textures/ceil002.bmp") << "not a selected format";
@@ -159,13 +170,23 @@ int main(int argc, char **argv)
 			unsigned char pixel[4];
 			glReadPixels(1, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
 			require(glGetError() == GL_NO_ERROR && pixel[0] == red && pixel[1] == (use_original ? 220 : 40) && pixel[2] == (use_original ? 220 : 30) && pixel[3] == 255, "actual controlled surface readback");
-			for (const char *name : { "broken", "translucent", "keyed" }) {
+			const int previous_limit = ogl_max_texture_size;
+			ogl_max_texture_size = 4;
+			if (!std::strcmp(owner, "a")) {
+				png_data ordinary{};
+				require(read_png("mods/pilot/textures/mixed.tga", &ordinary) && ordinary.width == 4, "ordinary lookup still fits mixed keyed pixels");
+				for (size_t p = 0; p < ordinary.width * ordinary.height; ++p)
+					require(!(ordinary.data[p * 4] == 120 && ordinary.data[p * 4 + 1] == 88 && ordinary.data[p * 4 + 2] == 128), "resizing erased source key: regression is meaningful");
+				free(ordinary.data);
+			}
+			for (const char *name : { "broken", "translucent", "keyed", "mixed", "fitted" }) {
 				const char *fallback_names[] = { nullptr, nullptr, name };
 				png_data fallback{};
-				require(android_ogl_read_replacement(path, sizeof(path), hog, fallback_names, slots, 3, 0, &bitmap, &fallback, &ktx, &metrics, &ktx_us, &png_us) == 1 && fallback.data[0] == 10, "malformed/translucent/keyed scoped candidate preserves global fallback");
+				require(android_ogl_read_replacement(path, sizeof(path), hog, fallback_names, slots, 3, 0, &bitmap, &fallback, &ktx, &metrics, &ktx_us, &png_us) == 1 && fallback.width == 4 && fallback.data[0] == (hog && !std::strcmp(owner, "a") && !std::strcmp(name, "fitted") ? 210 : 10), "source transparency rejects before fitting; opaque sources fit normally");
 				free(fallback.data);
 				free(fallback.palette);
 			}
+			ogl_max_texture_size = previous_limit;
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
 			results.push_back({ { "context", generation }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
 		}
