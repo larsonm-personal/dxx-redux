@@ -674,7 +674,7 @@ int mission_owns_resource_archive(const char *source)
 #ifdef DXX_XL_PILOT
 const char *mission_resource_archive(void)
 {
-	return Current_mission && xl_resource_mission_enabled() ? Current_mission_hog : "";
+	return Current_mission ? Current_mission_hog : "";
 }
 #endif
 

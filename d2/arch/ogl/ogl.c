@@ -75,6 +75,9 @@ static void android_clear_texture_replacement_path_cache(void);
 #include "piggy.h"
 #ifdef ANDROID
 #include "mission.h"
+#ifdef DXX_XL_PILOT
+#include "resource_validation.h"
+#endif
 #endif
 #include "../../3d/globvars.h"
 #include "../../3d/clipper.h"
@@ -3184,7 +3187,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 
 #ifdef ANDROID
 #ifdef DXX_XL_PILOT
-		const char *scoped_hog = d1_in_d2_use_d1_gameplay() ? NULL : mission_resource_archive();
+		const char *scoped_hog = !d1_in_d2_use_d1_gameplay() && xl_resource_texture_scope_enabled() ? mission_resource_archive() : NULL;
 #else
 		const char *scoped_hog = NULL;
 #endif

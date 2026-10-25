@@ -39,7 +39,7 @@ static int descriptor_test(int argc, char **argv)
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
-		require(!xl_resource_mission_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
+		require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
@@ -50,7 +50,7 @@ static int descriptor_test(int argc, char **argv)
 			require(load_base_mission("obsrv-xl", error, sizeof(error)), error);
 			require(!std::strcmp(Current_mission_longname, "Observatory XL"), "original XL title was not discovered");
 			require(Current_mission->enhanced == MISSION_ENHANCED_XL, "XL descriptor identity lost");
-			require(xl_resource_mission_enabled() && *mission_resource_archive(), "parsed XL descriptor did not seal resource identity");
+			require(xl_resource_texture_scope_enabled() && *mission_resource_archive(), "parsed XL descriptor did not seal resource identity");
 			require(Last_level == 1 && Last_secret_level == 0 && !std::strcmp(Level_names[0], "obsrv-xl.rl2"), "original level list differs");
 			require(!Current_mission->alternate_ham_file && bm_compatibility_warning_count() == 0, "XL descriptor was treated as stock extra-HAM");
 			require(gameplay_definitions() == stock_definitions && arena_model() == stock_model, "descriptor changed gameplay definitions or model payload");
@@ -94,7 +94,7 @@ static int descriptor_test(int argc, char **argv)
 			require(load_base_mission("d2", error, sizeof(error)), error);
 			require(Current_mission->enhanced == 0 && load_level("d2leva-1.rl2") == 0, "stock recovery failed");
 			require(!PHYSFS_getRealDir("obsrv-xl.rl2"), "XL companion archive leaked into stock mission");
-			require(!xl_resource_mission_enabled() && !*mission_resource_archive(), "XL resource policy leaked into stock recovery");
+			require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "XL resource policy leaked into stock recovery");
 			require(gameplay_definitions() == stock_definitions, "stock definitions changed after XL descriptor");
 		}
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
@@ -137,7 +137,7 @@ static int descriptor_test(int argc, char **argv)
 				if (secret_xl) descriptor << "num_secrets = 1\nxltail.rl2,1\n";
 				descriptor.close();
 				require(load_base_mission("clspol", error, sizeof(error)), error);
-				require(bool(xl_resource_mission_enabled()) == secret_xl && bool(*mission_resource_archive()) == secret_xl,
+				require(bool(xl_resource_texture_scope_enabled()) == secret_xl && *mission_resource_archive(),
 				        "owned textures or unlisted XL member changed the selected mission policy");
 				require(load_level("clspol.rl2") == 0 && !xl_preview_pilot_active(), "classic level activated XL runtime semantics");
 			};
@@ -163,7 +163,7 @@ static int descriptor_test(int argc, char **argv)
 			Mission *previous = Current_mission;
 			const std::string previous_path = previous ? previous->path : "";
 			const auto definitions = gameplay_definitions();
-			const auto resource_policy = xl_resource_mission_enabled();
+			const auto resource_policy = xl_resource_texture_scope_enabled();
 			const std::string resource_archive = mission_resource_archive();
 			const std::string descriptor = mission_descriptor_snapshot() ? mission_descriptor_snapshot() : "";
 			const auto mounted_paths = search_paths();
@@ -177,7 +177,7 @@ static int descriptor_test(int argc, char **argv)
 				            definitions == gameplay_definitions() && archive == (origin ? origin : ""),
 				        "malformed descriptor discarded previous mission or archive ownership");
 				require(mounted_paths == search_paths(), "rejected descriptor changed search-path contents or order");
-				require(resource_policy == xl_resource_mission_enabled() && resource_archive == mission_resource_archive(), "rejected descriptor changed retained resource policy");
+				require(resource_policy == xl_resource_texture_scope_enabled() && resource_archive == mission_resource_archive(), "rejected descriptor changed retained resource policy");
 				require(descriptor == (mission_descriptor_snapshot() ? mission_descriptor_snapshot() : ""),
 				        "rejected descriptor changed owned requirement snapshot");
 				XlPreparedResources retained_base("d2leva-1.rl2");

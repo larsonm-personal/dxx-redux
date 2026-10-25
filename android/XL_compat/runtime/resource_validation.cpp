@@ -269,7 +269,7 @@ extern "C" void xl_resource_commit_mission(void)
 	mission_requires_xl = mounted_mission_requires_xl(true);
 }
 
-extern "C" int xl_resource_mission_enabled(void)
+extern "C" int xl_resource_texture_scope_enabled(void)
 {
 	return mission_requires_xl;
 }

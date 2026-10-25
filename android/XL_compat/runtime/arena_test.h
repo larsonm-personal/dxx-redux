@@ -639,7 +639,7 @@ static int arena_test(int argc, char **argv)
 		const auto expected_rng_calls = d_rand_get_stream_call_count(D_RNG_SIM) - saved_rng_calls;
 		require(!xl_preview_water_segment(ConsoleObject->segnum), "water leaked after exit");
 		require(state_restore_all_sub(save, 0) != 0, "water restore failed");
-		require(xl_resource_mission_enabled() && *mission_resource_archive(), "water save restore lost XL resource identity");
+		require(xl_resource_texture_scope_enabled() && *mission_resource_archive(), "water save restore lost XL resource identity");
 		require(ConsoleObject->segnum == 187 && !std::memcmp(&ConsoleObject->pos, &saved_position, sizeof(saved_position)) && xl_preview_water_segment(187), "water checkpoint did not restore property/position");
 		require(d_rand_get_stream_call_count(D_RNG_SIM) == 0, "native restore did not reset diagnostic SIM count");
 		const auto restored_state = arena_state();
@@ -680,7 +680,7 @@ static int arena_test(int argc, char **argv)
 		const auto classic_inactive = [] {
 			require(!xl_runtime_active() && !xl_preview_pilot_active() && !xl_preview_pilot_completed() &&
 			            !xl_preview_water_segment(187) && xl_preview_motion_time(187, 1000) == 1000 &&
-			            !xl_resource_mission_enabled() && !*mission_resource_archive(),
+			            !xl_resource_texture_scope_enabled() && !*mission_resource_archive(),
 			        "committed classic mission retained XL gameplay or resource identity");
 		};
 		classic_inactive();

@@ -1,5 +1,6 @@
 // Native startup inventory only; does not certify progression or rendered resources
 #include "companion_resources.h"
+#include "resource_validation.h"
 #include "geometry.h"
 #include "light_sources.h"
 static int package_audit(int argc, char **argv)
@@ -215,6 +216,8 @@ static int package_audit(int argc, char **argv)
 		const char *output = find_arg_value(argc, argv, "-package-audit");
 		if (find_arg_value(argc, argv, "-package-audit-check-ownership")) {
 			require(companions.brightness && companions.colors, "ownership probe requires both original companions");
+			if (Current_mission->descent_version == 1)
+				require(!xl_resource_texture_scope_enabled() && *mission_resource_archive(), "D1 package ownership enabled D2 texture capability or lost its identity");
 			std::string upper = Gamesave_current_filename;
 			for (auto &c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
 			const auto folded = xl_compat::load_mission_lighting_companions(upper);

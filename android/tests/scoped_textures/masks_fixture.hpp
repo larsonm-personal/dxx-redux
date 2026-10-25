@@ -16,7 +16,11 @@ extern GLuint ogl_prog_tex2, ogl_prog_tex2m;
 // Identity injection only: this renderer fixture does not load a retail mission.
 const char *mission_resource_archive(void)
 {
-	return fixture_xl_mission ? "pilot.hog" : "";
+	return "pilot.hog";
+}
+int xl_resource_texture_scope_enabled(void)
+{
+	return fixture_xl_mission;
 }
 }
 static void mask_pattern()
