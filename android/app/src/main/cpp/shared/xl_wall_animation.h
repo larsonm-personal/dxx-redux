@@ -11,9 +11,11 @@ struct xl_wall_strip {
 	grs_bitmap *frames;
 	unsigned count;
 	size_t bytes;
+	int soft, pending;
 };
 struct xl_wall_path {
 	char name[128], path[256];
+	int static_lookup;
 };
 static struct xl_wall_strip xl_wall_strips[32];
 static struct xl_wall_path xl_wall_paths[512];
@@ -77,18 +79,20 @@ static void xl_wall_animation_clear(void)
 	xl_wall_generation = android_mission_assets_generation();
 }
 
-static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const char *name, grs_bitmap *original)
+static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const char *name, grs_bitmap *original, int allow_soft, int static_lookup)
 {
 	if (!name || strlen(name) >= sizeof(xl_wall_paths[0].name)) return NULL;
 	unsigned path_index;
 	for (path_index = 0; path_index < xl_wall_path_count; ++path_index)
-		if (!strcmp(xl_wall_paths[path_index].name, name)) break;
+		if (xl_wall_paths[path_index].static_lookup == static_lookup && !strcmp(xl_wall_paths[path_index].name, name)) break;
 	if (path_index == xl_wall_path_count) {
 		if (xl_wall_path_count == 512) return NULL;
 		struct xl_wall_path *path = &xl_wall_paths[xl_wall_path_count++];
 		strcpy(path->name, name);
+		path->static_lookup = static_lookup;
 		path->path[0] = 0;
-		if (!android_mission_assets_find_animation_texture(hog, name, path->path, sizeof(path->path))) {
+		if (static_lookup) android_mission_assets_find_static_texture(hog, name, path->path, sizeof(path->path));
+		else if (!android_mission_assets_find_animation_texture(hog, name, path->path, sizeof(path->path))) {
 			const char *marker = strchr(name, '#');
 			if (marker && marker - name < 125) {
 				char first[128];
@@ -100,15 +104,32 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 	}
 	const char *path = xl_wall_paths[path_index].path;
 	if (!*path) return NULL;
+	struct xl_wall_strip *strip = NULL;
 	for (unsigned i = 0; i < xl_wall_strip_count; ++i)
-		if (!strcmp(xl_wall_strips[i].path, path)) return xl_wall_strips[i].count ? &xl_wall_strips[i] : NULL;
-	if (xl_wall_strip_count == 32) return NULL;
+		if (!strcmp(xl_wall_strips[i].path, path)) {
+			strip = &xl_wall_strips[i];
+			if (strip->count) return !strip->soft || allow_soft ? strip : NULL;
+			if (!strip->pending || !allow_soft) return NULL;
+			strip->pending = 0; // one permitted retry; failures stay negative until reset
+			break;
+		}
+	if (!strip && xl_wall_strip_count == 32) return NULL;
 	/* Retain negative results too: unsupported artwork cannot decode every draw. */
-	struct xl_wall_strip *strip = &xl_wall_strips[xl_wall_strip_count++];
+	if (!strip) strip = &xl_wall_strips[xl_wall_strip_count++];
 	strcpy(strip->path, path);
 	png_data pixels = { 0 };
-	if (!read_png_scoped_binary_animation(path, &pixels)) return NULL;
+	if (!read_png_scoped_soft_animation(path, &pixels)) return NULL;
 	const unsigned frames = pixels.height / pixels.width;
+	strip->soft = pixels.scoped_soft;
+	if (static_lookup && (frames != 1 || !strip->soft)) {
+		free(pixels.data);
+		return NULL;
+	}
+	if (strip->soft && !allow_soft) {
+		strip->pending = 1;
+		free(pixels.data);
+		return NULL;
+	}
 	if (frames > 128 - xl_wall_frame_count) {
 		free(pixels.data);
 		return NULL;
@@ -133,7 +154,11 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 		int limit = 2;
 		const int maximum = ogl_max_texture_size > 0 ? ogl_max_texture_size : 2048;
 		while (limit <= maximum / 2 && limit < 16384) limit *= 2;
-		if (maximum < 2 || !dxx_xl_fit_static_pixels(source, pixels.width, pixels.width, pixels.channels, limit, &fitted)) {
+		const int fit = strip->soft
+		                    ? dxx_xl_fit_soft_coverage(source, NULL, pixels.width, pixels.width, pixels.channels, limit, 0, &fitted)
+		                    : dxx_xl_fit_static_pixels(source, pixels.width, pixels.width, pixels.channels, limit, &fitted);
+		if (maximum < 2 || !fit) {
+			if (fit) free(fitted.data);
 			complete = 0;
 			break;
 		}
@@ -163,6 +188,7 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 		coverage.scoped_mask = fitted.mask;
 		coverage.scoped_static = 1;
 		coverage.scoped_super = fitted.super;
+		coverage.scoped_soft = strip->soft;
 		if (!failed) failed = !android_ogl_load_scoped_mask(&coverage, frame, filter, ogl_loadtexture);
 		free(fitted.data);
 		if (failed) {
@@ -192,7 +218,7 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 	return strip;
 }
 
-static grs_bitmap *xl_wclip_animation_bitmap(grs_bitmap *original, int texture, int overlay, const char *hog)
+static grs_bitmap *xl_wclip_animation_bitmap(grs_bitmap *original, int texture, int overlay, const char *hog, int allow_soft)
 {
 	const int seg = g_android_draw_face_ctx.seg, side = g_android_draw_face_ctx.side;
 	if (Num_segments < 0 || Num_segments > MAX_SEGMENTS || seg < 0 || seg >= Num_segments ||
@@ -216,7 +242,7 @@ static grs_bitmap *xl_wclip_animation_bitmap(grs_bitmap *original, int texture, 
 		stock_frame = i;
 	}
 	if (stock_frame < 0) return original;
-	struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original);
+	struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original, allow_soft, 0);
 	if (!strip) return original;
 	const int frame = dxx_xl_wclip_frame(clip->num_frames, stock_frame, strip->count);
 	if (frame < 0) return original;
@@ -224,7 +250,7 @@ static grs_bitmap *xl_wclip_animation_bitmap(grs_bitmap *original, int texture, 
 	return &strip->frames[frame];
 }
 
-static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
+static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay, int allow_soft)
 {
 	if (Num_effects < 0 || Num_effects > MAX_EFFECTS || NumTextures < 0 || NumTextures > MAX_TEXTURES ||
 	    !g_android_draw_face_ctx.valid || !xl_resource_texture_scope_enabled() || d1_in_d2_use_d1_gameplay() ||
@@ -248,7 +274,7 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 		const struct xl_wall_phase phase = xl_wall_phases[i];
 		if (!phase.valid || phase.bitmap != Textures[texture].index ||
 		    dxx_xl_animation_frame(phase.frames, phase.frame_time, phase.frame, phase.time_left, phase.stopped, 1) < 0) return original;
-		struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original);
+		struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original, allow_soft, 0);
 		if (!strip) return original;
 		const int frame = dxx_xl_animation_frame(phase.frames, phase.frame_time, phase.frame,
 		                                         phase.time_left, phase.stopped, strip->count);
@@ -256,5 +282,21 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 		strip->frames[frame].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
 		return &strip->frames[frame];
 	}
-	return xl_wclip_animation_bitmap(original, texture, overlay, hog);
+	grs_bitmap *selected = xl_wclip_animation_bitmap(original, texture, overlay, hog, allow_soft);
+	if (selected != original || !overlay || !allow_soft) return selected;
+	struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original, 1, 1);
+	if (!strip || !strip->soft || strip->count != 1) return original;
+	strip->frames[0].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
+	return &strip->frames[0];
+}
+
+static int xl_soft_overlay_base_opaque(grs_bitmap *base)
+{
+	if (!base || !base->gltexture) return 0;
+	if (base->gltexture->scoped_static) return base->gltexture->scoped_opaque;
+	const int texture = g_android_draw_face_ctx.tmap1;
+	if (texture < 0 || texture >= NumTextures || Textures[texture].index >= MAX_BITMAP_FILES ||
+	    base != &GameBitmaps[Textures[texture].index]) return 0;
+	/* Uninspected cosmetic replacement alpha cannot establish opacity. */
+	return !base->gltexture->is_png && !(piggy_bitmap_get_flags(base) & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT));
 }

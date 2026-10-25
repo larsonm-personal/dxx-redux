@@ -616,9 +616,9 @@ void android_ogl_apply_pending_texture_options(
 	*state->requested_texfilt_level = *state->applied_texfilt_level;
 }
 
-/* Build binary coverage mips together, never re-detecting keys in filtered RGB.
+/* Build color/coverage mips together, never re-detecting keys in filtered RGB.
  * Conservative reduction trades subpixel bar thickness for retaining holes. */
-static int scoped_binary_mips(const png_data *image, grs_bitmap *bm)
+static int scoped_material_mips(const png_data *image, grs_bitmap *bm)
 {
 	if ((image->width & (image->width - 1)) || (image->height & (image->height - 1))) return 1;
 	dxx_xl_static_pixels previous = { image->data, image->scoped_mask, (int) image->width, (int) image->height, image->scoped_super };
@@ -627,8 +627,11 @@ static int scoped_binary_mips(const png_data *image, grs_bitmap *bm)
 	while (previous.width > 1 || previous.height > 1 ||
 	       (!level && (bm->gltexture->tw > previous.width || bm->gltexture->th > previous.height))) {
 		dxx_xl_static_pixels next;
-		if (!dxx_xl_fit_static_coverage(previous.data, previous.mask, previous.width, previous.height, 4,
-		                                previous.width > 1 ? previous.width / 2 : 1, &next)) {
+		const int limit = previous.width > 1 ? previous.width / 2 : 1;
+		const int fitted = image->scoped_soft
+		                       ? dxx_xl_fit_soft_coverage(previous.data, previous.mask, previous.width, previous.height, 4, limit, 1, &next)
+		                       : dxx_xl_fit_static_coverage(previous.data, previous.mask, previous.width, previous.height, 4, limit, &next);
+		if (!fitted) {
 			if (level) free(previous.data);
 			return 0;
 		}
@@ -677,9 +680,11 @@ int android_ogl_load_scoped_mask(const png_data *image, grs_bitmap *bm, int texf
 		}
 		bm->gltexture_mask->is_png = 1;
 	}
-	if (!scoped_binary_mips(image, bm)) return 0;
+	if (!scoped_material_mips(image, bm)) return 0;
 	bm->gltexture->scoped_static = 1;
 	bm->gltexture->scoped_super = image->scoped_super;
+	bm->gltexture->scoped_soft = image->scoped_soft;
+	bm->gltexture->scoped_opaque = !image->scoped_super && dxx_xl_rgba_opaque(image->data, image->width, image->height);
 	return 1;
 }
 

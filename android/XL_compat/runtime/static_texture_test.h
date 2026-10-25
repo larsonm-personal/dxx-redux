@@ -7,7 +7,7 @@ static int static_texture_catalog_test(int argc, char **argv)
 		const char *alias = find_arg_value(argc, argv, "-asset-alias");
 		const char *texture_name = find_arg_value(argc, argv, "-texture-name");
 		if (!texture_name) texture_name = "ceil002";
-		require(!strcmp(texture_name, "ceil002") || !strcmp(texture_name, "fan03") || !strcmp(texture_name, "misc075") || !strcmp(texture_name, "force01#0") || !strcmp(texture_name, "redgoal#0") || !strcmp(texture_name, "door53#0"), "unknown original texture witness");
+		require(!strcmp(texture_name, "metl060") || !strcmp(texture_name, "ceil002") || !strcmp(texture_name, "fan03") || !strcmp(texture_name, "misc075") || !strcmp(texture_name, "force01#0") || !strcmp(texture_name, "redgoal#0") || !strcmp(texture_name, "door53#0"), "unknown original texture witness");
 		const char *expected_path = find_arg_value(argc, argv, "-expected-texture");
 		require(alias && expected_path, "missing original texture fixture arguments");
 		android_mission_assets_init();
@@ -16,10 +16,11 @@ static int static_texture_catalog_test(int argc, char **argv)
 		require(resolve("missions/single/boilpnt.hog", texture_name, texture, sizeof(texture)), "original static texture did not resolve");
 		std::ifstream input(expected_path, std::ios::binary | std::ios::ate);
 		const auto size = input.tellg();
-		require(input && size == (!strcmp(texture_name, "ceil002") ? 17445 : !strcmp(texture_name, "force01#0") ? 295973
-		                                                                 : !strcmp(texture_name, "redgoal#0")   ? 393234
-		                                                                 : !strcmp(texture_name, "door53#0")    ? 1049637
-		                                                                                                        : 263205),
+		require(input && size == (!strcmp(texture_name, "metl060") ? 50213 : !strcmp(texture_name, "ceil002") ? 17445
+		                                                                 : !strcmp(texture_name, "force01#0") ? 295973
+		                                                                 : !strcmp(texture_name, "redgoal#0") ? 393234
+		                                                                 : !strcmp(texture_name, "door53#0")  ? 1049637
+		                                                                                                      : 263205),
 		        "original texture fixture length changed");
 		input.seekg(0);
 		std::vector<unsigned char> expected(static_cast<size_t>(size)), actual(expected.size());

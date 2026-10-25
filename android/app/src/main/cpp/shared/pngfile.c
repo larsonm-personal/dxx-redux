@@ -615,7 +615,7 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 	}
 
 	/* XL marks tall replacements as alternate animations even without # names. */
-	const int animation = scoped_opaque == 3 || scoped_opaque == 4;
+	const int animation = scoped_opaque >= 3;
 	if (scoped_opaque && !animation && h > w) {
 		free(fbuf);
 		return 0;
@@ -635,7 +635,7 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 		return 0;
 	/* Classify before any fitting: averaging can erase sparse purple keys. */
 	unsigned char *mask = NULL;
-	int has_super = 0;
+	int has_super = 0, has_soft = 0;
 	if (scoped_opaque) {
 		if ((channels != 3 && channels != 4) ||
 		    (size_t) w * h > ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES / 5) {
@@ -646,11 +646,12 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 			const unsigned char *p = pixels + i * channels;
 			const int key = p[0] == 120 && p[1] == 88 && p[2] == 128;
 			const int alpha = channels == 4 ? p[3] : 255;
-			if ((!key && alpha != 0 && alpha != 255) || ((scoped_opaque == 1 || scoped_opaque == 3) && (key || alpha != 255))) {
+			if ((!key && alpha != 0 && alpha != 255 && scoped_opaque != 5) || ((scoped_opaque == 1 || scoped_opaque == 3) && (key || alpha != 255))) {
 				free(pixels);
 				return 0;
 			}
 			has_super |= key;
+			has_soft |= !key && alpha != 0 && alpha != 255;
 		}
 		if (scoped_opaque == 2) {
 			/* Binary material mip chains currently require power-of-two surfaces.
@@ -692,6 +693,7 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 	pdata->scoped_mask = mask;
 	pdata->scoped_static = scoped_opaque == 2;
 	pdata->scoped_super = has_super;
+	pdata->scoped_soft = has_soft;
 	pdata->width = (unsigned int) w;
 	pdata->height = (unsigned int) h;
 	pdata->depth = 8;
@@ -724,6 +726,11 @@ int read_png_scoped_animation(const char *filename, png_data *pdata)
 int read_png_scoped_binary_animation(const char *filename, png_data *pdata)
 {
 	return read_png_policy(filename, pdata, 4);
+}
+
+int read_png_scoped_soft_animation(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 5);
 }
 
 int read_png_scoped_static(const char *filename, png_data *pdata)

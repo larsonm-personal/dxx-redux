@@ -48,5 +48,13 @@ int main()
 	free(out.data);
 	key_alpha[0] = 124;
 	require(!dxx_xl_fit_static_pixels(key_alpha, 1, 1, 4, 1, &out));
+	unsigned char soft[] = { 200, 40, 20, 128, 255, 0, 255, 0, 120, 88, 128, 255, 200, 40, 20, 255 };
+	require(dxx_xl_fit_soft_coverage(soft, nullptr, 2, 2, 4, 2, 0, &out));
+	require(out.super && out.data[0] == 100 && out.data[3] == 128 && out.data[4] == 0 && out.mask[2] == 255);
+	require(dxx_xl_fit_soft_coverage(out.data, out.mask, 2, 2, 4, 1, 1, &mip));
+	require(mip.data[0] == 75 && mip.data[1] == 15 && mip.data[3] == 95 && mip.mask[0] == 255);
+	free(mip.data);
+	free(out.data);
+	require(!dxx_xl_fit_soft_coverage(soft, nullptr, 2, 2, 4, 1, 1, &out) && !out.data);
 	std::cout << "Static source masks: sparse key, ordinary cutout, before-fit rejection, allocation bounds and state reset passed\n";
 }

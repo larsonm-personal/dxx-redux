@@ -48,6 +48,8 @@ class OriginalStaticTextureTest {
                     "missions/single/boilpnt.hog" to "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
                     "mods/boilpnt/textures/ceil002.tga" to
                         "150c3603749fc87d877c9a0c97218431605b845098a89338a632252402635c3b",
+                    "mods/boilpnt/textures/metl060.tga" to
+                        "9ad2eab3b3e1e1d00350e999f96266f839b44ea0a73b11b02750da8314aabeb9",
                     "mods/boilpnt/textures/fan03.tga" to
                         "8b51c97b97074f09260647b6db29f6df99939959397572c2f5dacb1d3d705799",
                     "mods/boilpnt/textures/misc075.tga" to
@@ -94,7 +96,7 @@ class OriginalStaticTextureTest {
                     it.getString("descriptor") ==
                         selection.key.descriptor
                 }
-            for (name in listOf("ceil002", "fan03", "misc075", "force01#0", "redgoal#0", "door53#0")) {
+            for (name in listOf("ceil002", "metl060", "fan03", "misc075", "force01#0", "redgoal#0", "door53#0")) {
                 val witness = resources.single { it.virtualPath == "mods/boilpnt/textures/$name.tga" }
                 assertEquals(files.getValue(witness.virtualPath), sha(witness.source))
                 val log = root.resolve("native-$name.log")

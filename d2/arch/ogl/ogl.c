@@ -402,7 +402,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->authored_mip_count = t->mip_base_level = 0;
 	t->replacement_source = 0;
 	t->sprite_additive = 0;
-	t->scoped_static = t->scoped_super = 0;
+	t->scoped_static = t->scoped_super = t->scoped_soft = t->scoped_opaque = 0;
 	t->additive_draws = 0;
 #endif
 }
@@ -1240,7 +1240,7 @@ extern void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist);
 bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light_rgb,grs_bitmap *bm)
 {
 #if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
-	if (tmap_drawer_ptr == draw_tmap) bm = xl_wall_animation_bitmap(bm, 0);
+	if (tmap_drawer_ptr == draw_tmap) bm = xl_wall_animation_bitmap(bm, 0, 0);
 #endif
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoord_array[MAX_VERTS * 2];
@@ -1380,8 +1380,8 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot, grs_bitmap *bmovl, int orient, int label_nv, const g3s_point **label_pointlist)
 {
 #if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
-	bmbot = xl_wall_animation_bitmap(bmbot, 0);
-	bmovl = xl_wall_animation_bitmap(bmovl, 1);
+	bmbot = xl_wall_animation_bitmap(bmbot, 0, 0);
+	bmovl = xl_wall_animation_bitmap(bmovl, 1, 0);
 #endif
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
@@ -1434,6 +1434,21 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 
+#if defined(ANDROID) && defined(DXX_XL_PILOT)
+	if (!bmovl->gltexture->scoped_static && xl_soft_overlay_base_opaque(bmbot) &&
+	    grd_curcanv->cv_blend_func == GR_BLEND_NORMAL && grd_curcanv->cv_fade_level >= GR_FADE_OFF && XL_FACE_ALPHA(1.0f) == 1.0f) {
+		grs_bitmap *selected = xl_wall_animation_bitmap(bmovl, 1, 1);
+		if (selected != bmovl) {
+			bmovl = selected;
+			android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
+			OGL_ACTIVETEXTURE(GL_TEXTURE0);
+			ogl_bindbmtex(bmbot);
+			OGL_ACTIVETEXTURE(GL_TEXTURE1);
+			ogl_bindbmtex(bmovl);
+			ogl_texwrap(bmovl->gltexture, GL_REPEAT);
+		}
+	}
+#endif
 	/* Compute super after bindbmtex -- on first encounter bm_flags may be
 	 * BM_FLAG_PAGED_OUT (no SUPER_TRANSPARENT) and gltexture_mask NULL.
 	 * bindbmtex pages in the bitmap and generates the mask. */
@@ -1579,6 +1594,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	gles3_shim_use_external(prog);
 	ogl_prog_set_tex2_current_matrix(gles3_shim_get_mvp(), super);
 	ogl_prog_set_tex2_base_binary(bmbot->gltexture->scoped_static, super);
+	ogl_prog_set_tex2_soft(bmovl->gltexture->scoped_soft, super);
 	r_shader_switches++;
 	if (super) {
 		++r_mask_draws;
@@ -1662,6 +1678,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 
 #if defined(ANDROID)
 	ogl_prog_set_tex2_base_binary(0, super);
+	ogl_prog_set_tex2_soft(0, super);
 	if (super) ogl_prog_set_tex2m_binary(0);
 	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {

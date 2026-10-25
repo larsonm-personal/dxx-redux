@@ -384,7 +384,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->authored_mip_count = t->mip_base_level = 0;
 	t->replacement_source = 0;
 	t->sprite_additive = 0;
-	t->scoped_static = t->scoped_super = 0;
+	t->scoped_static = t->scoped_super = t->scoped_soft = t->scoped_opaque = 0;
 	t->additive_draws = 0;
 #endif
 }
