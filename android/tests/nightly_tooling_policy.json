@@ -2563,6 +2563,14 @@
             "args": { "suite": "test_demo_import_public_basic_use" },
             "estimated_seconds": 720,
             "coverage_scope": "Public D1, D1-in-D2 and D2 ordinary launcher starts, menu return and live automap; untouched default pilot colors; no interrupted replacement qualification"
+        },
+        {
+            "id": "master:test_scoped_static_textures",
+            "owner": "master",
+            "lane": "android-single",
+            "args": { "suite": "test_scoped_static_textures" },
+            "estimated_seconds": 600,
+            "coverage_scope": "Synthetic mission-owned static texture selection, bounded decode, GLES readback and context isolation; no private mission assets."
         }
     ],
     "exclusions": [

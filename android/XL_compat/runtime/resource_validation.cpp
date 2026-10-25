@@ -7,9 +7,9 @@
 #include <vector>
 #include <array>
 #include <map>
+#include "picosha2.h"
 #include "asset_dependencies.h"
 #include "pog_resources.h"
-#include "picosha2.h"
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
@@ -200,10 +200,12 @@ void validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definition
 	// A changed joint/model can invalidate an otherwise unchanged robot
 	for (int id = 0; id < N_robot_types; ++id) {
 		bool affected = changed_robots.count(id) || changed_models.count(robots[id].model_num);
-		for (const auto &gun : robots[id].anim_states)
-			for (const auto &state : gun)
+		for (int gun = 0; gun <= MAX_GUNS; ++gun)
+			for (int animation = 0; animation < N_ANIM_STATES; ++animation) {
+				const auto state = robots[id].anim_states[gun][animation];
 				for (const int joint : changed_joints)
 					if (joint >= state.offset && joint - state.offset < state.n_joints) affected = true;
+			}
 		if (affected) graph.robot(id);
 	}
 }

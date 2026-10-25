@@ -10,6 +10,7 @@
 #include <android/log.h>
 
 #include "android_log.h"
+#include "android_mission_assets.h"
 #include "console.h"
 #include "ogl_texture_android.h"
 #include "ogl_texture_filename.h"
@@ -153,7 +154,7 @@ int android_ogl_read_texture_with_extensions(
 	return 0;
 }
 
-int android_ogl_read_replacement(char *filename, size_t capacity,
+int android_ogl_read_replacement(char *filename, size_t capacity, const char *mission_hog,
                                  const char *const *basenames, const int *slots, int count, int allow_ktx2,
                                  grs_bitmap *bitmap, png_data *png, etc2_file_data *ktx,
                                  struct android_profile_texture_lookup_metrics *lookup,
@@ -162,8 +163,8 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 	static const char *extensions[] = { ".ktx2", ".png", ".jpg", ".tga" };
 	struct candidate {
 		char path[256];
-		int rank, slot, extension;
-	} candidates[12];
+		int rank, slot, extension, scoped;
+	} candidates[13];
 	int used = 0;
 	const int bitmap_flags = piggy_bitmap_get_flags(bitmap);
 	char **search = PHYSFS_getSearchPath();
@@ -171,10 +172,19 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 		PHYSFS_freeList(search);
 		return 0;
 	}
+	/* One owned mission candidate precedes the existing 3 x 4 global candidates.
+	 * POG/custom bitmaps and transparent materials retain their existing path. */
+	if (count > 0 && mission_hog && !piggy_bitmap_is_custom(bitmap) &&
+	    !(bitmap_flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT))) {
+		struct candidate item = { { 0 }, -1, slots[count - 1], 3, 1 };
+		if (android_mission_assets_find_static_texture(mission_hog, basenames[count - 1], item.path, sizeof(item.path)))
+			candidates[used++] = item;
+	}
 	for (int base = 0; base < count; ++base) {
 		if (!basenames[base]) continue;
 		for (int ext = allow_ktx2 ? 0 : 1; ext < 4; ++ext) {
 			struct candidate item;
+			item.scoped = 0;
 			if (!android_ogl_texture_filename(item.path, sizeof(item.path), basenames[base], extensions[ext])) continue;
 			const char *owner = android_texture_source(item.path);
 			if (!owner) continue;
@@ -227,11 +237,29 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 				free(png->palette);
 				loaded = 0;
 			}
+			if (loaded && item->scoped) {
+				/* RGB/RGBA storage is permitted; translucent artwork is a later slice.
+				 * read_png has already bounded the decoded dimensions and allocation. */
+				int opaque = png->channels == 3 || png->channels == 4;
+				const size_t pixels = (size_t) png->width * png->height;
+				if (opaque && png->alpha)
+					for (size_t pixel = 0; pixel < pixels; ++pixel)
+						if (png->data[pixel * png->channels + png->channels - 1] != 255) {
+							opaque = 0;
+							break;
+						}
+				if (!opaque) {
+					free(png->data);
+					free(png->palette);
+					loaded = 0;
+				}
+			}
 			if (loaded) {
 				lookup->png_hit_slot = item->slot;
 				lookup->png_hit_ext = item->extension - 1;
 			}
 		}
+
 		if (!loaded) continue;
 		strcpy(filename, item->path);
 		return item->extension == 0 ? 2 : 1;

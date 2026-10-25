@@ -335,6 +335,29 @@ class MissionZipExtractionStoreTest {
         assertFalse(catalog.resourcesFor(bonus).any { it.virtualPath.endsWith("descent2.s22") })
     }
 
+    @Test
+    fun rejectsCaseFoldedMissionTextureCollisions() {
+        val root =
+            java.nio.file.Files
+                .createTempDirectory("xl-texture-collision")
+                .toFile()
+        try {
+            val archive = File(root, "textures.zip")
+            writeMissionArchive(
+                archive,
+                listOf(
+                    "mods/preview/textures/CEIL002.TGA" to "first",
+                    "mods/preview/textures/ceil002.tga" to "second",
+                ),
+            )
+            val scan = requireNotNull(MissionZip.inspect(archive))
+            val message = collisionMessage { extractZipToRoot(archive, File(root, "output"), scan) }
+            assertTrue(message.contains("colliding", ignoreCase = true))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     private fun file(
         sourcePath: String,
         relativePath: String,

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iterator>
 #include <filesystem>
+#include <fstream>
 #include <stdexcept>
 #include <cstring>
 // Parse JSON types before engine headers select byte packing on MSVC
@@ -46,6 +47,7 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #include <iostream>
 #include <iterator>
 #include <filesystem>
+#include <fstream>
 #include <stdexcept>
 #include <cstdlib>
 #include <set>
@@ -1505,12 +1507,14 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "arena_test.h"
 #include "campaign_test.h"
 #include "asset_mount_test.h"
+#include "static_texture_test.h"
 #include "format17_test.h"
 #include "descriptor_test.h"
 #include "package_audit.h"
 
 int main(int argc, char **argv)
 {
+	if (find_arg_value(argc, argv, "-static-texture-test")) return static_texture_catalog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);
 	if (find_arg_value(argc, argv, "-arena-test")) return arena_test(argc, argv);

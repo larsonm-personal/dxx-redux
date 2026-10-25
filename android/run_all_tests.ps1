@@ -481,6 +481,7 @@ $testTimeouts = @{
     "test_android_merged_wrap" = 600
     "test_android_merge_cache" = 600
     "test_android_texture_bindings" = 600
+    "test_scoped_static_textures" = 600
     "test_android_xmodel_mipmaps" = 600
     "test_android_ktx2_mipmaps" = 600
     "test_hires_pack_release" = 3600

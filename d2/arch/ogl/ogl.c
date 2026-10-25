@@ -73,6 +73,9 @@ static void android_clear_texture_replacement_path_cache(void);
 
 #include "3d.h"
 #include "piggy.h"
+#ifdef ANDROID
+#include "mission.h"
+#endif
 #include "../../3d/globvars.h"
 #include "../../3d/clipper.h"
 #include "dxxerror.h"
@@ -3150,6 +3153,11 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		int png_loaded = 0;
 
 #ifdef ANDROID
+#ifdef DXX_XL_PILOT
+		const char *scoped_hog = mission_resource_archive();
+#else
+		const char *scoped_hog = NULL;
+#endif
 		char texture_set_bitmapname[256];
 		char prefixed_bitmapname[256];
 		int have_d2_texture_root = android_have_d2_texture_root();
@@ -3164,7 +3172,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		const char *replacement_names[] = { have_texture_set_bitmapname ? texture_set_bitmapname : NULL, have_prefixed_bitmapname ? prefixed_bitmapname : NULL, bitmapname };
 		const int replacement_slots[] = { ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_SET, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE };
 		etc2_file_data edata;
-		int replacement = android_ogl_read_replacement(filename, sizeof(filename),
+		int replacement = android_ogl_read_replacement(filename, sizeof(filename), scoped_hog,
 			replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
 			!ogl_etc2_broken, bm, &pdata, &edata, &lookup_metrics,
 			&profile_ktx2_read_us, &profile_png_read_us);
@@ -3235,7 +3243,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		skip_ktx2:
 		if (replacement == 2) {
 			long long previous_png_us = profile_png_read_us;
-			png_loaded = android_ogl_read_replacement(filename, sizeof(filename),
+			png_loaded = android_ogl_read_replacement(filename, sizeof(filename), scoped_hog,
 				replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
 				0, bm, &pdata, &edata, &lookup_metrics,
 				&profile_ktx2_read_us, &profile_png_read_us) == 1;

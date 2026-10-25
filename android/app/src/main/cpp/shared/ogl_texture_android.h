@@ -81,7 +81,7 @@ void android_ogl_apply_pending_texture_options(
 int android_ogl_load_dxa_mask(const char *image_filename, grs_bitmap *bm, int texfilt,
                               android_ogl_loadtexture_fn loadtexture);
 /* Search-path priority, then palette/name specificity, then format within one pack */
-int android_ogl_read_replacement(char *filename, size_t capacity,
+int android_ogl_read_replacement(char *filename, size_t capacity, const char *mission_hog,
                                  const char *const *basenames, const int *slots, int count, int allow_ktx2,
                                  grs_bitmap *bitmap, png_data *png, etc2_file_data *ktx,
                                  struct android_profile_texture_lookup_metrics *lookup,
