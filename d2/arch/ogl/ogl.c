@@ -1323,8 +1323,14 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 			(const struct g3s_point **)pointlist, uvl_list, nv);
 #endif
 
+#ifdef ANDROID
+	const int previous_binary = gles3_shim_set_binary_texture(tmap_drawer_ptr == draw_tmap && bm->gltexture && bm->gltexture->scoped_static);
+#endif
 	if (!skip_merged_wall_cover_draw)
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
+#ifdef ANDROID
+	gles3_shim_set_binary_texture(previous_binary);
+#endif
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -1432,7 +1438,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 
 	OGL_ACTIVETEXTURE(GL_TEXTURE0);
 	#if defined(ANDROID)
-	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
+	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT) &&
+	    !bmbot->gltexture->scoped_static && !bmovl->gltexture->scoped_static) {
 		if (merged_wall_force_two_pass) {
 			android_merged_wall_log_tmap2_route("force_two_pass",
 				bmbot, bmovl, label_nv, orient);
@@ -1546,6 +1553,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #ifdef ANDROID
 	gles3_shim_use_external(prog);
 	ogl_prog_set_tex2_current_matrix(gles3_shim_get_mvp(), super);
+	ogl_prog_set_tex2_base_binary(bmbot->gltexture->scoped_static, super);
 	r_shader_switches++;
 	if (super) {
 		++r_mask_draws;
@@ -1628,6 +1636,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 
 #if defined(ANDROID)
+	ogl_prog_set_tex2_base_binary(0, super);
+	if (super) ogl_prog_set_tex2m_binary(0);
 	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {
 		android_merged_wall_track_face((const struct g3s_point **)pointlist,

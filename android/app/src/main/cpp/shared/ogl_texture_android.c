@@ -623,7 +623,9 @@ static int scoped_binary_mips(const png_data *image, grs_bitmap *bm)
 	if ((image->width & (image->width - 1)) || (image->height & (image->height - 1))) return 1;
 	dxx_xl_static_pixels previous = { image->data, image->scoped_mask, (int) image->width, (int) image->height, image->scoped_super };
 	int level = 0;
-	while (previous.width > 1 || previous.height > 1) {
+	/* The engine pads even 1x1 sources to 2x2; qualify that actual chain too. */
+	while (previous.width > 1 || previous.height > 1 ||
+	       (!level && (bm->gltexture->tw > previous.width || bm->gltexture->th > previous.height))) {
 		dxx_xl_static_pixels next;
 		if (!dxx_xl_fit_static_coverage(previous.data, previous.mask, previous.width, previous.height, 4,
 		                                previous.width > 1 ? previous.width / 2 : 1, &next)) {

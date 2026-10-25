@@ -80,6 +80,7 @@ static GLuint ogl_mk_prog(const char *prog_name, const char *vert_src, const cha
 }
 
 static GLint ogl_tex2m_binary = -1;
+static GLint ogl_tex2_base_binary = -1, ogl_tex2m_base_binary = -1;
 
 void ogl_init_prog() {
 	ogl_prog_tex2 = ogl_mk_prog("tex2", "attribute vec3 apos;"
@@ -99,11 +100,13 @@ void ogl_init_prog() {
 		"\n varying vec2 vtexcoord2;"
 		"\n varying vec4 vcolor;"
 		"\n uniform sampler2D utex;"
+		"\n uniform int ubotbinary;"
 		"\n uniform sampler2D utex2;"
 		"\n uniform int utex2_debug;"
 		"\n uniform float utex2alpha_cutoff;"
 		"\n void main() {"
 		"\n  vec4 bot = texture2D(utex, vtexcoord), ovl = texture2D(utex2, vtexcoord2);"
+		"\n  if (ubotbinary != 0) bot.a = step(0.5, bot.a);"
 		"\n  if (utex2_debug == 1) {"
 		"\n   gl_FragColor = vec4(ovl.a, 0.0, 0.0, 1.0);"
 		"\n   return;"
@@ -144,11 +147,13 @@ void ogl_init_prog() {
 		"\n varying vec2 vtexcoord2;"
 		"\n varying vec4 vcolor;"
 		"\n uniform sampler2D utex;"
+		"\n uniform int ubotbinary;"
 		"\n uniform sampler2D utex2;"
 		"\n uniform sampler2D utex2m;"
 		"\n uniform int ubinary;"
 		"\n void main() {"
 		"\n  vec4 bot = texture2D(utex, vtexcoord), ovl = texture2D(utex2, vtexcoord2);"
+		"\n  if (ubotbinary != 0) bot.a = step(0.5, bot.a);"
 		"\n  if (ubinary != 0) ovl.a = step(0.5, ovl.a);"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovl.a), bot.a + ovl.a - bot.a * ovl.a);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  vec4 mask = texture2D(utex2m, vtexcoord2);"
@@ -161,6 +166,8 @@ void ogl_init_prog() {
 	ogl_tex2_mat = glGetUniformLocation(ogl_prog_tex2, "umat");
 	ogl_tex2m_mat = glGetUniformLocation(ogl_prog_tex2m, "umat");
 	ogl_tex2m_binary = glGetUniformLocation(ogl_prog_tex2m, "ubinary");
+	ogl_tex2_base_binary = glGetUniformLocation(ogl_prog_tex2, "ubotbinary");
+	ogl_tex2m_base_binary = glGetUniformLocation(ogl_prog_tex2m, "ubotbinary");
 	ogl_tex2_alpha_cutoff = glGetUniformLocation(ogl_prog_tex2, "utex2alpha_cutoff");
 	ogl_tex2_debug_mode = glGetUniformLocation(ogl_prog_tex2, "utex2_debug");
 
@@ -176,6 +183,11 @@ void ogl_init_prog() {
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex2m"), 2);
 
 	ogl_shader_use_program(0);
+}
+
+void ogl_prog_set_tex2_base_binary(int enabled, int masked) {
+	const GLint location = masked ? ogl_tex2m_base_binary : ogl_tex2_base_binary;
+	if (location >= 0) glUniform1i(location, enabled);
 }
 
 void ogl_prog_set_tex2m_binary(int enabled) {

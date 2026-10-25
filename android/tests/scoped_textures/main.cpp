@@ -151,6 +151,10 @@ int main(int argc, char **argv)
 				char descriptor[256];
 				require(android_mission_assets_prepare((std::string("missions/_packs/") + owner + "/test.mn2").c_str(), descriptor, sizeof(descriptor)) && android_mission_assets_activate(), "activate real mission context");
 			}
+#ifdef DXX_BUILD_DESCENT_II
+			// Context activation retires the production wall programs with textures.
+			ogl_init_prog();
+#endif
 			require(resets > 0 && (!previous || !glIsTexture(previous)), "context change clears GPU replacement");
 			grs_bitmap bitmap{};
 			const char *names[] = { nullptr, nullptr, "ceil002" };
