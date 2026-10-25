@@ -1438,15 +1438,15 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	if (!bmovl->gltexture->scoped_static && xl_soft_overlay_base_opaque(bmbot) &&
 	    grd_curcanv->cv_blend_func == GR_BLEND_NORMAL && grd_curcanv->cv_fade_level >= GR_FADE_OFF && XL_FACE_ALPHA(1.0f) == 1.0f) {
 		grs_bitmap *selected = xl_wall_animation_bitmap(bmovl, 1, 1);
-		if (selected != bmovl) {
-			bmovl = selected;
-			android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
-			OGL_ACTIVETEXTURE(GL_TEXTURE0);
-			ogl_bindbmtex(bmbot);
-			OGL_ACTIVETEXTURE(GL_TEXTURE1);
-			ogl_bindbmtex(bmovl);
-			ogl_texwrap(bmovl->gltexture, GL_REPEAT);
-		}
+		bmovl = selected;
+		/* Selection can upload before rejecting a frame mapping or budget.
+		 * Restore both units even when the original bitmap is returned. */
+		android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
+		OGL_ACTIVETEXTURE(GL_TEXTURE0);
+		ogl_bindbmtex(bmbot);
+		OGL_ACTIVETEXTURE(GL_TEXTURE1);
+		ogl_bindbmtex(bmovl);
+		ogl_texwrap(bmovl->gltexture, GL_REPEAT);
 	}
 #endif
 	/* Compute super after bindbmtex -- on first encounter bm_flags may be

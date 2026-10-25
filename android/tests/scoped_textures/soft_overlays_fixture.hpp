@@ -1,6 +1,17 @@
 #ifdef DXX_BUILD_DESCENT_II
 static void soft_overlay_pattern()
 {
+	image("a/mods/pilot/textures/softover#0.tga", 200, 128, 40, 20, 4, 16);
+	// Three color/mask frames exceed the shared 32 MiB GPU budget after
+	// successful uploads, exercising cleanup and binding recovery, not driver OOM.
+	image("a/mods/pilot/textures/softfail#0.tga", 200, 128, 40, 20, 1024, 3072);
+	std::fstream failure("a/mods/pilot/textures/softfail#0.tga", std::ios::in | std::ios::out | std::ios::binary);
+	const unsigned char key[] = { 128, 88, 120, 255 };
+	for (int frame = 0; frame < 3; ++frame) {
+		failure.seekp(18 + frame * 1024 * 1024 * 4);
+		failure.write(reinterpret_cast<const char *>(key), 4);
+	}
+	require(bool(failure), "write bounded mid-upload failure source");
 	for (const char *owner : { "a", "b" })
 		for (const char *name : { "softwall", "softanim#0", "softplain" }) {
 			const bool animation = !strcmp(name, "softanim#0"), plain = !strcmp(name, "softplain");
@@ -42,6 +53,70 @@ static void test_soft_overlays(const char *owner)
 	for (int i = 0; i < 4; ++i) {
 		GameBitmaps[71 + i] = {};
 		mask_solid(GameBitmaps[71 + i], 10, 40, 30);
+	}
+	if (!strcmp(owner, "a")) {
+		const int previous_limit = ogl_max_texture_size;
+		ogl_max_texture_size = 1024;
+		for (const char *name : { "softover#0", "softfail#0" }) {
+			ogl_smash_png_textures();
+			Num_effects = 0;
+			NumTextures = 4;
+			for (int i = 1; i < 4; ++i) Textures[i].index = 70 + i;
+			Num_segments = Num_walls = Num_wall_anims = 1;
+			Highest_segment_index = 0;
+			Segments[0] = {};
+			Segments[0].sides[0].wall_num = 0;
+			Segments[0].sides[0].tmap_num2 = 1;
+			Walls[0] = {};
+			Walls[0].type = WALL_DOOR;
+			WallAnims[0] = {};
+			WallAnims[0].num_frames = !strcmp(name, "softover#0") ? 2 : 3;
+			for (int i = 0; i < 3; ++i) WallAnims[0].frames[i] = i + 1;
+			snprintf(piggy_game_bitmap_name(&GameBitmaps[71]), 12, "%s", name);
+			fixture_xl_mission = true;
+			fixture_hog = "pilot.hog";
+			Game_mode = 0;
+			screen.sc_canvas.cv_fade_level = GR_FADE_OFF;
+			screen.sc_canvas.cv_blend_func = GR_BLEND_NORMAL;
+			g_android_draw_face_ctx = {};
+			g_android_draw_face_ctx.valid = 1;
+			g_android_draw_face_ctx.tmap2 = 1;
+			int before = 0;
+			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; ++i) before += ogl_texture_list[i].handle > 0;
+			g3_start_frame();
+			vms_vector position{};
+			vms_matrix matrix = vmd_identity_matrix;
+			g3_set_view_matrix(&position, &matrix, F1_0);
+			glViewport(0, 0, 64, 64);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+			glDepthMask(GL_TRUE);
+			for (int repeat = 0; repeat < 2; ++repeat) {
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				mask_quad(base, &GameBitmaps[71], 0, 3 * F1_0, 4 * F1_0);
+				unsigned char pixel[4];
+				glReadPixels(32, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+				require(pixel[0] == 10 && pixel[1] == 40 && pixel[2] == 30, "rejected soft mapping/upload draws stock on first and cached attempt");
+				for (int unit = 0; unit < 2; ++unit) {
+					glActiveTexture(GL_TEXTURE0 + unit);
+					GLint handle = 0;
+					glGetIntegerv(GL_TEXTURE_BINDING_2D, &handle);
+					require(handle == int(GameBitmaps[70 + unit].gltexture->handle), "rejected selector restores both texture bindings");
+				}
+				glActiveTexture(GL_TEXTURE0);
+			}
+			int after = 0;
+			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; ++i) after += ogl_texture_list[i].handle > 0;
+			if (!strcmp(name, "softfail#0")) require(before == after, "mid-upload budget failure releases all color and mask objects");
+			g3_end_frame();
+			android_merged_wall_clear_draw_face_context();
+		}
+		ogl_smash_png_textures();
+		ogl_max_texture_size = previous_limit;
+		Num_walls = Num_wall_anims = 0;
+		NumTextures = 2;
 	}
 	for (int source = 0; source < 3; ++source) {
 		Num_effects = source == 1 ? 1 : 0;
