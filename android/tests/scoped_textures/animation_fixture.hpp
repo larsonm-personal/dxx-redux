@@ -29,6 +29,12 @@ static void animation_pattern()
 			}
 		require(bool(file), "write opaque animation strip");
 	}
+	for (const char *owner : { "a", "b" }) {
+		const std::string root = std::string(owner) + "/mods/pilot/textures/";
+		std::filesystem::copy_file(root + "anim#0.tga", root + "critical#0.tga", std::filesystem::copy_options::overwrite_existing);
+		image((root + "exact#0.tga").c_str(), 80, 255, 40, 30, 4, 4);
+		image((root + "exact#1.tga").c_str(), 220, 255, 40, 30, 4, 4);
+	}
 	image("a/mods/pilot/textures/badanim#0.tga", 120, 255, 88, 128, 4, 8);
 	image("a/mods/pilot/textures/short#0.tga", 210, 255, 40, 30, 4, 7);
 	image("a/mods/pilot/textures/alpha#0.tga", 210, 100, 40, 30, 4, 8);
@@ -156,6 +162,81 @@ static void test_animation(const char *owner)
 				}
 			}
 		}
+	fixture_hog = "pilot.hog";
+	fixture_xl_mission = true;
+	GameCfg.TexFilt = 0;
+	auto render_phase = [&](int red, const char *message) {
+		const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+		const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+		const eclip before_parent = Effects[0], before_critical = Effects[1];
+		g3_start_frame();
+		vms_vector position{};
+		vms_matrix matrix = vmd_identity_matrix;
+		g3_set_view_matrix(&position, &matrix, F1_0);
+		g_android_draw_face_ctx = {};
+		g_android_draw_face_ctx.valid = 1;
+		g_android_draw_face_ctx.tmap1 = 0;
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		mask_quad(GameBitmaps[Textures[0].index], nullptr, 0, 3 * F1_0, 4 * F1_0);
+		unsigned char pixel[4];
+		glReadPixels(32, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+		const int expected = scoped ? red : 10;
+		if (std::abs(int(pixel[0]) - expected) > 2)
+			std::fprintf(stderr, "%s owner=%s expected=%d actual=%u\n", message, owner, expected, pixel[0]);
+		require(std::abs(int(pixel[0]) - expected) <= 2, message);
+		require(!std::memcmp(&before_parent, &Effects[0], sizeof(eclip)) && !std::memcmp(&before_critical, &Effects[1], sizeof(eclip)), "draw preserves both authoritative effect clocks");
+		require(sim == d_rand_get_stream_call_count(D_RNG_SIM) && fx == d_rand_get_stream_call_count(D_RNG_FX), "boundary draws preserve RNG");
+		g3_end_frame();
+		android_merged_wall_clear_draw_face_context();
+	};
+	const int first_red = owner[0] == 'a' ? 40 : 100;
+	// Distinct critical bitmaps and timing, advanced AFTER their parent mapping.
+	Num_effects = 2;
+	Control_center_destroyed = 1;
+	effect.crit_clip = 1;
+	effect.frame_count = 0;
+	effect.time_left = effect.vc.frame_time;
+	Effects[1] = effect;
+	auto &critical_effect = Effects[1];
+	critical_effect.flags = EF_CRITICAL;
+	critical_effect.changing_wall_texture = 1; // real loop must advance this clip
+	critical_effect.vc.num_frames = 2;
+	critical_effect.vc.frame_time = critical_effect.time_left = 4096;
+	for (int i = 0; i < 2; ++i) {
+		auto &bitmap = GameBitmaps[20 + i];
+		bitmap = {};
+		mask_solid(bitmap, 10, 40, 30);
+		std::snprintf(piggy_game_bitmap_name(&bitmap), 12, "critical#%d", i);
+		critical_effect.vc.frames[i].index = 20 + i;
+	}
+	for (int step = 0; step < 5; ++step) {
+		const auto mapped = critical_effect;
+		const int selected = dxx_xl_animation_frame(2, 4096, mapped.frame_count, mapped.time_left, 0, 6);
+		FrameTime = 4097;
+		do_special_effects();
+		require(Textures[0].index == mapped.vc.frames[mapped.frame_count].index && critical_effect.frame_count != mapped.frame_count, "real later critical effect advances after parent maps previous frame");
+		render_phase(first_red + 20 * selected, "critical rendering uses actually applied phase across update boundary");
+	}
+	stop_effect(0);
+	FrameTime = 4097;
+	do_special_effects();
+	render_phase(first_red, "stopped parent ignores advancing distinct critical clip");
+	// Shared first bitmap must not cause a stopped parent to animate either.
+	critical_effect.vc.frames[critical_effect.frame_count].index = effect.vc.frames[0].index;
+	render_phase(first_red, "stopped parent remains first frame with shared critical bitmap");
+	ogl_freebmtexture(&GameBitmaps[20]);
+	ogl_freebmtexture(&GameBitmaps[21]);
+	// An actual exact nonzero name wins over the existing #0 fallback.
+	effect.flags = 0;
+	effect.crit_clip = -1;
+	Control_center_destroyed = 0;
+	Num_effects = 1;
+	std::strcpy(piggy_game_bitmap_name(&GameBitmaps[11]), "exact#1");
+	effect.frame_count = 1;
+	effect.time_left = effect.vc.frame_time;
+	effect_apply_bitmap_state(0);
+	render_phase(220, "exact nonzero frame filename takes precedence over #0");
+	std::strcpy(piggy_game_bitmap_name(&GameBitmaps[11]), "anim#1");
 	// Rendering must not trigger the real effect loop's one-shot side change.
 	Num_effects = 1;
 	Control_center_destroyed = 0;
@@ -167,6 +248,8 @@ static void test_animation(const char *owner)
 	effect.sidenum = 0;
 	effect.dest_bm_num = 2;
 	Segments[0].sides[0].tmap_num2 = 1;
+	effect_apply_bitmap_state(0);
+	render_phase(first_red + 100, "one-shot final frame rendered before completion");
 	for (int i = 0; i < 17; ++i)
 		require(dxx_xl_animation_frame(8, 6144, effect.frame_count, effect.time_left, 0, 6) == 5, "one-shot remains on final presentation frame before simulation advances");
 	require(Segments[0].sides[0].tmap_num2 == 1, "render sampling cannot complete a one-shot");
@@ -174,12 +257,15 @@ static void test_animation(const char *owner)
 	do_special_effects();
 	require(effect.frame_count == 0 && !(effect.flags & EF_ONE_SHOT) && effect.segnum == -1 && Segments[0].sides[0].tmap_num2 == 2,
 	        "native effect loop alone performs one-shot completion");
+	render_phase(first_red, "one-shot completion rendered at native mapped frame");
 	stop_effect(0);
 	const eclip stopped = effect;
 	FrameTime = F1_0;
 	do_special_effects();
 	require(!std::memcmp(&stopped, &effect, sizeof(effect)) && dxx_xl_animation_frame(8, 6144, effect.frame_count, effect.time_left, 1, 6) == 0,
 	        "stopped effect preserves simulation state and first replacement frame");
+
+	render_phase(first_red, "stopped effect renders first replacement frame");
 
 	// Load a real minimal POG, then prove the animation adapter respects its ownership.
 	std::vector<unsigned char> pog(36, 0);

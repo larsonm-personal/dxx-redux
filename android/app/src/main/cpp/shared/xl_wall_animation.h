@@ -20,6 +20,37 @@ static unsigned xl_wall_generation, xl_wall_strip_count, xl_wall_path_count, xl_
 static size_t xl_wall_bytes;
 static char xl_wall_hog[4096];
 
+/* Keep applied phases across GPU resets: a paused wall still has this mapping.
+ * Package generation and HOG identity prevent observations crossing missions. */
+struct xl_wall_phase {
+	int valid, bitmap, frames, frame_time, frame, time_left, stopped;
+};
+static struct xl_wall_phase xl_wall_phases[MAX_EFFECTS];
+static unsigned xl_wall_phase_generation;
+static char xl_wall_phase_hog[4096];
+
+void dxx_xl_wall_mapped_phase(int effect, int bitmap, int frames, int frame_time,
+                              int frame, int time_left, int stopped)
+{
+	if (effect < 0 || effect >= MAX_EFFECTS || !xl_resource_texture_scope_enabled()) return;
+	const char *hog = mission_resource_archive();
+	if (!hog || strlen(hog) >= sizeof(xl_wall_phase_hog)) return;
+	const unsigned generation = android_mission_assets_generation();
+	if (generation != xl_wall_phase_generation || strcmp(hog, xl_wall_phase_hog)) {
+		memset(xl_wall_phases, 0, sizeof(xl_wall_phases));
+		xl_wall_phase_generation = generation;
+		strcpy(xl_wall_phase_hog, hog);
+	}
+	struct xl_wall_phase *phase = &xl_wall_phases[effect];
+	phase->valid = 1;
+	phase->bitmap = bitmap;
+	phase->frames = frames;
+	phase->frame_time = frame_time;
+	phase->frame = frame;
+	phase->time_left = time_left;
+	phase->stopped = stopped;
+}
+
 static void xl_wall_release_texture(ogl_texture *texture)
 {
 	if (!texture) return;
@@ -164,17 +195,21 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 	for (int i = 0; i < Num_effects; ++i) {
 		const eclip *effect = &Effects[i];
 		if (effect->changing_wall_texture != texture || (effect->flags & EF_CRITICAL)) continue;
-		if (effect->crit_clip != -1 && Control_center_destroyed) {
-			if (effect->crit_clip < 0 || effect->crit_clip >= Num_effects) return original;
-			effect = &Effects[effect->crit_clip];
+		struct xl_wall_phase phase;
+		if (effect->flags & EF_STOPPED) {
+			/* stop_effect maps the parent's first frame even with a critical clip */
+			phase = (struct xl_wall_phase) { 1, effect->vc.frames[0].index, effect->vc.num_frames,
+				                             effect->vc.frame_time, 0, effect->vc.frame_time, 1 };
+		} else {
+			if (xl_wall_phase_generation != android_mission_assets_generation() || strcmp(hog, xl_wall_phase_hog)) return original;
+			phase = xl_wall_phases[i];
 		}
-		if (dxx_xl_animation_frame(effect->vc.num_frames, effect->vc.frame_time, effect->frame_count,
-		                           effect->time_left, effect->flags & EF_STOPPED, 1) < 0 ||
-		    effect->vc.frames[effect->frame_count].index != Textures[texture].index) return original;
-		struct xl_wall_strip *strip = xl_wall_animation_source(mission_resource_archive(), piggy_game_bitmap_name(original), original);
+		if (!phase.valid || phase.bitmap != Textures[texture].index ||
+		    dxx_xl_animation_frame(phase.frames, phase.frame_time, phase.frame, phase.time_left, phase.stopped, 1) < 0) return original;
+		struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original);
 		if (!strip) return original;
-		const int frame = dxx_xl_animation_frame(effect->vc.num_frames, effect->vc.frame_time, effect->frame_count,
-		                                         effect->time_left, effect->flags & EF_STOPPED, strip->count);
+		const int frame = dxx_xl_animation_frame(phase.frames, phase.frame_time, phase.frame,
+		                                         phase.time_left, phase.stopped, strip->count);
 		if (frame < 0) return original;
 		strip->frames[frame].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
 		return &strip->frames[frame];

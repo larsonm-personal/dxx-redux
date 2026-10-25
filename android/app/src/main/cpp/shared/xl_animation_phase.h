@@ -14,3 +14,9 @@ static inline int dxx_xl_animation_frame(int stock_frames, int frame_time, int f
 	const int64_t phase = (int64_t) frame * frame_time + frame_time - time_left;
 	return (int) ((phase > 0 ? phase - 1 : 0) * source_frames / period);
 }
+
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+/* Renderer-only observation of the clock actually applied to a wall mapping */
+void dxx_xl_wall_mapped_phase(int effect, int bitmap, int frames, int frame_time,
+                              int frame, int time_left, int stopped);
+#endif
