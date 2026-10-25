@@ -28,6 +28,8 @@ extern int write_png(const char *filename, png_data *pdata);
 /* Reject alpha and XL transparency keys before image fitting; global lookup is unchanged. */
 extern int read_png_scoped_opaque(const char *filename, png_data *pdata);
 extern int read_png_scoped_static(const char *filename, png_data *pdata);
+/* Opaque square-frame strip, original pixels retained for independent frame fitting */
+extern int read_png_scoped_animation(const char *filename, png_data *pdata);
 /* Pre-compressed ETC2 texture file (.etc2 format) */
 typedef struct _etc2_file_data {
 	unsigned int width;

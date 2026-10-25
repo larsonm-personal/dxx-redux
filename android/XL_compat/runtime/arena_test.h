@@ -1,5 +1,7 @@
 #include "resource_validation.h"
 #include "input_demo_replay.h"
+#include "xl_animation_phase.h"
+#include "effects.h"
 #include <map>
 extern "C" {
 #include "physics.h"
@@ -10,6 +12,29 @@ int check_volatile_wall(object *, int, int, vms_vector *);
 int d1_in_d2_load_mission_assets(void);
 void reset_level_robots_file(void);
 extern int Robot_replacements_loaded;
+}
+
+static std::vector<int> arena_animation_phases()
+{
+	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+	std::vector<int> phases;
+	bool valid = false;
+	for (int i = 0; i < Num_effects; ++i) {
+		const eclip before = Effects[i];
+		const int phase = dxx_xl_animation_frame(before.vc.num_frames, before.vc.frame_time,
+		                                         before.frame_count, before.time_left, before.flags & EF_STOPPED, 6);
+		valid |= phase >= 0;
+		phases.push_back(phase);
+		for (int sample = 0; sample < 17; ++sample)
+			require(dxx_xl_animation_frame(before.vc.num_frames, before.vc.frame_time, before.frame_count,
+			                               before.time_left, before.flags & EF_STOPPED, 6) == phase,
+			        "render-only animation phase changed while simulation was paused");
+		require(!std::memcmp(&before, &Effects[i], sizeof(before)), "animation sampling changed effect state");
+	}
+	require(valid && sim == d_rand_get_stream_call_count(D_RNG_SIM) && fx == d_rand_get_stream_call_count(D_RNG_FX),
+	        "animation phase sampling consumed RNG or had no valid effects");
+	return phases;
 }
 
 static int arena_remainder = 0;
@@ -631,6 +656,7 @@ static int arena_test(int argc, char **argv)
 		stop_time();
 		require(state_save_all_sub(save, description) != 0, "water save failed");
 		const auto saved_state = arena_state();
+		const auto saved_animation = arena_animation_phases();
 		const auto saved_position = ConsoleObject->pos;
 		const int saved_remainder = arena_remainder;
 		const auto saved_rng_calls = d_rand_get_stream_call_count(D_RNG_SIM);
@@ -643,6 +669,7 @@ static int arena_test(int argc, char **argv)
 		require(ConsoleObject->segnum == 187 && !std::memcmp(&ConsoleObject->pos, &saved_position, sizeof(saved_position)) && xl_preview_water_segment(187), "water checkpoint did not restore property/position");
 		require(d_rand_get_stream_call_count(D_RNG_SIM) == 0, "native restore did not reset diagnostic SIM count");
 		const auto restored_state = arena_state();
+		require(arena_animation_phases() == saved_animation, "native restore changed render-only animation phases");
 		for (std::size_t i = 0; i < saved_state.size(); ++i)
 			if (saved_state[i] != restored_state[i]) std::cout << "Restore field " << i << ": " << saved_state[i] << " -> " << restored_state[i] << '\n';
 		require(restored_state == saved_state, "water checkpoint restored a different simulation state");

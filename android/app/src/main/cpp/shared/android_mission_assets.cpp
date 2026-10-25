@@ -358,3 +358,9 @@ int android_mission_assets_find_static_texture(const char *hog, const char *bitm
 	const auto path = xl_compat::static_mission_texture_path(hog, bitmap);
 	return !path.empty() && android_mission_assets_find_owned_file(path.c_str(), resolved, capacity);
 }
+
+int android_mission_assets_find_animation_texture(const char *hog, const char *bitmap, char *resolved, size_t capacity)
+{
+	const auto path = xl_compat::animation_mission_texture_path(hog, bitmap);
+	return !path.empty() && android_mission_assets_find_owned_file(path.c_str(), resolved, capacity);
+}

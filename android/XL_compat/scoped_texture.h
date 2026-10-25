@@ -30,4 +30,25 @@ inline std::string static_mission_texture_path(const char *hog, const char *bitm
 	if (!component(identity) || !component(name)) return {};
 	return "mods/" + identity + "/textures/" + name + ".tga";
 }
+// Animation names require a bounded decimal frame suffix; directory components stay forbidden.
+inline std::string animation_mission_texture_path(const char *hog, const char *bitmap)
+{
+	if (!bitmap) return {};
+	size_t length = 0;
+	while (length < 128 && bitmap[length]) ++length;
+	if (length == 128) return {};
+	const std::string name(bitmap, length);
+	const auto marker = name.find('#');
+	if (marker == std::string::npos || marker + 1 == length || length - marker > 4) return {};
+	unsigned frame = 0;
+	for (size_t i = marker + 1; i < length; ++i) {
+		if (name[i] < '0' || name[i] > '9') return {};
+		frame = frame * 10 + unsigned(name[i] - '0');
+	}
+	if (frame >= 128) return {};
+	auto path = static_mission_texture_path(hog, name.substr(0, marker).c_str());
+	if (path.empty()) return {};
+	path.insert(path.size() - 4, name.substr(marker));
+	return path;
+}
 } // namespace xl_compat

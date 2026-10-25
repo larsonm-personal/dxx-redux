@@ -615,7 +615,12 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 	}
 
 	/* XL marks tall replacements as alternate animations even without # names. */
-	if (scoped_opaque && h > w) {
+	if (scoped_opaque && scoped_opaque != 3 && h > w) {
+		free(fbuf);
+		return 0;
+	}
+
+	if (scoped_opaque == 3 && (w < 2 || (w & (w - 1)) || h < w || h % w || h / w > 128)) {
 		free(fbuf);
 		return 0;
 	}
@@ -640,7 +645,7 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 			const unsigned char *p = pixels + i * channels;
 			const int key = p[0] == 120 && p[1] == 88 && p[2] == 128;
 			const int alpha = channels == 4 ? p[3] : 255;
-			if ((!key && alpha != 0 && alpha != 255) || (scoped_opaque == 1 && (key || alpha != 255))) {
+			if ((!key && alpha != 0 && alpha != 255) || ((scoped_opaque == 1 || scoped_opaque == 3) && (key || alpha != 255))) {
 				free(pixels);
 				return 0;
 			}
@@ -678,7 +683,7 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 				return 0;
 			}
 
-		} else pixels = texture_fit_pixels(pixels, &w, &h, channels);
+		} else if (scoped_opaque != 3) pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	} else pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	if (!pixels) return 0;
 
@@ -708,6 +713,11 @@ int read_png(const char *filename, png_data *pdata)
 int read_png_scoped_opaque(const char *filename, png_data *pdata)
 {
 	return read_png_policy(filename, pdata, 1);
+}
+
+int read_png_scoped_animation(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 3);
 }
 
 int read_png_scoped_static(const char *filename, png_data *pdata)

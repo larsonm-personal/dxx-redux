@@ -421,6 +421,12 @@ static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
 int g_cache_time_ms = 0; /* time spent in ogl_cache_level_textures */
 #endif
 
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+int ogl_allow_png(void);
+ogl_texture *ogl_get_free_texture(void);
+#include "xl_wall_animation.h"
+#endif
+
 void ogl_reset_texture_stats_internal(void){
 	int i;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
@@ -436,6 +442,9 @@ void ogl_reset_texture_stats_internal(void){
 }
 
 void ogl_init_texture_list_internal(void){
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	xl_wall_animation_clear();
+#endif
 	int i;
 #ifdef ANDROID
 	android_ogl_reset_transient_blit_texture(&ogl_bind_texture_state, 0);
@@ -453,6 +462,9 @@ void ogl_init_texture_list_internal(void){
 }
 
 void ogl_smash_texture_list_internal(void){
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	xl_wall_animation_clear();
+#endif
 	int i;
 #ifdef ANDROID
 	if (android_egl_discarding_lost_context_resources()) {
@@ -522,6 +534,9 @@ int ogl_allow_png(void){
 }
 
 void ogl_smash_png_textures(void){
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	xl_wall_animation_clear();
+#endif
 	int i;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++){
 		if (ogl_texture_list[i].handle>0 && ogl_texture_list[i].is_png){
@@ -1224,6 +1239,9 @@ extern void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist);
  */ 
 bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light_rgb,grs_bitmap *bm)
 {
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	if (tmap_drawer_ptr == draw_tmap) bm = xl_wall_animation_bitmap(bm, 0);
+#endif
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoord_array[MAX_VERTS * 2];
 	GLfloat color_alpha = 1.0;
@@ -1361,6 +1379,10 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
  */
 static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot, grs_bitmap *bmovl, int orient, int label_nv, const g3s_point **label_pointlist)
 {
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	bmbot = xl_wall_animation_bitmap(bmbot, 0);
+	bmovl = xl_wall_animation_bitmap(bmovl, 1);
+#endif
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
 	int skip_merged_wall_cover_draw = 0;

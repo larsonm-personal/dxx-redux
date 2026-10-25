@@ -31,6 +31,8 @@ int android_mission_assets_find_static_texture(const char *hog, const char *bitm
 int android_mission_assets_test_acquisition_failure(void);
 #endif
 
+int android_mission_assets_find_animation_texture(const char *hog, const char *bitmap, char *resolved, size_t capacity);
+
 /* Engine-specific data lifetime hooks, implemented in android_mission_asset_reset.c */
 void android_mission_asset_reset_before(void);
 void android_mission_asset_reset_baseline(void);
