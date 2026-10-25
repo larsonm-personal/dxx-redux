@@ -9,6 +9,8 @@ void xl_resource_baseline_clear(void);
 void xl_resource_baseline_capture(void);
 void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file);
 void xl_resource_select_mission(int requires_xl);
+void xl_resource_commit_mission(void);
+int xl_resource_mission_enabled(void);
 const char *xl_resource_base_rejection(void);
 void xl_discard_prepared_resources(void);
 int xl_install_prepared_hxm(const char *level_filename);

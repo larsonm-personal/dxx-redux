@@ -172,7 +172,7 @@ static void arena_fluid_objects()
 	for (const auto type : { OBJ_ROBOT, OBJ_WEAPON }) {
 		vms_vector start;
 		compute_segment_center(&start, &Segments[187]);
-		const int index = obj_create(type, 0, 187, &start, &orientation, F1_0 / 8, CT_NONE, MT_PHYSICS, RT_NONE);
+		const int index = obj_create(type, 0, 187, &start, &orientation, F1_0 / 8, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_PHYSICS, RT_NONE);
 		require(index >= 0, "cannot create fluid motion probe");
 		auto &probe = Objects[index];
 		probe.mtype.phys_info.mass = F1_0;
@@ -639,6 +639,7 @@ static int arena_test(int argc, char **argv)
 		const auto expected_rng_calls = d_rand_get_stream_call_count(D_RNG_SIM) - saved_rng_calls;
 		require(!xl_preview_water_segment(ConsoleObject->segnum), "water leaked after exit");
 		require(state_restore_all_sub(save, 0) != 0, "water restore failed");
+		require(xl_resource_mission_enabled() && *mission_resource_archive(), "water save restore lost XL resource identity");
 		require(ConsoleObject->segnum == 187 && !std::memcmp(&ConsoleObject->pos, &saved_position, sizeof(saved_position)) && xl_preview_water_segment(187), "water checkpoint did not restore property/position");
 		require(d_rand_get_stream_call_count(D_RNG_SIM) == 0, "native restore did not reset diagnostic SIM count");
 		const auto restored_state = arena_state();

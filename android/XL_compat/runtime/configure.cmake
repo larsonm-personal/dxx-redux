@@ -57,8 +57,9 @@ if(TARGET dxx-redux-d2-headless-metadata)
     target_sources(
         dxx-redux-d2-headless-metadata
         PRIVATE "${xl_runtime_dir}/../../app/src/main/cpp/shared/android_mission_assets.cpp")
-    target_compile_definitions(dxx-redux-d2-headless-metadata PRIVATE DXX_XL_CHECKPOINT_EXPORT
-                                                                      DXX_XL_DESCRIPTOR_TEST)
+    target_compile_definitions(
+        dxx-redux-d2-headless-metadata PRIVATE DXX_XL_CHECKPOINT_EXPORT DXX_XL_DESCRIPTOR_TEST
+                                               DXX_XL_DEVELOPER_PROBE)
     set_target_properties(dxx-redux-d2-headless-metadata PROPERTIES OUTPUT_NAME
                                                                     xl-preview-lifecycle)
 endif()

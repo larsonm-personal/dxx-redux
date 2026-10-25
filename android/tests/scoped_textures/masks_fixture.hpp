@@ -1,5 +1,6 @@
 // Production bitmap upload and wall composition, under the fixture's owned context.
 #ifdef DXX_BUILD_DESCENT_II
+static bool fixture_xl_mission = true;
 extern "C" {
 #include "3d.h"
 #include "config.h"
@@ -15,7 +16,7 @@ extern GLuint ogl_prog_tex2, ogl_prog_tex2m;
 // Identity injection only: this renderer fixture does not load a retail mission.
 const char *mission_resource_archive(void)
 {
-	return "pilot.hog";
+	return fixture_xl_mission ? "pilot.hog" : "";
 }
 }
 static void mask_pattern()
@@ -130,9 +131,17 @@ static void test_masks(bool owned)
 					if (owned) {
 						const char *expected[] = { "RGBR", "GRRB", "RBGR", "BRRG" };
 						const char color = expected[orient][(y >= 32 ? 0 : 2) + (x >= 32)];
-						require(color == 'R' ? p[0] > 180 && p[1] < 80 : color == 'G' ? p[1] > 180 && p[0] < 80
-						                                                              : p[2] > 180 && p[0] < 80,
-						        "authored quadrant position after each overlay rotation");
+						const bool correct = color == 'R' ? p[0] > 180 && p[1] < 80 : color == 'G' ? p[1] > 180 && p[0] < 80
+						                                                                           : p[2] > 180 && p[0] < 80;
+						if (!correct) {
+							std::fprintf(stderr, "quadrant filter=%d orient=%d xy=%d,%d expected=%c rgba=%u,%u,%u,%u gl_error=%u\n", filter, orient, x, y, color, p[0], p[1], p[2], p[3], glGetError());
+							for (int sy : { 48, 16 })
+								for (int sx : { 16, 48 }) {
+									const auto *q = pixels + (sy * 64 + sx) * 4;
+									std::fprintf(stderr, "  sample %d,%d rgba=%u,%u,%u,%u\n", sx, sy, q[0], q[1], q[2], q[3]);
+								}
+						}
+						require(correct, "authored quadrant position after each overlay rotation");
 					}
 				}
 			if (!(owned ? red == 2 && green == 1 && blue == 1 : global == 4)) std::fprintf(stderr, "mask readback owned=%d filter=%d orient=%d red=%d base=%d behind=%d global=%d\n", owned, filter, orient, red, green, blue, global);

@@ -33,13 +33,14 @@ std::array<std::string, 2> startup_sound_hashes;
 std::map<std::string, std::string> startup_graphics_hashes;
 bool mission_requires_xl = false;
 
-bool mounted_mission_requires_xl()
+bool mounted_mission_requires_xl(bool owned_only = false)
 {
-	if (!Current_mission) return false;
+	if (!Current_mission || Current_mission->descent_version != 2) return false;
 	if (Current_mission->enhanced == MISSION_ENHANCED_XL) return true;
-	auto extended = [](const char *filename) {
+	auto extended = [owned_only](const char *filename) {
 		std::string path = filename;
 		if (!PHYSFSX_exists(path.c_str(), 1)) path = std::string(MISSION_DIR) + filename;
+		if (owned_only && !mission_owns_resource_archive(PHYSFS_getRealDir(path.c_str()))) return false;
 		File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
 		unsigned char header[8];
 		if (!file || PHYSFS_readBytes(file.get(), header, sizeof(header)) != sizeof(header)) return false;
@@ -260,6 +261,17 @@ extern "C" void xl_resource_select_mission(int requires_xl)
 {
 	mission_requires_xl = requires_xl != 0;
 	base_rejection.clear();
+}
+
+extern "C" void xl_resource_commit_mission(void)
+{
+	// Seal from the parsed descriptor or selected HOG, never from texture presence
+	mission_requires_xl = mounted_mission_requires_xl(true);
+}
+
+extern "C" int xl_resource_mission_enabled(void)
+{
+	return mission_requires_xl;
 }
 
 extern "C" const char *xl_resource_base_rejection(void)

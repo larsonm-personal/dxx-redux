@@ -226,6 +226,10 @@ int main(int argc, char **argv)
 			}
 			ogl_max_texture_size = previous_limit;
 #ifdef DXX_BUILD_DESCENT_II
+			// Same compiled engine and same owned texture package: classic identity must stay global
+			fixture_xl_mission = false;
+			test_masks(false);
+			fixture_xl_mission = true;
 			test_masks(!std::strcmp(owner, "a"));
 #endif
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");

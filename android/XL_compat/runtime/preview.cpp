@@ -384,7 +384,11 @@ extern "C" int xl_preview_load_level(const char *filename)
 	// A mode change must never leave singleplayer extensions active in multiplayer
 	if (Game_mode & GM_MULTI) clear_active();
 	rejection.clear();
+#ifdef DXX_XL_DEVELOPER_PROBE
 	const bool translated_preview = option("-xl-static-light-preview") && !std::strcmp(filename, "xlprobe.rl2");
+#else
+	const bool translated_preview = false;
+#endif
 	int result = 0;
 	try {
 		validate_mission_context();
@@ -395,6 +399,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 				clear_active();
 				return xl_stock_load_level(filename);
 			}
+#ifdef DXX_XL_DEVELOPER_PROBE
 			if (Game_mode & GM_MULTI) throw std::runtime_error("multiplayer: XL preview synchronization is not implemented");
 			const char *path = option("-xl-source");
 			if (!path || !*path) throw std::runtime_error("-xl-source is required for the developer preview");
@@ -404,6 +409,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 			stream.seekg(0);
 			bytes.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
 			if (stream.bad() || bytes.size() != std::size_t(size)) throw std::runtime_error("XL source read failed");
+#endif
 		}
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
