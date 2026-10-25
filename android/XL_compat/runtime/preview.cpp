@@ -359,30 +359,32 @@ extern "C" int xl_test_stop_after_level(void)
 	return option("-fixture-path") && option("-xl-test-navigation") && !option("-xl-test-campaign");
 }
 
+extern "C" void xl_preview_clear_mission(void)
+{
+	xl_discard_prepared_resources();
+	admitted_pilot = completed_pilot = admitted_water_arena = false;
+	activated_triggers = 0;
+	source.reset();
+#ifdef DXX_XL_DESCRIPTOR_TEST
+	no_damage_test_source.reset();
+#endif
+	vertex_calls = 0;
+	corona_draws = 0;
+	corona_depth_failures = 0;
+	corona_classic_requested_draws = 0;
+	face_alpha = -1;
+	dynamic_vertices.clear();
+	brightness.clear();
+	unresolved_emitters = 0;
+	muzzle_lights.clear();
+	player_thrust = {};
+	pending_level.clear();
+}
+
 extern "C" int xl_preview_load_level(const char *filename)
 {
-	const auto clear_active = [] {
-		xl_discard_prepared_resources();
-		admitted_pilot = completed_pilot = admitted_water_arena = false;
-		activated_triggers = 0;
-		source.reset();
-#ifdef DXX_XL_DESCRIPTOR_TEST
-		no_damage_test_source.reset();
-#endif
-		vertex_calls = 0;
-		corona_draws = 0;
-		corona_depth_failures = 0;
-		corona_classic_requested_draws = 0;
-		face_alpha = -1;
-		dynamic_vertices.clear();
-		brightness.clear();
-		unresolved_emitters = 0;
-		muzzle_lights.clear();
-		player_thrust = {};
-		pending_level.clear();
-	};
 	// A mode change must never leave singleplayer extensions active in multiplayer
-	if (Game_mode & GM_MULTI) clear_active();
+	if (Game_mode & GM_MULTI) xl_preview_clear_mission();
 	rejection.clear();
 #ifdef DXX_XL_DEVELOPER_PROBE
 	const bool translated_preview = option("-xl-static-light-preview") && !std::strcmp(filename, "xlprobe.rl2");
@@ -396,7 +398,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		const bool original = !bytes.empty();
 		if (!original) {
 			if (!translated_preview) {
-				clear_active();
+				xl_preview_clear_mission();
 				return xl_stock_load_level(filename);
 			}
 #ifdef DXX_XL_DEVELOPER_PROBE
@@ -429,7 +431,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 			throw std::runtime_error("loaded fixture bytes differ from the source translation");
 		loaded.reset();
 		// All read-only admission and translated-byte checks precede the native commit
-		clear_active();
+		xl_preview_clear_mission();
 		if (original) pending_level = filename;
 		result = xl_stock_load_level(filename);
 		pending_level.clear();

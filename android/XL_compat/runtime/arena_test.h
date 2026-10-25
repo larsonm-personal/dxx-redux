@@ -675,7 +675,25 @@ static int arena_test(int argc, char **argv)
 			require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount prepared POG control");
 			require(std::filesystem::remove(path), "cannot remove prepared POG control");
 		}
+		require(xl_preview_water_segment(187), "transition regression requires an active XL water source");
 		require(load_base_mission("d2", error, sizeof(error)), error);
+		const auto classic_inactive = [] {
+			require(!xl_runtime_active() && !xl_preview_pilot_active() && !xl_preview_pilot_completed() &&
+			            !xl_preview_water_segment(187) && xl_preview_motion_time(187, 1000) == 1000 &&
+			            !xl_resource_mission_enabled() && !*mission_resource_archive(),
+			        "committed classic mission retained XL gameplay or resource identity");
+		};
+		classic_inactive();
+		require(xl_preview_load_level("absent.rl2") != 0, "missing classic level unexpectedly loaded");
+		classic_inactive();
+		const auto truncated = resource_shadow / "trunc.rl2";
+		write_bytes(truncated.string().c_str(), xl_compat::Bytes{ 'P', 'L', 'V', 'L' });
+		require(PHYSFS_addToSearchPath(resource_shadow.string().c_str(), 0), "cannot mount truncated classic level");
+		require(xl_preview_load_level("trunc.rl2") != 0, "truncated classic level unexpectedly loaded");
+		classic_inactive();
+		require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount truncated classic level");
+		require(std::filesystem::remove(truncated), "cannot remove truncated classic level");
+		std::cout << "Active XL -> committed classic -> missing/truncated level: gameplay and resource identity cleared\n";
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(!xl_preview_water_segment(187) && xl_preview_motion_time(187, 1000) == 1000, "water state leaked into stock");
