@@ -35,6 +35,7 @@ if ($LASTEXITCODE -ne 0 -or $abi -notin @('arm64-v8a', 'armeabi-v7a', 'x86_64'))
 if (-not $NativeBuildDir) {
     $cache = Get-ChildItem (Join-Path $repoRoot "android/app/.cxx/Debug/*/$abi/CMakeCache.txt") |
         Sort-Object LastWriteTime -Descending | Where-Object {
+            if ($Fixture -eq 'scoped_textures' -and -not (Select-String -LiteralPath $_.FullName -Pattern '^DXX_XL_PILOT:BOOL=ON$' -Quiet)) { return $false }
             $outputSetting = Select-String -LiteralPath $_.FullName -Pattern '^CMAKE_LIBRARY_OUTPUT_DIRECTORY:[^=]+='
             $outputPath = if ($outputSetting) { ($outputSetting.Line -split '=', 2)[1] }
             $outputPath -and (Test-Path (Join-Path $outputPath 'libdxx-redux-d1.so')) -and
@@ -48,6 +49,7 @@ $settings = @{}
 Get-Content (Join-Path $NativeBuildDir 'CMakeCache.txt') | ForEach-Object {
     if ($_ -match '^([^/#][^:]*):[^=]+=(.*)$') { $settings[$Matches[1]] = $Matches[2] }
 }
+if ($Fixture -eq 'scoped_textures' -and $settings.DXX_XL_PILOT -ne 'ON') { throw 'Scoped texture qualification requires an XL-enabled native build (-PxlPilot=true)' }
 if ($settings.CMAKE_ANDROID_ARCH_ABI -ne $abi -and $settings.ANDROID_ABI -ne $abi) { throw 'Native build ABI does not match the selected device' }
 $cmake = $settings.CMAKE_COMMAND
 $libraries = $settings.CMAKE_LIBRARY_OUTPUT_DIRECTORY

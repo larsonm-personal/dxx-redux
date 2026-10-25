@@ -338,6 +338,8 @@ class SweepTests(unittest.TestCase):
         )
         build = workflow.split("      - name: Build emulator APKs before boot", 1)[1].split("      - name:", 1)[0]
         self.assertIn("ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}", build)
+        execute = workflow.split("      - name: Execute reviewed test selection", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}", execute)
 
     def test_static_texture_diagnostic_is_bounded_and_public_only(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()

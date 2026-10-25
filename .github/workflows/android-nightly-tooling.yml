@@ -492,6 +492,7 @@ jobs:
         shell: bash
         env:
           NATIVE_REPLAY: ${{ steps.selection.outputs.native_replay }}
+          ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}
         run: |
           set -euo pipefail
           if [[ "$SWEEP_LANE" != 'jvm' ]]; then
