@@ -1,0 +1,136 @@
+[
+    {
+        "level": "boilpnt.rl2",
+        "sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507",
+        "matches": []
+    },
+    {
+        "level": "watrwrks.rl2",
+        "sha256": "c60ed421f6147e95939e38d07d92d00ed1467397991cc35e933a02675c444205",
+        "matches": [
+            {
+                "segment": 1222,
+                "side": 0,
+                "base": 250,
+                "overlay": 335,
+                "orientation": 0,
+                "wall": 135
+            },
+            {
+                "segment": 1254,
+                "side": 0,
+                "base": 226,
+                "overlay": 335,
+                "orientation": 0,
+                "wall": 134
+            },
+            {
+                "segment": 1255,
+                "side": 1,
+                "base": 226,
+                "overlay": 336,
+                "orientation": 0,
+                "wall": 132
+            },
+            {
+                "segment": 1256,
+                "side": 3,
+                "base": 226,
+                "overlay": 336,
+                "orientation": 0,
+                "wall": 133
+            }
+        ]
+    },
+    {
+        "level": "canyon.rl2",
+        "sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0",
+        "matches": []
+    },
+    {
+        "level": "subzero.rl2",
+        "sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e",
+        "matches": []
+    },
+    {
+        "level": "canyon2.rl2",
+        "sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d",
+        "matches": []
+    },
+    {
+        "level": "control2.rl2",
+        "sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef",
+        "matches": [
+            {
+                "segment": 1752,
+                "side": 5,
+                "base": 226,
+                "overlay": 336,
+                "orientation": 0,
+                "wall": 585
+            },
+            {
+                "segment": 1753,
+                "side": 4,
+                "base": 226,
+                "overlay": 336,
+                "orientation": 0,
+                "wall": 586
+            },
+            {
+                "segment": 1888,
+                "side": 2,
+                "base": 335,
+                "overlay": 0,
+                "orientation": 0,
+                "wall": 590
+            },
+            {
+                "segment": 1889,
+                "side": 2,
+                "base": 335,
+                "overlay": 0,
+                "orientation": 0,
+                "wall": 589
+            }
+        ]
+    },
+    {
+        "level": "control.rl2",
+        "sha256": "1bef7c4cb9ebf2ce9da42014a0fe73591828c695b1c689d24a57b01c8d7d946e",
+        "matches": [
+            {
+                "segment": 1751,
+                "side": 5,
+                "base": 226,
+                "overlay": 336,
+                "orientation": 0,
+                "wall": 579
+            },
+            {
+                "segment": 1752,
+                "side": 4,
+                "base": 226,
+                "overlay": 336,
+                "orientation": 0,
+                "wall": 580
+            },
+            {
+                "segment": 1887,
+                "side": 2,
+                "base": 335,
+                "overlay": 0,
+                "orientation": 0,
+                "wall": 584
+            },
+            {
+                "segment": 1888,
+                "side": 2,
+                "base": 335,
+                "overlay": 0,
+                "orientation": 0,
+                "wall": 583
+            }
+        ]
+    }
+]

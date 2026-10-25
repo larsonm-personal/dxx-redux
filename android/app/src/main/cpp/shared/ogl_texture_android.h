@@ -78,6 +78,8 @@ void android_ogl_apply_bound_texture_filter(ogl_texture *texture, int effective_
                                             int render_context);
 void android_ogl_apply_pending_texture_options(
     struct android_ogl_texture_filter_state *state, const char *source);
+int android_ogl_load_scoped_mask(const png_data *image, grs_bitmap *bm, int texfilt,
+                                 android_ogl_loadtexture_fn loadtexture);
 int android_ogl_load_dxa_mask(const char *image_filename, grs_bitmap *bm, int texfilt,
                               android_ogl_loadtexture_fn loadtexture);
 /* Search-path priority, then palette/name specificity, then format within one pack */

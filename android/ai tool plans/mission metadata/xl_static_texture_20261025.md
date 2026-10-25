@@ -28,6 +28,10 @@ Android engine compilation and both native GLES fixture builds passed locally. T
 
 This is a plan for separate feature slices after the static slice settles. Resource support does not imply BoilingPoint gameplay admission. The current GLES fixture overrides the game-definition baseline reset and invokes production decode plus engine upload directly: its A -> B -> stock -> A assertions qualify controlled owned-file/GPU-cache isolation, not a complete production mission-load lifecycle. Original import/publication/native resolution is a separate check. The normal high-resolution replacement setting still controls the engine hook. Standalone D1 and D1-in-D2 retain their existing lookup behavior.
 
+### Decoder correction discovered during implementation
+
+The table and manifest below describe Pillow-normalized pixels, not necessarily the alpha bytes consumed by XL or Redux. The static-mask follow-on's actual engine decode found TGA extension alpha type0 caused Pillow to normalize fan03 and misc075 to opaque, hiding stored cutouts. Misc075 is the binary witness; fan03 contains one non-key alpha104 sample and remains excluded from the binary slice. See [the implementation evidence](xl_static_masks_20261025.md). Do not use the earlier "no alpha-zero pixels" result as an engine-admission rule.
+
 ### Measured original resources
 
 The adjacent [evidence manifest](xl_texture_followon_evidence_20261025.json) records all 31 surveyed TGAs: 29 under `mods/boilpnt/textures` and two under `mods/ewithin/textures`. It includes exact archive members, full source hashes, dimensions, alpha classes, purple-key counts and decoded square-slice hashes. The bounded survey decoded actual retained bytes with Pillow 12.3.0; it did not render or execute these missions. Limits were 64 MiB compressed source and 16 Mi pixels per image. Hashes below are abbreviated only for readability; the manifest retains all 64 digits.

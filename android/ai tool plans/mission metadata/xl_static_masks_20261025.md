@@ -1,0 +1,33 @@
+# Mission-owned static binary texture coverage
+
+This slice starts at PR128 commit 642d77b4af36475c3f6701ed5778014ba823936e on a new xl-static-masks branch. It leaves xl-next-resource and xl_more unchanged. Animation and partial-alpha blending remain separate later slices; no whole mission is admitted here.
+
+## Evidence and scope
+
+Use the [31-file measured manifest](xl_texture_followon_evidence_20261025.json), pinned to test-assets d9fbeaf6eb059fd4504308bfd6364734775b7cba and levelpack SHA256 b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719. BoilingPoint fan03.tga and misc075.tga are each 263205 bytes, 256x256, Pillow-normalized alpha255; see the decoder correction below. Their 28375 and 21878 purple-key pixels respectively encode super-holes. Full source hashes are retained in that manifest. The initial Pillow survey normalized TGA extension alpha type0 and therefore did not expose stored alpha. The actual engine decoder and pinned XL raw reader disagree with that normalization: misc075 has 21878 alpha0 super-key pixels, 26379 additional ordinary alpha0 pixels, and 17279 opaque pixels. It is the selected binary witness. Fan03 has 28375 alpha0 keys, 22811 ordinary alpha0 pixels, 14349 opaque pixels and ONE non-key alpha104 pixel (stored pixel47303, RGB124/93/132). Fan03 remains rejected until partial-alpha qualification. Synthetic cutouts remain useful independent controls. No source bytes are rewritten or normalized to force admission.
+
+A bounded read of the original retail HAM/PIG tables maps texture335 to bitmap1562 misc075 and texture336 to bitmap1563 fan03. All six retail PIGs carry flags11 (transparent, super-transparent, RLE) for both. The BoilingPoint HOG contains no POG overrides. A read-only geometry probe following pinned XL CSegment::Read found four matching sides each in watrwrks.rl2, control2.rl2 and control.rl2; none in the other four levels. Waterworks uses both as overlays. The control levels additionally use misc075 as a base. The [material manifest](xl_static_masks_materials_20261025.json) records level hashes and exact sides, not mission bytes. This is bounded geometry evidence, not general v23 reader or runtime support; the production inventory still rejects these levels.
+
+## Implementation contract
+
+Derive color and semantic mask from the same owner-validated TGA allocation before resizing. Ordinary alpha0 removes only the overlay contribution; a purple super-hole removes combined wall coverage when used as overlay. When used as base or standalone artwork, a key removes that source's coverage; an opaque overlay can cover a base hole. Never mutate gameplay bitmap flags. Carry source classification on the renderer texture and clear it with the existing texture lifetime.
+
+Keep POG/custom priority, owner/case validation, foreign-source rejection, global-index exclusion, D1 and D1-in-D2 behavior unchanged. Reject partial alpha, tall strips and animation names. Binary materials require power-of-two source and fitted dimensions in this first profile. Gate combined super-holes on the merged renderer; no GLES1/two-pass equivalence claim.
+
+Reuse the engine upload and tex2/tex2m shaders. Source-specific binary thresholds leave legacy shader behavior unchanged. Build color and mask mip coverage together without searching averaged RGB for keys. Conservative minimum coverage preserves narrow holes but can widen subpixel openings; this explicit bounded policy is not a claim of pixel-identical XL filtering. Exclude transparent RGB from color averaging to avoid purple fringes. Keep decoded/color/mask allocations bounded, and fail the complete replacement if either GPU upload fails.
+
+## Validation
+
+Extend the existing xl-textures campaign, rather than adding a parallel renderer. Test production bitmap upload and g3_draw_tmap_2 with opaque stock flags, ordinary cutouts, special holes, all four rotations, nearest/linear/mipmap filtering, final-mip coverage, reversed layer submission/depth, owner A/B/stock/A and GL recreation. Existing malformed, partial-alpha, oversized, ownership and lookup controls remain. Synthetic fixtures contain no private artwork.
+
+The renderer fixture retains its explicit identity injection and game-definition-reset spy; it is not full production mission loading. The original importer/publication/native-resolution check now includes fan03 and misc075, with all original hashes checked. Native scope teardown is real. Original-resource rendering remains a separate optional qualification, not inferred from synthetic GPU results.
+
+Record actual local and final-head CI outcomes before calling this slice complete. Seek independent review at this boundary before starting opaque animation. The remaining sequence is unchanged: opaque wall/eclip then door/wclip presentation adapters, animated masks, then separately qualified partial-alpha ordering/blending.
+
+Source contracts: [pinned XL segment geometry](https://github.com/arbruijn/d2x-xl/blob/2576a98b5de310e3ac7c9777df2677d1627b8bae/main/segment.cpp#L182), [TGA key and alpha handling](https://github.com/arbruijn/d2x-xl/blob/2576a98b5de310e3ac7c9777df2677d1627b8bae/gameio/tga.cpp#L200), and the parent [follow-on plan](xl_static_texture_20261025.md).
+
+## Initial local results
+
+Eight native contracts and all 18 focused JVM tests passed, with no skipped original-asset test. That integration imported/published/resolved all three original TGAs and tore down each context. The Android D1/D2 engines and both GLES fixtures compile. A bounded host probe using the exact Android stb_image header and the production classifier verified every misc075 mask/alpha pixel (21878 super-holes) and rejected fan03's non-key partial alpha. This is decode/classification evidence, not original-artwork GPU rendering.
+
+Automation catalog validation passed. The master-catalog execution is environmentally blocked at exit125 because the container cannot read /proc/self/task/<pid>/children; no guard was bypassed. The existing xl-textures campaign now builds the opt-in XL runtime explicitly when that owner is selected, allowing its production upload hook to be tested. Other selections retain their normal build mode. Rendering, independent review and final-head CI remain pending at this checkpoint.

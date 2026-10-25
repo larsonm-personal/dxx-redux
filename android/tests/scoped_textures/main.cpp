@@ -69,12 +69,18 @@ static GLuint shader(GLenum type, const char *text)
 	require(compiled, "compile surface shader");
 	return result;
 }
+
+#include "masks_fixture.hpp"
+
 int main(int argc, char **argv)
 {
 	if (argc != 2) return 1;
 	mem_init();
 	require(PHYSFS_init(nullptr) && PHYSFS_setWriteDir(".") && PHYSFS_mount(".", nullptr, 1), "isolated files");
 	image("a/mods/pilot/textures/CEIL002.TGA", 210);
+#ifdef DXX_BUILD_DESCENT_II
+	mask_pattern();
+#endif
 	const bool original = std::filesystem::is_regular_file("ceil002.tga");
 	if (original) std::filesystem::copy_file("ceil002.tga", "a/mods/pilot/textures/CEIL002.TGA", std::filesystem::copy_options::overwrite_existing);
 	image("b/mods/pilot/textures/CEIL002.TGA", 110);
@@ -109,11 +115,11 @@ int main(int argc, char **argv)
 	android_mission_assets_init();
 	EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	require(eglInitialize(display, nullptr, nullptr), "initialize EGL");
-	const EGLint attributes[] = { EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8, EGL_NONE };
+	const EGLint attributes[] = { EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8, EGL_DEPTH_SIZE, 24, EGL_NONE };
 	EGLConfig config;
 	EGLint count;
 	require(eglChooseConfig(display, attributes, &config, 1, &count) && count == 1, "pbuffer config");
-	const EGLint dimensions[] = { EGL_WIDTH, 4, EGL_HEIGHT, 4, EGL_NONE }, version[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+	const EGLint dimensions[] = { EGL_WIDTH, 64, EGL_HEIGHT, 64, EGL_NONE }, version[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
 	nlohmann::json results = nlohmann::json::array();
 	for (int generation = 0; generation < 2; ++generation) {
 		EGLSurface surface = eglCreatePbufferSurface(display, config, dimensions);
@@ -122,6 +128,9 @@ int main(int argc, char **argv)
 		gles3_shim_init();
 		ogl_init_texture_list_internal();
 		ogl_init_pixel_buffers(64, 64);
+#ifdef DXX_BUILD_DESCENT_II
+		ogl_init_prog();
+#endif
 		GLuint vertex = shader(GL_VERTEX_SHADER, "#version 300 es\nout vec2 uv;void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);uv=p;gl_Position=vec4(p*2.0-1.0,0,1);}");
 		GLuint fragment = shader(GL_FRAGMENT_SHADER, "#version 300 es\nprecision highp float;in vec2 uv;uniform sampler2D source;out vec4 color;void main(){color=texture(source,uv);}");
 		GLuint program = glCreateProgram(), vao;
@@ -192,20 +201,38 @@ int main(int argc, char **argv)
 					require(!(ordinary.data[p * 4] == 120 && ordinary.data[p * 4 + 1] == 88 && ordinary.data[p * 4 + 2] == 128), "resizing erased source key: regression is meaningful");
 				free(ordinary.data);
 			}
-			for (const char *name : { "broken", "translucent", "keyed", "mixed", "fitted", "strip" }) {
+			for (const char *name : { "broken", "translucent", "fitted", "strip" }) {
 				const char *fallback_names[] = { nullptr, nullptr, name };
 				png_data fallback{};
 				require(android_ogl_read_replacement(path, sizeof(path), hog, fallback_names, slots, 3, 0, &bitmap, &fallback, &ktx, &metrics, &ktx_us, &png_us) == 1 && fallback.width == 4 && fallback.data[0] == (hog && !std::strcmp(owner, "a") && !std::strcmp(name, "fitted") ? 210 : 10), "source transparency rejects before fitting; opaque sources fit normally");
 				free(fallback.data);
 				free(fallback.palette);
 			}
+			if (hog && !std::strcmp(owner, "a")) {
+				png_data masked{};
+				require(read_png_scoped_static("mods/pilot/textures/mixed.tga", &masked), "sparse key classification before fitting");
+				require(masked.width == 4 && masked.scoped_super && masked.scoped_mask, "source mask retained with fitted color");
+				int holes = 0;
+				for (unsigned i = 0; i < 16; ++i) {
+					holes += masked.scoped_mask[i] == 255;
+					if (masked.scoped_mask[i]) require(masked.data[i * 4 + 3] == 0, "key removes color coverage");
+				}
+				require(holes == 1, "single sparse key survives reduction without RGB key search");
+				free(masked.data);
+			}
 			ogl_max_texture_size = previous_limit;
+#ifdef DXX_BUILD_DESCENT_II
+			test_masks(!std::strcmp(owner, "a"));
+#endif
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
 			results.push_back({ { "context", generation }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
 		}
 		android_mission_assets_free_begin();
 		android_mission_assets_free_end();
 		glDeleteVertexArrays(1, &vao);
+#ifdef DXX_BUILD_DESCENT_II
+		ogl_done_prog();
+#endif
 		ogl_close_pixel_buffers();
 		glDeleteProgram(program);
 		glDeleteShader(vertex);

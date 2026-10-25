@@ -117,7 +117,18 @@
             "alpha_zero": 0,
             "alpha_full": 65536,
             "alpha_partial": 0,
-            "purple_key": 28375
+            "purple_key": 28375,
+            "engine_alpha": {
+                "decoder": "Android-pinned stb_image, raw TGA v2 attribute type0 retained like pinned XL",
+                "histogram": {
+                    "0": 51186,
+                    "104": 1,
+                    "255": 14349
+                },
+                "purple_key": 28375,
+                "ordinary_cutout": 22811,
+                "binary_admission": "rejected: non-key alpha104 at stored pixel47303 RGB124/93/132"
+            }
         },
         {
             "member": "mods/boilpnt/textures/force01#0.tga",
@@ -643,7 +654,17 @@
             "alpha_zero": 0,
             "alpha_full": 65536,
             "alpha_partial": 0,
-            "purple_key": 21878
+            "purple_key": 21878,
+            "engine_alpha": {
+                "decoder": "Android-pinned stb_image, raw TGA v2 attribute type0 retained like pinned XL",
+                "histogram": {
+                    "0": 48257,
+                    "255": 17279
+                },
+                "purple_key": 21878,
+                "ordinary_cutout": 26379,
+                "binary_admission": "accepted by production classification; original GPU rendering not yet qualified"
+            }
         },
         {
             "member": "mods/boilpnt/textures/misc081.tga",
@@ -744,5 +765,6 @@
             "alpha_partial": 0,
             "purple_key": 0
         }
-    ]
+    ],
+    "qualification": "Pillow output can normalize TGA extension alpha type0. These alpha histograms are not stored-byte/engine-admission evidence. Native engine findings below supersede them for the named sources."
 }

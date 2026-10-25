@@ -48,6 +48,10 @@ class OriginalStaticTextureTest {
                     "missions/single/boilpnt.hog" to "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
                     "mods/boilpnt/textures/ceil002.tga" to
                         "150c3603749fc87d877c9a0c97218431605b845098a89338a632252402635c3b",
+                    "mods/boilpnt/textures/fan03.tga" to
+                        "8b51c97b97074f09260647b6db29f6df99939959397572c2f5dacb1d3d705799",
+                    "mods/boilpnt/textures/misc075.tga" to
+                        "82b67fa245c804174bfba321d7296778819440d675c57c168aa5d20fef532c7c",
                     "mods/boilpnt/textures/ceil002.bmp" to
                         "d801f9bb7858a868497a5136523407bfd1caafc01e168f4f3edf304454dee268",
                 )
@@ -84,33 +88,39 @@ class OriginalStaticTextureTest {
                     it.getString("descriptor") ==
                         selection.key.descriptor
                 }
-            val log = root.resolve("native.log")
-            val process =
-                ProcessBuilder(
-                    engine!!.absolutePath,
-                    "-static-texture-test",
-                    "original",
-                    "-hogdir",
-                    retail!!.absolutePath,
-                    "-extra-dir",
-                    root.absolutePath,
-                    "-userdir",
-                    game.absolutePath,
-                    "-asset-alias",
-                    entry.getString("alias"),
-                    "-expected-texture",
-                    original.source.absolutePath,
-                    "-nosound",
-                    "-nomusic",
-                ).redirectErrorStream(true).redirectOutput(log).start()
-            val exited = process.waitFor(60, TimeUnit.SECONDS)
-            if (!exited) {
-                process.destroyForcibly()
-                process.waitFor(5, TimeUnit.SECONDS)
+            for (name in listOf("ceil002", "fan03", "misc075")) {
+                val witness = resources.single { it.virtualPath == "mods/boilpnt/textures/$name.tga" }
+                assertEquals(files.getValue(witness.virtualPath), sha(witness.source))
+                val log = root.resolve("native-$name.log")
+                val process =
+                    ProcessBuilder(
+                        engine!!.absolutePath,
+                        "-static-texture-test",
+                        "original",
+                        "-hogdir",
+                        retail!!.absolutePath,
+                        "-extra-dir",
+                        root.absolutePath,
+                        "-userdir",
+                        game.absolutePath,
+                        "-asset-alias",
+                        entry.getString("alias"),
+                        "-expected-texture",
+                        witness.source.absolutePath,
+                        "-texture-name",
+                        name,
+                        "-nosound",
+                        "-nomusic",
+                    ).redirectErrorStream(true).redirectOutput(log).start()
+                val exited = process.waitFor(60, TimeUnit.SECONDS)
+                if (!exited) {
+                    process.destroyForcibly()
+                    process.waitFor(5, TimeUnit.SECONDS)
+                }
+                assertTrue("Native texture probe timed out", exited)
+                assertEquals(log.readText(), 0, process.exitValue())
+                assertTrue(log.readText().contains("exact bytes and stock teardown passed"))
             }
-            assertTrue("Native texture probe timed out", exited)
-            assertEquals(log.readText(), 0, process.exitValue())
-            assertTrue(log.readText().contains("exact bytes and stock teardown passed"))
         } finally {
             root.deleteRecursively()
         }

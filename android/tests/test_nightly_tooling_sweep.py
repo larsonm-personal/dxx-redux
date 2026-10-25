@@ -330,6 +330,15 @@ class SweepTests(unittest.TestCase):
         self.assertIn("not path.is_symlink()", step)
         self.assertIn("stream.read(16384)", step)
 
+    def test_static_texture_campaign_builds_the_actual_opt_in_runtime(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        self.assertIn(
+            "'xl_textures': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_scoped_static_textures' for test in selected)",
+            workflow,
+        )
+        build = workflow.split("      - name: Build emulator APKs before boot", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}", build)
+
     def test_static_texture_diagnostic_is_bounded_and_public_only(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
         step = workflow.split("      - name: Report synthetic XL texture result", 1)[1].split("      - name:", 1)[0]

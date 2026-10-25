@@ -399,6 +399,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->authored_mip_count = t->mip_base_level = 0;
 	t->replacement_source = 0;
 	t->sprite_additive = 0;
+	t->scoped_static = t->scoped_super = 0;
 	t->additive_draws = 0;
 #endif
 }
@@ -1406,6 +1407,9 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	 * BM_FLAG_PAGED_OUT (no SUPER_TRANSPARENT) and gltexture_mask NULL.
 	 * bindbmtex pages in the bitmap and generates the mask. */
 	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
+#ifdef ANDROID
+	if (bmovl->gltexture->scoped_super && bmovl->gltexture_mask) super = 1;
+#endif
 	#if defined(ANDROID)
 	is_logging_target_plain = !super && android_merged_wall_is_logging_target_bitmap(bmovl);
 	merged_wall_force_two_pass = is_logging_target_plain && g_merged_wall_force_two_pass;
@@ -1543,7 +1547,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	gles3_shim_use_external(prog);
 	ogl_prog_set_tex2_current_matrix(gles3_shim_get_mvp(), super);
 	r_shader_switches++;
-	if (super) r_mask_draws++;
+	if (super) {
+		++r_mask_draws;
+		ogl_prog_set_tex2m_binary(bmovl->gltexture->scoped_static);
+	}
 #else
 	glUseProgram(prog);
 #endif
@@ -3133,6 +3140,19 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 
 		while (bm->bm_parent)
 			bm=bm->bm_parent;
+#ifdef ANDROID
+	/* A replacement-only flush leaves bitmap pointers alive. Retire scoped
+	 * dimensions/classification/mask together before reloading or stock fallback. */
+	if (bm->gltexture && bm->gltexture->scoped_static && !bm->gltexture->handle) {
+		ogl_reset_texture(bm->gltexture);
+		bm->gltexture = NULL;
+		if (bm->gltexture_mask) {
+			if (bm->gltexture_mask->handle) ogl_freetexture(bm->gltexture_mask);
+			else ogl_reset_texture(bm->gltexture_mask);
+			bm->gltexture_mask = NULL;
+		}
+	}
+#endif
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
 #ifdef OGL_MERGE
@@ -3302,10 +3322,15 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 						free(pdata.palette);
 					} else {
 				#ifdef OGL_MERGE
-				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
+				if ((real_flags & BM_FLAG_SUPER_TRANSPARENT)
+#ifdef ANDROID
+				    || pdata.scoped_static
+#endif
+				) {
 #ifdef ANDROID
 					android_perf_clock_now(&stage_start);
-					if (!android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture)) {
+					if (!(pdata.scoped_static ? android_ogl_load_scoped_mask(&pdata, bm, texfilt, ogl_loadtexture)
+				                         : android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture))) {
 						free(pdata.data);
 						if (pdata.palette) free(pdata.palette);
 						ogl_freebmtexture(bm);

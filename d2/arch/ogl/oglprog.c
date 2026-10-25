@@ -79,6 +79,8 @@ static GLuint ogl_mk_prog(const char *prog_name, const char *vert_src, const cha
 	return prog;
 }
 
+static GLint ogl_tex2m_binary = -1;
+
 void ogl_init_prog() {
 	ogl_prog_tex2 = ogl_mk_prog("tex2", "attribute vec3 apos;"
 		"\n attribute vec4 acolor;"
@@ -144,10 +146,13 @@ void ogl_init_prog() {
 		"\n uniform sampler2D utex;"
 		"\n uniform sampler2D utex2;"
 		"\n uniform sampler2D utex2m;"
+		"\n uniform int ubinary;"
 		"\n void main() {"
 		"\n  vec4 bot = texture2D(utex, vtexcoord), ovl = texture2D(utex2, vtexcoord2);"
+		"\n  if (ubinary != 0) ovl.a = step(0.5, ovl.a);"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovl.a), bot.a + ovl.a - bot.a * ovl.a);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  vec4 mask = texture2D(utex2m, vtexcoord2);"
+		"\n  if (ubinary != 0) mask.a = step(0.5, mask.a);"
 		"\n  vec4 f = vcolor * vec4(c.rgb, c.a * mask.a);"
 		"\n  if (f.a < 0.02) discard;"
 		"\n  gl_FragColor = f;"
@@ -155,6 +160,7 @@ void ogl_init_prog() {
 
 	ogl_tex2_mat = glGetUniformLocation(ogl_prog_tex2, "umat");
 	ogl_tex2m_mat = glGetUniformLocation(ogl_prog_tex2m, "umat");
+	ogl_tex2m_binary = glGetUniformLocation(ogl_prog_tex2m, "ubinary");
 	ogl_tex2_alpha_cutoff = glGetUniformLocation(ogl_prog_tex2, "utex2alpha_cutoff");
 	ogl_tex2_debug_mode = glGetUniformLocation(ogl_prog_tex2, "utex2_debug");
 
@@ -170,6 +176,10 @@ void ogl_init_prog() {
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex2m"), 2);
 
 	ogl_shader_use_program(0);
+}
+
+void ogl_prog_set_tex2m_binary(int enabled) {
+	if (ogl_tex2m_binary >= 0) glUniform1i(ogl_tex2m_binary, enabled);
 }
 
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat cutoff) {

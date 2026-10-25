@@ -22,6 +22,7 @@
 #include "android_texture_usage.h"
 #include "android_mission_assets.h"
 #include "dxa_admission_limits.h"
+#include "xl_static_texture_pixels.h"
 
 #define KHRONOS_STATIC
 #include <ktx.h>
@@ -626,27 +627,65 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 
 	if (!pixels)
 		return 0;
-	/* Scoped XL admission examines original pixels: resizing can erase a key. */
+	/* Classify before any fitting: averaging can erase sparse purple keys. */
+	unsigned char *mask = NULL;
+	int has_super = 0;
 	if (scoped_opaque) {
-		int opaque = channels == 3 || channels == 4;
-		if (opaque)
-			for (size_t pixel = 0; pixel < (size_t) w * h; ++pixel) {
-				const unsigned char *color = pixels + pixel * channels;
-				if ((channels == 4 && color[3] != 255) ||
-				    (color[0] == 120 && color[1] == 88 && color[2] == 128)) {
-					opaque = 0;
-					break;
-				}
-			}
-		if (!opaque) {
+		if ((channels != 3 && channels != 4) ||
+		    (size_t) w * h > ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES / 5) {
 			free(pixels);
 			return 0;
 		}
-	}
-	pixels = texture_fit_pixels(pixels, &w, &h, channels);
+		for (size_t i = 0; i < (size_t) w * h; ++i) {
+			const unsigned char *p = pixels + i * channels;
+			const int key = p[0] == 120 && p[1] == 88 && p[2] == 128;
+			const int alpha = channels == 4 ? p[3] : 255;
+			if ((!key && alpha != 0 && alpha != 255) || (scoped_opaque == 1 && (key || alpha != 255))) {
+				free(pixels);
+				return 0;
+			}
+			has_super |= key;
+		}
+		if (scoped_opaque == 2) {
+			/* Binary material mip chains currently require power-of-two surfaces.
+			 * Keep non-POT opaque artwork on its existing padding path. */
+			int binary = has_super;
+			if (channels == 4)
+				for (size_t i = 0; i < (size_t) w * h; ++i) binary |= !pixels[i * 4 + 3];
+			if (binary && ((w & (w - 1)) || (h & (h - 1)))) {
+				free(pixels);
+				return 0;
+			}
+#ifdef OGL
+			const int limit = ogl_max_texture_size > 0 ? ogl_max_texture_size : 2048;
+#else
+			const int limit = 2048;
+#endif
+			dxx_xl_static_pixels fitted;
+			if (!dxx_xl_fit_static_pixels(pixels, w, h, channels, limit, &fitted)) {
+				free(pixels);
+				return 0;
+			}
+			free(pixels);
+			pixels = fitted.data;
+			mask = fitted.mask;
+			w = fitted.width;
+			h = fitted.height;
+			channels = 4;
+			has_super = fitted.super;
+			if (binary && ((w & (w - 1)) || (h & (h - 1)))) {
+				free(pixels);
+				return 0;
+			}
+
+		} else pixels = texture_fit_pixels(pixels, &w, &h, channels);
+	} else pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	if (!pixels) return 0;
 
 	memset(pdata, 0, sizeof(*pdata));
+	pdata->scoped_mask = mask;
+	pdata->scoped_static = scoped_opaque == 2;
+	pdata->scoped_super = has_super;
 	pdata->width = (unsigned int) w;
 	pdata->height = (unsigned int) h;
 	pdata->depth = 8;
@@ -669,6 +708,11 @@ int read_png(const char *filename, png_data *pdata)
 int read_png_scoped_opaque(const char *filename, png_data *pdata)
 {
 	return read_png_policy(filename, pdata, 1);
+}
+
+int read_png_scoped_static(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 2);
 }
 
 /* Screenshots: on Android without libpng, gr.c falls back to TGA output

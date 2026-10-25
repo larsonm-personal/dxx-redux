@@ -1,0 +1,191 @@
+// Production bitmap upload and wall composition, under the fixture's owned context.
+#ifdef DXX_BUILD_DESCENT_II
+extern "C" {
+#include "3d.h"
+#include "config.h"
+#include "args.h"
+void ogl_loadbmtexture_f(grs_bitmap *, int, const char *);
+void ogl_freebmtexture(grs_bitmap *);
+void ogl_init_prog(void);
+void ogl_done_prog(void);
+void ogl_smash_png_textures(void);
+#include "game.h"
+extern int r_mask_draws;
+// Identity injection only: this renderer fixture does not load a retail mission.
+const char *mission_resource_archive(void)
+{
+	return "pilot.hog";
+}
+}
+static void mask_pattern()
+{
+	image("a/mods/pilot/textures/pattern.tga", 210);
+	std::fstream f("a/mods/pilot/textures/pattern.tga", std::ios::in | std::ios::out | std::ios::binary);
+	f.seekp(17);
+	f.put(0x28); // top-left origin, eight alpha bits
+	for (int y = 0; y < 4; ++y)
+		for (int x = 0; x < 4; ++x) {
+			const unsigned char opaque[] = { 30, 40, 210, 255 }, cutout[] = { 99, 88, 77, 0 }, key[] = { 128, 88, 120, 255 };
+			f.write(reinterpret_cast<const char *>(y >= 2 && x < 2 ? key : y < 2 && x >= 2 ? cutout
+			                                                                               : opaque),
+			        4);
+		}
+	require(bool(f), "write mixed binary/key pattern");
+	image("global/pattern.tga", 10);
+}
+static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int extent, int depth)
+{
+	g3s_point points[4]{};
+	const g3s_point *list[4];
+	g3s_uvl uv[4]{};
+	g3s_lrgb light[4]{};
+	for (int i = 0; i < 4; ++i) {
+		vms_vector v{ (i == 0 || i == 3) ? -extent : extent, i < 2 ? extent : -extent, depth };
+		g3_rotate_point(&points[i], &v);
+		g3_project_point(&points[i]);
+		list[i] = &points[i];
+		uv[i].u = (i == 1 || i == 2) ? F1_0 : 0;
+		uv[i].v = i >= 2 ? F1_0 : 0;
+		uv[i].l = F1_0;
+		light[i] = { F1_0, F1_0, F1_0 };
+	}
+	if (overlay) g3_draw_tmap_2(4, list, uv, light, &base, overlay, orient);
+	else g3_draw_tmap(4, list, uv, light, &base);
+}
+static void mask_solid(grs_bitmap &bitmap, unsigned char r, unsigned char g, unsigned char b)
+{
+	unsigned char rgba[] = { r, g, b, 255 };
+	bitmap.bm_w = bitmap.bm_h = 1;
+	bitmap.gltexture = ogl_get_free_texture();
+	ogl_init_texture(bitmap.gltexture, 1, 1, OGL_FLAG_ALPHA);
+	require(!ogl_loadtexture(rgba, 0, 0, bitmap.gltexture, 0, 4, 0, nullptr), "solid layer upload");
+}
+static void test_masks(bool owned)
+{
+	GameArg.DbgAltTexMerge = 0;
+	grs_screen screen{};
+	screen.sc_w = screen.sc_h = 64;
+	screen.sc_aspect = F1_0;
+	gr_init_canvas(&screen.sc_canvas, nullptr, BM_OGL, 64, 64);
+	screen.sc_canvas.cv_fade_level = GR_FADE_OFF;
+	grd_curscreen = &screen;
+	gr_set_current_canvas(&screen.sc_canvas);
+	grs_bitmap base{}, behind{}, overlay{};
+	mask_solid(base, 20, 220, 20);
+	mask_solid(behind, 20, 20, 220);
+	unsigned char stock[16]{};
+	overlay.bm_w = overlay.bm_h = overlay.bm_rowsize = 4;
+	overlay.bm_data = stock;
+	for (int filter = 0; filter < 3; ++filter) {
+		GameCfg.TexFilt = filter;
+		ogl_loadbmtexture_f(&overlay, filter, "pattern");
+		require(overlay.gltexture && overlay.gltexture->scoped_static == owned && overlay.gltexture->scoped_super == owned, "production upload carries source classification with opaque stock flags");
+		require(overlay.bm_flags == 0 && bool(overlay.gltexture_mask) == owned, "stock flags unchanged; generated same-source mask");
+		if (owned) {
+			const GLuint color = overlay.gltexture->handle, mask = overlay.gltexture_mask->handle;
+			char rejected[256];
+			require(!android_mission_assets_prepare("missions/_packs/missing/no.mn2", rejected, sizeof(rejected)), "failed candidate rejected before replacing live context");
+			require(glIsTexture(color) && glIsTexture(mask) && !std::strcmp(android_mission_assets_owner(), "a"), "failed mission preparation preserves live color and mask together");
+		}
+		for (int orient = 0; orient < 4; ++orient) {
+			g3_start_frame();
+			vms_vector pos{};
+			vms_matrix matrix = vmd_identity_matrix;
+			g3_set_view_matrix(&pos, &matrix, F1_0);
+			glViewport(0, 0, 64, 64);
+			glClearColor(0, 0, 0, 1);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+			glDepthMask(GL_TRUE);
+			mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+			const int before = r_mask_draws;
+			mask_quad(base, &overlay, orient, 3 * F1_0, 4 * F1_0);
+			require(r_mask_draws - before == (owned ? 1 : 0), "production renderer selects mask for stock-opaque replacement");
+			unsigned char pixels[64 * 64 * 4];
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+			int red = 0, green = 0, blue = 0, global = 0;
+			for (int y : { 16, 48 })
+				for (int x : { 16, 48 }) {
+					const auto *p = pixels + (y * 64 + x) * 4;
+					red += p[0] > 180 && p[1] < 80;
+					green += p[1] > 180 && p[0] < 80;
+					blue += p[2] > 180 && p[0] < 80;
+					global += p[0] == 10 && p[1] == 40 && p[2] == 30;
+				}
+			if (!(owned ? red == 2 && green == 1 && blue == 1 : global == 4)) std::fprintf(stderr, "mask readback owned=%d filter=%d orient=%d red=%d base=%d behind=%d global=%d\n", owned, filter, orient, red, green, blue, global);
+			require(owned ? red == 2 && green == 1 && blue == 1 : global == 4, "ordinary cutout reveals base; super-hole reveals behind both layers");
+			// Reverse submission order: discarded holes must not write depth.
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			mask_quad(base, &overlay, orient, 3 * F1_0, 4 * F1_0);
+			mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+			unsigned char after[sizeof(pixels)];
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, after);
+			require(!std::memcmp(pixels, after, sizeof(pixels)), "hole discard preserves depth for geometry behind");
+			g3_end_frame();
+		}
+		if (owned)
+			for (int mode = 0; mode < 2; ++mode) {
+				g3_start_frame();
+				vms_vector pos{};
+				vms_matrix matrix = vmd_identity_matrix;
+				g3_set_view_matrix(&pos, &matrix, F1_0);
+				glViewport(0, 0, 64, 64);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				glDisable(GL_CULL_FACE);
+				glDisable(GL_BLEND);
+				mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+				mask_quad(overlay, mode ? &base : nullptr, 0, 3 * F1_0, 4 * F1_0);
+				unsigned char pixels[64 * 64 * 4];
+				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+				int red = 0, green = 0, blue = 0;
+				for (int y : { 16, 48 })
+					for (int x : { 16, 48 }) {
+						const auto *p = pixels + (y * 64 + x) * 4;
+						red += p[0] > 180 && p[1] < 80;
+						green += p[1] > 180 && p[0] < 80;
+						blue += p[2] > 180 && p[0] < 80;
+					}
+				require(mode ? green == 4 : red == 2 && blue == 2, "standalone holes reveal behind; opaque overlay covers base holes");
+				g3_end_frame();
+			}
+		if (owned && filter == 2) {
+			for (auto *texture : { overlay.gltexture, overlay.gltexture_mask }) {
+				glBindTexture(GL_TEXTURE_2D, texture->handle);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 2);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 2);
+			}
+			g3_start_frame();
+			vms_vector pos{};
+			vms_matrix matrix = vmd_identity_matrix;
+			g3_set_view_matrix(&pos, &matrix, F1_0);
+			glViewport(0, 0, 64, 64);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+			mask_quad(base, &overlay, 0, 3 * F1_0, 4 * F1_0);
+			unsigned char p[4];
+			glReadPixels(32, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, p);
+			require(p[2] > 180 && p[0] < 80, "conservative final mip retains super-hole coverage");
+			g3_end_frame();
+		}
+		if (owned) {
+			ogl_smash_png_textures();
+			const int old_mode = Game_mode;
+			Game_mode = GM_MULTI;
+			ogl_loadbmtexture_f(&overlay, filter, "pattern");
+			require(overlay.gltexture && !overlay.gltexture->scoped_static && !overlay.gltexture->scoped_super && !overlay.gltexture_mask && overlay.gltexture->w == 4, "replacement flush and disabled cosmetics clear classification and mask before stock fallback");
+			Game_mode = old_mode;
+		}
+		ogl_freebmtexture(&overlay);
+	}
+	ogl_freebmtexture(&base);
+	ogl_freebmtexture(&behind);
+	grd_curscreen = nullptr;
+	grd_curcanv = nullptr;
+	require(glGetError() == GL_NO_ERROR, "static mask production composition cleanup");
+}
+#endif
