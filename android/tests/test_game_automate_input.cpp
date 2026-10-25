@@ -8,6 +8,11 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
+extern "C" {
+#include "vecmat.h"
+}
+#undef min
+#undef max
 
 using json = nlohmann::json;
 using Uint32 = unsigned;
@@ -27,12 +32,24 @@ static FILE *g_log_fp;
 static char g_active_script[512], g_active_run_id[80], g_automate_dir[512] = ".";
 static automation_load_request g_pending_load;
 static std::mutex g_pending_load_mutex;
-static std::atomic<bool> g_load_requested{false};
-static Uint32 SDL_GetTicks() { return 100; }
+static std::atomic<bool> g_load_requested{ false };
+static Uint32 SDL_GetTicks()
+{
+	return 100;
+}
+static unsigned still_view_restores;
+// Observe the production parser/terminal cleanup seam without simulating a renderer
+static void restore_still_view()
+{
+	++still_view_restores;
+}
 static void clear_held_axes() {}
 static void open_log_file() {}
 static void log_append(const char *, const char *, const char *) {}
-static const char *step_type_name(step_type) { return "test"; }
+static const char *step_type_name(step_type)
+{
+	return "test";
+}
 #include "automation_parser.inc"
 #include "automation_result.inc"
 #include "automation_stale.inc"
@@ -66,20 +83,29 @@ int main()
 	std::remove("automation_result.json");
 	assert(!g_load_requested && !g_active);
 	process_pending_load();
-	assert(!g_active && !g_failed && g_steps.empty());
+	assert(!g_active && !g_failed && g_steps.empty() && still_view_restores == 0);
 	assert(!std::ifstream("automation_result.json").good());
 
 	for (const char *invalid : {
-			 R"([{"action":"log"},{"action":"assert_typo"}])",
-			 R"([{"action":"log"},{}])",
-			 R"([{"action":"log"},null])",
-			 R"([{"action":"log"},{"action":5}])",
-			 "[{", "{}", "[]", R"([{"_info":{}}])"}) {
+	         R"([{"action":"log"},{"action":"assert_typo"}])",
+	         R"([{"action":"log"},{}])",
+	         R"([{"action":"log"},null])",
+	         R"([{"action":"log"},{"action":5}])",
+	         "[{", "{}", "[]", R"([{"_info":{}}])",
+	         R"([{"action":"pose_view","position_fixed":[0,1]}])",
+	         R"([{"action":"pose_view","position_fixed":[0,1,2,3]}])",
+	         R"([{"action":"pose_view","position_fixed":[0,1.5,2]}])",
+	         R"([{"action":"pose_view","position_fixed":[0,true,2]}])",
+	         R"([{"action":"pose_view","position_fixed":[0,"1",2]}])",
+	         R"([{"action":"pose_view","position_fixed":[1966080001,0,0]}])",
+	         R"([{"action":"pose_view","position_fixed":[-1966080001,0,0]}])" }) {
 		// Begin with a still-active prior script and a stale successful result
 		request(R"([{"action":"log"},{"action":"wait_ms","ms":1000}])");
 		assert(g_active && g_steps.size() == 2);
 		write_result_file("PASS", nullptr);
+		const auto before = still_view_restores;
 		request(invalid);
+		assert(still_view_restores == before + 2); // replacement cleanup and terminal failure
 		assert(!g_active && g_failed && g_steps.empty());
 		const auto failed = result();
 		assert(failed.at("result") == "FAIL" && failed.at("run_id") == "new-run");
@@ -87,6 +113,13 @@ int main()
 		advance_step();
 		assert(result().at("result") == "FAIL");
 	}
+	const auto before_pose = still_view_restores;
+	request(R"([{"action":"pose_view","position_fixed":[-1966080000,65536,1966080000]}])");
+	assert(g_active && g_steps.size() == 1 && g_steps[0].pose_fixed);
+	assert(g_steps[0].fixed_position.x == -30000 * F1_0 && g_steps[0].fixed_position.y == F1_0 && g_steps[0].fixed_position.z == 30000 * F1_0);
+	assert(still_view_restores == before_pose + 1);
+	advance_step();
+	assert(!g_active && result().at("result") == "PASS" && still_view_restores == before_pose + 2);
 	request(R"([{"action":"log"}])");
 	std::strcpy(g_pending_load.script_path, "missing-automation-input.json");
 	g_load_requested = true;
