@@ -4,6 +4,7 @@ static bool fixture_xl_mission = true;
 static const char *fixture_hog = "pilot.hog";
 extern "C" {
 #include "3d.h"
+#include "xl_soft_base_pass.h"
 #include "config.h"
 #include "args.h"
 void ogl_loadbmtexture_f(grs_bitmap *, int, const char *);
@@ -43,7 +44,7 @@ static void mask_pattern()
 	image("a/mods/pilot/textures/tinycutout.tga", 210, 0, 40, 30, 1);
 	image("a/mods/pilot/textures/tinykey.tga", 120, 255, 88, 128, 1);
 }
-static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int extent, int depth, fix brightness = F1_0)
+static int mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int extent, int depth, fix brightness = F1_0, int soft_pass = 0, int repeats = 1)
 {
 	g3s_point points[4]{};
 	const g3s_point *list[4];
@@ -54,13 +55,15 @@ static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int ext
 		g3_rotate_point(&points[i], &v);
 		g3_project_point(&points[i]);
 		list[i] = &points[i];
-		uv[i].u = (i == 1 || i == 2) ? F1_0 : 0;
-		uv[i].v = i >= 2 ? F1_0 : 0;
+		uv[i].u = (i == 1 || i == 2) ? repeats * F1_0 : 0;
+		uv[i].v = i >= 2 ? repeats * F1_0 : 0;
 		uv[i].l = brightness;
 		light[i] = { brightness, brightness, brightness };
 	}
+	if (soft_pass) return ogl_draw_xl_soft_base_pass(soft_pass, 4, list, uv, light, &base);
 	if (overlay) g3_draw_tmap_2(4, list, uv, light, &base, overlay, orient);
 	else g3_draw_tmap(4, list, uv, light, &base);
+	return 1;
 }
 static void mask_solid(grs_bitmap &bitmap, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255)
 {

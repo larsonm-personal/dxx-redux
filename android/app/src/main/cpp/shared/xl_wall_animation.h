@@ -283,7 +283,7 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay, i
 		return &strip->frames[frame];
 	}
 	grs_bitmap *selected = xl_wclip_animation_bitmap(original, texture, overlay, hog, allow_soft);
-	if (selected != original || !overlay || !allow_soft) return selected;
+	if (selected != original || !allow_soft) return selected;
 	struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original, 1, 1);
 	if (!strip || !strip->soft || strip->count != 1) return original;
 	strip->frames[0].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;

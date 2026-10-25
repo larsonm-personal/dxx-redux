@@ -78,6 +78,7 @@ static GLuint shader(GLenum type, const char *text)
 #include "door_fixture.hpp"
 #include "animated_masks_fixture.hpp"
 #include "soft_overlays_fixture.hpp"
+#include "soft_base_fixture.hpp"
 
 int main(int argc, char **argv)
 {
@@ -91,6 +92,7 @@ int main(int argc, char **argv)
 	door_pattern();
 	animated_mask_pattern();
 	soft_overlay_pattern();
+	soft_base_pattern();
 #endif
 	const bool original = std::filesystem::is_regular_file("ceil002.tga");
 	if (original) std::filesystem::copy_file("ceil002.tga", "a/mods/pilot/textures/CEIL002.TGA", std::filesystem::copy_options::overwrite_existing);
@@ -248,6 +250,7 @@ int main(int argc, char **argv)
 			test_door_animation(owner);
 			test_animated_masks(owner);
 			test_soft_overlays(owner);
+			test_soft_bases(owner);
 #endif
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
 			results.push_back({ { "context", generation }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });

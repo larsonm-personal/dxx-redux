@@ -1374,6 +1374,10 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	return 0;
 }
 
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#include "xl_soft_base_pass_impl.h"
+#endif
+
 /*
  * Everything texturemapped with secondary texture (walls with secondary texture)
  */
