@@ -18,6 +18,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 #include <stdio.h>
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -972,6 +975,9 @@ int allowed_to_fire_laser(void)
 	}
 
 	//	Make sure enough time has elapsed to fire laser
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return 0;
+#endif
 	if (Next_laser_fire_time > GameTime64)
 		return 0;
 
@@ -997,6 +1003,9 @@ int allowed_to_fire_flare(void)
 
 int allowed_to_fire_missile(void)
 {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return 0;
+#endif
 	//	Make sure enough time has elapsed to fire missile
 	if (Next_missile_fire_time > GameTime64)
 		return 0;
@@ -1918,10 +1927,12 @@ static void game_process_frame_body(void)
 		#ifdef __ANDROID__
 		android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_MOVE);
 		#endif
+		const int movement_level = Current_level_num;
 		object_move_all();
 		#ifdef __ANDROID__
 		android_profile_bucket_end(ANDROID_PROFILE_BUCKET_MOVE);
 		#endif
+		if (Current_level_num != movement_level) return;
 		input_demo_debug_log_replay_energy_stage("after_move");
 		input_demo_debug_log_player_motion_state("after_move");
 		powerup_grab_cheat_all();
@@ -2258,6 +2269,9 @@ void FireLaser()
 	int wants_fire = Controls.fire_primary_state || Controls.fire_primary_count;
 
 	Controls.fire_primary_count = 0;
+#ifdef DXX_XL_PILOT
+	if (wants_fire || !xl_preview_preserve_fusion_queue())
+#endif
 	Global_laser_firing_count = wants_fire?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
 
 	if ((Players[Player_num].primary_weapon == FUSION_INDEX) && (Global_laser_firing_count)) {

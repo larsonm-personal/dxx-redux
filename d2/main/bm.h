@@ -92,6 +92,7 @@ int gamedata_read_tbl(int pc_shareware);
 
 extern void bm_read_all(PHYSFS_file * fp);
 extern int bm_validate_main_ham(PHYSFS_file *fp);
+int bm_validate_level_hxm(PHYSFS_file *fp);
 void bm_reset_mission_compatibility_warnings(void);
 void bm_reset_level_compatibility_warnings(void);
 int bm_compatibility_warning_count(void);

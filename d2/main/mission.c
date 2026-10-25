@@ -46,6 +46,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "../../android/XL_compat/mission_label.h"
 #include "d1_in_d2/d1_in_d2.h"
+#ifdef DXX_XL_PILOT
+#include "resource_validation.h"
+#endif
 
 //values that describe where a mission is located
 enum mle_loc
@@ -72,6 +75,13 @@ static int num_missions = -1;
 
 Mission *Current_mission = NULL; // currently loaded mission
 static char Current_mission_hog[PATH_MAX];
+#ifdef DXX_XL_PILOT
+static char *Current_mission_descriptor;
+const char *mission_descriptor_snapshot(void)
+{
+	return Current_mission_descriptor;
+}
+#endif
 static unsigned Mission_ignored_extra_secret_origins;
 
 int mission_compatibility_warning_count(void)
@@ -663,6 +673,12 @@ int mission_owns_resource_archive(const char *source)
 
 void free_mission(void)
 {
+#ifdef DXX_XL_PILOT
+	d_free(Current_mission_descriptor);
+	xl_discard_prepared_resources();
+	xl_resource_select_mission(0);
+	xl_resource_baseline_clear();
+#endif
 #ifdef __ANDROID__
 	if (Current_mission) android_mission_assets_free_begin();
 	physfsx_android_unmount_mission_directory();
@@ -769,7 +785,13 @@ void init_extra_robot_movie(char *filename);
 int load_mission_ham()
 {
 	void bm_read_extra_robots(const char *fname,int type);
+	int extra_robots = 0;
+#ifdef DXX_XL_PILOT
+	if (*xl_resource_base_rejection()) return 0;
+	xl_resource_baseline_clear();
+#else
 	if (Current_mission->enhanced == MISSION_ENHANCED_XL) return 0;
+#endif
 	bm_reset_mission_compatibility_warnings();
 	piggy_load_mission_data();
 
@@ -797,15 +819,351 @@ int load_mission_ham()
 		bm_read_extra_robots(*Current_mission->alternate_ham_file, 2);
 		if (exists)
 			PHYSFSX_contfile_close(p);
-		return 1;
-	} else if (Current_mission->enhanced) {
+		extra_robots = 1;
+	} else if (Current_mission->enhanced && Current_mission->enhanced != MISSION_ENHANCED_XL) {
 		char t[50];
 		snprintf(t,sizeof(t),"%s.ham",Current_mission_filename);
 		bm_read_extra_robots(t, Current_mission->enhanced);
-		return 1;
-	} else
-		return 0;
+		extra_robots = 1;
+	}
+#ifdef DXX_XL_PILOT
+	xl_resource_baseline_capture();
+#endif
+	return extra_robots;
 }
+
+typedef struct mission_text_reference {
+	char name[FILENAME_LEN];
+	int ending;
+	struct mission_text_reference *next;
+} mission_text_reference;
+
+typedef struct mission_descriptor_stage {
+	Mission candidate;
+	unsigned ignored_origins;
+	mission_text_reference *text;
+	int ready;
+	int has_companion_hog;
+#ifdef DXX_XL_PILOT
+	char companion_hog[PATH_MAX];
+	char *descriptor_data;
+#endif
+} mission_descriptor_stage;
+
+static void release_descriptor_stage(mission_descriptor_stage *stage)
+{
+#ifdef DXX_XL_PILOT
+	d_free(stage->descriptor_data);
+#endif
+	mission_text_reference *text = stage->text;
+	while (text) {
+		mission_text_reference *next = text->next;
+		d_free(text);
+		text = next;
+	}
+	d_free(stage->candidate.level_names);
+	d_free(stage->candidate.secret_level_names);
+	d_free(stage->candidate.secret_level_table);
+	d_free(stage->candidate.alternate_ham_file);
+	stage->text = NULL;
+	stage->ready = 0;
+}
+
+/* Defer archive-dependent text lookup, preserving directive order and fallback */
+static int descriptor_text_reference(const char *value, int ending, Mission *candidate, mission_text_reference **deferred)
+{
+	mission_text_reference *entry;
+	char name[FILENAME_LEN];
+	if (!deferred) {
+		set_mission_text_filename(value, ending ? candidate->ending_text_filename : candidate->briefing_text_filename);
+		return 1;
+	}
+	if (!mission_descriptor_make_text_filename(value, ".tex", name, sizeof(name))) return 1;
+	MALLOC(entry, mission_text_reference, 1);
+	if (!entry) return 0;
+	snprintf(entry->name, sizeof(entry->name), "%s", name);
+	entry->ending = ending;
+	entry->next = *deferred;
+	*deferred = entry;
+	return 1;
+}
+
+static char *descriptor_line(char *buffer, size_t capacity, PHYSFS_file *file, const char **cursor)
+{
+	size_t size = 0;
+	if (!cursor) return PHYSFSX_fgets(buffer, capacity, file);
+	if (!**cursor) return NULL;
+	while (**cursor && **cursor != '\n' && size + 1 < capacity) buffer[size++] = *(*cursor)++;
+	if (**cursor == '\n') ++*cursor;
+	buffer[size] = '\0';
+	return buffer;
+}
+
+/* Parse into caller-owned fields; never publish or destroy the active mission */
+static int parse_mission_descriptor(PHYSFS_file *mfile, Mission *candidate, unsigned *ignored_origins, mission_text_reference **deferred_text, const char **cursor)
+{
+	char buf[PATH_MAX], *v;
+	int parse_error = 0, descriptor_name_seen = 0;
+	while (descriptor_line(buf,sizeof(buf),mfile,cursor)) {
+		if (candidate->descent_version == 2 && mission_descriptor_key_is(buf,"d2x-name")) {
+			char title[MISSION_NAME_LEN+1];
+			if (descriptor_name_seen || strlen(buf) == sizeof(buf)-1 ||
+			    !mission_descriptor_copy_title(get_value(buf),title,sizeof(title))) {
+				parse_error = 1;
+				break;
+			}
+			descriptor_name_seen = 1;
+			candidate->enhanced = MISSION_ENHANCED_XL;
+			continue;
+		}
+		char *header = buf;
+		while (*header && isspace((unsigned char)*header)) ++header;
+		if (istok(header,"name") || istok(header,"xname") || istok(header,"zname") || istok(header,"!name")) {
+			if (candidate->enhanced == MISSION_ENHANCED_XL) {
+				parse_error = 1;
+				break;
+			}
+			descriptor_name_seen = 1;
+		}
+		/* Alternate archives and critical directives need separate XL qualification */
+		if (candidate->enhanced == MISSION_ENHANCED_XL &&
+		    (mission_descriptor_key_is(buf,"hog") || *header == '!')) {
+			parse_error = 1;
+			break;
+		}
+		if (istok(buf,"name") && !candidate->enhanced) {
+			candidate->enhanced = 0;
+			continue;						//already have name, go to next line
+		}
+		if (istok(buf,"xname") && !candidate->enhanced) {
+			candidate->enhanced = 1;
+			continue;						//already have name, go to next line
+		}
+		if (istok(buf,"zname") && !candidate->enhanced) {
+			candidate->enhanced = 2;
+			continue;						//already have name, go to next line
+		}
+		if (istok(buf,"!name") && !candidate->enhanced) {
+			candidate->enhanced = 3;
+			continue;						//already have name, go to next line
+		}
+		else if (istok(buf,"type"))
+			continue;						//already have name, go to next line
+		else if (istok(buf,"briefing")) {
+			if ((v = get_value(buf)) != NULL && !descriptor_text_reference(v, 0, candidate, deferred_text)) return 0;
+		}
+		else if (istok(buf,"ending")) {
+			if ((v = get_value(buf)) != NULL && !descriptor_text_reference(v, 1, candidate, deferred_text)) return 0;
+		}
+		else if (istok(buf,"num_levels")) {
+			if ((v=get_value(buf))!=NULL) {
+				int n_levels,i;
+				if (candidate->level_names || !mission_descriptor_parse_count(v, 1, MAX_LEVELS_PER_MISSION, &n_levels)) {
+					parse_error = 1;
+					break;
+				}
+				MALLOC(candidate->level_names, d_fname, n_levels);
+				if (!candidate->level_names)
+				{
+					return 0;
+				}
+
+				for (i=0;i<n_levels;i++) {
+					if (!descriptor_line(buf,sizeof(buf),mfile,cursor) ||
+					    !mission_descriptor_copy_level_name(buf, candidate->level_names[i], sizeof(candidate->level_names[i]))) {
+						parse_error = 1;
+						break;
+					}
+					candidate->last_level++;
+				}
+				if (parse_error) break;
+			}
+			else {
+				parse_error = 1;
+				break;
+			}
+		}
+		else if (istok(buf,"num_secrets")) {
+			if ((v=get_value(buf))!=NULL) {
+				int i, n_secret_levels;
+				if (candidate->secret_level_names || candidate->secret_level_table ||
+				    !mission_descriptor_parse_count(v, 0, MAX_SECRET_LEVELS_PER_MISSION, &n_secret_levels)) {
+					parse_error = 1;
+					break;
+				}
+				candidate->n_secret_levels = n_secret_levels;
+				if (!n_secret_levels) continue;
+				MALLOC(candidate->secret_level_names, d_fname, n_secret_levels);
+				if (!candidate->secret_level_names)
+				{
+					return 0;
+				}
+				MALLOC(candidate->secret_level_table, ubyte, n_secret_levels);
+				if (!candidate->secret_level_table)
+				{
+					return 0;
+				}
+				for (i=0;i<n_secret_levels;i++) {
+					int origin;
+					unsigned extra_origins;
+					if (!descriptor_line(buf,sizeof(buf),mfile,cursor) ||
+					    !mission_descriptor_parse_secret_ex(buf, candidate->last_level, candidate->secret_level_names[i],
+					                                        sizeof(candidate->secret_level_names[i]), &origin,
+					                                        &extra_origins)) {
+						parse_error = 1;
+						break;
+					}
+					*ignored_origins += extra_origins;
+					candidate->secret_level_table[i] = (ubyte)origin;
+					candidate->last_secret_level--;
+				}
+				if (parse_error) break;
+			}
+			else {
+				parse_error = 1;
+				break;
+			}
+		}
+		else if (candidate->enhanced == 3 && buf[0] == '!') {
+			if (istok(buf+1,"ham")) {
+				char alternate[FILENAME_LEN];
+				if ((v=get_value(buf))!=NULL &&
+				    mission_descriptor_copy_level_name(v, alternate, sizeof(alternate))) {
+					unsigned l = strlen(alternate);
+					if (l <= 4)
+						con_printf(CON_URGENT, "Mission %s has short HAM \"%s\".\n", candidate->path, alternate);
+					else {
+						if (!candidate->alternate_ham_file)
+							MALLOC(candidate->alternate_ham_file, d_fname, 1);
+						if (!candidate->alternate_ham_file) {
+							parse_error = 1;
+							break;
+						}
+						memcpy(*candidate->alternate_ham_file, alternate, l + 1);
+						con_printf(CON_VERBOSE, "Mission %s will use HAM %s.\n", candidate->path, (*candidate->alternate_ham_file));
+					}
+				}
+				else
+					con_printf(CON_URGENT, "Mission %s has no HAM.\n", candidate->path);
+			}
+			else {
+				con_printf(CON_URGENT, "Mission %s uses unsupported critical directive \"%s\".\n", candidate->path, buf);
+				candidate->last_level = 0;
+				break;
+			}
+		}
+
+	}
+
+	return !parse_error && candidate->last_level > 0;
+}
+
+#ifdef DXX_XL_PILOT
+static char *capture_mission_descriptor(PHYSFS_file *file)
+{
+	const PHYSFS_sint64 size = PHYSFS_fileLength(file);
+	char *data;
+	size_t input, output = 0;
+	if (size <= 0 || size > 1024 * 1024) return NULL;
+	data = d_malloc((size_t)size + 1);
+	if (!data) return NULL;
+	if (PHYSFS_readBytes(file, data, size) != size || memchr(data, '\0', (size_t)size)) {
+		d_free(data);
+		return NULL;
+	}
+	/* Normalize DOS/Mac line endings once for both native parsing and XL checks */
+	for (input = 0; input < (size_t)size; ++input) {
+		char value = data[input];
+		if (value == '\r') {
+			if (input + 1 < (size_t)size && data[input + 1] == '\n') ++input;
+			value = '\n';
+		}
+		data[output++] = value;
+	}
+	data[output] = '\0';
+	return data;
+}
+
+static void *allocate_mission_identity(size_t size, int allocation)
+{
+#ifdef DXX_XL_DESCRIPTOR_TEST
+	extern int xl_test_fail_identity_allocation(int allocation);
+	if (xl_test_fail_identity_allocation(allocation)) return NULL;
+#else
+	(void)allocation;
+#endif
+	return d_malloc(size);
+}
+
+static void release_mission_identity(Mission *mission)
+{
+	if (!mission) return;
+	d_free(mission->path);
+	d_free(mission);
+}
+
+static int preflight_mission_archive(char *descriptor_path, mission_descriptor_stage *stage)
+{
+	char real_path[PATH_MAX];
+	strcpy(descriptor_path + strlen(descriptor_path) - 4, ".hog");
+	PHYSFSEXT_locateCorrectCase(descriptor_path);
+	if (!PHYSFSX_exists(descriptor_path, 1)) return 1; /* Loose-level missions remain valid */
+	stage->has_companion_hog = 1;
+	if (!PHYSFSX_getRealPath(descriptor_path, real_path)) {
+		Warning("Cannot resolve mission archive: %s", descriptor_path);
+		return 0;
+	}
+	strcpy(stage->companion_hog, real_path);
+	if (PHYSFS_getMountPoint(real_path)) {
+		if (mission_owns_resource_archive(real_path)) return 1;
+		Warning("Mission archive belongs to another mount context: %s", descriptor_path);
+		return 0;
+	}
+	if (!PHYSFS_mount(real_path, "__xl_mission_archive_probe", 1)) {
+		Warning("Cannot read mission archive: %s", descriptor_path);
+		return 0;
+	}
+	if (!PHYSFS_unmount(real_path)) Error("Cannot release mission archive probe: %s", descriptor_path);
+	return 1;
+}
+
+static int preflight_mission_descriptor(const mle *mission, mission_descriptor_stage *stage)
+{
+	char path[PATH_MAX];
+	PHYSFS_file *file;
+	const char *cursor;
+	int valid, length;
+	if (mission->builtin_hogsize || mission->descent_version != 2) return 1;
+	length = snprintf(path, sizeof(path), "%s%s.mn2", mission->location == ML_MISSIONDIR ? MISSION_DIR : "", mission->path);
+	if (length < 0 || (size_t)length >= sizeof(path)) return 0;
+	file = PHYSFSX_openReadBuffered(path);
+	if (!file) return 0;
+	stage->descriptor_data = capture_mission_descriptor(file);
+	if (!stage->descriptor_data) {
+		PHYSFS_close(file);
+		return 0;
+	}
+	stage->candidate.descent_version = mission->descent_version;
+	stage->candidate.path = mission->path;
+	cursor = stage->descriptor_data;
+	valid = parse_mission_descriptor(NULL, &stage->candidate, &stage->ignored_origins, &stage->text, &cursor);
+	PHYSFS_close(file);
+	if (valid) valid = preflight_mission_archive(path, stage);
+	stage->ready = valid;
+	if (!valid) release_descriptor_stage(stage);
+	else {
+		mission_text_reference *text = stage->text, *ordered = NULL;
+		while (text) {
+			mission_text_reference *next = text->next;
+			text->next = ordered;
+			ordered = text;
+			text = next;
+		}
+		stage->text = ordered;
+	}
+	return valid;
+}
+#endif
 
 //loads the specfied mission from the mission list.
 //build_mission_list() must have been called.
@@ -813,16 +1171,44 @@ int load_mission_ham()
 int load_mission(mle *mission)
 {
 	PHYSFS_file *mfile;
-	char buf[PATH_MAX], *v;
+	char buf[PATH_MAX];
 	int parse_error = 0;
-	int descriptor_name_seen = 0;
+	mission_descriptor_stage staged = { 0 };
+#ifdef DXX_XL_PILOT
+	Mission *prepared_identity;
+	if (!preflight_mission_descriptor(mission, &staged)) return 0;
+	/* Reserve identity storage before Android preparation or prior-mission teardown */
+	prepared_identity = allocate_mission_identity(sizeof(*prepared_identity), 1);
+	if (prepared_identity) {
+		memset(prepared_identity, 0, sizeof(*prepared_identity));
+		prepared_identity->path = allocate_mission_identity(PATH_MAX, 2);
+	}
+	if (!prepared_identity || !prepared_identity->path || strlen(mission->path) >= PATH_MAX) {
+		release_mission_identity(prepared_identity);
+		release_descriptor_stage(&staged);
+		con_printf(CON_URGENT, "Cannot prepare mission identity; previous mission retained\n");
+		return 0;
+	}
+#ifdef DXX_XL_DESCRIPTOR_TEST
+	{
+		extern void xl_test_descriptor_staged(void);
+		xl_test_descriptor_staged();
+	}
+#endif
+#endif
 #ifdef __ANDROID__
 	mle selected = *mission;
 	char requested[PATH_MAX], resolved[PATH_MAX];
 	const char *extension = mission->descent_version == 2 ? ".mn2" : ".msn";
 	int length = snprintf(requested, sizeof(requested), "%s%s%s", mission->location == ML_MISSIONDIR ? MISSION_DIR : "", mission->path, extension);
 	if (length < 0 || (size_t)length >= sizeof(requested) ||
-	    !android_mission_assets_prepare(requested, resolved, sizeof(resolved))) return 0;
+	    !android_mission_assets_prepare(requested, resolved, sizeof(resolved))) {
+#ifdef DXX_XL_PILOT
+		release_mission_identity(prepared_identity);
+#endif
+		release_descriptor_stage(&staged);
+		return 0;
+	}
 	resolved[strlen(resolved) - 4] = 0;
 	selected.location = !strncmp(resolved, MISSION_DIR, strlen(MISSION_DIR)) ? ML_MISSIONDIR : ML_CURDIR;
 	selected.path = resolved + (selected.location == ML_MISSIONDIR ? strlen(MISSION_DIR) : 0);
@@ -831,29 +1217,79 @@ int load_mission(mle *mission)
 	mission = &selected;
 #endif
 
+#if defined(DXX_XL_PILOT) && !defined(__ANDROID__)
+	/* Acquire the native archive before destroying the previous mission */
+	if (staged.ready && staged.has_companion_hog) {
+		const int owned = mission_owns_resource_archive(staged.companion_hog);
+		if ((!owned && PHYSFS_getMountPoint(staged.companion_hog)) ||
+		    (!owned && !PHYSFS_mount(staged.companion_hog, NULL, 0))) {
+			Warning("Cannot acquire mission archive; previous mission retained: %s", staged.companion_hog);
+			release_mission_identity(prepared_identity);
+			release_descriptor_stage(&staged);
+			return 0;
+		}
+		/* Reselection transfers the existing mount instead of closing/reopening it */
+		if (owned) Current_mission_hog[0] = '\0';
+	}
+	if (staged.ready && Current_mission_hog[0]) {
+		if (!PHYSFS_unmount(Current_mission_hog)) {
+			if (staged.has_companion_hog && !PHYSFS_unmount(staged.companion_hog))
+				Error("Cannot release candidate mission archive: %s", staged.companion_hog);
+			Warning("Cannot release active mission archive; previous mission retained: %s", Current_mission_hog);
+			release_mission_identity(prepared_identity);
+			release_descriptor_stage(&staged);
+			return 0;
+		}
+		Current_mission_hog[0] = '\0';
+	}
+#endif
 	if (Current_mission)
 		free_mission();
 #ifdef __ANDROID__
-	if (!android_mission_assets_activate()) return 0;
+	if (!android_mission_assets_activate()) {
+#ifdef DXX_XL_PILOT
+		release_mission_identity(prepared_identity);
 #endif
+		release_descriptor_stage(&staged);
+		return 0;
+	}
+#endif
+#ifdef DXX_XL_PILOT
+	Current_mission = prepared_identity;
+#ifndef __ANDROID__
+	if (staged.ready && staged.has_companion_hog) {
+		strcpy(Current_mission_hog, staged.companion_hog);
+		input_demo_assets_note_archive("mission_hog", Current_mission_hog);
+	}
+#endif
+#else
 	MALLOC(Current_mission, Mission, 1);
 	if (!Current_mission) {
+		release_descriptor_stage(&staged);
 #ifdef __ANDROID__
 		android_mission_assets_free_begin();
 		android_mission_assets_free_end();
 #endif
 		return 0;
 	}
+#endif
 	/* List-only presentation flags must not change the runtime mission layout */
 	Current_mission->builtin_hogsize = mission->builtin_hogsize;
 	memcpy(Current_mission->mission_name, mission->mission_name, sizeof(Current_mission->mission_name));
 	Current_mission->descent_version = mission->descent_version;
 	Current_mission->anarchy_only_flag = mission->anarchy_only_flag;
+#ifdef DXX_XL_PILOT
+	strcpy(Current_mission->path, mission->path);
+#else
 	Current_mission->path = d_strdup(mission->path);
+#endif
 	Current_mission->filename = Current_mission->path + (mission->filename - mission->path);
 	Current_mission->n_secret_levels = 0;
 	Current_mission->enhanced = 0;
 	Current_mission->alternate_ham_file = NULL;
+#ifdef DXX_XL_PILOT
+	xl_resource_select_mission(mission->requires_xl);
+#endif
 
 	//init vars
 	Mission_ignored_extra_secret_origins = 0;
@@ -918,8 +1354,8 @@ int load_mission(mle *mission)
 
 	PHYSFSEXT_locateCorrectCase(buf);
 
-	mfile = PHYSFSX_openReadBuffered(buf);
-	if (mfile == NULL) {
+	mfile = staged.ready ? NULL : PHYSFSX_openReadBuffered(buf);
+	if (!staged.ready && mfile == NULL) {
 		free_mission();
 		return 0;		//error!
 	}
@@ -933,12 +1369,28 @@ int load_mission(mle *mission)
 	{
 		strcpy(buf+strlen(buf)-4,".hog");		//change extension
 		PHYSFSEXT_locateCorrectCase(buf);
+#if defined(DXX_XL_PILOT) && !defined(__ANDROID__)
+		/* Staged native descriptors already own their archive or its absence */
+		if (!staged.ready) {
+#endif
 		if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog)) {
 			if (!PHYSFS_addToSearchPath(Current_mission_hog, 0))
 				Current_mission_hog[0] = '\0';
 			else
 				input_demo_assets_note_archive("mission_hog", Current_mission_hog);
 		}
+#ifdef DXX_XL_PILOT
+		if (!Current_mission_hog[0] && (staged.has_companion_hog || PHYSFSX_exists(buf, 1))) {
+			Warning("Cannot activate mission archive: %s", buf);
+			if (mfile) PHYSFS_close(mfile);
+			release_descriptor_stage(&staged);
+			free_mission();
+			return 0;
+		}
+#endif
+#if defined(DXX_XL_PILOT) && !defined(__ANDROID__)
+		}
+#endif
 
 		snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%.8s.tex",Current_mission_filename);
 		if (!PHYSFSX_exists(Briefing_text_filename,1))
@@ -948,164 +1400,38 @@ int load_mission(mle *mission)
 			snprintf(Ending_text_filename, sizeof(Ending_text_filename), "%.8s.txb",Current_mission_filename);
 	}
 
-	while (PHYSFSX_fgets(buf,sizeof(buf),mfile)) {
-		if (Current_mission->descent_version == 2 && mission_descriptor_key_is(buf,"d2x-name")) {
-			char title[MISSION_NAME_LEN+1];
-			if (descriptor_name_seen || strlen(buf) == sizeof(buf)-1 ||
-			    !mission_descriptor_copy_title(get_value(buf),title,sizeof(title))) {
-				parse_error = 1;
-				break;
-			}
-			descriptor_name_seen = 1;
-			Current_mission->enhanced = MISSION_ENHANCED_XL;
-			continue;
-		}
-		char *header = buf;
-		while (*header && isspace((unsigned char)*header)) ++header;
-		if (istok(header,"name") || istok(header,"xname") || istok(header,"zname") || istok(header,"!name")) {
-			if (Current_mission->enhanced == MISSION_ENHANCED_XL) {
-				parse_error = 1;
-				break;
-			}
-			descriptor_name_seen = 1;
-		}
-		/* Alternate archives and critical directives need separate XL qualification */
-		if (Current_mission->enhanced == MISSION_ENHANCED_XL &&
-		    (mission_descriptor_key_is(buf,"hog") || *header == '!')) {
-			parse_error = 1;
-			break;
-		}
-		if (istok(buf,"name") && !Current_mission->enhanced) {
-			Current_mission->enhanced = 0;
-			continue;						//already have name, go to next line
-		}
-		if (istok(buf,"xname") && !Current_mission->enhanced) {
-			Current_mission->enhanced = 1;
-			continue;						//already have name, go to next line
-		}
-		if (istok(buf,"zname") && !Current_mission->enhanced) {
-			Current_mission->enhanced = 2;
-			continue;						//already have name, go to next line
-		}
-		if (istok(buf,"!name") && !Current_mission->enhanced) {
-			Current_mission->enhanced = 3;
-			continue;						//already have name, go to next line
-		}
-		else if (istok(buf,"type"))
-			continue;						//already have name, go to next line
-		else if (istok(buf,"briefing")) {
-			if ((v = get_value(buf)) != NULL) set_mission_text_filename(v, Briefing_text_filename);
-		}
-		else if (istok(buf,"ending")) {
-			if ((v = get_value(buf)) != NULL) set_mission_text_filename(v, Ending_text_filename);
-		}
-		else if (istok(buf,"num_levels")) {
-			if ((v=get_value(buf))!=NULL) {
-				int n_levels,i;
-				if (Level_names || !mission_descriptor_parse_count(v, 1, MAX_LEVELS_PER_MISSION, &n_levels)) {
-					parse_error = 1;
-					break;
-				}
-				MALLOC(Level_names, d_fname, n_levels);
-				if (!Level_names)
-				{
-					PHYSFS_close(mfile);
-					free_mission();
-					return 0;
-				}
-
-				for (i=0;i<n_levels;i++) {
-					if (!PHYSFSX_fgets(buf,sizeof(buf),mfile) ||
-					    !mission_descriptor_copy_level_name(buf, Level_names[i], sizeof(Level_names[i]))) {
-						parse_error = 1;
-						break;
-					}
-					Last_level++;
-				}
-				if (parse_error) break;
-			}
-			else {
-				parse_error = 1;
-				break;
-			}
-		}
-		else if (istok(buf,"num_secrets")) {
-			if ((v=get_value(buf))!=NULL) {
-				int i, n_secret_levels;
-				if (Secret_level_names || Secret_level_table ||
-				    !mission_descriptor_parse_count(v, 0, MAX_SECRET_LEVELS_PER_MISSION, &n_secret_levels)) {
-					parse_error = 1;
-					break;
-				}
-				N_secret_levels = n_secret_levels;
-				if (!n_secret_levels) continue;
-				MALLOC(Secret_level_names, d_fname, n_secret_levels);
-				if (!Secret_level_names)
-				{
-					PHYSFS_close(mfile);
-					free_mission();
-					return 0;
-				}
-				MALLOC(Secret_level_table, ubyte, n_secret_levels);
-				if (!Secret_level_table)
-				{
-					PHYSFS_close(mfile);
-					free_mission();
-					return 0;
-				}
-				for (i=0;i<n_secret_levels;i++) {
-					int origin;
-					unsigned extra_origins;
-					if (!PHYSFSX_fgets(buf,sizeof(buf),mfile) ||
-					    !mission_descriptor_parse_secret_ex(buf, Last_level, Secret_level_names[i],
-					                                        sizeof(Secret_level_names[i]), &origin,
-					                                        &extra_origins)) {
-						parse_error = 1;
-						break;
-					}
-					Mission_ignored_extra_secret_origins += extra_origins;
-					Secret_level_table[i] = (ubyte)origin;
-					Last_secret_level--;
-				}
-				if (parse_error) break;
-			}
-			else {
-				parse_error = 1;
-				break;
-			}
-		}
-		else if (Current_mission->enhanced == 3 && buf[0] == '!') {
-			if (istok(buf+1,"ham")) {
-				char alternate[FILENAME_LEN];
-				if ((v=get_value(buf))!=NULL &&
-				    mission_descriptor_copy_level_name(v, alternate, sizeof(alternate))) {
-					unsigned l = strlen(alternate);
-					if (l <= 4)
-						con_printf(CON_URGENT, "Mission %s has short HAM \"%s\".\n", Current_mission->path, alternate);
-					else {
-						if (!Current_mission->alternate_ham_file)
-							MALLOC(Current_mission->alternate_ham_file, d_fname, 1);
-						if (!Current_mission->alternate_ham_file) {
-							parse_error = 1;
-							break;
-						}
-						memcpy(*Current_mission->alternate_ham_file, alternate, l + 1);
-						con_printf(CON_VERBOSE, "Mission %s will use HAM %s.\n", Current_mission->path, (*Current_mission->alternate_ham_file));
-					}
-				}
-				else
-					con_printf(CON_URGENT, "Mission %s has no HAM.\n", Current_mission->path);
-			}
-			else {
-				con_printf(CON_URGENT, "Mission %s uses unsupported critical directive \"%s\".\n", Current_mission->path, buf);
-				Last_level = 0;
-				break;
-			}
-		}
-
+	if (staged.ready) {
+		mission_text_reference *text;
+#ifdef DXX_XL_PILOT
+		Current_mission_descriptor = staged.descriptor_data;
+		staged.descriptor_data = NULL;
+#endif
+		Current_mission->enhanced = staged.candidate.enhanced;
+		Current_mission->alternate_ham_file = staged.candidate.alternate_ham_file;
+		Level_names = staged.candidate.level_names;
+		Secret_level_names = staged.candidate.secret_level_names;
+		Secret_level_table = staged.candidate.secret_level_table;
+		Last_level = staged.candidate.last_level;
+		Last_secret_level = staged.candidate.last_secret_level;
+		N_secret_levels = staged.candidate.n_secret_levels;
+		Mission_ignored_extra_secret_origins = staged.ignored_origins;
+		for (text = staged.text; text; text = text->next)
+			set_mission_text_filename(text->name, text->ending ? Ending_text_filename : Briefing_text_filename);
+		staged.candidate.alternate_ham_file = NULL;
+		staged.candidate.level_names = staged.candidate.secret_level_names = NULL;
+		staged.candidate.secret_level_table = NULL;
+		release_descriptor_stage(&staged);
+	} else {
+#ifdef DXX_XL_PILOT
+		if (mission->descent_version == 2) {
+			Current_mission_descriptor = capture_mission_descriptor(mfile);
+			const char *cursor = Current_mission_descriptor;
+			parse_error = !cursor || !parse_mission_descriptor(NULL, Current_mission, &Mission_ignored_extra_secret_origins, NULL, &cursor);
+		} else
+#endif
+		parse_error = !parse_mission_descriptor(mfile, Current_mission, &Mission_ignored_extra_secret_origins, NULL, NULL);
+		PHYSFS_close(mfile);
 	}
-
-	PHYSFS_close(mfile);
 
 	if (parse_error || Last_level <= 0) {
 		free_mission();		//no valid mission loaded

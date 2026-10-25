@@ -2,6 +2,18 @@ include("${CMAKE_CURRENT_LIST_DIR}/stock_probe.cmake")
 configure_file("${fixture}/xlprobe.rl2" "${fixture}/stockprobe.rl2" COPYONLY)
 configure_file("${LEVEL}" "${fixture}/d2leva-1.rl2" COPYONLY)
 set(mission_test_args)
+if(LEVEL_TWO_ROUTE)
+    if(NOT CAMPAIGN)
+        message(FATAL_ERROR "Second-level route requires earned campaign arrival")
+    endif()
+    list(APPEND mission_test_args -xl-test-level-two-route)
+endif()
+if(CAMPAIGN)
+    if(NOT ESCAPE)
+        message(FATAL_ERROR "Campaign transition requires the earned escape route")
+    endif()
+    list(APPEND mission_test_args -xl-test-campaign)
+endif()
 if(DEFINED CROSS_FROM)
     if(NOT DEFINED BRANCH OR NOT DEFINED CROSS_TO OR DEFINED VISIT)
         message(
@@ -58,6 +70,36 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "XL preview lifecycle failed: ${result}; see ${fixture}")
 endif()
 file(READ "${fixture}/preview.log" report)
+if(LEVEL_TWO_ROUTE
+   AND NOT
+       report
+       MATCHES
+       "Active route generator checkpoint: timers, capacity, lives, masks, spawned robot provenance and earned resources restored"
+)
+    message(FATAL_ERROR "Active generator checkpoint was not verified on the second-level route")
+endif()
+if(LEVEL_TWO_ROUTE)
+    if(NOT report MATCHES
+       "Level two ordinary red key: frames=[1-9][0-9]* alive=1 checkpoint=restored"
+       OR NOT EXISTS "${fixture}/preview-user/xl-level-two-red.sav")
+        message(FATAL_ERROR "Second-level earned red key and checkpoint were not verified")
+    endif()
+    if(NOT report MATCHES
+       "Level two ordinary blue key: frames=[1-9][0-9]* alive=1 checkpoint=restored"
+       OR NOT EXISTS "${fixture}/preview-user/xl-level-two-blue.sav")
+        message(FATAL_ERROR "Second-level earned blue key and checkpoint were not verified")
+    endif()
+endif()
+if(PILOT_DESCRIPTOR
+   AND PILOT_HOG
+   AND NOT NAVIGATION
+   AND NOT
+       report
+       MATCHES
+       "Counterstrike level two prerequisite: native next-level path, ordinary movement/fire and checkpoint recovery verified"
+)
+    message(FATAL_ERROR "Counterstrike second-level prerequisite did not finish")
+endif()
 if(DEFINED CROSS_FROM AND NOT report MATCHES
                           "Normal linked portal: from=${CROSS_FROM} to=${CROSS_TO} crossed=1")
     message(FATAL_ERROR "Linked portal was not physically crossed")
@@ -77,8 +119,9 @@ if(NOT
 )
     message(FATAL_ERROR "Authored texture emitter state coverage did not finish")
 endif()
-if(ESCAPE AND NOT report MATCHES
-              "Normal escape recording: earned checkpoint and ordered flight inputs exported")
+if(ESCAPE AND NOT CAMPAIGN
+   AND NOT report MATCHES
+       "Normal escape recording: earned checkpoint and ordered flight inputs exported")
     message(FATAL_ERROR "Earned escape recording was not exported")
 endif()
 if(NOT
@@ -110,8 +153,15 @@ if(DEFINED BRANCH
 )
     message(FATAL_ERROR "Authored branch did not activate with passable linked targets")
 endif()
-if(ESCAPE AND NOT report MATCHES
-              "Normal escape navigation: frames=[0-9]+ dead=0 completed=1 level=1")
+if(CAMPAIGN)
+    if(NOT report MATCHES
+       "Earned campaign transition: level=2 alive=1 frames=[1-9][0-9]* prior_countdown=[1-9][0-9]*"
+       OR NOT EXISTS "${fixture}/preview-user/xl-earned-level-two.sav")
+        message(FATAL_ERROR "Earned second-level transition and checkpoint were not verified")
+    endif()
+endif()
+if(ESCAPE AND NOT CAMPAIGN AND NOT report MATCHES
+                               "Normal escape navigation: frames=[0-9]+ dead=0 completed=1 level=1")
     message(FATAL_ERROR "Timed escape did not reach native completion within pilot scope")
 endif()
 if(REACTOR AND (NOT report MATCHES "Normal reactor navigation: frames=[0-9]+ dead=0 destroyed=1"
@@ -123,6 +173,23 @@ if(NAVIGATION AND NOT report MATCHES "Normal red-key navigation: frames=[0-9]+ d
 endif()
 if(NAVIGATION AND NOT EXISTS "${fixture}/preview-user/xl-normal-key.sav")
     message(FATAL_ERROR "Normal navigation did not preserve its actual player checkpoint")
+endif()
+foreach(count 128 255)
+    if(NOT
+       report
+       MATCHES
+       "XL split light count ${count}: normal admission, native records and all source light-off/on UVLs verified"
+    )
+        message(
+            FATAL_ERROR "Large changing-light count ${count} did not complete native verification")
+    endif()
+endforeach()
+if(NOT
+   report
+   MATCHES
+   "XL rejected candidates preserve native geometry, objects, light masks, identity and active shading/materials before commit"
+)
+    message(FATAL_ERROR "Rejected-candidate state preservation was not verified")
 endif()
 if(NOT report MATCHES "recover passed")
     message(FATAL_ERROR "XL preview lifecycle did not reach final assertion")

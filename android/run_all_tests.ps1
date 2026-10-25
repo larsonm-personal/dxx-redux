@@ -489,6 +489,7 @@ $testTimeouts = @{
     "test_uud_mission_gameplay" = 5400
     "test_uud_surface_levels" = 3600
     "test_xl_pilot_runtime" = 300
+    "test_xl_water_runtime" = 360
     "test_xl_pilot_import" = 300
     "test_xl_pilot_coronas" = 300
     "test_xl_pilot_completion" = 300

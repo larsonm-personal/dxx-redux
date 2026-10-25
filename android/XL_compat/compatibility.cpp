@@ -153,7 +153,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 					detected = true;
 					status = "unknown";
 					summary = "XL descriptor detected; inspect referenced levels and assets";
-					rows[0] = { "d2x-name descriptor", "unknown", "Native title and level-list discovery supported; descriptor gameplay remains guarded pending safe resource initialization" };
+					rows[0] = { "d2x-name descriptor", "unknown", "Native title and level-list discovery supported; verified base initialization in opt-in builds; descriptor gameplay and failed-selection rollback remain guarded" };
 				}
 			}
 		}

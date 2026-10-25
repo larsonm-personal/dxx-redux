@@ -610,6 +610,7 @@ static json serialize_position()
 		{ "y", f2fl(ConsoleObject->pos.y) },
 		{ "z", f2fl(ConsoleObject->pos.z) },
 		{ "segment", (int) ConsoleObject->segnum },
+		{ "speed", f2fl(vm_vec_mag_quick(&ConsoleObject->mtype.phys_info.velocity)) },
 		{ "shields", f2fl(ConsoleObject->shields) },
 		/* Forward vector -- lets tests detect orientation changes */
 		{ "fvec_x", f2fl(ConsoleObject->orient.fvec.x) },
@@ -2014,6 +2015,11 @@ extern "C" char *game_introspect_get_state(void)
 #ifdef DXX_XL_PILOT
 	j["xl_pilot"] = {
 		{ "runtime_active", xl_runtime_active() != 0 },
+		{ "in_water", Game_wind && ConsoleObject && xl_preview_water_segment(ConsoleObject->segnum) != 0 },
+		{ "water_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 0) : 0 },
+		{ "water_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 1) : 0 },
+		{ "waterfall_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATERFALL, 0) : 0 },
+		{ "waterfall_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATERFALL, 1) : 0 },
 		{ "menu_indicator_draws", xl_menu_indicator_draws() },
 		{ "active", xl_preview_pilot_active() != 0 },
 		{ "completed", xl_preview_pilot_completed() != 0 },

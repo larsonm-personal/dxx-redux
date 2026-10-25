@@ -375,6 +375,9 @@ void do_weapon_n_item_stuff()
 		Global_missile_firing_count = 0;
 
 	//	Drop proximity bombs.
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) Controls.drop_bomb_count = 0;
+#endif
 	while (Controls.drop_bomb_count > 0)
 	{
 		do_missile_firing(1);

@@ -296,7 +296,13 @@ Inventory inspect_level(const Bytes &bytes)
 		seg.flags = mine.u8();
 		seg.light = mine.s32();
 		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, "segment_function", i, std::to_string(seg.function));
-		if (seg.flags & ~3) issue(out.unknown, "segment_flags", i, std::to_string(seg.flags));
+		if (seg.flags & ~3) {
+			// Pinned 17/36 reference consumes only ambient bits 0/1; retain all raw bits
+			// See evidence/segment-flags-17-36.md; other profiles stay unaudited
+			if (out.level_version == 17 && out.game_version == 36)
+				issue(out.observations, "reserved_segment_flags", i, std::to_string(seg.flags));
+			else issue(out.unknown, "segment_flags", i, std::to_string(seg.flags));
+		}
 	}
 	read_colors(mine, out.vertex_colors, vertex_count, false);
 	read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, false);
@@ -524,6 +530,10 @@ std::string inventory_json(const Inventory &v)
 	issues_json(s, v.unsupported);
 	s << ",\n  \"unknown\": ";
 	issues_json(s, v.unknown);
+	if (!v.observations.empty()) {
+		s << ",\n  \"observations\": ";
+		issues_json(s, v.observations);
+	}
 	s << ",\n  \"sections\": [";
 	for (std::size_t i = 0; i < v.sections.size(); ++i) {
 		if (i) s << ',';

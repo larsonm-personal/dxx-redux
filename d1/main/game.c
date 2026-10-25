@@ -1618,10 +1618,12 @@ static void game_process_frame_body(void)
 		#ifdef __ANDROID__
 		android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_MOVE);
 		#endif
+		const int movement_level = Current_level_num;
 		object_move_all();
 		#ifdef __ANDROID__
 		android_profile_bucket_end(ANDROID_PROFILE_BUCKET_MOVE);
 		#endif
+		if (Current_level_num != movement_level) return;
 		input_demo_debug_log_player_motion_state("after_move");
 		powerup_grab_cheat_all();
 

@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_PILOT
 #include "preview.h"
+#include "resource_validation.h"
 #endif
 #include "gameseq.h"
 #include "gamefont.h"
@@ -875,6 +876,9 @@ extern int Robot_replacements_loaded;
 
 void reset_level_robots_file(void)
 {
+#ifdef DXX_XL_PILOT
+	if (*xl_resource_base_rejection()) return;
+#endif
 	if (Robot_replacements_loaded) {
 		bm_free_extra_objbitmaps();
 		if (Current_mission)

@@ -675,6 +675,7 @@ class SetupActivity : ComponentActivity() {
         DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
         cleanInputDemoReplayPath?.let {
             intent.putExtra("input_demo_replay", it)
+            intent.putExtra("xl_water_physics", getIntent().getBooleanExtra("xl_water_physics", false))
         }
         cleanResumeSavePath?.let {
             intent.putExtra("resume_save_path", it)

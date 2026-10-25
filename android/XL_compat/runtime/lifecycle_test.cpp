@@ -701,11 +701,11 @@ std::vector<int32_t> face_lights()
 				values.push_back(Segments[seg].sides[side].uvls[corner].l);
 	return values;
 }
-void changing_lights(const xl_compat::Inventory &source)
+void changing_lights(const xl_compat::Inventory &source, const char *filename = "xlprobe.rl2")
 {
 	unsigned checked = 0, changed = 0, color_changes = 0;
 	for (const auto &light : source.light_indices) {
-		require(load_level("xlprobe.rl2") == 0, "light fixture reload failed");
+		require(load_level(filename) == 0, "light fixture reload failed");
 		std::fill(Light_subtracted, Light_subtracted + Num_segments, 0);
 		auto expected = face_lights();
 		const auto initial = expected;
@@ -749,7 +749,7 @@ void changing_lights(const xl_compat::Inventory &source)
 	}
 	require(checked == 70 && changed > 0 && color_changes > 0, "pilot changing-light coverage missing");
 	std::cout << "XL pilot light updates: " << checked << " sources checked, " << changed << " changed UVLs, " << color_changes << " colored corners changed; legacy scalar path only\n";
-	require(load_level("xlprobe.rl2") == 0, "final light fixture reload failed");
+	require(load_level(filename) == 0, "final light fixture reload failed");
 	std::fill(Light_subtracted, Light_subtracted + Num_segments, 0);
 }
 void write_bytes(const char *path, const xl_compat::Bytes &bytes)
@@ -859,12 +859,14 @@ std::vector<unsigned char> gameplay_definitions()
 	return result;
 }
 uint64_t route_activated_triggers = 0, route_passable_targets = 0;
+#include "generator_route_test.h"
 void observe_route_triggers()
 {
 	const auto activated = xl_preview_trigger_mask();
 	route_activated_triggers |= activated;
 	for (int t = 0; t < Num_triggers; ++t) {
-		if (!(activated & (uint64_t(1) << t)) || Triggers[t].type == TT_EXIT) continue;
+		// Generator links identify segments, not wall surfaces
+		if (!(activated & (uint64_t(1) << t)) || Triggers[t].type == TT_EXIT || Triggers[t].type == TT_MATCEN) continue;
 		bool passable = Triggers[t].num_links > 0;
 		for (int link = 0; link < Triggers[t].num_links; ++link) {
 			const int seg = Triggers[t].seg[link], side = Triggers[t].side[link];
@@ -909,9 +911,11 @@ void verify_branch_checkpoint(int branch)
 	std::cout << "Normal branch persistence: trigger=" << branch << " targets and earned resources restored\n";
 }
 
-void navigate_objective(bool reactor, bool escape = false, int branch = -1, int visit = -1, int cross_from = -1)
+void navigate_objective(bool reactor, bool escape = false, int branch = -1, int visit = -1, int cross_from = -1, bool campaign = false, int second_level = 0)
 {
-	require(Num_triggers == 13 && branch >= -1 && branch < Num_triggers, "unexpected pilot trigger scope");
+	require(Num_triggers == (second_level ? 39 : 13) && branch >= -1 && branch < Num_triggers, "unexpected pilot trigger scope");
+	const int key_id = second_level == 1 ? POW_KEY_BLUE : POW_KEY_RED;
+	const int key_flag = second_level == 1 ? KEY_BLUE : KEY_RED;
 	require(visit >= -1 && visit <= Highest_segment_index, "invalid visit objective");
 	require(cross_from >= -1 && cross_from <= Highest_segment_index, "invalid crossing origin");
 	const bool exploring = branch >= 0 || visit >= 0;
@@ -932,20 +936,23 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		require((Players[Player_num].flags & KEY_RED) && (Players[Player_num].shields == shields && Players[Player_num].energy == energy),
 		        "normal key checkpoint changed earned inventory");
 		if (after_reactor) require(Control_center_destroyed && Countdown_timer == countdown && countdown > 0, "earned reactor countdown changed on restore");
-	} else {
+	} else if (!second_level) {
 		route_activated_triggers = route_passable_targets = 0;
 		d_srand_stream(D_RNG_SIM, 1);
 		d_srand_stream(D_RNG_FX, 1);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		xl_checkpoint_capture_sources("d2leva-1.rl2");
+	} else {
+		require(Current_level_num == 2 && !std::strcmp(Gamesave_current_filename, "d2leva-2.rl2"), "second-level route requires earned arrival");
+		route_activated_triggers = route_passable_targets = 0;
 	}
 	int key = -1;
 	int robots = 0;
 	for (int i = 0; i <= Highest_object_index; ++i)
-		if (reactor ? Objects[i].type == OBJ_CNTRLCEN : (Objects[i].type == OBJ_POWERUP && Objects[i].id == POW_KEY_RED)) key = i;
+		if (reactor ? Objects[i].type == OBJ_CNTRLCEN : (Objects[i].type == OBJ_POWERUP && Objects[i].id == key_id)) key = i;
 		else if (Objects[i].type == OBJ_ROBOT) ++robots;
-	require((reactor || robots == 38) && Difficulty_level == 2 && !cheats.enabled && !cheats.monsterdamage && !cheats.ghostphysics && !cheats.robotfiringsuspended,
+	require((reactor || second_level == 2 || robots == (second_level ? 69 : 38)) && Difficulty_level == 2 && !cheats.enabled && !cheats.monsterdamage && !cheats.ghostphysics && !cheats.robotfiringsuspended,
 	        "normal navigation fixture has altered combat rules");
 	require(!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "normal navigation fixture is invulnerable");
 	require(xl_preview_pilot_active() && !xl_preview_pilot_completed(), "navigation did not start with fresh pilot admission");
@@ -961,7 +968,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
 	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
-	if (escape) {
+	if (escape && !campaign) {
 		const int paused = game_is_time_paused();
 		require(input_demo_start_quick_recording_common() != 0, "cannot record earned escape checkpoint");
 		require(game_is_time_paused() == paused, "checkpoint recording changed the caller's pause state");
@@ -969,11 +976,13 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 	bool crossed = false, approached = cross_from < 0;
 	auto complete = [&] { return cross_from >= 0 ? crossed : visit >= 0 ? ConsoleObject->segnum == visit
 		                                                 : branch >= 0  ? bool(xl_preview_trigger_mask() & route_passable_targets & (uint64_t(1) << branch))
-		                                                 : escape       ? bool(xl_preview_pilot_completed())
+		                                                 : escape       ? (campaign ? Current_level_num == 2 : bool(xl_preview_pilot_completed()))
 		                                                 : reactor      ? bool(Control_center_destroyed)
-		                                                                : bool(Players[Player_num].flags & KEY_RED); };
+		                                                                : bool(Players[Player_num].flags & key_flag); };
 	int remainder = 0, frames = 0, last_segment = -1;
 	const int entry_lives = Players[Player_num].lives;
+	GeneratorRouteObservation generators;
+	fix transition_countdown = 0;
 	for (; frames < (exploring ? 36000 : 10800) && !Player_is_dead && !complete(); ++frames) {
 		const int start = ConsoleObject->segnum;
 		if (start == cross_from) approached = true;
@@ -1015,9 +1024,9 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 				}
 			}
 		}
-		int pickup_steps = escape ? 0 : exploring                                                                                                 ? 4
-		                            : reactor && (Players[Player_num].shields < i2f(50) || (branch >= 0 && Players[Player_num].energy < i2f(50))) ? Highest_segment_index + 1
-		                                                                                                                                          : 6;
+		int pickup_steps = escape ? 0 : exploring                                                                                                                   ? 4
+		                            : (reactor || second_level) && (Players[Player_num].shields < i2f(50) || (branch >= 0 && Players[Player_num].energy < i2f(50))) ? Highest_segment_index + 1
+		                                                                                                                                                            : 6;
 		for (int i = 0; i <= Highest_object_index; ++i) {
 			const auto &o = Objects[i];
 			if (o.type != OBJ_POWERUP || o.segnum < 0 || steps[o.segnum] < 0 || steps[o.segnum] >= pickup_steps) continue;
@@ -1075,7 +1084,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 				const int approach = switch_approach(wall);
 				if (approach < 0 || steps[approach] >= best) continue;
 				const auto &trigger = Triggers[host.trigger];
-				if ((trigger.flags & TF_DISABLED) || (trigger.type != TT_OPEN_DOOR && trigger.type != TT_OPEN_WALL)) continue;
+				if ((trigger.flags & TF_DISABLED) || (trigger.type != TT_OPEN_DOOR && trigger.type != TT_OPEN_WALL && trigger.type != TT_UNLOCK_DOOR)) continue;
 				bool opens_frontier = false;
 				for (int link = 0; link < trigger.num_links; ++link) {
 					const int seg = trigger.seg[link], side = trigger.side[link];
@@ -1176,6 +1185,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		const fix distance = vm_vec_normalize(&direction);
 		vms_vector aim = direction;
 		fix nearest = i2f(100);
+		bool targeting_thief = false;
 		for (int i = 0; !escape && i <= Highest_object_index; ++i) {
 			if (Objects[i].type == OBJ_ROBOT) {
 				if (Robot_info[Objects[i].id].companion) continue;
@@ -1183,7 +1193,12 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 			vms_vector delta;
 			vm_vec_sub(&delta, &Objects[i].pos, &ConsoleObject->pos);
 			const fix range = vm_vec_normalize(&delta);
-			if (range >= nearest) continue;
+			const bool thief = Objects[i].type == OBJ_ROBOT && Robot_info[Objects[i].id].thief;
+			// Do not turn away from an armed defender to chase the closer thief
+			if (second_level) {
+				if (range >= i2f(100) || (nearest < i2f(100) && !targeting_thief && thief) ||
+				    (thief == targeting_thief && range >= nearest)) continue;
+			} else if (range >= nearest) continue;
 			fvi_query query{};
 			query.p0 = &ConsoleObject->pos;
 			query.p1 = &Objects[i].pos;
@@ -1197,6 +1212,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 				vm_vec_sub(&aim, &predicted, &ConsoleObject->pos);
 				vm_vec_normalize(&aim);
 				nearest = range;
+				targeting_thief = thief;
 			}
 		}
 		remainder += F1_0;
@@ -1255,15 +1271,58 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 		}
 		Controls.fire_primary_state = (fighting || barrier || (switch_wall >= 0 && start == goal)) && z > (nearest < i2f(40) ? 0.995 : 0.999) && switch_visible;
 		Controls.fire_secondary_state = fighting && z > 0.999 && nearest > i2f(20);
-		if (escape) input_demo_record_input_sample();
+		if (second_level && Controls.fire_secondary_state) {
+			// Avoid firing an explosive missile into a nearby corridor wall
+			vms_vector clearance;
+			vm_vec_scale_add(&clearance, &ConsoleObject->pos, &orientation.fvec, i2f(40));
+			fvi_query query{};
+			query.p0 = &ConsoleObject->pos;
+			query.p1 = &clearance;
+			query.rad = F1_0;
+			query.startseg = start;
+			query.thisobjnum = Players[Player_num].objnum;
+			fvi_info hit{};
+			if (find_vector_intersection(&query, &hit) != HIT_NONE) Controls.fire_secondary_state = 0;
+		}
+		if (escape && !campaign) input_demo_record_input_sample();
 		const fix shields_before_frame = Players[Player_num].shields;
 		do_weapon_n_item_stuff();
 		calc_game_time();
+		if (campaign) transition_countdown = Countdown_timer;
 		GameProcessFrame();
+		if (second_level && Players[Player_num].shields < shields_before_frame) {
+			std::cout << "Level two route damage: frame=" << frames << " segment=" << ConsoleObject->segnum << " shields=" << Players[Player_num].shields
+			          << " enemy_range=" << double(nearest) / F1_0 << " aim_dot=" << z << " primary=" << int(Controls.fire_primary_state)
+			          << " secondary=" << int(Controls.fire_secondary_state) << '\n';
+			if (second_level == 2) {
+				std::cout << "Red route evasion: sideways_speed=" << dot(ConsoleObject->mtype.phys_info.velocity, ConsoleObject->orient.rvec)
+				          << " requested=" << dodge;
+				for (int axis = 0; axis < 4; ++axis) {
+					vms_vector endpoint;
+					vm_vec_scale_add(&endpoint, &ConsoleObject->pos, axis < 2 ? &ConsoleObject->orient.rvec : &ConsoleObject->orient.uvec,
+					                 (axis % 2 ? -1 : 1) * i2f(20));
+					fvi_query query{};
+					query.p0 = &ConsoleObject->pos;
+					query.p1 = &endpoint;
+					query.startseg = ConsoleObject->segnum;
+					query.rad = ConsoleObject->size;
+					query.thisobjnum = Players[Player_num].objnum;
+					fvi_info hit{};
+					const int result = find_vector_intersection(&query, &hit);
+					std::cout << " clearance" << axis << '=' << (result == HIT_NONE ? 20.0 : double(vm_vec_dist(&ConsoleObject->pos, &hit.hit_pnt)) / F1_0);
+				}
+				std::cout << '\n';
+			}
+		}
+		if (campaign && complete()) {
+			++frames;
+			break;
+		}
 		if (cross_from >= 0 && Players[Player_num].shields < shields_before_frame)
 			std::cout << "Portal damage: frame=" << frames << " segment=" << ConsoleObject->segnum << " shields=" << double(Players[Player_num].shields) / F1_0
 			          << " enemy_range=" << double(nearest) / F1_0 << " primary=" << int(Controls.fire_primary_state) << " secondary=" << int(Controls.fire_secondary_state) << '\n';
 		observe_route_triggers();
+		if (second_level) generators.observe();
 		if (cross_from >= 0 && start == cross_from && ConsoleObject->segnum == visit) crossed = true;
 		if (cross_from >= 0 && !crossed && ConsoleObject->segnum == visit) approached = false;
 		if (visit >= 0) require(Players[Player_num].lives == entry_lives && !Reactor_countdown_paused,
@@ -1285,9 +1344,47 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 			          << " shields=" << Players[Player_num].shields << " energy=" << Players[Player_num].energy
 			          << " goal=" << goal << " switch=" << switch_wall << " switch_visible=" << switch_visible
 			          << " aim_dot=" << z << " enemy_range=" << double(nearest) / F1_0 << " kills=" << Players[Player_num].num_kills_level << '\n';
+			if (second_level) std::cout << "Route weapons: primary=" << int(Players[Player_num].primary_weapon) << " owned=" << Players[Player_num].primary_weapon_flags << '\n';
 		}
 	}
 	std::memset(&Controls, 0, sizeof(Controls));
+	if (second_level) {
+		std::cout << "Level two generator observations: activations=" << generators.activations << " spawns=" << generators.spawns << '\n';
+		std::cout << "Level two route result: key=" << key_id << " frames=" << frames << " dead=" << Player_is_dead
+		          << " shields=" << Players[Player_num].shields << " complete=" << complete() << '\n';
+		require(!Player_is_dead && Players[Player_num].lives == entry_lives && complete(), "level-two ordinary key route incomplete");
+		const auto energy = Players[Player_num].energy, shields = Players[Player_num].shields;
+		char blue_save[] = "xl-level-two-blue.sav", red_save[] = "xl-level-two-red.sav", description[] = "Earned level two key";
+		char *save = second_level == 1 ? blue_save : red_save;
+		const auto generator_state = generator_checkpoint_state();
+		stop_time();
+		require(state_save_all_sub(save, description) && state_restore_all_sub(save, 0), "level-two earned key checkpoint failed");
+		require(generator_checkpoint_state() == generator_state, "earned checkpoint changed generator masks, activation counters or timing");
+		std::cout << "Level two generator checkpoint: masks, stations, capacity, lives and timers restored\n";
+		require(Current_level_num == 2 && (Players[Player_num].flags & key_flag) &&
+		            Players[Player_num].energy == energy && Players[Player_num].shields == shields,
+		        "level-two earned checkpoint altered inventory");
+		std::cout << "Level two ordinary " << (second_level == 1 ? "blue" : "red") << " key: frames=" << frames << " alive=1 checkpoint=restored\n";
+		return;
+	}
+	if (campaign) {
+		require(!Player_is_dead && Players[Player_num].lives == entry_lives && transition_countdown > 0 &&
+		            Current_level_num == 2 && !std::strcmp(Current_mission_filename, "d2-xl") &&
+		            !std::strcmp(Gamesave_current_filename, "d2leva-2.rl2") && xl_preview_pilot_active(),
+		        "earned exit did not reach original second level alive before countdown");
+		const auto position = ConsoleObject->pos;
+		const auto energy = Players[Player_num].energy, shields = Players[Player_num].shields;
+		char save[] = "xl-earned-level-two.sav", description[] = "Earned level two arrival";
+		stop_time();
+		require(state_save_all_sub(save, description), "earned level-two checkpoint failed");
+		require(state_restore_all_sub(save, 0), "earned level-two checkpoint restore failed");
+		require(Current_level_num == 2 && xl_preview_pilot_active() && vm_vec_dist(&position, &ConsoleObject->pos) == 0 &&
+		            Players[Player_num].energy == energy && Players[Player_num].shields == shields && Players[Player_num].lives == entry_lives,
+		        "earned level-two checkpoint changed arrival state");
+		std::cout << "Earned campaign transition: level=2 alive=1 frames=" << frames << " prior_countdown=" << transition_countdown
+		          << "; original identity and arrival checkpoint restored\n";
+		return;
+	}
 	if (visit >= 0) {
 		if (cross_from >= 0) std::cout << "Normal linked portal: from=" << cross_from << " to=" << visit << " crossed=" << crossed << '\n';
 		std::cout << "Normal secret entry: target=" << visit << " actual=" << ConsoleObject->segnum << " frames=" << frames
@@ -1405,6 +1502,9 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 } // namespace
 
 #include "arena_test.h"
+#include "campaign_test.h"
+#include "asset_mount_test.h"
+#include "format17_test.h"
 #include "descriptor_test.h"
 
 int main(int argc, char **argv)
@@ -1443,6 +1543,39 @@ int main(int argc, char **argv)
 		require(load_base_mission(find_arg_value(argc, argv, "-mission"), error, sizeof(error)), error);
 		unchanged(vertex);
 		require(load_level("d2leva-1.rl2") == 0, "original XL pilot admission failed");
+		{
+			const auto &source = probe.source;
+			const auto section = std::find_if(source.sections.begin(), source.sections.end(), [](const auto &s) { return s.name == "light_indices"; });
+			const auto index = std::find_if(source.light_indices.begin(), source.light_indices.end(), [&](const auto &light) {
+				return source.delta_lights.size() - light[3] >= 255;
+			});
+			require(section != source.sections.end() && index != source.light_indices.end(), "large-count lighting fixture unavailable");
+			const auto record = std::size_t(index - source.light_indices.begin());
+			const auto path = (std::filesystem::path(extra_dir) / "widelight.rl2").string();
+			for (const int count : { 128, 255 }) {
+				auto wide = bytes;
+				wide.at(section->offset + record * 6 + 3) = static_cast<std::uint8_t>(count);
+				const auto inventory = xl_compat::inspect_level(wide);
+				write_bytes(path.c_str(), wide);
+				require(xl_level_supported("widelight.rl2", 0) && load_level("widelight.rl2") == 0, "large light count rejected by normal admission");
+				int native = 0;
+				for (const auto &light : inventory.light_indices) {
+					int remaining = light[2], target = light[3];
+					do {
+						const int chunk = (std::min) (remaining, 127);
+						require(native < Num_static_lights, "native split light index missing");
+						const auto &actual = Dl_indices[native++];
+						require(actual.segnum == light[0] && actual.sidenum == light[1] && actual.count == chunk && actual.index == target, "native loader changed split light index");
+						target += chunk;
+						remaining -= chunk;
+					} while (remaining);
+				}
+				require(native == Num_static_lights, "extra native light indices");
+				changing_lights(inventory, "widelight.rl2");
+				std::cout << "XL split light count " << count << ": normal admission, native records and all source light-off/on UVLs verified\n";
+			}
+			require(load_level("d2leva-1.rl2") == 0, "original pilot recovery after split lights failed");
+		}
 		{
 			const int saved_robot_count = N_robot_types;
 			N_robot_types = 0;
@@ -1498,14 +1631,25 @@ int main(int argc, char **argv)
 		materials(probe.source);
 		std::cout << "XL multiplayer admission: original and translated preview rejected in network/cooperative modes, stock loader and single-player recovery passed\n";
 		const auto original_copy = (std::filesystem::path(extra_dir) / "d2leva-1.rl2").string();
+		const auto native_state = [] {
+			return std::string(reinterpret_cast<const char *>(Segments), sizeof(*Segments) * Num_segments) +
+			       std::string(reinterpret_cast<const char *>(Vertices), sizeof(*Vertices) * Num_vertices) +
+			       std::string(reinterpret_cast<const char *>(Objects), sizeof(*Objects) * (Highest_object_index + 1)) +
+			       std::string(reinterpret_cast<const char *>(Light_subtracted), sizeof(*Light_subtracted) * Num_segments) +
+			       Gamesave_current_filename;
+		};
+		const auto before_rejection = native_state();
 		auto altered_original = bytes;
 		altered_original[4] = 16;
 		write_bytes(original_copy.c_str(), altered_original);
 		const int original_rejected = load_level("d2leva-1.rl2");
 		write_bytes(original_copy.c_str(), bytes);
 		require(original_rejected != 0, "unsupported level version accepted");
+		require(native_state() == before_rejection, "unsupported candidate changed native geometry, objects, light masks or identity");
 		require(std::strstr(xl_level_rejection(), "version"), "unsupported version rejection lacks a reason");
-		unchanged(vertex);
+		require(xl_preview_pilot_active(), "unsupported candidate cleared the active pilot");
+		colored(probe.source, vertex);
+		materials(probe.source);
 		require(load_level("d2leva-1.rl2") == 0, "original pilot recovery failed");
 		std::cout << "Pilot ambient flags:";
 		for (int segment = 0; segment < Num_segments; ++segment)
@@ -1576,10 +1720,14 @@ int main(int argc, char **argv)
 		auto corrupt = probe.stock_level;
 		corrupt.at(probe.source.mine_offset + 5) ^= 1;
 		write_bytes(fixture_path, corrupt);
+		const auto before_mismatch = native_state();
 		const int rejected = load_level("xlprobe.rl2");
 		write_bytes(fixture_path, probe.stock_level);
 		require(rejected != 0, "mismatched source/fixture accepted");
-		unchanged(vertex);
+		require(native_state() == before_mismatch, "mismatched fixture was loaded before validation");
+		colored(probe.source, vertex);
+		materials(probe.source);
+		std::cout << "XL rejected candidates preserve native geometry, objects, light masks, identity and active shading/materials before commit\n";
 		require(load_level("xlprobe.rl2") == 0, "restored preview load rejected");
 		colored(probe.source, vertex);
 		std::cout << "XL preview lifecycle: activate, clear, reload, reject mismatch, recover passed; rendering/gameplay unverified\n";
@@ -1601,9 +1749,15 @@ int main(int argc, char **argv)
 					navigate_objective(true, false, -1, std::stoi(edge.substr(separator + 1)), std::stoi(edge.substr(0, separator)));
 				}
 				if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-escape"); })) {
-					navigate_objective(true, true);
+					const bool campaign = std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-campaign"); });
+					navigate_objective(true, true, -1, -1, -1, campaign);
+					if (std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-level-two-route"); })) {
+						navigate_objective(false, false, -1, -1, -1, false, 1);
+						navigate_objective(false, false, -1, -1, -1, false, 2);
+					}
 					mission_isolation(probe.source, vertex);
 				}
+				if (!std::any_of(argv, argv + argc, [](const char *arg) { return !std::strcmp(arg, "-xl-test-navigation"); })) campaign_level_two();
 			}
 		return 0;
 	} catch (const std::exception &error) {

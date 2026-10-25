@@ -34,7 +34,7 @@ void rejects(const std::function<void()> &action)
 	}
 	check(rejected, "malformed input accepted");
 }
-Bytes fixture(int version = 15)
+Bytes fixture(int version = 15, int segment_flags = 0)
 {
 	Bytes b;
 	put(b, 0x504c564c, 4);
@@ -64,7 +64,7 @@ Bytes fixture(int version = 15)
 	put(b, 0, 1);
 	put(b, 255, 1);
 	put(b, 255, 1);
-	put(b, 0, 1);
+	put(b, segment_flags, 1);
 	put(b, 65536, 4);
 	for (int i = 0; i < 14; ++i) {
 		put(b, 1, 1);
@@ -190,6 +190,7 @@ void version_17_contract()
 	patch(equipment, inventory.game_offset + 39 + 9 * 12, 1);
 	equipment.resize(equipment.size() + 20);
 	const auto with_equipment = xl_compat::inspect_level(equipment);
+	rejects([&] { xl_compat::prepare_serialization_probe_17_36(equipment); });
 	check(std::any_of(with_equipment.unsupported.begin(), with_equipment.unsupported.end(), [](const auto &issue) { return issue.feature == "equipment_generators"; }), "equipment payload silently dropped");
 	equipment.pop_back();
 	rejects([&] { xl_compat::inspect_level(equipment); });
@@ -221,6 +222,149 @@ void version_17_contract()
 	rejects([&] { xl_compat::inspect_level(lights); });
 }
 
+void light_count_contract()
+{
+	for (const int count : { 0, 1, 127, 128, 255 }) {
+		auto bytes = fixture();
+		const auto game = xl_compat::inspect_level(bytes).game_offset;
+		patch(bytes, game + 35 + 7 * 12, static_cast<std::uint32_t>(bytes.size()));
+		patch(bytes, game + 39 + 7 * 12, 1);
+		patch(bytes, game + 43 + 7 * 12, 6);
+		put(bytes, 0, 2);
+		put(bytes, 5, 1);
+		put(bytes, count, 1);
+		put(bytes, 0, 2);
+		patch(bytes, game + 35 + 8 * 12, static_cast<std::uint32_t>(bytes.size()));
+		patch(bytes, game + 39 + 8 * 12, count);
+		patch(bytes, game + 43 + 8 * 12, 8);
+		for (int i = 0; i < count; ++i) {
+			put(bytes, 0, 2);
+			put(bytes, 4, 1);
+			put(bytes, 0, 1);
+			for (int corner = 0; corner < 4; ++corner) put(bytes, corner + 1, 1);
+		}
+		const auto inventory = xl_compat::inspect_level(bytes);
+		check(inventory.light_indices.at(0)[2] == count, "source light count was narrowed");
+		check(xl_compat::runtime_blockers(inventory).empty(), "losslessly representable light count rejected");
+		const auto translated = xl_compat::prepare_gameplay_probe(bytes).stock_level;
+		const auto read = [&](std::size_t offset, int width) {
+			unsigned value = 0;
+			for (int i = 0; i < width; ++i) value |= unsigned(translated.at(offset + i)) << (8 * i);
+			return value;
+		};
+		const auto translated_game = read(12, 4);
+		const auto table = read(translated_game + 35 + 7 * 12, 4);
+		const auto records = read(translated_game + 39 + 7 * 12, 4);
+		check(records == unsigned(count ? (count + 126) / 127 : 1), "translated light table size differs");
+		int covered = 0;
+		for (unsigned i = 0; i < records; ++i) {
+			const auto record = table + i * 6;
+			check(read(record, 2) == 0 && read(record + 2, 1) == 5 && read(record + 4, 2) == unsigned(covered), "split light source or target order changed");
+			const auto chunk = read(record + 3, 1);
+			check(chunk <= 127 && (chunk || !count), "split light count is not representable");
+			covered += chunk;
+		}
+		check(covered == count, "split light targets lost");
+		if (count == 128) {
+			for (const int copies : { 250, 251 }) {
+				auto crowded = bytes;
+				const auto index_offset = inventory.sections.at(7).offset;
+				const Bytes record(bytes.begin() + index_offset, bytes.begin() + index_offset + 6);
+				for (int i = 1; i < copies; ++i)
+					crowded.insert(crowded.begin() + index_offset, record.begin(), record.end());
+				patch(crowded, game + 39 + 7 * 12, copies);
+				patch(crowded, game + 35 + 8 * 12, inventory.sections.at(8).offset + (copies - 1) * 6);
+				if (copies == 250) xl_compat::prepare_gameplay_probe(crowded);
+				else {
+					const auto message = xl_compat::blocker_message(xl_compat::runtime_blockers(xl_compat::inspect_level(crowded)));
+					check(message.find("more than 500 light indices") != std::string::npos, "expanded capacity rejection missing");
+					rejects([&] { xl_compat::prepare_gameplay_probe(crowded); });
+					check(xl_compat::compatibility_json("lights.rl2", crowded).find("\"status\": \"blocked\"") != std::string::npos, "browser admitted expanded light overflow");
+				}
+			}
+		}
+	}
+}
+
+void serialization_17_contract()
+{
+	for (const int count : { 0, 1, 31, 32, 127, 128, 255, 300, 8191 }) {
+		auto bytes = fixture(17, 0xfc);
+		const auto game = xl_compat::inspect_level(bytes).game_offset;
+		const auto read = [](const Bytes &data, std::size_t offset, int width = 4) {
+			unsigned value = 0;
+			for (int i = 0; i < width; ++i) value |= unsigned(data.at(offset + i)) << (i * 8);
+			return value;
+		};
+		// An actual name must follow the retained nine-section header
+		bytes.insert(bytes.begin() + game + 155, { 'L', '1', '7' });
+		patch(bytes, game + 71, read(bytes, game + 71) + 3);
+		patch(bytes, game + 27, read(bytes, game + 71));
+		patch(bytes, game + 35 + 7 * 12, static_cast<unsigned>(bytes.size()));
+		patch(bytes, game + 39 + 7 * 12, 1);
+		put(bytes, 0, 2);
+		put(bytes, (count << 3) | 5, 2);
+		put(bytes, 0, 2);
+		patch(bytes, game + 35 + 8 * 12, static_cast<unsigned>(bytes.size()));
+		patch(bytes, game + 39 + 8 * 12, count);
+		for (int i = 0; i < count; ++i) {
+			put(bytes, 0, 2);
+			put(bytes, 4, 1);
+			put(bytes, 0, 1);
+			for (int corner = 0; corner < 4; ++corner) put(bytes, corner + 1, 1);
+		}
+		const auto source = xl_compat::inspect_level(bytes);
+		const auto converted = xl_compat::prepare_serialization_probe_17_36(bytes);
+		const auto &out = converted.stock_level;
+		const auto output_game = read(out, 12);
+		check(read(out, 4) == 8 && read(out, output_game + 2, 2) == 32 && read(out, output_game + 4) == 143, "17/36 output header differs");
+		check(std::string(out.begin() + output_game + 143, out.begin() + output_game + 146) == "L17", "equipment descriptor displaced level name");
+		check(converted.source.segments[0].flags == 0xfc, "layout qualification masked reserved source bits");
+		for (const auto field : { 27, 71, 35 + 8 * 12 })
+			check(read(out, output_game + field) == read(bytes, game + field) - game + output_game - 12, "retained section offset not rebased");
+		const auto delta = read(out, output_game + 35 + 8 * 12);
+		check(std::equal(bytes.begin() + source.sections[8].offset, bytes.end(), out.begin() + delta), "delta payload changed");
+		const auto table = read(out, output_game + 35 + 7 * 12), records = read(out, output_game + 39 + 7 * 12);
+		check(records == unsigned(count ? (count + 126) / 127 : 1), "17/36 light split count differs");
+		unsigned covered = 0;
+		for (unsigned i = 0; i < records; ++i) {
+			check(read(out, table + i * 6, 2) == 0 && read(out, table + i * 6 + 2, 1) == 5 &&
+			          read(out, table + i * 6 + 4, 2) == covered,
+			      "17/36 light side or target order changed");
+			const auto chunk = read(out, table + i * 6 + 3, 1);
+			check(chunk <= 127 && (chunk || !count), "17/36 light count unrepresentable");
+			covered += chunk;
+		}
+		check(covered == unsigned(count), "17/36 light targets lost");
+		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+		bytes.at(source.mine_offset + 277) = 13;
+		rejects([&] { xl_compat::prepare_serialization_probe_17_36(bytes); });
+	}
+	rejects([&] { xl_compat::prepare_serialization_probe_17_36(fixture()); });
+	std::cout << "17/36 layout qualification: header removal, retained offsets, packed counts 0..8191; runtime and no-damage remain blocked\n";
+}
+
+void segment_flags_contract()
+{
+	for (int flags = 0; flags < 256; ++flags) {
+		const auto bytes = fixture(17, flags);
+		const auto v = xl_compat::inspect_level(bytes);
+		check(v.segments.at(0).flags == flags, "17/36 raw segment flags changed");
+		check(v.observations.size() == (flags & 0xfc ? 1u : 0u), "reserved-bit observation count");
+		if (flags & 0xfc) {
+			check(v.observations[0].feature == "reserved_segment_flags" && v.observations[0].detail == std::to_string(flags), "reserved flags lost source value");
+			check(xl_compat::inventory_json(v).find("reserved_segment_flags") != std::string::npos, "reserved flags omitted from report");
+		}
+		const auto blockers = xl_compat::runtime_blockers(v);
+		check(std::any_of(blockers.begin(), blockers.end(), [](const auto &i) { return i.feature == "serialization"; }), "flag audit admitted unsupported serialization");
+		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+	}
+	const auto legacy_bytes = fixture(15, 255);
+	const auto legacy = xl_compat::inspect_level(legacy_bytes);
+	check(legacy.observations.empty() && std::any_of(legacy.unknown.begin(), legacy.unknown.end(), [](const auto &i) { return i.feature == "segment_flags"; }), "17/36 audit widened another profile");
+	rejects([&] { xl_compat::prepare_gameplay_probe(legacy_bytes); });
+}
+
 void original_observatory(const char *path)
 {
 	std::ifstream input(path, std::ios::binary | std::ios::ate);
@@ -241,14 +385,14 @@ void original_observatory(const char *path)
 	check(v.mine_offset == 86 && v.game_offset == 43377 && v.sections.at(0).offset == 45741 && v.sections.at(1).offset == 50832, "original Observatory section boundaries differ");
 	check(v.triggers.empty() && v.object_triggers == 0 && v.object_trigger_heads.empty() && v.light_indices.empty() && v.delta_lights.empty(), "original Observatory neutral sections differ");
 	check(std::count_if(v.segments.begin(), v.segments.end(), [](const auto &segment) { return segment.function == 13; }) == 26, "no-damage properties were dropped");
-	check(v.unsupported.size() == 27 && v.unknown.size() == 40, "unexpected original Observatory structural findings");
+	check(v.unsupported.size() == 27 && v.unknown.size() == 3 && v.observations.size() == 37, "unexpected original Observatory structural findings");
 	for (const auto &issue : v.unsupported)
 		check(issue.feature == "embedded_lighting" || (issue.feature == "segment_function" && issue.detail == "13"), "unexpected original Observatory unsupported feature");
 	for (const auto &issue : v.unknown)
-		check(issue.feature == "segment_flags" || issue.feature == "object_dependencies" || issue.feature == "runtime_semantics" || issue.feature == "assets", "unconsumed original Observatory section data");
-	check(std::count_if(v.unknown.begin(), v.unknown.end(), [](const auto &issue) { return issue.feature == "segment_flags"; }) == 37 &&
+		check(issue.feature == "object_dependencies" || issue.feature == "runtime_semantics" || issue.feature == "assets", "unconsumed original Observatory section data");
+	check(std::count_if(v.observations.begin(), v.observations.end(), [](const auto &issue) { return issue.feature == "reserved_segment_flags"; }) == 37 &&
 	          v.segments.at(0).flags == 65 && v.segments.at(4).flags == 202 && v.segments.at(106).flags == 255,
-	      "unaudited original segment flags were discarded");
+	      "audited reserved segment flags were discarded");
 	rejects([&] { xl_compat::prepare_gameplay_probe(level->bytes); });
 	std::cout << "Original Observatory 17/36 inventory passed; 26 no-damage segments retained; gameplay remains blocked\n";
 }
@@ -260,7 +404,10 @@ int main(int argc, char **argv)
 		check(argc == 1 || argc == 2, "expected optional original Observatory HOG path");
 		if (argc == 2) original_observatory(argv[1]);
 		version_17_contract();
+		serialization_17_contract();
 		feature_contract();
+		segment_flags_contract();
+		light_count_contract();
 		const auto bytes = fixture();
 		const auto out = xl_compat::inspect_level(bytes);
 		const std::size_t mine = bytes[8];

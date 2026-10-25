@@ -3923,6 +3923,10 @@ class MainActivity :
     fun consumeInputDemoReplayPath(): String? = pendingInputDemoReplayPath.also { pendingInputDemoReplayPath = null }
 
     @Suppress("unused")
+    fun consumeXlWaterPhysics(): Boolean =
+        intent.getBooleanExtra("xl_water_physics", false).also { intent.removeExtra("xl_water_physics") }
+
+    @Suppress("unused")
     fun consumeResumeSavePath(): String? =
         pendingResumeSavePath.also { savePath ->
             if (savePath != null) clearPendingResumeLaunch(this, pendingTransientLaunchToken)

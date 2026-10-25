@@ -17,9 +17,14 @@ foreach(xl_target IN LISTS xl_targets)
     target_include_directories(${xl_target} PRIVATE "${xl_runtime_dir}")
     target_sources(
         ${xl_target}
-        PRIVATE "${xl_runtime_dir}/preview.cpp" "${xl_runtime_dir}/../inventory.cpp"
-                "${xl_runtime_dir}/../admission.cpp" "${xl_runtime_dir}/../probe.cpp"
-                "${xl_runtime_dir}/../lighting.cpp" "${xl_runtime_dir}/menu_indicator.c")
+        PRIVATE "${xl_runtime_dir}/preview.cpp"
+                "${xl_runtime_dir}/../inventory.cpp"
+                "${xl_runtime_dir}/../admission.cpp"
+                "${xl_runtime_dir}/../probe.cpp"
+                "${xl_runtime_dir}/../lighting.cpp"
+                "${xl_runtime_dir}/menu_indicator.c"
+                "${xl_runtime_dir}/resource_validation.cpp"
+                "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")
     if(NOT xl_target STREQUAL "dxx-redux-d2-headless-metadata")
         target_sources(${xl_target} PRIVATE "${xl_runtime_dir}/start.cpp")
     endif()
@@ -43,7 +48,11 @@ if(TARGET dxx-redux-d2-headless-metadata)
         ${xl_checkpoint_sources} TARGET_DIRECTORY dxx-redux-d2-headless-metadata
         PROPERTIES COMPILE_DEFINITIONS DXX_REWIND_FILE_WRAPPER)
     target_sources(dxx-redux-d2-headless-metadata PRIVATE ${xl_checkpoint_sources})
-    target_compile_definitions(dxx-redux-d2-headless-metadata PRIVATE DXX_XL_CHECKPOINT_EXPORT)
+    target_sources(
+        dxx-redux-d2-headless-metadata
+        PRIVATE "${xl_runtime_dir}/../../app/src/main/cpp/shared/android_mission_assets.cpp")
+    target_compile_definitions(dxx-redux-d2-headless-metadata PRIVATE DXX_XL_CHECKPOINT_EXPORT
+                                                                      DXX_XL_DESCRIPTOR_TEST)
     set_target_properties(dxx-redux-d2-headless-metadata PROPERTIES OUTPUT_NAME
                                                                     xl-preview-lifecycle)
 endif()

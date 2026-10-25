@@ -5,11 +5,18 @@
 extern "C" {
 #endif
 int xl_preview_water_segment(int segment);
+int xl_preview_no_damage_segment(int segment);
+int xl_preview_preserve_fusion_queue(void);
+#ifdef __ANDROID__
+/* Automation-only opt-in; refuse to change the profile during gameplay */
+int xl_preview_set_water_test_profile(int enabled);
+#endif
 int32_t xl_preview_motion_time(int segment, int32_t time);
 int xl_preview_water_frame(int object_index);
 int xl_preview_water_contact(int object_index, int segment);
 int xl_preview_water_sound(int object_index, int side, int contact_sound);
 int xl_preview_fluid_loop(int object_index, int sound, int playing);
+int xl_linked_sound_count(int object_index, int sound, int playing_only);
 void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t *g, int32_t *b);
 int xl_preview_start(void);
 int xl_preview_load_level(const char *filename);

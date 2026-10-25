@@ -856,10 +856,15 @@ void do_physics_sim(object *obj)
 	d1_in_d2_note_physics_result(obj, &start_pos, fate, obj_stopped, bounced);
 
 	// After collision with objects and walls, set velocity from actual movement
-	if (!obj_stopped && !bounced 
-		&& ((obj->type == OBJ_PLAYER) || (obj->type == OBJ_ROBOT) || (obj->type == OBJ_DEBRIS)) 
-		&& ((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0))
-		)
+	int reconstruct_velocity =
+		((obj->type == OBJ_PLAYER) || (obj->type == OBJ_ROBOT) || (obj->type == OBJ_DEBRIS)) &&
+		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0));
+#ifdef DXX_XL_PILOT
+	// XL's fluid profile reconstructs all object types after wall/bad-start hits
+	if (xl_preview_water_segment(orig_segnum))
+		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
+#endif
+	if (!obj_stopped && !bounced && reconstruct_velocity)
 	{	
 		vms_vector moved_vec;
 		vm_vec_sub(&moved_vec,&obj->pos,&start_pos);

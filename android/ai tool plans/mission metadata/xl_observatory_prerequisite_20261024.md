@@ -90,6 +90,22 @@ and explicitly unknown; no historical interpretation or harmlessness is assumed.
 Resolve them before any runtime admission. This is further evidence against
 calling Observatory a single-feature unlock.
 
+Follow-up: the [17/36 flag audit](../../XL_compat/evidence/segment-flags-17-36.md)
+has now resolved these bytes against the pinned reference. High six bits are
+preserved reserved data; only the low ambient-water/lava bits have consumers.
+Inventory now exposes all 37 records as observations without altering any raw
+byte. A compiled oracle exercises the actual reference ambient update/traversal
+functions over all 256 byte values. This closes the flag-interpretation gate,
+not the descriptor/resource, translation, no-damage or presentation gates below.
+
+Descriptor follow-up: opt-in builds now reload verified D2 base resources for
+d2x-name without invoking the legacy extra-HAM dialect. Native tests replace a
+stale prior robot definition, capture a clean owned baseline, reject shadow HAM
+and default-PIG resources before mutation, and pass D1 -> Observatory descriptor
+-> D2 recovery with private D1 assets. Full failed-selection rollback and gameplay
+qualification remain guarded; original Observatory is still not admitted.
+See xl_stack_review_20261024.md for current evidence and remaining resource work.
+
 Public fixtures cover the added header, integer texture colors, zero sparse-ref
 count, packed light count 300, invalid sides/counts/truncation and bounded
 unsupported equipment records. The gameplay translator explicitly rejects 17/36,

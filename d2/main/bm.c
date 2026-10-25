@@ -31,6 +31,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "bm.h"
 #include "u_mem.h"
+#ifdef DXX_XL_PILOT
+#include "resource_validation.h"
+#endif
 #include "dxxerror.h"
 #include "object.h"
 #include "vclip.h"
@@ -357,6 +360,22 @@ static int bm_validate_hxm(PHYSFS_file *fp)
 	return valid;
 }
 
+/* Read-only companion preflight; do not replace the active warning report */
+int bm_validate_level_hxm(PHYSFS_file *fp)
+{
+	d2_ham_validation_limits limits = bm_validation_limits();
+	d2_ham_validation_report report;
+	ubyte *data;
+	size_t size;
+	int valid;
+	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
+	valid = d2_ham_validate_hxm(data, size, &limits,
+	                          N_robot_types, N_robot_joints, N_polygon_models, &report);
+	d_free(data);
+	return valid && !report.inert_robot_records &&
+	       !report.normalized_empty_joint_offsets && !report.ignored_trailing_bytes;
+}
+
 void bm_reset_mission_compatibility_warnings(void)
 {
 	memset(&Mission_ham_validation_report, 0, sizeof(Mission_ham_validation_report));
@@ -567,6 +586,10 @@ void load_robot_replacements(char *level_name)
 	char ifile_name[FILENAME_LEN];
 
 	bm_reset_level_compatibility_warnings();
+
+#ifdef DXX_XL_PILOT
+	if (xl_install_prepared_hxm(level_name)) return;
+#endif
 	change_filename_extension(ifile_name, level_name, ".HXM" );
 
 	fp = PHYSFSX_openReadBuffered(ifile_name);

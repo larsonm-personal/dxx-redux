@@ -35,6 +35,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "grdef.h"
 #include "u_mem.h"
+#ifdef DXX_XL_PILOT
+#include "resource_validation.h"
+#endif
 #include "iff.h"
 #include "dxxerror.h"
 #include "sounds.h"
@@ -990,6 +993,10 @@ int read_hamfile()
 		PHYSFS_close(ham_fp);
 		return 0;
 	}
+#ifdef DXX_XL_PILOT
+	if (!Current_mission)
+		xl_resource_note_startup_ham(shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED, ham_fp);
+#endif
 
 #ifdef __ANDROID__
 	android_sound_trace_asset_open("ham", shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED);
@@ -2081,12 +2088,19 @@ invalid_flags:
 	return 0;
 }
 
+#ifdef DXX_XL_PILOT
+#include "pog_install.h"
+#endif
+
 void load_bitmap_replacements(char *level_name)
 {
 	char ifile_name[FILENAME_LEN];
 	PHYSFS_file *ifile;
 	int i;
 
+#ifdef DXX_XL_PILOT
+	if (xl_install_prepared_pog(level_name)) return;
+#endif
 	//first, free up data allocated for old bitmaps
 	free_bitmap_replacements();
 

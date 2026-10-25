@@ -561,9 +561,11 @@ behavior rather than demand identical unconstrained frames
 
 ## Separate water arena experiment
 
-The opt-in runtime also offers `-xl-preview-start -xl-water-arena` for the
-hash-pinned original Robotech Arena (`rtarena` mission, `rtarena.rl2`). This does
-not broaden production admission or the active Counterstrike campaign. Its one
+The opt-in runtime offers `-xl-water-physics` for a detected experimental fluid
+profile. Developer capture uses `-xl-preview-start -xl-water-physics -mission NAME`.
+Admission does not depend on a mission name, level name, or source hash. Robot
+combat/generation in fluids and multiplayer still reject with specific reasons.
+This does not broaden production admission or qualify a full campaign. Its one
 additional semantic area is the old-format water segment: the fluid-enabled
 profile uses 75-percent movement time, thrust turbulence, water contact and the
 stock ship-in-water sound. Source properties are reconstructed on save restore
@@ -571,11 +573,39 @@ and cleared on every unrelated level load. Multiplayer is explicitly refused.
 
 Configure `XL_ARENA_HOG`, `XL_ARENA_DESCRIPTOR`, `XL_PREVIEW_LIFECYCLE` and
 `XL_RETAIL_DATA` for the private `xl_water_arena` CTest. It verifies original
-resource loading, real physics, ordinary-input entry/exit, checkpoint replay and
-arena/stock isolation. The arena has no reactor or exit; this is not campaign
-completion. Android, interactive rendering/audio and alternate XL/fog profiles
-remain unqualified. See the [expansion plan](../ai%20tool%20plans/mission%20metadata/xl_level_expansion_20261024.md)
+resource loading, real physics, ordinary-input entry/exit, checkpoint replay,
+arena/stock isolation, renamed/repacked admission and unsupported-capability
+rejection. The private original fixture remains hash-pinned in the test runner.
+The arena has no reactor or exit; this is not campaign
+completion. Android authored traversal, interactive rendering/audio and alternate
+XL/fog profiles remain unqualified. See the [expansion plan](../ai%20tool%20plans/mission%20metadata/xl_level_expansion_20261024.md)
 for source pins, ordered level gates, measurements and limitations.
+
+The Android controlled probe is `android/tests/test_xl_water_runtime.ps1`, with
+explicit `-Serial`, `-Hog` and `-Descriptor` arguments for that original private
+fixture. It requires an installed `-PxlPilot=true` debug APK, retail D2 data and
+the `player` pilot. It backs up and restores pilot/save/configuration and matching
+mission files. An interrupted restoration leaves `files/xl-water-runtime-backup`
+in app storage and the next run refuses to overwrite it.
+
+Android intentionally ignores `d2x.ini`. The child script enables the experimental
+profile using `set_debug` field `xl_water_physics`, value `enable`; `disable`
+restores normal admission. This debug-only automation action requires the XL
+build and refuses profile changes during gameplay. It does not skip any resource
+or unsupported-feature check. The script repositions into water, applies thrust,
+checks wet/dry save restoration and stock isolation, then verifies normal
+admission rejects water. It does not establish full authored traversal or visual/audio
+parity. `xl_pilot.in_water` describes the active player, not retained level data
+after aborting gameplay.
+
+On emulator-5554 the expanded controlled probe passes all 57 steps (26.768 seconds),
+including thrust-driven crossing of the authored water portal in both directions
+from staged poses, active SDL waterfall playback, dry-space sound cleanup, save
+restoration with playback, stock transition and disabled-profile rejection.
+Original pilot/save hashes match after restoration. This is an emulator runtime
+result, not full spawn-to-water traversal, physical-device or reference-rendering
+qualification. Interior-water loop reset/retry and sound-registry exhaustion have
+native coverage; they are not evidence of waveform or reference mixing parity.
 
 ## Observatory serialization prerequisite
 
@@ -589,11 +619,13 @@ game-36 sparse reference tables remain outside this bounded reader profile.
 Configure `XL_OBSERVATORY_HOG` with the original local archive to enable the
 hash-pinned `xl_observatory_inventory` test. It checks 328 vertices, 110 segments,
 54 walls and 44 objects, complete section endpoints, 26 preserved unsupported
-old-type-13 segments, and 37 preserved unaudited segment-flag records. The source
+old-type-13 segments, and 37 preserved reserved segment-flag records. The source
 archive is checked again after inspection. No private bytes enter public CI.
 
 This is the first [Observatory prerequisite](../ai%20tool%20plans/mission%20metadata/xl_observatory_prerequisite_20261024.md),
-not a gameplay unlock. Descriptor/resources, the flag bytes, runtime translation,
+not a gameplay unlock. The [17/36 flag audit](evidence/segment-flags-17-36.md)
+now identifies those high bits as preserved reserved data, with a compiled pinned
+reference oracle and all-byte inventory tests. Descriptor/resources, runtime translation,
 no-damage semantics and presentation still need separate qualification. The
 level has no exit trigger, so eventual arena qualification cannot establish
 campaign completion. No new runtime or save state is introduced here.
@@ -605,3 +637,8 @@ does not qualify XL assets or gameplay. Alternate HOG and critical directives
 remain unsupported. Configure `XL_OBSERVATORY_DESCRIPTOR` together with
 `XL_OBSERVATORY_HOG`, `XL_PREVIEW_LIFECYCLE` and `XL_RETAIL_DATA` to run the
 private original-descriptor discovery, rejection and stock-isolation test.
+
+Configure `XL_REFERENCE_SEGMENT_FLAGS` with pinned `main/findsegment.cpp` to run
+the optional `xl_segment_flags_reference` oracle. Raw flags remain visible in
+inventory records and optional `observations`; the audit does not enable 17/36
+gameplay or widen the treatment of unaudited flags in other version profiles.

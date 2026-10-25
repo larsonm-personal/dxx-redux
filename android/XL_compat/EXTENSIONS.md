@@ -12,6 +12,150 @@ alone does not admit a level. The executable catalog is `compatibility.cpp`;
 the Android browser displays its per-source evidence. Keep descriptions and
 support text synchronized with this catalog
 
+The 17/36 [segment-flag audit](evidence/segment-flags-17-36.md) resolves
+Observatory's 37 high-bit records as preserved reserved data in the pinned
+reference. Only the low ambient-water/lava bits have runtime consumers. The raw
+bytes remain visible; no-damage functions, 17/36 runtime translation and descriptor
+gameplay resource transactions remain separate blockers. This does not admit Observatory.
+
+A developer-only 17/36 layout probe now removes the extra equipment header,
+rebases retained offsets, and rebuilds every packed light-index record into
+ordered stock-sized chunks. It requires empty equipment data and retains all
+semantic blockers. Binary tests cover packed counts 0 through 8191. A native
+loader control derived from Observatory verifies name, geometry, reserved bits,
+light indices and delta payloads after explicitly replacing its 26 no-damage
+functions with ordinary segments. That changed fixture is layout evidence only;
+the original source and the normal 17/36 gameplay entry remain rejected.
+
+The [no-damage semantic audit](evidence/no-damage-reference.md) records the next
+Observatory prerequisite. Reference behavior includes firing gates, collision
+response and effects, with distinct flare-energy and queued-missile accounting.
+It is not equivalent to player invulnerability. Headless controls now verify
+final player-damage suppression and direct weapon impacts against ordinary
+segments, using an owned original-property binding available only in the test
+build. Native firing controls also cover primary and fresh missile/bomb refusal,
+flare and queued-missile resource costs, parent/muzzle segment distinctions and
+robot weapon creation. Synthetic wall-contact controls verify hit-segment damage
+suppression, retained force-field response and lava/water classification with
+thrust-dependent rotation. Paired radius-explosion controls verify preserved
+force/rotation and flash-missile blinding while suppressing shield loss. Native
+player/clutter and player/player controls check bump and sound-gate suppression
+with receiver-segment distinctions. Broader debris behavior remains unqualified. Broader
+fusion, guided flight/persistence, full wall traversal, general splash behavior, persistence
+and matched reference behavior remain unqualified; the original mission and
+function 13 remain blocked.
+
+Guided dispatch controls verify that fresh protected fire retains control, normal
+release works after exit, and an already queued protected event releases without
+spending ammo or creating another projectile. These use explicit boundary
+placement and queue setup; they do not qualify flight, rendering or persistence.
+
+A full-frame fusion control reproduces and fixes queue loss after protection:
+detected no-damage profiles retain a charged pending shot on released input,
+recharge for one frame on exit as in the reference, then emit with the retained
+charge multiplier and normal energy costs. Profiles without this property retain
+classic behavior. Other fusion timing cases and persistence remain unqualified.
+
+Fresh protected fusion input and native weapon-switch cancellation also have
+frame controls. XL's general manual-selection charge refund is a known unported
+policy: Redux clears charge on switching without refunding it. This is separate
+from serialized no-damage properties and is not claimed by those controls.
+
+Opt-in descriptor selection now reloads verified D2 base resources without treating
+d2x-name as an extra-HAM dialect. Native tests verify replacement of stale prior
+definitions, capture of an owned baseline, shadow HAM/default-PIG rejection and
+D1 -> XL descriptor -> D2 recovery. Ordinary builds retain discovery-only behavior.
+Descriptor gameplay and full failed-selection rollback remain guarded.
+
+Opt-in mission selection now owns a bounded descriptor snapshot. Native field
+parsing and XL resource-option checks consume the same bytes, with DOS/Mac line
+endings normalized once and embedded NUL bytes rejected. Admission does not
+reopen a selected mission's descriptor; edits take effect on reselection.
+Failed selection preserves the prior snapshot with its mission and resources.
+
+Opt-in mission identity allocation now precedes Android preparation and prior
+mission teardown. Native fault controls cover allocation of both the Mission
+object and its path, retaining the previous mission/archive/resource baseline.
+This closes that allocation window; later mounts and resource initialization
+are not thereby transactional, and the descriptor gameplay guard remains.
+
+Visible native companion HOGs now undergo a private mount probe before teardown.
+Unreadable or foreign-owned archives reject while preserving the prior mission
+and search-path order; the mission's own mounted archive can be reselected.
+Native commit acquires the candidate mount before teardown, so disappearance or
+corruption after preflight also preserves the previous mission and search order.
+Reselection transfers the owned mount without closing open archive members.
+If an open member prevents releasing the previous archive during a different
+selection, the candidate mount is removed and the previous state is retained.
+Android catalog activation and later resource initialization still have separate
+failure boundaries; this does not establish full mission-switch rollback.
+
+Rejected XL level candidates now retain the active extension state until admission
+and translated-byte validation finish. Native tests verify preserved water,
+shading/materials, geometry, objects, light masks and source identity. Successful
+stock loads still clear XL state; multiplayer mode changes explicitly deactivate
+singleplayer extensions. This does not yet roll back native-load failures after
+commit or restore a previously selected mission's descriptor/mount context.
+
+Opt-in builds now parse non-builtin D2 descriptors before discarding the current
+mission, using the same caller-owned parser as actual loading. On Android this
+check reads the published discovery descriptor before asset preparation. Native
+tests verify that malformed candidates retain the previous descriptor, mounted
+archive and owned resource baseline. Loading consumes the owned validated fields;
+a native source-replacement test verifies that later file changes cannot replace
+the level list or dialect. Ordered briefing/ending lookup remains deferred until
+mounting. Activation/resource failures after this check still require rollback.
+
+Android catalog preparation now probes candidate mounts in an isolated virtual
+namespace before reset. Corrupt archives, duplicate paths and mounts owned by
+another context are rejected without changing the active search path. Native
+tests use the actual catalog/PhysFS code with reset spies and verify repaired
+archive activation and reselection. Preparation now acquires all candidate mounts
+before destructive reset; activation transfers ownership without reopening them.
+Late acquisition failure removes candidate mounts while preserving the old owner,
+generation, search order and reset counts. Reselection retains open handles.
+Published mission contexts are disjoint; overlapping contexts are rejected.
+Activation requires a successful preparation and consumes that transition once.
+The 59-step Android water test now injects second-mount failure during gameplay
+and verifies preserved water/audio state, subsequent movement, save/restore and
+stock switching. Its old mission has base catalog ownership; imported-context
+retention still has native coverage only. This is not complete playable-mission
+rollback: old-mount release, loose companion archives and later resource
+installation failures still need coverage. Directory contents are not snapshotted.
+
+Changing-light translation splits 15/33 counts above 127 into ordered records
+that fit the stock signed count. It preserves source data and rejects expanded
+tables above 500 indices. Native tests verify 128- and 255-target fixtures through
+normal admission, decoded records and every source's light-off/on UVLs, including
+ordered clamping. This does not enable 17/36 packed lighting or qualify rendering.
+
+XL resource admission checks both base sound banks against their startup contents,
+including bank absence, alongside the base HAM identity. Identical mounted copies
+are allowed; changed banks are rejected before resource reset with the bank name
+in the error. Native tests verify unchanged active resources and recovery after
+unmounting the override. Selected level palettes and PIGs are likewise compared
+with startup content before XL preflight and loading; native tests cover changed
+files, unchanged active graphics state and new-game recovery. Custom base resources,
+immutable check-to-read handling and full mission rollback remain separate requirements.
+
+The separate experimental `-xl-water-physics` profile now detects water requirements
+without mission-name, filename or source-hash admission rules. Native tests cover a
+renamed/repacked/changed-hash fixture as well as explicit rejection of unqualified
+water/robot combinations. A 57-step Android emulator probe verifies controlled
+water movement, authored portal crossing from staged poses, live waterfall mixer state,
+dry-space sound cleanup, wet/dry save restoration, stock isolation and disabled-profile
+rejection. Multiplayer, robot combat/generation, full Android authored traversal
+and reference water presentation parity remain outside this profile's qualification. This does not
+promote water to generally supported status in the browser catalog
+
+An optional Android input-replay phase now flies from the original dry spawn to
+water segment 187 using 1,235 recorded control frames, with no pose injection.
+The complete terminal result matches the fresh-process native replay. Recording
+and playback use the same 1920x1080 projection; validation is not bypassed.
+The launcher forwards an explicit experimental-water opt-in for replay only,
+honored by XL-enabled native builds. This adds one authored route's cross-platform
+simulation evidence, not whole-arena coverage or heard/rendered presentation parity.
+
 Pilot scope clarified by the user: faithful XL engine extensions; incidental
 XL retuning of classic gameplay (for example, wholesale flare speed) need not
 be copied. This does not mandate preserving every Redux gameplay choice.
@@ -171,7 +315,7 @@ The next qualification sequence is therefore:
 
 1. Retain the verified interactive completion boundary: the Android 22-step
    earned-checkpoint test passes, including score presentation and menu use.
-   Level 2 remains outside admission; broaden device/performance evidence
+   Level 2 is eligible in the opt-in runtime but remains unqualified; broaden device/performance evidence
    separately rather than treating the emulator result as universal
 2. Retain the verified activation, passability and persistence coverage for all
    13 actions. Keep any unexercised physical branch traversal explicitly
@@ -196,6 +340,38 @@ The next qualification sequence is therefore:
    levels or production compatibility approval from these results
 
 These gates refine the first pilot, not the corpus-wide implementation order.
+
+Counterstrike level 2 (Turnabout Bore) now has a native prerequisite test using
+the original archive: direct invocation of the next-level path, all 69 authored
+robots retained, two seconds of ordinary thrust/fire, and native checkpoint
+restore after a level-one restart. Identity, player position/energy/shields,
+robot count and light UVLs survive restore. The transition is invoked directly,
+not earned through level one's exit. Its 39 triggers (including ten generator
+activations), three generators, full combat/branch route, countdown and Android
+presentation remain separate qualification work. These results do not extend
+the verified pilot's completion claim to level two.
+
+A separate earned campaign-transition test now follows the normal key/reactor/
+escape route into original level two and restores its arrival checkpoint. This
+exposed a native divide-by-zero: the old object loop continued after the exit
+replaced the level and reset FrameTime. Both engines now stop object iteration
+and the old frame at a level change. The D2 earned route verifies this boundary;
+it does not establish level-two completion or Android transition presentation.
+
+The ordinary-input continuation from earned arrival reaches level two's blue
+key alive and restores its earned checkpoint. The added xl_level_two_keys
+acceptance test remains failing at the red-key continuation: the controller
+dies in combat. Its logs preserve these failures; passing blue-key evidence is
+not a claim that both keys, generator behavior or level completion are verified.
+
+Generator-specific route observations now distinguish segment targets from wall
+targets. The red-key attempt activates the segment-233 generator and observes
+five robots whose IDs match its authored mask. A checkpoint after its first
+spawn preserves masks, station mapping, capacity, lives, timers, robot provenance
+and earned resources; the observed remaining spawn sequence matches the run
+without that checkpoint. The other two generators, repeat/exhaustion semantics
+and reference behavior remain unqualified, and the overall route still fails.
+
 Do not port teleports, generators or wider tables merely because the survey
 finds them elsewhere; retain them as explicit later fixtures unless this pilot's
 complete requirement inventory demonstrates a dependency

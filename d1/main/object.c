@@ -2079,10 +2079,15 @@ void object_move_one( object * obj )
 	if (obj->type == OBJ_PLAYER && obj->movement_type==MT_PHYSICS)	{
 		if (previous_segment != obj->segnum) {
 			int	connect_side,i;
+			const int old_level = Current_level_num;
 			for (i=0;i<n_phys_segs-1;i++) {
 				connect_side = find_connect_side(&Segments[phys_seglist[i+1]], &Segments[phys_seglist[i]]);
 				if (connect_side != -1)
 					check_trigger(&Segments[phys_seglist[i]], connect_side, obj-Objects, 0);
+				if (Current_level_num != old_level) {
+					input_demo_rng_trace_clear_object_context();
+					return;
+				}
 			}
 		}
 	}
@@ -2099,6 +2104,7 @@ void object_move_all()
 {
 	int i;
 	object *objp;
+	const int frame_level = Current_level_num;
 
 //	check_duplicate_objects();
 //	remove_incorrect_objects();
@@ -2142,6 +2148,8 @@ void object_move_all()
 	for (i=0;i<=Highest_object_index;i++) {
 		if ( (objp->type != OBJ_NONE) && (!(objp->flags&OF_SHOULD_BE_DEAD)) )	{
 			object_move_one( objp );
+			// A trigger can replace Objects and reset timing while this slot runs
+			if (Current_level_num != frame_level) return;
 			input_demo_debug_log_object_watch_after_slot(i);
 		}
 		objp++;

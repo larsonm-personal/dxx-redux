@@ -33,13 +33,24 @@ extern "C" int xl_preview_start(void)
 {
 	const bool option = has_option("-xl-preview-start");
 	if (!option) return input_demo_maybe_start_replay_from_cmdline();
-	if (!has_option("-xl-static-light-preview") && !has_option("-xl-pilot") && !has_option("-xl-water-arena")) {
-		std::fprintf(stderr, "XL preview startup requires a lighting preview or pinned mission option\n");
+	if (!has_option("-xl-static-light-preview") && !has_option("-xl-pilot") && !has_option("-xl-water-physics")) {
+		std::fprintf(stderr, "XL preview startup requires a lighting, pilot or fluid profile option\n");
 		return 1;
 	}
-	char mission[16];
-	std::strcpy(mission, has_option("-xl-water-arena") ? "rtarena" : has_option("-xl-pilot") ? "d2-xl"
-	                                                                                         : "xlprobe");
+	char mission[PATH_MAX];
+	const char *selected = has_option("-xl-pilot") ? "d2-xl" : "xlprobe";
+	bool explicit_mission = false;
+	for (int i = 1; i + 1 < Num_args; ++i)
+		if (!std::strcmp(Args[i], "-mission")) {
+			selected = Args[i + 1];
+			explicit_mission = true;
+			break;
+		}
+	if ((has_option("-xl-water-physics") && !explicit_mission) || std::strlen(selected) >= sizeof(mission)) {
+		std::fprintf(stderr, "XL fluid preview requires an explicit bounded -mission name\n");
+		return 1;
+	}
+	std::strcpy(mission, selected);
 	if (!load_mission_by_name(mission)) {
 		std::fprintf(stderr, "XL preview cannot load mission %s\n", mission);
 		return 1;

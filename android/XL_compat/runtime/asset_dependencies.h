@@ -25,10 +25,18 @@ inline void asset_require(bool condition, const char *message)
 	if (!condition) throw std::runtime_error(message);
 }
 struct ObjectDependencies {
+	// Read-only views permit validating staged HXM definitions before installation
+	const robot_info *robot_data = Robot_info;
+	const jointpos *joint_data = Robot_joints;
+	const polymodel *model_data = Polygon_models;
+	const bitmap_index *object_bitmaps = ObjBitmaps;
+	const ushort *object_bitmap_ptrs = ObjBitmapPtrs;
+	const int *dying_models = Dying_modelnums, *dead_models = Dead_modelnums;
 	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
 	void sound(int id)
 	{
 		if (id == -1 || id == 255) return;
+		asset_require(id >= 0 && id < MAX_SOUNDS, "dependency references invalid sound ID");
 		const int resolved = digi_xlat_sound(id);
 		if (resolved < 0 || resolved >= MAX_SOUND_FILES)
 			throw std::runtime_error("dependency references unmapped sound " + std::to_string(id));
@@ -96,18 +104,18 @@ struct ObjectDependencies {
 		if (id == -1) return;
 		asset_require(id >= 0 && id < N_polygon_models, "object dependency references missing model");
 		if (!models.insert(id).second) return;
-		const auto &p = Polygon_models[id];
+		const auto &p = model_data[id];
 		asset_require(p.model_data && p.model_data_size > 0 && p.n_models > 0 && p.n_models <= MAX_SUBMODELS, "object dependency model has no valid payload");
 		asset_require(int(p.first_texture) + p.n_textures <= MAX_OBJ_BITMAPS, "model texture pointer range invalid");
 		for (int i = 0; i < p.n_textures; ++i) {
-			const int index = ObjBitmapPtrs[p.first_texture + i];
+			const int index = object_bitmap_ptrs[p.first_texture + i];
 			asset_require(index >= 0 && index < N_ObjBitmaps, "model texture references missing object bitmap");
-			bitmap(ObjBitmaps[index].index);
+			bitmap(object_bitmaps[index].index);
 			for (int e = 0; e < Num_effects; ++e)
 				if (Effects[e].changing_object_texture == index || Effects[e].changing_object_texture == p.first_texture + i) effect(e);
 		}
-		model(Dying_modelnums[id]);
-		model(Dead_modelnums[id]);
+		model(dying_models[id]);
+		model(dead_models[id]);
 		if (p.simpler_model) model(p.simpler_model - 1);
 	}
 	void weapon(int id)
@@ -146,9 +154,11 @@ struct ObjectDependencies {
 	}
 	void robot(int id)
 	{
-		asset_require(robot_info_is_usable(id), "object dependency references unusable robot");
+		asset_require(id >= 0 && id < N_robot_types && robot_data[id].model_num >= 0 &&
+		                  robot_data[id].model_num < N_polygon_models,
+		              "object dependency references unusable robot");
 		if (!robots.insert(id).second) return;
-		const auto &r = Robot_info[id];
+		const auto &r = robot_data[id];
 		for (const int id : { r.exp1_sound_num, r.exp2_sound_num, r.see_sound, r.attack_sound, r.claw_sound, r.taunt_sound }) sound(id);
 		if (r.death_roll) sound(r.deathroll_sound);
 		model(r.model_num);
@@ -165,7 +175,7 @@ struct ObjectDependencies {
 				const auto &j = r.anim_states[gun][state];
 				asset_require(j.n_joints >= 0 && j.offset >= 0 && j.offset + j.n_joints <= N_robot_joints, "robot joint range invalid");
 				for (int i = 0; i < j.n_joints; ++i)
-					asset_require(Robot_joints[j.offset + i].jointnum >= 0 && Robot_joints[j.offset + i].jointnum < Polygon_models[r.model_num].n_models, "robot joint references missing submodel");
+					asset_require(joint_data[j.offset + i].jointnum >= 0 && joint_data[j.offset + i].jointnum < model_data[r.model_num].n_models, "robot joint references missing submodel");
 			}
 	}
 };

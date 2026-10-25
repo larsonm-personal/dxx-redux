@@ -735,6 +735,7 @@ int input_demo_start_loaded_replay_common(void)
 	input_demo_rear_view_baseline view;
 	char projection_error[256] = "";
 	if (!input_demo_validate_replay_view_projection(projection_error, sizeof(projection_error))) {
+		INPUT_DEMO_CRUMB_V("input_demo: startup projection rejected: %s", projection_error);
 		printf("Input demo replay could not start: %s\n", projection_error);
 		input_demo_replay_unload();
 		return 1;

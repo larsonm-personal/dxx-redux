@@ -639,6 +639,11 @@ void polygon_model_data_read(polymodel *pm, PHYSFS_file *fp)
 	pm->model_data = d_malloc(pm->model_data_size);
 	Assert(pm->model_data != NULL);
 	PHYSFS_read(fp, pm->model_data, sizeof(ubyte), pm->model_data_size);
+	polygon_model_data_init(pm);
+}
+
+void polygon_model_data_init(polymodel *pm)
+{
 #ifdef WORDS_NEED_ALIGNMENT
 	align_polygon_model_data(pm);
 #endif

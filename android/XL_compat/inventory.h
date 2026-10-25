@@ -86,6 +86,8 @@ struct Inventory {
 	std::vector<Trigger> triggers;
 	std::vector<Section> sections;
 	std::vector<Issue> unsupported, unknown;
+	// Audited preserved data which is neither an unknown feature nor an admission grant
+	std::vector<Issue> observations;
 };
 
 // Inspection is not admission: even a decoded file is not approved for gameplay

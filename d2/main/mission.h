@@ -150,6 +150,9 @@ int mission_compatibility_warning_text(int warning_index, char *buffer, unsigned
 
 /* Whether a resource comes from the active custom mission HOG */
 int mission_owns_resource_archive(const char *source);
+#ifdef DXX_XL_PILOT
+const char *mission_descriptor_snapshot(void);
+#endif
 
 /* D2 HAM/sound/extra-robot loading service; caller owns profile transition and
  * has released old polygon models. Does not select or prepare D1 assets */

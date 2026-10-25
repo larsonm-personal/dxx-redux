@@ -2518,21 +2518,17 @@ void object_move_one( object * obj )
 	if (obj->type == OBJ_PLAYER && obj->movement_type==MT_PHYSICS)	{
 		if (previous_segment != obj->segnum) {
 			int	connect_side,i;
-#ifdef NETWORK
 			int	old_level = Current_level_num;
-#endif
 			for (i=0;i<n_phys_segs-1;i++) {
 				connect_side = find_connect_side(&Segments[phys_seglist[i+1]], &Segments[phys_seglist[i]]);
 				if (connect_side != -1)
 					check_trigger(&Segments[phys_seglist[i]], connect_side, obj-Objects,0);
 
 				//maybe we've gone on to the next level.  if so, bail!
-#ifdef NETWORK
 				if (Current_level_num != old_level) {
 					input_demo_rng_trace_clear_object_context();
 					return;
 				}
-#endif
 			}
 		}
 
@@ -2640,6 +2636,7 @@ void object_move_all()
 {
 	int i;
 	object *objp;
+	const int frame_level = Current_level_num;
 
 	if (Highest_object_index > MAX_USED_OBJECTS)
 		free_object_slots(MAX_USED_OBJECTS);		//	Free all possible object slots.
@@ -2688,6 +2685,8 @@ void object_move_all()
 			input_demo_current_move_id = -1;
 			input_demo_current_move_segnum = -1;
 			input_demo_current_move_control_type = -1;
+			// A trigger can replace Objects and reset timing while this slot runs
+			if (Current_level_num != frame_level) return;
 		}
 		objp++;
 	}

@@ -33,6 +33,11 @@ if(BUILD_TESTING)
     if(XL_REFERENCE_RENDERLIB)
         include(tests/reference_lighting.cmake)
     endif()
+    set(XL_REFERENCE_SEGMENT_FLAGS ""
+        CACHE FILEPATH "Pinned XL main/findsegment.cpp for ambient flag oracle")
+    if(XL_REFERENCE_SEGMENT_FLAGS)
+        include(tests/reference_segment_flags.cmake)
+    endif()
     set(XL_REFERENCE_LIGHT "" CACHE FILEPATH
                                     "Pinned XL lighting/light.cpp for dynamic color oracle")
     if(XL_REFERENCE_LIGHT)
@@ -129,6 +134,28 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/escape-tests -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
             set_tests_properties(xl_normal_escape PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_earned_campaign_transition
+                COMMAND
+                    ${CMAKE_COMMAND} -DNAVIGATION=ON -DREACTOR=ON -DESCAPE=ON -DCAMPAIGN=ON
+                    -DLEVEL=${XL_PILOT_LEVEL} -DPROBE=$<TARGET_FILE:xl_probe_fixture>
+                    -DENGINE=${XL_STOCK_METADATA} -DDATA=${XL_RETAIL_DATA}
+                    -DPREVIEW=${XL_PREVIEW_LIFECYCLE} -DPILOT_HOG=${XL_PILOT_HOG}
+                    -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/campaign-tests -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+            set_tests_properties(xl_earned_campaign_transition PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_level_two_keys
+                COMMAND
+                    ${CMAKE_COMMAND} -DNAVIGATION=ON -DREACTOR=ON -DESCAPE=ON -DCAMPAIGN=ON
+                    -DLEVEL_TWO_ROUTE=ON -DLEVEL=${XL_PILOT_LEVEL}
+                    -DPROBE=$<TARGET_FILE:xl_probe_fixture> -DENGINE=${XL_STOCK_METADATA}
+                    -DDATA=${XL_RETAIL_DATA} -DPREVIEW=${XL_PREVIEW_LIFECYCLE}
+                    -DPILOT_HOG=${XL_PILOT_HOG} -DPILOT_DESCRIPTOR=${XL_PILOT_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/level-two-route-tests -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/preview_lifecycle.cmake)
+            set_tests_properties(xl_level_two_keys PROPERTIES TIMEOUT 90)
             # Linked portals not crossed by the existing branch and secret routes
             foreach(crossing IN ITEMS "1,176,182" "2,193,194" "3,136,137" "5,5,185")
                 string(REPLACE "," ";" endpoints "${crossing}")

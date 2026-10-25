@@ -21,6 +21,7 @@
 
 #include <nlohmann/json.hpp>
 #ifdef DXX_XL_PILOT
+#include "preview.h"
 #include "persistence_probe.h"
 #include "corona_probe.h"
 #endif
@@ -72,6 +73,7 @@ extern "C" {
 #endif
 #endif
 #include "android_log.h"
+#include "android_mission_assets.h"
 #include "android_crash_handler.h"
 #include "android_menu_scale.h"
 #include "android_music_control.h"
@@ -6865,6 +6867,21 @@ extern "C" void game_automate_tick(void)
 				if (!report.value("passed", false)) stop_script_fail("XL corona framebuffer verification failed");
 #else
 				stop_script_fail("XL corona framebuffer probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_asset_acquisition_failure") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (s.value != "verify" || !Game_wind || !android_mission_assets_test_acquisition_failure())
+					stop_script_fail("XL asset acquisition failure did not preserve the active context");
+				else LOGI("XL asset acquisition failure preserved ownership and search path after partial acquisition");
+#else
+				stop_script_fail("XL asset acquisition failure probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_water_physics") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if ((s.value != "enable" && s.value != "disable") || !xl_preview_set_water_test_profile(s.value == "enable"))
+					stop_script_fail("XL water profile requires enable/disable outside gameplay");
+#else
+				stop_script_fail("XL water profile requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_pilot_persistence") {
 #if defined(DXX_XL_PILOT) && defined(__ANDROID__)

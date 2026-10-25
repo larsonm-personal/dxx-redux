@@ -22,6 +22,11 @@ std::vector<Issue> runtime_blockers(const Inventory &level)
 	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
 	limit(level.light_indices.size() > 500 || level.delta_lights.size() > 32000, "lighting capacity", "more than 500 light indices or 32000 delta lights");
+	// Translation splits counts into signed-byte chunks, preserving zero-count records
+	std::size_t translated_indices = 0;
+	for (const auto &index : level.light_indices)
+		translated_indices += index[2] ? (index[2] + 126) / 127 : 1;
+	limit(translated_indices > 500, "changing-light capacity", "lossless translation requires more than 500 light indices");
 	limit(level.flicker_lights.size() > 100, "flicker capacity", "more than 100 flickering lights");
 	limit(level.object_triggers != 0, "object triggers", "object-attached triggers are not implemented");
 	return result;
