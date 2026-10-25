@@ -17,6 +17,7 @@ extern "C" {
 void ogl_init_texture_list_internal(void);
 void ogl_smash_texture_list_internal(void);
 void ogl_init_pixel_buffers(int, int);
+extern int GL_TEXTURE_2D_enabled, GL_texclamp_enabled;
 void ogl_close_pixel_buffers(void);
 int ogl_loadtexture(unsigned char *, int, int, ogl_texture *, int, int, int, const char *);
 }
@@ -126,6 +127,8 @@ int main(int argc, char **argv)
 		EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, version);
 		require(eglMakeCurrent(display, surface, surface, context), "render context");
 		gles3_shim_init();
+		// This fixture creates EGL contexts directly; retire the native state caches too.
+		GL_TEXTURE_2D_enabled = GL_texclamp_enabled = -1;
 		ogl_init_texture_list_internal();
 		ogl_init_pixel_buffers(64, 64);
 #ifdef DXX_BUILD_DESCENT_II
