@@ -35,7 +35,7 @@ static void require(bool value, const char *message)
 		std::exit(1);
 	}
 }
-static void image(const char *path, unsigned char red, unsigned char alpha = 255)
+static void image(const char *path, unsigned char red, unsigned char alpha = 255, unsigned char green = 40, unsigned char blue = 30)
 {
 	std::filesystem::create_directories(std::filesystem::path(path).parent_path());
 	std::vector<unsigned char> bytes(18 + 4 * 4 * 4);
@@ -44,8 +44,8 @@ static void image(const char *path, unsigned char red, unsigned char alpha = 255
 	bytes[16] = 32;
 	bytes[17] = 8;
 	for (size_t p = 18; p < bytes.size(); p += 4) {
-		bytes[p] = 30;
-		bytes[p + 1] = 40;
+		bytes[p] = blue;
+		bytes[p + 1] = green;
 		bytes[p + 2] = red;
 		bytes[p + 3] = alpha;
 	}
@@ -75,6 +75,8 @@ int main(int argc, char **argv)
 	image("global/ceil002.tga", 10);
 	image("a/mods/pilot/textures/translucent.tga", 230, 100);
 	image("global/translucent.tga", 10);
+	image("a/mods/pilot/textures/keyed.tga", 120, 255, 88, 128);
+	image("global/keyed.tga", 10);
 	image("global/broken.tga", 10);
 	std::ofstream("a/mods/pilot/textures/broken.tga") << "truncated";
 	std::ofstream("a/mods/pilot/textures/ceil002.bmp") << "not a selected format";
@@ -155,10 +157,10 @@ int main(int argc, char **argv)
 			unsigned char pixel[4];
 			glReadPixels(1, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
 			require(glGetError() == GL_NO_ERROR && pixel[0] == red && pixel[1] == (use_original ? 220 : 40) && pixel[2] == (use_original ? 220 : 30) && pixel[3] == 255, "actual controlled surface readback");
-			for (const char *name : { "broken", "translucent" }) {
+			for (const char *name : { "broken", "translucent", "keyed" }) {
 				const char *fallback_names[] = { nullptr, nullptr, name };
 				png_data fallback{};
-				require(android_ogl_read_replacement(path, sizeof(path), hog, fallback_names, slots, 3, 0, &bitmap, &fallback, &ktx, &metrics, &ktx_us, &png_us) == 1 && fallback.data[0] == 10, "malformed/translucent scoped candidate preserves global fallback");
+				require(android_ogl_read_replacement(path, sizeof(path), hog, fallback_names, slots, 3, 0, &bitmap, &fallback, &ktx, &metrics, &ktx_us, &png_us) == 1 && fallback.data[0] == 10, "malformed/translucent/keyed scoped candidate preserves global fallback");
 				free(fallback.data);
 				free(fallback.palette);
 			}

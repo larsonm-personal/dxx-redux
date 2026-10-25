@@ -242,9 +242,10 @@ int android_ogl_read_replacement(char *filename, size_t capacity, const char *mi
 				 * read_png has already bounded the decoded dimensions and allocation. */
 				int opaque = png->channels == 3 || png->channels == 4;
 				const size_t pixels = (size_t) png->width * png->height;
-				if (opaque && png->alpha)
+				if (opaque)
 					for (size_t pixel = 0; pixel < pixels; ++pixel)
-						if (png->data[pixel * png->channels + png->channels - 1] != 255) {
+						if ((png->alpha && png->data[pixel * png->channels + png->channels - 1] != 255) ||
+						    (png->data[pixel * png->channels] == 120 && png->data[pixel * png->channels + 1] == 88 && png->data[pixel * png->channels + 2] == 128)) {
 							opaque = 0;
 							break;
 						}
