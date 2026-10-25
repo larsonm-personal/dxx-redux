@@ -76,6 +76,7 @@ int g_replay_robot_labels_enabled = 0;
 #include "render_gameplay_view.h"
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 #include "ogl_msaa_probe_android.h"
+#include "game_introspect.h"
 #endif
 #endif
 #ifdef ANDROID
@@ -648,6 +649,21 @@ void render_side(segment *segp, int sidenum)
 		//	the face is, how normal to the surfaces the view is.
 		//	Now, if both dot products are close to 1.0, then render two triangles as a single quad.
 		v_dot_n1 = vm_vec_dot(&tvec, &normals[1]);
+#ifdef DXX_XL_PILOT
+		if (xl_classic_legacy_fans_active() || xl_preview_reference_fans()) {
+			if (xl_preview_split_face_visible(segp-Segments, sidenum, Viewer_eye.x, Viewer_eye.y, Viewer_eye.z)) {
+#ifdef ANDROID
+				android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
+					sidep->tmap_num2, wid_flags, 4, 0);
+				android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+					wid_flags, f2fl(v_dot_n0), 4, 0);
+#endif
+				render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
+			}
+			return;
+		}
+#endif
+
 
 		if (v_dot_n0 < v_dot_n1) {
 			min_dot = v_dot_n0;
@@ -1910,6 +1926,11 @@ void render_frame(fix eye_offset, int window_num)
 	g3_start_frame();
 
 	start_seg_num = render_setup_view(eye_offset);
+
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (window_num == 0)
+		game_introspect_record_main_view(start_seg_num);
+#endif
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)

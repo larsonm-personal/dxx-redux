@@ -20,9 +20,11 @@
 
 #include <nlohmann/json.hpp>
 #include "android_mod_assets.h"
+#include "android_sound_trace.h"
 #include "mod_save_compat.h"
 #include "android_mod_bitmaps.h"
 #include "android_texture_usage.h"
+#include "input_demo_codec.h"
 #ifdef DXX_XL_PILOT
 #include "preview.h"
 #endif
@@ -157,6 +159,99 @@ static unsigned int Framebuffer_probe_gl_error;
 static unsigned long long Framebuffer_probe_map_visible_pixels;
 static unsigned long long Framebuffer_probe_map_rgb_sum;
 static int Framebuffer_probe_map_max_channel;
+static json Pending_main_view;
+static json Framebuffer_main_view;
+static unsigned int Main_view_request_generation;
+static unsigned long long Render_flip_sequence;
+static char introspect_path[512] = "";
+static bool Pixel_capture_requested;
+static json Pixel_capture = { { "status", "idle" } };
+
+extern "C" void game_introspect_request_pixel_capture(void)
+{
+	Pixel_capture_requested = true;
+	Pixel_capture = { { "status", "pending" } };
+	game_introspect_request();
+}
+
+static void export_framebuffer_pixels(const std::vector<unsigned char> &pixels, unsigned int generation)
+{
+	if (!Pixel_capture_requested) return;
+	Pixel_capture_requested = false;
+	Pixel_capture = { { "status", "failed" }, { "request_generation", generation } };
+	if (!introspect_path[0] || Framebuffer_probe_gl_error || !Framebuffer_main_view.value("valid", false)) {
+		Pixel_capture["reason"] = "No valid main view or framebuffer readback";
+		return;
+	}
+	std::string digest, error;
+	if (!input_demo_sha256_hex(pixels.data(), pixels.size(), &digest, &error)) {
+		Pixel_capture["reason"] = error;
+		return;
+	}
+	json header = {
+		{ "version", 1 }, { "format", "RGBA8" }, { "row_order", "bottom_up" }, { "width", Framebuffer_probe_width }, { "height", Framebuffer_probe_height }, { "pixel_bytes", pixels.size() }, { "pixel_sha256", digest }, { "request_generation", generation }, { "main_view", Framebuffer_main_view }, { "mission_key", android_mission_assets_key() }, { "mission_generation", android_mission_assets_generation() }, { "level", Current_level_num }
+	};
+	const std::string path = std::string(introspect_path) + ".frame";
+	const std::string temporary = path + ".tmp";
+	const std::string metadata = header.dump() + "\n";
+	FILE *file = fopen(temporary.c_str(), "wb");
+	bool ok = false;
+	if (file) {
+		ok = fwrite(metadata.data(), 1, metadata.size(), file) == metadata.size() &&
+		     fwrite(pixels.data(), 1, pixels.size(), file) == pixels.size();
+		if (fclose(file) != 0) ok = false;
+	}
+	if (!ok || rename(temporary.c_str(), path.c_str()) != 0) {
+		remove(temporary.c_str());
+		Pixel_capture["reason"] = "Could not publish frame export";
+		return;
+	}
+	Pixel_capture = header;
+	Pixel_capture["status"] = "saved";
+}
+
+extern "C" void game_introspect_record_main_view(int segment)
+{
+#if defined(OGL) && defined(DXX_BUILD_DESCENT_II)
+	if (!game_introspect_dump_requested()) return;
+	/* These are the g3 globals immediately after render_setup_view, not player pose */
+	extern vms_vector View_position, Matrix_scale;
+	extern vms_matrix Unscaled_matrix;
+	extern fix View_zoom;
+	int viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	auto vector = [](const vms_vector &v) { return json::array({ v.x, v.y, v.z }); };
+	Main_view_request_generation = Introspect_request_generation.load();
+	Pending_main_view = {
+		{ "diagnostic_still_view", game_automate_still_view_active() != 0 },
+		{ "diagnostic_reference_fans", game_automate_reference_fans_active() != 0 },
+#ifdef DXX_XL_PILOT
+		{ "visual_profile", (xl_classic_legacy_fans_active() || xl_preview_reference_fans()) ? "legacy_fan" : "compiled_splits" },
+#else
+		{ "visual_profile", "compiled_splits" },
+#endif
+		{ "valid", true },
+		{ "request_generation", Main_view_request_generation },
+		{ "flip_sequence", Render_flip_sequence },
+		{ "segment", segment },
+		{ "position_fixed", vector(View_position) },
+		{ "right_fixed", vector(Unscaled_matrix.rvec) },
+		{ "up_fixed", vector(Unscaled_matrix.uvec) },
+		{ "forward_fixed", vector(Unscaled_matrix.fvec) },
+		{ "matrix_scale_fixed", vector(Matrix_scale) },
+		{ "zoom_fixed", View_zoom },
+		{ "viewport", json::array({ viewport[0], viewport[1], viewport[2], viewport[3] }) }
+	};
+#else
+	(void) segment;
+#endif
+}
+
+extern "C" void game_introspect_finish_render_frame(void)
+{
+	Pending_main_view = nullptr;
+	++Render_flip_sequence;
+}
 
 extern "C" void game_introspect_sample_framebuffer(int width, int height)
 {
@@ -164,6 +259,9 @@ extern "C" void game_introspect_sample_framebuffer(int width, int height)
 	if (width <= 0 || height <= 0)
 		return;
 	const unsigned int generation = Introspect_request_generation.load();
+	Framebuffer_main_view = !Pending_main_view.is_null() && Main_view_request_generation == generation
+	                            ? Pending_main_view
+	                            : json{ { "valid", false } };
 	std::vector<unsigned char> pixels((size_t) width * (size_t) height * 4u);
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 	Framebuffer_probe_gl_error = glGetError();
@@ -217,6 +315,7 @@ extern "C" void game_introspect_sample_framebuffer(int width, int height)
 		}
 	}
 	Framebuffer_probe_generation = generation;
+	export_framebuffer_pixels(pixels, generation);
 #else
 	(void) width;
 	(void) height;
@@ -611,6 +710,10 @@ static json serialize_position()
 		{ "y", f2fl(ConsoleObject->pos.y) },
 		{ "z", f2fl(ConsoleObject->pos.z) },
 		{ "segment", (int) ConsoleObject->segnum },
+		{ "radius", f2fl(ConsoleObject->size) },
+		{ "velocity_x", f2fl(ConsoleObject->mtype.phys_info.velocity.x) },
+		{ "velocity_y", f2fl(ConsoleObject->mtype.phys_info.velocity.y) },
+		{ "velocity_z", f2fl(ConsoleObject->mtype.phys_info.velocity.z) },
 		{ "speed", f2fl(vm_vec_mag_quick(&ConsoleObject->mtype.phys_info.velocity)) },
 		{ "shields", f2fl(ConsoleObject->shields) },
 		/* Forward vector -- lets tests detect orientation changes */
@@ -692,6 +795,7 @@ static json serialize_level_scene()
 	json result = { { "segment", ConsoleObject ? serialize_scene_segment(ConsoleObject->segnum) : json(nullptr) },
 		            { "reactor_destroyed", Control_center_destroyed != 0 },
 		            { "robots", json::array() },
+		            { "powerups", json::array() },
 		            { "hostages", json::array() },
 		            { "explosions", json::array() },
 		            { "reactors", json::array() } };
@@ -726,10 +830,12 @@ static json serialize_level_scene()
 		// Android capture automation locates authored hostages for real collision pickups
 		if (obj.type == OBJ_HOSTAGE && !(obj.flags & OF_SHOULD_BE_DEAD))
 			result["hostages"].push_back({ { "object", i }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) } });
+		if (obj.type == OBJ_POWERUP && !(obj.flags & OF_SHOULD_BE_DEAD))
+			result["powerups"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "radius", f2fl(obj.size) } });
 		if (obj.type == OBJ_ROBOT) {
 			// Locate actual combat for mod sprite acceptance without creating test objects
 			vms_vector position = obj.pos;
-			result["robots"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "shields", f2fl(obj.shields) }, { "alive", obj.shields > 0 && !(obj.flags & OF_SHOULD_BE_DEAD) }, { "radius", f2fl(obj.size) }, { "distance", ConsoleObject ? json(f2fl(vm_vec_dist_quick(&position, &ConsoleObject->pos))) : json(nullptr) } });
+			result["robots"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "shields", f2fl(obj.shields) }, { "alive", obj.shields >= 0 && !(obj.flags & OF_SHOULD_BE_DEAD) }, { "radius", f2fl(obj.size) }, { "distance", ConsoleObject ? json(f2fl(vm_vec_dist_quick(&position, &ConsoleObject->pos))) : json(nullptr) } });
 		}
 		if (obj.type != OBJ_CNTRLCEN) continue;
 		result["reactors"].push_back({ { "object", i }, { "position", serialize_scene_point(obj.pos) }, { "radius", f2fl(obj.size) }, { "shields", f2fl(obj.shields) }, { "destroyed", (obj.flags & OF_DESTROYED) != 0 }, { "render_type", obj.render_type }, { "model", obj.render_type == RT_POLYOBJ ? json(obj.rtype.pobj_info.model_num) : json(nullptr) }, { "segment", serialize_scene_segment(obj.segnum) } });
@@ -2019,6 +2125,9 @@ extern "C" char *game_introspect_get_state(void)
 #ifdef DXX_XL_PILOT
 	j["xl_pilot"] = {
 		{ "runtime_active", xl_runtime_active() != 0 },
+		{ "classic_lighting_requested", xl_classic_lighting_requested() != 0 },
+		{ "classic_lighting_vertices", xl_classic_lighting_vertex_count() },
+		{ "classic_legacy_fans", xl_classic_legacy_fans_active() != 0 },
 		{ "in_water", Game_wind && ConsoleObject && xl_preview_water_segment(ConsoleObject->segnum) != 0 },
 		{ "water_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 0) : 0 },
 		{ "water_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 1) : 0 },
@@ -3227,6 +3336,16 @@ extern "C" char *game_introspect_get_state(void)
 		j["physfs"] = std::move(physfs);
 		j["mounted_mods"] = std::move(mods);
 		j["mod_usage"] = android_mod_usage_snapshot();
+		android_sound_completion completions[MAX_SOUND_FILES];
+		const int completion_count = android_sound_completion_snapshot(completions, MAX_SOUND_FILES);
+		json playback = json::object();
+		for (int i = 0; i < completion_count; ++i) {
+			const auto &entry = completions[i];
+			playback[std::to_string(entry.sample)] = {
+				{ "attempts", entry.attempts }, { "completed", entry.completed }, { "stop_requested", entry.stop_requested }, { "failed", entry.failed }, { "last_elapsed_ms", entry.last_elapsed_ms }, { "last_bytes", entry.last_bytes }
+			};
+		}
+		j["sound_playback"] = std::move(playback);
 		j["mod_save"] = { { "status", mod_save_status() }, { "reason", mod_save_reason() }, { "adapted", mod_save_adapted_count() } };
 		j["mission_asset_owner"] = android_mission_assets_owner();
 		j["mission_asset_generation"] = android_mission_assets_generation();
@@ -3291,10 +3410,13 @@ extern "C" char *game_introspect_get_state(void)
 	}
 
 	/* -- Dense framebuffer output probe ----------------------------- */
+	j["pixel_capture"] = Pixel_capture;
 	if (Framebuffer_probe_width > 0 && Framebuffer_probe_height > 0) {
 		const unsigned long long pixel_count =
 		    (unsigned long long) Framebuffer_probe_width * (unsigned long long) Framebuffer_probe_height;
 		j["framebuffer_probe"] = {
+			{ "request_generation", Framebuffer_probe_generation },
+			{ "main_view", Framebuffer_main_view },
 			{ "width", Framebuffer_probe_width },
 			{ "height", Framebuffer_probe_height },
 			{ "pixel_count", pixel_count },
@@ -3358,8 +3480,6 @@ extern "C" char *game_introspect_get_state(void)
 }
 
 /* -- On-demand dump infrastructure ------------------------------------ */
-
-static char introspect_path[512] = "";
 
 extern "C" void game_introspect_set_path(const char *path)
 {

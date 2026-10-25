@@ -431,6 +431,17 @@ int main(int argc, char **argv)
 		rejects([&] { xl_compat::prepare_gameplay_probe(water, true); });
 
 		const auto compatibility = xl_compat::compatibility_json("pilot.rl2", bytes);
+		const std::string hash(64, 'a');
+		const auto package = xl_compat::package_compatibility_json("owner", "missions/pilot.msn", { { "missions/pilot.msn", hash }, { "mods/pilot/sounds/BOSS01.WAV", hash }, { "mods/pilot/pilot.s22", hash }, { "mods/pilot/textures/rock.tga", hash }, { "missions/pilot.hog", hash } });
+		check(package.find("\"blocks_analysis\": false") != std::string::npos && package.find("\"playable\": false") != std::string::npos,
+		      "package evidence must not block analysis or imply playability");
+		const auto sound_row = feature_row(package, "scoped_sounds");
+		check(sound_row.find("2 catalogued candidate files") != std::string::npos && sound_row.find("BOSS01.WAV") != std::string::npos &&
+		          sound_row.find("pilot.s22") != std::string::npos && sound_row.find(hash) != std::string::npos,
+		      "owned WAV and bank candidates must preserve source evidence without selecting a winner");
+		check(feature_row(package, "companion_lighting").find("\"status\": \"unknown\"") != std::string::npos,
+		      "uninspected HOG companions must not be reported absent");
+		check(package.find("\"status\": \"eligible\"") == std::string::npos, "catalog candidates gained eligibility");
 		check(compatibility.find("\"status\": \"eligible\"") != std::string::npos, "supported features should be eligible for runtime validation");
 		check(compatibility.find("\"playable\": false") != std::string::npos, "compatibility must remain nonplayable");
 		check(compatibility.find("Object-attached triggers") != std::string::npos, "catalog missing category");

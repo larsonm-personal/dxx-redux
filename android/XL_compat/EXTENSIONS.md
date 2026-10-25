@@ -430,18 +430,53 @@ The browser now separates package identity, scoped textures, sounds, music,
 models, companion lighting, configuration options and distribution extraction.
 Level-only reports leave those categories unknown. A ZIP/7z/RAR distribution is
 distinct from its mission HOG, and reading its catalog does not prove decoding.
+Extracted mission targets now attach a native report from the verified extraction
+record and the launch catalog's ownership/deduplication policy. It lists candidate
+paths and SHA-256 values for scoped sounds, textures, music, models, options and
+loose lighting companions. These are catalog candidates, not active-HOG or
+ordinal selection, decoding or qualification evidence. Zero candidates remains
+unknown because embedded archive members and other resource sources are outside
+this inventory. Direct unextracted archives and loose-file targets do not yet
+provide this report. Embedded HOG lighting inspection remains separate.
+An Android original-package witness verifies Dragon Pit's two boss WAV paths and
+hashes through the extracted-target/JNI/report pipeline and production dialog;
+its lighting restrictions remain present. Long table evidence is previewed with
+an ellipsis and available in full in the feature explanation. This is browser
+evidence, not active resource selection or gameplay qualification.
+Reports now carry an explicit `blocks_analysis` flag, separate from displayed
+support status. Only Boolean false permits informational reports to bypass that
+restriction; existing detected level/descriptor/lighting reports retain it.
+Package evidence cannot suppress a separate level blocker or promote support.
 The original Dragon Pit distribution exposed a BCJ2 decoder limitation; its
 targeted native 7z fallback now extracts the admitted catalog in one pass with
 path, byte, CRC and completion checks. Original-package Android import passed,
 and the extracted descriptor, HOG and two boss WAVs match the audited originals.
 This proves import for that package, not all 7z methods or gameplay support.
+Launcher base-file compatibility dispatch recognizes 7z/RAR owner signatures,
+including extensionless downloads, before attempting a DXA ZIP manifest read.
+This reads at most eight bytes and preserves ZIP/DXA checks; full archive
+validation remains part of extraction. The original-package Android lifecycle
+check passes with the final dispatch and no owner-as-DXA ZIP warnings. This
+does not add nested-DXA base-requirement validation or change admission status.
 
 The opt-in imported-D1 WAV runtime path selects only active-context files using
 the mounted HOG identity and incoming signed level ordinal. It explicitly
 converts PCM and records installed-byte evidence; unsupported scoped sound banks
 reject instead of implying WAV fallback support. Controlled Android boss probes
 played both original WAVs, with matching installed PCM and mixer fingerprints.
-Death timing, lifecycle, native-D1 parity and lighting remain unqualified.
+The death WAV also reached natural SDL_mixer completion; a save/restore negative
+control stopped a second playback without counting it as completed. Debug-only
+`sound_playback` introspection exposes process-cumulative per-sample attempts,
+natural completions, stop requests, failures, and last callback elapsed time/bytes.
+These are playback diagnostics, not mission support flags.
+The logging-gated mod_usage snapshot additionally records actual scoped WAV
+selection against the mounted HOG, signed ordinal and mission key/generation,
+with a current-context check. Android save/restore and mission-to-stock-to-mission
+tests verify these records and invalidation. They remain separate from static
+browser candidates and do not promote a package's qualification status.
+Native D1 death scheduling is retained; the pinned XL reference reads an empty high-resolution
+length slot and uses a one-second fallback. Exact reference death timing, normal
+combat and native-D1 parity remain unqualified.
 The probes used teleportation and scripted lethal damage; they do not establish
 normal traversal or combat. No successful startup or decoder test
 may promote Dragon Pit to fully supported without those gates and normal-input
@@ -451,11 +486,66 @@ LGT/CLR companion decoding is separately tested against the pinned 910-entry
 layout and the original Dragon Pit HOG. The bounded readers reject incomplete
 or oversized tables and preserve signed brightness/color values and the serialized
 CLR byte for inspection. XL resets that byte when applying texture colors.
-These readers do not yet apply the tables to rendering; companion lighting
-therefore remains unqualified in the browser.
+The opt-in imported-D1 runtime now applies these tables through owned ambient
+lighting state and the vertex renderer hook. Native and refreshed Android lifecycle
+probes cover mission release, stock transitions and save/restore after the latest
+geometry corrections. Matched-viewport native
+comparison agrees with all 1,737 nearest-light lists and vertex RGB values within
+0.0000002 of a separately labeled reference with its uninitialized visibility
+buffer corrected. See [lighting comparison evidence](evidence/dragon-lighting-comparison.md).
+This verifies the bounded calculation profile. A separate native still-view
+comparison now measures five static surface regions after matching effective
+projection and texture filtering. Four regions have mean channel errors below
+0.066 on the 0-255 scale. The remaining warped floor differs because normal
+rendering preserves its compiled triangle split while the reference's non-mesh
+renderer uses a four-corner fan. An explicit diagnostic fan draw reduces that
+region's error from 9.408 to 0.056, leaving the other four regions unchanged.
+The original comparison retained the compiled split; this documented visual difference
+is not a reason to alter collision geometry. These bounded captures do not verify
+other views, dynamic lighting, Android rendering or normal mission completion.
+Companion lighting remains unqualified in the browser until the remaining gates
+pass.
 
 HOG summaries now inspect embedded LGT/CLR members and expose their decoded
 counts or decoding errors as blocked companion requirements. D1 MSN descriptors
 follow their sibling HOG like D2 MN2 descriptors. Detection does not establish
 which level consumes a member, or whether it is equivalent to defaults; those
 remain explicit verification requirements.
+
+
+A controlled Android still-view capture now provides a matched five-region
+lighting witness with exact camera/viewport receipts and hashed pixels. Four
+regions have mean channel errors0.010..0.035 (0..255 scale); the warped floor
+remains9.403 with normal compiled face splits. This is bounded diagnostic
+rendering evidence, not full visual or gameplay qualification. Details and
+provenance are in [the comparison evidence](evidence/dragon-lighting-comparison.md).
+Package/mission support status is unchanged.
+
+
+Warped-face drawing is also profile-dependent in the pinned XL source: its
+no-mesh lighting path uses four-corner fans, while mesh paths preserve side
+splits or subdivide eligible quads. Treat this as renderer-profile fidelity,
+separate from file-format and collision support. A classic warped side alone
+must not become an XL-only admission blocker. The current floor discrepancy is
+still recorded; no mission is promoted by this distinction.
+
+The still-only Android fan diagnostic now has matched start, oblique and
+mixed-facing reference views. At the start, the warped-floor mean RGB error
+drops from 9.403 to 0.030; the oblique floor regions drop from 10.050/8.009 to
+0.043/0.026. The mixed-facing projected triangle footprint has mean error
+0.035 over 2675 pixels. Captures label the diagnostic explicitly and retain
+normal compiled collision geometry. These bounded results justify further
+work on a named renderer profile, not automatic promotion of companion
+lighting or package support. Missions without prepared classic lighting retain compiled splits;
+normal-input mission completion and broader authored-feature coverage remain
+open. See the comparison evidence for hashes, fixtures and limitations.
+
+The prepared experimental classic companion-lighting runtime now selects its
+named `legacy_fan` visual profile during ordinary single-player D1 gameplay,
+without a mission-name check or still-camera override. This requires successful
+companion preparation; merely requesting lighting or loading a warped classic
+side does not activate it. The 43-step lifecycle test verifies activation,
+save/restore, stock Counterstrike isolation and restored pilot rendering with
+both diagnostic flags off. Frame receipts report the effective profile
+separately from diagnostic flags. This remains within the experimental
+classic-lighting opt-in; admission and browser support status are unchanged.

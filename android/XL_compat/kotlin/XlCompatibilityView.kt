@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -49,11 +50,12 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
     var explanation by remember(reports) { mutableStateOf<XlCompatibilityRow?>(null) }
     // Unscanned siblings cannot inherit a detected level's compatibility
     val status = compatibilityGroupStatus(reports)
-    val label = when (status) {
-        "blocked" -> "D2X-XL compatibility: cannot load"
-        "eligible" -> "D2X-XL compatibility: runtime checks needed"
-        else -> "D2X-XL compatibility: unverified"
-    }
+    val label =
+        when (status) {
+            "blocked" -> "D2X-XL compatibility: cannot load"
+            "eligible" -> "D2X-XL compatibility: runtime checks needed"
+            else -> "D2X-XL compatibility: unverified"
+        }
     OutlinedButton(
         onClick = { open = true },
         colors = ButtonDefaults.outlinedButtonColors(contentColor = compatibilityColor(status)),
@@ -131,11 +133,13 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                     )
-                                    Text(row.support, fontSize = 12.sp)
+                                    Text(row.support, fontSize = 12.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
                                     if (row.evidence.isNotBlank()) {
                                         Text(
                                             row.evidence,
                                             fontSize = 11.sp,
+                                            maxLines = 3,
+                                            overflow = TextOverflow.Ellipsis,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
@@ -161,10 +165,16 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
                 ) {
                     Text(row.shortTitle(), fontWeight = FontWeight.Bold)
                     Text(compatibilityStatusLabel(row.status), color = compatibilityColor(row.status))
+                    Text("Inspected requirement", fontWeight = FontWeight.Bold)
+                    Text(row.requirement)
                     Text("What XL does", fontWeight = FontWeight.Bold)
                     Text(row.xlExplanation())
                     Text("Current Redux support", fontWeight = FontWeight.Bold)
                     Text(row.reduxExplanation())
+                    if (row.evidence.isNotBlank()) {
+                        Text("Evidence", fontWeight = FontWeight.Bold)
+                        Text(row.evidence)
+                    }
                     Text("Feature support does not mean this level is playable.", fontSize = 12.sp)
                 }
             },

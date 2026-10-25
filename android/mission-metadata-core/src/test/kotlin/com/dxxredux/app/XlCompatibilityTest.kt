@@ -6,6 +6,35 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class XlCompatibilityTest {
+    @Test
+    fun packageEvidenceDoesNotDisableAnalysisOrQualifyTheMission() {
+        val inventory =
+            XlCompatibility.parse(
+                report().replace("\"detected\":true", "\"detected\":true,\"blocks_analysis\":false"),
+            )!!
+        val level = XlCompatibility.parse(report())!!
+        assertEquals("blocked", inventory.status)
+        assertEquals("blocked", compatibilityGroupStatus(listOf(inventory)))
+        assertEquals(emptyList<XlCompatibilityReport>(), listOf(inventory).analysisBlockers())
+        assertEquals(listOf(level), listOf(inventory, level).analysisBlockers())
+        // Feature eligibility does not give the metadata engine XL runtime support
+        val eligible = level.copy(status = "eligible")
+        assertEquals(listOf(eligible), listOf(inventory, eligible).analysisBlockers())
+    }
+
+    @Test
+    fun onlyAnExplicitBooleanCanRemoveAnAnalysisRestriction() {
+        for (value in listOf("true", "null", "\"false\"", "0", "{}")) {
+            val parsed =
+                XlCompatibility.parse(
+                    report().replace("\"detected\":true", "\"detected\":true,\"blocks_analysis\":$value"),
+                )!!
+            assertEquals(listOf(parsed), listOf(parsed).analysisBlockers())
+        }
+        val absent = XlCompatibility.parse(report())!!
+        assertEquals(listOf(absent), listOf(absent).analysisBlockers())
+    }
+
     private fun report(
         extra: String = "",
         status: String = "blocked",

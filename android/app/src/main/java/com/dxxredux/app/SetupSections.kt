@@ -3310,7 +3310,7 @@ private fun LevelMetadataDialog(
             )
         movieScanning = true
         xlReports = inspectXlCompatibilityTarget(target)
-        if (xlReports.any { it.status == "blocked" }) {
+        if (xlReports.analysisBlockers().any { it.status == "blocked" }) {
             movieScanning = false
             loading = false
             return@LaunchedEffect
@@ -3383,7 +3383,7 @@ private fun LevelMetadataDialog(
                     TextButton(
                         enabled =
                             !movieScanning && !loading &&
-                                xlReports.none {
+                                xlReports.analysisBlockers().none {
                                     it.status == "blocked"
                                 },
                         onClick = {
@@ -3397,7 +3397,7 @@ private fun LevelMetadataDialog(
                             }
                         },
                     ) { Text("Scan for missing movies") }
-                    if (xlReports.any { it.status == "blocked" }) {
+                    if (xlReports.analysisBlockers().any { it.status == "blocked" }) {
                         Text("Engine analysis is unavailable because this source requires unsupported D2X-XL features.")
                     } else if (loading) {
                         Text(

@@ -68,6 +68,8 @@ internal data class LevelMetadataTarget(
     val provenanceDates: List<ArchiveProvenanceDate> = emptyList(),
     // Engine selects the worker/cache namespace; content selects its native asset lifecycle
     val contentGame: String = game,
+    // Snapshot from the verified extraction catalog; never used for runtime admission
+    val packageCompatibility: XlCompatibilityReport? = null,
 )
 
 internal data class LevelMetadataCheckpointUpdate(

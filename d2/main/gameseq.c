@@ -1037,6 +1037,10 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 
 	load_level_robots(level_num);
+#ifdef DXX_XL_PILOT
+	if (!xl_classic_lighting_prepare(level_name))
+		Error("Cannot prepare experimental XL lighting: %s", xl_level_rejection());
+#endif
 #ifdef __ANDROID__
 	mod_save_capture_level(level_name);
 	secret_area_prepare_current_level();

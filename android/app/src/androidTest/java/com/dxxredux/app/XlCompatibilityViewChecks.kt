@@ -58,6 +58,7 @@ internal class XlCompatibilityViewChecks(
         text: String,
         direction: Int = AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
     ): AccessibilityNodeInfo {
+        var lastDiagnostics = ""
         repeat(10) {
             find(text)?.let { target ->
                 if (target.isVisibleToUser) return target
@@ -68,7 +69,17 @@ internal class XlCompatibilityViewChecks(
             }
 
             fun scroll(node: AccessibilityNodeInfo): Boolean {
-                if (node.isScrollable && node.performAction(direction)) return true
+                val vertical =
+                    if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) {
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id
+                    } else {
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                    }
+                if (node.isScrollable && node.actionList.any { it.id == vertical } &&
+                    node.performAction(vertical)
+                ) {
+                    return true
+                }
                 for (index in 0 until node.childCount) {
                     val child = node.getChild(index) ?: continue
                     if (scroll(child)) return true
@@ -92,18 +103,21 @@ internal class XlCompatibilityViewChecks(
                         labels.add(
                             "${node.text?.take(
                                 160,
-                            )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} bounds=${Rect().also(
-                                node::getBoundsInScreen,
-                            )}",
+                            )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} " +
+                                "actions=${node.actionList.map {
+                                    it.id
+                                }} bounds=${Rect().also(
+                                    node::getBoundsInScreen,
+                                )}",
                         )
                     }
                     for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
                 }
                 instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
-                error("Cannot scroll to $text: ${labels.joinToString(" | ")}")
+                lastDiagnostics = labels.joinToString(" | ")
             }
         }
-        error("Text not visible after bounded scroll: $text")
+        error("Text not visible after bounded scroll: $text; $lastDiagnostics")
     }
 
     private fun capture(name: String): Bitmap {
@@ -319,12 +333,94 @@ internal class XlCompatibilityViewChecks(
             click("Uninspected category 0")
             awaitText("No verified feature explanation is available")
             click("Back to features")
+            awaitText("Close")
             val before = Rect().also(scrollTo("Water segments")::getBoundsInScreen)
             click("Water segments")
             awaitText("What XL does")
             click("Back to features")
+            awaitText("Close")
             val after = Rect().also(awaitText("Water segments")::getBoundsInScreen)
-            check(before == after) { "Closing an explanation lost a scrolled inventory position" }
+            check(before == after) { "Closing an explanation lost a scrolled inventory position: $before -> $after" }
+            click("Close")
+        } finally {
+            instrumentation.runOnMainSync { launcher.finish() }
+        }
+    }
+
+    /** Optional original-package witness; requires an already imported, unchanged fixture */
+    fun runDragonPackage(archivePath: String) {
+        val context = instrumentation.targetContext
+        val archive = File(archivePath)
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        archive.inputStream().use { input ->
+            val buffer = ByteArray(65536)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                digest.update(buffer, 0, count)
+            }
+        }
+        check(
+            digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) } ==
+                "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+        )
+        val store = checkNotNull(missionZipExtractedStoreForArchivePath(archivePath))
+        val record = checkNotNull(store.reusableRecord(archive.name, archive))
+        val scan = checkNotNull(MissionZip.inspectExtracted(record))
+        val mission = scan.missionSets.single { it.mission.path == "missions/spotlight/drgpit.msn" }
+        val target = checkNotNull(store.extractedTarget(archivePath, context.filesDir, scan, mission))
+        val catalog = checkNotNull(target.packageCompatibility)
+        check(!catalog.blocksAnalysis && catalog.status == "unknown")
+        check(catalog.rows.all { it.status == "unknown" })
+        val sound = catalog.rows.single { it.id == "scoped_sounds" }
+        check(sound.requirement == "2 catalogued candidate files")
+        check(
+            sound.evidence.contains(
+                "mods/drgpit/sounds/boss01.wav [SHA-256 f448d3506def983bd2ba3e9d79a24386930ff7aeba956f2eaed666b443201480]",
+            ),
+        )
+        check(
+            sound.evidence.contains(
+                "mods/drgpit/sounds/boss02.wav [SHA-256 91fa0e3fb5ff3187929e6511ebfebff002b8ef47c3225d5b99be42fd67571f3d]",
+            ),
+        )
+        val reports = kotlinx.coroutines.runBlocking { inspectXlCompatibilityTarget(target) }
+        check(reports.contains(catalog))
+        check(
+            reports.analysisBlockers().any { report ->
+                report.rows.any {
+                    it.id == "companion_lighting" &&
+                        it.status == "blocked"
+                }
+            },
+        )
+        check(compatibilityGroupStatus(reports) == "blocked")
+        File(context.getExternalFilesDir(null), "xl-feature-dragon-evidence.txt").writeText(
+            reports.joinToString("\n\n") { report ->
+                "${report.source}\nstatus=${report.status} blocks_analysis=${report.blocksAnalysis}\n" +
+                    report.rows.joinToString("\n") { "${it.id}: ${it.requirement} [${it.status}]\n${it.evidence}" }
+            },
+        )
+        val launcher =
+            instrumentation.startActivitySync(
+                Intent(context, SetupActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            ) as SetupActivity
+        try {
+            instrumentation.runOnMainSync {
+                launcher.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                launcher.setContent { MaterialTheme { XlCompatibilityButton(reports) } }
+            }
+            instrumentation.waitForIdleSync()
+            click("D2X-XL compatibility: cannot load")
+            scrollTo("Mission WAV effects and sound banks")
+            click("Mission WAV effects and sound banks")
+            awaitText("What XL does")
+            scrollTo("2 catalogued candidate files")
+            scrollTo("mods/drgpit/sounds/boss01.wav")
+            awaitText("Back to features")
+            capture("xl-feature-dragon-sounds.png").recycle()
+            check(find("Supported") == null)
+            click("Back to features")
             click("Close")
         } finally {
             instrumentation.runOnMainSync { launcher.finish() }

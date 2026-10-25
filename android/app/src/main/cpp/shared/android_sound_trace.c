@@ -16,6 +16,75 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef INTROSPECT_ON
+#include <SDL.h>
+
+/* No allocation, logging or engine-object access on the audio callback */
+static struct {
+	int active, sample, looping, stop_requested;
+	unsigned int started_ms, bytes;
+} completion_channels[64];
+static android_sound_completion completion_samples[MAX_SOUND_FILES];
+
+void android_sound_completion_begin(int channel, int sample, unsigned int bytes, int looping)
+{
+	if (channel < 0 || channel >= 64 || sample < 0 || sample >= MAX_SOUND_FILES) return;
+	SDL_LockAudio();
+	completion_channels[channel].active = 1;
+	completion_channels[channel].sample = sample;
+	completion_channels[channel].looping = looping;
+	completion_channels[channel].stop_requested = 0;
+	completion_channels[channel].started_ms = SDL_GetTicks();
+	completion_channels[channel].bytes = bytes;
+	completion_samples[sample].sample = sample;
+	++completion_samples[sample].attempts;
+	SDL_UnlockAudio();
+}
+
+void android_sound_completion_stop(int channel)
+{
+	SDL_LockAudio();
+	for (int i = 0; i < 64; ++i)
+		if ((channel == -1 || channel == i) && completion_channels[i].active)
+			completion_channels[i].stop_requested = 1;
+	SDL_UnlockAudio();
+}
+
+void android_sound_completion_failed(int channel)
+{
+	if (channel < 0 || channel >= 64) return;
+	SDL_LockAudio();
+	if (completion_channels[channel].active) {
+		++completion_samples[completion_channels[channel].sample].failed;
+		completion_channels[channel].active = 0;
+	}
+	SDL_UnlockAudio();
+}
+
+void android_sound_completion_finished(int channel)
+{
+	if (channel < 0 || channel >= 64 || !completion_channels[channel].active) return;
+	android_sound_completion *entry = &completion_samples[completion_channels[channel].sample];
+	entry->last_elapsed_ms = SDL_GetTicks() - completion_channels[channel].started_ms;
+	entry->last_bytes = completion_channels[channel].bytes;
+	if (completion_channels[channel].stop_requested || completion_channels[channel].looping)
+		++entry->stop_requested;
+	else
+		++entry->completed;
+	completion_channels[channel].active = 0;
+}
+
+int android_sound_completion_snapshot(android_sound_completion *output, int capacity)
+{
+	int count = 0;
+	SDL_LockAudio();
+	for (int i = 0; i < MAX_SOUND_FILES && count < capacity; ++i)
+		if (completion_samples[i].attempts) output[count++] = completion_samples[i];
+	SDL_UnlockAudio();
+	return count;
+}
+#endif
+
 #define SOUND_TRACE_CHANGES_PER_LEVEL 8
 
 typedef struct sound_trace_sample {

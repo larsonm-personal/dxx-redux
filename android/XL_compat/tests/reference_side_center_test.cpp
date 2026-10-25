@@ -82,10 +82,25 @@ int main()
 						side.m_normals[1].p = second;
 						for (unsigned i = 0; i < 3; ++i) side.m_normals[2].p[i] = (first[i] + second[i]) / 2;
 						side.ComputeCenter();
-						if (xl_compat::geometry_side_center(corners, { first, second }) != side.m_vCenter.p)
+						if (xl_compat::geometry_side_center(corners, { first, second }, fixed_vertices[0].p) != side.m_vCenter.p)
 							throw std::runtime_error("side center differs from pinned source");
 						++checked;
 					}
+		// Large original fixed coordinates retain bits that the float mesh cannot
+		for (int low_bits : { -3, -1, 1, 3 }) {
+			CSide side;
+			for (unsigned i = 0; i < 4; ++i) {
+				fixed_vertices[i].p = { -32938036 + low_bits, int(i & 1) * 65536, int(i / 2) * 65536 };
+				for (unsigned axis = 0; axis < 3; ++axis) float_vertices[i].p[axis] = float(fixed_vertices[i].p[axis]) / 65536.0f;
+			}
+			for (auto &normal : side.m_normals) normal.p = { 65536, 0, 0 };
+			side.ComputeCenter();
+			std::array<xl_compat::LightPoint, 4> corners;
+			for (unsigned i = 0; i < 4; ++i) corners[i] = float_vertices[i].p;
+			if (xl_compat::geometry_side_center(corners, { side.m_normals[0].p, side.m_normals[1].p }, fixed_vertices[0].p) != side.m_vCenter.p)
+				throw std::runtime_error("side center lost original fixed plane vertex precision");
+			++checked;
+		}
 		std::cout << checked << " side centers match pinned source; supplied fixed normals are not compiler certification\n";
 		return 0;
 	} catch (const std::exception &error) {

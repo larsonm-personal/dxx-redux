@@ -68,3 +68,32 @@ add_executable(xl_fixed_cross_test "${CMAKE_CURRENT_LIST_DIR}/reference_fixed_cr
 target_include_directories(xl_fixed_cross_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(xl_fixed_cross_test PRIVATE xl_inventory)
 add_test(NAME xl_fixed_cross_reference COMMAND xl_fixed_cross_test)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/3d/points.cpp" points_hash)
+if(NOT points_hash STREQUAL "0d89f71e96f275b360b37badaf274dc0fbcc751b50627ab0b94667b452644e10")
+    message(FATAL_ERROR "XL projection source differs from audited revision")
+endif()
+set(extracted "// Generated from pinned XL screen projection\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/points.cpp"
+                      "uint8_t CRenderPoint::Project (CTransformation&")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_projection.h" CONTENT "${extracted}")
+add_executable(xl_projection_test "${CMAKE_CURRENT_LIST_DIR}/reference_projection_test.cpp")
+target_include_directories(xl_projection_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(xl_projection_test PRIVATE xl_inventory)
+add_test(NAME xl_projection_reference COMMAND xl_projection_test)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" vector_header_hash)
+if(NOT vector_header_hash STREQUAL
+   "83d7f73f89a2f588a0b56a08fb9e293b747cc65a5ed22bad6771d64319bdca0f")
+    message(FATAL_ERROR "XL normalization source differs from audited revision")
+endif()
+set(extracted "// Generated from pinned XL magnitude and normalization functions\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
+                      "fix CFixVector::Mag (void) const")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const fix CFixVector::Normalize (CFixVector& v)")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_magnitude.h" CONTENT "${extracted}")
+add_executable(xl_magnitude_test "${CMAKE_CURRENT_LIST_DIR}/reference_magnitude_test.cpp")
+target_include_directories(xl_magnitude_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(xl_magnitude_test PRIVATE xl_inventory)
+add_test(NAME xl_magnitude_reference COMMAND xl_magnitude_test)

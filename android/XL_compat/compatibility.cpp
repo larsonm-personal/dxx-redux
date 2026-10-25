@@ -192,7 +192,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 	std::ostringstream out;
 	out << "{\n  \"schema\": \"dxx-xl-compatibility-v1\",\n  \"source\": " << json_string(name)
 	    << ",\n  \"detected\": " << (detected ? "true" : "false") << ",\n  \"status\": " << json_string(status)
-	    << ",\n  \"summary\": " << json_string(summary) << ",\n  \"playable\": false,\n  \"rows\": [";
+	    << ",\n  \"summary\": " << json_string(summary) << ",\n  \"playable\": false,\n  \"blocks_analysis\": " << (detected ? "true" : "false") << ",\n  \"rows\": [";
 	for (std::size_t i = 0; i < sizeof(categories) / sizeof(categories[0]); ++i) {
 		if (i) out << ',';
 		out << "\n    {\"id\": " << json_string(categories[i].id) << ", \"feature\": " << json_string(categories[i].label)
@@ -208,6 +208,54 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 		    << ", \"requirement\": " << json_string(feature.count < 0 ? "Not inspected" : std::to_string(feature.count))
 		    << ", \"support\": " << json_string(feature.support) << ", \"explanation\": " << json_string(feature.explanation) << ", \"limitations\": " << json_string(feature.limitations ? feature.limitations : feature.support) << ", \"status\": " << json_string(state)
 		    << ", \"evidence\": " << json_string(feature.count < 0 ? "Requires successful bounded level inspection" : "Serialized record count; does not establish playability") << '}';
+	}
+	out << "\n  ]\n}\n";
+	return out.str();
+}
+std::string package_compatibility_json(const std::string &owner, const std::string &descriptor,
+                                       const std::vector<PackageResource> &resources)
+{
+	if (owner.empty() || descriptor.empty() || resources.size() > 4096)
+		throw std::runtime_error("Invalid owned package catalog");
+	std::ostringstream out;
+	out << "{\n  \"schema\": \"dxx-xl-compatibility-v1\",\n  \"source\": " << json_string(owner + "/" + descriptor + " (package catalog)")
+	    << ",\n  \"detected\": true,\n  \"status\": \"unknown\",\n  \"summary\": \"Owned package files inspected; runtime selection and mission qualification unverified\","
+	    << "\n  \"playable\": false,\n  \"blocks_analysis\": false,\n  \"rows\": [";
+	bool first = true;
+	for (const auto &category : categories) {
+		const std::string id = category.id;
+		if (id != "package_identity" && id != "scoped_textures" && id != "scoped_sounds" &&
+		    id != "scoped_music" && id != "scoped_models" && id != "companion_lighting" && id != "package_options") continue;
+		std::string evidence;
+		int count = 0;
+		for (const auto &resource : resources) {
+			if (resource.path.size() > 4096 || resource.sha256.size() != 64)
+				throw std::runtime_error("Invalid package resource evidence");
+			auto path = resource.path;
+			std::transform(path.begin(), path.end(), path.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			const auto dot = path.find_last_of('.');
+			const auto ext = dot == std::string::npos ? std::string{} : path.substr(dot);
+			const bool mod = path.rfind("mods/", 0) == 0;
+			const bool match =
+			    (id == "package_identity" && resource.path == descriptor) ||
+			    (id == "scoped_textures" && mod && path.find("/textures/") != std::string::npos) ||
+			    (id == "scoped_sounds" && mod && (path.find("/sounds/") != std::string::npos || ext == ".s11" || ext == ".s22")) ||
+			    (id == "scoped_music" && (ext == ".sng" || (mod && path.find("/music/") != std::string::npos))) ||
+			    (id == "scoped_models" && mod && path.find("/models/") != std::string::npos) ||
+			    (id == "companion_lighting" && (ext == ".lgt" || ext == ".clr")) ||
+			    (id == "package_options" && mod && (ext == ".ini" || path.find("/wallpapers/") != std::string::npos));
+			if (match) {
+				++count;
+				evidence += resource.path + " [SHA-256 " + resource.sha256 + "]\n";
+			}
+		}
+		evidence += "Owned catalog candidates only; filenames do not establish active HOG identity, precedence, decoding or playback. Embedded archive members are not included in these counts. No candidates does not establish absence of the feature.";
+		if (!first) out << ',';
+		first = false;
+		out << "\n    {\"id\": " << json_string(id) << ", \"feature\": " << json_string(category.label)
+		    << ", \"requirement\": " << json_string(std::to_string(count) + " catalogued candidate files")
+		    << ", \"support\": " << json_string(category.support) << ", \"explanation\": " << json_string(category.explanation)
+		    << ", \"status\": \"unknown\", \"evidence\": " << json_string(evidence) << '}';
 	}
 	out << "\n  ]\n}\n";
 	return out.str();

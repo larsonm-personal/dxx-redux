@@ -28,6 +28,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/companion_resources.cpp"
                 "${xl_runtime_dir}/geometry.cpp"
                 "${xl_runtime_dir}/light_sources.cpp"
+                "${xl_runtime_dir}/visibility.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
                 "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")

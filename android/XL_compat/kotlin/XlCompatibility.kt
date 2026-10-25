@@ -20,6 +20,9 @@ internal data class XlCompatibilityReport(
     val status: String,
     val summary: String,
     val rows: List<XlCompatibilityRow>,
+    // Independent of display status: an inventory can describe unsupported resources
+    // without preventing inspection of the classic level geometry
+    val blocksAnalysis: Boolean = true,
 )
 
 internal object XlCompatibility {
@@ -60,6 +63,7 @@ internal object XlCompatibility {
                         row.optString("limitations", ""),
                     )
                 },
+                blocksAnalysis = json.opt("blocks_analysis") != false,
             )
         }.getOrNull()
 
@@ -67,7 +71,28 @@ internal object XlCompatibility {
         name: String,
         bytes: ByteArray,
     ): String?
+
+    fun inspectPackage(
+        owner: String,
+        descriptor: String,
+        paths: List<String>,
+        hashes: List<String>,
+    ): XlCompatibilityReport? {
+        if (!available) return null
+        return runCatching { nativeInspectPackage(owner, descriptor, paths.toTypedArray(), hashes.toTypedArray()) }
+            .getOrNull()
+            ?.let(::parse)
+    }
+
+    private external fun nativeInspectPackage(
+        owner: String,
+        descriptor: String,
+        paths: Array<String>,
+        hashes: Array<String>,
+    ): String?
 }
+
+internal fun List<XlCompatibilityReport>.analysisBlockers(): List<XlCompatibilityReport> = filter { it.blocksAnalysis }
 
 internal fun XlCompatibilityRow.shortTitle(): String = if (counted) "$feature: ${count?.toString() ?: "?"}" else feature
 

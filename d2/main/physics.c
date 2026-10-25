@@ -44,6 +44,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "game_automate.h"
+#endif
 
 //Global variables for physics system
 
@@ -500,6 +503,13 @@ void do_physics_sim(object *obj)
 			fq.flags |= FQ_GET_SEGLIST;
 
 		fate = find_vector_intersection(&fq,&hit_info);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+		if (obj == ConsoleObject && fate != HIT_NONE)
+			game_automate_observe_flight_collision(fate,
+				fate == HIT_WALL ? hit_info.hit_side_seg : -1,
+				fate == HIT_WALL ? hit_info.hit_side : -1,
+				fate == HIT_OBJECT ? hit_info.hit_object : -1);
+#endif
 		input_demo_log_replay_physics_fvi_fate(obj, fate, &hit_info,
 			&frame_vec, &new_pos, sim_time, n_ignore_objs);
 

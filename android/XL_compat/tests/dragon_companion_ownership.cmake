@@ -10,8 +10,10 @@ endif()
 file(MAKE_DIRECTORY "${OUTPUT}/missions" "${OUTPUT}/preview-user")
 file(COPY "${HOG}" "${source}/drgpit.msn" DESTINATION "${OUTPUT}/missions")
 execute_process(
-    COMMAND "${ENGINE}" -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user"
-            -mission drgpit -package-audit "${OUTPUT}/audit.json" -package-audit-check-ownership yes
+    COMMAND
+        "${ENGINE}" -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user"
+        -mission drgpit -package-audit "${OUTPUT}/audit.json" -package-audit-check-ownership yes
+        -xl-classic-light-preview
     RESULT_VARIABLE result
     OUTPUT_FILE "${OUTPUT}/run.log"
     ERROR_FILE "${OUTPUT}/error.log"
@@ -57,6 +59,10 @@ if(NOT compiled02 EQUAL 2068 OR NOT compiled13 EQUAL 1724 OR NOT compiled_change
     message(FATAL_ERROR "Original mine assembled XL lighting splits changed")
 endif()
 string(JSON source_count LENGTH "${report}" geometry_light_sources)
+string(JSON variable_count GET "${report}" variable_geometry_light_count)
+if(NOT variable_count EQUAL 3)
+    message(FATAL_ERROR "Original mission variable-light count differs")
+endif()
 if(NOT source_count EQUAL 252)
     message(FATAL_ERROR "Original mission geometry light-source count differs")
 endif()
@@ -67,6 +73,33 @@ string(JSON sources GET "${report}" geometry_light_sources)
 foreach(index RANGE 0 251 1)
     string(JSON material GET "${sources}" ${index} material_texture)
     string(JSON created GET "${sources}" ${index} created_texture)
+    string(JSON radius GET "${sources}" ${index} radius)
+    if(radius LESS_EQUAL 0)
+        message(FATAL_ERROR "Original mission light source has no positive geometric radius")
+    endif()
+    string(
+        JSON
+        variable
+        GET
+        "${sources}"
+        ${index}
+        variability
+        variable)
+    string(
+        JSON
+        destructible
+        GET
+        "${sources}"
+        ${index}
+        variability
+        destructible)
+    if(index LESS 249)
+        if(variable)
+            message(FATAL_ERROR "Variable light appears inside original static source range")
+        endif()
+    elseif(NOT variable OR NOT destructible)
+        message(FATAL_ERROR "Original variable source is not classified as destructible")
+    endif()
     if(material EQUAL 286)
         math(EXPR orange_sources "${orange_sources} + 1")
     elseif(material EQUAL 333)

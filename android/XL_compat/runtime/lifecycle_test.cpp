@@ -80,6 +80,17 @@ void set_ambient_sound_flags(void);
 void add_side_as_2_triangles(segment *sp, int sidenum);
 }
 
+extern "C" int xl_preview_reference_fans(void)
+{
+	return 0;
+}
+
+extern "C" int xl_preview_split_face_visible(int, int, int32_t, int32_t, int32_t)
+{
+	std::fputs("Unexpected face visibility query in headless XL lifecycle test\n", stderr);
+	std::abort();
+}
+
 extern "C" void xl_preview_before_swap(void)
 {
 	std::fputs("Unexpected rendering in headless XL lifecycle test\n", stderr);

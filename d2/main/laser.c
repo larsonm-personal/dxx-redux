@@ -48,6 +48,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "player.h"
 #include "input_demo_hooks.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "game_automate.h"
+#endif
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_energy_trace.h"
@@ -1692,6 +1695,11 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	Fate = find_vector_intersection(&fq, &hit_data);
 
 	LaserSeg = hit_data.hit_seg;
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (obj == ConsoleObject)
+		game_automate_observe_flight_shot("muzzle", laser_type, gun_num, Fate, LaserSeg, -1);
+#endif
+
 
 	if (LaserSeg == -1)		//some sort of annoying error
 		return;
@@ -1721,6 +1729,10 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	}
 
 	objnum = Laser_create_new( &LaserDir, &LaserPos, LaserSeg, obj-Objects, laser_type, make_sound );
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (obj == ConsoleObject)
+		game_automate_observe_flight_shot("created", laser_type, gun_num, Fate, LaserSeg, objnum);
+#endif
 	if (objnum != -1 && input_demo_replay_homing_desync_probe_active()) {
 		char probe[256];
 

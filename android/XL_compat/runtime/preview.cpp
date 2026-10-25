@@ -2,6 +2,8 @@
 #include "preview.h"
 #include "no_damage_test_binding.h"
 #include "resource_validation.h"
+#include "light_sources.h"
+#include "companion_resources.h"
 #include "../probe.h"
 #include "../lighting.h"
 #include "../admission.h"
@@ -58,10 +60,13 @@ extern int Do_dynamic_light;
 namespace
 {
 std::unique_ptr<xl_compat::Inventory> source;
+std::unique_ptr<xl_compat::ClassicAmbientLighting> classic_ambient;
+std::vector<xl_compat::Rgb> classic_colors;
 #ifdef DXX_XL_DESCRIPTOR_TEST
 std::unique_ptr<xl_compat::Inventory> no_damage_test_source;
 #endif
 bool water_test_profile = false;
+bool classic_light_test_profile = false;
 uint64_t vertex_calls = 0;
 uint64_t corona_draws = 0;
 uint64_t corona_depth_failures = 0;
@@ -329,6 +334,13 @@ extern "C" int xl_preview_set_water_test_profile(int enabled)
 	water_test_profile = enabled != 0;
 	return 1;
 }
+extern "C" int xl_preview_set_classic_light_test_profile(int enabled)
+{
+	if (Game_wind) return 0;
+	classic_light_test_profile = enabled != 0;
+	if (!classic_light_test_profile) xl_classic_lighting_release();
+	return 1;
+}
 #endif
 
 extern "C" const char *xl_level_rejection(void)
@@ -359,8 +371,79 @@ extern "C" int xl_test_stop_after_level(void)
 	return option("-fixture-path") && option("-xl-test-navigation") && !option("-xl-test-campaign");
 }
 
+extern "C" void xl_classic_lighting_release(void)
+{
+	if (classic_ambient) {
+		dynamic_vertices.clear();
+		brightness.clear();
+		muzzle_lights.clear();
+	}
+	classic_ambient.reset();
+	std::vector<xl_compat::Rgb>().swap(classic_colors);
+}
+
+extern "C" int xl_classic_lighting_requested(void)
+{
+	return option("-xl-classic-light-preview") || classic_light_test_profile;
+}
+
+extern "C" int xl_classic_lighting_prepare(const char *filename)
+{
+	xl_classic_lighting_release();
+	if (!xl_classic_lighting_requested()) return 1;
+	if (!Current_mission || Current_mission->descent_version != 1 || (Game_mode & GM_MULTI)) return 1;
+	rejection.clear();
+	try {
+		const auto companions = xl_compat::load_mission_lighting_companions(filename);
+		if (!companions.brightness && !companions.colors) return 1;
+		if (!companions.brightness || !companions.colors) throw std::runtime_error("classic lighting preview requires both LGT and CLR companions");
+		const auto optics = xl_compat::classic_default_lighting_camera();
+		const auto sources = xl_compat::compile_classic_geometry_lights(*companions.brightness, *companions.colors);
+		auto pending = std::make_unique<xl_compat::ClassicAmbientLighting>(sources, optics);
+		auto colors = pending->gather(xl_compat::ClassicAmbientProfile{});
+		std::vector<float> level_brightness(colors.size(), 0);
+		for (int segment = 0; segment <= Highest_segment_index; ++segment)
+			for (int side = 0; side < 6; ++side)
+				for (int corner = 0; corner < 4; ++corner) {
+					const auto vertex = Segments[segment].verts[Side_to_verts_int[side][corner]];
+					level_brightness.at(vertex) = (std::max) (level_brightness.at(vertex), Segments[segment].sides[side].uvls[corner].l / 65536.0f);
+				}
+		std::vector<xl_compat::DynamicVertexLight> level_dynamic(colors.size());
+		classic_ambient = std::move(pending);
+		classic_colors = std::move(colors);
+		brightness = std::move(level_brightness);
+		dynamic_vertices = std::move(level_dynamic);
+		return 1;
+	} catch (const std::exception &error) {
+		xl_classic_lighting_release();
+		rejection = std::string("Experimental classic lighting: ") + error.what();
+		return 0;
+	}
+}
+
+extern "C" unsigned xl_classic_lighting_vertex_count(void)
+{
+	return static_cast<unsigned>(classic_colors.size());
+}
+
+extern "C" int xl_classic_legacy_fans_active(void)
+{
+	return classic_ambient && Game_wind && Current_mission &&
+	       Current_mission->descent_version == 1 && !(Game_mode & GM_MULTI);
+}
+
+extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
+{
+	if (!classic_ambient || !Current_mission || Current_mission->descent_version != 1 || (Game_mode & GM_MULTI) ||
+	    !rgb || vertex < 0 || static_cast<std::size_t>(vertex) >= classic_colors.size()) return 0;
+	std::copy(classic_colors[vertex].begin(), classic_colors[vertex].end(), rgb);
+	return 1;
+}
+
 extern "C" int xl_preview_load_level(const char *filename)
 {
+	// Release before validation as well as before a successful replacement
+	xl_classic_lighting_release();
 	const auto clear_active = [] {
 		xl_discard_prepared_resources();
 		admitted_pilot = completed_pilot = admitted_water_arena = false;
@@ -580,7 +663,7 @@ extern "C" int xl_preview_pilot_active(void)
 extern "C" int xl_runtime_active(void)
 {
 	// Loaded XL extensions, not a particular mission or build capability
-	return source && Game_wind && !(Game_mode & GM_MULTI);
+	return (source || classic_ambient) && Game_wind && !(Game_mode & GM_MULTI);
 }
 
 extern "C" void xl_preview_complete_pilot(void)
@@ -751,10 +834,14 @@ extern "C" uint64_t xl_preview_corona_depth_failures(void)
 
 extern "C" void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t *g, int32_t *b)
 {
-	if (!source || vertex < 0 || std::size_t(vertex) >= source->vertex_colors.size()) return;
+	xl_compat::Rgb classic_color;
+	const bool classic = xl_classic_lighting_color(vertex, classic_color.data()) != 0;
+	if (!classic && (!source || vertex < 0 || std::size_t(vertex) >= source->vertex_colors.size())) return;
 	try {
 		xl_compat::VertexLighting input;
-		for (unsigned i = 0; i < 3; ++i) input.ambient[i] = float(source->vertex_colors[vertex].rgb[i]);
+		if (classic) input.ambient = classic_color;
+		else
+			for (unsigned i = 0; i < 3; ++i) input.ambient[i] = float(source->vertex_colors[vertex].rgb[i]);
 		input.static_light = light;
 		const auto &dynamic = dynamic_vertices.at(vertex);
 		input.dynamic_light = dynamic.intensity;
@@ -841,7 +928,7 @@ extern "C" void xl_preview_player_thrust(int player, int32_t x, int32_t y, int32
 extern "C" void xl_preview_muzzle_snapshot(int64_t current_time)
 {
 	muzzle_lights.clear();
-	if (!source) return;
+	if (!source && !classic_ambient) return;
 	// Called with the stock loop's timestamp, before its one queue-expiration pass
 	// Pinned XL also narrows elapsed time to int16, including its wrap behavior
 	constexpr fix duration = F1_0 / 3, scale = 3 * F1_0 / duration;
@@ -854,7 +941,7 @@ extern "C" void xl_preview_muzzle_snapshot(int64_t current_time)
 
 extern "C" void xl_preview_dynamic_frame(void)
 {
-	if (!source) return;
+	if ((!source && !classic_ambient) || (classic_ambient && (Game_mode & GM_MULTI))) return;
 	try {
 		std::fill(dynamic_vertices.begin(), dynamic_vertices.end(), xl_compat::DynamicVertexLight{});
 		unresolved_emitters = 0;

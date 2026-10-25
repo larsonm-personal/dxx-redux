@@ -45,6 +45,13 @@ int game_introspect_dump_requested(void);
 /* Sample the resolved framebuffer before swap for render-output assertions. */
 void game_introspect_sample_framebuffer(int width, int height);
 
+/* Record the drawn main view before auxiliary views overwrite projection globals */
+void game_introspect_record_main_view(int segment);
+/* Invalidate pending view evidence on every flip, including unsampled frames */
+void game_introspect_finish_render_frame(void);
+/* One-shot debug export: JSON header line followed by bottom-up RGBA8 pixels */
+void game_introspect_request_pixel_capture(void);
+
 /*
  * Called from the game thread (e.g. event_process) each frame.
  * If a dump was requested, writes the current state to the file and
@@ -73,6 +80,12 @@ static inline void game_introspect_sample_framebuffer(int width, int height)
 	(void) width;
 	(void) height;
 }
+static inline void game_introspect_record_main_view(int segment)
+{
+	(void) segment;
+}
+static inline void game_introspect_finish_render_frame(void) {}
+static inline void game_introspect_request_pixel_capture(void) {}
 static inline void game_introspect_check_and_dump(void) {}
 
 #endif /* INTROSPECT_ON */

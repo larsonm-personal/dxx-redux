@@ -26,6 +26,7 @@ extern "C" {
 #include "sound_trace_fingerprint.h"
 #if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
 #include "mission.h"
+#include "gameseq.h"
 #include "error.h"
 #endif
 }
@@ -38,6 +39,7 @@ struct sound_overlay {
 	std::string path, origin;
 	sound_trace_fingerprint fingerprint{};
 	bool played = false;
+	nlohmann::json selection;
 };
 std::array<sound_overlay, MAX_SOUND_FILES> sounds;
 nlohmann::json presentation = nlohmann::json::array();
@@ -144,6 +146,7 @@ static bool apply_scoped_d1_sound(int sample, const char *name)
 		sound.freq = rate;
 		piggy_sound_duration_override(sample, static_cast<int>(pcm.mono.size()), pcm.rate);
 		android_mod_sound_loaded(sample, selected.path.c_str());
+		entry.selection = { { "mission_key", scoped_key }, { "generation", scoped_generation }, { "archive", scoped_archive }, { "identity", scoped_identity }, { "signed_ordinal", scoped_ordinal }, { "bank_rate", GameArg.SndDigiSampleRate }, { "sample_name", name }, { "scope", selected.scope }, { "path", selected.path } };
 		debug_log(DLOG_GAME, "[XL] scoped sound=%d scope=%s ordinal=%d frames=%zu source_rate=%u output_rate=%d", sample, selected.scope.c_str(), scoped_ordinal, pcm.mono.size(), pcm.rate, rate);
 		return true;
 	} catch (const std::exception &e) {
@@ -175,6 +178,7 @@ void android_mod_sound_loaded(int sample, const char *filename)
 	entry.origin = origin_of(entry.path);
 	entry.fingerprint = sound_trace_fingerprint_bytes(GameSounds[sample].data, GameSounds[sample].length);
 	entry.played = false;
+	entry.selection = nullptr;
 	dirty = true;
 	android_sound_trace_loaded(sample, filename, 0, 1);
 	debug_log(DLOG_GAME, "[MOD] sound=%d file='%s' source='%s' bytes=%zu rate=%d hash=%s",
@@ -318,9 +322,16 @@ nlohmann::json android_mod_usage_snapshot()
 		const auto &entry = sounds[i];
 		if (entry.path.empty()) continue;
 		const auto current = sound_trace_fingerprint_bytes(GameSounds[i].data, GameSounds[i].length);
-		entries.push_back({ { "sample", i }, { "file", entry.path }, { "source", entry.origin }, { "bytes", entry.fingerprint.length }, { "hash", hash_text(entry.fingerprint) }, { "rate", GameSounds[i].freq }, { "played", entry.played }, { "resident", sound_trace_fingerprint_match(current, entry.fingerprint) == 1 } });
+		entries.push_back({ { "sample", i }, { "file", entry.path }, { "source", entry.origin }, { "bytes", entry.fingerprint.length }, { "hash", hash_text(entry.fingerprint) }, { "rate", GameSounds[i].freq }, { "played", entry.played }, { "resident", sound_trace_fingerprint_match(current, entry.fingerprint) == 1 }, { "scoped_selection", entry.selection } });
 	}
-	return { { "schema", 1 }, { "enabled", true }, { "sounds", std::move(entries) }, { "presentation", presentation } };
+	nlohmann::json result = { { "schema", 1 }, { "enabled", true }, { "sounds", std::move(entries) }, { "presentation", presentation } };
+#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+	const bool current = !scoped_identity.empty() && scoped_ordinal != 0 && scoped_ordinal == Current_level_num &&
+	                     scoped_generation == android_mission_assets_generation() &&
+	                     scoped_key == android_mission_assets_key() && scoped_archive == mission_resource_archive();
+	result["scoped_sound_context"] = { { "current", current }, { "mission_key", scoped_key }, { "generation", scoped_generation }, { "archive", scoped_archive }, { "identity", scoped_identity }, { "signed_ordinal", scoped_ordinal } };
+#endif
+	return result;
 }
 
 void android_mod_usage_flush(void)

@@ -960,9 +960,12 @@ class ModManager(
                 .sortedBy { it.order }
                 .mapNotNull { mod ->
                     val archive = modFile(mod.filename)
+                    val cached = store.reusableRecord(mod.filename, archive)
                     val scan =
-                        requireNotNull(MissionZip.inspect(archive)) { "Cannot inventory level pack: ${mod.filename}" }
-                    val record = store.ensureExtracted(mod.filename, archive, scan)
+                        requireNotNull(cached?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(archive)) {
+                            "Cannot inventory level pack: ${mod.filename}"
+                        }
+                    val record = cached ?: store.ensureExtracted(mod.filename, archive, scan)
                     missionLaunchPackage("mod/${mod.filename}", scan, record, game, includeD1MissionZipsForD2)
                 }
         return MissionLaunchCatalog(packages)
@@ -1919,6 +1922,8 @@ class ModManager(
         assetEntries: Map<String, AssetManifest.AssetEntry>,
     ): List<ModCompatibilityFailure> {
         try {
+            // Read only the signature, not the full extraction catalog on every compatibility query
+            if (mod.kind == MOD_KIND_MISSION_ZIP && ArchiveFiles.isNonZipDistribution(modFile)) return emptyList()
             ZipFile(modFile).use { zip ->
                 val entry = zip.getEntry("metadata/manifest.json") ?: return emptyList()
                 val manifest = readModManifest(zip) ?: return emptyList()

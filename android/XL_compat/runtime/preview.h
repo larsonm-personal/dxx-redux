@@ -10,6 +10,7 @@ int xl_preview_preserve_fusion_queue(void);
 #ifdef __ANDROID__
 /* Automation-only opt-in; refuse to change the profile during gameplay */
 int xl_preview_set_water_test_profile(int enabled);
+int xl_preview_set_classic_light_test_profile(int enabled);
 #endif
 int32_t xl_preview_motion_time(int segment, int32_t time);
 int xl_preview_water_frame(int object_index);
@@ -20,11 +21,23 @@ int xl_linked_sound_count(int object_index, int sound, int playing_only);
 void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t *g, int32_t *b);
 int xl_preview_start(void);
 int xl_preview_load_level(const char *filename);
+/* Experimental classic companion lighting; prepare after level asset loading */
+int xl_classic_lighting_prepare(const char *filename);
+int xl_classic_lighting_requested(void);
+void xl_classic_lighting_release(void);
+int xl_classic_lighting_color(int vertex, float rgb[3]);
+unsigned xl_classic_lighting_vertex_count(void);
+/* No-mesh visual profile belongs to prepared classic lighting, not mission identity */
+int xl_classic_legacy_fans_active(void);
 int xl_level_supported(const char *filename, int multiplayer);
 const char *xl_level_rejection(void);
 int xl_test_stop_after_level(void);
 int xl_preview_wall_is_doorway(int segment_index, int side);
 void xl_preview_before_swap(void);
+/* Explicit still-view diagnostic only; does not change collision geometry */
+int xl_preview_reference_fans(void);
+/* Raw displacement and truncating dot test; retains engine compiled normals */
+int xl_preview_split_face_visible(int segment, int side, int32_t x, int32_t y, int32_t z);
 uint64_t xl_preview_vertex_calls(void);
 void xl_preview_begin_face(int segment, int side);
 void xl_preview_end_face(void);

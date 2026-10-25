@@ -52,7 +52,7 @@ FixedLightPoint edge(const FixedLightPoint &a, const FixedLightPoint &b)
 }
 } // namespace
 
-FixedLightPoint geometry_fixed_direction(const FixedLightPoint &direction)
+static FixedLightPoint setup_direction(const FixedLightPoint &direction)
 {
 	vms_vector vector{ direction[0], direction[1], direction[2] };
 	const auto magnitude = vm_vec_mag(&vector);
@@ -62,10 +62,44 @@ FixedLightPoint geometry_fixed_direction(const FixedLightPoint &direction)
 	return result;
 }
 
+FixedLightPoint geometry_fixed_direction(const FixedLightPoint &direction)
+{
+	return geometry_default_direction(direction);
+}
+
+std::array<FixedLightPoint, 3> geometry_camera_basis(const FixedLightPoint &forward)
+{
+	std::array<FixedLightPoint, 3> basis{};
+	auto &right = basis[0], &up = basis[1], &direction = basis[2];
+	direction = geometry_fixed_direction(forward);
+	if (direction == FixedLightPoint{}) throw std::runtime_error("Degenerate geometry camera direction");
+	if (!direction[0] && !direction[2]) {
+		right[0] = 65536;
+		// Reference tests z here, not y, even though z is zero in this branch
+		up[2] = direction[2] < 0 ? 65536 : -65536;
+	} else {
+		right = geometry_fixed_direction({ direction[2], 0, -direction[0] });
+		up = geometry_fixed_cross(direction, right);
+	}
+	return basis;
+}
+
 FixedLightPoint geometry_fixed_normal(const FixedLightPoint &a, const FixedLightPoint &b, const FixedLightPoint &c)
 {
 	const auto u = edge(b, a), v = edge(c, b);
-	return geometry_fixed_direction(geometry_fixed_cross(u, v));
+	return setup_direction(geometry_fixed_cross(u, v));
+}
+
+std::int32_t geometry_fixed_distance(const FixedLightPoint &a, const FixedLightPoint &b)
+{
+	FixedLightPoint delta;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		const auto value = std::int64_t(a[axis]) - b[axis];
+		if (value < (std::numeric_limits<std::int32_t>::min)() || value > (std::numeric_limits<std::int32_t>::max)())
+			throw std::runtime_error("XL geometry distance exceeds fixed-point range");
+		delta[axis] = static_cast<std::int32_t>(value);
+	}
+	return geometry_default_magnitude(delta);
 }
 
 ClassicLightingSide compile_classic_lighting_side(int segment_index, int side_index)
@@ -117,7 +151,8 @@ ClassicLightingSide compile_classic_lighting_side(int segment_index, int side_in
 			for (auto &value : result.face.normals[triangle]) value = -value;
 		}
 	}
-	result.center = geometry_side_center(result.face.corners, result.fixed_normals);
+	result.center = geometry_side_center(result.face.corners, result.fixed_normals, fixed_corners[0]);
+	for (const auto &corner : fixed_corners) result.outer_radius = (std::max) (result.outer_radius, geometry_fixed_distance(result.center, corner));
 	LightPoint sum{};
 	for (const auto id : segment.verts) {
 		if (id < 0 || id > Highest_vertex_index) throw std::runtime_error("Invalid classic segment vertex");
@@ -139,9 +174,81 @@ ClassicLightingSide compile_classic_lighting_side(int segment_index, int side_in
 	}
 	if (squared)
 		for (auto &value : float_direction) value /= std::sqrt(squared);
-	const auto oriented = geometry_orient_normals(result.face.normals, result.fixed_normals, float_direction, geometry_fixed_direction(direction));
+	const auto oriented = geometry_orient_normals(result.face.normals, result.fixed_normals, float_direction, setup_direction(direction));
 	result.face.normals = { oriented[0], oriented[1] };
 	result.average_normal = oriented[2];
+	return result;
+}
+
+std::int32_t classic_segment_average_radius(int segment)
+{
+	if (segment < 0 || segment > Highest_segment_index) throw std::runtime_error("Invalid classic radius segment");
+	const auto center = compile_classic_lighting_side(segment, 0).segment_center;
+	std::int32_t inner = (std::numeric_limits<std::int32_t>::max)(), outer = 0;
+	for (int side = 0; side < 6; ++side) {
+		const auto geometry = compile_classic_lighting_side(segment, side);
+		const int a = geometry.split_13 ? 3 : 0, b = geometry.split_13 ? 1 : 2;
+		const int anchor = (std::min) (Segments[segment].verts[Side_to_verts_int[side][a]], Segments[segment].verts[Side_to_verts_int[side][b]]);
+		if (anchor < 0 || anchor > Highest_vertex_index) throw std::runtime_error("Invalid classic radius anchor");
+		const auto &v = Vertices[anchor];
+		const FixedLightPoint point{ v.x, v.y, v.z };
+		std::int64_t sum = 0;
+		unsigned count = 0;
+		for (const auto &normal : geometry.fixed_normals) {
+			double projection = 0;
+			for (unsigned axis = 0; axis < 3; ++axis) projection += double(std::int64_t(center[axis]) - point[axis]) * normal[axis];
+			projection /= 65536.0;
+			if (projection < (std::numeric_limits<std::int32_t>::min)() || projection > (std::numeric_limits<std::int32_t>::max)())
+				throw std::runtime_error("Classic radius plane distance exceeds fixed-point range");
+			const auto distance = static_cast<std::int32_t>(projection);
+			if (distance >= -65) {
+				sum += distance;
+				++count;
+			}
+		}
+		if (count == 2) sum /= 2;
+		if (sum > (std::numeric_limits<std::int32_t>::max)()) throw std::runtime_error("Classic side distance exceeds fixed-point range");
+		inner = (std::min) (inner, static_cast<std::int32_t>(sum));
+	}
+	for (const auto vertex : Segments[segment].verts) {
+		if (vertex < 0 || vertex > Highest_vertex_index) throw std::runtime_error("Invalid classic radius vertex");
+		const auto &v = Vertices[vertex];
+		outer = (std::max) (outer, geometry_fixed_distance(center, { v.x, v.y, v.z }));
+	}
+	return static_cast<std::int32_t>((std::int64_t(inner) + outer) / 2);
+}
+
+std::vector<ClassicVertexNormal> compile_classic_vertex_normals()
+{
+	if (Highest_vertex_index < 0 || Highest_segment_index < 0)
+		throw std::runtime_error("Classic vertex normals require loaded geometry");
+	std::vector<ClassicVertexNormal> result(static_cast<std::size_t>(Highest_vertex_index) + 1);
+	for (int segment = 0; segment <= Highest_segment_index; ++segment)
+		for (int side = 0; side < 6; ++side) {
+			const auto geometry = compile_classic_lighting_side(segment, side);
+			LightPoint average;
+			for (unsigned axis = 0; axis < 3; ++axis)
+				average[axis] = static_cast<float>((std::int64_t(geometry.fixed_normals[0][axis]) + geometry.fixed_normals[1][axis]) / 2) / 65536.0f;
+			for (int corner = 0; corner < 4; ++corner) {
+				const int vertex = Segments[segment].verts[Side_to_verts_int[side][corner]];
+				if (vertex < 0 || vertex > Highest_vertex_index)
+					throw std::runtime_error("Invalid classic normal vertex");
+				auto &entry = result[vertex];
+				for (unsigned axis = 0; axis < 3; ++axis) entry.normal[axis] += average[axis];
+				++entry.contributions;
+			}
+		}
+	for (auto &entry : result) {
+		// AddToVertexNormal calls both operator+= (which increments) and n++
+		const auto faces = static_cast<std::uint8_t>(entry.contributions * 2);
+		if (!faces) continue;
+		if (faces > 1)
+			for (auto &axis : entry.normal) axis /= static_cast<float>(faces);
+		const auto &n = entry.normal;
+		const float magnitude = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+		if (magnitude)
+			for (auto &axis : entry.normal) axis /= magnitude;
+	}
 	return result;
 }
 } // namespace xl_compat

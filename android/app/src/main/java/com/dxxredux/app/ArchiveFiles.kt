@@ -47,6 +47,19 @@ internal interface ReadableArchiveFile : Closeable {
 }
 
 internal object ArchiveFiles {
+    // Bounded format dispatch only; extraction still validates the complete archive
+    fun isNonZipDistribution(file: File): Boolean =
+        RandomAccessFile(file, "r").use { archive ->
+            val header = ByteArray(minOf(8L, archive.length()).toInt())
+            archive.readFully(header)
+            val sevenZip = byteArrayOf(0x37, 0x7a, 0xbc.toByte(), 0xaf.toByte(), 0x27, 0x1c)
+            val rar4 = byteArrayOf(0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00)
+            val rar5 = byteArrayOf(0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00)
+            listOf(sevenZip, rar4, rar5).any { signature ->
+                header.size >= signature.size && signature.indices.all { header[it] == signature[it] }
+            }
+        }
+
     fun isSupportedArchiveName(name: String): Boolean = GameFileFormats.extensionOf(name) in setOf("zip", "7z", "rar")
 
     fun open(file: File): ReadableArchiveFile {

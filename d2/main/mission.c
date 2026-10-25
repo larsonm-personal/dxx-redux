@@ -48,6 +48,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2/d1_in_d2.h"
 #ifdef DXX_XL_PILOT
 #include "resource_validation.h"
+#include "preview.h"
 #endif
 
 //values that describe where a mission is located
@@ -680,6 +681,7 @@ const char *mission_resource_archive(void)
 void free_mission(void)
 {
 #ifdef DXX_XL_PILOT
+	xl_classic_lighting_release();
 	d_free(Current_mission_descriptor);
 	xl_discard_prepared_resources();
 	xl_resource_select_mission(0);

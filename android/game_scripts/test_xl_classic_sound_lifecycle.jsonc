@@ -1,0 +1,253 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_classic_sound_lifecycle",
+        },
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "dlog_game logs_enabled",
+            "value": true,
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 10000,
+    },
+    {
+        "expect": {
+            "xl_pilot.classic_lighting_requested": false,
+            "xl_pilot.classic_lighting_vertices": 0,
+        },
+        "action": "assert",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_classic_lighting",
+        "value": "enable",
+    },
+    {
+        "expect": {
+            "xl_pilot.classic_lighting_requested": true,
+            "xl_pilot.classic_lighting_vertices": 0,
+        },
+        "action": "assert",
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Dragon pit outpost",
+        "timeout_ms": 60000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "current_level_name": "drgpit",
+            "player.invulnerable": false,
+            "mod_usage.scoped_sound_context.current": true,
+            "mod_usage.scoped_sound_context.identity": "drgpit",
+            "mod_usage.scoped_sound_context.signed_ordinal": 1,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "xl_pilot.runtime_active": true,
+            "xl_pilot.classic_lighting_vertices": 1737,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "a",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "l",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "m",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "i",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "g",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "h",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "t",
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 50,
+        "key": "y",
+    },
+    {
+        "expect": {
+            "player.invulnerable": true,
+        },
+        "action": "assert",
+    },
+    {
+        "post_delay_ms": 200,
+        "action": "face_view",
+        "side": 2,
+        "segment": 492,
+        "distance": 12,
+    },
+    {
+        "value": "quick_save",
+        "post_delay_ms": 500,
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "action": "set_debug",
+        "field": "capture_audio",
+        "value": "start",
+    },
+    {
+        "post_delay_ms": 100,
+        "action": "set_debug",
+        "field": "damage_boss",
+        "value": "lethal",
+    },
+    {
+        "ms": 10000,
+        "action": "wait_ms",
+    },
+    {
+        "action": "set_debug",
+        "field": "capture_audio",
+        "value": "stop",
+    },
+    {
+        "expect": {
+            "player.invulnerable": true,
+            "player_dead": false,
+        },
+        "action": "assert",
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "sound_playback.82.completed": 1,
+            "sound_playback.82.last_bytes": 524964,
+            "sound_playback.82.attempts": 1,
+            "sound_playback.82.stop_requested": 0,
+            "sound_playback.82.failed": 0,
+        },
+    },
+    {
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "player.invulnerable": true,
+            "in_game": true,
+            "current_level_name": "drgpit",
+        },
+        "timeout_ms": 15000,
+        "action": "wait_for",
+    },
+    {
+        "value": "lethal",
+        "post_delay_ms": 100,
+        "field": "damage_boss",
+        "action": "set_debug",
+    },
+    {
+        "timeout_ms": 10000,
+        "action": "wait_for",
+        "expect": {
+            "sound_playback.82.attempts": 2,
+        },
+    },
+    {
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "sound_playback.82.completed": 1,
+            "sound_playback.82.failed": 0,
+            "sound_playback.82.stop_requested": 1,
+            "mod_usage.scoped_sound_context.current": true,
+            "mod_usage.scoped_sound_context.identity": "drgpit",
+            "mod_usage.scoped_sound_context.signed_ordinal": 1,
+        },
+        "timeout_ms": 15000,
+        "action": "wait_for",
+    },
+    {
+        "action": "introspect",
+    },
+]

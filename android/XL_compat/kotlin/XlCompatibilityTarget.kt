@@ -6,7 +6,7 @@ import java.io.File
 
 internal suspend fun xlCompatibilityAnalysisFailure(target: LevelMetadataTarget): LevelMetadataResult? {
     // Metadata analysis has no XL runtime/assets; feature eligibility is not analysis support
-    val blockers = inspectXlCompatibilityTarget(target)
+    val blockers = inspectXlCompatibilityTarget(target).analysisBlockers()
     if (blockers.isEmpty()) return null
     return LevelMetadataResult.failed(
         source = target.displayName,
@@ -20,6 +20,7 @@ internal suspend fun xlCompatibilityAnalysisFailure(target: LevelMetadataTarget)
 internal suspend fun inspectXlCompatibilityTarget(target: LevelMetadataTarget): List<XlCompatibilityReport> =
     withContext(Dispatchers.IO) {
         buildList {
+            target.packageCompatibility?.let { add(it) }
             val archive = target.archivePath?.let(::File)
             if (archive?.isFile == true) {
                 target.archiveEntries.distinct().forEach { path ->

@@ -2480,6 +2480,9 @@ void gr_flip(void)
 		}
 	}
 	ogl_android_apply_pending_runtime_options("gr_flip");
+#ifdef INTROSPECT_ON
+	game_introspect_finish_render_frame();
+#endif
 #endif
 
 #ifdef ANDROID

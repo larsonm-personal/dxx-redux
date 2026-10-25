@@ -345,6 +345,20 @@ internal class MissionZipExtractionStore(
                 record.rootDir,
                 hogFiles + assetArchives + stagedRelativePath(scan, mission.path),
             )
+        val packageReport =
+            runCatching {
+                val owner = "extracted/${record.ownerSha256}"
+                val pack = requireNotNull(missionLaunchPackage(owner, scan, record, mission.game, false))
+                val catalog = MissionLaunchCatalog(listOf(pack))
+                val key = MissionLaunchKey(owner, stagedRelativePath(scan, mission.path), mission.game)
+                val resources = catalog.resourcesFor(key).sortedBy { it.virtualPath }
+                XlCompatibility.inspectPackage(
+                    owner,
+                    key.descriptor,
+                    resources.map { it.virtualPath },
+                    resources.map { it.sha256 },
+                )
+            }.getOrNull()
         return LevelMetadataTarget(
             displayName = mission.displayName,
             game =
@@ -368,6 +382,7 @@ internal class MissionZipExtractionStore(
             assetArchives = assetArchives.map(sourceLayout::relativeToRoot),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
+            packageCompatibility = packageReport,
         )
     }
 
