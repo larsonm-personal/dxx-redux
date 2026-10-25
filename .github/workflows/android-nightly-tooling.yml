@@ -534,6 +534,24 @@ jobs:
                           text = stream.read(16384).decode('utf-8', errors='replace')
                       print(re.sub(r'\x1b\[[0-9;]*m', '', text))
           PYTHON
+      - name: Report synthetic XL texture result
+        if: always() && !inputs.retail_assets && hashFiles('plan/plan.json') != ''
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import json, pathlib, re
+          plan = json.loads(pathlib.Path('plan/plan.json').read_text())
+          if any(row.get('id') == 'master:test_scoped_static_textures' for row in plan.get('tests', [])):
+              logs = sorted(pathlib.Path('results/master').glob('test_scoped_static_textures_*.log'))
+              if not logs:
+                  print('Synthetic XL texture owner log unavailable; inspect setup/runner status')
+              for path in logs[-1:]:
+                  if path.is_file() and not path.is_symlink():
+                      with path.open('rb') as stream:
+                          stream.seek(max(0, path.stat().st_size - 16384))
+                          text = stream.read(16384).decode('utf-8', errors='replace')
+                      print(re.sub(r'\x1b\[[0-9;]*m', '', text))
+          PYTHON
       - name: Report sanitized online qualification receipt
         if: always() && steps.selection.outputs.online_preview == 'true'
         shell: bash

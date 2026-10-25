@@ -16,4 +16,22 @@ if ($OriginalTexture) {
     if ((Split-Path -Leaf $OriginalTexture) -cne 'ceil002.tga') { throw 'Original texture must retain its authored filename' }
     $arguments.DataFiles = @($OriginalTexture)
 }
-& (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture scoped_textures -ExpectedCases 8 @arguments
+if (-not $OutputDirectory) {
+    $OutputDirectory = Join-Path $PSScriptRoot ('../temp/scoped-textures/run_' + [guid]::NewGuid().ToString('N'))
+    $arguments.OutputDirectory = $OutputDirectory
+}
+try {
+    & (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture scoped_textures -ExpectedCases 8 @arguments
+} catch {
+    if (-not $OriginalTexture) {
+        foreach ($game in @('d1', 'd2')) {
+            $log = Join-Path $OutputDirectory "$game.log"
+            if (Test-Path -LiteralPath $log -PathType Leaf) {
+                Get-Content -LiteralPath $log -Tail 20 | ForEach-Object {
+                    Write-Host ($_.Substring(0, [Math]::Min($_.Length, 512)))
+                }
+            }
+        }
+    }
+    throw
+}

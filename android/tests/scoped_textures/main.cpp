@@ -16,6 +16,8 @@ extern "C" {
 #include "u_mem.h"
 void ogl_init_texture_list_internal(void);
 void ogl_smash_texture_list_internal(void);
+void ogl_init_pixel_buffers(int, int);
+void ogl_close_pixel_buffers(void);
 int ogl_loadtexture(unsigned char *, int, int, ogl_texture *, int, int, int, const char *);
 }
 // The sampling shader uses gl_VertexID, not the legacy client-array shim.
@@ -114,9 +116,12 @@ int main(int argc, char **argv)
 		require(eglMakeCurrent(display, surface, surface, context), "render context");
 		gles3_shim_init();
 		ogl_init_texture_list_internal();
+		ogl_init_pixel_buffers(64, 64);
 		GLuint vertex = shader(GL_VERTEX_SHADER, "#version 300 es\nout vec2 uv;void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);uv=p;gl_Position=vec4(p*2.0-1.0,0,1);}");
 		GLuint fragment = shader(GL_FRAGMENT_SHADER, "#version 300 es\nprecision highp float;in vec2 uv;uniform sampler2D source;out vec4 color;void main(){color=texture(source,uv);}");
-		GLuint program = glCreateProgram();
+		GLuint program = glCreateProgram(), vao;
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
 		glAttachShader(program, vertex);
 		glAttachShader(program, fragment);
 		glLinkProgram(program);
@@ -154,7 +159,7 @@ int main(int argc, char **argv)
 			require(android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 3, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us) == 1, "production candidate decoder");
 			require(png.width == (use_original ? 64u : 4u) && png.height == png.width && png.channels == 4 && png.data[0] == (use_original ? 80 : red), "selected decoded pixels");
 			ogl_texture *texture = ogl_get_free_texture();
-			ogl_init_texture(texture, png.width, png.height, 0);
+			ogl_init_texture(texture, png.width, png.height, png.alpha ? OGL_FLAG_ALPHA : 0);
 			require(ogl_loadtexture(png.data, 0, 0, texture, 0, png.channels, 0, "ceil002") == 0, "engine texture upload");
 			const std::string selected_path(path);
 			free(png.data);
@@ -192,6 +197,8 @@ int main(int argc, char **argv)
 		}
 		android_mission_assets_free_begin();
 		android_mission_assets_free_end();
+		glDeleteVertexArrays(1, &vao);
+		ogl_close_pixel_buffers();
 		glDeleteProgram(program);
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);

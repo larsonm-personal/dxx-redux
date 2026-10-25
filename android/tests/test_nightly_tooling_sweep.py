@@ -330,6 +330,15 @@ class SweepTests(unittest.TestCase):
         self.assertIn("not path.is_symlink()", step)
         self.assertIn("stream.read(16384)", step)
 
+    def test_static_texture_diagnostic_is_bounded_and_public_only(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("      - name: Report synthetic XL texture result", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("!inputs.retail_assets", step)
+        self.assertIn("row.get('id') == 'master:test_scoped_static_textures'", step)
+        self.assertIn("glob('test_scoped_static_textures_*.log')", step)
+        self.assertIn("not path.is_symlink()", step)
+        self.assertIn("stream.read(16384)", step)
+
     def test_static_texture_campaign_is_exact_and_asset_free(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         catalog = {"schema": 1, "tests": [{"name": "test_scoped_static_textures"}]}
