@@ -18,6 +18,8 @@ void ogl_init_texture_list_internal(void);
 void ogl_smash_texture_list_internal(void);
 int ogl_loadtexture(unsigned char *, int, int, ogl_texture *, int, int, int, const char *);
 }
+// The sampling shader uses gl_VertexID, not the legacy client-array shim.
+#undef glDrawArrays
 static unsigned resets;
 // This isolated renderer has no game definitions. Use real GPU/lookup invalidation,
 // with a baseline spy instead of attempting to load retail data into the fixture.
@@ -149,7 +151,7 @@ int main(int argc, char **argv)
 			previous = texture->handle;
 			glViewport(0, 0, 4, 4);
 			glDisable(GL_BLEND);
-			glUseProgram(program);
+			gles3_shim_bind_program(program);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, previous);
 			glUniform1i(glGetUniformLocation(program, "source"), 0);
