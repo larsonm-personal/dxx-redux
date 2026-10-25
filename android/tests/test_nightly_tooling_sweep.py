@@ -966,7 +966,7 @@ class SweepTests(unittest.TestCase):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         self.assertIn(
             "options:[nightly,first-play,graphics-capabilities,xl-browser,xl-textures,basic-use,online-preview,online-preview-d2,online-transports]",
-            "".join(workflow.split()),
+            "".join(workflow.split()).replace(",]", "]"),
         )
         self.assertIn("default: nightly", workflow)
         self.assertIn(

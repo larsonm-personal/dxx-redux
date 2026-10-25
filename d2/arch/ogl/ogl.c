@@ -3154,7 +3154,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 
 #ifdef ANDROID
 #ifdef DXX_XL_PILOT
-		const char *scoped_hog = mission_resource_archive();
+		const char *scoped_hog = d1_in_d2_use_d1_gameplay() ? NULL : mission_resource_archive();
 #else
 		const char *scoped_hog = NULL;
 #endif
