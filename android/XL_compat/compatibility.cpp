@@ -1,5 +1,6 @@
 #include "compatibility.h"
 #include "admission.h"
+#include "companion_lighting.h"
 #include "../app/src/main/cpp/shared/mission_descriptor_safe.h"
 #include <algorithm>
 #include <cctype>
@@ -35,6 +36,14 @@ const Category categories[] = {
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
 	{ "effect_objects", "Particles, lightning and ambient sounds", "XL payloads, activation and audio cues require individual verification", "Particles, lightning and ambient sound objects add effects to the mine. Their payloads, activation and presentation require separate qualification." },
 	{ "resource_scope", "Mission resource precedence and isolation", "Standard HXM/extra-HAM and HMQ paths exist; XL override semantics and transition cleanup unverified", "A mission can override stock resources. The right definitions must load for that mission and be cleared or restored when switching missions." },
+	{ "package_identity", "Package identity and resource ownership", "Descriptor ownership and immutable publication exist; HOG aliases and ambiguous wrappers need qualification", "Archive name, mission title, descriptor and selected HOG are different identities. Package resources must belong to the selected mission; a level-only report cannot establish their ownership or absence." },
+	{ "scoped_textures", "Mission and level texture folders", "External XL texture-folder lookup and frame precedence unqualified", "Authored textures can live under a mission mod folder or signed level ordinal. Preserving a TGA does not prove selection, decoding, animation or transparency. Exact frames, fallback frames and POG precedence require separate checks." },
+	{ "scoped_sounds", "Mission WAV effects and sound banks", "Opt-in imported-D1 WAV path implemented; playback unqualified; scoped banks unsupported", "Sound effects are distinct from music. A mission sound bank can suppress external WAV lookup. Names, scope, sample conversion, playback and cleanup must be verified for the selected game." },
+	{ "scoped_music", "Mission playlists and ordinal music", "SNG and nested music paths exist; XL playlist and secret-level precedence unqualified", "Music selection can depend on HOG options, mission playlists and signed level ordinals. Finding or preserving an audio file does not prove that the intended track plays or stops on transition." },
+	{ "scoped_models", "Mission models and model skins", "ASE infrastructure exists; scoped aliases and skins unqualified; OOF unsupported", "Model format, model-number mapping and skin ownership are separate requirements. A skin must resolve in the owning model scope rather than borrowing a same-named file from another mission." },
+	{ "companion_lighting", "LGT and CLR lighting companions", "Separate brightness and color tables require inspection and runtime qualification", "Level-named LGT and CLR files describe texture brightness and colors. They are not HAM definitions or proof of embedded level lighting; their values and renderer use must be checked separately." },
+	{ "package_options", "Mission configuration and presentation options", "Packaged INI, wallpapers and extended briefing options unqualified", "Recognizing packaged configuration does not authorize executing it. Each supported option needs bounded parsing, explicit semantics, resource dependencies and restoration on mission changes." },
+	{ "distribution_archive", "Distribution archive extraction", "ZIP, 7z and RAR readers exist; codec and original-package extraction require verification", "The downloaded archive is separate from the mission HOG. Recognizing a 7z catalog does not prove its compression methods can be decoded. Extraction must preserve owned paths and pass byte, integrity and collision checks before mission resources can be evaluated." },
 };
 struct Evidence {
 	std::string need = "Unknown - not inspected", status = "unknown", detail;
@@ -145,6 +154,28 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 	} else {
 		auto lower_name = name;
 		std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		const auto extension = lower_name.size() >= 4 ? lower_name.substr(lower_name.size() - 4) : std::string{};
+		if (extension == ".lgt" || extension == ".clr") {
+			detected = true;
+			status = "blocked";
+			summary = "Lighting companion requires unqualified runtime rendering support";
+			Evidence lighting{ extension == ".lgt" ? "Texture brightness companion" : "Texture RGB companion", "blocked", "" };
+			try {
+				if (extension == ".lgt") {
+					const auto table = decode_texture_brightness(bytes.data(), bytes.size());
+					lighting.detail = "910 brightness entries; " + std::to_string(std::count_if(table.begin(), table.end(), [](auto value) { return value != 0; })) + " nonzero";
+				} else {
+					const auto table = decode_texture_colors(bytes.data(), bytes.size());
+					lighting.detail = "910 color entries; " + std::to_string(std::count_if(table.begin(), table.end(), [](const auto &value) { return value.channels[0] != value.channels[1] || value.channels[1] != value.channels[2]; })) + " chromatic";
+				}
+				lighting.detail += "; decoded layout only. Level association, defaults, rendered effects and restoration require verification";
+			} catch (const std::exception &e) {
+				summary = "Cannot decode lighting companion: " + std::string(e.what());
+				lighting.detail = summary;
+			}
+			for (std::size_t i = 0; i < sizeof(categories) / sizeof(categories[0]); ++i)
+				if (std::string(categories[i].id) == "companion_lighting") rows[i] = lighting;
+		}
 		if (lower_name.size() >= 4 && lower_name.substr(lower_name.size() - 4) == ".mn2") {
 			std::istringstream text(std::string(bytes.begin(), bytes.end()));
 			std::string line;

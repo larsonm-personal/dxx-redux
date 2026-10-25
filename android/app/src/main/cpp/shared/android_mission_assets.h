@@ -23,6 +23,8 @@ const char *android_mission_assets_key(void);
 const char *android_mission_assets_context_json(void);
 int android_mission_assets_resolve_key(const char *key, char *mission_path, size_t capacity);
 unsigned android_mission_assets_generation(void);
+/* A file from this selected context only; never a global or sibling fallback */
+int android_mission_assets_find_owned_file(const char *path, char *resolved, size_t capacity);
 #if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_PILOT)
 int android_mission_assets_test_acquisition_failure(void);
 #endif

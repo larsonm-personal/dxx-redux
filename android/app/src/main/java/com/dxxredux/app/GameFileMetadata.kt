@@ -67,7 +67,7 @@ internal object GameFileMetadata {
             "rl2", "mn2", "msn" -> {
                 val summary = file.inputStream().use { summarizeLevelOrDescriptor(file.name, it) }
                 val sibling = File(file.parentFile, "${file.nameWithoutExtension}.hog")
-                if (GameFileFormats.extensionOf(file.name) == "mn2" && sibling.isFile) {
+                if (GameFileFormats.extensionOf(file.name) in setOf("mn2", "msn") && sibling.isFile) {
                     val archive = sibling.inputStream().use { summarizeHog(sibling.name, sibling.length(), it) }
                     summary.copy(xlCompatibility = summary.xlCompatibility + archive.xlCompatibility)
                 } else {
@@ -111,7 +111,7 @@ internal object GameFileMetadata {
                     "rl2", "mn2", "msn" -> {
                         val summary = summarizeLevelOrDescriptor(displayName, input)
                         val sibling =
-                            if (GameFileFormats.extensionOf(displayName) == "mn2") {
+                            if (GameFileFormats.extensionOf(displayName) in setOf("mn2", "msn")) {
                                 zip.findEntry("${path.substringBeforeLast('.')}.hog")
                             } else {
                                 null
@@ -230,7 +230,7 @@ internal object GameFileMetadata {
                 break
             }
             entries += EntrySummary(entryName, entrySize, roleForEntry(entryName))
-            if (GameFileFormats.extensionOf(entryName) in setOf("rl2", "mn2")) {
+            if (GameFileFormats.extensionOf(entryName) in setOf("rl2", "mn2", "lgt", "clr")) {
                 val bytes = input.readExact(entrySize.toInt())
                 if (bytes.size.toLong() != entrySize) {
                     problems += "Truncated entry $entryName"

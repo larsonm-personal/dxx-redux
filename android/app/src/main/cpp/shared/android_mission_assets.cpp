@@ -16,6 +16,7 @@
 extern "C" {
 #include "android_log.h"
 #include "dxxerror.h"
+#include "ignorecase.h"
 }
 
 namespace
@@ -294,6 +295,33 @@ int android_mission_assets_descriptor_source(const char *alias, char *path, size
 unsigned android_mission_assets_generation(void)
 {
 	return generation;
+}
+
+int android_mission_assets_find_owned_file(const char *path, char *resolved, size_t capacity)
+{
+	if (!enabled || active < 0 || transitioning || !path || !resolved || !capacity) return 0;
+	const std::string requested(path);
+	if (requested.empty() || requested.size() >= capacity || requested.size() >= 4096) return 0;
+	std::size_t start = 0;
+	for (std::size_t i = 0; i <= requested.size(); ++i) {
+		if (i < requested.size() && requested[i] != '/') {
+			const unsigned char c = requested[i];
+			if (c < 32 || c == 127 || c == '\\' || c == ':') return 0;
+			continue;
+		}
+		const auto part = requested.substr(start, i - start);
+		if (part.empty() || part == "." || part == "..") return 0;
+		start = i + 1;
+	}
+	std::vector<char> corrected(requested.begin(), requested.end());
+	corrected.push_back(0);
+	if (PHYSFSEXT_locateCorrectCase(corrected.data()) != 0) return 0;
+	const char *origin = PHYSFS_getRealDir(corrected.data());
+	if (!origin || std::find(mounted.begin(), mounted.end(), origin) == mounted.end()) return 0;
+	PHYSFS_Stat info;
+	if (!PHYSFS_stat(corrected.data(), &info) || info.filetype != PHYSFS_FILETYPE_REGULAR) return 0;
+	std::memcpy(resolved, corrected.data(), corrected.size());
+	return 1;
 }
 
 const char *android_mission_assets_key(void)

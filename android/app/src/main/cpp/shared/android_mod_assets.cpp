@@ -8,7 +8,13 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <stdexcept>
 #include <SDL.h>
+#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#include "../../../../../XL_compat/scoped_sound.h"
+#include "../../../../../XL_compat/wave.h"
+#include "android_mission_assets.h"
+#endif
 extern "C" {
 #include "args.h"
 #include "digi.h"
@@ -18,6 +24,10 @@ extern "C" {
 #include "android_log.h"
 #include "android_sound_trace.h"
 #include "sound_trace_fingerprint.h"
+#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+#include "mission.h"
+#include "error.h"
+#endif
 }
 
 namespace
@@ -33,6 +43,11 @@ std::array<sound_overlay, MAX_SOUND_FILES> sounds;
 nlohmann::json presentation = nlohmann::json::array();
 bool dirty = true;
 Uint32 last_flush;
+#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+int scoped_ordinal;
+unsigned scoped_generation;
+std::string scoped_archive, scoped_identity, scoped_key;
+#endif
 
 std::string real_path(const char *filename)
 {
@@ -62,7 +77,10 @@ int select_sound_source(const std::string (&origins)[2], const std::string &bank
 	if (search) {
 		for (char **p = search; *p && selected == -1; ++p) {
 			for (int i = 0; i < 2; ++i)
-				if (!origins[i].empty() && origins[i] == *p) { selected = i; break; }
+				if (!origins[i].empty() && origins[i] == *p) {
+					selected = i;
+					break;
+				}
 			if (selected == -1 && !bank_origin.empty() && bank_origin == *p) selected = -2;
 		}
 		PHYSFS_freeList(search);
@@ -70,6 +88,70 @@ int select_sound_source(const std::string (&origins)[2], const std::string &bank
 	return selected;
 }
 } // namespace
+
+#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+void android_mod_sound_level_prepare(int ordinal)
+{
+	scoped_ordinal = ordinal;
+	scoped_generation = android_mission_assets_generation();
+	scoped_key = android_mission_assets_key();
+	scoped_archive = mission_resource_archive();
+	scoped_identity.clear();
+	if (scoped_key.empty() || scoped_archive.empty()) return;
+	const auto slash = scoped_archive.find_last_of("/\\");
+	auto name = scoped_archive.substr(slash == std::string::npos ? 0 : slash + 1);
+	const auto dot = name.find_last_of('.');
+	if (dot == std::string::npos || SDL_strcasecmp(name.c_str() + dot, ".hog")) return;
+	scoped_identity = name.substr(0, dot);
+}
+
+// Imported D1 installation rebuilds the sample registry for each incoming level
+static bool apply_scoped_d1_sound(int sample, const char *name)
+{
+	if (scoped_identity.empty() || !scoped_ordinal ||
+	    scoped_generation != android_mission_assets_generation() ||
+	    scoped_key != android_mission_assets_key() || scoped_archive != mission_resource_archive()) return false;
+	try {
+		const auto selected = xl_compat::resolve_scoped_sound(scoped_identity, name, scoped_ordinal,
+		                                                      GameArg.SndDigiSampleRate, [](const std::string &path) {
+			                                                      char resolved[PATH_MAX];
+			                                                      return android_mission_assets_find_owned_file(path.c_str(), resolved, sizeof(resolved)) ? std::string(resolved) : std::string{};
+		                                                      });
+		if (selected.path.empty()) return false;
+		if (selected.bank) throw std::runtime_error("Mission sound bank requires unsupported scoped-bank decoding: " + selected.path);
+		PHYSFS_file *file = PHYSFS_openRead(selected.path.c_str());
+		if (!file) throw std::runtime_error("Cannot open owned WAV: " + selected.path);
+		const auto length = PHYSFS_fileLength(file);
+		if (length <= 0 || length > xl_compat::max_wave_bytes) {
+			PHYSFS_close(file);
+			throw std::runtime_error("Invalid owned WAV size: " + selected.path);
+		}
+		std::vector<unsigned char> source(static_cast<size_t>(length));
+		const bool complete = PHYSFS_readBytes(file, source.data(), length) == length;
+		PHYSFS_close(file);
+		if (!complete) throw std::runtime_error("Incomplete owned WAV: " + selected.path);
+		const auto pcm = xl_compat::decode_wave(source.data(), source.size());
+		// Both Redux backends consume unsigned 8-bit source PCM
+		const int rate = GameArg.SndDisableSdlMixer ? GameArg.SndDigiSampleRate : static_cast<int>(pcm.rate);
+		auto bytes = xl_compat::wave_unsigned8(pcm, rate);
+		auto &entry = sounds[sample];
+		auto &sound = GameSounds[sample];
+		entry.original = sound;
+		entry.bytes = std::move(bytes);
+		sound.data = entry.bytes.data();
+		sound.length = static_cast<unsigned int>(entry.bytes.size());
+		sound.bits = 8;
+		sound.freq = rate;
+		piggy_sound_duration_override(sample, static_cast<int>(pcm.mono.size()), pcm.rate);
+		android_mod_sound_loaded(sample, selected.path.c_str());
+		debug_log(DLOG_GAME, "[XL] scoped sound=%d scope=%s ordinal=%d frames=%zu source_rate=%u output_rate=%d", sample, selected.scope.c_str(), scoped_ordinal, pcm.mono.size(), pcm.rate, rate);
+		return true;
+	} catch (const std::exception &e) {
+		Error("Cannot load mission sound %s: %s", name, e.what());
+		return true;
+	}
+}
+#endif
 
 void android_mod_sounds_reset(void)
 {
@@ -115,7 +197,7 @@ void android_mod_sound_timing_apply(int sample)
 	if (!name || !*name) return;
 	// Numeric HAM references and loose PCM names come from the canonical bank
 	std::string paths[] = { real_path((std::string("Sounds/") + name + ".r22").c_str()),
-	                        real_path((std::string("Sounds/") + name + ".raw").c_str()) };
+		                    real_path((std::string("Sounds/") + name + ".raw").c_str()) };
 	std::string origins[] = { origin_of(paths[0]), origin_of(paths[1]) };
 	const int selected = select_sound_source(origins, origin_of(piggy_sound_duration_bank()));
 	if (selected < 0) return;
@@ -135,6 +217,9 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 	auto &entry = sounds[sample];
 	auto &sound = GameSounds[sample];
 	if (!entry.bytes.empty()) return;
+#if defined(DXX_XL_PILOT) && defined(DXX_BUILD_DESCENT_II)
+	if (content_game == 1 && apply_scoped_d1_sound(sample, name)) return;
+#endif
 #ifndef DXX_BUILD_DESCENT_II
 	if (!sound.data || sound.data == (void *) -1 || !sound.length) return;
 #endif

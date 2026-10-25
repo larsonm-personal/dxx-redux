@@ -5,8 +5,17 @@ if(ANDROID)
     add_subdirectory(android)
 endif()
 
-add_library(xl_inventory STATIC inventory.cpp probe.cpp compatibility.cpp lighting.cpp
-                                mission_label.cpp admission.cpp)
+add_library(
+    xl_inventory STATIC
+    inventory.cpp
+    probe.cpp
+    compatibility.cpp
+    lighting.cpp
+    mission_label.cpp
+    admission.cpp
+    wave.cpp
+    companion_lighting.cpp
+    scoped_sound.cpp)
 target_compile_features(xl_inventory PUBLIC cxx_std_17)
 target_include_directories(xl_inventory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(xl_inspect inspect.cpp)
@@ -25,6 +34,29 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(xl_companion_lighting_test tests/companion_lighting_test.cpp)
+    target_link_libraries(xl_companion_lighting_test PRIVATE xl_inventory)
+    add_test(NAME xl_companion_lighting_contract COMMAND xl_companion_lighting_test)
+    set(XL_DRAGON_HOG "" CACHE FILEPATH "Private original Dragon Pit HOG")
+    if(XL_DRAGON_HOG)
+        add_test(
+            NAME xl_dragon_lighting_decode
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_DRAGON_HOG}
+                -DTEST=$<TARGET_FILE:xl_companion_lighting_test> -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/dragon_lighting.cmake)
+    endif()
+    add_executable(xl_wave_test tests/wave_test.cpp)
+    target_link_libraries(xl_wave_test PRIVATE xl_inventory)
+    add_test(NAME xl_wave_contract COMMAND xl_wave_test)
+    set(XL_DRAGON_SOUNDS "" CACHE PATH "Private original Dragon Pit sound directory")
+    if(XL_DRAGON_SOUNDS)
+        add_test(
+            NAME xl_dragon_wave_decode
+            COMMAND
+                ${CMAKE_COMMAND} -DSOUNDS=${XL_DRAGON_SOUNDS} -DTEST=$<TARGET_FILE:xl_wave_test> -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/dragon_wave.cmake)
+    endif()
     add_executable(xl_mission_label_test tests/mission_label_test.cpp)
     target_link_libraries(xl_mission_label_test PRIVATE xl_inventory)
     add_test(NAME xl_mission_labels COMMAND xl_mission_label_test)
@@ -44,6 +76,20 @@ if(BUILD_TESTING)
         include(tests/reference_dynamic.cmake)
     endif()
     add_executable(xl_lighting_test tests/lighting_test.cpp)
+    set(XL_REFERENCE_GEOMETRY_ROOT "" CACHE PATH "Pinned XL source root for face hit-point oracle")
+    if(XL_REFERENCE_GEOMETRY_ROOT)
+        include(tests/reference_face_point.cmake)
+    endif()
+    set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
+                                            "Pinned XL lightprecalc.cpp for nearest-light oracle")
+    if(XL_REFERENCE_LIGHT_PRECALC)
+        include(tests/reference_nearest_lights.cmake)
+    endif()
+    set(XL_REFERENCE_OGL_COLOR ""
+        CACHE FILEPATH "Pinned XL ogl/ogl_color.cpp for geometry attenuation oracle")
+    if(XL_REFERENCE_OGL_COLOR)
+        include(tests/reference_geometry_attenuation.cmake)
+    endif()
     target_link_libraries(xl_lighting_test PRIVATE xl_inventory)
     add_test(NAME xl_lighting_calculation COMMAND xl_lighting_test)
     add_executable(xl_inventory_test tests/inventory_test.cpp)
@@ -69,6 +115,16 @@ if(BUILD_TESTING)
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     set(XL_OBSERVATORY_DESCRIPTOR "" CACHE FILEPATH "Original Observatory mission descriptor")
+    if(XL_DRAGON_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_dragon_companion_ownership
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_DRAGON_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/dragon-companion-ownership -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/dragon_companion_ownership.cmake)
+        set_tests_properties(xl_dragon_companion_ownership PROPERTIES TIMEOUT 60)
+    endif()
     if(XL_OBSERVATORY_HOG AND XL_OBSERVATORY_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
             NAME xl_observatory_descriptor

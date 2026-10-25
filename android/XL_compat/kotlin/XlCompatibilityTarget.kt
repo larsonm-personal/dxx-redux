@@ -23,7 +23,7 @@ internal suspend fun inspectXlCompatibilityTarget(target: LevelMetadataTarget): 
             val archive = target.archivePath?.let(::File)
             if (archive?.isFile == true) {
                 target.archiveEntries.distinct().forEach { path ->
-                    if (GameFileFormats.extensionOf(path) in setOf("hog", "mn2", "rl2")) {
+                    if (GameFileFormats.extensionOf(path) in setOf("hog", "mn2", "msn", "rl2")) {
                         val summary =
                             runCatching {
                                 GameFileMetadata.summarizeZipConstituent(

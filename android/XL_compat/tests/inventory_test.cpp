@@ -147,6 +147,11 @@ void feature_contract()
 	check(feature_row(json, "wall_teleports").find("excludes object-attached actions") != std::string::npos, "teleport explanation lost count scope");
 	check(feature_row(json, "serialization").find("binary layout") != std::string::npos, "broad category has no explanation");
 	check(json.find("\"explanation\": \"\"") == std::string::npos, "catalog emitted an empty feature explanation");
+	for (const char *id : { "package_identity", "scoped_textures", "scoped_sounds", "scoped_music", "scoped_models", "companion_lighting", "package_options", "distribution_archive" }) {
+		const auto package_row = feature_row(json, id);
+		check(package_row.find("\"status\": \"unknown\"") != std::string::npos, "level-only report inferred package resource support or absence");
+		check(package_row.find("Unknown - not inspected") != std::string::npos, "package evidence missing its inspection boundary");
+	}
 	bytes.pop_back();
 	row = feature_row(xl_compat::compatibility_json("broken.rl2", bytes), "wall_teleports");
 	check(row.find("\"count\": null") != std::string::npos, "failed parse leaked partial counts");

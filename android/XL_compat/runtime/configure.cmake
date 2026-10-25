@@ -22,6 +22,12 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../admission.cpp"
                 "${xl_runtime_dir}/../probe.cpp"
                 "${xl_runtime_dir}/../lighting.cpp"
+                "${xl_runtime_dir}/../scoped_sound.cpp"
+                "${xl_runtime_dir}/../wave.cpp"
+                "${xl_runtime_dir}/../companion_lighting.cpp"
+                "${xl_runtime_dir}/companion_resources.cpp"
+                "${xl_runtime_dir}/geometry.cpp"
+                "${xl_runtime_dir}/light_sources.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
                 "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")

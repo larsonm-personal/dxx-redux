@@ -18,6 +18,9 @@
 #include "pstypes.h"
 #include "songs.h"
 #include "track_names.h"
+#include "object.h"
+#include "gamesave.h"
+#include "secretarea.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2_presentation.h"
 #endif
@@ -325,6 +328,10 @@ void track_overlay_notify_mission_music(const char *filename, int song_index)
 void level_overlay_notify(int level_num, const char *level_name)
 {
 	char buf[OVERLAY_TEXT_LEN];
+	char display_name[256];
+	/* Legacy level titles are untrusted bytes, not JNI Modified UTF-8 */
+	level_metadata_choose_level_display_name(Gamesave_current_filename, level_name, display_name, sizeof(display_name));
+	level_name = display_name;
 	int has_name = level_name && level_name[0];
 	if (level_num < 0) {
 		if (has_name)

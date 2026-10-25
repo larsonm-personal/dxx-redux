@@ -1,5 +1,6 @@
 // Real Android catalog/mount code with reset spies in the native lifecycle target
 #include "android_mission_assets.h"
+#include "../scoped_sound.h"
 
 static unsigned asset_reset_before_calls, asset_reset_baseline_calls;
 static std::filesystem::path asset_remove_after_probe;
@@ -32,6 +33,13 @@ static void asset_mount_test(int argc, char **argv)
 	write_bytes((second / "test.mn2").string().c_str(), descriptor);
 	write_bytes((first / "collision.txt").string().c_str(), { 'a' });
 	write_bytes((second / "collision.txt").string().c_str(), { 'b' });
+	write_bytes((first / "OWNED.WAV").string().c_str(), { 'a' });
+	const auto sound_root = first / "mods/pilot";
+	std::filesystem::create_directories(sound_root / "sounds/level01");
+	std::filesystem::create_directories(sound_root / "sounds/slevel01");
+	write_bytes((sound_root / "sounds/VOICE.WAV").string().c_str(), { 'm' });
+	write_bytes((sound_root / "sounds/level01/VOICE.WAV").string().c_str(), { 'l' });
+	write_bytes((sound_root / "sounds/slevel01/VOICE.WAV").string().c_str(), { 's' });
 	const auto broken = root / "broken.hog";
 	write_bytes(broken.string().c_str(), { 'B', 'A', 'D', '!' });
 	const auto manifest = std::filesystem::path(PHYSFS_getWriteDir()) / ".mission_assets.json";
@@ -80,6 +88,26 @@ static void asset_mount_test(int argc, char **argv)
 		PHYSFS_freeList(list);
 		return result;
 	};
+	char owned_path[PATH_MAX];
+	require(android_mission_assets_find_owned_file("owned.wav", owned_path, sizeof(owned_path)),
+	        "case-correct owned lookup failed");
+	PHYSFS_file *owned_file = PHYSFS_openRead(owned_path);
+	char owned_byte = 0;
+	require(owned_file && PHYSFS_readBytes(owned_file, &owned_byte, 1) == 1 && owned_byte == 'a', "owned lookup selected different content");
+	PHYSFS_close(owned_file);
+	const auto lookup = [](const std::string &path) {
+		char resolved_path[PATH_MAX];
+		return android_mission_assets_find_owned_file(path.c_str(), resolved_path, sizeof(resolved_path)) ? std::string(resolved_path) : std::string{};
+	};
+	require(xl_compat::resolve_scoped_sound("pilot", "voice", 1, 22050, lookup).scope == "level" &&
+	            xl_compat::resolve_scoped_sound("pilot", "voice", -1, 22050, lookup).scope == "secret_level" &&
+	            xl_compat::resolve_scoped_sound("pilot", "voice", 2, 22050, lookup).scope == "mission",
+	        "owned sound scope selection failed");
+	write_bytes((sound_root / "pilot.s22").string().c_str(), { 'b' });
+	require(xl_compat::resolve_scoped_sound("pilot", "voice", 1, 22050, lookup).bank, "owned bank did not gate WAV selection");
+	std::filesystem::remove(sound_root / "pilot.s22");
+	for (const char *path : { "../OWNED.WAV", "/OWNED.WAV", "C:OWNED.WAV", "x\\OWNED.WAV", "./OWNED.WAV", "descent2.ham" })
+		require(!android_mission_assets_find_owned_file(path, owned_path, sizeof(owned_path)), "foreign or unsafe resource accepted as mission owned");
 	for (const char *id : { "broken", "duplicate", "conflict", "overlap" }) {
 		const auto before_paths = paths();
 		const auto before_reset = asset_reset_before_calls, before_baseline = asset_reset_baseline_calls;
@@ -132,6 +160,9 @@ static void asset_mount_test(int argc, char **argv)
 	require(PHYSFS_getMountPoint(broken.string().c_str()) && PHYSFS_getMountPoint(tail.string().c_str()),
 	        "successful preparation did not retain acquired mounts");
 	require(android_mission_assets_activate(), "acquired archives could not activate");
+	require(!android_mission_assets_find_owned_file("owned.wav", owned_path, sizeof(owned_path)), "previous context remained visible to owned lookup");
+	require(xl_compat::resolve_scoped_sound("pilot", "voice", 1, 22050, lookup).path.empty(), "scoped sound survived a context switch");
+	require(android_mission_assets_find_owned_file("proof.txt", owned_path, sizeof(owned_path)), "owned archive member lookup failed");
 	PHYSFS_file *proof = PHYSFS_openRead("proof.txt");
 	char proof_value = 0;
 	require(proof && PHYSFS_readBytes(proof, &proof_value, 1) == 1, "repaired archive payload unavailable");

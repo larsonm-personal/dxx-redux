@@ -133,6 +133,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_warp.h"
 #include "android_log.h"
 #include "android_profile.h"
+#include "android_mod_assets.h"
 #include "mod_save_compat.h"
 #include "state_android_shared.h"
 #include "android_route_metadata.h"
@@ -977,6 +978,9 @@ void LoadLevel(int level_num,int page_in_textures)
 		gr_clear_canvas(BM_XRGB(0, 0, 0));		//so palette switching is less obvious
 	}
 
+#if defined(__ANDROID__) && defined(DXX_XL_PILOT)
+	android_mod_sound_level_prepare(level_num);
+#endif
 	d1_assets = d1_in_d2_prepare_level_assets(level_name);
 	if (!d1_assets)
 		reset_level_robots_file(); // restore mission models before initial object verification
@@ -1295,10 +1299,18 @@ void DoEndLevelScoreGlitz(int network)
 
 	// m[c].type = NM_TYPE_MENU;	m[c++].text = "Ok";
 
+	const char *completion_level_name = Current_level_name;
+#ifdef __ANDROID__
+	/* Android menus also expose their titles through introspection */
+	char display_level_name[LEVEL_NAME_LEN];
+	level_metadata_choose_level_display_name(Gamesave_current_filename, Current_level_name,
+		display_level_name, sizeof(display_level_name));
+	completion_level_name = display_level_name;
+#endif
 	if (Current_level_num < 0)
-		sprintf(title,"%s%s %d %s\n %s %s",is_last_level?"\n\n\n":"\n",TXT_SECRET_LEVEL, -Current_level_num, TXT_COMPLETE, Current_level_name, TXT_DESTROYED);
+		sprintf(title,"%s%s %d %s\n %s %s",is_last_level?"\n\n\n":"\n",TXT_SECRET_LEVEL, -Current_level_num, TXT_COMPLETE, completion_level_name, TXT_DESTROYED);
 	else
-		sprintf(title,"%s%s %d %s\n%s %s",is_last_level?"\n\n\n":"\n",TXT_LEVEL, Current_level_num, TXT_COMPLETE, Current_level_name, TXT_DESTROYED);
+		sprintf(title,"%s%s %d %s\n%s %s",is_last_level?"\n\n\n":"\n",TXT_LEVEL, Current_level_num, TXT_COMPLETE, completion_level_name, TXT_DESTROYED);
 
 	Assert(c <= N_GLITZITEMS);
 

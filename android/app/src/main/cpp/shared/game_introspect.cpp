@@ -104,6 +104,7 @@ extern "C" {
 #include "textures.h"
 #include "wall.h"
 #include "secretarea.h"
+#include "gamesave.h"
 #include "android_menu_scale.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -2011,7 +2012,10 @@ extern "C" char *game_introspect_get_state(void)
 		{ "map_cheats_accessible", PlayerCfg.MapCheatsAccessible != 0 }
 	};
 	j["current_level_num"] = Current_level_num;
-	j["current_level_name"] = Current_level_name;
+	char display_level_name[256];
+	level_metadata_choose_level_display_name(Gamesave_current_filename, Current_level_name,
+	                                         display_level_name, sizeof(display_level_name));
+	j["current_level_name"] = display_level_name;
 #ifdef DXX_XL_PILOT
 	j["xl_pilot"] = {
 		{ "runtime_active", xl_runtime_active() != 0 },

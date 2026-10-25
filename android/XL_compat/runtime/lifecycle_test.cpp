@@ -77,6 +77,7 @@ extern int Do_dynamic_light;
 void GameProcessFrame(void);
 void do_weapon_n_item_stuff(void);
 void set_ambient_sound_flags(void);
+void add_side_as_2_triangles(segment *sp, int sidenum);
 }
 
 extern "C" void xl_preview_before_swap(void)
@@ -1506,9 +1507,11 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "asset_mount_test.h"
 #include "format17_test.h"
 #include "descriptor_test.h"
+#include "package_audit.h"
 
 int main(int argc, char **argv)
 {
+	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);
 	if (find_arg_value(argc, argv, "-arena-test")) return arena_test(argc, argv);
 	std::setvbuf(stdout, nullptr, _IONBF, 0);

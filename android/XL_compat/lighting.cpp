@@ -9,6 +9,221 @@ namespace xl_compat
 {
 namespace
 {
+LightPoint difference(const LightPoint &a, const LightPoint &b)
+{
+	return { a[0] - b[0], a[1] - b[1], a[2] - b[2] };
+}
+float dot(const LightPoint &a, const LightPoint &b)
+{
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+LightPoint along(const LightPoint &origin, const LightPoint &direction, float distance)
+{
+	return { origin[0] + direction[0] * distance, origin[1] + direction[1] * distance, origin[2] + direction[2] * distance };
+}
+void sort_geometry_distances(std::vector<GeometryLightDistance> &distances, int left, int right)
+{
+	int l = left, r = right;
+	const auto pivot = distances[(l + r) / 2].distance;
+	do {
+		while (distances[l].distance < pivot) ++l;
+		while (distances[r].distance > pivot) --r;
+		if (l <= r) {
+			if (l < r) std::swap(distances[l], distances[r]);
+			++l;
+			--r;
+		}
+	} while (l <= r);
+	if (l < right) sort_geometry_distances(distances, l, right);
+	if (left < r) sort_geometry_distances(distances, left, r);
+}
+} // namespace
+
+LightPoint geometry_emission_direction(const std::array<FixedLightPoint, 2> &normals)
+{
+	LightPoint result;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		const auto average = (std::int64_t(normals[0][axis]) + normals[1][axis]) / 2;
+		result[axis] = static_cast<float>(average) / 65536.0f;
+	}
+	const float magnitude = std::sqrt(dot(result, result));
+	if (magnitude)
+		for (auto &value : result) value /= magnitude;
+	return result;
+}
+
+FixedLightPoint geometry_fixed_cross(const FixedLightPoint &a, const FixedLightPoint &b)
+{
+	for (unsigned axis = 0; axis < 3; ++axis)
+		if (a[axis] < -262144 || a[axis] > 262143 || b[axis] < -262144 || b[axis] > 262143)
+			throw std::runtime_error("XL fixed cross requires scaled edges");
+	FixedLightPoint result;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		const auto j = (axis + 1) % 3, k = (axis + 2) % 3;
+		const auto product = std::int64_t(a[j]) * b[k] - std::int64_t(a[k]) * b[j];
+		result[axis] = static_cast<std::int32_t>(product / 65536 - (product < 0 && product % 65536 ? 1 : 0));
+	}
+	return result;
+}
+
+FixedLightPoint geometry_side_center(const std::array<LightPoint, 4> &corners, const std::array<FixedLightPoint, 2> &normals)
+{
+	const auto checked = [](double value) -> std::int32_t {
+		if (!std::isfinite(value) || value < std::numeric_limits<std::int32_t>::min() || value > std::numeric_limits<std::int32_t>::max())
+			throw std::runtime_error("Geometry side center exceeds fixed-point range");
+		return static_cast<std::int32_t>(value);
+	};
+	FixedLightPoint center{}, start{}, direction{}, offset{};
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		float sum = 0;
+		for (const auto &corner : corners) sum += corner[axis];
+		center[axis] = checked((sum / 4.0f) * 65536.0f);
+		const auto average = (std::int64_t(normals[0][axis]) + normals[1][axis]) / 2;
+		start[axis] = checked(double(center[axis]) + average);
+		direction[axis] = checked(-2.0 * average);
+		offset[axis] = checked(double(start[axis]) - checked(corners[0][axis] * 65536.0f));
+	}
+	const auto fixed_dot = [&](const FixedLightPoint &a, const FixedLightPoint &b) {
+		return checked((double(a[0]) * b[0] + double(a[1]) * b[1] + double(a[2]) * b[2]) / 65536.0);
+	};
+	const auto denominator = checked(-double(fixed_dot(normals[0], direction)));
+	if (!denominator) return center;
+	const auto numerator = fixed_dot(normals[0], offset);
+	const auto fraction = checked(double(numerator) / denominator * 65536.0);
+	if (fraction > 65536) return center;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		// XL's active FixMul macro truncates the double product toward zero
+		const auto scaled = checked(double(fraction) / 65536.0 * direction[axis]);
+		center[axis] = checked(double(start[axis]) + scaled);
+	}
+	return center;
+}
+
+std::array<LightPoint, 3> geometry_orient_normals(const std::array<LightPoint, 2> &normals,
+                                                  const std::array<FixedLightPoint, 2> &fixed_normals, const LightPoint &float_direction, const FixedLightPoint &fixed_direction)
+{
+	std::array<LightPoint, 3> result{ normals[0], normals[1], {} };
+	for (unsigned i = 0; i < 2; ++i)
+		if (dot(result[i], float_direction) < 0)
+			for (auto &value : result[i]) value = -value;
+	for (unsigned axis = 0; axis < 3; ++axis) result[2][axis] = (result[0][axis] + result[1][axis]) / 2;
+	for (unsigned i = 0; i < 2; ++i) {
+		const auto &n = fixed_normals[i];
+		const double projection = (double(n[0]) * fixed_direction[0] + double(n[1]) * fixed_direction[1] + double(n[2]) * fixed_direction[2]) / 65536.0;
+		// Fixed dot truncates toward zero: a negative fraction does not trigger a flip
+		if (std::trunc(projection) < 0)
+			for (auto &value : result[i]) value = -value;
+	}
+	// Pinned XL flips float normals again in its fixed pass and retains the earlier average
+	return result;
+}
+
+LightPoint geometry_triangle_normal(const LightPoint &a, const LightPoint &b, const LightPoint &c)
+{
+	const auto u = difference(b, a), v = difference(c, b);
+	LightPoint normal{ u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
+	const float magnitude = std::sqrt(dot(normal, normal));
+	if (magnitude)
+		for (auto &coordinate : normal) coordinate /= magnitude;
+	return normal;
+}
+
+LightPoint geometry_portal_normal(const std::array<LightPoint, 3> &points, const std::array<std::uint16_t, 3> &vertices)
+{
+	for (const auto vertex : vertices)
+		if (vertex == 0xffff) throw std::runtime_error("Invalid portal normal vertex");
+	std::array<unsigned, 3> order{ 0, 1, 2 };
+	for (unsigned i = 1; i < 3; ++i)
+		for (unsigned j = 0; j < i; ++j)
+			if (vertices[order[j]] > vertices[order[i]]) std::swap(order[i], order[j]);
+	auto normal = geometry_triangle_normal(points[order[0]], points[order[1]], points[order[2]]);
+	// Fourth reference vertex is the 0xffff sentinel, which sorts last
+	if ((order[0] + 3) % 4 == order[1] || (order[1] + 3) % 4 == order[2])
+		for (auto &coordinate : normal) coordinate = -coordinate;
+	return normal;
+}
+
+LightPoint geometry_light_point(const GeometryLightFace &face, const LightPoint &receiver)
+{
+	if (face.corner_count < 3 || face.corner_count > 4 || face.triangle_count < 1 || face.triangle_count > 2)
+		throw std::runtime_error("Invalid geometry light face dimensions");
+	for (unsigned i = 0; i < face.triangle_count; ++i) {
+		const auto &indices = face.triangles[i];
+		for (const auto index : indices)
+			if (index >= face.corner_count) throw std::runtime_error("Invalid geometry light triangle corner");
+	}
+	for (unsigned i = 0; i < face.triangle_count; ++i) {
+		const auto &normal = face.normals[i];
+		if (std::sqrt(dot(normal, normal)) < 1e-6f) continue;
+		const auto &indices = face.triangles[i];
+		const auto &a = face.corners[indices[0]];
+		const float distance = dot(difference(receiver, a), normal);
+		const auto projected = along(receiver, normal, -distance);
+		const auto v0 = difference(face.corners[indices[2]], a);
+		const auto v1 = difference(face.corners[indices[1]], a);
+		const auto v2 = difference(projected, a);
+		const float dot00 = dot(v0, v0), dot01 = dot(v0, v1), dot02 = dot(v0, v2), dot11 = dot(v1, v1), dot12 = dot(v1, v2);
+		const float inverse = 1.0f / (dot00 * dot11 - dot01 * dot01);
+		const float u = (dot11 * dot02 - dot01 * dot12) * inverse;
+		const float v = (dot00 * dot12 - dot01 * dot02) * inverse;
+		if (!(u < -0.00001f || v < -0.00001f || u + v > 1.00001f))
+			return std::abs(distance) < 0.001f ? receiver : projected;
+	}
+	LightPoint result{};
+	float nearest = 1e10f;
+	for (unsigned i = 0; i < face.corner_count; ++i) {
+		const auto &a = face.corners[i];
+		const auto &b = face.corners[(i + 1) % face.corner_count];
+		const auto edge = difference(b, a);
+		const float squared = std::abs(dot(edge, edge));
+		const float amount = squared == 0 ? 0 : dot(difference(receiver, a), edge) / squared;
+		const auto point = amount < 0 ? a : amount > 1 ? b
+		                                               : along(a, edge, amount);
+		const auto delta = difference(point, receiver);
+		const float distance = std::sqrt(dot(delta, delta));
+		if (nearest > distance) {
+			nearest = distance;
+			result = point;
+		}
+	}
+	return result;
+}
+
+std::vector<GeometryLightDistance> nearest_geometry_lights(std::vector<GeometryLightDistance> candidates)
+{
+	// Reference light indices are signed 16-bit; never narrow an unbounded vector
+	if (candidates.size() > 32768) throw std::runtime_error("Geometry light candidates exceed reference index capacity");
+	for (const auto &candidate : candidates)
+		if (candidate.index < 0 || candidate.index > 32767) throw std::runtime_error("Invalid geometry light candidate index");
+	if (!candidates.empty()) sort_geometry_distances(candidates, 0, static_cast<int>(candidates.size()) - 1);
+	if (candidates.size() > 32) candidates.resize(32);
+	return candidates;
+}
+
+std::optional<GeometryAttenuation> geometry_attenuation(const GeometryLightSample &input)
+{
+	if (input.brightness <= 0) return std::nullopt;
+	float distance = input.distance * input.range_scale;
+	float normal_dot = input.normal_dot;
+	float attenuation = 1;
+	if (distance <= 0) {
+		distance = 0;
+		normal_dot = 1;
+	} else {
+		float decay = std::min(input.emission_angle, normal_dot);
+		if (decay < 0) {
+			decay += 1.0000001f;
+			distance /= decay * decay;
+		}
+		if (distance > input.cutoff) return std::nullopt;
+		attenuation = 1.0f + input.linear_attenuation * distance + input.quadratic_attenuation * distance * distance;
+	}
+	attenuation /= input.brightness;
+	return GeometryAttenuation{ distance, normal_dot, attenuation };
+}
+
+namespace
+{
 void scale(Rgb &color, float factor)
 {
 	for (auto &channel : color) channel *= factor;

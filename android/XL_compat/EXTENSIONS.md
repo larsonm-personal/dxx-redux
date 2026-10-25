@@ -416,3 +416,46 @@ do not establish new XL-only requirements
 See the [pilot plan](../ai%20tool%20plans/mission%20metadata/d2xxl_first_mission_pilot_20261023.md)
 and [browser plan](../ai%20tool%20plans/mission%20metadata/d2xxl_compatibility_browser_20261023.md)
 for current gates and implementation evidence
+
+## Distribution packages and scoped-resource pilot
+
+The package follow-up uses Dragon Pit Outpost from the original `levelpack.7z`
+as a separate resource-support pilot. Its classic D1 geometry does not make the
+package equivalent to a stock mission: it supplies scoped boss WAVs and LGT/CLR
+lighting companions. Native D1 and imported-D1 behavior require separate evidence.
+See the [package pilot plan](../ai%20tool%20plans/mission%20metadata/xl_package_pilot_20261024.md)
+and the imported [package-layout study](../ai%20tool%20plans/mission%20metadata/xl_mission_package_support_20261024.md).
+
+The browser now separates package identity, scoped textures, sounds, music,
+models, companion lighting, configuration options and distribution extraction.
+Level-only reports leave those categories unknown. A ZIP/7z/RAR distribution is
+distinct from its mission HOG, and reading its catalog does not prove decoding.
+The original Dragon Pit distribution exposed a BCJ2 decoder limitation; its
+targeted native 7z fallback now extracts the admitted catalog in one pass with
+path, byte, CRC and completion checks. Original-package Android import passed,
+and the extracted descriptor, HOG and two boss WAVs match the audited originals.
+This proves import for that package, not all 7z methods or gameplay support.
+
+The opt-in imported-D1 WAV runtime path selects only active-context files using
+the mounted HOG identity and incoming signed level ordinal. It explicitly
+converts PCM and records installed-byte evidence; unsupported scoped sound banks
+reject instead of implying WAV fallback support. Controlled Android boss probes
+played both original WAVs, with matching installed PCM and mixer fingerprints.
+Death timing, lifecycle, native-D1 parity and lighting remain unqualified.
+The probes used teleportation and scripted lethal damage; they do not establish
+normal traversal or combat. No successful startup or decoder test
+may promote Dragon Pit to fully supported without those gates and normal-input
+mission completion.
+
+LGT/CLR companion decoding is separately tested against the pinned 910-entry
+layout and the original Dragon Pit HOG. The bounded readers reject incomplete
+or oversized tables and preserve signed brightness/color values and the serialized
+CLR byte for inspection. XL resets that byte when applying texture colors.
+These readers do not yet apply the tables to rendering; companion lighting
+therefore remains unqualified in the browser.
+
+HOG summaries now inspect embedded LGT/CLR members and expose their decoded
+counts or decoding errors as blocked companion requirements. D1 MSN descriptors
+follow their sibling HOG like D2 MN2 descriptors. Detection does not establish
+which level consumes a member, or whether it is equivalent to defaults; those
+remain explicit verification requirements.

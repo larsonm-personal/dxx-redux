@@ -1,0 +1,8 @@
+file(SHA256 "${HOG}" hash)
+if(NOT hash STREQUAL "a8eebb7e83faa55e143a48ec87c82407d8ffcaef3ad6b8f9329b84a6a42b262e")
+    message(FATAL_ERROR "Original Dragon Pit HOG hash differs")
+endif()
+execute_process(COMMAND "${TEST}" "${HOG}" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Original Dragon Pit lighting decoding failed")
+endif()

@@ -670,6 +670,12 @@ int mission_owns_resource_archive(const char *source)
 {
 	return source && Current_mission && Current_mission_hog[0] && !strcmp(source, Current_mission_hog);
 }
+#ifdef DXX_XL_PILOT
+const char *mission_resource_archive(void)
+{
+	return Current_mission ? Current_mission_hog : "";
+}
+#endif
 
 void free_mission(void)
 {
