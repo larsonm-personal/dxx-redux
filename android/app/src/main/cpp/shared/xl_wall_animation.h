@@ -194,7 +194,7 @@ static grs_bitmap *xl_wclip_animation_bitmap(grs_bitmap *original, int texture, 
 	if (clip->num_frames < 1 || clip->num_frames > MAX_CLIP_FRAMES ||
 	    (!!(clip->flags & WCF_TMAP1)) == !!overlay) return original;
 	const int mapped = overlay ? (Segments[seg].sides[side].tmap_num2 & 0x3fff) : Segments[seg].sides[side].tmap_num;
-	if (mapped != texture) return original;
+	if (mapped != texture || (overlay && !mapped)) return original;
 	int stock_frame = -1;
 	for (int i = 0; i < clip->num_frames; ++i) {
 		if (clip->frames[i] < 0 || clip->frames[i] >= NumTextures) return original;

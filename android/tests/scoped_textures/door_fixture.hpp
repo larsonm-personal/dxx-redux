@@ -155,6 +155,7 @@ static void test_door_animation(const char *owner)
 			for (int repeat = 0; repeat < 3; ++repeat) draw(0, overlay, 3, true, "waiting door remains on final frame");
 			setup(overlay, false);
 			Walls[0].type = Walls[1].type = WALL_BLASTABLE;
+			WallAnims[0].flags |= WCF_BLASTABLE;
 			wall_damage(&Segments[0], 0, 30 * F1_0);
 			draw(0, overlay, 0, true, "blast damage retains native first damage frame");
 			wall_damage(&Segments[0], 0, 20 * F1_0);
@@ -206,6 +207,18 @@ static void test_door_animation(const char *owner)
 	Walls[0].segnum = 1;
 	draw(0, false, 2, false, "mismatched wall ownership cannot select replacement");
 	Walls[0].segnum = 0;
+	const auto texture_zero = Textures[0];
+	Textures[0] = Textures[2];
+	WallAnims[0].flags = 0;
+	WallAnims[0].frames[0] = 0;
+	Segments[0].sides[0].tmap_num = 1;
+	Segments[0].sides[0].tmap_num2 = 0x4000;
+	draw(0, true, 0, false, "rotation-only absent overlay cannot activate texture zero");
+	Textures[0] = texture_zero;
+	WallAnims[0].flags = WCF_TMAP1;
+	WallAnims[0].frames[0] = 2;
+	Segments[0].sides[0].tmap_num = 5;
+	Segments[0].sides[0].tmap_num2 = 0;
 	std::vector<unsigned char> pog(36, 0);
 	std::memcpy(pog.data(), "DPOG", 4);
 	pog[4] = pog[8] = 1;
