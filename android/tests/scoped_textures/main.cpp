@@ -89,6 +89,7 @@ int main(int argc, char **argv)
 		mixed.write(reinterpret_cast<const char *>(key), sizeof(key));
 		require(bool(mixed), "write single transparency key among opaque neighbors");
 	}
+	std::filesystem::copy_file("a/mods/pilot/textures/mixed.tga", "global/mixed-source.tga", std::filesystem::copy_options::overwrite_existing);
 	image("global/mixed.tga", 10);
 	image("a/mods/pilot/textures/fitted.tga", 210, 255, 40, 30, 8);
 	image("global/fitted.tga", 10);
@@ -175,11 +176,14 @@ int main(int argc, char **argv)
 			unsigned char pixel[4];
 			glReadPixels(1, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
 			require(glGetError() == GL_NO_ERROR && pixel[0] == red && pixel[1] == (use_original ? 220 : 40) && pixel[2] == (use_original ? 220 : 30) && pixel[3] == 255, "actual controlled surface readback");
+			png_data foreign{};
+			require(!read_png_scoped_opaque("ceil002.tga", &foreign), "scoped decoder revalidates ownership and refuses global source");
 			const int previous_limit = ogl_max_texture_size;
 			ogl_max_texture_size = 4;
 			if (!std::strcmp(owner, "a")) {
 				png_data ordinary{};
-				require(read_png("mods/pilot/textures/mixed.tga", &ordinary) && ordinary.width == 4, "ordinary lookup still fits mixed keyed pixels");
+				require(!read_png("mods/pilot/textures/fitted.tga", &ordinary), "global decoder still excludes mission scope");
+				require(read_png("mixed-source.tga", &ordinary) && ordinary.width == 4, "ordinary lookup still fits mixed keyed pixels");
 				for (size_t p = 0; p < ordinary.width * ordinary.height; ++p)
 					require(!(ordinary.data[p * 4] == 120 && ordinary.data[p * 4 + 1] == 88 && ordinary.data[p * 4 + 2] == 128), "resizing erased source key: regression is meaningful");
 				free(ordinary.data);

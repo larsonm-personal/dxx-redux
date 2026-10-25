@@ -20,6 +20,7 @@
 #include "pstypes.h"
 #include "android_log.h"
 #include "android_texture_usage.h"
+#include "android_mission_assets.h"
 #include "dxa_admission_limits.h"
 
 #define KHRONOS_STATIC
@@ -560,18 +561,25 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 
 	if (!filename || !pdata)
 		return 0;
-	resolved_filename = texture_lookup_resolve_indexed_path(filename);
-	if (!resolved_filename)
-		return 0;
-	if (texture_lookup_miss_cache_contains(filename) ||
-	    (resolved_filename != filename && texture_lookup_miss_cache_contains(resolved_filename)))
-		return 0;
+	char owned_path[256];
+	if (scoped_opaque) {
+		/* mods/ is intentionally absent from the global cosmetic index. Revalidate
+		 * active ownership and case here; never broaden that index or its cache. */
+		if (!android_mission_assets_find_owned_file(filename, owned_path, sizeof(owned_path))) return 0;
+		resolved_filename = owned_path;
+	} else {
+		resolved_filename = texture_lookup_resolve_indexed_path(filename);
+		if (!resolved_filename) return 0;
+		if (texture_lookup_miss_cache_contains(filename) ||
+		    (resolved_filename != filename && texture_lookup_miss_cache_contains(resolved_filename))) return 0;
+	}
 
 	fp = PHYSFS_openRead(resolved_filename);
 	if (!fp) {
-		texture_lookup_miss_cache_add(filename);
-		if (resolved_filename != filename)
-			texture_lookup_miss_cache_add(resolved_filename);
+		if (!scoped_opaque) {
+			texture_lookup_miss_cache_add(filename);
+			if (resolved_filename != filename) texture_lookup_miss_cache_add(resolved_filename);
+		}
 		return 0;
 	}
 
