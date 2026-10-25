@@ -250,7 +250,24 @@ class RetailBoundaryTests(unittest.TestCase):
     def test_workflow_secret_and_artifact_boundary_is_explicit(self):
         for name in ('nightly-tooling-sweep.yml', 'android-nightly-tooling.yml'):
             source = (ROOT / '.github/workflows' / name).read_text()
-            self.assertIn("'retail-ci' || 'asset-free'", source)
+            requested = (
+                "contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')"
+                if name == "nightly-tooling-sweep.yml"
+                else "inputs.retail_assets"
+            )
+            trusted_retail = (
+                requested + " && github.repository == 'larsonm-personal/dxx-redux'"
+                " && github.ref == 'refs/heads/cmake'"
+                " && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake'"
+                " && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')"
+            )
+            # Environment access and deployment creation must share the full trust gate
+            self.assertIn(
+                "    environment:\n"
+                "      name: ${{ " + trusted_retail + " && 'retail-ci' || 'asset-free' }}\n"
+                "      deployment: ${{ " + trusted_retail + " }}\n",
+                source,
+            )
             self.assertNotIn('secrets: inherit', source)
             self.assertIn('repository: larsonm-personal/dxx-redux-test-assets', source)
             self.assertIn('token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}', source)
