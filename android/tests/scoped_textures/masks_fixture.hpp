@@ -80,8 +80,9 @@ static void test_masks(bool owned)
 	screen.sc_canvas.cv_fade_level = GR_FADE_OFF;
 	grd_curscreen = &screen;
 	gr_set_current_canvas(&screen.sc_canvas);
-	grs_bitmap base{}, behind{}, overlay{}, empty{};
+	grs_bitmap base{}, behind{}, overlay{}, empty{}, coverage{};
 	mask_solid(empty, 0, 0, 0, 0);
+	mask_solid(coverage, 255, 255, 255);
 	mask_solid(base, 20, 220, 20);
 	mask_solid(behind, 20, 20, 220);
 	unsigned char stock[16]{};
@@ -170,7 +171,7 @@ static void test_masks(bool owned)
 				g3_end_frame();
 			}
 		if (owned && filter > 0)
-			for (int mode = 0; mode < 2; ++mode) {
+			for (int mode = 0; mode < 3; ++mode) {
 				for (int legacy = 0; legacy < 2; ++legacy) {
 					overlay.gltexture->scoped_static = !legacy;
 					g3_start_frame();
@@ -182,7 +183,14 @@ static void test_masks(bool owned)
 					glDisable(GL_CULL_FACE);
 					glDisable(GL_BLEND);
 					mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+					// An all-covered synthetic mask selects tex2m without hiding the base edge.
+					empty.gltexture_mask = mode == 2 ? coverage.gltexture : nullptr;
+					empty.gltexture->scoped_super = mode == 2;
+					const int before = r_mask_draws;
 					mask_quad(overlay, mode ? &empty : nullptr, 0, 3 * F1_0, 4 * F1_0);
+					require(r_mask_draws - before == (mode == 2), "binary base edge exercises selected plain or masked production program");
+					empty.gltexture_mask = nullptr;
+					empty.gltexture->scoped_super = 0;
 					unsigned char edge[4];
 					glReadPixels(34, 48, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, edge);
 					const bool background = edge[2] > 180 && edge[0] < 80;
@@ -257,6 +265,7 @@ static void test_masks(bool owned)
 			g3_end_frame();
 			ogl_freebmtexture(&tiny);
 		}
+	ogl_freebmtexture(&coverage);
 	ogl_freebmtexture(&empty);
 	ogl_freebmtexture(&base);
 	ogl_freebmtexture(&behind);
