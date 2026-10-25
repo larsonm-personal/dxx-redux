@@ -145,7 +145,9 @@ internal class XlCompatibilityViewChecks(
                 labels.add(
                     "${node.text?.take(
                         160,
-                    )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} actions=${node.actionList.map { it.id }} bounds=${Rect().also(
+                    )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} actions=${node.actionList.map {
+                        it.id
+                    }} bounds=${Rect().also(
                         node::getBoundsInScreen,
                     )}",
                 )
