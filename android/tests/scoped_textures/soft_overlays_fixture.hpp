@@ -174,7 +174,8 @@ static void test_soft_overlays(const char *owner)
 						unsigned char pixels[64 * 64 * 4], reversed[sizeof(pixels)];
 						glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 						const bool admitted = owned && !negative;
-						const char *quadrants[] = { "SGBR", "GSRB", "RBGS", "BRSG" };
+						// Top-left, top-right, bottom-left, bottom-right after each UV rotation.
+						const char *quadrants[] = { "SGBR", "GRSB", "RBGS", "BSRG" };
 						for (int y : { 48, 16 })
 							for (int x : { 16, 48 }) {
 								const char q = source == 2 ? 'S' : quadrants[orient][(y < 32 ? 2 : 0) + (x >= 32)];
