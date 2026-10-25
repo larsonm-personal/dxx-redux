@@ -33,7 +33,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "cntrlcen.h"
 #include "dxxerror.h"
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 #include "xl_animation_phase.h"
 #endif
 
@@ -134,7 +134,7 @@ void stop_effect(int effect_num)
 
 	if (ec->changing_wall_texture != -1) {
 		Textures[ec->changing_wall_texture] = ec->vc.frames[0];
-#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 		dxx_xl_wall_mapped_phase(effect_num, ec->vc.frames[0].index,
 		                         ec->vc.num_frames, ec->vc.frame_time, 0, ec->vc.frame_time, 1);
 #endif

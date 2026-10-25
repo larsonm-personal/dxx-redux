@@ -81,7 +81,8 @@ static int descriptor_test(int argc, char **argv)
 			for (const char *level : { "obsrv-xl.rl2", "d2leva-1.rl2" }) {
 				require(!xl_level_supported(level, 0), "descriptor context bypassed preflight");
 				const std::string reason = xl_level_rejection();
-				require(reason.find("d2x-name mission resources") != std::string::npos, "preflight omitted actionable descriptor reason");
+				const char *expected = !std::strcmp(level, "obsrv-xl.rl2") ? "segment_function" : "d2x-name mission resources";
+				require(reason.find(expected) != std::string::npos, "preflight omitted actionable feature reason");
 				require(load_level(level) != 0 && reason == xl_level_rejection(), "loader and preflight descriptor reasons differ");
 			}
 			require(load_level("obsrv-xl.rl2") != 0, "unaudited Observatory gameplay admitted");

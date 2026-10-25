@@ -5,7 +5,7 @@ namespace xl_compat
 {
 // Default D2 XL light strengths, not HAM gameplay tuning or serialized color indices
 // descent2.lgt SHA-256: 3374b5cae705a4ad8fc0cb370f79d36fba96eb2195a918ed0f64c6dfda5d04fb
-// Zero entries omitted; only the exact original pilot is admitted by the runtime
+// Zero entries omitted; an owned level LGT replaces the whole table when present
 struct TextureBrightness {
 	int texture;
 	std::int32_t brightness;

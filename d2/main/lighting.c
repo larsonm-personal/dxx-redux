@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -208,7 +208,7 @@ void cast_muzzle_flash_light(int n_render_vertices, int *render_vertices, int *v
 	short time_since_flash;
 
 	current_time = timer_query();
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_preview_muzzle_snapshot(current_time);
 #endif
 

@@ -1,7 +1,7 @@
-# Ordinary opt-in target configuration; engine hooks are guarded by DXX_XL_PILOT
+# Shared stock/XL runtime for every OpenGL D2 build; the macro marks renderer capability
 set(xl_runtime_dir "${CMAKE_CURRENT_LIST_DIR}")
 if(NOT OPENGL)
-    message(FATAL_ERROR "DXX_XL_PILOT currently requires the OpenGL runtime")
+    message(FATAL_ERROR "DXX_XL_RUNTIME currently requires the OpenGL runtime")
 endif()
 get_property(xl_targets DIRECTORY "${PROJECT_SOURCE_DIR}/main" PROPERTY BUILDSYSTEM_TARGETS)
 foreach(xl_target IN LISTS xl_targets)
@@ -13,7 +13,10 @@ foreach(xl_target IN LISTS xl_targets)
     if(NOT xl_type STREQUAL "EXECUTABLE" AND NOT xl_type STREQUAL "SHARED_LIBRARY")
         continue()
     endif()
-    target_compile_definitions(${xl_target} PRIVATE DXX_XL_PILOT)
+    target_compile_definitions(${xl_target} PRIVATE DXX_XL_RUNTIME)
+    if(DXX_XL_DEVELOPER_TESTS)
+        target_compile_definitions(${xl_target} PRIVATE DXX_XL_DEVELOPER_PROBE)
+    endif()
     target_include_directories(${xl_target} PRIVATE "${xl_runtime_dir}")
     target_sources(
         ${xl_target}
@@ -32,7 +35,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
                 "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")
-    if(NOT xl_target STREQUAL "dxx-redux-d2-headless-metadata")
+    if(NOT (DXX_XL_DEVELOPER_TESTS AND xl_target STREQUAL "dxx-redux-d2-headless-metadata"))
         target_sources(${xl_target} PRIVATE "${xl_runtime_dir}/start.cpp")
     endif()
     target_compile_features(${xl_target} PRIVATE cxx_std_17)
@@ -41,13 +44,10 @@ foreach(xl_target IN LISTS xl_targets)
                                             "${xl_runtime_dir}/corona_probe.cpp")
     endif()
 endforeach()
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE DXX_XL_PILOT)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE DXX_XL_RUNTIME)
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}")
 target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}/corona_renderer.c")
-if(NOT ANDROID)
-    set_target_properties(dxx-redux-d2 PROPERTIES OUTPUT_NAME xl-render-preview)
-endif()
-if(TARGET dxx-redux-d2-headless-metadata)
+if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
     # Export earned private checkpoints with Android's real source-definition trailer
     set(xl_checkpoint_sources "${xl_runtime_dir}/checkpoint_export.cpp"
                               "${xl_runtime_dir}/../../app/src/main/cpp/shared/mod_save_compat.cpp")

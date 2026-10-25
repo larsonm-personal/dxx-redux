@@ -46,7 +46,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "../../android/XL_compat/mission_label.h"
 #include "d1_in_d2/d1_in_d2.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "resource_validation.h"
 #include "preview.h"
 #endif
@@ -76,7 +76,7 @@ static int num_missions = -1;
 
 Mission *Current_mission = NULL; // currently loaded mission
 static char Current_mission_hog[PATH_MAX];
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 static char *Current_mission_descriptor;
 const char *mission_descriptor_snapshot(void)
 {
@@ -671,7 +671,7 @@ int mission_owns_resource_archive(const char *source)
 {
 	return source && Current_mission && Current_mission_hog[0] && !strcmp(source, Current_mission_hog);
 }
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 const char *mission_resource_archive(void)
 {
 	return Current_mission ? Current_mission_hog : "";
@@ -680,7 +680,7 @@ const char *mission_resource_archive(void)
 
 void free_mission(void)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	d_free(Current_mission_descriptor);
 	xl_preview_clear_mission();
 	xl_resource_select_mission(0);
@@ -793,7 +793,7 @@ int load_mission_ham()
 {
 	void bm_read_extra_robots(const char *fname,int type);
 	int extra_robots = 0;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (*xl_resource_base_rejection()) return 0;
 	xl_resource_baseline_clear();
 #else
@@ -833,7 +833,7 @@ int load_mission_ham()
 		bm_read_extra_robots(t, Current_mission->enhanced);
 		extra_robots = 1;
 	}
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_resource_baseline_capture();
 #endif
 	return extra_robots;
@@ -851,7 +851,7 @@ typedef struct mission_descriptor_stage {
 	mission_text_reference *text;
 	int ready;
 	int has_companion_hog;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	char companion_hog[PATH_MAX];
 	char *descriptor_data;
 #endif
@@ -859,7 +859,7 @@ typedef struct mission_descriptor_stage {
 
 static void release_descriptor_stage(mission_descriptor_stage *stage)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	d_free(stage->descriptor_data);
 #endif
 	mission_text_reference *text = stage->text;
@@ -1065,7 +1065,7 @@ static int parse_mission_descriptor(PHYSFS_file *mfile, Mission *candidate, unsi
 	return !parse_error && candidate->last_level > 0;
 }
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 static char *capture_mission_descriptor(PHYSFS_file *file)
 {
 	const PHYSFS_sint64 size = PHYSFS_fileLength(file);
@@ -1181,7 +1181,7 @@ int load_mission(mle *mission)
 	char buf[PATH_MAX];
 	int parse_error = 0;
 	mission_descriptor_stage staged = { 0 };
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	Mission *prepared_identity;
 	if (!preflight_mission_descriptor(mission, &staged)) return 0;
 	/* Reserve identity storage before Android preparation or prior-mission teardown */
@@ -1210,7 +1210,7 @@ int load_mission(mle *mission)
 	int length = snprintf(requested, sizeof(requested), "%s%s%s", mission->location == ML_MISSIONDIR ? MISSION_DIR : "", mission->path, extension);
 	if (length < 0 || (size_t)length >= sizeof(requested) ||
 	    !android_mission_assets_prepare(requested, resolved, sizeof(resolved))) {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		release_mission_identity(prepared_identity);
 #endif
 		release_descriptor_stage(&staged);
@@ -1224,7 +1224,7 @@ int load_mission(mle *mission)
 	mission = &selected;
 #endif
 
-#if defined(DXX_XL_PILOT) && !defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && !defined(__ANDROID__)
 	/* Acquire the native archive before destroying the previous mission */
 	if (staged.ready && staged.has_companion_hog) {
 		const int owned = mission_owns_resource_archive(staged.companion_hog);
@@ -1254,14 +1254,14 @@ int load_mission(mle *mission)
 		free_mission();
 #ifdef __ANDROID__
 	if (!android_mission_assets_activate()) {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		release_mission_identity(prepared_identity);
 #endif
 		release_descriptor_stage(&staged);
 		return 0;
 	}
 #endif
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	Current_mission = prepared_identity;
 #ifndef __ANDROID__
 	if (staged.ready && staged.has_companion_hog) {
@@ -1285,7 +1285,7 @@ int load_mission(mle *mission)
 	memcpy(Current_mission->mission_name, mission->mission_name, sizeof(Current_mission->mission_name));
 	Current_mission->descent_version = mission->descent_version;
 	Current_mission->anarchy_only_flag = mission->anarchy_only_flag;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	strcpy(Current_mission->path, mission->path);
 #else
 	Current_mission->path = d_strdup(mission->path);
@@ -1294,7 +1294,7 @@ int load_mission(mle *mission)
 	Current_mission->n_secret_levels = 0;
 	Current_mission->enhanced = 0;
 	Current_mission->alternate_ham_file = NULL;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	/* Browser classification is a hint, not the active resource policy */
 	xl_resource_select_mission(0);
 #endif
@@ -1377,7 +1377,7 @@ int load_mission(mle *mission)
 	{
 		strcpy(buf+strlen(buf)-4,".hog");		//change extension
 		PHYSFSEXT_locateCorrectCase(buf);
-#if defined(DXX_XL_PILOT) && !defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && !defined(__ANDROID__)
 		/* Staged native descriptors already own their archive or its absence */
 		if (!staged.ready) {
 #endif
@@ -1387,7 +1387,7 @@ int load_mission(mle *mission)
 			else
 				input_demo_assets_note_archive("mission_hog", Current_mission_hog);
 		}
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		if (!Current_mission_hog[0] && (staged.has_companion_hog || PHYSFSX_exists(buf, 1))) {
 			Warning("Cannot activate mission archive: %s", buf);
 			if (mfile) PHYSFS_close(mfile);
@@ -1396,7 +1396,7 @@ int load_mission(mle *mission)
 			return 0;
 		}
 #endif
-#if defined(DXX_XL_PILOT) && !defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && !defined(__ANDROID__)
 		}
 #endif
 
@@ -1410,7 +1410,7 @@ int load_mission(mle *mission)
 
 	if (staged.ready) {
 		mission_text_reference *text;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		Current_mission_descriptor = staged.descriptor_data;
 		staged.descriptor_data = NULL;
 #endif
@@ -1430,7 +1430,7 @@ int load_mission(mle *mission)
 		staged.candidate.secret_level_table = NULL;
 		release_descriptor_stage(&staged);
 	} else {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		if (mission->descent_version == 2) {
 			Current_mission_descriptor = capture_mission_descriptor(mfile);
 			const char *cursor = Current_mission_descriptor;
@@ -1446,7 +1446,7 @@ int load_mission(mle *mission)
 		return 0;
 	}
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_resource_commit_mission();
 #endif
 	// re-read default HAM file, in case this mission brings it's own version of it

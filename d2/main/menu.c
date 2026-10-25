@@ -24,7 +24,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "game.h"
 #include "gr.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 #include "key.h"
@@ -958,7 +958,7 @@ int do_new_game_menu()
 	if (!do_difficulty_menu())
 		return 0;
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (!xl_level_supported(Level_names[new_level_num - 1], 0)) {
 		nm_messagebox("Cannot run XL level", 1, TXT_OK, "%s", xl_level_rejection());
 		return 0;

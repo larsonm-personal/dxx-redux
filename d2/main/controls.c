@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -266,7 +266,7 @@ void read_flying_controls( object * obj )
 		wiggle_applied);
 
 	pre_scale_thrust = obj->mtype.phys_info.thrust;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_preview_player_thrust(obj->id, pre_scale_thrust.x, pre_scale_thrust.y, pre_scale_thrust.z);
 #endif
 	pre_scale_rotthrust = obj->mtype.phys_info.rotthrust;

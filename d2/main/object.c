@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -1045,7 +1045,7 @@ void check_and_fix_matrix(vms_matrix *m);
 
 void reset_player_object()
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_preview_reset_player_thrust();
 #endif
 	render_reset_gameplay_view_objects();
@@ -2546,7 +2546,7 @@ void object_move_one( object * obj )
 						if ((type=check_volatile_wall(obj,obj->segnum,sidenum,&obj->pos))!=0) {
 							int sound = (type==1)?SOUND_LAVAFALL_HISS:SOUND_SHIP_IN_WATERFALL;
 							under_lavafall = 1;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 							sound = xl_preview_water_sound(obj-Objects, sidenum, sound);
 							lavafall_hiss_playing[obj->id] = xl_preview_fluid_loop(obj-Objects, sound, lavafall_hiss_playing[obj->id]);
 #else
@@ -2559,7 +2559,7 @@ void object_move_one( object * obj )
 					}
 			}
 	
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 			if (!under_lavafall && xl_preview_water_frame(obj-Objects)) {
 				under_lavafall = 1;
 				lavafall_hiss_playing[obj->id] = xl_preview_fluid_loop(obj-Objects, SOUND_SHIP_IN_WATER, lavafall_hiss_playing[obj->id]);

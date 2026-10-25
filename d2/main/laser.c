@@ -18,7 +18,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 #include <stdlib.h>
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 #include <stdio.h>
@@ -748,7 +748,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	//	Don't let homing blobs make muzzle flash.
 	if (Objects[parent].type == OBJ_ROBOT)
 		do_muzzle_stuff(segnum, position);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	else if (&Objects[parent] == ConsoleObject && xl_preview_no_damage_segment(ConsoleObject->segnum))
 		return -1;
 #endif
@@ -2129,7 +2129,7 @@ extern int Player_fired_laser_this_frame;
 
 void do_laser_firing_player(void)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return;
 #endif
 	player	*plp = &Players[Player_num];
@@ -2876,7 +2876,7 @@ void do_missile_firing(int drop_bomb)
 		}
 
 		Laser_player_fire( ConsoleObject, weapon_index, weapon_gun, 1, 0, orient);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		// Creation was refused after ammo/cooldown accounting, as in the reference
 		if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return;
 #endif

@@ -353,7 +353,7 @@ if(NOT ANDROID)
         # Replay must use the same Guide-Bot navigation rules as the desktop game
         PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER DXX_GUIDEBOT_LIVE_ESCORT
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve)
-    if(DXX_XL_PILOT)
+    if(DXX_XL_DEVELOPER_TESTS)
         set(metadata_entry ../../android/XL_compat/runtime/lifecycle_test.cpp)
     else()
         set(metadata_entry ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp)

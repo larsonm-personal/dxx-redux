@@ -224,6 +224,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xfing_asset_validation'
         )
         explicit = @(
+            'test_xl_konflict_runtime'
             'test_xl_classic_lighting_lifecycle'
             'test_xl_classic_sound_lifecycle'
             'test_xl_water_runtime'

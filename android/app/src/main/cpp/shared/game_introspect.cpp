@@ -25,7 +25,7 @@
 #include "android_mod_bitmaps.h"
 #include "android_texture_usage.h"
 #include "input_demo_codec.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 
@@ -225,7 +225,7 @@ extern "C" void game_introspect_record_main_view(int segment)
 	Pending_main_view = {
 		{ "diagnostic_still_view", game_automate_still_view_active() != 0 },
 		{ "diagnostic_reference_fans", game_automate_reference_fans_active() != 0 },
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		{ "visual_profile", (xl_classic_legacy_fans_active() || xl_preview_reference_fans()) ? "legacy_fan" : "compiled_splits" },
 #else
 		{ "visual_profile", "compiled_splits" },
@@ -2122,7 +2122,7 @@ extern "C" char *game_introspect_get_state(void)
 	level_metadata_choose_level_display_name(Gamesave_current_filename, Current_level_name,
 	                                         display_level_name, sizeof(display_level_name));
 	j["current_level_name"] = display_level_name;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	j["xl_pilot"] = {
 		{ "runtime_active", xl_runtime_active() != 0 },
 		{ "classic_lighting_requested", xl_classic_lighting_requested() != 0 },

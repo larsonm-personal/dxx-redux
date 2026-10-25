@@ -16,6 +16,7 @@ const char *xl_resource_base_rejection(void);
 void xl_discard_prepared_resources(void);
 int xl_install_prepared_hxm(const char *level_filename);
 int xl_install_prepared_pog(const char *level_filename);
+int xl_prepared_texture_brightness(int texture, int *brightness);
 #ifdef __cplusplus
 }
 
@@ -36,6 +37,7 @@ class XlPreparedResources
 	xl_assets::ObjectDependencies &dependencies();
 	void install_hxm();
 	void install_pog();
+	bool texture_brightness(int texture, int &brightness) const;
 
   private:
 	struct State;

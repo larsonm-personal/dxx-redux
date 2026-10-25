@@ -18,7 +18,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 #include <stdio.h>
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 #include <stdlib.h>
@@ -975,7 +975,7 @@ int allowed_to_fire_laser(void)
 	}
 
 	//	Make sure enough time has elapsed to fire laser
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return 0;
 #endif
 	if (Next_laser_fire_time > GameTime64)
@@ -1003,7 +1003,7 @@ int allowed_to_fire_flare(void)
 
 int allowed_to_fire_missile(void)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return 0;
 #endif
 	//	Make sure enough time has elapsed to fire missile
@@ -2269,7 +2269,7 @@ void FireLaser()
 	int wants_fire = Controls.fire_primary_state || Controls.fire_primary_count;
 
 	Controls.fire_primary_count = 0;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (wants_fire || !xl_preview_preserve_fusion_queue())
 #endif
 	Global_laser_firing_count = wants_fire?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
