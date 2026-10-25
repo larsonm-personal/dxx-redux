@@ -63,8 +63,10 @@ static void xl_wall_animation_clear(void)
 {
 	for (unsigned i = 0; i < xl_wall_strip_count; ++i) {
 		struct xl_wall_strip *strip = &xl_wall_strips[i];
-		for (unsigned j = 0; j < strip->count; ++j)
+		for (unsigned j = 0; j < strip->count; ++j) {
 			xl_wall_release_texture(strip->frames[j].gltexture);
+			xl_wall_release_texture(strip->frames[j].gltexture_mask);
+		}
 		free(strip->frames);
 	}
 	memset(xl_wall_strips, 0, sizeof(xl_wall_strips));
@@ -105,7 +107,7 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 	struct xl_wall_strip *strip = &xl_wall_strips[xl_wall_strip_count++];
 	strcpy(strip->path, path);
 	png_data pixels = { 0 };
-	if (!read_png_scoped_animation(path, &pixels)) return NULL;
+	if (!read_png_scoped_binary_animation(path, &pixels)) return NULL;
 	const unsigned frames = pixels.height / pixels.width;
 	if (frames > 128 - xl_wall_frame_count) {
 		free(pixels.data);
@@ -114,7 +116,8 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 	unsigned free_slots = 0;
 	for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; ++i)
 		free_slots += ogl_texture_list[i].handle <= 0 && !ogl_texture_list[i].w;
-	if (free_slots < frames) {
+	/* Reserve worst-case color/mask pairs when any source frame has a key. */
+	if (free_slots < frames * (pixels.scoped_super ? 2u : 1u)) {
 		free(pixels.data);
 		return NULL;
 	}
@@ -137,7 +140,7 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 		/* Allow full padded mip chains; retain at most32 MiB across all sources. */
 		size_t width = 2;
 		while (width < (size_t) fitted.width) width *= 2;
-		const size_t bytes = width * width * 4 * 2;
+		const size_t bytes = width * width * 4 * 2 * (fitted.super ? 2 : 1);
 		if (bytes > 32u * 1024u * 1024u - xl_wall_bytes - strip->bytes) {
 			free(fitted.data);
 			complete = 0;
@@ -151,22 +154,32 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 		frame->gltexture_mask = NULL;
 		frame->gltexture = ogl_get_free_texture();
 		ogl_init_texture(frame->gltexture, fitted.width, fitted.height, OGL_FLAG_ALPHA);
-		const int failed = ogl_loadtexture(fitted.data, 0, 0, frame->gltexture, frame->bm_flags, 4,
-		                                   android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level), name);
+		const int filter = android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level);
+		int failed = ogl_loadtexture(fitted.data, 0, 0, frame->gltexture, frame->bm_flags, 4, filter, name);
+		png_data coverage = { 0 };
+		coverage.width = fitted.width;
+		coverage.height = fitted.height;
+		coverage.data = fitted.data;
+		coverage.scoped_mask = fitted.mask;
+		coverage.scoped_static = 1;
+		coverage.scoped_super = fitted.super;
+		if (!failed) failed = !android_ogl_load_scoped_mask(&coverage, frame, filter, ogl_loadtexture);
 		free(fitted.data);
 		if (failed) {
 			complete = 0;
 			break;
 		}
 		frame->gltexture->is_png = 1;
-		/* Opaque source also bypasses the static merged-result cache. */
+		/* Color and mask travel together and bypass the merged-result cache. */
 		frame->gltexture->scoped_static = 1;
 		strip->bytes += bytes;
 	}
 	free(pixels.data);
 	if (!complete) {
-		for (unsigned i = 0; i < frames; ++i)
+		for (unsigned i = 0; i < frames; ++i) {
 			xl_wall_release_texture(strip->frames[i].gltexture);
+			xl_wall_release_texture(strip->frames[i].gltexture_mask);
+		}
 		free(strip->frames);
 		strip->frames = NULL;
 		strip->bytes = 0;

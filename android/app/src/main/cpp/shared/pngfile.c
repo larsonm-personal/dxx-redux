@@ -615,12 +615,13 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 	}
 
 	/* XL marks tall replacements as alternate animations even without # names. */
-	if (scoped_opaque && scoped_opaque != 3 && h > w) {
+	const int animation = scoped_opaque == 3 || scoped_opaque == 4;
+	if (scoped_opaque && !animation && h > w) {
 		free(fbuf);
 		return 0;
 	}
 
-	if (scoped_opaque == 3 && (w < 2 || (w & (w - 1)) || h < w || h % w || h / w > 128)) {
+	if (animation && (w < 2 || (w & (w - 1)) || h < w || h % w || h / w > 128)) {
 		free(fbuf);
 		return 0;
 	}
@@ -683,7 +684,7 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 				return 0;
 			}
 
-		} else if (scoped_opaque != 3) pixels = texture_fit_pixels(pixels, &w, &h, channels);
+		} else if (!animation) pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	} else pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	if (!pixels) return 0;
 
@@ -718,6 +719,11 @@ int read_png_scoped_opaque(const char *filename, png_data *pdata)
 int read_png_scoped_animation(const char *filename, png_data *pdata)
 {
 	return read_png_policy(filename, pdata, 3);
+}
+
+int read_png_scoped_binary_animation(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 4);
 }
 
 int read_png_scoped_static(const char *filename, png_data *pdata)
