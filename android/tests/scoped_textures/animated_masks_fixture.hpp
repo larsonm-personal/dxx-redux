@@ -187,6 +187,38 @@ static void test_animated_masks(const char *owner)
 							mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
 							glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, reversed);
 							require(!std::memcmp(pixels, reversed, sizeof(pixels)), "animated holes preserve depth regardless of submission order");
+							if (admitted && filter == 2 && !mode && !orient) {
+								// Inspect the production-selected frame, including its paired mask.
+								surface();
+								GLint handles[2]{}, levels[2][2]{};
+								const int count = frame >= 2 ? 2 : 1;
+								for (int i = 0; i < count; ++i) {
+									glActiveTexture(GL_TEXTURE1 + i);
+									glGetIntegerv(GL_TEXTURE_BINDING_2D, &handles[i]);
+									require(handles[i] && glIsTexture(handles[i]), "selected animation color/mask has a live GPU object");
+									glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &levels[i][0]);
+									glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &levels[i][1]);
+									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 2);
+									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 2);
+								}
+								glActiveTexture(GL_TEXTURE0);
+								glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+								mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+								surface();
+								unsigned char mip[4];
+								glReadPixels(32, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, mip);
+								const bool correct = !frame ? std::abs(int(mip[0]) - red) <= 2 : frame == 1 ? mip[1] > 180 && mip[0] < 80
+								                                                                            : mip[2] > 180 && mip[0] < 80;
+								if (!correct) std::fprintf(stderr, "animated final mip owner=%s door=%d frame=%d rgba=%u,%u,%u,%u\n", owner, door, frame, mip[0], mip[1], mip[2], mip[3]);
+								require(correct, "each frame retains its opaque/cutout/super-hole semantics through final mip");
+								for (int i = 0; i < count; ++i) {
+									glActiveTexture(GL_TEXTURE1 + i);
+									glBindTexture(GL_TEXTURE_2D, handles[i]);
+									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, levels[i][0]);
+									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, levels[i][1]);
+								}
+								glActiveTexture(GL_TEXTURE0);
+							}
 							require(!std::memcmp(&effect, &saved_effect, sizeof(effect)) && !std::memcmp(&Walls[0], &saved_wall, sizeof(wall)) && !std::memcmp(&Segments[0].sides[0], &saved_side, sizeof(saved_side)) && sim == d_rand_get_stream_call_count(D_RNG_SIM) && fx == d_rand_get_stream_call_count(D_RNG_FX), "binary animation rendering preserves authoritative state and RNG");
 							g3_end_frame();
 							android_merged_wall_clear_draw_face_context();
