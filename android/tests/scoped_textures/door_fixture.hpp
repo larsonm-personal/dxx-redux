@@ -147,12 +147,31 @@ static void test_door_animation(const char *owner)
 			draw(0, overlay, 1, true, "reversal retains last applied mapping before next tick");
 			wall_open_door(&Segments[0], 0);
 			draw(0, overlay, 1, true, "reverse again does not invent a presentation clock");
+			FrameTime = F1_0 / 5;
+			do_door_open(0);
+			require((overlay ? Segments[0].sides[0].tmap_num2 : Segments[0].sides[0].tmap_num) == 5, "reversed opening advances native mapping");
+			draw(0, overlay, 2, true, "replacement advances after opening reversal");
+			wall_close_door(&Segments[0], 0);
+			do_door_close(0);
+			require((overlay ? Segments[0].sides[0].tmap_num2 : Segments[0].sides[0].tmap_num) == 3, "reversed closing advances native mapping");
+			draw(0, overlay, 0, true, "replacement advances after closing reversal");
 			setup(overlay, true);
 			wall_open_door(&Segments[0], 0);
 			FrameTime = 4 * (F1_0 / 5);
 			do_door_open(0);
 			require(Walls[0].state == WALL_DOOR_WAITING && Num_open_doors == 1, "automatic door enters native waiting state");
 			for (int repeat = 0; repeat < 3; ++repeat) draw(0, overlay, 3, true, "waiting door remains on final frame");
+			FrameTime = DOOR_WAIT_TIME + 1;
+			wall_frame_process();
+			require(Walls[0].state == WALL_DOOR_CLOSING && Num_open_doors == 1 && ActiveDoors[0].time == 0, "native waiting expiry starts automatic closing");
+			draw(0, overlay, 3, true, "wait expiry preserves applied endpoint before closing tick");
+			FrameTime = F1_0 / 5;
+			for (int stock = 3; stock >= 0; --stock) {
+				wall_frame_process();
+				require((overlay ? Segments[0].sides[0].tmap_num2 : Segments[0].sides[0].tmap_num) == 2 + stock, "automatic close applies expected stock frame");
+				draw(0, overlay, selected[stock], true, "automatic close follows applied frame");
+			}
+			require(Walls[0].state == WALL_DOOR_CLOSED && !Num_open_doors, "automatic door finishes closing natively");
 			setup(overlay, false);
 			Walls[0].type = Walls[1].type = WALL_BLASTABLE;
 			WallAnims[0].flags |= WCF_BLASTABLE;
