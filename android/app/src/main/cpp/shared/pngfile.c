@@ -613,6 +613,12 @@ static int read_png_policy(const char *filename, png_data *pdata, int scoped_opa
 		return 0;
 	}
 
+	/* XL marks tall replacements as alternate animations even without # names. */
+	if (scoped_opaque && h > w) {
+		free(fbuf);
+		return 0;
+	}
+
 	/* Ask stb_image for RGBA or RGB depending on what's in the file.
 	 * channels=0 means "give me whatever the file has". */
 	pixels = stbi_load_from_memory(fbuf, (int) fsize, &w, &h, &channels, 0);

@@ -39,12 +39,14 @@ static void require(bool value, const char *message)
 		std::exit(1);
 	}
 }
-static void image(const char *path, unsigned char red, unsigned char alpha = 255, unsigned char green = 40, unsigned char blue = 30, unsigned dimension = 4)
+static void image(const char *path, unsigned char red, unsigned char alpha = 255, unsigned char green = 40, unsigned char blue = 30, unsigned dimension = 4, unsigned height = 0)
 {
 	std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-	std::vector<unsigned char> bytes(18 + dimension * dimension * 4);
+	if (!height) height = dimension;
+	std::vector<unsigned char> bytes(18 + dimension * height * 4);
 	bytes[2] = 2;
-	bytes[12] = bytes[14] = dimension;
+	bytes[12] = dimension;
+	bytes[14] = height;
 	bytes[16] = 32;
 	bytes[17] = 8;
 	for (size_t p = 18; p < bytes.size(); p += 4) {
@@ -93,6 +95,8 @@ int main(int argc, char **argv)
 	image("global/mixed.tga", 10);
 	image("a/mods/pilot/textures/fitted.tga", 210, 255, 40, 30, 8);
 	image("global/fitted.tga", 10);
+	image("a/mods/pilot/textures/strip.tga", 210, 255, 40, 30, 4, 8);
+	image("global/strip.tga", 10);
 	image("global/broken.tga", 10);
 	std::ofstream("a/mods/pilot/textures/broken.tga") << "truncated";
 	std::ofstream("a/mods/pilot/textures/ceil002.bmp") << "not a selected format";
@@ -188,7 +192,7 @@ int main(int argc, char **argv)
 					require(!(ordinary.data[p * 4] == 120 && ordinary.data[p * 4 + 1] == 88 && ordinary.data[p * 4 + 2] == 128), "resizing erased source key: regression is meaningful");
 				free(ordinary.data);
 			}
-			for (const char *name : { "broken", "translucent", "keyed", "mixed", "fitted" }) {
+			for (const char *name : { "broken", "translucent", "keyed", "mixed", "fitted", "strip" }) {
 				const char *fallback_names[] = { nullptr, nullptr, name };
 				png_data fallback{};
 				require(android_ogl_read_replacement(path, sizeof(path), hog, fallback_names, slots, 3, 0, &bitmap, &fallback, &ktx, &metrics, &ktx_us, &png_us) == 1 && fallback.width == 4 && fallback.data[0] == (hog && !std::strcmp(owner, "a") && !std::strcmp(name, "fitted") ? 210 : 10), "source transparency rejects before fitting; opaque sources fit normally");
