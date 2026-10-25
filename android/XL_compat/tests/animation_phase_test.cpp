@@ -40,6 +40,20 @@ int main()
 	require(dxx_xl_animation_frame(8, 12, 8, 12, 0, 6) == -1);
 	require(dxx_xl_animation_frame(8, 12, 0, -1, 0, 6) == -1);
 	require(dxx_xl_animation_frame(8, 12, 0, 13, 0, 6) == -1);
+	for (int stock = 1; stock <= 50; ++stock)
+		for (int source = 1; source <= stock; ++source) {
+			int previous = -1;
+			for (int frame = 0; frame < stock; ++frame) {
+				const int selected = dxx_xl_wclip_frame(stock, frame, source);
+				require(selected >= 0 && selected < source && selected >= previous && selected <= previous + 1);
+				previous = selected;
+			}
+			require(dxx_xl_wclip_frame(stock, 0, source) == 0 && previous == source - 1);
+			require(dxx_xl_wclip_frame(stock, 0, stock + 1) == -1);
+		}
+	for (int invalid : { -1, 0, 51, INT_MAX }) require(dxx_xl_wclip_frame(invalid, 0, 1) == -1);
+	require(dxx_xl_wclip_frame(5, -1, 4) == -1 && dxx_xl_wclip_frame(5, 5, 4) == -1);
+	require(dxx_xl_wclip_frame(5, 0, 0) == -1);
 	using xl_compat::animation_mission_texture_path;
 	require(animation_mission_texture_path("missions/BOILPNT.HOG", "force01#127") == "mods/BOILPNT/textures/force01#127.tga");
 	for (const char *name : { "force01", "force01#", "force01#128", "force01#-1", "force01#0/evil", "force01#0#1", "../force01#0" })

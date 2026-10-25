@@ -75,6 +75,7 @@ static GLuint shader(GLenum type, const char *text)
 
 #include "masks_fixture.hpp"
 #include "animation_fixture.hpp"
+#include "door_fixture.hpp"
 
 int main(int argc, char **argv)
 {
@@ -85,6 +86,7 @@ int main(int argc, char **argv)
 #ifdef DXX_BUILD_DESCENT_II
 	mask_pattern();
 	animation_pattern();
+	door_pattern();
 #endif
 	const bool original = std::filesystem::is_regular_file("ceil002.tga");
 	if (original) std::filesystem::copy_file("ceil002.tga", "a/mods/pilot/textures/CEIL002.TGA", std::filesystem::copy_options::overwrite_existing);
@@ -239,6 +241,7 @@ int main(int argc, char **argv)
 			fixture_xl_mission = true;
 			test_masks(!std::strcmp(owner, "a"));
 			test_animation(owner);
+			test_door_animation(owner);
 #endif
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
 			results.push_back({ { "context", generation }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });

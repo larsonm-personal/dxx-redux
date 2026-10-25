@@ -4,6 +4,7 @@
 #include "xl_animation_phase.h"
 #include "xl_static_texture_pixels.h"
 #include "cntrlcen.h"
+#include "wall.h"
 
 struct xl_wall_strip {
 	char path[256];
@@ -178,6 +179,38 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 	return strip;
 }
 
+static grs_bitmap *xl_wclip_animation_bitmap(grs_bitmap *original, int texture, int overlay, const char *hog)
+{
+	const int seg = g_android_draw_face_ctx.seg, side = g_android_draw_face_ctx.side;
+	if (Num_segments < 0 || Num_segments > MAX_SEGMENTS || seg < 0 || seg >= Num_segments ||
+	    seg > Highest_segment_index || side < 0 || side >= 6 ||
+	    Num_walls < 0 || Num_walls > MAX_WALLS || Num_wall_anims < 0 || Num_wall_anims > MAX_WALL_ANIMS) return original;
+	const int wall_index = Segments[seg].sides[side].wall_num;
+	if (wall_index < 0 || wall_index >= Num_walls) return original;
+	const wall *w = &Walls[wall_index];
+	if (w->segnum != seg || w->sidenum != side || (w->type != WALL_DOOR && w->type != WALL_BLASTABLE) ||
+	    w->clip_num < 0 || w->clip_num >= Num_wall_anims) return original;
+	const wclip *clip = &WallAnims[w->clip_num];
+	if (clip->num_frames < 1 || clip->num_frames > MAX_CLIP_FRAMES ||
+	    (!!(clip->flags & WCF_TMAP1)) == !!overlay) return original;
+	const int mapped = overlay ? (Segments[seg].sides[side].tmap_num2 & 0x3fff) : Segments[seg].sides[side].tmap_num;
+	if (mapped != texture) return original;
+	int stock_frame = -1;
+	for (int i = 0; i < clip->num_frames; ++i) {
+		if (clip->frames[i] < 0 || clip->frames[i] >= NumTextures) return original;
+		if (clip->frames[i] != texture) continue;
+		if (stock_frame != -1) return original; // repeated mappings cannot identify an authored frame
+		stock_frame = i;
+	}
+	if (stock_frame < 0) return original;
+	struct xl_wall_strip *strip = xl_wall_animation_source(hog, piggy_game_bitmap_name(original), original);
+	if (!strip) return original;
+	const int frame = dxx_xl_wclip_frame(clip->num_frames, stock_frame, strip->count);
+	if (frame < 0) return original;
+	strip->frames[frame].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
+	return &strip->frames[frame];
+}
+
 static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 {
 	if (Num_effects < 0 || Num_effects > MAX_EFFECTS || NumTextures < 0 || NumTextures > MAX_TEXTURES ||
@@ -210,5 +243,5 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 		strip->frames[frame].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
 		return &strip->frames[frame];
 	}
-	return original;
+	return xl_wclip_animation_bitmap(original, texture, overlay, hog);
 }

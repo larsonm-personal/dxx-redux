@@ -15,6 +15,15 @@ static inline int dxx_xl_animation_frame(int stock_frames, int frame_time, int f
 	return (int) ((phase > 0 ? phase - 1 : 0) * source_frames / period);
 }
 
+/* Wclips are driven by the applied wall mapping, including saved/reversed state.
+ * Restrict source counts so every authored frame is represented without a new clock. */
+static inline int dxx_xl_wclip_frame(int stock_frames, int stock_frame, int source_frames)
+{
+	if (stock_frames < 1 || stock_frames > 50 || stock_frame < 0 || stock_frame >= stock_frames ||
+	    source_frames < 1 || source_frames > stock_frames) return -1;
+	return stock_frames == 1 ? 0 : stock_frame * (source_frames - 1) / (stock_frames - 1);
+}
+
 #if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
 /* Renderer-only observation of the clock actually applied to a wall mapping */
 void dxx_xl_wall_mapped_phase(int effect, int bitmap, int frames, int frame_time,
