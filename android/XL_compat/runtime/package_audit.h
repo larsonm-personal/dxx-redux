@@ -1,5 +1,6 @@
 // Native startup inventory only; does not certify progression or rendered resources
 #include "companion_resources.h"
+#include "resource_validation.h"
 #include "geometry.h"
 #include "light_sources.h"
 #include "visibility.h"
@@ -576,8 +577,14 @@ static int package_audit(int argc, char **argv)
 			// Subsequent ownership probes use the original undamaged level
 			StartNewGame(1);
 			require(xl_preview_load_level("__missing_classic_lighting_test__.rdl") != 0, "missing level unexpectedly loaded");
-			require(!xl_classic_lighting_vertex_count(), "failed level replacement retained classic lighting");
-			require(xl_classic_lighting_prepare(Gamesave_current_filename), "cannot restore lighting after failed precommit load");
+			// Read-only rejection keeps the still-current level intact; committed teardown below clears it
+			require(xl_classic_lighting_vertex_count() == original_colors.size(), "precommit rejection changed current lighting size");
+			for (std::size_t vertex = 0; vertex < original_colors.size(); ++vertex) {
+				xl_compat::Rgb color;
+				require(xl_classic_lighting_color(static_cast<int>(vertex), color.data()) && color == original_colors[vertex], "precommit rejection changed current ambient colors");
+			}
+			if (Current_mission->descent_version == 1)
+				require(!xl_resource_texture_scope_enabled() && *mission_resource_archive(), "D1 package ownership enabled D2 texture capability or lost its identity");
 			std::string upper = Gamesave_current_filename;
 			for (auto &c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
 			const auto folded = xl_compat::load_mission_lighting_companions(upper);

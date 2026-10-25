@@ -384,6 +384,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->authored_mip_count = t->mip_base_level = 0;
 	t->replacement_source = 0;
 	t->sprite_additive = 0;
+	t->scoped_static = t->scoped_super = t->scoped_soft = t->scoped_opaque = 0;
 	t->additive_draws = 0;
 #endif
 }
@@ -3069,7 +3070,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		const char *replacement_names[] = { have_prefixed_bitmapname ? prefixed_bitmapname : NULL, bitmapname };
 		const int replacement_slots[] = { ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE };
 		etc2_file_data edata;
-		int replacement = android_ogl_read_replacement(filename, sizeof(filename),
+		int replacement = android_ogl_read_replacement(filename, sizeof(filename), NULL,
 			replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
 			!ogl_etc2_broken, bm, &pdata, &edata, &lookup_metrics,
 			&profile_ktx2_read_us, &profile_png_read_us);
@@ -3140,7 +3141,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		skip_ktx2:
 		if (replacement == 2) {
 			long long previous_png_us = profile_png_read_us;
-			png_loaded = android_ogl_read_replacement(filename, sizeof(filename),
+			png_loaded = android_ogl_read_replacement(filename, sizeof(filename), NULL,
 				replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
 				0, bm, &pdata, &edata, &lookup_metrics,
 				&profile_ktx2_read_us, &profile_png_read_us) == 1;

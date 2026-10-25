@@ -78,6 +78,7 @@ typedef struct _ogl_texture {
 	int authored_mip_count, mip_base_level;
 	unsigned int replacement_source;
 	int sprite_additive;
+	int scoped_static, scoped_super, scoped_soft, scoped_opaque; /* Renderer-only XL source classification */
 	unsigned int additive_draws; /* Android diagnostics: actual sprite draw submissions */
 #endif
 } ogl_texture;

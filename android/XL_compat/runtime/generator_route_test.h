@@ -33,7 +33,7 @@ struct GeneratorRouteObservation {
 			states.emplace_back(Station[station].Enabled, Station[station].Lives);
 		}
 		for (int i = 0; i <= Highest_object_index; ++i)
-			if (Objects[i].type == OBJ_ROBOT) seen.emplace(Objects[i].matcen_creator, Objects[i].signature);
+			if (Objects[i].type == OBJ_ROBOT) seen.emplace(Objects[i].matcen_creator, static_cast<int>(Objects[i].signature));
 	}
 
 	void observe()

@@ -440,34 +440,39 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 	return 1;
 }
 
+extern "C" void xl_preview_clear_mission(void)
+{
+	xl_classic_lighting_release();
+	xl_discard_prepared_resources();
+	admitted_pilot = completed_pilot = admitted_water_arena = false;
+	activated_triggers = 0;
+	source.reset();
+#ifdef DXX_XL_DESCRIPTOR_TEST
+	no_damage_test_source.reset();
+#endif
+	vertex_calls = 0;
+	corona_draws = 0;
+	corona_depth_failures = 0;
+	corona_classic_requested_draws = 0;
+	face_alpha = -1;
+	dynamic_vertices.clear();
+	brightness.clear();
+	unresolved_emitters = 0;
+	muzzle_lights.clear();
+	player_thrust = {};
+	pending_level.clear();
+}
+
 extern "C" int xl_preview_load_level(const char *filename)
 {
-	// Release before validation as well as before a successful replacement
-	xl_classic_lighting_release();
-	const auto clear_active = [] {
-		xl_discard_prepared_resources();
-		admitted_pilot = completed_pilot = admitted_water_arena = false;
-		activated_triggers = 0;
-		source.reset();
-#ifdef DXX_XL_DESCRIPTOR_TEST
-		no_damage_test_source.reset();
-#endif
-		vertex_calls = 0;
-		corona_draws = 0;
-		corona_depth_failures = 0;
-		corona_classic_requested_draws = 0;
-		face_alpha = -1;
-		dynamic_vertices.clear();
-		brightness.clear();
-		unresolved_emitters = 0;
-		muzzle_lights.clear();
-		player_thrust = {};
-		pending_level.clear();
-	};
 	// A mode change must never leave singleplayer extensions active in multiplayer
-	if (Game_mode & GM_MULTI) clear_active();
+	if (Game_mode & GM_MULTI) xl_preview_clear_mission();
 	rejection.clear();
+#ifdef DXX_XL_DEVELOPER_PROBE
 	const bool translated_preview = option("-xl-static-light-preview") && !std::strcmp(filename, "xlprobe.rl2");
+#else
+	const bool translated_preview = false;
+#endif
 	int result = 0;
 	try {
 		validate_mission_context();
@@ -475,9 +480,10 @@ extern "C" int xl_preview_load_level(const char *filename)
 		const bool original = !bytes.empty();
 		if (!original) {
 			if (!translated_preview) {
-				clear_active();
+				xl_preview_clear_mission();
 				return xl_stock_load_level(filename);
 			}
+#ifdef DXX_XL_DEVELOPER_PROBE
 			if (Game_mode & GM_MULTI) throw std::runtime_error("multiplayer: XL preview synchronization is not implemented");
 			const char *path = option("-xl-source");
 			if (!path || !*path) throw std::runtime_error("-xl-source is required for the developer preview");
@@ -487,6 +493,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 			stream.seekg(0);
 			bytes.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
 			if (stream.bad() || bytes.size() != std::size_t(size)) throw std::runtime_error("XL source read failed");
+#endif
 		}
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
@@ -506,7 +513,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 			throw std::runtime_error("loaded fixture bytes differ from the source translation");
 		loaded.reset();
 		// All read-only admission and translated-byte checks precede the native commit
-		clear_active();
+		xl_preview_clear_mission();
 		if (original) pending_level = filename;
 		result = xl_stock_load_level(filename);
 		pending_level.clear();

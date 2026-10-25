@@ -2,6 +2,7 @@
 #include "cntrlcen.h"
 #include "effects.h"
 #include "textures.h"
+#include "xl_animation_phase.h"
 
 static int effect_clamp_frame_count(const eclip *ec, int frame_count)
 {
@@ -58,16 +59,26 @@ void effect_apply_bitmap_state(int effect_num)
 	if (ec->crit_clip != -1 && Control_center_destroyed) {
 		crit_ec = &Effects[ec->crit_clip];
 		frame_count = effect_clamp_frame_count(crit_ec, crit_ec->frame_count);
-		if (ec->changing_wall_texture != -1)
+		if (ec->changing_wall_texture != -1) {
 			Textures[ec->changing_wall_texture] = crit_ec->vc.frames[frame_count];
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+			dxx_xl_wall_mapped_phase(effect_num, crit_ec->vc.frames[frame_count].index,
+			                         crit_ec->vc.num_frames, crit_ec->vc.frame_time, frame_count, crit_ec->time_left, crit_ec->flags & EF_STOPPED);
+#endif
+		}
 		if (ec->changing_object_texture != -1)
 			ObjBitmaps[ec->changing_object_texture] = crit_ec->vc.frames[frame_count];
 		return;
 	}
 
 	frame_count = effect_clamp_frame_count(ec, ec->frame_count);
-	if (ec->changing_wall_texture != -1)
+	if (ec->changing_wall_texture != -1) {
 		Textures[ec->changing_wall_texture] = ec->vc.frames[frame_count];
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+		dxx_xl_wall_mapped_phase(effect_num, ec->vc.frames[frame_count].index,
+		                         ec->vc.num_frames, ec->vc.frame_time, frame_count, ec->time_left, ec->flags & EF_STOPPED);
+#endif
+	}
 	if (ec->changing_object_texture != -1)
 		ObjBitmaps[ec->changing_object_texture] = ec->vc.frames[frame_count];
 }

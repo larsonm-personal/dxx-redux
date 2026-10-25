@@ -12,6 +12,9 @@ void ogl_init_prog();
 void ogl_done_prog();
 void ogl_prog_set_matrix(GLfloat *mat);
 void ogl_prog_set_tex2_current_matrix(const GLfloat *mat, int super);
+void ogl_prog_set_tex2_soft(int enabled, int masked);
+void ogl_prog_set_tex2_base_binary(int enabled, int masked);
+void ogl_prog_set_tex2m_binary(int enabled);
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat cutoff);
 void ogl_prog_set_tex2_debug_mode(GLint mode);
 

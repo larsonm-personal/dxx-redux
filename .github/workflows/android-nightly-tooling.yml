@@ -110,6 +110,7 @@ jobs:
               'online_preview': any(test.get('args', {}).get('suite') in ('test_mp_public_shareware', 'test_mp_public_shareware_d2', 'test_mp_coop_d1_relay', 'test_mp_coop_d2_direct', 'test_mp_coop_d2_initial_fallback') for test in selected),
               'three_emulators': any(test.get('requires') == 'three_emulators' for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
+              'xl_textures': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_scoped_static_textures' for test in selected),
               'native_replay': any(test.get('owner') == 'shareware' and test.get('args', {}).get('suite') in ('test_auto_level_cheats', 'test_auto_level_demos') for test in selected),
           }
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
@@ -342,6 +343,8 @@ jobs:
       - name: Build emulator APKs before boot
         if: inputs.lane != 'jvm'
         id: apk
+        env:
+          ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}
         timeout-minutes: 35
         shell: bash
         working-directory: target
@@ -489,6 +492,7 @@ jobs:
         shell: bash
         env:
           NATIVE_REPLAY: ${{ steps.selection.outputs.native_replay }}
+          ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}
         run: |
           set -euo pipefail
           if [[ "$SWEEP_LANE" != 'jvm' ]]; then
@@ -527,6 +531,24 @@ jobs:
               logs = sorted(pathlib.Path('results/master').glob('test_xl_feature_browser_*.log'))
               if not logs:
                   print('Synthetic XL dialog owner log unavailable; inspect setup/runner status')
+              for path in logs[-1:]:
+                  if path.is_file() and not path.is_symlink():
+                      with path.open('rb') as stream:
+                          stream.seek(max(0, path.stat().st_size - 16384))
+                          text = stream.read(16384).decode('utf-8', errors='replace')
+                      print(re.sub(r'\x1b\[[0-9;]*m', '', text))
+          PYTHON
+      - name: Report synthetic XL texture result
+        if: always() && !inputs.retail_assets && hashFiles('plan/plan.json') != ''
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import json, pathlib, re
+          plan = json.loads(pathlib.Path('plan/plan.json').read_text())
+          if any(row.get('id') == 'master:test_scoped_static_textures' for row in plan.get('tests', [])):
+              logs = sorted(pathlib.Path('results/master').glob('test_scoped_static_textures_*.log'))
+              if not logs:
+                  print('Synthetic XL texture owner log unavailable; inspect setup/runner status')
               for path in logs[-1:]:
                   if path.is_file() and not path.is_symlink():
                       with path.open('rb') as stream:

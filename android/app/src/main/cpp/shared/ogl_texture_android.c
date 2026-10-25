@@ -10,10 +10,12 @@
 #include <android/log.h>
 
 #include "android_log.h"
+#include "android_mission_assets.h"
 #include "console.h"
 #include "ogl_texture_android.h"
 #include "ogl_texture_filename.h"
 #include "pngfile.h"
+#include "xl_static_texture_pixels.h"
 #include "physfs.h"
 #include "android_texture_usage.h"
 #include "piggy.h"
@@ -153,7 +155,7 @@ int android_ogl_read_texture_with_extensions(
 	return 0;
 }
 
-int android_ogl_read_replacement(char *filename, size_t capacity,
+int android_ogl_read_replacement(char *filename, size_t capacity, const char *mission_hog,
                                  const char *const *basenames, const int *slots, int count, int allow_ktx2,
                                  grs_bitmap *bitmap, png_data *png, etc2_file_data *ktx,
                                  struct android_profile_texture_lookup_metrics *lookup,
@@ -162,8 +164,8 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 	static const char *extensions[] = { ".ktx2", ".png", ".jpg", ".tga" };
 	struct candidate {
 		char path[256];
-		int rank, slot, extension;
-	} candidates[12];
+		int rank, slot, extension, scoped;
+	} candidates[13];
 	int used = 0;
 	const int bitmap_flags = piggy_bitmap_get_flags(bitmap);
 	char **search = PHYSFS_getSearchPath();
@@ -171,10 +173,18 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 		PHYSFS_freeList(search);
 		return 0;
 	}
+	/* One owned mission candidate precedes the existing 3 x 4 global candidates.
+	 * POG/custom bitmaps retain their existing path. */
+	if (count > 0 && mission_hog && !piggy_bitmap_is_custom(bitmap)) {
+		struct candidate item = { { 0 }, -1, slots[count - 1], 3, 1 };
+		if (android_mission_assets_find_static_texture(mission_hog, basenames[count - 1], item.path, sizeof(item.path)))
+			candidates[used++] = item;
+	}
 	for (int base = 0; base < count; ++base) {
 		if (!basenames[base]) continue;
 		for (int ext = allow_ktx2 ? 0 : 1; ext < 4; ++ext) {
 			struct candidate item;
+			item.scoped = 0;
 			if (!android_ogl_texture_filename(item.path, sizeof(item.path), basenames[base], extensions[ext])) continue;
 			const char *owner = android_texture_source(item.path);
 			if (!owner) continue;
@@ -198,7 +208,7 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 		int loaded;
 		long long elapsed;
 		if (strlen(item->path) >= capacity) continue;
-		if (bitmap_flags & BM_FLAG_SUPER_TRANSPARENT) {
+		if (!item->scoped && (bitmap_flags & BM_FLAG_SUPER_TRANSPARENT)) {
 			char mask[256];
 			if (!replacement_mask_name(item->path, mask, sizeof(mask)) && bitmap_needs_super_mask(bitmap)) {
 				debug_log(DLOG_TEXTURE, "Replacement skipped: %s needs a mask from the same source", item->path);
@@ -206,7 +216,15 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 			}
 		}
 		android_ogl_texture_clock_now(&start);
-		loaded = item->extension == 0 ? read_ktx2_file(item->path, ktx) : read_png(item->path, png);
+		loaded = item->extension == 0 ? read_ktx2_file(item->path, ktx) : item->scoped ? read_png_scoped_static(item->path, png)
+		                                                                               : read_png(item->path, png);
+#ifndef OGL_MERGE
+		if (loaded && item->scoped && png->scoped_super) {
+			free(png->data);
+			memset(png, 0, sizeof(*png));
+			loaded = 0;
+		}
+#endif
 		android_ogl_texture_clock_now(&end);
 		elapsed = android_ogl_texture_elapsed_us(&start, &end);
 		if (item->extension == 0) {
@@ -232,6 +250,7 @@ int android_ogl_read_replacement(char *filename, size_t capacity,
 				lookup->png_hit_ext = item->extension - 1;
 			}
 		}
+
 		if (!loaded) continue;
 		strcpy(filename, item->path);
 		return item->extension == 0 ? 2 : 1;
@@ -595,6 +614,78 @@ void android_ogl_apply_pending_texture_options(
 		}
 	}
 	*state->requested_texfilt_level = *state->applied_texfilt_level;
+}
+
+/* Build color/coverage mips together, never re-detecting keys in filtered RGB.
+ * Conservative reduction trades subpixel bar thickness for retaining holes. */
+static int scoped_material_mips(const png_data *image, grs_bitmap *bm)
+{
+	if ((image->width & (image->width - 1)) || (image->height & (image->height - 1))) return 1;
+	dxx_xl_static_pixels previous = { image->data, image->scoped_mask, (int) image->width, (int) image->height, image->scoped_super };
+	int level = 0;
+	/* The engine pads even 1x1 sources to 2x2; qualify that actual chain too. */
+	while (previous.width > 1 || previous.height > 1 ||
+	       (!level && (bm->gltexture->tw > previous.width || bm->gltexture->th > previous.height))) {
+		dxx_xl_static_pixels next;
+		const int limit = previous.width > 1 ? previous.width / 2 : 1;
+		const int fitted = image->scoped_soft
+		                       ? dxx_xl_fit_soft_coverage(previous.data, previous.mask, previous.width, previous.height, 4, limit, 1, &next)
+		                       : dxx_xl_fit_static_coverage(previous.data, previous.mask, previous.width, previous.height, 4, limit, &next);
+		if (!fitted) {
+			if (level) free(previous.data);
+			return 0;
+		}
+		if (level) free(previous.data);
+		++level;
+		glBindTexture(GL_TEXTURE_2D, bm->gltexture->handle);
+		glTexImage2D(GL_TEXTURE_2D, level, bm->gltexture->internalformat, next.width, next.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, next.data);
+		if (bm->gltexture_mask) {
+			unsigned char *rgba = (unsigned char *) malloc((size_t) next.width * next.height * 4);
+			if (!rgba) {
+				free(next.data);
+				return 0;
+			}
+			for (size_t i = 0; i < (size_t) next.width * next.height; ++i) {
+				rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = 255;
+				rgba[i * 4 + 3] = next.mask[i] ? 0 : 255;
+			}
+			glBindTexture(GL_TEXTURE_2D, bm->gltexture_mask->handle);
+			glTexImage2D(GL_TEXTURE_2D, level, bm->gltexture_mask->internalformat, next.width, next.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+			free(rgba);
+		}
+		if (glGetError() != GL_NO_ERROR) {
+			free(next.data);
+			return 0;
+		}
+		previous = next;
+	}
+	if (level) free(previous.data);
+	bm->gltexture->has_mipmaps = 1;
+	if (bm->gltexture_mask) bm->gltexture_mask->has_mipmaps = 1;
+	return 1;
+}
+
+/* Color and mask were classified from one owner-validated allocation. The
+ * caller discards both GPU objects if this upload fails. No sidecar lookup. */
+int android_ogl_load_scoped_mask(const png_data *image, grs_bitmap *bm, int texfilt,
+                                 android_ogl_loadtexture_fn loadtexture)
+{
+	if (!image || !image->scoped_static || !image->scoped_mask || !bm || !bm->gltexture || !loadtexture) return 0;
+	if (image->scoped_super || (piggy_bitmap_get_flags(bm) & BM_FLAG_SUPER_TRANSPARENT)) {
+		if (!bm->gltexture_mask) bm->gltexture_mask = ogl_get_free_texture();
+		ogl_init_texture(bm->gltexture_mask, image->width, image->height, OGL_FLAG_ALPHA);
+		if (loadtexture(image->scoped_mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt, NULL)) {
+			if (!bm->gltexture_mask->handle) ogl_init_texture(bm->gltexture_mask, 0, 0, 0);
+			return 0;
+		}
+		bm->gltexture_mask->is_png = 1;
+	}
+	if (!scoped_material_mips(image, bm)) return 0;
+	bm->gltexture->scoped_static = 1;
+	bm->gltexture->scoped_super = image->scoped_super;
+	bm->gltexture->scoped_soft = image->scoped_soft;
+	bm->gltexture->scoped_opaque = !image->scoped_super && dxx_xl_rgba_opaque(image->data, image->width, image->height);
+	return 1;
 }
 
 int android_ogl_load_dxa_mask(const char *image_filename, grs_bitmap *bm, int texfilt,

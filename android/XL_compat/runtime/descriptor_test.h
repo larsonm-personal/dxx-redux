@@ -39,6 +39,7 @@ static int descriptor_test(int argc, char **argv)
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
+		require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
@@ -49,6 +50,7 @@ static int descriptor_test(int argc, char **argv)
 			require(load_base_mission("obsrv-xl", error, sizeof(error)), error);
 			require(!std::strcmp(Current_mission_longname, "Observatory XL"), "original XL title was not discovered");
 			require(Current_mission->enhanced == MISSION_ENHANCED_XL, "XL descriptor identity lost");
+			require(xl_resource_texture_scope_enabled() && *mission_resource_archive(), "parsed XL descriptor did not seal resource identity");
 			require(Last_level == 1 && Last_secret_level == 0 && !std::strcmp(Level_names[0], "obsrv-xl.rl2"), "original level list differs");
 			require(!Current_mission->alternate_ham_file && bm_compatibility_warning_count() == 0, "XL descriptor was treated as stock extra-HAM");
 			require(gameplay_definitions() == stock_definitions && arena_model() == stock_model, "descriptor changed gameplay definitions or model payload");
@@ -92,9 +94,60 @@ static int descriptor_test(int argc, char **argv)
 			require(load_base_mission("d2", error, sizeof(error)), error);
 			require(Current_mission->enhanced == 0 && load_level("d2leva-1.rl2") == 0, "stock recovery failed");
 			require(!PHYSFS_getRealDir("obsrv-xl.rl2"), "XL companion archive leaked into stock mission");
+			require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "XL resource policy leaked into stock recovery");
 			require(gameplay_definitions() == stock_definitions, "stock definitions changed after XL descriptor");
 		}
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
+		{
+			// A classic custom mission owns the same replacement layout but must not activate XL
+			PHYSFS_file *input = PHYSFS_openRead("d2leva-1.rl2");
+			require(input && PHYSFS_fileLength(input) > 0 && PHYSFS_fileLength(input) < 64 * 1024 * 1024, "classic resource control missing");
+			xl_compat::Bytes level(static_cast<std::size_t>(PHYSFS_fileLength(input)));
+			require(PHYSFS_readBytes(input, level.data(), level.size()) == PHYSFS_sint64(level.size()), "classic control read failed");
+			PHYSFS_close(input);
+			xl_compat::Bytes hog{ 'D', 'H', 'F' };
+			auto member = [&](const char *name, const xl_compat::Bytes &bytes) {
+				char filename[13] = {};
+				require(std::strlen(name) < sizeof(filename), "policy control member too long");
+				std::strcpy(filename, name);
+				hog.insert(hog.end(), filename, filename + sizeof(filename));
+				for (unsigned shift = 0; shift < 32; shift += 8) hog.push_back(static_cast<unsigned char>(bytes.size() >> shift));
+				hog.insert(hog.end(), bytes.begin(), bytes.end());
+			};
+			member("clspol.rl2", level);
+			member("xltail.rl2", original_17);
+			write_bytes((root / "clspol.hog").string().c_str(), hog);
+			const auto replacement = root / "mods/clspol/textures/pattern.tga";
+			std::filesystem::create_directories(replacement.parent_path());
+			xl_compat::Bytes tga(18 + 16, 0);
+			tga[2] = 2;
+			tga[12] = tga[14] = 2;
+			tga[16] = 32;
+			tga[17] = 8;
+			for (unsigned i = 18; i < tga.size(); i += 4) {
+				tga[i] = 128;
+				tga[i + 1] = 88;
+				tga[i + 2] = 120;
+				tga[i + 3] = 255;
+			}
+			write_bytes(replacement.string().c_str(), tga);
+			auto select = [&](bool secret_xl) {
+				std::ofstream descriptor(root / "clspol.mn2");
+				descriptor << "name = Classic policy control\nnum_levels = 1\nclspol.rl2\n";
+				if (secret_xl) descriptor << "num_secrets = 1\nxltail.rl2,1\n";
+				descriptor.close();
+				require(load_base_mission("clspol", error, sizeof(error)), error);
+				require(bool(xl_resource_texture_scope_enabled()) == secret_xl && *mission_resource_archive(),
+				        "owned textures or unlisted XL member changed the selected mission policy");
+				require(load_level("clspol.rl2") == 0 && !xl_preview_pilot_active(), "classic level activated XL runtime semantics");
+			};
+			select(false);
+			select(true);
+			require(load_level("xltail.rl2") != 0, "mixed mission admitted unsupported secret-level semantics");
+			select(false);
+			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "classic policy recovery failed");
+			std::cout << "Resource policy: classic custom decoy textures stay inactive; only listed owned XL secret enables mission scope; classic recovery passes\n";
+		}
 		const auto search_paths = [] {
 			std::vector<std::string> result;
 			char **paths = PHYSFS_getSearchPath();
@@ -110,6 +163,8 @@ static int descriptor_test(int argc, char **argv)
 			Mission *previous = Current_mission;
 			const std::string previous_path = previous ? previous->path : "";
 			const auto definitions = gameplay_definitions();
+			const auto resource_policy = xl_resource_texture_scope_enabled();
+			const std::string resource_archive = mission_resource_archive();
 			const std::string descriptor = mission_descriptor_snapshot() ? mission_descriptor_snapshot() : "";
 			const auto mounted_paths = search_paths();
 			const char *origin = PHYSFS_getRealDir("obsrv-xl.rl2");
@@ -122,6 +177,7 @@ static int descriptor_test(int argc, char **argv)
 				            definitions == gameplay_definitions() && archive == (origin ? origin : ""),
 				        "malformed descriptor discarded previous mission or archive ownership");
 				require(mounted_paths == search_paths(), "rejected descriptor changed search-path contents or order");
+				require(resource_policy == xl_resource_texture_scope_enabled() && resource_archive == mission_resource_archive(), "rejected descriptor changed retained resource policy");
 				require(descriptor == (mission_descriptor_snapshot() ? mission_descriptor_snapshot() : ""),
 				        "rejected descriptor changed owned requirement snapshot");
 				XlPreparedResources retained_base("d2leva-1.rl2");

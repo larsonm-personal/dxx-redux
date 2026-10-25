@@ -20,7 +20,9 @@
 #include "pstypes.h"
 #include "android_log.h"
 #include "android_texture_usage.h"
+#include "android_mission_assets.h"
 #include "dxa_admission_limits.h"
+#include "xl_static_texture_pixels.h"
 
 #define KHRONOS_STATIC
 #include <ktx.h>
@@ -549,7 +551,7 @@ const char *android_texture_source(const char *filename)
 	return resolved ? PHYSFS_getRealDir(resolved) : NULL;
 }
 
-int read_png(const char *filename, png_data *pdata)
+static int read_png_policy(const char *filename, png_data *pdata, int scoped_opaque)
 {
 	PHYSFS_File *fp;
 	PHYSFS_sint64 fsize;
@@ -560,18 +562,25 @@ int read_png(const char *filename, png_data *pdata)
 
 	if (!filename || !pdata)
 		return 0;
-	resolved_filename = texture_lookup_resolve_indexed_path(filename);
-	if (!resolved_filename)
-		return 0;
-	if (texture_lookup_miss_cache_contains(filename) ||
-	    (resolved_filename != filename && texture_lookup_miss_cache_contains(resolved_filename)))
-		return 0;
+	char owned_path[256];
+	if (scoped_opaque) {
+		/* mods/ is intentionally absent from the global cosmetic index. Revalidate
+		 * active ownership and case here; never broaden that index or its cache. */
+		if (!android_mission_assets_find_owned_file(filename, owned_path, sizeof(owned_path))) return 0;
+		resolved_filename = owned_path;
+	} else {
+		resolved_filename = texture_lookup_resolve_indexed_path(filename);
+		if (!resolved_filename) return 0;
+		if (texture_lookup_miss_cache_contains(filename) ||
+		    (resolved_filename != filename && texture_lookup_miss_cache_contains(resolved_filename))) return 0;
+	}
 
 	fp = PHYSFS_openRead(resolved_filename);
 	if (!fp) {
-		texture_lookup_miss_cache_add(filename);
-		if (resolved_filename != filename)
-			texture_lookup_miss_cache_add(resolved_filename);
+		if (!scoped_opaque) {
+			texture_lookup_miss_cache_add(filename);
+			if (resolved_filename != filename) texture_lookup_miss_cache_add(resolved_filename);
+		}
 		return 0;
 	}
 
@@ -605,6 +614,18 @@ int read_png(const char *filename, png_data *pdata)
 		return 0;
 	}
 
+	/* XL marks tall replacements as alternate animations even without # names. */
+	const int animation = scoped_opaque >= 3;
+	if (scoped_opaque && !animation && h > w) {
+		free(fbuf);
+		return 0;
+	}
+
+	if (animation && (w < 2 || (w & (w - 1)) || h < w || h % w || h / w > 128)) {
+		free(fbuf);
+		return 0;
+	}
+
 	/* Ask stb_image for RGBA or RGB depending on what's in the file.
 	 * channels=0 means "give me whatever the file has". */
 	pixels = stbi_load_from_memory(fbuf, (int) fsize, &w, &h, &channels, 0);
@@ -612,10 +633,67 @@ int read_png(const char *filename, png_data *pdata)
 
 	if (!pixels)
 		return 0;
-	pixels = texture_fit_pixels(pixels, &w, &h, channels);
+	/* Classify before any fitting: averaging can erase sparse purple keys. */
+	unsigned char *mask = NULL;
+	int has_super = 0, has_soft = 0;
+	if (scoped_opaque) {
+		if ((channels != 3 && channels != 4) ||
+		    (size_t) w * h > ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES / 5) {
+			free(pixels);
+			return 0;
+		}
+		for (size_t i = 0; i < (size_t) w * h; ++i) {
+			const unsigned char *p = pixels + i * channels;
+			const int key = p[0] == 120 && p[1] == 88 && p[2] == 128;
+			const int alpha = channels == 4 ? p[3] : 255;
+			if ((!key && alpha != 0 && alpha != 255 && scoped_opaque != 5) || ((scoped_opaque == 1 || scoped_opaque == 3) && (key || alpha != 255))) {
+				free(pixels);
+				return 0;
+			}
+			has_super |= key;
+			has_soft |= !key && alpha != 0 && alpha != 255;
+		}
+		if (scoped_opaque == 2) {
+			/* Binary material mip chains currently require power-of-two surfaces.
+			 * Keep non-POT opaque artwork on its existing padding path. */
+			int binary = has_super;
+			if (channels == 4)
+				for (size_t i = 0; i < (size_t) w * h; ++i) binary |= !pixels[i * 4 + 3];
+			if (binary && ((w & (w - 1)) || (h & (h - 1)))) {
+				free(pixels);
+				return 0;
+			}
+#ifdef OGL
+			const int limit = ogl_max_texture_size > 0 ? ogl_max_texture_size : 2048;
+#else
+			const int limit = 2048;
+#endif
+			dxx_xl_static_pixels fitted;
+			if (!dxx_xl_fit_static_pixels(pixels, w, h, channels, limit, &fitted)) {
+				free(pixels);
+				return 0;
+			}
+			free(pixels);
+			pixels = fitted.data;
+			mask = fitted.mask;
+			w = fitted.width;
+			h = fitted.height;
+			channels = 4;
+			has_super = fitted.super;
+			if (binary && ((w & (w - 1)) || (h & (h - 1)))) {
+				free(pixels);
+				return 0;
+			}
+
+		} else if (!animation) pixels = texture_fit_pixels(pixels, &w, &h, channels);
+	} else pixels = texture_fit_pixels(pixels, &w, &h, channels);
 	if (!pixels) return 0;
 
 	memset(pdata, 0, sizeof(*pdata));
+	pdata->scoped_mask = mask;
+	pdata->scoped_static = scoped_opaque == 2;
+	pdata->scoped_super = has_super;
+	pdata->scoped_soft = has_soft;
 	pdata->width = (unsigned int) w;
 	pdata->height = (unsigned int) h;
 	pdata->depth = 8;
@@ -628,6 +706,36 @@ int read_png(const char *filename, png_data *pdata)
 	pdata->alpha = (channels == 4 || channels == 2) ? 1 : 0;
 
 	return 1;
+}
+
+int read_png(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 0);
+}
+
+int read_png_scoped_opaque(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 1);
+}
+
+int read_png_scoped_animation(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 3);
+}
+
+int read_png_scoped_binary_animation(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 4);
+}
+
+int read_png_scoped_soft_animation(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 5);
+}
+
+int read_png_scoped_static(const char *filename, png_data *pdata)
+{
+	return read_png_policy(filename, pdata, 2);
 }
 
 /* Screenshots: on Android without libpng, gr.c falls back to TGA output

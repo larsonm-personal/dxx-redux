@@ -279,11 +279,11 @@ class SweepTests(unittest.TestCase):
     def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         self.assertIn(
-            "REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' }}",
+            "REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' }}",
             workflow,
         )
         self.assertIn(
-            "(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha",
+            "(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha",
             workflow,
         )
         self.assertIn(
@@ -329,6 +329,36 @@ class SweepTests(unittest.TestCase):
         self.assertIn("glob('test_xl_feature_browser_*.log')", step)
         self.assertIn("not path.is_symlink()", step)
         self.assertIn("stream.read(16384)", step)
+
+    def test_static_texture_campaign_builds_the_actual_opt_in_runtime(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        self.assertIn(
+            "'xl_textures': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_scoped_static_textures' for test in selected)",
+            workflow,
+        )
+        build = workflow.split("      - name: Build emulator APKs before boot", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}", build)
+        execute = workflow.split("      - name: Execute reviewed test selection", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("ORG_GRADLE_PROJECT_xlPilot: ${{ steps.selection.outputs.xl_textures }}", execute)
+
+    def test_static_texture_diagnostic_is_bounded_and_public_only(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("      - name: Report synthetic XL texture result", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("!inputs.retail_assets", step)
+        self.assertIn("row.get('id') == 'master:test_scoped_static_textures'", step)
+        self.assertIn("glob('test_scoped_static_textures_*.log')", step)
+        self.assertIn("not path.is_symlink()", step)
+        self.assertIn("stream.read(16384)", step)
+
+    def test_static_texture_campaign_is_exact_and_asset_free(self):
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {"schema": 1, "tests": [{"name": "test_scoped_static_textures"}]}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        chosen = sweep.select_public_campaign(plan, policy, catalog, "xl-textures")
+        self.assertEqual([e["id"] for e in chosen["tests"]], ["master:test_scoped_static_textures"])
+        self.assertEqual(chosen["lanes"], ["android-single"])
+        self.assertEqual(chosen["estimated_seconds"], 600)
+        self.assertNotIn("retail_assets", chosen)
 
     def test_xl_browser_campaign_is_exact_and_asset_free(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
@@ -955,8 +985,8 @@ class SweepTests(unittest.TestCase):
     def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         self.assertIn(
-            "options:[nightly,first-play,graphics-capabilities,xl-browser,basic-use,online-preview,online-preview-d2,online-transports]",
-            "".join(workflow.split()),
+            "options:[nightly,first-play,graphics-capabilities,xl-browser,xl-textures,basic-use,online-preview,online-preview-d2,online-transports]",
+            "".join(workflow.split()).replace(",]", "]"),
         )
         self.assertIn("default: nightly", workflow)
         self.assertIn(

@@ -29,6 +29,7 @@ int xl_classic_lighting_color(int vertex, float rgb[3]);
 unsigned xl_classic_lighting_vertex_count(void);
 /* No-mesh visual profile belongs to prepared classic lighting, not mission identity */
 int xl_classic_legacy_fans_active(void);
+void xl_preview_clear_mission(void);
 int xl_level_supported(const char *filename, int multiplayer);
 const char *xl_level_rejection(void);
 int xl_test_stop_after_level(void);

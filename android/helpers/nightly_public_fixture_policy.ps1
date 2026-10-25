@@ -74,6 +74,7 @@ function Test-SuiteMediaIndependentTest {
                 'test_android_ogl_batches',
                 'test_android_redbook_completion',
                 'test_android_texture_bindings',
+                'test_scoped_static_textures',
                 'test_android_texture_labels',
                 'test_android_xmodel_mipmaps',
                 'test_pcm_ring',

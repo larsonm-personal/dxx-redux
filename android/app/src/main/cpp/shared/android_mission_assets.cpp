@@ -1,5 +1,6 @@
 /* Android mission-owned mounts. See MissionLaunchPublication.kt for schema 1 */
 #include "android_mission_assets.h"
+#include "../../../../../XL_compat/scoped_texture.h"
 #include <nlohmann/json.hpp>
 #include <physfs.h>
 #include <algorithm>
@@ -350,4 +351,16 @@ int android_mission_assets_resolve_key(const char *key, char *mission_path, size
 		return 1;
 	}
 	return 0;
+}
+
+int android_mission_assets_find_static_texture(const char *hog, const char *bitmap, char *resolved, size_t capacity)
+{
+	const auto path = xl_compat::static_mission_texture_path(hog, bitmap);
+	return !path.empty() && android_mission_assets_find_owned_file(path.c_str(), resolved, capacity);
+}
+
+int android_mission_assets_find_animation_texture(const char *hog, const char *bitmap, char *resolved, size_t capacity)
+{
+	const auto path = xl_compat::animation_mission_texture_path(hog, bitmap);
+	return !path.empty() && android_mission_assets_find_owned_file(path.c_str(), resolved, capacity);
 }

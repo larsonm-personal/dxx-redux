@@ -297,6 +297,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_android_merged_wrap'
             'test_android_merge_cache'
             'test_android_texture_bindings'
+            'test_scoped_static_textures'
             'test_android_xmodel_mipmaps'
             'test_android_ktx2_mipmaps'
             'test_hires_pack_release'

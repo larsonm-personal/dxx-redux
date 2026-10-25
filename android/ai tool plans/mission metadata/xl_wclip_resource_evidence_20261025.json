@@ -1,0 +1,100 @@
+{
+    "asset_revision": "d9fbeaf6eb059fd4504308bfd6364734775b7cba",
+    "archive": "missions/d2xxl_downloads/levelpack.7z",
+    "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+    "hog_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+    "method": "Read original v23/game40 wall records with the pinned XL 25-byte serialized layout; require each wall location to match the bounded geometry scan. This is resource association, not gameplay admission. No original artwork GPU execution.",
+    "walls": [
+        {
+            "level": "boilpnt.rl2",
+            "wall": 31,
+            "segment": 502,
+            "side": 4,
+            "type": 1,
+            "flags": 0,
+            "state": 0,
+            "clip": 46,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507"
+        },
+        {
+            "level": "canyon.rl2",
+            "wall": 24,
+            "segment": 281,
+            "side": 3,
+            "type": 1,
+            "flags": 0,
+            "state": 0,
+            "clip": 46,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0"
+        },
+        {
+            "level": "canyon.rl2",
+            "wall": 22,
+            "segment": 313,
+            "side": 5,
+            "type": 1,
+            "flags": 0,
+            "state": 0,
+            "clip": 46,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0"
+        },
+        {
+            "level": "canyon.rl2",
+            "wall": 23,
+            "segment": 329,
+            "side": 1,
+            "type": 1,
+            "flags": 0,
+            "state": 0,
+            "clip": 46,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0"
+        },
+        {
+            "level": "canyon.rl2",
+            "wall": 21,
+            "segment": 330,
+            "side": 4,
+            "type": 1,
+            "flags": 0,
+            "state": 0,
+            "clip": 46,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0"
+        },
+        {
+            "level": "control2.rl2",
+            "wall": 600,
+            "segment": 2025,
+            "side": 4,
+            "type": 5,
+            "flags": 0,
+            "state": 0,
+            "clip": -1,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef"
+        },
+        {
+            "level": "control2.rl2",
+            "wall": 601,
+            "segment": 2029,
+            "side": 5,
+            "type": 5,
+            "flags": 0,
+            "state": 0,
+            "clip": -1,
+            "declared_record_size": 24,
+            "serialized_record_size": 25,
+            "level_sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef"
+        }
+    ]
+}

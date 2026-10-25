@@ -681,9 +681,8 @@ const char *mission_resource_archive(void)
 void free_mission(void)
 {
 #ifdef DXX_XL_PILOT
-	xl_classic_lighting_release();
 	d_free(Current_mission_descriptor);
-	xl_discard_prepared_resources();
+	xl_preview_clear_mission();
 	xl_resource_select_mission(0);
 	xl_resource_baseline_clear();
 #endif
@@ -1296,7 +1295,8 @@ int load_mission(mle *mission)
 	Current_mission->enhanced = 0;
 	Current_mission->alternate_ham_file = NULL;
 #ifdef DXX_XL_PILOT
-	xl_resource_select_mission(mission->requires_xl);
+	/* Browser classification is a hint, not the active resource policy */
+	xl_resource_select_mission(0);
 #endif
 
 	//init vars
@@ -1446,6 +1446,9 @@ int load_mission(mle *mission)
 		return 0;
 	}
 
+#ifdef DXX_XL_PILOT
+	xl_resource_commit_mission();
+#endif
 	// re-read default HAM file, in case this mission brings it's own version of it
 	if (d1_in_d2_load_mission_assets())
 		init_extra_robot_movie(Current_mission_filename);

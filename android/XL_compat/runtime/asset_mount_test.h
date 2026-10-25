@@ -34,6 +34,11 @@ static void asset_mount_test(int argc, char **argv)
 	write_bytes((first / "collision.txt").string().c_str(), { 'a' });
 	write_bytes((second / "collision.txt").string().c_str(), { 'b' });
 	write_bytes((first / "OWNED.WAV").string().c_str(), { 'a' });
+	std::filesystem::create_directories(first / "mods/pilot/textures");
+	std::filesystem::create_directories(second / "mods/pilot/textures");
+	write_bytes((first / "mods/pilot/textures/CEIL002.TGA").string().c_str(), { 'a' });
+	write_bytes((first / "mods/pilot/textures/ceil002.bmp").string().c_str(), { 'x' });
+	write_bytes((second / "mods/pilot/textures/ceil002.tga").string().c_str(), { 'b' });
 	const auto sound_root = first / "mods/pilot";
 	std::filesystem::create_directories(sound_root / "sounds/level01");
 	std::filesystem::create_directories(sound_root / "sounds/slevel01");
@@ -54,6 +59,7 @@ static void asset_mount_test(int argc, char **argv)
 		                    { "mounts", mounts } });
 	};
 	entry("first", { first.string() });
+	entry("second", { second.string() });
 	entry("broken", { second.string(), broken.string(), tail.string() });
 	entry("duplicate", { second.string(), second.string() });
 	entry("overlap", { second.string(), first.string() });
@@ -95,6 +101,29 @@ static void asset_mount_test(int argc, char **argv)
 	char owned_byte = 0;
 	require(owned_file && PHYSFS_readBytes(owned_file, &owned_byte, 1) == 1 && owned_byte == 'a', "owned lookup selected different content");
 	PHYSFS_close(owned_file);
+
+	const auto texture_byte = [&]() {
+		char path[256], value = 0;
+		require(android_mission_assets_find_static_texture("missions/PILOT.HOG", "ceil002", path, sizeof(path)), "owned static texture missing");
+		PHYSFS_file *file = PHYSFS_openRead(path);
+		require(file && PHYSFS_readBytes(file, &value, 1) == 1, "owned static texture unreadable");
+		PHYSFS_close(file);
+		return value;
+	};
+	require(texture_byte() == 'a', "static texture chose BMP or wrong owner");
+	for (const char *name : { "../ceil002", "a/ceil002", "a\\ceil002", "ceil002#0", "", "C:ceil002" })
+		require(!android_mission_assets_find_static_texture("pilot.hog", name, owned_path, sizeof(owned_path)), "unsafe or animated texture accepted");
+	require(!android_mission_assets_find_static_texture("other.hog", "ceil002", owned_path, sizeof(owned_path)) &&
+	            !android_mission_assets_find_static_texture("pilot.zip", "ceil002", owned_path, sizeof(owned_path)) &&
+	            !android_mission_assets_find_static_texture("pilot.hog", "ceil002", owned_path, 4),
+	        "texture identity or output bound ignored");
+	require(android_mission_assets_prepare("missions/_packs/second/test.mn2", resolved, sizeof(resolved)) && android_mission_assets_activate(), "cannot switch texture owner");
+	require(texture_byte() == 'b', "texture retained first owner");
+	android_mission_assets_free_begin();
+	android_mission_assets_free_end();
+	require(!android_mission_assets_find_static_texture("pilot.hog", "ceil002", owned_path, sizeof(owned_path)), "texture leaked into stock context");
+	require(android_mission_assets_prepare("missions/_packs/first/test.mn2", resolved, sizeof(resolved)) && android_mission_assets_activate(), "cannot restore texture owner");
+	require(texture_byte() == 'a', "texture failed A-B-stock-A restoration");
 	const auto lookup = [](const std::string &path) {
 		char resolved_path[PATH_MAX];
 		return android_mission_assets_find_owned_file(path.c_str(), resolved_path, sizeof(resolved_path)) ? std::string(resolved_path) : std::string{};

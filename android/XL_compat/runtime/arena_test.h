@@ -1,5 +1,7 @@
 #include "resource_validation.h"
 #include "input_demo_replay.h"
+#include "xl_animation_phase.h"
+#include "effects.h"
 #include <map>
 extern "C" {
 #include "physics.h"
@@ -10,6 +12,29 @@ int check_volatile_wall(object *, int, int, vms_vector *);
 int d1_in_d2_load_mission_assets(void);
 void reset_level_robots_file(void);
 extern int Robot_replacements_loaded;
+}
+
+static std::vector<int> arena_animation_phases()
+{
+	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+	std::vector<int> phases;
+	bool valid = false;
+	for (int i = 0; i < Num_effects; ++i) {
+		const eclip before = Effects[i];
+		const int phase = dxx_xl_animation_frame(before.vc.num_frames, before.vc.frame_time,
+		                                         before.frame_count, before.time_left, before.flags & EF_STOPPED, 6);
+		valid |= phase >= 0;
+		phases.push_back(phase);
+		for (int sample = 0; sample < 17; ++sample)
+			require(dxx_xl_animation_frame(before.vc.num_frames, before.vc.frame_time, before.frame_count,
+			                               before.time_left, before.flags & EF_STOPPED, 6) == phase,
+			        "render-only animation phase changed while simulation was paused");
+		require(!std::memcmp(&before, &Effects[i], sizeof(before)), "animation sampling changed effect state");
+	}
+	require(valid && sim == d_rand_get_stream_call_count(D_RNG_SIM) && fx == d_rand_get_stream_call_count(D_RNG_FX),
+	        "animation phase sampling consumed RNG or had no valid effects");
+	return phases;
 }
 
 static int arena_remainder = 0;
@@ -172,7 +197,7 @@ static void arena_fluid_objects()
 	for (const auto type : { OBJ_ROBOT, OBJ_WEAPON }) {
 		vms_vector start;
 		compute_segment_center(&start, &Segments[187]);
-		const int index = obj_create(type, 0, 187, &start, &orientation, F1_0 / 8, CT_NONE, MT_PHYSICS, RT_NONE);
+		const int index = obj_create(type, 0, 187, &start, &orientation, F1_0 / 8, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_PHYSICS, RT_NONE);
 		require(index >= 0, "cannot create fluid motion probe");
 		auto &probe = Objects[index];
 		probe.mtype.phys_info.mass = F1_0;
@@ -631,6 +656,7 @@ static int arena_test(int argc, char **argv)
 		stop_time();
 		require(state_save_all_sub(save, description) != 0, "water save failed");
 		const auto saved_state = arena_state();
+		const auto saved_animation = arena_animation_phases();
 		const auto saved_position = ConsoleObject->pos;
 		const int saved_remainder = arena_remainder;
 		const auto saved_rng_calls = d_rand_get_stream_call_count(D_RNG_SIM);
@@ -639,9 +665,11 @@ static int arena_test(int argc, char **argv)
 		const auto expected_rng_calls = d_rand_get_stream_call_count(D_RNG_SIM) - saved_rng_calls;
 		require(!xl_preview_water_segment(ConsoleObject->segnum), "water leaked after exit");
 		require(state_restore_all_sub(save, 0) != 0, "water restore failed");
+		require(xl_resource_texture_scope_enabled() && *mission_resource_archive(), "water save restore lost XL resource identity");
 		require(ConsoleObject->segnum == 187 && !std::memcmp(&ConsoleObject->pos, &saved_position, sizeof(saved_position)) && xl_preview_water_segment(187), "water checkpoint did not restore property/position");
 		require(d_rand_get_stream_call_count(D_RNG_SIM) == 0, "native restore did not reset diagnostic SIM count");
 		const auto restored_state = arena_state();
+		require(arena_animation_phases() == saved_animation, "native restore changed render-only animation phases");
 		for (std::size_t i = 0; i < saved_state.size(); ++i)
 			if (saved_state[i] != restored_state[i]) std::cout << "Restore field " << i << ": " << saved_state[i] << " -> " << restored_state[i] << '\n';
 		require(restored_state == saved_state, "water checkpoint restored a different simulation state");
@@ -674,7 +702,25 @@ static int arena_test(int argc, char **argv)
 			require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount prepared POG control");
 			require(std::filesystem::remove(path), "cannot remove prepared POG control");
 		}
+		require(xl_preview_water_segment(187), "transition regression requires an active XL water source");
 		require(load_base_mission("d2", error, sizeof(error)), error);
+		const auto classic_inactive = [] {
+			require(!xl_runtime_active() && !xl_preview_pilot_active() && !xl_preview_pilot_completed() &&
+			            !xl_preview_water_segment(187) && xl_preview_motion_time(187, 1000) == 1000 &&
+			            !xl_resource_texture_scope_enabled() && !*mission_resource_archive(),
+			        "committed classic mission retained XL gameplay or resource identity");
+		};
+		classic_inactive();
+		require(xl_preview_load_level("absent.rl2") != 0, "missing classic level unexpectedly loaded");
+		classic_inactive();
+		const auto truncated = resource_shadow / "trunc.rl2";
+		write_bytes(truncated.string().c_str(), xl_compat::Bytes{ 'P', 'L', 'V', 'L' });
+		require(PHYSFS_addToSearchPath(resource_shadow.string().c_str(), 0), "cannot mount truncated classic level");
+		require(xl_preview_load_level("trunc.rl2") != 0, "truncated classic level unexpectedly loaded");
+		classic_inactive();
+		require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount truncated classic level");
+		require(std::filesystem::remove(truncated), "cannot remove truncated classic level");
+		std::cout << "Active XL -> committed classic -> missing/truncated level: gameplay and resource identity cleared\n";
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(!xl_preview_water_segment(187) && xl_preview_motion_time(187, 1000) == 1000, "water state leaked into stock");

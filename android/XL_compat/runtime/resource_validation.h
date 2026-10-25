@@ -9,6 +9,9 @@ void xl_resource_baseline_clear(void);
 void xl_resource_baseline_capture(void);
 void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file);
 void xl_resource_select_mission(int requires_xl);
+void xl_resource_commit_mission(void);
+/* New D2 texture capability, not a general package-ownership or gameplay flag */
+int xl_resource_texture_scope_enabled(void);
 const char *xl_resource_base_rejection(void);
 void xl_discard_prepared_resources(void);
 int xl_install_prepared_hxm(const char *level_filename);
