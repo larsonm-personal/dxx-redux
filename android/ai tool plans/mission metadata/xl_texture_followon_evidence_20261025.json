@@ -20,7 +20,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 4096
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/ceil031.tga",
@@ -38,7 +49,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 4096
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/ceil032.tga",
@@ -56,7 +78,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 4096
+                }
+            }
         },
         {
             "member": "mods/ewithin/textures/COCKPITB.TGA",
@@ -74,7 +107,19 @@
             "alpha_zero": 0,
             "alpha_full": 307200,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 640,
+                "height": 480,
+                "purple_key": 0,
+                "ordinary_cutout": 188672,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 188672,
+                    "255": 118528
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/door53#0.tga",
@@ -99,7 +144,244 @@
                 "de7432973cfa7a24a526192bfeecfc1e750fed4d229f807ccc7fc3aea4630b43",
                 "d51194c6aaad8f62c5c3b5c63beff7513ea70fcc71ad7a600ffd62ff2bd66925",
                 "b7997c60612a8f60f104b19583162aaac7dde1f1ab2e8ef7c9b935550e2b0aa8"
-            ]
+            ],
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 256,
+                "height": 1024,
+                "purple_key": 0,
+                "ordinary_cutout": 69906,
+                "non_key_partial": 1453,
+                "alpha_histogram": {
+                    "0": 69906,
+                    "1": 9,
+                    "2": 17,
+                    "3": 12,
+                    "4": 42,
+                    "5": 6,
+                    "6": 105,
+                    "7": 2,
+                    "8": 156,
+                    "9": 3,
+                    "10": 31,
+                    "11": 1,
+                    "12": 38,
+                    "13": 2,
+                    "14": 33,
+                    "15": 4,
+                    "16": 24,
+                    "17": 1,
+                    "18": 20,
+                    "19": 1,
+                    "20": 33,
+                    "21": 1,
+                    "22": 7,
+                    "23": 12,
+                    "24": 2,
+                    "25": 15,
+                    "27": 13,
+                    "28": 1,
+                    "29": 13,
+                    "30": 1,
+                    "31": 11,
+                    "32": 7,
+                    "33": 7,
+                    "34": 8,
+                    "35": 2,
+                    "36": 8,
+                    "37": 3,
+                    "38": 6,
+                    "39": 10,
+                    "40": 1,
+                    "41": 6,
+                    "43": 5,
+                    "44": 1,
+                    "45": 10,
+                    "46": 1,
+                    "47": 8,
+                    "48": 9,
+                    "49": 2,
+                    "50": 4,
+                    "51": 5,
+                    "52": 6,
+                    "54": 3,
+                    "55": 9,
+                    "56": 10,
+                    "57": 2,
+                    "58": 4,
+                    "59": 2,
+                    "60": 7,
+                    "61": 4,
+                    "62": 6,
+                    "63": 7,
+                    "64": 7,
+                    "65": 1,
+                    "66": 5,
+                    "67": 3,
+                    "68": 4,
+                    "69": 11,
+                    "70": 3,
+                    "71": 2,
+                    "72": 3,
+                    "73": 2,
+                    "74": 4,
+                    "75": 8,
+                    "76": 1,
+                    "77": 4,
+                    "78": 5,
+                    "79": 3,
+                    "80": 7,
+                    "81": 4,
+                    "82": 6,
+                    "83": 5,
+                    "84": 2,
+                    "85": 4,
+                    "86": 6,
+                    "87": 4,
+                    "88": 5,
+                    "89": 5,
+                    "90": 5,
+                    "91": 4,
+                    "92": 1,
+                    "93": 10,
+                    "94": 3,
+                    "95": 4,
+                    "96": 8,
+                    "97": 7,
+                    "98": 6,
+                    "99": 5,
+                    "100": 4,
+                    "101": 10,
+                    "102": 6,
+                    "103": 4,
+                    "104": 7,
+                    "105": 3,
+                    "106": 4,
+                    "107": 5,
+                    "108": 9,
+                    "109": 3,
+                    "110": 6,
+                    "111": 6,
+                    "112": 4,
+                    "113": 3,
+                    "114": 2,
+                    "116": 4,
+                    "117": 3,
+                    "118": 4,
+                    "119": 6,
+                    "120": 5,
+                    "121": 6,
+                    "122": 8,
+                    "123": 2,
+                    "124": 8,
+                    "125": 8,
+                    "126": 3,
+                    "127": 2,
+                    "128": 1,
+                    "129": 3,
+                    "130": 7,
+                    "131": 1,
+                    "132": 8,
+                    "133": 5,
+                    "134": 5,
+                    "135": 2,
+                    "136": 6,
+                    "137": 11,
+                    "138": 2,
+                    "139": 3,
+                    "140": 6,
+                    "141": 5,
+                    "142": 4,
+                    "143": 4,
+                    "144": 6,
+                    "145": 6,
+                    "146": 5,
+                    "147": 5,
+                    "148": 5,
+                    "149": 3,
+                    "150": 1,
+                    "151": 6,
+                    "152": 3,
+                    "153": 3,
+                    "154": 5,
+                    "155": 2,
+                    "156": 4,
+                    "157": 4,
+                    "158": 8,
+                    "159": 1,
+                    "160": 6,
+                    "161": 5,
+                    "162": 2,
+                    "163": 6,
+                    "164": 3,
+                    "165": 2,
+                    "166": 2,
+                    "167": 5,
+                    "169": 1,
+                    "170": 3,
+                    "171": 1,
+                    "172": 5,
+                    "173": 5,
+                    "174": 2,
+                    "175": 4,
+                    "176": 2,
+                    "177": 1,
+                    "178": 2,
+                    "179": 5,
+                    "180": 4,
+                    "181": 3,
+                    "182": 2,
+                    "183": 3,
+                    "184": 3,
+                    "185": 4,
+                    "186": 5,
+                    "187": 3,
+                    "188": 6,
+                    "189": 5,
+                    "190": 4,
+                    "191": 4,
+                    "192": 2,
+                    "193": 6,
+                    "194": 4,
+                    "195": 2,
+                    "196": 4,
+                    "197": 3,
+                    "198": 1,
+                    "199": 5,
+                    "200": 5,
+                    "201": 2,
+                    "202": 5,
+                    "203": 3,
+                    "204": 1,
+                    "205": 1,
+                    "206": 10,
+                    "207": 5,
+                    "208": 7,
+                    "209": 3,
+                    "210": 3,
+                    "211": 2,
+                    "212": 5,
+                    "213": 4,
+                    "214": 6,
+                    "215": 6,
+                    "216": 2,
+                    "217": 6,
+                    "218": 1,
+                    "219": 3,
+                    "220": 2,
+                    "221": 2,
+                    "223": 2,
+                    "224": 1,
+                    "225": 3,
+                    "226": 1,
+                    "227": 2,
+                    "230": 1,
+                    "231": 1,
+                    "232": 1,
+                    "233": 1,
+                    "255": 190785
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/fan03.tga",
@@ -128,6 +410,19 @@
                 "purple_key": 28375,
                 "ordinary_cutout": 22811,
                 "binary_admission": "rejected: non-key alpha104 at stored pixel47303 RGB124/93/132"
+            },
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 256,
+                "height": 256,
+                "purple_key": 28375,
+                "ordinary_cutout": 22811,
+                "non_key_partial": 1,
+                "alpha_histogram": {
+                    "0": 51186,
+                    "104": 1,
+                    "255": 14349
+                }
             }
         },
         {
@@ -155,7 +450,18 @@
                 "370be32261070300d3d20bc56c20cf9c9af6a637bb65644399e3ed8407a06402",
                 "9c79bac2ba9a8d5c99cba2b64b43a105097cf2653ee1bb51a9df28e705194293",
                 "7bc315d2e71b7925296a16786d5216de04a50bdb40c8889a56645845cdec76d8"
-            ]
+            ],
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 768,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 98304
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl015.tga",
@@ -173,7 +479,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl024.tga",
@@ -191,7 +508,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 4096
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl036.tga",
@@ -209,7 +537,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl048.tga",
@@ -227,7 +566,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl060.tga",
@@ -245,7 +595,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl065.tga",
@@ -263,7 +624,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl096.tga",
@@ -281,7 +653,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl100.tga",
@@ -326,7 +709,45 @@
             "alpha_zero": 0,
             "alpha_full": 4394,
             "alpha_partial": 11990,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 11990,
+                "alpha_histogram": {
+                    "57": 137,
+                    "63": 953,
+                    "64": 2135,
+                    "70": 1368,
+                    "71": 998,
+                    "72": 567,
+                    "78": 243,
+                    "79": 905,
+                    "81": 89,
+                    "87": 768,
+                    "88": 190,
+                    "89": 121,
+                    "94": 75,
+                    "95": 442,
+                    "96": 703,
+                    "97": 4,
+                    "102": 394,
+                    "103": 101,
+                    "104": 971,
+                    "105": 290,
+                    "110": 13,
+                    "111": 58,
+                    "112": 295,
+                    "113": 67,
+                    "118": 7,
+                    "119": 85,
+                    "120": 11,
+                    "255": 4394
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl109.tga",
@@ -344,7 +765,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 4096
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl111.tga",
@@ -453,7 +885,109 @@
             "alpha_zero": 0,
             "alpha_full": 5734,
             "alpha_partial": 10650,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 10650,
+                "alpha_histogram": {
+                    "24": 3,
+                    "30": 2,
+                    "31": 6706,
+                    "32": 10,
+                    "33": 1,
+                    "37": 1,
+                    "38": 2,
+                    "39": 1,
+                    "45": 3,
+                    "46": 12,
+                    "47": 102,
+                    "48": 1,
+                    "53": 43,
+                    "54": 21,
+                    "55": 48,
+                    "56": 19,
+                    "59": 1,
+                    "60": 1,
+                    "61": 115,
+                    "62": 6,
+                    "63": 37,
+                    "64": 14,
+                    "67": 17,
+                    "68": 1,
+                    "69": 100,
+                    "70": 13,
+                    "71": 37,
+                    "72": 6,
+                    "75": 16,
+                    "76": 22,
+                    "77": 79,
+                    "78": 23,
+                    "79": 26,
+                    "80": 2,
+                    "83": 53,
+                    "84": 2,
+                    "85": 118,
+                    "86": 2,
+                    "87": 34,
+                    "91": 63,
+                    "92": 2,
+                    "93": 150,
+                    "94": 1,
+                    "95": 23,
+                    "99": 82,
+                    "100": 2,
+                    "101": 155,
+                    "103": 10,
+                    "107": 60,
+                    "109": 181,
+                    "111": 8,
+                    "114": 51,
+                    "117": 254,
+                    "118": 1,
+                    "119": 13,
+                    "122": 39,
+                    "124": 1,
+                    "125": 269,
+                    "126": 46,
+                    "127": 18,
+                    "130": 10,
+                    "132": 66,
+                    "133": 169,
+                    "134": 101,
+                    "138": 5,
+                    "140": 228,
+                    "142": 139,
+                    "146": 1,
+                    "148": 107,
+                    "150": 162,
+                    "152": 3,
+                    "155": 62,
+                    "158": 139,
+                    "160": 7,
+                    "163": 2,
+                    "164": 46,
+                    "165": 43,
+                    "166": 58,
+                    "168": 10,
+                    "171": 20,
+                    "173": 22,
+                    "174": 51,
+                    "175": 2,
+                    "176": 2,
+                    "179": 8,
+                    "181": 26,
+                    "183": 9,
+                    "184": 1,
+                    "189": 14,
+                    "191": 6,
+                    "197": 2,
+                    "255": 5734
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl128.tga",
@@ -510,7 +1044,57 @@
             "alpha_zero": 0,
             "alpha_full": 1,
             "alpha_partial": 16383,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 16383,
+                "alpha_histogram": {
+                    "54": 177,
+                    "59": 526,
+                    "60": 739,
+                    "61": 12,
+                    "62": 2901,
+                    "67": 1904,
+                    "68": 297,
+                    "69": 1049,
+                    "70": 759,
+                    "74": 10,
+                    "75": 300,
+                    "76": 2,
+                    "77": 1273,
+                    "80": 120,
+                    "82": 1,
+                    "84": 1001,
+                    "85": 84,
+                    "87": 283,
+                    "88": 162,
+                    "92": 784,
+                    "94": 25,
+                    "95": 914,
+                    "96": 8,
+                    "100": 681,
+                    "101": 3,
+                    "102": 1247,
+                    "103": 328,
+                    "104": 34,
+                    "107": 17,
+                    "108": 82,
+                    "109": 170,
+                    "110": 249,
+                    "111": 24,
+                    "112": 70,
+                    "115": 3,
+                    "116": 27,
+                    "117": 95,
+                    "118": 18,
+                    "119": 4,
+                    "255": 1
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl129.tga",
@@ -528,7 +1112,19 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 3321,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 3321,
+                    "255": 775
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl130.tga",
@@ -546,7 +1142,19 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 1936,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 1936,
+                    "255": 2160
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/metl145.tga",
@@ -564,7 +1172,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/misc002.tga",
@@ -582,7 +1201,19 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 2427,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 2427,
+                    "255": 1669
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/misc019.tga",
@@ -600,7 +1231,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/misc042.tga",
@@ -618,7 +1260,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/misc059.tga",
@@ -636,7 +1289,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 4096
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/misc075.tga",
@@ -664,6 +1328,18 @@
                 "purple_key": 21878,
                 "ordinary_cutout": 26379,
                 "binary_admission": "accepted by production classification; original GPU rendering not yet qualified"
+            },
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 256,
+                "height": 256,
+                "purple_key": 21878,
+                "ordinary_cutout": 26379,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 48257,
+                    "255": 17279
+                }
             }
         },
         {
@@ -682,7 +1358,18 @@
             "alpha_zero": 0,
             "alpha_full": 16384,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 128,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 16384
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/redgoal#0.tga",
@@ -709,7 +1396,18 @@
                 "370be32261070300d3d20bc56c20cf9c9af6a637bb65644399e3ed8407a06402",
                 "9c79bac2ba9a8d5c99cba2b64b43a105097cf2653ee1bb51a9df28e705194293",
                 "7bc315d2e71b7925296a16786d5216de04a50bdb40c8889a56645845cdec76d8"
-            ]
+            ],
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 128,
+                "height": 768,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 98304
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/rock059.tga",
@@ -727,7 +1425,18 @@
             "alpha_zero": 0,
             "alpha_full": 65536,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 256,
+                "height": 256,
+                "purple_key": 0,
+                "ordinary_cutout": 0,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "255": 65536
+                }
+            }
         },
         {
             "member": "mods/boilpnt/textures/rock162.tga",
@@ -745,7 +1454,18 @@
             "alpha_zero": 0,
             "alpha_full": 4096,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 64,
+                "height": 64,
+                "purple_key": 0,
+                "ordinary_cutout": 4096,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 4096
+                }
+            }
         },
         {
             "member": "mods/ewithin/textures/STATUSB.TGA",
@@ -763,7 +1483,19 @@
             "alpha_zero": 0,
             "alpha_full": 71040,
             "alpha_partial": 0,
-            "purple_key": 0
+            "purple_key": 0,
+            "engine_decode": {
+                "decoder": "Exact Android build pcm_decoders/stb_image.h; stored alpha retained like pinned XL raw TGA reader; bounded 64 MiB source and RGBA output",
+                "width": 640,
+                "height": 111,
+                "purple_key": 0,
+                "ordinary_cutout": 45622,
+                "non_key_partial": 0,
+                "alpha_histogram": {
+                    "0": 45622,
+                    "255": 25418
+                }
+            }
         }
     ],
     "qualification": "Pillow output can normalize TGA extension alpha type0. These alpha histograms are not stored-byte/engine-admission evidence. Native engine findings below supersede them for the named sources."
