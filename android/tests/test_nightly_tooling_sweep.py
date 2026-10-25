@@ -337,7 +337,7 @@ class SweepTests(unittest.TestCase):
         chosen = sweep.select_public_campaign(plan, policy, catalog, "xl-browser")
         self.assertEqual([e["id"] for e in chosen["tests"]], ["master:test_xl_feature_browser"])
         self.assertEqual(chosen["lanes"], ["android-single"])
-        self.assertEqual(chosen["estimated_seconds"], 120)
+        self.assertEqual(chosen["estimated_seconds"], 300)
         self.assertNotIn("retail_assets", chosen)
 
     def test_graphics_campaign_is_exact_public_and_within_lane_budget(self):

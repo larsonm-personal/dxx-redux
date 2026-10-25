@@ -14,7 +14,7 @@ try {
     $instrumentArgs = @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'xl_compatibility')
     if ($DragonPackageArchive) { $instrumentArgs += @('-e', 'dragon_package_archive', $DragonPackageArchive) }
     $instrumentArgs += "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation"
-    $result = Adb -Seconds 90 -AdbArgs $instrumentArgs
+    $result = Adb -Seconds 240 -AdbArgs $instrumentArgs
     Write-Output $result
     $result | Set-Content (Join-Path $output 'instrumentation.txt')
     if ($result -notmatch 'PASS: XL compatibility dialog text and colors' -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {

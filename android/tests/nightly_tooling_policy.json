@@ -1511,7 +1511,7 @@
             "owner": "master",
             "lane": "android-single",
             "args": { "suite": "test_xl_feature_browser" },
-            "estimated_seconds": 120,
+            "estimated_seconds": 300,
             "coverage_scope": "Synthetic XL detail dialog text, status colors and screenshots; no mission assets or engine launch."
         },
         {

@@ -4,8 +4,11 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.os.Bundle
 import android.os.SystemClock
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -54,12 +57,46 @@ internal class XlCompatibilityViewChecks(
         }
     }
 
+    private fun swipeScrollable(
+        node: AccessibilityNodeInfo,
+        direction: Int,
+    ) {
+        val bounds = Rect().also(node::getBoundsInScreen)
+        check(bounds.width() > 0 && bounds.height() > 0) { "Scrollable dialog has no touch bounds" }
+        val low = bounds.top + bounds.height() * 0.2f
+        val high = bounds.top + bounds.height() * 0.8f
+        val start = if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) low else high
+        val end = if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) high else low
+        val downTime = SystemClock.uptimeMillis()
+
+        fun inject(
+            action: Int,
+            y: Float,
+        ) {
+            val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, bounds.exactCenterX(), y, 0)
+            event.source = InputDevice.SOURCE_TOUCHSCREEN
+            try {
+                check(instrumentation.uiAutomation.injectInputEvent(event, true)) { "Dialog swipe injection failed" }
+            } finally {
+                event.recycle()
+            }
+        }
+        inject(MotionEvent.ACTION_DOWN, start)
+        for (step in 1..6) {
+            SystemClock.sleep(40)
+            inject(MotionEvent.ACTION_MOVE, start + (end - start) * step / 6f)
+        }
+        // Release at rest so later scroll-position assertions do not race a fling
+        SystemClock.sleep(180)
+        inject(MotionEvent.ACTION_MOVE, end)
+        inject(MotionEvent.ACTION_UP, end)
+    }
+
     private fun scrollTo(
         text: String,
         direction: Int = AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
     ): AccessibilityNodeInfo {
-        var lastDiagnostics = ""
-        repeat(10) {
+        repeat(10) { attempt ->
             find(text)?.let { target ->
                 if (target.isVisibleToUser) return target
                 target.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
@@ -69,16 +106,20 @@ internal class XlCompatibilityViewChecks(
             }
 
             fun scroll(node: AccessibilityNodeInfo): Boolean {
-                val vertical =
-                    if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) {
-                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id
-                    } else {
-                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                if (node.isScrollable && node.isVisibleToUser) {
+                    // Exercise the user's touch path too, when accessibility scrolling has not revealed the target
+                    if (attempt % 2 == 1) {
+                        swipeScrollable(node, direction)
+                        return true
                     }
-                if (node.isScrollable && node.actionList.any { it.id == vertical } &&
-                    node.performAction(vertical)
-                ) {
-                    return true
+                    val vertical =
+                        if (direction == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) {
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id
+                        } else {
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                        }
+                    if (node.actionList.any { it.id == vertical } && node.performAction(vertical)) return true
+                    if (node.performAction(direction)) return true
                 }
                 for (index in 0 until node.childCount) {
                     val child = node.getChild(index) ?: continue
@@ -86,38 +127,55 @@ internal class XlCompatibilityViewChecks(
                 }
                 return false
             }
-            val moved = scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))
+            scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))
             instrumentation.waitForIdleSync()
+            // A false action result can precede the accessibility update from the previous scroll
             SystemClock.sleep(250)
-            if (!moved) {
-                find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
-                // Only synthetic dialog text is rendered by this test; keep failure evidence bounded
-                val labels = mutableListOf<String>()
-
-                fun describe(
-                    node: AccessibilityNodeInfo,
-                    depth: Int,
-                ) {
-                    if (depth > 20 || labels.size >= 24) return
-                    if (node.text != null || node.isScrollable) {
-                        labels.add(
-                            "${node.text?.take(
-                                160,
-                            )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} " +
-                                "actions=${node.actionList.map {
-                                    it.id
-                                }} bounds=${Rect().also(
-                                    node::getBoundsInScreen,
-                                )}",
-                        )
-                    }
-                    for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
-                }
-                instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
-                lastDiagnostics = labels.joinToString(" | ")
-            }
         }
-        error("Text not visible after bounded scroll: $text; $lastDiagnostics")
+        find(text)?.takeIf { it.isVisibleToUser }?.let { return it }
+        // Only synthetic dialog text is rendered by this test; keep failure evidence bounded
+        val labels = mutableListOf<String>()
+
+        fun describe(
+            node: AccessibilityNodeInfo,
+            depth: Int,
+        ) {
+            if (depth > 20 || labels.size >= 24) return
+            if (node.text != null || node.isScrollable) {
+                labels.add(
+                    "${node.text?.take(
+                        160,
+                    )} visible=${node.isVisibleToUser} scroll=${node.isScrollable} actions=${node.actionList.map { it.id }} bounds=${Rect().also(
+                        node::getBoundsInScreen,
+                    )}",
+                )
+            }
+            for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
+        }
+        instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
+        error("Text not visible after bounded scroll: $text: ${labels.joinToString(" | ")}")
+    }
+
+    private fun settledBounds(text: String): Rect {
+        instrumentation.waitForIdleSync()
+        var previous: Rect? = null
+        var stable = 0
+        repeat(30) {
+            val node = find(text)
+            val current =
+                if (node?.isVisibleToUser ==
+                    true
+                ) {
+                    Rect().also(node::getBoundsInScreen).takeUnless { it.isEmpty }
+                } else {
+                    null
+                }
+            stable = if (current != null && current == previous) stable + 1 else 0
+            if (stable >= 3) return checkNotNull(current)
+            previous = current
+            SystemClock.sleep(100)
+        }
+        error("Dialog text did not settle: $text; last=$previous")
     }
 
     private fun capture(name: String): Bitmap {
@@ -160,6 +218,10 @@ internal class XlCompatibilityViewChecks(
         }
     }
 
+    private fun checkpoint(message: String) {
+        instrumentation.sendStatus(0, Bundle().apply { putString("stream", "XL dialog: $message\n") })
+    }
+
     fun run() {
         val context = instrumentation.targetContext
         val launcher =
@@ -173,6 +235,7 @@ internal class XlCompatibilityViewChecks(
             }
             SystemClock.sleep(500)
             for (dark in listOf(false, true)) {
+                checkpoint("theme dark=$dark")
                 // Read explanations through the real JNI catalog using only a synthetic descriptor
                 val catalog =
                     checkNotNull(
@@ -225,21 +288,21 @@ internal class XlCompatibilityViewChecks(
                 }
                 instrumentation.waitForIdleSync()
                 click("D2X-XL compatibility: cannot load")
-                awaitText("Supported fixture: 2")
-                awaitText("Wall teleports: 3")
-                awaitText("Water segments: 1")
+                awaitText("D2X-XL extensions")
+                scrollTo("Wall teleports: 3")
                 instrumentation.waitForIdleSync()
                 SystemClock.sleep(300)
                 val theme = if (dark) "dark" else "light"
                 capture("xl-feature-browser-$theme.png").recycle()
                 assertColor("Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
+                scrollTo("Water segments: 1")
                 assertColor("Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
+                scrollTo("Eligible fixture: 1")
                 assertColor("Eligible; runtime checks needed", if (dark) 0xFFB86C else 0x8A4B00)
+                scrollTo("Supported fixture: 2")
                 assertColor("Supported", if (dark) 0x81C995 else 0x216E39)
-                val waterBounds =
-                    Rect().also(
-                        scrollTo("Water segments: 1", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)::getBoundsInScreen,
-                    )
+                scrollTo("Water segments: 1", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+                val waterBounds = settledBounds("Water segments: 1")
                 click("Water segments: 1")
                 awaitText("What XL does")
                 scrollTo("Current Redux support")
@@ -248,17 +311,23 @@ internal class XlCompatibilityViewChecks(
                 capture("xl-feature-water-$theme.png").recycle()
                 instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
                 instrumentation.waitForIdleSync()
-                val restoredBounds = Rect().also(awaitText("Water segments: 1")::getBoundsInScreen)
-                check(restoredBounds == waterBounds) { "Explanation Back lost the feature-list position" }
+                awaitText("D2X-XL extensions")
+                val restoredBounds = settledBounds("Water segments: 1")
+                check(restoredBounds == waterBounds) {
+                    "Explanation Back lost the feature-list position: before=$waterBounds after=$restoredBounds"
+                }
+                checkpoint("water Back preserved $restoredBounds")
                 scrollTo("Wall teleports: 3", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
                 click("Wall teleports: 3")
                 awaitText("What XL does")
-                scrollTo("Current Redux support")
                 awaitText("Unsupported")
+                scrollTo("Current Redux support")
+                scrollTo("Wall-trigger actions only; object actions are not decoded")
                 click("Back to features")
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
+            checkpoint("light/dark explanations and colors passed")
             val unknownRows =
                 listOf(
                     XlCompatibilityRow("Missing fixture", "Not inspected", "Unknown", "unknown", "", null, true),
@@ -285,6 +354,7 @@ internal class XlCompatibilityViewChecks(
                 click("Close")
                 instrumentation.waitForIdleSync()
             }
+            checkpoint("unknown/absent/empty states passed")
             val sourceA =
                 XlCompatibilityReport("Source A", "eligible", "Assets still need checks", listOf(unknownRows[0]))
             val sourceB = XlCompatibilityReport("Source B", "unknown", "Sibling not inspected", listOf(unknownRows[1]))
@@ -315,6 +385,7 @@ internal class XlCompatibilityViewChecks(
                     count = 1,
                     status = "partial",
                 )
+            checkpoint("source switching and reopen passed")
             val longRows =
                 List(12) { XlCompatibilityRow("Uninspected category $it", "Unknown", "Unqualified", "unknown", "") } +
                     water.copy(counted = false)
@@ -330,17 +401,20 @@ internal class XlCompatibilityViewChecks(
             }
             instrumentation.waitForIdleSync()
             click("D2X-XL compatibility: cannot load")
+            awaitText("D2X-XL extensions")
             click("Uninspected category 0")
             awaitText("No verified feature explanation is available")
             click("Back to features")
-            awaitText("Close")
-            val before = Rect().also(scrollTo("Water segments")::getBoundsInScreen)
+            scrollTo("Water segments")
+            val before = settledBounds("Water segments")
             click("Water segments")
             awaitText("What XL does")
             click("Back to features")
-            awaitText("Close")
-            val after = Rect().also(awaitText("Water segments")::getBoundsInScreen)
-            check(before == after) { "Closing an explanation lost a scrolled inventory position: $before -> $after" }
+            awaitText("D2X-XL extensions")
+            val after = settledBounds("Water segments")
+            check(
+                before == after,
+            ) { "Closing an explanation lost a scrolled inventory position: before=$before after=$after" }
             click("Close")
         } finally {
             instrumentation.runOnMainSync { launcher.finish() }
