@@ -20,6 +20,14 @@ import java.io.File
 internal class XlCompatibilityViewChecks(
     private val instrumentation: Instrumentation,
 ) {
+    private fun activeRoot(): AccessibilityNodeInfo? {
+        // Dialog replacement and Compose scrolling can leave UiAutomation's node
+        // cache at the prior viewport even after the main looper is idle.
+        val automation = instrumentation.uiAutomation
+        if (android.os.Build.VERSION.SDK_INT >= 34) automation.clearCache()
+        return automation.rootInActiveWindow?.takeIf { it.refresh() }
+    }
+
     private fun find(text: String): AccessibilityNodeInfo? {
         fun visit(
             node: AccessibilityNodeInfo,
@@ -35,7 +43,7 @@ internal class XlCompatibilityViewChecks(
             }
             return null
         }
-        val root = instrumentation.uiAutomation.rootInActiveWindow ?: return null
+        val root = activeRoot() ?: return null
         // Prefer the status label over a title such as "Supported fixture"
         return visit(root, 30, true) ?: visit(root, 30, false)
     }
@@ -127,7 +135,8 @@ internal class XlCompatibilityViewChecks(
                 }
                 return false
             }
-            scroll(checkNotNull(instrumentation.uiAutomation.rootInActiveWindow))
+            val moved = scroll(checkNotNull(activeRoot()))
+            checkpoint("scroll target=$text attempt=$attempt actionAccepted=$moved")
             instrumentation.waitForIdleSync()
             // A false action result can precede the accessibility update from the previous scroll
             SystemClock.sleep(250)
@@ -154,7 +163,8 @@ internal class XlCompatibilityViewChecks(
             }
             for (index in 0 until node.childCount) node.getChild(index)?.let { describe(it, depth + 1) }
         }
-        instrumentation.uiAutomation.rootInActiveWindow?.let { describe(it, 0) }
+        activeRoot()?.let { describe(it, 0) }
+        capture("xl-feature-scroll-failure.png").recycle()
         error("Text not visible after bounded scroll: $text: ${labels.joinToString(" | ")}")
     }
 

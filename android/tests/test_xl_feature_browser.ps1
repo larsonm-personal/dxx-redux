@@ -21,7 +21,7 @@ try {
         throw 'XL compatibility dialog instrumentation failed'
     }
 } finally {
-    $captures = if ($DragonPackageArchive) { @('dragon-sounds') } else { @('browser-light', 'browser-dark', 'water-light', 'water-dark') }
+    $captures = if ($DragonPackageArchive) { @('dragon-sounds') } else { @('browser-light', 'browser-dark', 'water-light', 'water-dark', 'scroll-failure') }
     foreach ($theme in $captures) {
         try { Adb -AdbArgs @('pull', "/sdcard/Android/data/$($script:PACKAGE)/files/xl-feature-$theme.png", $output) | Out-Null }
         catch { Write-Warning "No $theme screenshot: $_" }
