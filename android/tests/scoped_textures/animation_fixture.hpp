@@ -114,6 +114,7 @@ static void test_animation(const char *owner)
 					effect_apply_bitmap_state(0);
 					const eclip before = effect, before_critical = Effects[1];
 					const auto rng = d_rand_get_stream_call_count(D_RNG_SIM);
+					const auto fx_rng = d_rand_get_stream_call_count(D_RNG_FX);
 					g_android_draw_face_ctx = {};
 					g_android_draw_face_ctx.valid = 1;
 					g_android_draw_face_ctx.tmap1 = 0;
@@ -127,13 +128,27 @@ static void test_animation(const char *owner)
 					glDisable(GL_DEPTH_TEST);
 					glClearColor(0, 0, 0, 1);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					mask_quad(GameBitmaps[Textures[0].index], source_frame & 1 ? &overlay : nullptr, source_frame % 4, 3 * F1_0, 4 * F1_0);
+					auto &drawn_bitmap = GameBitmaps[Textures[0].index];
+					const bool paged_unlit = identity == 2 && scoped && source_frame == 0;
+					const bool dim_lit = identity == 2 && scoped && source_frame == 1;
+					if (paged_unlit) {
+						drawn_bitmap.bm_flags = BM_FLAG_PAGED_OUT;
+						piggy_bitmap_set_file_state(Textures[0].index, 1, BM_FLAG_NO_LIGHTING);
+					}
+					mask_quad(drawn_bitmap, source_frame & 1 ? &overlay : nullptr, source_frame % 4, 3 * F1_0, 4 * F1_0,
+					          paged_unlit || dim_lit ? F0_5 : F1_0);
+					if (paged_unlit) {
+						require(drawn_bitmap.bm_flags == BM_FLAG_PAGED_OUT, "render clone preserves paged-out gameplay bitmap flags");
+						drawn_bitmap.bm_flags = 0;
+						piggy_bitmap_set_file_state(Textures[0].index, 0, 0);
+					}
 					unsigned char pixel[4];
 					glReadPixels(32, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-					const int expected = identity == 2 && scoped ? (owner[0] == 'a' ? 40 : 100) + source_frame * 20 : 10;
+					const int scale = dim_lit ? 2 : 1;
+					const int expected = (identity == 2 && scoped ? (owner[0] == 'a' ? 40 : 100) + source_frame * 20 : 10) / scale;
 					if (std::abs(int(pixel[0]) - expected) > 2) std::fprintf(stderr, "animation owner=%s enabled=%d filter=%d frame=%d expected=%d rgba=%u,%u,%u,%u\n", owner, enabled, filter, source_frame, expected, pixel[0], pixel[1], pixel[2], pixel[3]);
-					require(std::abs(int(pixel[0]) - expected) <= 2 && pixel[1] == 40 && pixel[2] == 30, "production wall draw selects replacement phase or classic stock");
-					require(rng == d_rand_get_stream_call_count(D_RNG_SIM), "render animation does not consume SIM RNG");
+					require(std::abs(int(pixel[0]) - expected) <= 2 && std::abs(int(pixel[1]) - 40 / scale) <= 2 && std::abs(int(pixel[2]) - 30 / scale) <= 2, "production wall draw selects replacement phase or classic stock");
+					require(rng == d_rand_get_stream_call_count(D_RNG_SIM) && fx_rng == d_rand_get_stream_call_count(D_RNG_FX), "render animation does not consume SIM or FX RNG");
 					require(!std::memcmp(&before_critical, &Effects[1], sizeof(effect)), "render sampling leaves critical effect unchanged");
 					require(!std::memcmp(&before, &effect, sizeof(effect)), "render sampling leaves authoritative effect state unchanged");
 					g3_end_frame();

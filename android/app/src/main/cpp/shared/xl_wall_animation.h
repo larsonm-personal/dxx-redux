@@ -115,7 +115,7 @@ static struct xl_wall_strip *xl_wall_animation_source(const char *hog, const cha
 		*frame = *original;
 		frame->bm_parent = NULL;
 		frame->bm_data = NULL;
-		frame->bm_flags = original->bm_flags & BM_FLAG_NO_LIGHTING;
+		frame->bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
 		frame->gltexture_mask = NULL;
 		frame->gltexture = ogl_get_free_texture();
 		ogl_init_texture(frame->gltexture, fitted.width, fitted.height, OGL_FLAG_ALPHA);
@@ -176,7 +176,7 @@ static grs_bitmap *xl_wall_animation_bitmap(grs_bitmap *original, int overlay)
 		const int frame = dxx_xl_animation_frame(effect->vc.num_frames, effect->vc.frame_time, effect->frame_count,
 		                                         effect->time_left, effect->flags & EF_STOPPED, strip->count);
 		if (frame < 0) return original;
-		strip->frames[frame].bm_flags = original->bm_flags & BM_FLAG_NO_LIGHTING;
+		strip->frames[frame].bm_flags = piggy_bitmap_get_flags(original) & BM_FLAG_NO_LIGHTING;
 		return &strip->frames[frame];
 	}
 	return original;

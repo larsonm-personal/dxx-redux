@@ -43,7 +43,7 @@ static void mask_pattern()
 	image("a/mods/pilot/textures/tinycutout.tga", 210, 0, 40, 30, 1);
 	image("a/mods/pilot/textures/tinykey.tga", 120, 255, 88, 128, 1);
 }
-static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int extent, int depth)
+static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int extent, int depth, fix brightness = F1_0)
 {
 	g3s_point points[4]{};
 	const g3s_point *list[4];
@@ -56,8 +56,8 @@ static void mask_quad(grs_bitmap &base, grs_bitmap *overlay, int orient, int ext
 		list[i] = &points[i];
 		uv[i].u = (i == 1 || i == 2) ? F1_0 : 0;
 		uv[i].v = i >= 2 ? F1_0 : 0;
-		uv[i].l = F1_0;
-		light[i] = { F1_0, F1_0, F1_0 };
+		uv[i].l = brightness;
+		light[i] = { brightness, brightness, brightness };
 	}
 	if (overlay) g3_draw_tmap_2(4, list, uv, light, &base, overlay, orient);
 	else g3_draw_tmap(4, list, uv, light, &base);
