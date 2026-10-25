@@ -115,6 +115,21 @@ static void test_masks(bool owned)
 			glDepthFunc(GL_LESS);
 			glDepthMask(GL_TRUE);
 			mask_quad(behind, nullptr, 0, 5 * F1_0, 5 * F1_0);
+			unsigned char background[4];
+			glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, background);
+			if (!(background[2] > 180 && background[0] < 80)) {
+				GLint program = 0, active = 0, binding = 0;
+				glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+				glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, &binding);
+				std::fprintf(stderr, "background owned=%d filter=%d orient=%d rgba=%u,%u,%u,%u program=%d active=%d bound=%d expected_handle=%u\n", owned, filter, orient, background[0], background[1], background[2], background[3], program, active, binding, behind.gltexture->handle);
+				for (const char *name : { "uTexEnabled", "uTex", "uDebugMode", "uUseColorAttr" }) {
+					GLint location = glGetUniformLocation(program, name), value = -1;
+					if (location >= 0) glGetUniformiv(program, location, &value);
+					std::fprintf(stderr, "  %s location=%d value=%d\n", name, location, value);
+				}
+			}
+			require(background[2] > 180 && background[0] < 80, "production standalone background is blue before overlay composition");
 			const int before = r_mask_draws;
 			mask_quad(base, &overlay, orient, 3 * F1_0, 4 * F1_0);
 			require(r_mask_draws - before == (owned ? 1 : 0), "production renderer selects mask for stock-opaque replacement");
