@@ -22,6 +22,7 @@ foreach(xl_target IN LISTS xl_targets)
         ${xl_target}
         PRIVATE "${xl_runtime_dir}/preview.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
+                "${xl_runtime_dir}/trigger.cpp"
                 "${xl_runtime_dir}/../inventory.cpp"
                 "${xl_runtime_dir}/../admission.cpp"
                 "${xl_runtime_dir}/../probe.cpp"

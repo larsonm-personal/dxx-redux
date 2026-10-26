@@ -106,6 +106,9 @@ extern "C" {
 #include "piggy.h"
 #include "textures.h"
 #include "wall.h"
+#ifdef DXX_XL_RUNTIME
+#include "switch.h"
+#endif
 #include "secretarea.h"
 #include "gamesave.h"
 #include "android_menu_scale.h"
@@ -2159,6 +2162,17 @@ extern "C" char *game_introspect_get_state(void)
 		{ "unresolved_emitters", xl_preview_unresolved_emitters() },
 		{ "activated_triggers", xl_preview_trigger_mask() },
 	};
+	if (Game_wind && xl_level_extensions_active()) {
+		json triggers = json::object();
+		for (int index = 0; index < Num_triggers; ++index)
+			triggers[std::to_string(index)] = {
+				{ "type", Triggers[index].type },
+				{ "flags", Triggers[index].flags },
+				{ "value", Triggers[index].value },
+				{ "time", Triggers[index].time },
+			};
+		j["xl_pilot"]["wall_triggers"] = std::move(triggers);
+	}
 #endif
 	{
 		int active_wall_transition_count = 0;
