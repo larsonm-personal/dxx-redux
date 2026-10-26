@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import struct
+import subprocess
+import xml.etree.ElementTree as ET
 import tempfile
 import unittest
 import zipfile
@@ -72,9 +74,7 @@ class XlPrivateTests(unittest.TestCase):
                 data = {
                     "archive": {"path": "pack.7z", **identity(b"pack")},
                     "archives": [],
-                    "original_mission_archives": [
-                        {"path": "missions/D2-XL.7z", **identity(b"original")}
-                    ],
+                    "original_mission_archives": [{"path": "missions/D2-XL.7z", **identity(b"original")}],
                     "format_witnesses": [
                         {
                             "archive_member": "missions/single/d2-xl.hog",
@@ -90,11 +90,7 @@ class XlPrivateTests(unittest.TestCase):
                 for index in range(2 if mode in ("collision", "case-collision") else 1):
                     name = "bundle-" + str(index) + ".zip"
                     content = b"first" if index == 0 else b"conflicting"
-                    member_name = (
-                        "Resource.bin"
-                        if mode == "case-collision" and index
-                        else "resource.bin"
-                    )
+                    member_name = "Resource.bin" if mode == "case-collision" and index else "resource.bin"
                     with zipfile.ZipFile(root / name, "w") as archive:
                         if mode != "missing":
                             archive.writestr(member_name, content)
@@ -117,10 +113,7 @@ class XlPrivateTests(unittest.TestCase):
                     for name, content in files.items():
                         (target / name).write_bytes(content)
 
-                pins = {
-                    name: (len(content), hashlib.sha256(content).hexdigest())
-                    for name, content in files.items()
-                }
+                pins = {name: (len(content), hashlib.sha256(content).hexdigest()) for name, content in files.items()}
                 with (
                     patch.object(assets, "manifest", return_value=data),
                     patch.object(assets, "D2_FILES", pins),
@@ -128,9 +121,7 @@ class XlPrivateTests(unittest.TestCase):
                 ):
                     if mode == "valid":
                         assets.stage_inputs(root, destination, None)
-                        self.assertEqual(
-                            (destination / "witnesses/level.rl2").read_bytes(), level
-                        )
+                        self.assertEqual((destination / "witnesses/level.rl2").read_bytes(), level)
                         assets.verify(destination)
                         with self.assertRaises(ValueError):
                             assets.stage_inputs(root, destination, None)
@@ -161,12 +152,7 @@ class XlPrivateTests(unittest.TestCase):
 
     def test_hog_bounds_duplicate_paths_and_missing_members(self):
         def member(name, content=b"abc", size=None):
-            return (
-                struct.pack(
-                    "<13si", name.encode(), len(content) if size is None else size
-                )
-                + content
-            )
+            return struct.pack("<13si", name.encode(), len(content) if size is None else size) + content
 
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "fixture.hog"
@@ -193,23 +179,16 @@ class XlPrivateTests(unittest.TestCase):
             data = {
                 "missing": [],
                 "mismatched": [],
-                "format_witnesses": [
-                    {"level_version": a, "game_version": b}
-                    for a, b in sorted(assets.PAIRS)
-                ],
+                "format_witnesses": [{"level_version": a, "game_version": b} for a, b in sorted(assets.PAIRS)],
             }
             path.write_text(json.dumps(data))
             with self.assertRaises(ValueError):
                 assets.manifest(path)
-            with patch.object(
-                assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()
-            ):
+            with patch.object(assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()):
                 self.assertEqual(assets.manifest(path), data)
             data["format_witnesses"].pop()
             path.write_text(json.dumps(data))
-            with patch.object(
-                assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()
-            ):
+            with patch.object(assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()):
                 with self.assertRaises(ValueError):
                     assets.manifest(path)
 
@@ -222,24 +201,195 @@ class XlPrivateTests(unittest.TestCase):
                 "",
                 '<testcase name="other"/>',
                 '<testcase name="required"/><testcase name="required"/>',
-                *(
-                    '<testcase name="required"><' + tag + "/></testcase>"
-                    for tag in ("skipped", "failure", "error")
-                ),
+                *('<testcase name="required"><' + tag + "/></testcase>" for tag in ("skipped", "failure", "error")),
             ):
                 path.write_text("<testsuite>" + body + "</testsuite>")
                 with self.assertRaises(ValueError):
                     runner.require_junit(path, {"required"})
 
+    def test_public_experimental_status_is_visible_and_sanitized(self):
+        base = dict(schema=1, target_sha="a" * 40, catalog_hash="b" * 64, batch_id="test", lane="linux")
+        for status in ("passed", "failed"):
+            row = dict(
+                id="host-profile:retail-xl-originals",
+                status="PASS",
+                phase="tests",
+                reason="private output",
+                experimental_acceptance={"xl_level_two_keys": status, "private": "must not escape"},
+            )
+            result = retail.public_receipt(dict(base, results=[row]))["results"][0]
+            self.assertEqual(result["experimental_acceptance"], {"xl_level_two_keys": status})
+            self.assertNotIn("must not escape", json.dumps(result))
+            row["id"] = "unrelated"
+            self.assertNotIn("experimental_acceptance", retail.public_receipt(dict(base, results=[row]))["results"][0])
+
+    def test_experimental_outcome_survives_collection_and_reconciliation(self):
+        entry = dict(
+            id="host-profile:retail-xl-originals",
+            owner="host-adapter",
+            lane="host",
+            args={"suite": "host-profile:retail-xl-originals"},
+            estimated_seconds=10,
+        )
+        policy = {"schema": 1, "suites": [entry]}
+        identity = retail.configured_identity(
+            {
+                "GITHUB_REPOSITORY": retail.REPOSITORY,
+                "GITHUB_REF": "refs/heads/cmake",
+                "GITHUB_WORKFLOW_REF": retail.WORKFLOW,
+                "GITHUB_EVENT_NAME": "workflow_dispatch",
+                "RETAIL_ASSETS_COMMIT": assets.ASSETS_COMMIT,
+            }
+        )
+        plan, state = sweep.plan_batch("a" * 40, {"schema": 1, "tests": []}, policy, retail_assets=identity)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            sweep.write(
+                output / "attempt.json",
+                {
+                    **sweep.attempt_identity(plan, "host"),
+                    "processes": {entry["id"]: {"completed": True, "exit_code": 0}},
+                },
+            )
+            sweep.write(
+                output / "host-profile_retail-xl-originals.json",
+                {
+                    "schema": 1,
+                    "suite": entry["id"],
+                    "status": "PASS",
+                    "exit_code": 0,
+                    "experimental_acceptance": {"xl_level_two_keys": "failed"},
+                },
+            )
+            receipt = sweep.collect(plan, policy, "host", output)
+            expected = {"xl_level_two_keys": "failed"}
+            self.assertEqual(receipt["results"][0]["experimental_acceptance"], expected)
+            reconciled = sweep.reconcile(plan, policy, state, [receipt])
+            self.assertEqual(reconciled["records"][entry["id"]]["experimental_acceptance"], expected)
+
+    def test_native_experimental_policy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native.xml"
+            marker = "XL_EXPERIMENTAL_ACCEPTANCE: xl_level_two_keys route_incomplete"
+
+            def receipt(experimental, code=8, required_failure=False):
+                body = "".join(
+                    '<testcase name="'
+                    + name
+                    + '" status="run">'
+                    + ('<failure message="Failed"/>' if required_failure else "")
+                    + "</testcase>"
+                    for name in sorted(runner.CORE_TESTS)
+                )
+                path.write_text("<testsuite>" + body + experimental + "</testsuite>")
+                return runner.native_receipt(path, code)
+
+            failed = (
+                '<testcase name="xl_level_two_keys" status="fail"><failure message="Failed"/>'
+                "<system-out>" + marker + "</system-out></testcase>"
+            )
+            passed = '<testcase name="xl_level_two_keys" status="run"/>'
+            self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
+            self.assertEqual(receipt(passed, 0)["required_passed"], 40)
+            self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
+            # CTest can exit zero when disabled tests are present
+            disabled_required = ET.parse(path)
+            disabled_required.find(".//testcase").set("status", "disabled")
+            disabled_required.write(path)
+            with self.assertRaises(ValueError):
+                runner.native_receipt(path, 0)
+            with self.assertRaises(ValueError):
+                receipt('<testcase name="xl_level_two_keys" status="disabled"/>', 0)
+            invalid = [
+                "",
+                failed + failed,
+                failed.replace(marker, ""),
+                failed.replace(marker, marker + "\n" + marker),
+                '<testcase name="xl_level_two_keys" status="disabled"/>',
+                '<testcase name="xl_level_two_keys" status="notrun"/>',
+                passed.replace("/>", "><skipped/></testcase>"),
+                passed.replace("/>", "><error/></testcase>"),
+                *[
+                    failed.replace('message="Failed"', 'message="' + kind + '"')
+                    for kind in ("Timeout", "SEGFAULT", "BAD_COMMAND")
+                ],
+            ]
+            for body, code, required_failure in (
+                *[(body, 8, False) for body in invalid],
+                (failed, 0, False),
+                (passed, 8, False),
+                (failed, 8, True),
+            ):
+                with self.subTest(body=body, code=code, required_failure=required_failure):
+                    with self.assertRaises(ValueError):
+                        receipt(body, code, required_failure)
+
+    def test_private_route_failure_classification(self):
+        helper = Path(__file__).resolve().parents[1] / "XL_compat/tests/experimental_acceptance.cmake"
+        marker = "XL_EXPERIMENTAL_ACCEPTANCE: xl_level_two_keys route_incomplete"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            script = root / "classify.cmake"
+            script.write_text(
+                'include("' + helper.as_posix() + '")\nxl_report_experimental_route_failure("${RESULT}" "${FIXTURE}")\n'
+            )
+            blue = "Level two ordinary blue key: frames=20 alive=1 checkpoint=restored\n"
+            red = "Level two route result: key=5 frames=30 dead=1 shields=-1 complete=0\n"
+            error = "XL lifecycle FAILED: level-two ordinary key route incomplete\n"
+            for result, output, errors, expected in (
+                ("1", blue + red, error, True),
+                ("Process terminated due to timeout", blue + red, error, False),
+                ("Subprocess aborted", blue + red, error, False),
+                ("1", blue + red, "XL lifecycle FAILED: different assertion\n", False),
+                ("1", blue + red, error + error, False),
+                ("1", red, error, False),
+                ("1", blue, error, False),
+                ("1", blue + red + red, error, False),
+                ("0", blue + red, error, False),
+            ):
+                with self.subTest(result=result, output=output, errors=errors):
+                    (root / "preview.log").write_text(output)
+                    (root / "preview-error.log").write_text(errors)
+                    run = subprocess.run(
+                        ["cmake", "-DRESULT=" + result, "-DFIXTURE=" + root.as_posix(), "-P", str(script)],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=True,
+                    )
+                    self.assertEqual(marker in run.stderr, expected)
+
+    def test_actual_ctest_nonexecution_and_timeout_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "CTestTestfile.cmake").write_text(
+                "add_test(timeout cmake -E sleep 2)\nset_tests_properties(timeout PROPERTIES TIMEOUT 0.1)\n"
+                "add_test(disabled cmake -E true)\nset_tests_properties(disabled PROPERTIES DISABLED TRUE)\n"
+                'add_test(missing "' + (root / "absent-command").as_posix() + '")\n'
+            )
+            report = root / "ctest.xml"
+            run = subprocess.run(
+                ["ctest", "--test-dir", str(root), "--output-junit", str(report)], capture_output=True, timeout=15
+            )
+            self.assertEqual(run.returncode, 8)
+            actual = ET.parse(report).getroot().findall(".//testcase")
+            self.assertEqual({c.get("name") for c in actual}, {"timeout", "disabled", "missing"})
+            for case in actual:
+                with self.subTest(kind=case.get("name")):
+                    case.set("name", "xl_level_two_keys")
+                    suite = ET.Element("testsuite")
+                    for name in runner.CORE_TESTS:
+                        ET.SubElement(suite, "testcase", name=name, status="run")
+                    suite.append(case)
+                    ET.ElementTree(suite).write(report)
+                    with self.assertRaises(ValueError):
+                        runner.native_receipt(report, 8)
+
     def test_private_campaign_requires_trust_pin_and_both_owners(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         catalog = {
             "schema": 1,
-            "tests": [
-                {"name": e["args"]["suite"]}
-                for e in policy["suites"]
-                if e["owner"] == "master"
-            ],
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
         }
         env = {
             "GITHUB_REPOSITORY": retail.REPOSITORY,
@@ -249,9 +399,7 @@ class XlPrivateTests(unittest.TestCase):
             "RETAIL_ASSETS_COMMIT": assets.ASSETS_COMMIT,
         }
         with patch.dict(os.environ, env, clear=True):
-            plan, _ = sweep.plan_batch(
-                "a" * 40, catalog, policy, retail_assets=retail.configured_identity()
-            )
+            plan, _ = sweep.plan_batch("a" * 40, catalog, policy, retail_assets=retail.configured_identity())
             chosen = sweep.select_xl_originals(plan, policy, catalog)
             self.assertEqual({e["id"] for e in chosen["tests"]}, assets.OWNER_IDS)
             self.assertEqual(set(chosen["lanes"]), {"host", "android-single"})

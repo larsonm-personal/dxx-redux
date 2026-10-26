@@ -1528,7 +1528,7 @@
       ],
       "python_modules": [],
       "estimated_seconds": 1800,
-      "coverage_scope": "Required pinned Counterstrike, water, Observatory, Konflict and Dragon Pit native tests plus nine original format inspection/rejection witnesses",
+      "coverage_scope": "40 required native XL regressions, separately reported experimental level-two campaign acceptance, and nine original format inspection/rejection witnesses",
       "constraints": [
         "Trusted retail-ci only; exact XL asset revision and manifest required",
         "No full mission or unsupported-format gameplay claim; raw outputs remain private"
@@ -1541,7 +1541,7 @@
       "path": "android/tests/test_xl_private_assets.py",
       "estimated_seconds": 30,
       "python_modules": [],
-      "executables": [],
+      "executables": ["cmake", "ctest"],
       "coverage_scope": "Synthetic XL private staging, complete receipts and trusted campaign gates; no private bytes.",
       "constraints": []
     }

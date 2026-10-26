@@ -256,6 +256,10 @@ def public_diagnostics(value):
         for key in ("archive", "baseline", "route_oracle", "retail_stage_verified", "metadata_summary", "metadata_output", "route_summary")
         if type(value.get("assets", {}).get(key)) is bool
     }
+    if value.get("id") == "host-profile:retail-xl-originals":
+        experimental = value.get("experimental_acceptance", {})
+        if isinstance(experimental, dict) and experimental.get("xl_level_two_keys") in ("passed", "failed"):
+            clean["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
     return clean
 
 

@@ -546,6 +546,9 @@ def reconcile(plan, policy, state, receipts):
                 attempted_tests=row.get("attempted_tests", True),
                 phase=row.get("phase", "tests"),
             )
+            diagnostics = retail.public_diagnostics(row)
+            if "experimental_acceptance" in diagnostics:
+                compact["experimental_acceptance"] = diagnostics["experimental_acceptance"]
             cases = row.get("cases", [])
             compact["case_counts"] = {
                 status: sum(c.get("status") == status for c in cases) for status in ("PASS", "FAIL", "SKIP", "BLOCKED")
@@ -695,7 +698,7 @@ def collect(plan, policy, lane, output, blocked_reason=""):
                 "status": status,
                 "reason": row.get("reason", "")[:2048],
                 "exit_code": row.get("exit_code", exit_code),
-                **retail.public_diagnostics(row),
+                **retail.public_diagnostics({**row, "id": entry["id"]}),
                 "run_url": run_url,
                 "exclusions": row.get("exclusions", []),
                 "cases": row.get("cases", []),
@@ -1213,6 +1216,10 @@ def main():
         )
         summary["matching_unconfirmed_routes"] = {
             key: row["runtime_outcome"] for key, row in state["records"].items() if row.get("comparison_only")
+        }
+        summary["experimental_acceptance"] = {
+            key: row["experimental_acceptance"]
+            for key, row in state["records"].items() if row.get("experimental_acceptance")
         }
         summary["pending_owners"] = len(pending)
         summary["outcome"] = (
