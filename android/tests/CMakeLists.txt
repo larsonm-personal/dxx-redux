@@ -6,6 +6,10 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
+    add_test(NAME test_keyboard_rebind
+             COMMAND ${CMAKE_COMMAND} -DENGINE=$<TARGET_FILE:test_upstream_compat> -P
+                     ${CMAKE_CURRENT_LIST_DIR}/test_keyboard_rebind.cmake)
+    set_tests_properties(test_keyboard_rebind PROPERTIES TIMEOUT 90)
     add_test(NAME test_headless_connectivity_warning COMMAND test_upstream_compat
                                                              --headless-connectivity)
     set_tests_properties(test_headless_connectivity_warning PROPERTIES TIMEOUT 30 SKIP_RETURN_CODE
