@@ -7,7 +7,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level)
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported)
-		if (issue.feature != "embedded_lighting") result.push_back(issue);
+		if (issue.feature != "embedded_lighting" &&
+		    !(issue.feature == "segment_function" && issue.detail == "13")) result.push_back(issue);
 	for (const auto &issue : level.unknown)
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")

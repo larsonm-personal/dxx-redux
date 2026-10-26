@@ -2129,6 +2129,8 @@ extern "C" char *game_introspect_get_state(void)
 		{ "classic_lighting_vertices", xl_classic_lighting_vertex_count() },
 		{ "classic_legacy_fans", xl_classic_legacy_fans_active() != 0 },
 		{ "in_water", Game_wind && ConsoleObject && xl_preview_water_segment(ConsoleObject->segnum) != 0 },
+		{ "in_no_damage", Game_wind && ConsoleObject && xl_preview_no_damage_segment(ConsoleObject->segnum) != 0 },
+		{ "rebuilt_ambient_vertices", xl_preview_rebuilt_ambient_vertices() },
 		{ "water_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 0) : 0 },
 		{ "water_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 1) : 0 },
 		{ "waterfall_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATERFALL, 0) : 0 },

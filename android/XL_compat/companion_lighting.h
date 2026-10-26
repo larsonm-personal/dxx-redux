@@ -19,6 +19,7 @@ struct CompanionTextureColor {
 	std::array<std::int32_t, 3> channels;
 };
 using TextureColorTable = std::array<CompanionTextureColor, companion_texture_count>;
+using TextureRgbTable = std::array<std::array<float, 3>, companion_texture_count>;
 // Exact pinned-layout decoding only, not renderer or gameplay qualification
 TextureBrightnessTable decode_texture_brightness(const std::uint8_t *data, std::size_t size);
 TextureColorTable decode_texture_colors(const std::uint8_t *data, std::size_t size);
@@ -37,10 +38,11 @@ struct ClassicFaceLight {
 class ClassicFaceLightMaterials
 {
 	TextureBrightnessTable brightness_;
-	std::array<std::array<float, 3>, companion_texture_count> colors_{};
+	TextureRgbTable colors_{};
 
   public:
 	ClassicFaceLightMaterials(const TextureBrightnessTable &brightness, const TextureColorTable &colors);
+	ClassicFaceLightMaterials(const TextureBrightnessTable &brightness, const TextureRgbTable &colors);
 	std::optional<ClassicFaceLight> face(int base, int overlay, bool outdoors);
 };
 } // namespace xl_compat

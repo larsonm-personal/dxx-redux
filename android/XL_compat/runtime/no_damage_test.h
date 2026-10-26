@@ -1,5 +1,6 @@
 #include "no_damage_test_binding.h"
 #include "no_damage_firing_test.h"
+#include "no_damage_reference_gates_test.h"
 #include "no_damage_guided_test.h"
 #include "no_damage_fusion_test.h"
 #include "no_damage_wall_test.h"
@@ -9,6 +10,7 @@ extern "C" {
 #include "endlevel.h"
 }
 #include "no_damage_bump_test.h"
+#include "no_damage_boundary_test.h"
 
 // Controlled native calls, not an earned route or original Observatory admission
 static void no_damage_collision_test(const xl_compat::Inventory &source)
@@ -84,14 +86,16 @@ static void no_damage_collision_test(const xl_compat::Inventory &source)
 	require(Players[Player_num].shields == shields - i2f(10) && (weapon.flags & OF_SHOULD_BE_DEAD) && num_objects > objects_before,
 	        "ordinary direct impact did not damage, dispose projectile and create effect");
 	no_damage_firing_test(protected_segment, ordinary_segment);
+	no_damage_reference_gates_test(protected_segment, ordinary_segment);
 	no_damage_guided_test(protected_segment, ordinary_segment);
 	no_damage_wall_test(protected_segment, ordinary_segment);
 	no_damage_splash_test(source, protected_segment);
 	no_damage_bump_test(source, protected_segment);
 	no_damage_fusion_test(source, protected_segment, ordinary_segment);
+	no_damage_boundary_test(source);
 	Game_mode = previous_mode;
 	Player_is_dead = previous_dead;
 	Endlevel_sequence = previous_end;
 	Players[Player_num] = previous_player;
-	std::cout << "No-damage native collision controls: protected damage and impacts preserve state; ordinary controls damage, flash and dispose projectile; original admission remains blocked\n";
+	std::cout << "No-damage native collision controls: protected damage and impacts preserve state; ordinary controls damage, flash and dispose projectile; original admission tested separately\n";
 }

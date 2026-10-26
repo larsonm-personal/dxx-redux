@@ -146,6 +146,14 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/dragon_companion_ownership.cmake)
         set_tests_properties(xl_dragon_companion_ownership PROPERTIES TIMEOUT 60)
     endif()
+    set(XL_REFERENCE_WEAPON_CONTROL "" CACHE FILEPATH
+                                             "Pinned XL weapon control for matched no-damage gates")
+    set(xl_reference_gate_args)
+    if(XL_REFERENCE_WEAPON_CONTROL)
+        include(tests/reference_no_damage_gates.cmake)
+        list(APPEND xl_reference_gate_args
+             -DREFERENCE_GATES=$<TARGET_FILE:xl_no_damage_reference_gates>)
+    endif()
     if(XL_OBSERVATORY_HOG AND XL_OBSERVATORY_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
             NAME xl_observatory_descriptor
@@ -153,7 +161,8 @@ if(BUILD_TESTING)
                 ${CMAKE_COMMAND} -DHOG=${XL_OBSERVATORY_HOG}
                 -DDESCRIPTOR=${XL_OBSERVATORY_DESCRIPTOR} -DENGINE=${XL_PREVIEW_LIFECYCLE}
                 -DDATA=${XL_RETAIL_DATA}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/observatory-descriptor -P
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/observatory-descriptor
+                ${xl_reference_gate_args} -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/observatory_descriptor.cmake)
         set_tests_properties(xl_observatory_descriptor PROPERTIES TIMEOUT 90)
     endif()

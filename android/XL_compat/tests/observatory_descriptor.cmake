@@ -9,13 +9,47 @@ file(MAKE_DIRECTORY "${OUTPUT}/missions" "${OUTPUT}/preview-user")
 configure_file("${HOG}" "${OUTPUT}/missions/obsrv-xl.hog" COPYONLY)
 configure_file("${DESCRIPTOR}" "${OUTPUT}/missions/obsrv-xl.mn2" COPYONLY)
 execute_process(
-    COMMAND "${ENGINE}" -descriptor-test observatory -hogdir "${DATA}" -extra-dir "${OUTPUT}"
-            -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+    COMMAND
+        "${ENGINE}" -descriptor-test observatory -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
+        "${OUTPUT}/preview-user" -nosound -nomusic -xl-ambient-report "${OUTPUT}/ambient.json"
+        -xl-ambient-reference
+        "${CMAKE_CURRENT_LIST_DIR}/../evidence/observatory-ambient-reference.json"
     RESULT_VARIABLE result
     OUTPUT_VARIABLE stdout
     ERROR_VARIABLE stderr
     TIMEOUT 60)
 file(WRITE "${OUTPUT}/descriptor.log" "${stdout}${stderr}")
+if(REFERENCE_GATES AND result EQUAL 0)
+    execute_process(
+        COMMAND "${REFERENCE_GATES}"
+        RESULT_VARIABLE reference_result
+        OUTPUT_VARIABLE reference_stdout
+        ERROR_VARIABLE reference_stderr
+        TIMEOUT 10)
+    file(WRITE "${OUTPUT}/reference-gates.log" "${reference_stdout}${reference_stderr}")
+    string(REGEX MATCHALL "ND_GATE [^\r\n]+" native_rows "${stdout}")
+    string(REGEX MATCHALL "ND_GATE [^\r\n]+" reference_rows "${reference_stdout}")
+    list(LENGTH reference_rows reference_count)
+    if(NOT reference_result EQUAL 0 OR NOT reference_count EQUAL 12 OR NOT native_rows STREQUAL
+                                                                       reference_rows)
+        message(
+            FATAL_ERROR
+                "Native/reference no-damage firing gates differ: native=${native_rows}; reference=${reference_rows}"
+        )
+    endif()
+    message(STATUS "Pinned XL gun/missile gates match native results for all 12 state combinations")
+    string(REGEX MATCHALL "ND_CONTACT [^\r\n]+" native_contacts "${stdout}")
+    string(REGEX MATCHALL "ND_CONTACT [^\r\n]+" reference_contacts "${reference_stdout}")
+    list(SORT native_contacts)
+    list(SORT reference_contacts)
+    list(LENGTH reference_contacts contact_count)
+    if(NOT contact_count EQUAL 4 OR NOT native_contacts STREQUAL reference_contacts)
+        message(FATAL_ERROR "Native/reference no-damage contact dispatch differs")
+    endif()
+    message(
+        STATUS
+            "Pinned XL player/clutter and player/player dispatch matches all four native controls")
+endif()
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Descriptor test failed (${result}): ${stdout}${stderr}")
 endif()
@@ -41,6 +75,13 @@ endif()
 if(NOT stdout MATCHES
    "Mission identity preflight: object and path allocation failures retain prior mission")
     message(FATAL_ERROR "Mission identity allocation failure controls did not finish")
+endif()
+if(NOT stdout MATCHES
+   "No-damage original-source persistence: stock round trip reconstructs 26 properties")
+    message(FATAL_ERROR "Original-source no-damage persistence controls did not finish")
+endif()
+if(NOT stdout MATCHES "No-damage native boundary: original shared face crossed in both directions")
+    message(FATAL_ERROR "Native no-damage shared-face boundary controls did not finish")
 endif()
 if(NOT stdout MATCHES "No-damage fusion input controls: protected fresh input does not charge")
     message(FATAL_ERROR "Native no-damage fusion input controls did not finish")
@@ -103,3 +144,13 @@ if(NOT final_hog_hash STREQUAL hog_hash OR NOT final_descriptor_hash STREQUAL de
     message(FATAL_ERROR "Original descriptor sources changed")
 endif()
 message(STATUS "${stdout}")
+
+if(NOT stdout MATCHES "Original ambient reference: 224 sources and 328 vertex colors match")
+    message(FATAL_ERROR "Original ambient reference comparison did not run")
+endif()
+
+foreach(marker "No-damage robot controls:" "No-damage projectile boundary:")
+    if(NOT stdout MATCHES "${marker}")
+        message(FATAL_ERROR "Missing final no-damage control: ${marker}")
+    endif()
+endforeach()

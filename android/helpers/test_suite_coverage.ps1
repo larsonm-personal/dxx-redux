@@ -225,6 +225,7 @@ function Get-TestSuiteCoveragePolicy {
         )
         explicit = @(
             'test_xl_konflict_runtime'
+            'test_xl_observatory_runtime'
             'test_xl_classic_lighting_lifecycle'
             'test_xl_classic_sound_lifecycle'
             'test_xl_water_runtime'

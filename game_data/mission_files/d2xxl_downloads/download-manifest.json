@@ -1,0 +1,335 @@
+[
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/af.7z",
+    "name": "af.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 1213848,
+    "sha256": "962d87a8a01eabd4e66c9dd3c0b8fe0252da2e13bce9effd5aaf90c63f45dd2b"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/af-xl.7z",
+    "name": "af-xl.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 79868303,
+    "sha256": "be81e3578efb80f14ff0e161ab9b40bc5bcec44aed46e32e62f295755d873bc7"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/BelialSystemXL.7z",
+    "name": "BelialSystemXL.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 65773088,
+    "sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/darkflamewolf/lostlvls.7z",
+    "name": "lostlvls.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 53192543,
+    "sha256": "b13136cdde92cbf60a88f0936a3967fb957e03711a81d68737a92ba954ef9211"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/darkflamewolf/lostlvls-d1.7z",
+    "name": "lostlvls-d1.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 687967,
+    "sha256": "e8a9091ed0c789ca447e5b975f7993db13bbcf669b3adb9a3708265c7ca3329f"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/D2-XL.7z",
+    "name": "D2-XL.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 2725117,
+    "sha256": "24060d3addb78bdafb8691e7c3a3137543f92b1f4b2f68d694c28703a3d14f3c"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/yokelassence/dinter-1.5.7z",
+    "name": "dinter-1.5.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 31257376,
+    "sha256": "445c17f06d94f72c02fe4bed68a58a241415b8fdfa8155b4a35330ce09c3dd75"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/entropy2.7z",
+    "name": "entropy2.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 573802,
+    "sha256": "90fa5254e2759db93ca5e9f0643305d073bf952c267b66eed5dc4632068cf6ed"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/icerealm.7z",
+    "name": "icerealm.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 241231,
+    "sha256": "8f6ea161f291f1fc374c1c5156598437295eae3060e11ab71de41d28f18b4ff0"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/obsidian.7z",
+    "name": "obsidian.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 55185288,
+    "sha256": "6c68fdd5e962f92354ad4c8701a11d2e429226adcddc02e4eaf92bf8c16aca03"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/odyssee.7z",
+    "name": "odyssee.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 153724,
+    "sha256": "003eec3119ea56959152ad9ff4a5c234d28dddb2b22278f4632b9458acb9d529"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/po.7z",
+    "name": "po.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 28244374,
+    "sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/single/mandrill.7z",
+    "name": "mandrill.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 555439,
+    "sha256": "3df73d96f13d63bc04412d87ce3d32d0fef4059bdfab5412653d101fb71509bd"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/darkflamewolf/enemywithin.7z",
+    "name": "enemywithin.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 408219154,
+    "sha256": "77a2b7596dd118621b3da68df5bd870362ff75eb0a0050ef3118aaa064827c8b"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/yokelassence/sphere-1.51.7z",
+    "name": "sphere-1.51.7z",
+    "folder": "",
+    "source": "3rdparty",
+    "status": "downloaded",
+    "bytes": 78967018,
+    "sha256": "06be9a76428b15676fceaaac76de32ff356c264c22d4b29c86a3af9719f65c2d"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/boilpnt.7z",
+    "name": "boilpnt.7z",
+    "folder": "",
+    "source": "sp-levels",
+    "status": "downloaded",
+    "bytes": 103374391,
+    "sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/lor-xl.7z",
+    "name": "lor-xl.7z",
+    "folder": "levels",
+    "source": "sp-levels",
+    "status": "downloaded",
+    "bytes": 73663194,
+    "sha256": "7c80710e8a317905dee1d027df1079b9a5d7fd63b3a0cbe99cac57a3090994c8"
+  },
+  {
+    "url": "https://www.descent2.de/files/textures/lor-textures.7z",
+    "name": "lor-textures.7z",
+    "folder": "levels",
+    "source": "sp-levels",
+    "status": "downloaded",
+    "bytes": 15983975,
+    "sha256": "825ea5923cc6309f7704f34abe81311ad173dd78839be6f22eb8c6c816f068d3"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/wshock20.7z",
+    "name": "wshock20.7z",
+    "folder": "",
+    "source": "sp-levels",
+    "status": "downloaded",
+    "bytes": 53979947,
+    "sha256": "7eddb40763cbbaf4df732052a5cce01452ab5698e740908d489e9868d172e8ab"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/d2_zoo.zip",
+    "name": "d2_zoo.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 20623,
+    "sha256": "ed9bdcfef287e4ad9c35b14b9041cde871e5be232d55c18e06b4c74847840e20"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/dspace10.zip",
+    "name": "dspace10.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 406380,
+    "sha256": "277081f7d4f6ad573de94dcf2e773c995e99cbe2adcd097697632cb86eee8571"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/draconis.zip",
+    "name": "draconis.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 160556,
+    "sha256": "24961820a0f6f529eda0a5d94080d5861db8ba9f4a9b2328e24241f6d726b56d"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/drgpit.zip",
+    "name": "drgpit.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 1029829,
+    "sha256": "025d7bbe4d4215c07f6132d34c14f58d90b62978c25743ee4c09d4d50521af5d"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/drmdungn.zip",
+    "name": "drmdungn.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 279325,
+    "sha256": "acdac8f174f0c3db61a78f5732cfe50f63609a7d28bed5e2b550b67c68a61aae"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/jailbrkn.zip",
+    "name": "jailbrkn.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 683382,
+    "sha256": "cbf7a149ce4e8dab1c914a2ac2d0d6ce5ebfd34acf3577dd70fdcd5c5df3815a"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/lavagorge.zip",
+    "name": "lavagorge.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 24998,
+    "sha256": "b52c8d7293314aa6f7ee43adc2af970e02120a2be9a83fdd349e0f81ad71c41a"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/marzipan.7z",
+    "name": "marzipan.7z",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 51929,
+    "sha256": "2b1fd72ced1b70d9b8b6bbb089ad2f0c476647798b11eb1b68de83f97147836f"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/mconncp.zip",
+    "name": "mconncp.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 61008,
+    "sha256": "a4d55f42640ff2c76b5c6c774eb36a5afd1b27adbeae7c63dfa052d81dbe3def"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/ppg_hall.zip",
+    "name": "ppg_hall.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 115569,
+    "sha256": "5399ac69ea3507d9a31d41574de4baed3b07ca1cf5cd233034a6c12d74a9f3e0"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/academy.zip",
+    "name": "academy.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 77979,
+    "sha256": "8258fd08cef95fb1c341810f57d510ba1e704615ba21cf073eea899287776b48"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/p-city.zip",
+    "name": "p-city.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 106676,
+    "sha256": "0d7bdc0d7bcd0d4f7e83a17a95a4277a801d59354459fd3ae5a2a49a681439d8"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/spotlight/urbwar1.zip",
+    "name": "urbwar1.zip",
+    "folder": "levels",
+    "source": "spotlight",
+    "status": "downloaded",
+    "bytes": 96276,
+    "sha256": "b487a427ab2fdcc3de151e0338bf689863bc20bef7a110737fa6a9c636ca8bca"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/darkhorse/darkmttr.zip",
+    "name": "darkmttr.zip",
+    "folder": "levels",
+    "source": "darkhorse",
+    "status": "downloaded",
+    "bytes": 53848,
+    "sha256": "8307bc42f9a85bedbd0090ba51cdbbb653e529636ff7181a341d0617ababdc03"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/darkhorse/magnacore.zip",
+    "name": "magnacore.zip",
+    "folder": "levels",
+    "source": "darkhorse",
+    "status": "downloaded",
+    "bytes": 54533,
+    "sha256": "7d504ac3c76af14cb5fde65d683326e95edc82e708e2a8ed27095e16e0c5a039"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/lobber/umbrel21.zip",
+    "name": "umbrel21.zip",
+    "folder": "levels",
+    "source": "lobber",
+    "status": "downloaded",
+    "bytes": 60886,
+    "sha256": "eac55fa5dab8ea78a0eb649fd2e332984278a6e87e93666a745168a7cf1cabed"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/sirius/anthology.7z",
+    "name": "anthology.7z",
+    "folder": "",
+    "source": "sirius",
+    "status": "downloaded",
+    "bytes": 27964940,
+    "sha256": "380552e767767147dcbd52f361657acf2a08071e5894c6cd9aa511e6232e0f3f"
+  },
+  {
+    "url": "https://www.descent2.de/files/missions/3rdparty/sirius/anthology(split).7z",
+    "name": "anthology(split).7z",
+    "folder": "",
+    "source": "sirius",
+    "status": "downloaded",
+    "bytes": 34933586,
+    "sha256": "636b07e2cb1f52f5263b558ed0abb40724553d2b3d67cfdd4728f4addac68481"
+  }
+]

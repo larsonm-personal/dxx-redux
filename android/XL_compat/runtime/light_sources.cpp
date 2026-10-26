@@ -97,7 +97,7 @@ bool textured_face(int segment, int side)
 
 std::vector<int> classic_lighting_face_vertices(int segment)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || segment < 0 || segment > Highest_segment_index)
+	if (!geometry_lighting_available() || segment < 0 || segment > Highest_segment_index)
 		throw std::runtime_error("Invalid classic lighting mesh segment");
 	std::vector<int> vertices;
 	for (int side = 0; side < 6; ++side)
@@ -115,7 +115,7 @@ std::vector<int> classic_lighting_face_vertices(int segment)
 std::vector<GeometryLightDistance> classic_nearest_vertex_lights(int vertex,
                                                                  const std::vector<ClassicGeometryLight> &sources, const std::vector<std::vector<bool>> &visibility)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || vertex < 0 || vertex > Highest_vertex_index ||
+	if (!geometry_lighting_available() || vertex < 0 || vertex > Highest_vertex_index ||
 	    visibility.size() != static_cast<std::size_t>(Highest_segment_index) + 1)
 		throw std::runtime_error("Invalid classic nearest-light vertex or visibility table");
 	const auto &position = Vertices[vertex];
@@ -139,8 +139,17 @@ std::vector<GeometryLightDistance> classic_nearest_vertex_lights(int vertex,
 
 std::vector<ClassicGeometryLight> compile_classic_geometry_lights(const TextureBrightnessTable &brightness, const TextureColorTable &colors)
 {
-	if (!Current_mission || Current_mission->descent_version != 1)
-		throw std::runtime_error("Classic D1 geometry light materials require a D1 mission");
+	TextureRgbTable rgb{};
+	for (std::size_t i = 0; i < colors.size(); ++i)
+		for (unsigned channel = 0; channel < 3; ++channel)
+			rgb[i][channel] = static_cast<float>(colors[i].channels[channel]) / static_cast<float>(0x7fffffff);
+	return compile_classic_geometry_lights(brightness, rgb);
+}
+
+std::vector<ClassicGeometryLight> compile_classic_geometry_lights(const TextureBrightnessTable &brightness, const TextureRgbTable &colors)
+{
+	if (!geometry_lighting_available())
+		throw std::runtime_error("Geometry light materials require D1 or admitted XL geometry");
 	if (Game_mode & GM_MULTI) throw std::runtime_error("Classic geometry light profile requires single-player mode");
 	ClassicFaceLightMaterials materials(brightness, colors);
 	std::vector<ClassicGeometryLight> result;
@@ -197,8 +206,8 @@ ClassicAmbientLighting::ClassicAmbientLighting(const std::vector<ClassicGeometry
 
 ClassicAmbientLighting::ClassicAmbientLighting(const std::vector<ClassicGeometryLight> &sources, const std::vector<std::vector<bool>> &visibility)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || Highest_vertex_index < 0)
-		throw std::runtime_error("Ambient snapshot requires loaded classic D1 geometry");
+	if (!geometry_lighting_available() || Highest_vertex_index < 0)
+		throw std::runtime_error("Ambient snapshot requires loaded D1 or admitted XL geometry");
 	if (Game_mode & GM_MULTI) throw std::runtime_error("Classic ambient profile requires single-player mode");
 	std::vector<std::int32_t> radii;
 	for (int segment = 0; segment <= Highest_segment_index; ++segment) radii.push_back(classic_segment_average_radius(segment));

@@ -15,7 +15,8 @@ support text synchronized with this catalog
 The 17/36 [segment-flag audit](evidence/segment-flags-17-36.md) resolves
 Observatory's 37 high-bit records as preserved reserved data in the pinned
 reference. Only the low ambient-water/lava bits have runtime consumers. The raw
-bytes remain visible; no-damage functions remain blocked. This does not admit Observatory.
+bytes remain visible. No-damage function 13 is now admitted through the same feature
+and resource checks as other implemented requirements; see the qualification below.
 
 The bounded 17/36 translator removes the extra equipment header,
 rebases retained offsets, and rebuilds every packed light-index record into
@@ -24,7 +25,7 @@ semantic blockers. Binary tests cover packed counts 0 through 8191. A native
 loader control derived from Observatory verifies name, geometry, reserved bits,
 light indices and delta payloads after explicitly replacing its 26 no-damage
 functions with ordinary segments. That changed fixture is layout evidence only;
-the original Observatory source remains rejected for its no-damage requirements.
+the unchanged original is tested separately through normal admission and save loading.
 
 Konflict is the next original-distribution acceptance fixture for this layout.
 Its unchanged d2x-name descriptor and 17/36 level now pass native startup,
@@ -42,8 +43,16 @@ startup, rendering, save/restore, XL menu indicator, stock switching and a
 controlled authored-light face with actual corona draws and no depth failures.
 Native controlled exit dispatch also passes; no route traversal is claimed.
 
-The [no-damage semantic audit](evidence/no-damage-reference.md) records the next
-Observatory prerequisite. Reference behavior includes firing gates, collision
+Original Observatory now passes 45 normal-APK behavior/lifecycle checks and a
+controlled rendered view. Its initially black mine exposed missing ambient
+reconstruction: levels without registered baked colors now use the detected
+method-0 geometry-light path. All 224 light sources and 328 ambient vertex colors
+match the pinned running reference (maximum RGB difference 1.47e-7). Native
+load/restore tests retain that comparison. This is bounded singleplayer evidence,
+not a full playthrough or universal rendering parity.
+
+The [no-damage semantic audit](evidence/no-damage-reference.md) records the implemented
+function-13 protection behavior and its qualification limits. Reference behavior includes firing gates, collision
 response and effects, with distinct flare-energy and queued-missile accounting.
 It is not equivalent to player invulnerability. Headless controls now verify
 final player-damage suppression and direct weapon impacts against ordinary
@@ -55,21 +64,33 @@ suppression, retained force-field response and lava/water classification with
 thrust-dependent rotation. Paired radius-explosion controls verify preserved
 force/rotation and flash-missile blinding while suppressing shield loss. Native
 player/clutter and player/player controls check bump and sound-gate suppression
-with receiver-segment distinctions. Broader debris behavior remains unqualified. Broader
-fusion, guided flight/persistence, full wall traversal, general splash behavior, persistence
-and matched reference behavior remain unqualified; the original mission and
-function 13 remain blocked.
+with receiver-segment distinctions. Optional persistent-debris behavior, full guided flight, general wall traversal
+and exhaustive splash combinations remain unqualified. These controls establish
+the listed cases, not universal combat parity.
 
 Guided dispatch controls verify that fresh protected fire retains control, normal
 release works after exit, and an already queued protected event releases without
 spending ammo or creating another projectile. These use explicit boundary
-placement and queue setup; they do not qualify flight, rendering or persistence.
+placement and queue setup; original-source persistence is verified separately below.
+
+Controlled shared-face physics now verifies both directions through an original
+Observatory portal, with identical movement/RNG to neutral-property controls and
+immediate damage/firing gates on arrival. Separately compiled, hash-pinned XL
+functions match 12 native firing-gate and four contact-dispatch cases. This is
+isolated-function evidence, not full reference gameplay or collision-impulse
+parity. Reference actor/debris contacts are conditional on optional persistent
+debris; the default disables them. Original-source save/restore now reconstructs
+all 26 properties through the normal loader in the native harness, with continued
+fusion and guided behavior after restoration and stock isolation. No private
+admission switch is needed. Normal-APK qualification is recorded in the no-damage
+audit; this is bounded singleplayer support, not a full mission playthrough.
 
 A full-frame fusion control reproduces and fixes queue loss after protection:
 detected no-damage profiles retain a charged pending shot on released input,
 recharge for one frame on exit as in the reference, then emit with the retained
 charge multiplier and normal energy costs. Profiles without this property retain
-classic behavior. Other fusion timing cases and persistence remain unqualified.
+classic behavior. Original-source persistence is verified; other fusion timing
+cases remain unqualified.
 
 Fresh protected fusion input and native weapon-switch cancellation also have
 frame controls. XL's general manual-selection charge refund is a known unported
@@ -229,8 +250,8 @@ unsupported XL extensions
 
 | Browser ID / category                                 | Inventory and corpus evidence                                                                                                                     | Current production support / investigation                                                          | Acceptance slice                                                                                                           |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `container` Archive/descriptor dialect                | DHF versus D2X, signed member sizes, long names, `d2x-name`; survey reports one D2X HOG and 48 XL descriptors                                     | DHF and d2x-name supported with per-level feature/resource checks; extended archives unsupported           | Bounds, truncation, name collisions, descriptor precedence and dependency closure                                          |
-| `serialization` Versioned layouts                     | Separate level/game versions; v13 wall-width, v21 segment-layout and color/object transitions                                                     | OpenGL builds: stock 1-8 and bounded XL 15/33 and 17/36                                            | Exact section ends, malformed references and version fixtures; never just relax version checks                             |
+| `container` Archive/descriptor dialect                | DHF versus D2X, signed member sizes, long names, `d2x-name`; survey reports one D2X HOG and 48 XL descriptors                                     | DHF and d2x-name supported with per-level feature/resource checks; extended archives unsupported    | Bounds, truncation, name collisions, descriptor precedence and dependency closure                                          |
+| `serialization` Versioned layouts                     | Separate level/game versions; v13 wall-width, v21 segment-layout and color/object transitions                                                     | OpenGL builds: stock 1-8 and bounded XL 15/33 and 17/36                                             | Exact section ends, malformed references and version fixtures; never just relax version checks                             |
 | `capacity` Tables and reference widths                | 21 levels exceed 255 walls; two exceed 1000 objects; two exceed 100 triggers                                                                      | Stock: 9000 segments, 36000 vertices, 255 walls, 1000 objects, 100 triggers; no general XL widening | Indices 254/255/256, sentinels, allocation headroom, saves/demos/network and metadata consumers                            |
 | `segments` Physics, properties, ownership             | Old combined types versus v21+ split properties; blocked, water/lava, outdoor, no-damage, shield/energy damage, teams/groups                      | Classic repair centers exist; XL semantics unverified                                               | Equivalent old/new encodings, damage timing, traversal and ownership                                                       |
 | `walls` Wall types and flags                          | Extended types/flags; paired sides and door/open/close/cloak transitions                                                                          | Classic subset; XL parity unverified                                                                | Collision, projectile passage, activation and persistence                                                                  |
@@ -238,11 +259,11 @@ unsupported XL extensions
 | `object_triggers` Object activation                   | 212 triggers in 22 levels; damage/destruction activation and stable references                                                                    | Unsupported                                                                                         | Threshold/destruction, ordering, once/repeat flags, restore and network identity                                           |
 | `objects` Objects and AI                              | Type/control/movement/render variants, identities and robot behavior                                                                              | Classic behavior exists; field agreement is not AI parity                                           | Ordinary combat, collisions, contained items and object lifecycle                                                          |
 | `gameplay_assets` Custom game data                    | Robot/weapon/model dependencies, HAM/HXM/PMH and expanded tables                                                                                  | Substantial classic HXM/extra-HAM exists; XL alternate formats/counts unverified                    | Reference closure, failure rollback and custom weapons/robots; never alias PO2 PMH into stock HAM                          |
-| `baked_lighting` Embedded and sidecar colors          | Non-gray vertex/side/texture tables in 124/58/129 levels; CLR is a separate resource source                                                       | OpenGL 15/33 and 17/36 embedded colors; D2 CLR overrides rejected                        | Float/integer transitions, resolved color precedence and matched reference frames                                          |
+| `baked_lighting` Embedded and sidecar colors          | Non-gray vertex/side/texture tables in 124/58/129 levels; CLR is a separate resource source                                                       | OpenGL 15/33 and 17/36 embedded colors; D2 CLR overrides rejected                                   | Float/integer transitions, resolved color precedence and matched reference frames                                          |
 | `dynamic_lighting` Changing lights and modes          | Switchable/flickering lights, dynamic sources, reactor/seismic flash, per-pixel/lightmap/shadow settings                                          | Arithmetic comparison exists; full integration/modes unverified                                     | Light on/off, shot sources, flash, save/reload; pin profile, never extrapolate across modes                                |
 | `visual_assets` Texture/model formats                 | TGA/OOF, layered/animated materials; broad-corpus counts are not exclusively XL                                                                   | Individual formats/paths need verification                                                          | Orientation, filtering/alpha, model rendering and disclosed fallback                                                       |
 | `mission_flow` Campaign behavior                      | Secret origins/returns, directed exits, dependencies and objectives                                                                               | XL campaign behavior unverified; no modern hub-persistence claim                                    | All branches, transitions/returns and saves; one level never certifies 30                                                  |
-| `runtime` Qualification                               | Combat, progression, presentation, persistence, isolation, replay and multiplayer                                                                 | Bounded OpenGL pilots with explicit evidence; no general campaign or multiplayer claim                                                                   | Scope and evidence for each claim; all required categories must qualify                                                    |
+| `runtime` Qualification                               | Combat, progression, presentation, persistence, isolation, replay and multiplayer                                                                 | Bounded OpenGL pilots with explicit evidence; no general campaign or multiplayer claim              | Scope and evidence for each claim; all required categories must qualify                                                    |
 | `navigation` Teleports, boosts and spawn destinations | 108 wall teleports, 281 boosts, 20 spawn-setting actions; object-trigger transport also occurs                                                    | XL movement actions and route-analysis edges unsupported                                            | Disconnected regions, position/orientation/velocity, respawn, collision and guidebot routing                               |
 | `generators` Equipment and spawning                   | 53 equipment generators in 11 levels; distinct from robot matcens; spawn/countdown actions                                                        | Classic robot matcens exist; XL behavior unverified                                                 | Activation, replenishment/exhaustion, ordering, capacity and restore                                                       |
 | `wall_materials` Authored opacity/materials           | Type-8 colored walls (Glass House: 126), opacity on ordinary walls; pilot has 14 nonzero cloak/opacity records                                    | Classic cloaking/bitmap transparency exists; XL semantics unverified                                | Visibility, collision, targeting and projectiles independently; fixed opacity and layers                                   |
@@ -531,7 +552,6 @@ follow their sibling HOG like D2 MN2 descriptors. Detection does not establish
 which level consumes a member, or whether it is equivalent to defaults; those
 remain explicit verification requirements.
 
-
 A controlled Android still-view capture now provides a matched five-region
 lighting witness with exact camera/viewport receipts and hashed pixels. Four
 regions have mean channel errors0.010..0.035 (0..255 scale); the warped floor
@@ -539,7 +559,6 @@ remains9.403 with normal compiled face splits. This is bounded diagnostic
 rendering evidence, not full visual or gameplay qualification. Details and
 provenance are in [the comparison evidence](evidence/dragon-lighting-comparison.md).
 Package/mission support status is unchanged.
-
 
 Warped-face drawing is also profile-dependent in the pinned XL source: its
 no-mesh lighting path uses four-corner fans, while mesh paths preserve side

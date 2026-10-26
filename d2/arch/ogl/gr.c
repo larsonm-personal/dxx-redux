@@ -1291,7 +1291,7 @@ void save_screen_shot(int automap_flag)
 		HUD_init_message(HM_DEFAULT, "%s '%s'", TXT_DUMPING_SCREEN, savename + strlen(SCRNS_DIR));
 
 #ifndef OGLES
-#ifdef DXX_XL_RUNTIME
+#ifdef DXX_XL_DEVELOPER_PROBE
 	glReadBuffer(GL_BACK);
 #else
 	glReadBuffer(GL_FRONT);

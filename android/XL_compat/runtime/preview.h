@@ -6,6 +6,7 @@ extern "C" {
 #endif
 int xl_preview_water_segment(int segment);
 int xl_preview_no_damage_segment(int segment);
+unsigned xl_preview_rebuilt_ambient_vertices(void);
 int xl_preview_preserve_fusion_queue(void);
 #ifdef __ANDROID__
 /* Automation-only opt-in; refuse to change the profile during gameplay */

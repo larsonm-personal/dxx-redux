@@ -1,8 +1,99 @@
 # No-damage semantic audit
 
-Status: source evidence and partial native collision controls, not admitted.
-Original Observatory still rejects its 26 function-13 segments. The developer
-17/36 layout control explicitly removes those functions and cannot qualify them.
+Status: function 13 and detected method-0 ambient reconstruction are implemented
+in normal OpenGL D2 builds. Original Observatory passes bounded singleplayer
+behavior, persistence, resource and rendering checks. This is not a full playthrough,
+universal XL renderer parity or multiplayer qualification. The developer 17/36
+layout control removes protection and remains layout-only evidence.
+
+## Original Observatory acceptance
+
+The normal x86_64 debug APK passes all 45 controlled automation steps: protection
+versus ordinary damage, direct quickload, stock switching followed by restoration,
+XL menu marker, source-derived ambient reconstruction and stock cleanup. Input
+HOG/descriptor hashes are checked, and device file inventories match before and
+after testing. No 3D route navigation was attempted.
+
+An earlier run passed behavior checks but rendered the mine black. Nonzero shaded
+vertex counts and zero unresolved emitters were insufficient. The original has
+328 zero vertex colors and 660 zero side colors. Reference ReadColor registers
+only float channels strictly between zero and one, and GatherStaticLights rebuilds
+ambient when none registered. Our renderer was using the zero table directly.
+The implementation now detects that requirement, builds method-0 geometry lights
+from owned LGT/default brightness and texture colors, and reconstructs ambient on
+load/restore. Baked-color levels retain their existing path. The existing water
+pilot retains its separately qualified presentation profile.
+
+The fixed-camera Android capture now contains lit, textured mine geometry. More
+strongly, the unchanged pinned XL executable loaded the original HOG in method 0,
+ambient color enabled, bColored false, single-threaded, square 1024 viewport and
+default zoom 0x9000. Read-only runtime capture found 224 geometry lights. All source
+locations, RGB and brightness match the port within 1e-5, and all 328 ambient RGB
+triples match with maximum component difference 1.47e-7. The captured fixture is
+[observatory-ambient-reference.json](observatory-ambient-reference.json); the native
+descriptor test compares it on initial load and after stock/save restoration.
+This compares fresh ambient tables, not every rendered pixel or lighting mode.
+Observatory has no flicker records, light-index entries or geometry triggers.
+
+The pinned ReadColor function also executes unchanged in the reference adapter;
+16 float/integer, registered/texture and boundary cases match detection, including
+float rounding near one. Its source hash is
+`dd9335a95f69cb91a244ba6352ea381d4531fcddb1a12cf06c619d9ab6cf857f`.
+Shared geometry helpers require either D1 context or an admitted singleplayer XL
+source; ordinary stock D2 is excluded. Stock upstream compatibility, original
+Konflict, D1 Dragon companion controls and the existing water arena pass.
+
+Artifacts: `temp/xl-observatory-android/{result.json,state.json,render.png,steps.jsonl}`;
+`temp/xl-no-damage-20261025/{ambient-verified.log,ambient-inventory.log,ambient-stock.log,ambient-neighbors.log}`;
+reference launch/read scripts and raw capture are under the latter directory's
+`reference/`. The reference executable SHA and capture digest accompany the fixture.
+
+The private descriptor harness now additionally loads the unchanged Observatory
+source through the normal translation/resource/owned-inventory path. Normal feature admission permits function 13 while retaining all other
+feature/resource checks; there is no mission-name exception or qualification switch. The translator writes ordinary stock
+segment enums while retaining all 26 protected properties in the owned inventory.
+An original-mission save is followed by a real stock new game and restoration.
+All properties, player position/resources, fusion charge/queue/relative timer and
+guided missile ownership/signatures survive. Restored protection refuses fresh
+guided release and damage; leaving permits ordinary release/damage. Native frames
+verify the restored fusion queue remains protected, recharges for one exit frame,
+then emits two bolts with the expected energy accounting. Rejected level selection
+preserves the restored map and position. Unsupported blocked-segment properties
+still fail preflight, including hidden secret levels. These tests do not call the
+private property-binding API to rebuild state after restore. Android rendering
+is a separate acceptance check.
+
+The pinned reference's actual AllowedToFireGun, AllowedToFireMissile,
+CollidePlayerAndPlayer and CollideActorAndClutter functions are now compiled
+unchanged in an isolated state adapter. Their source hashes are checked before
+extraction. The descriptor test compares measured Redux outputs against all 12
+reference firing cases (ordinary/protected, alive/dead, expired/due/future
+cooldown), including queued-missile clearing. Four paired contact cases compare
+bump and sound-gate dispatch. All pass. Reference bump/audio sinks only observe
+dispatch; they do not emulate impulse calculations or prove mixer parity.
+These are matched isolated-function executions, not a running reference game.
+Slow motion, multiplayer, observer mode and large/bogus cooldown recovery are
+outside this comparison. Configure XL_REFERENCE_WEAPON_CONTROL with the pinned
+weapons/controlweapon.cpp and build xl_no_damage_reference_gates to enable the
+comparison inside xl_observatory_descriptor.
+
+The debris gap is conditional: reference SetDebrisCollisions enables player/debris
+and robot/debris only when render.nDebrisLife is nonzero. The pinned defaults in
+main/gameoptions.cpp and main/gamedata.cpp set it to zero, matching Redux's disabled
+pairs. The extracted reference setter is executed for zero/nonzero lifetime.
+Persistent-debris collision support remains unported; its presence in the collision
+dispatcher alone does not make it a default no-damage mission requirement.
+
+Native shared-face controls now cross the original Observatory boundary between
+segments 33 and 34 in both directions, using the original ship size and native
+physics. Paired protected/neutral property bindings produce identical positions,
+physics state and simulation RNG state. Damage, primary and missile input gates
+change immediately according to the arrival segment. Other objects are temporarily
+excluded from collision and restored afterward: an initial paired run collected
+an authored missile pickup only on the first pass, invalidating the comparison.
+This is controlled boundary-motion evidence, not navigation, projectile traversal,
+save/restore or reference execution. The property still uses the private validated
+source binding for paired comparisons; normal admission is verified separately.
 
 The native test now separately binds an owned copy of the original segment
 properties to that layout after validating geometry. That binding is compiled
