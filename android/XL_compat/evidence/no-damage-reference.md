@@ -13,6 +13,9 @@ versus ordinary damage, direct quickload, stock switching followed by restoratio
 XL menu marker, source-derived ambient reconstruction and stock cleanup. Input
 HOG/descriptor hashes are checked, and device file inventories match before and
 after testing. No 3D route navigation was attempted.
+Final run: `76214e2953c343d5b3a4113ffaebdac2`, 45/45, 50281 ms.
+APK SHA256: `41317a2a01c9f84b0edae8918ed77aab81477cd5bdd12bda637af9a6d0c46931`.
+The final screenshot was inspected after this run; device files restored identically.
 
 An earlier run passed behavior checks but rendered the mine black. Nonzero shaded
 vertex counts and zero unresolved emitters were insufficient. The original has
@@ -158,8 +161,8 @@ and updates cooldown without spending ammo or changing the projectile. This
 matches `controlweapon.cpp:820-826` and `fireweapon.cpp:892-906`: the fresh-input
 gate is outside queued dispatch, and guided release precedes ammo processing.
 Boundary placement and the pending queue are explicit fixture setup, not earned
-flight or replay evidence. Guidance rendering, physics traversal and persistence
-remain unqualified.
+flight or replay evidence. Guidance rendering and full guided-flight parity
+remain unqualified; original-source persistence is verified separately above.
 
 A full native gameplay-frame control covers an already charged fusion timer
 expiring inside protection. It retains charge and queues a shot without energy
@@ -249,7 +252,7 @@ weapons or robot damage as a shortcut. Shield damage routed through
 remain. Similarly, this audit does not prove that splash force, awareness or
 sound preceding the final player-damage call should disappear.
 
-## Qualification sequence before admission
+## Qualification sequence and evidence
 
 1. Preserve function-13 identity separately from stock geometry conversion and
    bind it to the same owned, validated source as the other XL adapters. Verify
@@ -270,6 +273,15 @@ sound preceding the final player-damage call should disappear.
    descriptor/resource transaction qualification and original-level gameplay,
    lighting and presentation checks. Do not promote the neutralized layout
    fixture into evidence of original-level support
+
+The native descriptor suite now exercises all five stages above. The final
+coverage audit added ordinary/protected robot damage and contact controls:
+robot damage, collision physics, sound-gate dispatch and AI awareness remain,
+while player shield damage is suppressed. Incoming laser controls cross the
+original shared face in both directions using native physics; paired positions
+match, and the arrival segment determines shield damage and projectile survival.
+These are controlled dispatch/physics cases, not navigation or all combat variants.
+The suite requires explicit completion markers for these controls.
 
 Fusion timing also uses `weapons/fusion.cpp`, SHA256
 `452ffc572b8f397fd439a07b6c1328e068360cd413565149abad8c016d7b2700`.

@@ -71,7 +71,7 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	}
 	// Protection must not disable robot damage, contact response or AI awareness
 	const int robot_index = obj_create(OBJ_ROBOT, 0, segment, &ConsoleObject->pos, &ConsoleObject->orient,
-	                                  F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
+	                                   F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
 	require(robot_index >= 0 && !Robot_info[0].companion && !Robot_info[0].kamikaze && !Robot_info[0].thief,
 	        "robot contact control requires an ordinary robot");
 	auto &robot = Objects[robot_index];

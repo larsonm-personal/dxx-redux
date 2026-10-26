@@ -160,3 +160,36 @@ The normal Android APK passes 45/45 and its inspected screenshot shows the textu
 mine rather than black. Full pixel parity, optional persistent debris and broad
 XL fusion-selection policy remain outside this bounded feature qualification.
 See the semantic audit for source hashes, exact scope and artifact locations.
+
+### Completion audit against the five planned stages
+
+1. Property consumers and boundary behavior: required native controls cover damage,
+   firing/resource accounting, queued fusion/guided state, walls, splash, actor
+   collisions, and bidirectional shared-face movement. Final added controls prove
+   robot damage/physics/awareness remain and incoming projectiles cross in both
+   directions with arrival-based damage/disposal behavior (coverage-audit.log).
+2. Independent reference cases: unchanged pinned firing/contact functions match
+   12 gate and four contact cases; ReadColor matches 16 registration cases. The
+   running reference ambient capture matches all 224 sources and 328 colors.
+3. Ownership/persistence: original-source normal loader reconstructs 26 protection
+   properties and ambient after a stock mission; queued weapons and resources
+   survive. Failed selections preserve active state, and multiplayer rejects.
+4. Production integration: no mission-name/hash admission exception; browser
+   evidence distinguishes baked colors from ambient reconstruction. Original HOG
+   and descriptor are hash-checked by test fixtures only. Normal OpenGL builds
+   run both stock and XL; Android has controlled behavioral and visual evidence.
+5. Regressions: final native suite passes 4/4, inventory/UI 2/2 and rebuilt stock
+   upstream compatibility 1/1. Normal Windows game/metadata and Android APK build.
+   Automation catalogs passed after test registration. Scoped quality checks pass.
+
+No mission traversal is required or claimed. Optional persistent-debris settings,
+other lighting modes, full guided-flight or pixel-by-pixel parity, and XL's broader
+manual weapon-selection refund remain explicitly outside this feature's evidence.
+
+Final normal-APK acceptance: run 76214e2953c343d5b3a4113ffaebdac2 passes 45/45
+in 50281 ms, with 328 reconstructed ambient vertices and visibly textured mine
+geometry in the inspected capture. APK SHA256 is
+41317a2a01c9f84b0edae8918ed77aab81477cd5bdd12bda637af9a6d0c46931.
+Device files restored identically. Final code-quality checks and diff whitespace
+checks pass. The five-stage bounded support objective is complete; broader XL
+features and the explicitly listed parity limits remain separate future work.
