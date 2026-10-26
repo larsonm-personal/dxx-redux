@@ -40,6 +40,10 @@ if(TARGET test_upstream_compat)
                                                matcen-stations.json)
     add_test(NAME test_config_policy COMMAND test_upstream_compat --config-policy
                                              config-policy.json)
+    add_test(NAME test_config_roundtrip
+             COMMAND ${CMAKE_COMMAND} -DENGINE=$<TARGET_FILE:test_upstream_compat> -P
+                     ${CMAKE_CURRENT_LIST_DIR}/test_config_roundtrip.cmake)
+    set_tests_properties(test_config_roundtrip PROPERTIES TIMEOUT 180)
     add_test(NAME test_coop_pickup_rewards COMMAND test_upstream_compat --coop-pickup-rewards
                                                    coop-pickup-rewards.json)
     add_test(NAME test_udp_security_validation COMMAND test_upstream_compat

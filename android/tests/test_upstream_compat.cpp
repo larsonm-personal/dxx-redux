@@ -11555,6 +11555,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 #include "pickup_autoselect_fixture.hpp"
 #include "coop_pickup_reward_fixture.hpp"
 #include "config_policy_fixture.hpp"
+#include "config_roundtrip_fixture.hpp"
 #include "keyboard_rebind_fixture.hpp"
 #include "secret_origins_fixture.hpp"
 #include "d1_text_loader_fixture.hpp"
@@ -12774,6 +12775,11 @@ int main(int argc, char **argv)
 	}
 	if (argc == 3 && std::strcmp(argv[1], "--matcen-stations") == 0) {
 		test_matcen_stations(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--config-roundtrip") == 0) {
+		test_config_roundtrip(argv[2], argv[3]);
 		PHYSFS_deinit();
 		return 0;
 	}
