@@ -22,6 +22,10 @@ if (-not $OutputDirectory) {
 }
 try {
     & (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture scoped_textures -ExpectedCases 8 @arguments
+    if ($OriginalTexture) {
+        & python3 (Join-Path $PSScriptRoot "xl_private_assets.py") --gpu-trace (Join-Path $OutputDirectory "d2.json")
+        if ($LASTEXITCODE -ne 0) { throw "Required original texture GPU evidence is incomplete" }
+    }
 } catch {
     if (-not $OriginalTexture) {
         foreach ($game in @('d1', 'd2')) {

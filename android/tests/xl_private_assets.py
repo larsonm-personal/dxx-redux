@@ -16,10 +16,26 @@ ASSETS_COMMIT = "8c9988a96a7e306f8aac04c85e2610492917b7ac"
 MANIFEST_SHA256 = "cfa5a81f003958798cb37ee177f07b74c77812c4ab43d1986ccff37244347647"
 OWNER_IDS = {"host-profile:retail-xl-originals", "master:test_xl_original_assets"}
 D2_FILES = {
-    "d2-xl.hog": (9871510, "7491c45d217831509a840d934641bf1791e029ae6c1bcbe3e4efba2847d53d32"),
-    "d2-xl.mn2": (514, "cfd619db7eff6a37663188905aec1a1c96d50567613d07ac1dcfd97b621bb8ea"),
+    "d2-xl.hog": (
+        9871510,
+        "7491c45d217831509a840d934641bf1791e029ae6c1bcbe3e4efba2847d53d32",
+    ),
+    "d2-xl.mn2": (
+        514,
+        "cfd619db7eff6a37663188905aec1a1c96d50567613d07ac1dcfd97b621bb8ea",
+    ),
 }
-PAIRS = {(11, 31), (15, 33), (15, 34), (17, 35), (17, 36), (18, 36), (19, 40), (21, 40), (23, 40)}
+PAIRS = {
+    (11, 31),
+    (15, 33),
+    (15, 34),
+    (17, 35),
+    (17, 36),
+    (18, 36),
+    (19, 40),
+    (21, 40),
+    (23, 40),
+}
 
 
 def selected(plan):
@@ -43,7 +59,8 @@ def manifest(path):
     if (
         data["missing"]
         or data["mismatched"]
-        or {(x["level_version"], x["game_version"]) for x in data["format_witnesses"]} != PAIRS
+        or {(x["level_version"], x["game_version"]) for x in data["format_witnesses"]}
+        != PAIRS
     ):
         raise ValueError("XL fixture manifest is incomplete")
     return data
@@ -77,10 +94,14 @@ def hog_member(path, name):
 
 def expected_files(data):
     result = {}
+    folded = {}
     for archive in data["archives"]:
         adapter = archive["path"].endswith("/adapters/boilpnt-test.zip")
         for row in archive["members"]:
             path = ("adapter/" if adapter else "") + member_path(row["path"]).as_posix()
+            if path.casefold() in folded and folded[path.casefold()] != path:
+                raise ValueError("XL fixture members have case-colliding paths")
+            folded[path.casefold()] = path
             if path in result and result[path] != (row["size"], row["sha256"]):
                 raise ValueError("XL fixture members conflict")
             result[path] = (row["size"], row["sha256"])
@@ -100,7 +121,10 @@ def verify(stage):
             raise ValueError("XL staged member identity mismatch")
     for row in data["format_witnesses"]:
         content = hog_member(stage / row["archive_member"], row["hog_member"])
-        if len(content) != row["size"] or hashlib.sha256(content).hexdigest() != row["sha256"]:
+        if (
+            len(content) != row["size"]
+            or hashlib.sha256(content).hexdigest() != row["sha256"]
+        ):
             raise ValueError("XL format witness identity mismatch")
         if len(content) < 16 or struct.unpack_from("<I", content)[0] != 0x504C564C:
             raise ValueError("XL format witness header differs")
@@ -108,7 +132,10 @@ def verify(stage):
         if not 16 <= game_offset <= len(content) - 4:
             raise ValueError("XL format witness offset differs")
         signature, game = struct.unpack_from("<HH", content, game_offset)
-        if signature != 0x6705 or (level, game) != (row["level_version"], row["game_version"]):
+        if signature != 0x6705 or (level, game) != (
+            row["level_version"],
+            row["game_version"],
+        ):
             raise ValueError("XL format witness version differs")
         checked(stage / "witnesses" / row["hog_member"], row)
     return data
@@ -123,7 +150,9 @@ def stage_inputs(root, destination, seven_zip):
         raise ValueError("XL fixture destination already exists")
     destination.mkdir(parents=True)
     try:
-        shutil.copyfile(root / "missions/d2xxl/manifest.json", destination / "manifest.json")
+        shutil.copyfile(
+            root / "missions/d2xxl/manifest.json", destination / "manifest.json"
+        )
         checked(root / data["archive"]["path"], data["archive"])
         shutil.copyfile(root / data["archive"]["path"], destination / "levelpack.7z")
         for index, record in enumerate(data["archives"]):
@@ -131,7 +160,11 @@ def stage_inputs(root, destination, seven_zip):
             checked(source, record)
             temporary = destination / ("unpack-" + str(index))
             extract_archive(source, temporary)
-            actual = {p.relative_to(temporary).as_posix() for p in temporary.rglob("*") if p.is_file()}
+            actual = {
+                p.relative_to(temporary).as_posix()
+                for p in temporary.rglob("*")
+                if p.is_file()
+            }
             if actual != {r["path"] for r in record["members"]}:
                 raise ValueError("XL archive member set differs")
             adapter = record["path"].endswith("/adapters/boilpnt-test.zip")
@@ -145,13 +178,21 @@ def stage_inputs(root, destination, seven_zip):
                 else:
                     shutil.copyfile(temporary / path, target)
             shutil.rmtree(temporary)
-        record = next(r for r in data["original_mission_archives"] if r["path"].endswith("/D2-XL.7z"))
+        record = next(
+            r
+            for r in data["original_mission_archives"]
+            if r["path"].endswith("/D2-XL.7z")
+        )
         source = root / member_path(record["path"])
         checked(source, record)
         temporary = destination / "unpack-d2"
         extract_archive(source, temporary, seven_zip=seven_zip)
         for name, (_, digest) in D2_FILES.items():
-            matches = [p for p in temporary.rglob("*") if p.is_file() and p.name.casefold() == name]
+            matches = [
+                p
+                for p in temporary.rglob("*")
+                if p.is_file() and p.name.casefold() == name
+            ]
             if len(matches) != 1 or file_identity(matches[0])[1] != digest:
                 raise ValueError("XL original Counterstrike package differs")
             target = destination / "missions/single" / name
@@ -169,12 +210,54 @@ def stage_inputs(root, destination, seven_zip):
         raise
 
 
+def require_original_gpu_trace(path):
+    # Four visits in each rebuilt GL context include original A and return-to-A
+    rows = json.loads(Path(path).read_text())
+    if not isinstance(rows, list) or len(rows) != 8:
+        raise ValueError("Required original GPU witness count differs")
+    seen = set()
+    for row in rows:
+        context, visit = row.get("context"), row.get("visit")
+        if (
+            type(context) is not int
+            or type(visit) is not int
+            or context not in (0, 1)
+            or visit not in range(4)
+        ):
+            raise ValueError("Required original GPU witness identity differs")
+        identity = (context, visit)
+        if identity in seen:
+            raise ValueError("Required original GPU witness is duplicated")
+        seen.add(identity)
+        owner = ("a", "b", "stock", "a")[visit]
+        original = owner == "a"
+        if (
+            row.get("owner") != owner
+            or row.get("correct") is not True
+            or row.get("original") is not original
+        ):
+            raise ValueError("Required original GPU witness did not execute correctly")
+        if original and (
+            row.get("red") != 228
+            or row.get("path") != "mods/pilot/textures/CEIL002.TGA"
+        ):
+            raise ValueError("Required original GPU source or pixel differs")
+    if seen != {(context, visit) for context in (0, 1) for visit in range(4)}:
+        raise ValueError("Required original GPU witness is missing")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path)
-    parser.add_argument("--stage", type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--stage", type=Path)
+    mode.add_argument("--gpu-trace", type=Path)
     parser.add_argument("--seven-zip")
     args = parser.parse_args()
+    if args.gpu_trace:
+        require_original_gpu_trace(args.gpu_trace)
+        print("Verified four original GPU witnesses across two GL contexts")
+        return
     if args.root:
         stage_inputs(args.root, args.stage, args.seven_zip)
     else:
