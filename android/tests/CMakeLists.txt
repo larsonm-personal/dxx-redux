@@ -6,6 +6,12 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
+    if(SDLMIXER)
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/music-pcm")
+        add_test(NAME test_music_pcm COMMAND test_upstream_compat --music-pcm)
+        set_tests_properties(test_music_pcm PROPERTIES TIMEOUT 30
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/music-pcm")
+    endif()
     add_test(NAME test_headless_connectivity_warning COMMAND test_upstream_compat
                                                              --headless-connectivity)
     set_tests_properties(test_headless_connectivity_warning PROPERTIES TIMEOUT 30 SKIP_RETURN_CODE
