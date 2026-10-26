@@ -1,0 +1,11 @@
+// Fresh isolated CI pilot created through the ordinary D2 menu, not serialized bytes
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_original_assets" } },
+    { "action": "enter_launcher" },
+    { "action": "setup_command", "command": "clear_pilot_files", "post_delay_ms": 250 },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "select", "text": "Ok", "timeout_ms": 10000, "post_delay_ms": 200 },
+    { "action": "assert", "expect": { "screen_mode": "menu", "menu.items": { "contains": "New game" } } },
+]

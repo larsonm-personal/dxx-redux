@@ -301,9 +301,11 @@ def public_receipt(receipt):
 def demos_available(identity):
     from private_input_demos import ASSETS_COMMIT
     from nightly_regression_catalog import CORPUS_COMMIT
-    return bool(identity and identity.get('commit') in (ASSETS_COMMIT, CORPUS_COMMIT))
+    from xl_private_assets import ASSETS_COMMIT as XL_ASSETS_COMMIT
+    return bool(identity and identity.get('commit') in (ASSETS_COMMIT, CORPUS_COMMIT, XL_ASSETS_COMMIT))
 
 
 def corpus_available(identity):
     from nightly_regression_catalog import CORPUS_COMMIT
-    return bool(identity and identity.get('commit') == CORPUS_COMMIT)
+    from xl_private_assets import ASSETS_COMMIT as XL_ASSETS_COMMIT
+    return bool(identity and identity.get('commit') in (CORPUS_COMMIT, XL_ASSETS_COMMIT))

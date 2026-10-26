@@ -332,6 +332,8 @@ def retail_profile_arguments(suite, repo, build_root, work):
     """Bind reviewed retail owners to the verified stage, never fallback media."""
     profile = suite["profile"]
     stage = repo / "game_data/retail-ci"
+    if profile == "retail-xl-originals":
+        return ["--repo", str(repo), "--work", str(work / "xl-originals")]
 
     def binary(game, suffix):
         return str(

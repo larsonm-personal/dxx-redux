@@ -1305,7 +1305,9 @@
       "path": "android/tests/test_nightly_corpus_stage.py",
       "estimated_seconds": 30,
       "python_modules": [],
-      "executables": ["pwsh"],
+      "executables": [
+        "pwsh"
+      ],
       "coverage_scope": "Synthetic isolated corpus staging and archive rejection controls; no private assets or native runtime assertions.",
       "constraints": []
     },
@@ -1508,6 +1510,39 @@
       "python_modules": [],
       "executables": [],
       "coverage_scope": "Synthetic admission, immutable input, strict oracle, missing output and private headless command controls",
+      "constraints": []
+    },
+    {
+      "id": "host-profile:retail-xl-originals",
+      "kind": "retail-python",
+      "profile": "retail-xl-originals",
+      "path": "android/tests/run_xl_originals.py",
+      "games": [],
+      "target_suffix": "",
+      "fixture": "retail-missions",
+      "public_data": false,
+      "virtual_display": false,
+      "executables": [
+        "cmake",
+        "ctest"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 1800,
+      "coverage_scope": "Required pinned Counterstrike, water, Observatory, Konflict and Dragon Pit native tests plus nine original format inspection/rejection witnesses",
+      "constraints": [
+        "Trusted retail-ci only; exact XL asset revision and manifest required",
+        "No full mission or unsupported-format gameplay claim; raw outputs remain private"
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "python:test_xl_private_assets.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_xl_private_assets.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "Synthetic XL private staging, complete receipts and trusted campaign gates; no private bytes.",
       "constraints": []
     }
   ],

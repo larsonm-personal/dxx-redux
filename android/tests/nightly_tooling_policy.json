@@ -2462,6 +2462,13 @@
             "estimated_seconds": 30
         },
         {
+            "id": "python:test_xl_private_assets.py",
+            "owner": "host-adapter",
+            "lane": "host",
+            "args": { "suite": "python:test_xl_private_assets.py" },
+            "estimated_seconds": 30
+        },
+        {
             "id": "master:test_d2_boss_difficulty_save_restore",
             "owner": "master",
             "lane": "android-single",
@@ -2571,6 +2578,26 @@
             "args": { "suite": "test_scoped_static_textures" },
             "estimated_seconds": 600,
             "coverage_scope": "Synthetic mission-owned static texture selection, bounded decode, GLES readback and context isolation; no private mission assets."
+        },
+        {
+            "id": "host-profile:retail-xl-originals",
+            "owner": "host-adapter",
+            "lane": "host",
+            "args": {
+                "suite": "host-profile:retail-xl-originals"
+            },
+            "estimated_seconds": 1800,
+            "fixture": "retail-missions"
+        },
+        {
+            "id": "master:test_xl_original_assets",
+            "owner": "master",
+            "lane": "android-single",
+            "args": {
+                "suite": "test_xl_original_assets"
+            },
+            "estimated_seconds": 2400,
+            "fixture": "retail-missions"
         }
     ],
     "exclusions": [

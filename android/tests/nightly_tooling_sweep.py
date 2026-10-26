@@ -16,6 +16,7 @@ import subprocess
 import sys
 import time
 import nightly_retail as retail
+from xl_private_assets import OWNER_IDS, available
 import nightly_regression_catalog as corpus
 
 VALIDATION_IDS = {
@@ -254,6 +255,9 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
         if entry.get("fixture") == "retail-demos" and not retail.demos_available(retail_assets):
             unavailable.append({"id": ident, "reason": "reviewed private demo commit unavailable; pending"})
             continue
+        if ident in OWNER_IDS and not available(retail_assets):
+            unavailable.append({"id": ident, "reason": "reviewed XL fixture commit unavailable; pending"})
+            continue
         if entry["owner"] == "master" and entry["args"]["suite"] not in names:
             excluded.append({"id": ident, "reason": "not present in pinned master catalog"})
             continue
@@ -326,6 +330,21 @@ def select_public_campaign(plan, policy, catalog, campaign):
     return plan
 
 
+def select_xl_originals(plan, policy, catalog):
+    if not retail.trusted_context() or not available(plan.get("retail_assets")):
+        raise ValueError("Original XL campaign requires trusted cmake and the pinned private revision")
+    entries = policy_entries(policy)
+    if not OWNER_IDS <= entries.keys() or "test_xl_original_assets" not in {r["name"] for r in catalog["tests"]}:
+        raise ValueError("Required original XL owners are missing")
+    result = dict(plan)
+    result["tests"] = [entries[key] for key in sorted(OWNER_IDS)]
+    result["lanes"] = [lane for lane in LANES if any(e["lane"] == lane for e in result["tests"])]
+    result["estimated_seconds"] = sum(e["estimated_seconds"] for e in result["tests"])
+    result["batch_id"] = digest({key: result[key] for key in ("target_sha", "catalog_hash", "tests", "retail_assets")})
+    validate_plan(result, policy)
+    return result
+
+
 def omit_pr_public_lan(plan, policy):
     """The unconditional PR workflow owns this one public LAN test"""
     plan = dict(plan)
@@ -363,6 +382,8 @@ def validate_plan(plan, policy):
             raise ValueError("Private demo selection lacks reviewed commit")
         if entry.get("fixture") == "retail-corpus" and not retail.corpus_available(plan.get("retail_assets")):
             raise ValueError("Mission corpus selection lacks reviewed commit")
+        if ident in OWNER_IDS and not available(plan.get("retail_assets")):
+            raise ValueError("Original XL selection lacks reviewed commit")
         if entry.get("unavailable_reason"):
             raise ValueError("Selected owner requires an unavailable target capability")
         seen.add(ident)
@@ -1052,6 +1073,7 @@ def main():
             "basic-use",
             "xl-browser",
             "xl-textures",
+            "xl-originals",
             "lan-smoke",
             "online-preview",
             "online-preview-d2",
@@ -1136,7 +1158,11 @@ def main():
         if args.campaign:
             if args.validation:
                 raise ValueError("Choose validation or campaign, not both")
-            plan = select_public_campaign(plan, read(args.policy), read(args.catalog), args.campaign)
+            plan = (
+                select_xl_originals(plan, read(args.policy), read(args.catalog))
+                if args.campaign == "xl-originals"
+                else select_public_campaign(plan, read(args.policy), read(args.catalog), args.campaign)
+            )
             state = fresh_state(plan["target_sha"], plan["catalog_hash"])
         if args.omit_pr_public_lan:
             if not (args.validation or args.campaign == "first-play"):

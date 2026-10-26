@@ -490,6 +490,7 @@ $testTimeouts = @{
     "test_uud_mission_gameplay" = 5400
     "test_uud_surface_levels" = 3600
     "test_xl_feature_browser" = 300
+    "test_xl_original_assets" = 2400
     "test_xl_pilot_runtime" = 300
     "test_xl_classic_lighting_lifecycle" = 360
     "test_xl_classic_sound_lifecycle" = 360

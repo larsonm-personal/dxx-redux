@@ -15,7 +15,7 @@ function Get-TestSuiteExtendedSample {
 function Get-TestSuiteInstrumentationOwners {
     @('test_package_documents', 'test_enemy_within_import', 'test_demo_import', 'test_controller_overlay',
         'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery',
-        'test_lan_qr', 'test_xl_feature_browser', 'test_slider_navigation', 'test_lobby_latency', 'test_manual_ip_engine', 'test_mp')
+        'test_lan_qr', 'test_xl_feature_browser', 'test_xl_original_assets', 'test_slider_navigation', 'test_lobby_latency', 'test_manual_ip_engine', 'test_mp')
 }
 
 function Get-TestSuiteCoveragePolicy {
@@ -365,6 +365,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_touch_layout_format'
         )
         launcher = @(
+            'test_xl_original_assets'
             'test_xl_feature_browser'
             'test_demo_import'
             'test_graphics_preview'

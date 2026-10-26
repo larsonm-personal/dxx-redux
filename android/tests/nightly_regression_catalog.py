@@ -89,7 +89,8 @@ def policy_suites(repo=ROOT):
 
 def stage_archives(source, repo, commit):
     """Copy only baseline-matched archives from the reviewed immutable checkout."""
-    if commit not in (CORPUS_COMMIT, HISTORICAL_CORPUS_COMMIT):
+    from xl_private_assets import ASSETS_COMMIT as XL_ASSETS_COMMIT
+    if commit not in (CORPUS_COMMIT, HISTORICAL_CORPUS_COMMIT, XL_ASSETS_COMMIT):
         raise ValueError('Mission corpus requires the reviewed immutable asset revision')
     source, repo = Path(source).resolve(), Path(repo).resolve()
     actual = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
