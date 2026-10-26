@@ -173,8 +173,8 @@ extern "C" void xl_preview_before_swap(void)
 		{ "zoom_fixed", View_zoom },
 		{ "canvas", { Canvas_width, Canvas_height } },
 		{ "screen", { grd_curscreen->sc_w, grd_curscreen->sc_h } },
-		{ "gamma", GameCfg.GammaLevel },
-		{ "texture_filter", GameCfg.TexFilt }
+		{ "gamma", static_cast<int>(GameCfg.GammaLevel) },
+		{ "texture_filter", static_cast<int>(GameCfg.TexFilt) }
 	};
 	const std::string serialized = context.dump(2) + "\n";
 	if (PHYSFS_File *file = PHYSFS_openWrite("xl-preview-camera.json")) {
