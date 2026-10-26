@@ -1526,10 +1526,12 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "package_audit.h"
 #include "konflict_test.h"
 #include "neptune_test.h"
+#include "modern_properties_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-modern-properties-test")) return modern_properties_test(argc, argv);
 	if (find_arg_value(argc, argv, "-neptune-test")) return neptune_test(argc, argv);
 	if (find_arg_value(argc, argv, "-format23-test")) return format23_layout_test(argc, argv);
 	if (find_arg_value(argc, argv, "-konflict-test")) return konflict_test(argc, argv);

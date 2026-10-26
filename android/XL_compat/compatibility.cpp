@@ -77,15 +77,21 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	const int trigger_types[] = { 14, 15, 16, 31 };
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
-	const int segment_types[] = { 7, 8, 12, 13 };
 	for (std::size_t i = 0; i < 4; ++i) {
 		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) {
-			return v.level_version >= 21 ? (s.properties & (1 << i)) != 0 : s.function == segment_types[i];
+			return (segment_property_bits(v.level_version, s) & (1 << i)) != 0;
 		}));
-		if (v.level_version >= 21) {
+		if (v.level_version >= 21 && i != 0 && i != 3) {
 			features[i + 4].present_status = "blocked";
 			features[i + 4].support = "Split segment property detected; runtime translation is not implemented";
 		}
+	}
+	if (v.level_version >= 21) {
+		const auto blockers = runtime_blockers(v);
+		const bool actors = std::any_of(blockers.begin(), blockers.end(), [](const Issue &issue) { return issue.feature == "water actors"; });
+		features[4].present_status = actors ? "blocked" : "supported";
+		features[4].support = actors ? "Water with robots or generators is unqualified" : "Modern singleplayer water motion, material boundaries, contact audio and source restoration implemented";
+		features[4].limitations = "Robot-free 23/40 profile with default fluid physics and non-volumetric colored boundaries; multiplayer, robots, generators and optional volumetric fog remain unqualified. Derived fixture checks do not qualify an original mission or campaign";
 	}
 	features[8].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.type == 8; }));
 	features[9].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; }));

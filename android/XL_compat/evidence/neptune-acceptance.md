@@ -52,6 +52,15 @@ completion. Android run `2ecd83d92a674dfe83cdd86b40754809` passed 65/65 steps in
 `temp/xl-neptune-android` and `temp/xl-stack-review/neptune-features`.
 Original fixture availability is not assumed in CI.
 
+The later [modern-property tranche](modern-properties.md) implements no-damage
+bit 8 and robot-free water bit 1, including their combination. The historical
+property-8 rejection above describes the pinned older APK. The reusable rejection
+fixture now uses still-unsupported blocked bit 4; the final refreshed receipt is
+run `c313e04994a14673baba00625e3eb32d`, 65/65 on APK
+`926d4af944009f4c739a657f4e34025ff68d0a6e6be18ba6b4ddd5c4e2087717`.
+It verifies the specific bit-4 rejection and unchanged Neptune afterward.
+Signed damage and other unsupported bits still reject.
+
 ## Retained limits
 
 Redux uses its existing procedural soft halo. XL's bitmap glare is broader and
@@ -61,7 +70,7 @@ were excluded in the earlier pilot scope. Static captures do not newly qualify
 dynamic lighting, alternate reference render modes or arbitrary views. Existing
 implemented dynamic-light behavior is unchanged.
 
-Modern properties/damage, multiplayer-only objects, wide wall flags, object
+Other modern property bits/signed damage, multiplayer-only objects, wide wall flags, object
 triggers, populated equipment data and unsupported resource requirements remain
 blocked. Software rendering and multiplayer are not admitted. Other 23/40 levels
 must independently pass feature, capacity and asset checks; Neptune does not

@@ -12,9 +12,23 @@ alone does not admit a level. The executable catalog is `compatibility.cpp`;
 the Android browser displays its per-source evidence. Keep descriptions and
 support text synchronized with this catalog
 
-The new 23/40 path admits only detected supported requirements. Modern split
-properties/damage, multiplayer-only objects, wide wall flags and object triggers
-remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
+The new 23/40 path admits only detected supported requirements. Modern no-damage
+bit 8 now uses the existing protection behavior while preserving independent
+segment functions. Derived native controls verify collision/firing, fusion,
+boundary behavior and normal source-based save restoration. The normal Android APK
+passes 45 derived-fixture protection, rendering-activity and lifecycle checks.
+Modern water bit 1 and combined water/no-damage bit 9 now use ordinary admission
+for the robot-free singleplayer profile. Native controls cover independent
+functions, movement, turbulence, material boundaries, source saves and stock
+isolation. The final normal APK passes 51 water and 45 no-damage checks, including
+actual boundary draws, depth state, contact-loop playback and stock cleanup.
+A matched-camera Android water surface/boundary capture also passes. Legacy water
+remains experimental. Robots/generators in water, other property bits, signed
+damage and multiplayer remain rejected. See the
+[modern-property evidence](evidence/modern-properties.md) and
+[implementation plan](../ai%20tool%20plans/mission%20metadata/xl_modern_properties_20261025.md).
+Other modern properties/damage, multiplayer-only objects, wide wall flags and object
+triggers remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and
 controlled exit dispatch, and stock-to-save restoration. Its 24 detected texture
 emitters all use authored brightness values that differ from defaults. These
@@ -23,7 +37,7 @@ Android APK additionally passes 65 rejection, startup, shading, menu indication,
 stock-transition, emitter-view and POG checks. All seven live replacement payloads
 match their original fingerprints and become GPU-resident. The pinned XL runtime's
 287 baked vertex colors agree with the decoded table within capture precision.
-Android rejects injected modern properties, multiplayer-only objects and malformed
+Android rejects injected unsupported property bits, multiplayer-only objects and malformed
 CLR with specific messages, then successfully loads unchanged Neptune. Bounded
 rendering comparison and authored station/pickup/door checks are reconciled in the
 [Neptune acceptance record](evidence/neptune-acceptance.md); its procedural halo

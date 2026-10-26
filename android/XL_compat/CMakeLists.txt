@@ -149,6 +149,22 @@ if(BUILD_TESTING)
         set_tests_properties(xl_neptune_native_layout PROPERTIES TIMEOUT 70)
         if(XL_NEPTUNE_DESCRIPTOR)
             add_test(
+                NAME xl_modern_properties
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/modern-properties -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/modern_properties.cmake)
+            set_tests_properties(xl_modern_properties PROPERTIES TIMEOUT 85)
+            add_test(
+                NAME xl_modern_water
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA} -DMODE=water
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/modern-water -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/modern_properties.cmake)
+            set_tests_properties(xl_modern_water PROPERTIES TIMEOUT 85)
+            add_test(
                 NAME xl_neptune_native_features
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}

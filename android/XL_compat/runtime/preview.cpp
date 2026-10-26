@@ -71,9 +71,11 @@ bool water_test_profile = false;
 bool classic_light_test_profile = false;
 uint64_t vertex_calls = 0;
 uint64_t corona_draws = 0;
+uint64_t water_draws = 0, water_depth_failures = 0;
 uint64_t corona_depth_failures = 0;
 uint64_t corona_classic_requested_draws = 0;
 float face_alpha = -1;
+bool face_water_material = false;
 std::vector<xl_compat::DynamicVertexLight> dynamic_vertices;
 std::vector<float> brightness;
 unsigned unresolved_emitters = 0;
@@ -174,13 +176,11 @@ xl_compat::Bytes read_extended_level(const char *filename)
 bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer)
 {
 	const auto level = xl_compat::inspect_level(bytes);
-	// Modern function 7 is a team function, not legacy water
-	if (level.level_version >= 21) return false;
-	const bool water = std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) {
-		return segment.function == 7;
+	const bool water = std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) {
+		return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_water) != 0;
 	});
 	if (!water) return false;
-	if (!option("-xl-water-physics") && !water_test_profile)
+	if (level.level_version < 21 && !option("-xl-water-physics") && !water_test_profile)
 		throw std::runtime_error("water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete");
 	if (multiplayer) throw std::runtime_error("water physics multiplayer synchronization is unqualified");
 	if (!level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) {
@@ -215,12 +215,7 @@ bool mission_has_companion(const char *extension)
 
 void validate_requirements(const xl_compat::Inventory &level, const char *filename, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph)
 {
-	auto blockers = xl_compat::runtime_blockers(level);
-	if (water_pilot)
-		blockers.erase(std::remove_if(blockers.begin(), blockers.end(), [](const xl_compat::Issue &issue) {
-			               return issue.feature == "segment_function" && issue.detail == "7";
-		               }),
-		               blockers.end());
+	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
 	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
 	// Both callers checked mission context before reading or translating the level
@@ -462,9 +457,11 @@ extern "C" void xl_preview_clear_mission(void)
 #endif
 	vertex_calls = 0;
 	corona_draws = 0;
+	water_draws = water_depth_failures = 0;
 	corona_depth_failures = 0;
 	corona_classic_requested_draws = 0;
 	face_alpha = -1;
+	face_water_material = false;
 	dynamic_vertices.clear();
 	rebuilt_ambient.clear();
 	brightness.clear();
@@ -603,10 +600,10 @@ extern "C" int xl_preview_load_level(const char *filename)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
-		admitted_pilot = original && !arena;
-		admitted_water_arena = arena;
+		admitted_water_arena = arena && source->level_version < 21;
+		admitted_pilot = original && !admitted_water_arena;
 		rebuild_xl_ambient();
-		con_printf(CON_NORMAL, arena ? "XL water physics: detected experimental profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
+		con_printf(CON_NORMAL, admitted_water_arena ? "XL water physics: detected experimental profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
 		return result;
 	} catch (const std::exception &error) {
 		pending_level.clear();
@@ -620,7 +617,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 #ifdef DXX_XL_DESCRIPTOR_TEST
 void xl_test_bind_no_damage(const xl_compat::Inventory &level)
 {
-	if (Game_mode & GM_MULTI || level.level_version != 17 || level.game_version != 36 ||
+	if (Game_mode & GM_MULTI || !((level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)) ||
 	    level.vertices.size() != std::size_t(Num_vertices) || level.segments.size() != std::size_t(Num_segments))
 		throw std::runtime_error("no-damage qualification source profile/geometry mismatch");
 	for (int i = 0; i < Num_vertices; ++i)
@@ -641,7 +638,8 @@ extern "C" int xl_preview_no_damage_segment(int segment)
 	if (no_damage_test_source) level = no_damage_test_source.get();
 #endif
 	return level && !(Game_mode & GM_MULTI) && segment >= 0 &&
-	       std::size_t(segment) < level->segments.size() && level->segments[segment].function == 13;
+	       std::size_t(segment) < level->segments.size() &&
+	       (xl_compat::segment_property_bits(level->level_version, level->segments[segment]) & xl_compat::segment_no_damage);
 }
 
 extern "C" int xl_preview_preserve_fusion_queue(void)
@@ -653,8 +651,8 @@ extern "C" int xl_preview_preserve_fusion_queue(void)
 #ifdef DXX_XL_DESCRIPTOR_TEST
 	if (no_damage_test_source) level = no_damage_test_source.get();
 #endif
-	return level && std::any_of(level->segments.begin(), level->segments.end(), [](const xl_compat::Segment &segment) {
-		       return segment.function == 13;
+	return level && std::any_of(level->segments.begin(), level->segments.end(), [&](const xl_compat::Segment &segment) {
+		       return (xl_compat::segment_property_bits(level->level_version, segment) & xl_compat::segment_no_damage) != 0;
 	       });
 }
 
@@ -663,7 +661,8 @@ extern "C" int xl_preview_preserve_fusion_queue(void)
 extern "C" int xl_preview_water_segment(int segment)
 {
 	return source && !(Game_mode & GM_MULTI) && segment >= 0 &&
-	       std::size_t(segment) < source->segments.size() && source->segments[segment].function == 7;
+	       std::size_t(segment) < source->segments.size() &&
+	       (xl_compat::segment_property_bits(source->level_version, source->segments[segment]) & xl_compat::segment_water);
 }
 
 extern "C" int32_t xl_preview_motion_time(int segment, int32_t time)
@@ -935,7 +934,7 @@ extern "C" void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t
 		// XL FlashFrame keeps the reactor branch at least one fixed-point unit
 		if (Control_center_destroyed && !Seismic_tremor_magnitude && input.flash_scale == 0)
 			input.flash_scale = 1;
-		const auto shaded = xl_compat::shade_vertex(input);
+		const auto shaded = face_water_material ? xl_compat::shade_water_vertex(input, true) : xl_compat::shade_vertex(input);
 		*r = int32_t(shaded.rgb[0] * 65536);
 		*g = int32_t(shaded.rgb[1] * 65536);
 		*b = int32_t(shaded.rgb[2] * 65536);
@@ -969,8 +968,27 @@ extern "C" int xl_preview_wall_is_doorway(int segment_index, int side)
 extern "C" void xl_preview_begin_face(int segment_number, int side)
 {
 	face_alpha = -1;
+	face_water_material = false;
 	if (!source || option("-xl-preview-stock-materials") || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return;
 	const int index = Segments[segment_number].sides[side].wall_num;
+	if (source->level_version >= 21) {
+		xl_compat::WaterFace face;
+		const auto &original = source->segments[segment_number];
+		const int child = Segments[segment_number].children[side];
+		face.water = xl_preview_water_segment(segment_number) != 0;
+		face.has_child = child >= 0 && child < Num_segments;
+		face.child_water = face.has_child && xl_preview_water_segment(child);
+		face.function = original.function;
+		face.child_function = face.has_child ? source->segments[child].function : 0;
+		face.has_wall = index >= 0 && index < Num_walls;
+		// Match XL HasTexture, including its child-or-wall condition
+		if (face.has_child || face.has_wall) {
+			const auto &s = Segments[segment_number].sides[side];
+			const auto fluid = [](int texture) { return texture >= 0 && texture < NumTextures && (TmapInfo[texture].damage || (TmapInfo[texture].flags & TMI_WATER)); };
+			face.fluid_texture = fluid(s.tmap_num) || (s.tmap_num2 && fluid(s.tmap_num2 & 0x3fff));
+		}
+		face_water_material = xl_compat::water_face_colored(face);
+	}
 	if (index < 0 || index >= Num_walls) return;
 	const wall &w = Walls[index];
 	// Cloaked flat walls are handled before the textured-face hook
@@ -982,6 +1000,65 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 extern "C" void xl_preview_end_face(void)
 {
 	face_alpha = -1;
+	face_water_material = false;
+}
+
+extern "C" int xl_preview_water_portal(int segment_number, int side, int32_t points[4][3], float colors[4][4])
+{
+	if (!source || source->level_version < 21 || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return 0;
+	const auto &segment = Segments[segment_number];
+	const auto &face = segment.sides[side];
+	// Wall-backed faces keep their normal visibility/material dispatch
+	// -1 is a textured outer wall; -2 is the open external-exit boundary
+	if (segment.children[side] == -1 || face.wall_num >= 0) return 0;
+	xl_preview_begin_face(segment_number, side);
+	if (!face_water_material) {
+		xl_preview_end_face();
+		return 0;
+	}
+	int vertices[4];
+	get_side_verts(vertices, segment_number, side);
+	for (int i = 0; i < 4; ++i) {
+		// A rotated fan preserves the compiled 1-3 diagonal
+		const int corner = (i + (face.type == SIDE_IS_TRI_13 ? 1 : 0)) % 4;
+		const int vertex = vertices[corner];
+		const auto &p = Vertices[vertex];
+		points[i][0] = p.x;
+		points[i][1] = p.y;
+		points[i][2] = p.z;
+		int32_t r = 0, g = 0, b = 0;
+		// XL SetupFace leaves bTextured=true for a no-wall colored face
+		xl_preview_vertex(vertex, face.uvls[corner].l, &r, &g, &b);
+		colors[i][0] = float(r) / F1_0;
+		colors[i][1] = float(g) / F1_0;
+		colors[i][2] = float(b) / F1_0;
+		colors[i][3] = 0.333f;
+	}
+	xl_preview_end_face();
+	return 1;
+}
+
+extern "C" void xl_preview_draw_water_portal(int segment_number, int side)
+{
+	int32_t points[4][3];
+	float colors[4][4];
+	if (xl_preview_water_portal(segment_number, side, points, colors)) ogl_draw_xl_water_portal(points, colors);
+}
+
+extern "C" void xl_preview_record_water_draw(int depth_enabled)
+{
+	++water_draws;
+	if (!depth_enabled) ++water_depth_failures;
+}
+
+extern "C" uint64_t xl_preview_water_draws(void)
+{
+	return water_draws;
+}
+
+extern "C" uint64_t xl_preview_water_depth_failures(void)
+{
+	return water_depth_failures;
 }
 
 extern "C" float xl_preview_alpha(float stock_alpha)

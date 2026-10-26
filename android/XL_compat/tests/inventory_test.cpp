@@ -254,9 +254,11 @@ void version_23_contract()
 		auto bad = bytes;
 		patch(bad, segment + 4, property, 1);
 		check(xl_compat::inspect_level(bad).segments.at(0).properties == property, "property bit lost");
-		if (property == 8) {
-			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), "no_damage_segments");
-			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "browser lost split no-damage requirement or claimed support");
+		if (property == 1 || property == 8) {
+			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), property == 1 ? "water_segments" : "no_damage_segments");
+			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "browser lost split no-damage support");
+			check(!xl_compat::prepare_gameplay_probe(bad).stock_level.empty(), "modern no-damage was not translated");
+			continue;
 		}
 		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
 	}
@@ -266,6 +268,30 @@ void version_23_contract()
 		patch(bad, segment + 7, damage, 2);
 		check(xl_compat::inspect_level(bad).segments.at(0).damage == std::array<int, 2>{ damage, damage }, "signed damage changed");
 		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	for (int bits = 0; bits < 256; ++bits) {
+		auto combined = bytes;
+		patch(combined, segment + 4, bits, 1);
+		const auto decoded = xl_compat::inspect_level(combined);
+		check(xl_compat::runtime_blockers(decoded).empty() == (bits == 0 || bits == 1 || bits == 8 || bits == 9), "normal modern admission accepted unsupported property combination");
+		check(xl_compat::runtime_blockers(decoded, true).empty() == (bits == 0 || bits == 1 || bits == 8 || bits == 9), "experimental water profile accepted unrelated property bits");
+		if (bits == 1 || bits == 9) {
+			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
+			for (int actor = 0; actor < 3; ++actor) {
+				auto unsupported_actor = decoded;
+				if (actor == 2) unsupported_actor.matcens.resize(1);
+				else {
+					xl_compat::Object object{};
+					if (actor == 0) object.type = 2;
+					else {
+						object.contains_type = 2;
+						object.contains_count = 1;
+					}
+					unsupported_actor.objects.push_back(object);
+				}
+				check(xl_compat::blocker_message(xl_compat::runtime_blockers(unsupported_actor)).find("water actors") != std::string::npos, "water robot/generator gate lost");
+			}
+		}
 	}
 	auto bad = bytes;
 	patch(bad, inventory.game_offset + 2, 36, 2);
@@ -516,6 +542,17 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		// Independent encoding controls: modern functions never imply old properties
+		xl_compat::Segment property_segment{};
+		const int legacy_properties[] = { 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 4, 8, 4, 0, 16 };
+		for (int function = 0; function < 17; ++function) {
+			property_segment.function = function;
+			for (int bits = 0; bits < 256; ++bits) {
+				property_segment.properties = bits;
+				check(xl_compat::segment_property_bits(23, property_segment) == bits, "modern property/function independence lost");
+				check(xl_compat::segment_property_bits(17, property_segment) == legacy_properties[function], "modern property field leaked into legacy interpretation");
+			}
+		}
 		check(argc == 1 || argc == 2 || (argc == 3 && std::string(argv[1]) == "--neptune"), "expected optional original HOG path");
 		if (argc == 2) original_observatory(argv[1]);
 		if (argc == 3) original_neptune(argv[2]);

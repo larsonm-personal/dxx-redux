@@ -43,6 +43,12 @@ int xl_preview_split_face_visible(int segment, int side, int32_t x, int32_t y, i
 uint64_t xl_preview_vertex_calls(void);
 void xl_preview_begin_face(int segment, int side);
 void xl_preview_end_face(void);
+int xl_preview_water_portal(int segment, int side, int32_t points[4][3], float colors[4][4]);
+void xl_preview_draw_water_portal(int segment, int side);
+void ogl_draw_xl_water_portal(const int32_t points[4][3], const float colors[4][4]);
+void xl_preview_record_water_draw(int depth_enabled);
+uint64_t xl_preview_water_draws(void);
+uint64_t xl_preview_water_depth_failures(void);
 float xl_preview_alpha(float stock_alpha);
 void xl_preview_dynamic_frame(void);
 void xl_preview_muzzle_snapshot(int64_t current_time);

@@ -44,19 +44,13 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
-	auto blockers = runtime_blockers(v);
+	auto blockers = runtime_blockers(v, water_segments);
 	const bool serialization_17_36 = v.level_version == 17 && v.game_version == 36;
 	const bool serialization_23_40 = v.level_version == 23 && v.game_version == 40;
 	if (qualification_version == 17) require(serialization_17_36, "layout qualification requires 17/36");
 	if (qualification_version == 23) {
 		require(serialization_23_40, "layout qualification requires 23/40");
 	}
-	// Only the explicitly selected experimental fluid profile translates water
-	if (water_segments)
-		blockers.erase(std::remove_if(blockers.begin(), blockers.end(), [](const Issue &issue) {
-			               return issue.feature == "segment_function" && issue.detail == "7";
-		               }),
-		               blockers.end());
 	require(blockers.empty(), blocker_message(blockers));
 	require(v.object_triggers == 0, "object triggers have no stock equivalent");
 	// Current stock representation limits, checked again by the unchanged stock loader
@@ -100,7 +94,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	}
 	for (const auto &seg : v.segments) {
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (water_segments && seg.function == 7) || seg.function == 13 ? 0 : seg.function, 1);
+		put(out, v.level_version < 21 && ((water_segments && seg.function == 7) || seg.function == 13) ? 0 : seg.function, 1);
 		put(out, seg.producer, 1);
 		put(out, seg.value, 1);
 		put(out, seg.flags, 1);

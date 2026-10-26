@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 				if (variant == 0) {
 					const auto colors = (level.vertices.size() + level.segments.size() * 6 + 910) * 13;
 					const auto first = level.game_offset - colors - level.segments.size() * 13;
-					member.bytes.at(first + 4) = 8;
+					member.bytes.at(first + 4) = xl_compat::segment_blocked;
 				} else member.bytes.at(level.objects.front().source_offset + 6) = 1;
 				changed = true;
 			}

@@ -729,4 +729,23 @@ ShadedVertex shade_vertex(const VertexLighting &in)
 		if (!std::isfinite(channel)) throw std::runtime_error("Invalid XL vertex color");
 	return { color, light };
 }
+bool water_face_colored(const WaterFace &face)
+{
+	if (!face.colored_segments || face.volumetric_fog || !face.water || face.child_water || face.fluid_texture) return false;
+	if (!face.has_child || face.function == face.child_function) return true;
+	// Pinned modern segment functions: team blue=7, team red=8
+	const auto team = [](int function) { return function == 7 || function == 8; };
+	return !face.has_wall && (team(face.function) || team(face.child_function));
+}
+
+ShadedVertex shade_water_vertex(VertexLighting input, bool textured)
+{
+	input.face = { 0.2f, 0.4f, 0.6f };
+	input.face_alpha = 0.333f;
+	input.blend = textured ? 2 : 1;
+	auto shaded = shade_vertex(input);
+	for (unsigned channel = 0; channel < 3; ++channel)
+		shaded.rgb[channel] *= input.face[channel];
+	return shaded;
+}
 } // namespace xl_compat

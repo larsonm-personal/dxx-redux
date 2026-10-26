@@ -1,14 +1,19 @@
 #include "admission.h"
+#include <algorithm>
 #include <sstream>
 
 namespace xl_compat
 {
-std::vector<Issue> runtime_blockers(const Inventory &level)
+std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water)
 {
 	std::vector<Issue> result;
-	for (const auto &issue : level.unsupported)
+	for (const auto &issue : level.unsupported) {
+		if (experimental_water) {
+			if (level.level_version < 21 && issue.feature == "segment_function" && issue.detail == "7") continue;
+		}
 		if (issue.feature != "embedded_lighting" &&
 		    !(issue.feature == "segment_function" && issue.detail == "13")) result.push_back(issue);
+	}
 	for (const auto &issue : level.unknown)
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
@@ -22,6 +27,9 @@ std::vector<Issue> runtime_blockers(const Inventory &level)
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
+	const bool modern_water = level.level_version >= 21 && std::any_of(level.segments.begin(), level.segments.end(), [](const Segment &segment) { return (segment.properties & segment_water) != 0; });
+	const bool fluid_actors = !level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) { return object.type == 2 || (object.contains_count > 0 && object.contains_type == 2); });
+	limit(modern_water && fluid_actors, "water actors", "water with robots or robot generators is not qualified; robot-free singleplayer water is supported");
 	limit(level.light_indices.size() > 500 || level.delta_lights.size() > 32000, "lighting capacity", "more than 500 light indices or 32000 delta lights");
 	// Translation splits counts into signed-byte chunks, preserving zero-count records
 	std::size_t translated_indices = 0;
