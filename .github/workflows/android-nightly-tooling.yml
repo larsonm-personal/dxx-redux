@@ -442,7 +442,7 @@ jobs:
           if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'master:test_xl_original_assets' for e in p['tests']))"; then
             sudo apt-get update
             sudo apt-get install -y build-essential libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev libglew-dev zlib1g-dev
-            pwsh -NoProfile -Command '$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value $tool -NoNewline'
+            pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
             python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)"
           fi
           rm -rf retail-input
