@@ -221,6 +221,50 @@ class XlPrivateTests(unittest.TestCase):
             row["id"] = "unrelated"
             self.assertNotIn("experimental_acceptance", retail.public_receipt(dict(base, results=[row]))["results"][0])
 
+    def test_experimental_outcome_survives_collection_and_reconciliation(self):
+        entry = dict(
+            id="host-profile:retail-xl-originals",
+            owner="host-adapter",
+            lane="host",
+            args={"suite": "host-profile:retail-xl-originals"},
+            estimated_seconds=10,
+        )
+        policy = {"schema": 1, "suites": [entry]}
+        identity = retail.configured_identity(
+            {
+                "GITHUB_REPOSITORY": retail.REPOSITORY,
+                "GITHUB_REF": "refs/heads/cmake",
+                "GITHUB_WORKFLOW_REF": retail.WORKFLOW,
+                "GITHUB_EVENT_NAME": "workflow_dispatch",
+                "RETAIL_ASSETS_COMMIT": assets.ASSETS_COMMIT,
+            }
+        )
+        plan, state = sweep.plan_batch("a" * 40, {"schema": 1, "tests": []}, policy, retail_assets=identity)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            sweep.write(
+                output / "attempt.json",
+                {
+                    **sweep.attempt_identity(plan, "host"),
+                    "processes": {entry["id"]: {"completed": True, "exit_code": 0}},
+                },
+            )
+            sweep.write(
+                output / "host-profile_retail-xl-originals.json",
+                {
+                    "schema": 1,
+                    "suite": entry["id"],
+                    "status": "PASS",
+                    "exit_code": 0,
+                    "experimental_acceptance": {"xl_level_two_keys": "failed"},
+                },
+            )
+            receipt = sweep.collect(plan, policy, "host", output)
+            expected = {"xl_level_two_keys": "failed"}
+            self.assertEqual(receipt["results"][0]["experimental_acceptance"], expected)
+            reconciled = sweep.reconcile(plan, policy, state, [receipt])
+            self.assertEqual(reconciled["records"][entry["id"]]["experimental_acceptance"], expected)
+
     def test_native_experimental_policy(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "native.xml"
