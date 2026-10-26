@@ -11,6 +11,7 @@
 #include "asset_dependencies.h"
 #include "pog_resources.h"
 #include "companion_resources.h"
+#include "../inventory.h"
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
@@ -374,7 +375,7 @@ xl_assets::ObjectDependencies &XlPreparedResources::dependencies()
 	return state->graph;
 }
 
-XlPreparedResources::XlPreparedResources(const char *level_filename)
+XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level)
 {
 	if (!mission_base) throw std::runtime_error("clean mission definitions are unavailable");
 	if (mission_base->robots.size() != std::size_t(N_robot_types))
@@ -391,7 +392,9 @@ XlPreparedResources::XlPreparedResources(const char *level_filename)
 		if (!*mission_resource_archive())
 			throw std::runtime_error("D2 XL lighting companions require an owned mission HOG: " + base);
 		state->lighting = xl_compat::load_mission_lighting_companions(level_filename);
-		if (state->lighting.colors)
+		// The pinned 23/40 loader reads CLR first, then replaces every texture color
+		// from the embedded table. Ownership and decoding still apply to the companion
+		if (state->lighting.colors && !(level && level->level_version == 23 && level->game_version == 40 && level->texture_colors.size() == xl_compat::companion_texture_count))
 			throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
 	}
 	const auto hxm_name = base + ".HXM";
@@ -429,6 +432,16 @@ bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
 extern "C" int xl_prepared_texture_brightness(int texture, int *brightness)
 {
 	return brightness && prepared_resources && prepared_resources->texture_brightness(texture, *brightness);
+}
+
+bool XlPreparedResources::pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const
+{
+	return xl_pog_bitmap_receipt(state->pog.get(), bitmap, bytes, fnv1a) != 0;
+}
+
+extern "C" int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a)
+{
+	return prepared_resources && prepared_resources->pog_receipt(bitmap, bytes, fnv1a);
 }
 
 void XlPreparedResources::install_hxm()

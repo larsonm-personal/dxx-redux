@@ -1,0 +1,13 @@
+# Original mission bytes remain private; this verifies inspection, not playability
+file(SHA256 "${HOG}" before_hash)
+if(NOT before_hash STREQUAL "4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303")
+    message(FATAL_ERROR "Neptune inspection requires the audited original HOG")
+endif()
+execute_process(COMMAND "${TEST}" --neptune "${HOG}" RESULT_VARIABLE result TIMEOUT 20)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Original Neptune inventory failed: ${result}")
+endif()
+file(SHA256 "${HOG}" after_hash)
+if(NOT after_hash STREQUAL before_hash)
+    message(FATAL_ERROR "Original Neptune HOG changed during inspection")
+endif()

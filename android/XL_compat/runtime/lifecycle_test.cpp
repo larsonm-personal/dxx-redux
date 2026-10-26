@@ -1521,13 +1521,17 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "asset_mount_test.h"
 #include "static_texture_test.h"
 #include "format17_test.h"
+#include "format23_test.h"
 #include "descriptor_test.h"
 #include "package_audit.h"
 #include "konflict_test.h"
+#include "neptune_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-neptune-test")) return neptune_test(argc, argv);
+	if (find_arg_value(argc, argv, "-format23-test")) return format23_layout_test(argc, argv);
 	if (find_arg_value(argc, argv, "-konflict-test")) return konflict_test(argc, argv);
 	if (find_arg_value(argc, argv, "-static-texture-test")) return static_texture_catalog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);

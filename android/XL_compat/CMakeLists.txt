@@ -34,6 +34,8 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(xl_rejection_fixture tests/rejection_fixture.cpp)
+    target_link_libraries(xl_rejection_fixture PRIVATE xl_inventory)
     add_executable(xl_animation_phase_test tests/animation_phase_test.cpp)
     target_compile_features(xl_animation_phase_test PRIVATE cxx_std_17)
     add_test(NAME xl_animation_phase_contract COMMAND xl_animation_phase_test)
@@ -104,6 +106,20 @@ if(BUILD_TESTING)
     add_executable(xl_inventory_test tests/inventory_test.cpp)
     target_link_libraries(xl_inventory_test PRIVATE xl_inventory)
     add_test(NAME xl_inventory_contract COMMAND xl_inventory_test)
+    set(XL_NEPTUNE_HOG "" CACHE FILEPATH "Original Neptune XL HOG for private 23/40 qualification")
+    set(XL_NEPTUNE_DESCRIPTOR "" CACHE FILEPATH "Original Neptune XL mission descriptor")
+    set(XL_REFERENCE_COLOR_ROOT "" CACHE PATH "Pinned XL source for CLR/embedded precedence oracle")
+    if(XL_REFERENCE_COLOR_ROOT)
+        include(tests/reference_color_precedence.cmake)
+    endif()
+    if(XL_NEPTUNE_HOG)
+        add_test(
+            NAME xl_neptune_inventory
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DTEST=$<TARGET_FILE:xl_inventory_test> -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/neptune_inventory.cmake)
+        set_tests_properties(xl_neptune_inventory PROPERTIES TIMEOUT 30)
+    endif()
     set(XL_OBSERVATORY_HOG "" CACHE FILEPATH
                                     "Original Observatory XL HOG for private inspection coverage")
     if(XL_OBSERVATORY_HOG)
@@ -123,6 +139,25 @@ if(BUILD_TESTING)
     set(XL_STOCK_ROUTE "" CACHE FILEPATH "Unmodified D2 headless route diagnostic executable")
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
+    if(XL_NEPTUNE_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_neptune_native_layout
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/neptune-layout -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/neptune_layout.cmake)
+        set_tests_properties(xl_neptune_native_layout PROPERTIES TIMEOUT 70)
+        if(XL_NEPTUNE_DESCRIPTOR)
+            add_test(
+                NAME xl_neptune_native_features
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/neptune-features -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/neptune_features.cmake)
+            set_tests_properties(xl_neptune_native_features PROPERTIES TIMEOUT 85)
+        endif()
+    endif()
     set(XL_OBSERVATORY_DESCRIPTOR "" CACHE FILEPATH "Original Observatory mission descriptor")
     set(XL_KONFLICT_HOG "" CACHE FILEPATH "Original Konflict HOG for bounded 17/36 coverage")
     set(XL_KONFLICT_DESCRIPTOR "" CACHE FILEPATH "Original Konflict mission descriptor")

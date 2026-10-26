@@ -2,6 +2,7 @@
 #define DXX_XL_COMPAT_INVENTORY_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -34,6 +35,8 @@ struct Segment {
 	std::array<int, 8> vertices;
 	std::array<Side, 6> sides;
 	int function, producer, value, flags, light;
+	int properties = 0;
+	std::array<int, 2> damage{};
 };
 
 struct Color {
@@ -58,6 +61,8 @@ struct Section {
 
 struct Object {
 	int type, id, control, movement, render, flags, segment;
+	int multiplayer = 0;
+	std::size_t source_offset = 0, source_end = 0;
 	std::array<int, 3> position, last_position;
 	std::array<int, 9> orientation;
 	int size, shields, contains_type, contains_id, contains_count;
