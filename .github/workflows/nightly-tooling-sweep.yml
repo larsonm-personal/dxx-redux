@@ -34,6 +34,7 @@ on:
             graphics-capabilities,
             xl-browser,
             xl-textures,
+            xl-originals,
             basic-use,
             online-preview,
             online-preview-d2,
@@ -192,7 +193,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
-          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha || '' }}
+          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'xl-originals' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha || '' }}
         run: |
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
@@ -227,6 +228,7 @@ jobs:
           ONLINE_TRANSPORTS: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'online-transports' }}
           BASIC_USE: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'basic-use' }}
           XL_BROWSER: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-browser' }}
+          XL_ORIGINALS: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-originals' }}
           XL_TEXTURES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-textures' }}
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
@@ -243,6 +245,8 @@ jobs:
             validation=(--campaign basic-use)
           elif [[ "$FIRST_PLAY" == true ]]; then
             validation=(--campaign first-play)
+          elif [[ "$XL_ORIGINALS" == true ]]; then
+            validation=(--campaign xl-originals)
           elif [[ "$XL_TEXTURES" == true ]]; then
             validation=(--campaign xl-textures)
           elif [[ "$XL_BROWSER" == true ]]; then
@@ -395,6 +399,11 @@ jobs:
           if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
             python3 control/android/tests/nightly_regression_catalog.py --source retail-input --repo target --commit "$RETAIL_CHECKOUT_COMMIT"
           fi
+          # Original XL owners require verified, complete private inputs
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'host-profile:retail-xl-originals' for e in p['tests']))"; then
+            pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
+            python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)"
+          fi
           rm -rf retail-input
       - name: Execute admitted host owners
         id: execute
@@ -477,7 +486,7 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
-          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' }}
+          REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'xl-originals' }}
         run: |
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
@@ -509,7 +518,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

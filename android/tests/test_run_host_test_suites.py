@@ -1009,7 +1009,7 @@ class RetailProfileTests(unittest.TestCase):
                 {"profile": "arbitrary"}, Path("repo"), Path("build"), Path("work")
             )
 
-    def test_two_expansion_profiles_require_mission_stage(self):
+    def test_expansion_profiles_require_mission_stage(self):
         suites = adapter.load_suites()
         expansions = [
             suite
@@ -1018,10 +1018,10 @@ class RetailProfileTests(unittest.TestCase):
         ]
         self.assertEqual(
             {suite["profile"] for suite in expansions},
-            {"retail-vertigo-metadata", "retail-obsidian-liquid"},
+            {"retail-vertigo-metadata", "retail-obsidian-liquid", "retail-xl-originals"},
         )
         for suite in expansions:
-            self.assertEqual(suite["games"], ["d2"])
+            self.assertEqual(suite["games"], [] if suite["profile"] == "retail-xl-originals" else ["d2"])
             self.assertFalse(suite["public_data"])
             self.assertFalse(suite["virtual_display"])
         registry = json.loads(adapter.REGISTRY.read_text(encoding="utf-8"))

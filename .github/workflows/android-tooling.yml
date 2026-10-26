@@ -68,6 +68,7 @@ jobs:
           python3 android/tests/test_nightly_regression_corpus.py
           python3 android/tests/test_corpus_comparison.py
           python3 android/tests/test_nightly_retail.py
+          python3 android/tests/test_xl_private_assets.py
           python3 android/tests/test_private_input_demos.py
           python3 android/tests/test_retail_ci_assets.py
           python3 android/tests/test_run_host_test_suites.py

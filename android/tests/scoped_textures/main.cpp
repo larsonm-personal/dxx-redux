@@ -253,7 +253,7 @@ int main(int argc, char **argv)
 			test_soft_bases(owner);
 #endif
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
-			results.push_back({ { "context", generation }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
+			results.push_back({ { "context", generation }, { "visit", results.size() % 4 }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
 		}
 		android_mission_assets_free_begin();
 		android_mission_assets_free_end();
