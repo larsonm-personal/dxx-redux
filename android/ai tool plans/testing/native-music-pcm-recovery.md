@@ -21,3 +21,5 @@ Existing song-list mount-priority tests retain their independent routing scope.
 
 The source branch remains intact. No settings, toolchain pins, private assets,
 or production code change. Hosted native CI remains required.
+
+Review hardening: teardown now starts an audible tone before calling `mix_free_music`, then requires stopped playback, silent callbacks and null `current_music`. The stopped-but-still-loaded state is explicitly distinguished from freeing the resource; a no-op free cannot pass.

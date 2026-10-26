@@ -2,6 +2,7 @@
 #include <cmath>
 extern "C" {
 #include "digi_mixer_music.h"
+extern Mix_Music *current_music;
 }
 namespace music_pcm_fixture {
 struct observation {
@@ -91,8 +92,15 @@ static void run()
 	require(tone(measure(), 440, 1), "A-B-A restores actual source output");
 	mix_stop_music();
 	require(!Mix_PlayingMusic() && measure().absolute == 0, "native stop does not leak PCM");
+	require(current_music != nullptr, "stop alone retains the loaded source and is not resource teardown");
+	require(mix_play_file(b, 1, nullptr) == 1, "start audible source for active teardown");
+	const auto before_free = measure();
+	require(tone(before_free, 660, 1) && Mix_PlayingMusic() && current_music != nullptr,
+	        "active teardown negative control is audible, playing and owns a source");
 	mix_free_music();
-	require(measure().absolute == 0, "native teardown retains silent callback output");
+	const auto after_free = measure();
+	require(!Mix_PlayingMusic() && current_music == nullptr && after_free.absolute == 0,
+	        "freeing active music stops PCM and clears the owned source");
 	Mix_SetPostMix(nullptr, nullptr);
 	Mix_CloseAudio();
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
