@@ -1,5 +1,17 @@
 # D2X-XL extension support catalog
 
+The provisional singleplayer roadmap estimates 10-20 further comparable chunks,
+with overlapping work areas and substantial uncertainty around trigger scheduling
+and custom gameplay data. This is not a completion percentage. See the
+[roadmap and wall-teleport plan](../ai%20tool%20plans/mission%20metadata/xl_wall_teleports_20261025.md)
+for estimates, acceptance criteria and the next implementation tranche
+
+Immediate singleplayer wall teleports now use detected requirements, including
+destination validation, actor dispatch, reference-matched rotation and source
+save restoration. Delayed actions, extended flags, object triggers, boosts and
+multiplayer remain blocked. Derived-fixture qualification does not unlock an
+original mission by itself; see [wall-teleport evidence](evidence/wall-teleports.md)
+
 Normal OpenGL D2 builds admit levels by detected requirements and runtime asset checks,
 without a mission-name or hash exception. Stock and XL missions share one binary; software rendering still rejects XL.
 This is per-level eligibility, not campaign qualification. The original Ahayweh Gate
@@ -301,7 +313,7 @@ unsupported XL extensions
 | `visual_assets` Texture/model formats                 | TGA/OOF, layered/animated materials; broad-corpus counts are not exclusively XL                                                                   | Individual formats/paths need verification                                                          | Orientation, filtering/alpha, model rendering and disclosed fallback                                                       |
 | `mission_flow` Campaign behavior                      | Secret origins/returns, directed exits, dependencies and objectives                                                                               | XL campaign behavior unverified; no modern hub-persistence claim                                    | All branches, transitions/returns and saves; one level never certifies 30                                                  |
 | `runtime` Qualification                               | Combat, progression, presentation, persistence, isolation, replay and multiplayer                                                                 | Bounded OpenGL pilots with explicit evidence; no general campaign or multiplayer claim              | Scope and evidence for each claim; all required categories must qualify                                                    |
-| `navigation` Teleports, boosts and spawn destinations | 108 wall teleports, 281 boosts, 20 spawn-setting actions; object-trigger transport also occurs                                                    | XL movement actions and route-analysis edges unsupported                                            | Disconnected regions, position/orientation/velocity, respawn, collision and guidebot routing                               |
+| `navigation` Teleports, boosts and spawn destinations | 108 wall teleports, 281 boosts, 20 spawn-setting actions; object-trigger transport also occurs | Immediate singleplayer wall teleports supported; delays, extended flags, boosts, spawn actions and teleport route-analysis edges remain unsupported | Reference transforms, actor crossings, arrival collision and source save restoration verified; campaign and guidebot routing unqualified |
 | `generators` Equipment and spawning                   | 53 equipment generators in 11 levels; distinct from robot matcens; spawn/countdown actions                                                        | Classic robot matcens exist; XL behavior unverified                                                 | Activation, replenishment/exhaustion, ordering, capacity and restore                                                       |
 | `wall_materials` Authored opacity/materials           | Type-8 colored walls (Glass House: 126), opacity on ordinary walls; pilot has 14 nonzero cloak/opacity records                                    | Classic cloaking/bitmap transparency exists; XL semantics unverified                                | Visibility, collision, targeting and projectiles independently; fixed opacity and layers                                   |
 | `effect_objects` Particles, lightning, ambient sound  | In 129 decoded sections: 330 particle, 151 lightning, 1335 sound records                                                                          | XL payloads and behavior unverified                                                                 | Versioned payload ends, preserved IDs/references, activation, looping-audio cleanup; cues may affect gameplay              |

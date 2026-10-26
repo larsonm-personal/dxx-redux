@@ -8,6 +8,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
+		if (issue.feature == "trigger_type" && issue.detail == "14") continue;
 		if (experimental_water) {
 			if (level.level_version < 21 && issue.feature == "segment_function" && issue.detail == "7") continue;
 		}

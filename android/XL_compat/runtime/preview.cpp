@@ -276,6 +276,10 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 		graph.sound(SOUND_SHIP_IN_WATER);
 		graph.sound(SOUND_SHIP_IN_WATERFALL);
 	}
+	if (std::any_of(level.triggers.begin(), level.triggers.end(), [](const xl_compat::Trigger &trigger) { return trigger.type == 14; })) {
+		graph.sound(SOUND_SECRET_EXIT);
+		graph.clip(VCLIP_PLAYER_APPEARANCE);
+	}
 	for (std::size_t i = 0; i < level.objects.size(); ++i) {
 		const auto &obj = level.objects[i];
 		// Cooperative starts are removed by singleplayer initialization
@@ -741,6 +745,11 @@ extern "C" int xl_runtime_active(void)
 {
 	// Loaded XL extensions, not a particular mission or build capability
 	return (source || classic_ambient) && Game_wind && !(Game_mode & GM_MULTI);
+}
+
+extern "C" int xl_level_extensions_active(void)
+{
+	return source && !(Game_mode & GM_MULTI);
 }
 
 extern "C" void xl_preview_complete_pilot(void)

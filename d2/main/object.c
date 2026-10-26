@@ -2514,6 +2514,10 @@ void object_move_one( object * obj )
 	}
 
 	//	If player and moved to another segment, see if hit any triggers.
+#ifdef DXX_XL_RUNTIME
+	if (obj->type != OBJ_PLAYER && obj->movement_type == MT_PHYSICS && previous_segment != obj->segnum)
+		xl_wall_teleport_crossings(obj - Objects, phys_seglist, n_phys_segs);
+#endif
 	// also check in player under a lavafall
 	if (obj->type == OBJ_PLAYER && obj->movement_type==MT_PHYSICS)	{
 		if (previous_segment != obj->segnum) {

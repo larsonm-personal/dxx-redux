@@ -112,6 +112,45 @@ std::string feature_row(const std::string &json, const char *id)
 	check(begin != std::string::npos, "feature row missing");
 	return json.substr(begin, json.find('}', begin) - begin);
 }
+void teleport_inventory_contract()
+{
+	for (const int version : { 15, 17, 23 }) {
+		auto bytes = fixture(version);
+		const auto inventory = xl_compat::inspect_level(bytes);
+		const auto section = std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const xl_compat::Section &s) { return s.name == "triggers"; });
+		check(section != inventory.sections.end(), "missing fixture trigger section");
+		const auto offset = static_cast<std::size_t>(section->offset);
+		bytes.insert(bytes.begin() + offset, 52, 0);
+		// Only the trigger section has a payload in this fixture
+		const auto game = inventory.game_offset;
+		patch(bytes, game + 75, 1);
+		patch(bytes, offset, 14, 1);
+		patch(bytes, offset + 2, 1, 1);
+		patch(bytes, offset + 8, 0xffffffff);
+		check(xl_compat::inspect_level(bytes).triggers.size() == 1, "teleport record lost");
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(bytes)).empty(), "immediate teleport blocked by feature admission");
+		auto boost = bytes;
+		patch(boost, offset, 15, 1);
+		check(!xl_compat::runtime_blockers(xl_compat::inspect_level(boost)).empty(), "teleport support admitted speed boost");
+		for (const auto field : { offset + 12, offset + 32 }) {
+			auto invalid = bytes;
+			patch(invalid, field, 0xffff, 2);
+			rejects([&] { xl_compat::inspect_level(invalid); });
+			patch(invalid, field, field == offset + 12 ? 1 : 6, 2);
+			rejects([&] { xl_compat::inspect_level(invalid); });
+		}
+		for (const int time : { -900001, -900000, -100, -99, 0, 99, 100, 900000, 900001, (-2147483647 - 1) }) {
+			auto delayed = bytes;
+			patch(delayed, offset + 8, static_cast<std::uint32_t>(time));
+			const auto parsed = xl_compat::inspect_level(delayed);
+			const bool found = std::any_of(parsed.unsupported.begin(), parsed.unsupported.end(), [](const xl_compat::Issue &issue) { return issue.feature == "teleport_delay"; });
+			const auto magnitude = time < 0 ? -std::int64_t(time) : std::int64_t(time);
+			check(found == (magnitude >= 100 && magnitude <= 900000), "teleport delay admission differs from reference");
+			check(xl_compat::runtime_blockers(parsed).empty() == !found, "runtime admission ignored teleport scheduler requirement");
+		}
+	}
+}
+
 void feature_contract()
 {
 	auto bytes = fixture();
@@ -138,7 +177,8 @@ void feature_contract()
 	patch(bytes, game + 75, 5);
 	auto json = xl_compat::compatibility_json("features.rl2", bytes);
 	auto row = feature_row(json, "wall_teleports");
-	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "wall teleports not counted or falsely supported");
+	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "immediate wall teleport feature count or support differs");
+	check(json.find("\"status\": \"blocked\"") == json.find("\"status\":"), "teleport support hid unsupported boost/camera requirements");
 	check(json.find("Wall speed boosts") != std::string::npos && json.find("Wall camera triggers") != std::string::npos && json.find("Wall master triggers") != std::string::npos, "action counts lost wall-only scope");
 	check(feature_row(json, "speed_boosts").find("\"count\": 1") != std::string::npos, "boost count");
 	check(feature_row(json, "master_triggers").find("\"status\": \"not_required\"") != std::string::npos, "absent feature not distinct");
@@ -559,6 +599,7 @@ int main(int argc, char **argv)
 		version_17_contract();
 		version_23_contract();
 		serialization_17_contract();
+		teleport_inventory_contract();
 		feature_contract();
 		segment_flags_contract();
 		light_count_contract();

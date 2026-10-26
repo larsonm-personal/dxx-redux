@@ -77,6 +77,13 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	const int trigger_types[] = { 14, 15, 16, 31 };
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
+	const bool blocked_teleport = std::any_of(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) {
+		const auto time = t.time < 0 ? -std::int64_t(t.time) : std::int64_t(t.time);
+		return t.type == 14 && ((t.flags & ~7) || (time >= 100 && time <= 900000));
+	});
+	features[0].present_status = blocked_teleport ? "blocked" : "supported";
+	features[0].support = blocked_teleport ? "Wall teleport requires unsupported flags or delayed scheduling" : "Immediate singleplayer wall teleports implemented with destination rotation, actor dispatch and saved one-shot state";
+	features[0].limitations = "Object-attached actions, delayed scheduling, extended flags, speed boosts and multiplayer remain unsupported. Derived controls do not qualify an original mission or campaign";
 	for (std::size_t i = 0; i < 4; ++i) {
 		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) {
 			return (segment_property_bits(v.level_version, s) & (1 << i)) != 0;

@@ -351,6 +351,10 @@ void do_physics_sim(object *obj)
 	physics_info *pi;
 	int orig_segnum = obj->segnum;
 	int bounced=0;
+	int record_crossings = obj->type == OBJ_PLAYER;
+#ifdef DXX_XL_RUNTIME
+	record_crossings |= xl_wall_teleport_actor(obj - Objects);
+#endif
 
 	Assert(obj->movement_type == MT_PHYSICS);
 
@@ -499,7 +503,7 @@ void do_physics_sim(object *obj)
 		if (obj->type == OBJ_WEAPON)
 			fq.flags |= FQ_TRANSPOINT;
 
-		if (obj->type == OBJ_PLAYER)
+		if (record_crossings)
 			fq.flags |= FQ_GET_SEGLIST;
 
 		fate = find_vector_intersection(&fq,&hit_info);
@@ -529,7 +533,7 @@ void do_physics_sim(object *obj)
 		}
 #endif
 
-		if (obj->type == OBJ_PLAYER) {
+		if (record_crossings) {
 			int i;
 
 			if (n_phys_segs && phys_seglist[n_phys_segs-1]==hit_info.seglist[0])
