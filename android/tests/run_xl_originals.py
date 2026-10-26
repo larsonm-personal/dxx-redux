@@ -132,6 +132,7 @@ def main():
                     str(repo / "android/gradlew"),
                     "-p",
                     str(repo / "android"),
+                    ":app:cleanTestDebugUnitTest",
                     ":app:testDebugUnitTest",
                     "--tests",
                     "com.dxxredux.app.OriginalStaticTextureTest",
