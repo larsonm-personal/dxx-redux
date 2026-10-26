@@ -132,6 +132,10 @@ void teleport_inventory_contract()
 		auto boost = bytes;
 		patch(boost, offset, 15, 1);
 		check(!xl_compat::runtime_blockers(xl_compat::inspect_level(boost)).empty(), "teleport support admitted speed boost");
+		patch(boost, offset + 8, 1000);
+		patch(boost, offset + 1, 8, 1);
+		const auto blocked_timing = xl_compat::compatibility_json("boost.rl2", boost);
+		check(feature_row(blocked_timing, "delayed_wall_actions").find("\"status\": \"blocked\"") != std::string::npos && feature_row(blocked_timing, "stateful_trigger_flags").find("\"status\": \"blocked\"") != std::string::npos, "scheduler browser rows hide unsupported action requirements");
 		for (const auto field : { offset + 12, offset + 32 }) {
 			auto invalid = bytes;
 			patch(invalid, field, 0xffff, 2);
@@ -145,7 +149,9 @@ void teleport_inventory_contract()
 			const auto parsed = xl_compat::inspect_level(delayed);
 			const bool found = std::any_of(parsed.unsupported.begin(), parsed.unsupported.end(), [](const xl_compat::Issue &issue) { return issue.feature == "teleport_delay"; });
 			const auto magnitude = time < 0 ? -std::int64_t(time) : std::int64_t(time);
-			check(found == (magnitude >= 100 && magnitude <= 900000), "teleport delay admission differs from reference");
+			check(!found, "implemented teleport scheduling remains blocked");
+			const auto row = feature_row(xl_compat::compatibility_json("delay.rl2", delayed), "delayed_wall_actions");
+			check(row.find(magnitude >= 100 && magnitude <= 900000 ? "\"count\": 1" : "\"count\": 0") != std::string::npos, "delay requirement count differs from reference boundaries");
 			check(xl_compat::runtime_blockers(parsed).empty() == !found, "runtime admission ignored teleport scheduler requirement");
 		}
 	}
@@ -201,6 +207,70 @@ void feature_contract()
 	patch(bytes, 4, 23);
 	row = feature_row(xl_compat::compatibility_json("newer.rl2", bytes), "wall_teleports");
 	check(row.find("\"count\": null") != std::string::npos, "unsupported version reported false zero");
+}
+
+void trigger_chain_inventory_contract()
+{
+	for (int version : { 15, 17, 23 }) {
+		const auto original = fixture(version);
+		const auto inventory = xl_compat::inspect_level(original);
+		const auto &section = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
+		for (int type : { 31, 32, 33 }) {
+			auto bytes = original;
+			bytes.insert(bytes.begin() + section.offset, 52, 0);
+			patch(bytes, inventory.game_offset + 75, 1);
+			patch(bytes, section.offset, type, 1);
+			patch(bytes, section.offset + 2, 1, 1);
+			patch(bytes, section.offset + 8, 0xffffffff);
+			const auto decoded = xl_compat::inspect_level(bytes);
+			check(xl_compat::runtime_blockers(decoded).empty(), "immediate chain action rejected");
+			if (type == 31)
+				for (int value : { -65536, 0, 1, 65535, 65536, 131072 })
+					for (int flags : { 0, 8, 128, 136 }) {
+						auto authored = bytes;
+						patch(authored, section.offset + 4, value);
+						patch(authored, section.offset + 1, flags, 1);
+						const auto translated = xl_compat::prepare_gameplay_probe(authored).stock_level;
+						const auto read = [&](std::size_t offset) {
+							std::uint32_t result = 0;
+							for (unsigned i = 0; i < 4; ++i) result |= std::uint32_t(translated.at(offset + i)) << (i * 8);
+							return static_cast<std::int32_t>(result);
+						};
+						const auto game = read(12), trigger = read(game + 71);
+						const int expected = version < 23 ? 0 : value > 0 ? value / 65536
+						                                                  : value;
+						const int expected_flags = version == 23 && value > 0 ? (flags | 4) & (flags & 128 ? ~8 : ~0) : flags;
+						check(read(trigger + 4) == expected && translated.at(trigger + 1) == expected_flags, "versioned master source counter normalization differs");
+					}
+			const auto row = feature_row(xl_compat::compatibility_json("chain.rl2", bytes), type == 31 ? "master_triggers" : "trigger_switches");
+			check(row.find("\"status\": \"supported\"") != std::string::npos && row.find("\"count\": 1") != std::string::npos, "browser does not expose supported chain action");
+			for (int flags : { 32, 64 }) {
+				auto bad = bytes;
+				patch(bad, section.offset + 1, flags, 1);
+				check(!xl_compat::runtime_blockers(xl_compat::inspect_level(bad)).empty(), "unimplemented chain flag admitted");
+			}
+			for (int flags : { 8, 16, 128, 24, 136, 152, 159 }) {
+				auto supported = bytes;
+				patch(supported, section.offset + 1, flags, 1);
+				check(xl_compat::runtime_blockers(xl_compat::inspect_level(supported)).empty(), "implemented stateful flags rejected");
+			}
+			for (int time : { -900001, -900000, -100, -99, 0, 99, 100, 900000, 900001, (-2147483647 - 1) }) {
+				auto timed = bytes;
+				patch(timed, section.offset + 8, static_cast<std::uint32_t>(time));
+				check(xl_compat::runtime_blockers(xl_compat::inspect_level(timed)).empty(), "supported chain scheduling rejected");
+			}
+			for (auto field : { section.offset + 12, section.offset + 32 }) {
+				auto bad = bytes;
+				patch(bad, field, field == section.offset + 12 ? 1 : 6, 2);
+				rejects([&] { xl_compat::inspect_level(bad); });
+				patch(bad, field, 0xffff, 2);
+				if (field == section.offset + 32 && type != 31) {
+					const auto blocked = xl_compat::runtime_blockers(xl_compat::inspect_level(bad));
+					check(!blocked.empty() && xl_compat::blocker_message(blocked).find("effect") != std::string::npos, "effect-object target not rejected helpfully");
+				} else rejects([&] { xl_compat::inspect_level(bad); });
+			}
+		}
+	}
 }
 
 void version_17_contract()
@@ -600,6 +670,7 @@ int main(int argc, char **argv)
 		version_23_contract();
 		serialization_17_contract();
 		teleport_inventory_contract();
+		trigger_chain_inventory_contract();
 		feature_contract();
 		segment_flags_contract();
 		light_count_contract();

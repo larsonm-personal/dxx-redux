@@ -22,7 +22,7 @@ const Category categories[] = {
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported", "Larger mines can require wider references and more segments, vertices, walls, objects or triggers. A readable file can still exceed engine limits." },
 	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. They are distinct from a wall texture." },
 	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported", "Wall types and flags control doors, barriers and other surfaces. Visibility, collision and activation behavior must agree." },
-	{ "triggers", "Stateful events and geometry triggers", "Stock actions only; XL master chains, scheduling, flags and persistence unsupported", "Triggers activate linked actions. XL adds action types, flags and event chains whose live state can matter after save/load." },
+	{ "triggers", "Stateful events and geometry triggers", "Supported wall actions include delayed scheduling and permanent/alternate/autoplay state; other actions, orientation/silent flags and object events remain blocked", "Triggers activate linked actions. XL adds action types, flags and event chains whose live state can matter after save/load." },
 	{ "object_triggers", "Object-attached triggers", "Unsupported", "These actions are attached to objects rather than only to walls. Their activation rules and linked actions need separate inspection." },
 	{ "objects", "Objects and AI behavior", "Stock behavior only; XL behavior parity unverified", "Level objects include players, robots, pickups and effects. Knowing the object count does not establish its behavior or AI compatibility." },
 	{ "gameplay_assets", "Custom robot and weapon definitions", "XL gameplay asset formats and dependencies unverified", "Custom robot and weapon definitions can change behavior and refer to models, animations, projectiles and sounds. Those dependencies must resolve together." },
@@ -70,6 +70,9 @@ std::vector<CountedFeature> counted_features()
 		{ "chromatic_vertices", "Colored vertices", "Implemented in OpenGL builds; rendered-scene and campaign parity require qualification", "partial", "These vertices contain authored color channels that are not all equal. The count describes stored lighting data, not proof of correctly rendered colors." },
 		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked", "Object-attached triggers hold actions linked to objects. A declared count is not trusted until the corresponding records and references are validated." },
 		{ "equipment_count", "Equipment generators", "XL item generation unsupported", "blocked", "Equipment generators spawn authored items. Their contents, activation, timing and persistence are separate from classic robot generators." },
+		{ "trigger_switches", "Wall trigger enable/disable actions", "Immediate wall targets implemented; effect-object targets unsupported", "supported", "Enable and disable actions change linked wall triggers, including the raw reference count on master triggers. This count excludes object-attached actions." },
+		{ "delayed_wall_actions", "Delayed wall actions", "Positive and randomized delays implemented on supported wall actions", "supported", "Delayed wall actions retain the first activating actor and selected delay. Disabling suspends pending work; permanent actions can rearm after execution." },
+		{ "stateful_trigger_flags", "Permanent, alternate and autoplay wall actions", "Supported actions retain flag transitions and scheduling state across saves", "supported", "Permanent actions rearm, alternating actions switch to their opposite after execution, and autoplay actions start from frame processing. Unsupported actions remain blocked independently." },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
@@ -78,12 +81,31 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
 	const bool blocked_teleport = std::any_of(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) {
-		const auto time = t.time < 0 ? -std::int64_t(t.time) : std::int64_t(t.time);
-		return t.type == 14 && ((t.flags & ~7) || (time >= 100 && time <= 900000));
+		return t.type == 14 && (t.flags & ~159);
 	});
 	features[0].present_status = blocked_teleport ? "blocked" : "supported";
-	features[0].support = blocked_teleport ? "Wall teleport requires unsupported flags or delayed scheduling" : "Immediate singleplayer wall teleports implemented with destination rotation, actor dispatch and saved one-shot state";
-	features[0].limitations = "Object-attached actions, delayed scheduling, extended flags, speed boosts and multiplayer remain unsupported. Derived controls do not qualify an original mission or campaign";
+	features[0].support = blocked_teleport ? "Wall teleport requires unsupported flags" : "Singleplayer wall teleports include delayed scheduling, destination rotation, actor dispatch and saved state";
+	features[0].limitations = "Object-attached actions, orientation/silent flags, speed boosts and multiplayer remain unsupported. Derived controls do not qualify an original mission or campaign";
+	const auto chain_blocked = [&](int type) {
+		return std::any_of(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) {
+			return t.type == type && ((t.flags & ~159) || std::any_of(t.targets.begin(), t.targets.end(), [](const auto &target) { return target[1] < 0; }));
+		});
+	};
+	features[3].present_status = chain_blocked(31) ? "blocked" : "supported";
+	features[3].support = "Singleplayer wall chains preserve link order, delayed scheduling, stateful flags and saved enable counters";
+	features[3].limitations = "Orientation/silent flags, object-attached actions and multiplayer remain unsupported. Each child action and resource is checked independently; this does not qualify an original mission";
+	features[13].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { return t.type == 32 || t.type == 33; }));
+	features[13].present_status = chain_blocked(32) || chain_blocked(33) ? "blocked" : "supported";
+	features[13].limitations = features[3].limitations;
+	features[14].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { const auto time = std::abs(std::int64_t(t.time)); return t.type != 25 && t.type != 29 && t.type != 30 && time >= 100 && time <= 900000; }));
+	features[15].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { return (t.flags & (8 | 16 | 128)) != 0; }));
+	for (const auto &trigger : v.triggers) {
+		const bool unsupported = (trigger.type > 14 && (trigger.type < 31 || trigger.type > 33)) || (trigger.flags & ~159) || std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; });
+		const auto time = std::abs(std::int64_t(trigger.time));
+		if (unsupported && trigger.type != 25 && trigger.type != 29 && trigger.type != 30 && time >= 100 && time <= 900000) features[14].present_status = "blocked";
+		if (unsupported && (trigger.flags & (8 | 16 | 128))) features[15].present_status = "blocked";
+	}
+	features[14].limitations = features[15].limitations = features[3].limitations;
 	for (std::size_t i = 0; i < 4; ++i) {
 		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) {
 			return (segment_property_bits(v.level_version, s) & (1 << i)) != 0;

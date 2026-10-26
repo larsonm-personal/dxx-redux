@@ -27,6 +27,7 @@
 #include "input_demo_codec.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "trigger_state.h"
 #include "resource_validation.h"
 #endif
 
@@ -106,6 +107,9 @@ extern "C" {
 #include "piggy.h"
 #include "textures.h"
 #include "wall.h"
+#ifdef DXX_XL_RUNTIME
+#include "switch.h"
+#endif
 #include "secretarea.h"
 #include "gamesave.h"
 #include "android_menu_scale.h"
@@ -2159,6 +2163,27 @@ extern "C" char *game_introspect_get_state(void)
 		{ "unresolved_emitters", xl_preview_unresolved_emitters() },
 		{ "activated_triggers", xl_preview_trigger_mask() },
 	};
+	if (Game_wind && xl_level_extensions_active()) {
+		json triggers = json::object();
+		for (int index = 0; index < Num_triggers; ++index) {
+			triggers[std::to_string(index)] = {
+				{ "type", Triggers[index].type },
+				{ "flags", Triggers[index].flags },
+				{ "value", Triggers[index].value },
+				{ "time", Triggers[index].time },
+			};
+			xl_trigger_state state;
+			if (xl_wall_trigger_state(index, &state)) {
+				auto &row = triggers[std::to_string(index)];
+				row["operated"] = state.operated != 0;
+				row["delay_ms"] = state.delay_ms;
+				row["elapsed_ticks"] = state.elapsed;
+				row["actor"] = state.object;
+				row["shot"] = state.shot;
+			}
+		}
+		j["xl_pilot"]["wall_triggers"] = std::move(triggers);
+	}
 #endif
 	{
 		int active_wall_transition_count = 0;

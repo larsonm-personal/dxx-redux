@@ -451,6 +451,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_wall_trigger_reset();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
@@ -750,6 +751,37 @@ extern "C" int xl_runtime_active(void)
 extern "C" int xl_level_extensions_active(void)
 {
 	return source && !(Game_mode & GM_MULTI);
+}
+
+extern "C" int xl_level_trigger_state_required(void)
+{
+	return source && std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
+		       const auto time = std::abs(std::int64_t(trigger.time));
+		       return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
+	       });
+}
+
+extern "C" uint64_t xl_level_trigger_identity(void)
+{
+	if (!source) return 0;
+	std::uint64_t identity = UINT64_C(14695981039346656037);
+	const auto field = [&](int value) {
+		for (unsigned shift = 0; shift < 32; shift += 8) {
+			identity ^= (std::uint32_t(value) >> shift) & 255;
+			identity *= UINT64_C(1099511628211);
+		}
+	};
+	field(source->level_version);
+	field(source->game_version);
+	field(static_cast<int>(source->triggers.size()));
+	for (const auto &trigger : source->triggers) {
+		for (int value : { trigger.type, trigger.flags, trigger.value, trigger.time, static_cast<int>(trigger.targets.size()) }) field(value);
+		for (const auto &target : trigger.targets) {
+			field(target[0]);
+			field(target[1]);
+		}
+	}
+	return identity;
 }
 
 extern "C" void xl_preview_complete_pilot(void)

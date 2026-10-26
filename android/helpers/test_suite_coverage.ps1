@@ -229,6 +229,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_neptune_runtime'
             'test_xl_modern_properties_runtime'
             'test_xl_wall_teleports_runtime'
+            'test_xl_wall_trigger_chains_runtime'
+            'test_xl_wall_trigger_scheduler_runtime'
             'test_xl_classic_lighting_lifecycle'
             'test_xl_classic_sound_lifecycle'
             'test_xl_water_runtime'

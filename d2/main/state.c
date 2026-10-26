@@ -33,6 +33,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamefont.h"
 #include "gameseg.h"
 #include "switch.h"
+#ifdef DXX_XL_RUNTIME
+#include "trigger_state.h"
+#endif
 #include "game.h"
 #include "effects.h"
 #include "endlevel.h"
@@ -2875,6 +2878,13 @@ int state_save_all_sub(char *filename, char *desc)
 		start_time();
 		return 0;
 	}
+#ifdef DXX_XL_RUNTIME
+	if (!xl_wall_trigger_write(fp)) {
+		PHYSFS_close(fp);
+		start_time();
+		return 0;
+	}
+#endif
 
 #ifdef __ANDROID__
 	android_save_probe_mark("runtime");
@@ -4045,6 +4055,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	if (version < CADENCE_D2_SAVE_VERSION && !secret_restore)
 		cadence_runtime_reset();
 	state_log_checkpoint_ai_restore_state();
+#ifdef DXX_XL_RUNTIME
+	if (!xl_wall_trigger_read(fp)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+#endif
 
 #ifdef __ANDROID__
 	debug_log(DLOG_GAME,

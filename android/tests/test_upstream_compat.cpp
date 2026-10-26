@@ -11556,6 +11556,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 #include "coop_pickup_reward_fixture.hpp"
 #include "config_policy_fixture.hpp"
 #include "config_roundtrip_fixture.hpp"
+#include "keyboard_rebind_fixture.hpp"
 #include "secret_origins_fixture.hpp"
 #include "d1_text_loader_fixture.hpp"
 extern "C" {
@@ -11991,6 +11992,7 @@ static void write_render_candidates_trace(const char *directory, bool public_ass
 void test_autoselect();
 
 #ifdef USE_SDLMIXER
+#include "music_pcm_fixture.hpp"
 // Exercise the real mixer with simultaneous D1 and optional D2 sample rates
 static void test_mixed_rate_sound_conversion()
 {
@@ -12781,6 +12783,11 @@ int main(int argc, char **argv)
 		PHYSFS_deinit();
 		return 0;
 	}
+	if (argc == 3 && std::strcmp(argv[1], "--keyboard-rebind") == 0) {
+		keyboard_rebind_fixture::run(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 3 && std::strcmp(argv[1], "--config-policy") == 0) {
 		test_config_policy(argv[2]);
 		PHYSFS_deinit();
@@ -12839,6 +12846,11 @@ int main(int argc, char **argv)
 	}
 #endif
 #ifdef USE_SDLMIXER
+	if (argc == 2 && std::strcmp(argv[1], "--music-pcm") == 0) {
+		music_pcm_fixture::run();
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--sound-mixer-test") == 0) {
 		test_mixed_rate_sound_conversion();
 		return 0;
