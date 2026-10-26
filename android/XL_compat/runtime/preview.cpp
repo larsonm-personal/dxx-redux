@@ -17,6 +17,7 @@
 #include <limits>
 #include <cmath>
 #include <sstream>
+#include <iomanip>
 #include <cctype>
 #include "asset_dependencies.h"
 extern "C" {
@@ -62,6 +63,7 @@ namespace
 std::unique_ptr<xl_compat::Inventory> source;
 std::unique_ptr<xl_compat::ClassicAmbientLighting> classic_ambient;
 std::vector<xl_compat::Rgb> classic_colors;
+std::vector<xl_compat::Rgb> rebuilt_ambient;
 #ifdef DXX_XL_DESCRIPTOR_TEST
 std::unique_ptr<xl_compat::Inventory> no_damage_test_source;
 #endif
@@ -462,11 +464,66 @@ extern "C" void xl_preview_clear_mission(void)
 	corona_classic_requested_draws = 0;
 	face_alpha = -1;
 	dynamic_vertices.clear();
+	rebuilt_ambient.clear();
 	brightness.clear();
 	unresolved_emitters = 0;
 	muzzle_lights.clear();
 	player_thrust = {};
 	pending_level.clear();
+}
+
+// Method-0 GatherStaticLights when ReadColor did not register baked colors
+static void rebuild_xl_ambient()
+{
+	if (!source || admitted_water_arena || xl_compat::has_registered_colors(*source)) return;
+	xl_compat::TextureBrightnessTable table{};
+	for (const auto &entry : xl_compat::texture_brightness) table.at(entry.texture) = entry.brightness;
+	for (unsigned i = 0; i < table.size(); ++i) {
+		int value;
+		if (xl_prepared_texture_brightness(i, &value)) table[i] = value;
+	}
+	xl_compat::TextureRgbTable colors{};
+	for (unsigned i = 0; i < colors.size(); ++i)
+		for (unsigned channel = 0; channel < 3; ++channel) {
+			const auto serialized = source->texture_colors.at(i).rgb[channel];
+			// Match ReadColor: floating v15 or integer v17, without narrowing v15 to int32
+			const float loaded = source->level_version == 15 ? static_cast<float>(serialized) : static_cast<float>(std::round(serialized * 2147483647.0)) / static_cast<float>(0x7fffffff);
+			if (!std::isfinite(loaded)) throw std::runtime_error("XL ambient texture color exceeds finite float range");
+			colors[i][channel] = loaded;
+		}
+	const auto lights = xl_compat::compile_classic_geometry_lights(table, colors);
+	const xl_compat::ClassicAmbientLighting ambient(lights, xl_compat::classic_default_lighting_camera());
+	rebuilt_ambient = ambient.gather(xl_compat::ClassicAmbientProfile{});
+#ifdef DXX_XL_DESCRIPTOR_TEST
+	if (const char *path = option("-xl-ambient-report")) {
+		std::ostringstream report;
+		report << std::setprecision(9) << "{\n  \"vertices\": " << rebuilt_ambient.size() << ",\n  \"sources\": [";
+		for (std::size_t i = 0; i < lights.size(); ++i) {
+			const auto &entry = lights[i];
+			report << (i ? "," : "") << "\n    {\"segment\": " << entry.segment << ", \"side\": " << entry.side
+			       << ", \"brightness\": " << entry.material.brightness << ", \"rgb\": ["
+			       << entry.material.rgb[0] << ", " << entry.material.rgb[1] << ", " << entry.material.rgb[2] << "]}";
+		}
+		report << "\n  ],\n  \"colors\": [";
+		for (std::size_t i = 0; i < rebuilt_ambient.size(); ++i) {
+			const auto &rgb = rebuilt_ambient[i];
+			report << (i ? "," : "") << "\n    [" << rgb[0] << ", " << rgb[1] << ", " << rgb[2] << "]";
+		}
+		report << "\n  ]\n}\n";
+		std::ifstream old(path, std::ios::binary);
+		const std::string existing{ std::istreambuf_iterator<char>(old), std::istreambuf_iterator<char>() };
+		if (existing != report.str()) {
+			std::ofstream output(path, std::ios::binary | std::ios::trunc);
+			output << report.str();
+			if (!output) throw std::runtime_error("Cannot write ambient diagnostic report");
+		}
+	}
+#endif
+}
+
+extern "C" unsigned xl_preview_rebuilt_ambient_vertices(void)
+{
+	return static_cast<unsigned>(rebuilt_ambient.size());
 }
 
 extern "C" int xl_preview_load_level(const char *filename)
@@ -480,6 +537,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 	const bool translated_preview = false;
 #endif
 	int result = 0;
+	bool committed = false;
 	try {
 		validate_mission_context();
 		auto bytes = read_extended_level(filename);
@@ -521,6 +579,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 			throw std::runtime_error("loaded fixture bytes differ from the source translation");
 		loaded.reset();
 		// All read-only admission and translated-byte checks precede the native commit
+		committed = true;
 		xl_preview_clear_mission();
 		if (original) pending_level = filename;
 		result = xl_stock_load_level(filename);
@@ -544,10 +603,12 @@ extern "C" int xl_preview_load_level(const char *filename)
 		source = std::move(level);
 		admitted_pilot = original && !arena;
 		admitted_water_arena = arena;
+		rebuild_xl_ambient();
 		con_printf(CON_NORMAL, arena ? "XL water physics: detected experimental profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
 		return result;
 	} catch (const std::exception &error) {
 		pending_level.clear();
+		if (committed) xl_preview_clear_mission();
 		rejection = std::string(filename) + "\n" + error.what();
 		con_printf(CON_URGENT, "XL level rejected: %s\n", rejection.c_str());
 		return 1;
@@ -857,6 +918,7 @@ extern "C" void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t
 	try {
 		xl_compat::VertexLighting input;
 		if (classic) input.ambient = classic_color;
+		else if (!rebuilt_ambient.empty()) input.ambient = rebuilt_ambient.at(vertex);
 		else
 			for (unsigned i = 0; i < 3; ++i) input.ambient[i] = float(source->vertex_colors[vertex].rgb[i]);
 		input.static_light = light;

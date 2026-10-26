@@ -19,7 +19,7 @@ struct GameplayProbe {
 // Lighting remains in source and must be integrated before faithful play is claimed
 GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments = false);
 // Explicit 17/36 entry point for layout qualification fixtures
-// All semantic blockers (including no-damage and equipment generators) still apply
+// All unsupported semantic requirements, including equipment generators, still apply
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source);
 
 } // namespace xl_compat

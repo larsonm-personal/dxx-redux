@@ -4,13 +4,7 @@ static void format17_layout_test(const xl_compat::Bytes &original, const char *d
 {
 	const auto source = xl_compat::inspect_level(original);
 	require(source.level_version == 17 && source.game_version == 36, "layout control is not original 17/36");
-	bool rejected = false;
-	try {
-		xl_compat::prepare_serialization_probe_17_36(original);
-	} catch (const std::runtime_error &) {
-		rejected = true;
-	}
-	require(rejected, "layout entry point bypassed original no-damage blocker");
+	require(xl_compat::prepare_serialization_probe_17_36(original).source.segments.size() == source.segments.size(), "supported original layout failed translation");
 	auto neutral = original;
 	const auto color_bytes = (source.vertices.size() + source.segments.size() * 6 + 910) * 13;
 	require(source.game_offset > color_bytes + source.segments.size() * 8, "invalid segment metadata boundary");
@@ -64,5 +58,5 @@ static void format17_layout_test(const xl_compat::Bytes &original, const char *d
 	require(load_level("d2leva-1.rl2") == 0, "stock recovery after layout control failed");
 	for (int i = 0; i < Num_segments; ++i)
 		require(!xl_preview_no_damage_segment(i), "no-damage test binding survived stock recovery");
-	std::cout << "17/36 native layout control: name, geometry, reserved bits and packed light indices verified; 26 no-damage functions removed only in derived fixture; original remains rejected\n";
+	std::cout << "17/36 native layout control: name, geometry, reserved bits and packed light indices verified; 26 no-damage functions removed only in derived fixture; original admission tested separately\n";
 }

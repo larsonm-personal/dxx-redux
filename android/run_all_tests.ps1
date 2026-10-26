@@ -495,6 +495,7 @@ $testTimeouts = @{
     "test_xl_classic_sound_lifecycle" = 360
     "test_xl_water_runtime" = 360
     "test_xl_konflict_runtime" = 360
+    "test_xl_observatory_runtime" = 360
     "test_xl_pilot_import" = 300
     "test_xl_pilot_coronas" = 300
     "test_xl_pilot_completion" = 300

@@ -7480,10 +7480,20 @@ static void test_d1_reactor()
 			const char rejected_descriptor[] = "name = Invalid D2\nnum_levels = 0\n";
 			write_fixture("missions/rejectd2.mn2", bytes(rejected_descriptor, rejected_descriptor + sizeof(rejected_descriptor) - 1));
 			char rejected_name[] = "rejectd2";
+#ifdef DXX_XL_RUNTIME
+			Mission *retained_mission = Current_mission;
+			require(!load_mission_by_name(rejected_name) && Current_mission == retained_mission &&
+			            !std::strcmp(Current_mission_filename, "keepd1"),
+			        "descriptor preflight rejects invalid D2 selection without replacing the active D1 mission");
+#else
 			require(!load_mission_by_name(rejected_name) && !Current_mission,
 			        "failed D2 selection frees the old and rejected descriptors through the normal mission loader");
+#endif
 			require(d1_in_d2_use_d1_gameplay() && Polygon_models[1].model_data == active_model && GameBitmaps[1].bm_data == active_pixels && GameSounds[0].data == active_samples,
 			        "failed cross-profile selection retains committed D1 identity, models, custom images and sound storage");
+#ifdef DXX_XL_RUNTIME
+			free_mission();
+#endif
 			Current_mission = saved_mission;
 			require(PHYSFS_delete("missions/rejectd2.mn2") != 0, "remove rejected D2 mission fixture");
 			require(PHYSFS_delete("missions/keepd1.msn") != 0, "remove D1 mission selection fixture");

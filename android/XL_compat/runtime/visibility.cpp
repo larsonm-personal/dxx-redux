@@ -1,4 +1,5 @@
 #include "visibility.h"
+#include "preview.h"
 #include "../lighting.h"
 #include "geometry.h"
 #include <stdexcept>
@@ -14,6 +15,11 @@ extern "C" {
 
 namespace xl_compat
 {
+bool geometry_lighting_available()
+{
+	return Current_mission && (Current_mission->descent_version == 1 || xl_preview_pilot_active());
+}
+
 ClassicVisibilityCamera classic_default_lighting_camera()
 {
 	ClassicVisibilityCamera camera;
@@ -29,8 +35,8 @@ ClassicVisibilityCamera classic_default_lighting_camera()
 
 std::optional<std::array<ClassicLightView, 5>> classic_light_views(int segment, int side)
 {
-	if (!Current_mission || Current_mission->descent_version != 1)
-		throw std::runtime_error("Classic light views require a D1 mission");
+	if (!geometry_lighting_available())
+		throw std::runtime_error("Classic light views require D1 or admitted XL geometry");
 	const auto geometry = compile_classic_lighting_side(segment, side);
 	FixedLightPoint normal;
 	for (unsigned axis = 0; axis < 3; ++axis)
@@ -67,8 +73,8 @@ std::vector<int> visible_segments(int start, const std::function<GeometryScreenP
 }
 std::vector<int> classic_camera_visible_segments(int start, const ClassicVisibilityCamera &camera)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || Highest_vertex_index < 0)
-		throw std::runtime_error("Classic camera requires a loaded D1 mine");
+	if (!geometry_lighting_available() || Highest_vertex_index < 0)
+		throw std::runtime_error("Classic camera requires a loaded D1 or admitted XL mine");
 	for (const auto factor : camera.projection_xy)
 		if (!std::isfinite(factor) || factor <= 0) throw std::runtime_error("Invalid classic perspective projection");
 	const auto basis = geometry_scaled_camera(geometry_camera_basis(camera.forward), camera.aspect, camera.zoom);
@@ -85,8 +91,8 @@ std::vector<int> classic_camera_visible_segments(int start, const ClassicVisibil
 
 std::vector<std::vector<bool>> classic_segment_visibility(const ClassicVisibilityCamera &optics)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || Highest_segment_index < 0)
-		throw std::runtime_error("Classic segment visibility requires a loaded D1 mine");
+	if (!geometry_lighting_available() || Highest_segment_index < 0)
+		throw std::runtime_error("Classic segment visibility requires a loaded D1 or admitted XL mine");
 	const auto count = static_cast<std::size_t>(Highest_segment_index) + 1;
 	std::vector<std::vector<bool>> visibility(count, std::vector<bool>(count, false));
 	for (int segment = 0; segment <= Highest_segment_index; ++segment) {
@@ -139,8 +145,8 @@ namespace
 std::vector<int> visible_segments(int start, const std::function<GeometryScreenPoint(int)> &project,
                                   int width, int height, unsigned detail_depth)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || Highest_segment_index < 0 || Highest_vertex_index < 0)
-		throw std::runtime_error("Classic visibility requires a loaded D1 mine");
+	if (!geometry_lighting_available() || Highest_segment_index < 0 || Highest_vertex_index < 0)
+		throw std::runtime_error("Classic visibility requires a loaded D1 or admitted XL mine");
 	const auto vertex = [&project](int id) {
 		if (id < 0 || id > Highest_vertex_index)
 			throw std::runtime_error("Invalid classic visibility vertex");
@@ -185,8 +191,8 @@ namespace
 {
 bool classic_portal_passable(int segment, int side, bool router)
 {
-	if (!Current_mission || Current_mission->descent_version != 1)
-		throw std::runtime_error("Classic light portals require a D1 mission");
+	if (!geometry_lighting_available())
+		throw std::runtime_error("Classic light portals require D1 or admitted XL geometry");
 	if (segment < 0 || segment > Highest_segment_index || side < 0 || side >= 6)
 		throw std::runtime_error("Invalid classic light portal");
 	const auto &seg = Segments[segment];
@@ -220,8 +226,8 @@ bool classic_light_portal_passable(int segment, int side)
 
 ClassicRouteGraph classic_light_route_graph()
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || Highest_vertex_index < 0 || Highest_segment_index < 0)
-		throw std::runtime_error("Classic route graph requires a loaded D1 mine");
+	if (!geometry_lighting_available() || Highest_vertex_index < 0 || Highest_segment_index < 0)
+		throw std::runtime_error("Classic route graph requires a loaded D1 or admitted XL mine");
 	FixedLightPoint minimum{ Vertices[0].x, Vertices[0].y, Vertices[0].z }, maximum = minimum;
 	for (int i = 1; i <= Highest_vertex_index; ++i) {
 		const FixedLightPoint point{ Vertices[i].x, Vertices[i].y, Vertices[i].z };
@@ -252,7 +258,7 @@ ClassicRouteGraph classic_light_route_graph()
 
 std::vector<int> classic_light_route_reachable(int start)
 {
-	if (!Current_mission || Current_mission->descent_version != 1 || start < 0 || start > Highest_segment_index)
+	if (!geometry_lighting_available() || start < 0 || start > Highest_segment_index)
 		throw std::runtime_error("Invalid classic light route start");
 	std::vector<bool> seen(static_cast<std::size_t>(Highest_segment_index) + 1, false);
 	std::vector<int> pending{ start };

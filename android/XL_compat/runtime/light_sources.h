@@ -21,10 +21,11 @@ struct ClassicGeometryLight {
 		return destructible || flickering || triggered || volatile_wall;
 	}
 };
-// Single-player classic D1 full-color method-0 sources, static first then segment/side
+// Single-player D1 or admitted XL full-color method-0 sources, static first then segment/side
 // Classification does not implement enabled-state updates, visibility or shading
 std::vector<ClassicGeometryLight> compile_classic_geometry_lights(const TextureBrightnessTable &brightness, const TextureColorTable &colors);
-// Classic D1 method-0 mesh faces, no colored volumes or generated mesh vertices
+std::vector<ClassicGeometryLight> compile_classic_geometry_lights(const TextureBrightnessTable &brightness, const TextureRgbTable &colors);
+// D1 or admitted XL method-0 mesh faces, no colored volumes or generated mesh vertices
 std::vector<int> classic_lighting_face_vertices(int segment);
 // Assemble source-view vertex flags using explicit optics and loaded geometry
 // This table precedes and is independent of later light range/ray flag updates

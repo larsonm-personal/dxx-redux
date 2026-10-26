@@ -1,4 +1,5 @@
 // Test-only mutation at the native preflight/commit boundary
+#include "no_damage_persistence_test.h"
 static std::string descriptor_mutation_path;
 static std::string archive_removal_path;
 static std::string archive_corruption_path;
@@ -78,14 +79,14 @@ static int descriptor_test(int argc, char **argv)
 			};
 			const auto before_geometry = geometry();
 			const auto before_time = GameTime64;
-			for (const char *level : { "obsrv-xl.rl2", "d2leva-1.rl2" }) {
+			for (const char *level : { "d2leva-1.rl2" }) {
 				require(!xl_level_supported(level, 0), "descriptor context bypassed preflight");
 				const std::string reason = xl_level_rejection();
-				const char *expected = !std::strcmp(level, "obsrv-xl.rl2") ? "segment_function" : "d2x-name mission resources";
+				const char *expected = "d2x-name mission resources";
 				require(reason.find(expected) != std::string::npos, "preflight omitted actionable feature reason");
 				require(load_level(level) != 0 && reason == xl_level_rejection(), "loader and preflight descriptor reasons differ");
 			}
-			require(load_level("obsrv-xl.rl2") != 0, "unaudited Observatory gameplay admitted");
+			require(xl_level_supported("obsrv-xl.rl2", 0), xl_level_rejection());
 			require(load_level("d2leva-1.rl2") != 0, "XL descriptor admitted even a stock-format level");
 			require(d_rand_get_stream_state(D_RNG_SIM, &rng_after) && rng_after == rng_before &&
 			            d_rand_get_stream_call_count(D_RNG_SIM) == rng_calls && GameTime64 == before_time,
@@ -116,7 +117,11 @@ static int descriptor_test(int argc, char **argv)
 				hog.insert(hog.end(), bytes.begin(), bytes.end());
 			};
 			member("clspol.rl2", level);
-			member("xltail.rl2", original_17);
+			auto unsupported = original_17;
+			const auto inventory = xl_compat::inspect_level(unsupported);
+			const auto function_offset = inventory.game_offset - (inventory.vertices.size() + inventory.segments.size() * 6 + 910) * 13 - inventory.segments.size() * 8;
+			unsupported.at(function_offset) = 12; // Unsupported blocked-segment semantics
+			member("xltail.rl2", unsupported);
 			write_bytes((root / "clspol.hog").string().c_str(), hog);
 			const auto replacement = root / "mods/clspol/textures/pattern.tga";
 			std::filesystem::create_directories(replacement.parent_path());
@@ -319,15 +324,16 @@ static int descriptor_test(int argc, char **argv)
 			        "D1 to XL descriptor transition did not restore D2 base definitions");
 			XlPreparedResources clean_base("d2leva-1.rl2");
 			clean_base.dependencies().robot(0);
-			require(load_level("obsrv-xl.rl2") != 0, "D1 transition bypassed Observatory qualification");
+			require(xl_level_supported("obsrv-xl.rl2", 0), "D1 transition failed supported Observatory preflight");
 			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "D1/descriptor stock recovery failed");
 			std::cout << "D1 -> XL descriptor -> D2: default graphics transition, native definitions and recovery passed\n";
 		} else std::cout << "D1 descriptor transition untested: optional D1 assets unavailable\n";
-		std::cout << "Original Observatory descriptor: title, level list and companion archive resolved; gameplay rejected; stock isolation and malformed descriptors passed\n";
+		std::cout << "Original Observatory descriptor: title, level list and companion archive resolved; feature preflight accepted; stock isolation and malformed descriptors passed\n";
 		std::cout << "XL descriptor base initialization: stale robot definitions reset, owned baseline captured, extra-HAM dialect not invoked\n";
 		std::cout << "Descriptor preflight: malformed candidates retain prior mission, archive and owned resource baseline\n";
 		asset_mount_test(argc, argv);
 		format17_layout_test(original_17, find_arg_value(argc, argv, "-extra-dir"));
+		no_damage_persistence_test(original_17);
 		return 0;
 	} catch (const std::exception &e) {
 		std::fprintf(stderr, "XL descriptor FAIL: %s\n", e.what());

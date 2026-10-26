@@ -43,6 +43,11 @@ ClassicFaceLightMaterials::ClassicFaceLightMaterials(const TextureBrightnessTabl
 			colors_[i][c] = static_cast<float>(colors[i].channels[c]) / static_cast<float>(0x7fffffff);
 }
 
+ClassicFaceLightMaterials::ClassicFaceLightMaterials(const TextureBrightnessTable &brightness, const TextureRgbTable &colors)
+    : brightness_(brightness), colors_(colors)
+{
+}
+
 std::optional<ClassicFaceLight> ClassicFaceLightMaterials::face(int base, int overlay, bool outdoors)
 {
 	const auto valid = [](int texture) { return texture >= 0 && texture < static_cast<int>(companion_texture_count); };
