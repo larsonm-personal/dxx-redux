@@ -205,6 +205,22 @@ class XlPrivateTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     runner.require_junit(path, {"required"})
 
+    def test_public_experimental_status_is_visible_and_sanitized(self):
+        base = dict(schema=1, target_sha="a" * 40, catalog_hash="b" * 64, batch_id="test", lane="linux")
+        for status in ("passed", "failed"):
+            row = dict(
+                id="host-profile:retail-xl-originals",
+                status="PASS",
+                phase="tests",
+                reason="private output",
+                experimental_acceptance={"xl_level_two_keys": status, "private": "must not escape"},
+            )
+            result = retail.public_receipt(dict(base, results=[row]))["results"][0]
+            self.assertEqual(result["experimental_acceptance"], {"xl_level_two_keys": status})
+            self.assertNotIn("must not escape", json.dumps(result))
+            row["id"] = "unrelated"
+            self.assertNotIn("experimental_acceptance", retail.public_receipt(dict(base, results=[row]))["results"][0])
+
     def test_native_experimental_policy(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "native.xml"

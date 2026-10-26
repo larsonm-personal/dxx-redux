@@ -280,6 +280,10 @@ def public_receipt(receipt):
                      'infrastructure', 'target-capability', 'test-timeout',
                      'metadata-cli-setup', 'corpus-worker-configure', 'corpus-worker-build') else '',
                  'cases': [{'status': case['status']} for case in row.get('cases', []) if case.get('status') in ('PASS', 'FAIL', 'SKIP', 'BLOCKED')]}
+        if row.get("id") == "host-profile:retail-xl-originals":
+            experimental = row.get("experimental_acceptance", {})
+            if isinstance(experimental, dict) and experimental.get("xl_level_two_keys") in ("passed", "failed"):
+                clean["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
         clean.update(public_diagnostics(row))
         sites = clean.get("master_diagnostics", {}).get("source_matches", [])
         if sites and status in ("FAIL", "TIMEOUT", "BLOCKED"):

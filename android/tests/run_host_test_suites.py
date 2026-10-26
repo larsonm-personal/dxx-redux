@@ -892,6 +892,18 @@ def run_suite(suite, repo, build_root, output, timeout):
             if suite.get("virtual_display"):
                 argv = ["xvfb-run", "-a"] + argv
             code = run(argv, virtual_display=suite.get("virtual_display", False))
+            if suite["profile"] == "retail-xl-originals" and code == 0:
+                receipt = json.loads((work / "xl-originals/original-status.json").read_text())
+                experimental = receipt.get("experimental")
+                if (
+                    receipt.get("required_passed") != 40
+                    or receipt.get("level_two_completion_qualified") is not False
+                    or not isinstance(experimental, dict)
+                    or set(experimental) != {"xl_level_two_keys"}
+                    or experimental["xl_level_two_keys"] not in {"passed", "failed"}
+                ):
+                    raise ValueError("Invalid original XL acceptance receipt")
+                result["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
             result["exclusions"] = [
                 {
