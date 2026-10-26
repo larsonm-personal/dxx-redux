@@ -8,12 +8,13 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	GameTime64 = i2f(100);
 	int ordinary_segment = -1;
 	for (int i = 0; i < Num_segments; ++i)
-		if (source.segments[i].function == 0) ordinary_segment = i;
+		if (source.segments[i].function == 0 && !(xl_compat::segment_property_bits(source.level_version, source.segments[i]) & xl_compat::segment_no_damage)) ordinary_segment = i;
 	require(ordinary_segment >= 0, "object collision boundary control needs an ordinary segment");
 	obj_relink(ConsoleObject - Objects, segment);
 	compute_segment_center(&ConsoleObject->pos, &Segments[segment]);
 	auto neutral = source;
-	neutral.segments[segment].function = 0;
+	if (neutral.level_version >= 21) neutral.segments[segment].properties &= ~xl_compat::segment_no_damage;
+	else neutral.segments[segment].function = 0;
 	for (auto type : { OBJ_CLUTTER, OBJ_PLAYER }) {
 		const int id = type == OBJ_PLAYER ? (Player_num + 1) % MAX_PLAYERS : 0;
 		const int other_index = obj_create(type, id, segment, &ConsoleObject->pos, &ConsoleObject->orient,

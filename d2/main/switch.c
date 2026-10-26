@@ -524,6 +524,14 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 	if ((Game_mode & GM_MULTI) && (Players[pnum].connected != CONNECT_PLAYING)) // as a host we may want to handle triggers for our clients. to do that properly we must check wether we (host) or client is actually playing.
 		return 1;
 
+#ifdef DXX_XL_RUNTIME
+	const int xl_result = xl_wall_teleport(trigger_num, Players[pnum].objnum, shot);
+	if (xl_result >= 0) {
+		xl_preview_trigger_result(trigger_num, shot, xl_result);
+		return xl_result;
+	}
+#endif
+
 #ifdef __ANDROID__
 	if (coop_travel_handle_exit_trigger(trigger_num, pnum, shot))
 		return 1;
@@ -710,6 +718,20 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
  	//short cside;
 	input_demo_log_trigger_probe("entry", seg, side, objnum, shot, -1);
 
+#ifdef DXX_XL_RUNTIME
+	if (side >= 0 && side < MAX_SIDES_PER_SEGMENT) {
+		const int xl_wall = seg->sides[side].wall_num;
+		if (xl_wall >= 0 && xl_wall < Num_walls) {
+			const int xl_trigger = Walls[xl_wall].trigger;
+			const int xl_result = xl_wall_teleport(xl_trigger, objnum, shot);
+			if (xl_result >= 0) {
+				xl_preview_trigger_result(xl_trigger, shot, xl_result);
+				return;
+			}
+		}
+	}
+#endif
+
 	if ((Game_mode & GM_MULTI) && (Players[Player_num].connected != CONNECT_PLAYING)) { // as a host we may want to handle triggers for our clients. so this function may be called when we are not playing.
 		input_demo_log_trigger_probe("skip_not_connected", seg, side, objnum, shot, -1);
 		return;
@@ -775,9 +797,15 @@ void triggers_frame_process()
 {
 	int i;
 
-	for (i=0;i<Num_triggers;i++)
+	for (i=0;i<Num_triggers;i++) {
+#ifdef DXX_XL_RUNTIME
+		/* Immediate XL teleport time is a scheduling descriptor, not a stock countdown */
+		if (xl_level_extensions_active() && Triggers[i].type == 14)
+			continue;
+#endif
 		if (Triggers[i].time >= 0)
 			Triggers[i].time -= FrameTime;
+	}
 }
 
 /*

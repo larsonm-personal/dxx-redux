@@ -184,6 +184,19 @@ struct ShadedVertex {
 // Source basis: XL renderlib SetVertexColor/SetVertexLight/AdjustVertexColor
 // Does not implement lightmaps, light-source generation, face setup or GL output
 ShadedVertex shade_vertex(const VertexLighting &input);
+
+// Non-volumetric colored-segment profile, after normalizing legacy functions
+// Texture classification follows CSegment::HasTexture/IsWater/IsLava
+struct WaterFace {
+	bool water = false, child_water = false, has_child = false;
+	bool has_wall = false, fluid_texture = false;
+	bool colored_segments = true, volumetric_fog = false;
+	int function = 0, child_function = 0;
+};
+bool water_face_colored(const WaterFace &face);
+// ComputeStaticFaceLight blends the face into ambient before lighting, then
+// multiplies the resulting RGB by the material color; alpha is handled by GL
+ShadedVertex shade_water_vertex(VertexLighting input, bool textured);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

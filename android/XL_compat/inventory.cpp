@@ -297,7 +297,7 @@ Inventory inspect_level(const Bytes &bytes)
 		if (out.level_version == 23) {
 			seg.properties = mine.u8();
 			seg.damage = { mine.s16(), mine.s16() };
-			if (seg.properties) issue(out.unsupported, "segment_properties", i, std::to_string(seg.properties));
+			if (seg.properties & ~(segment_water | segment_no_damage)) issue(out.unsupported, "segment_properties", i, std::to_string(seg.properties));
 			if (seg.damage[0] || seg.damage[1]) issue(out.unsupported, "segment_damage", i, std::to_string(seg.damage[0]) + "/" + std::to_string(seg.damage[1]));
 		}
 		seg.light = mine.s32();
@@ -348,10 +348,12 @@ Inventory inspect_level(const Bytes &bytes)
 			for (auto &v : sides) v = r.s16();
 			for (int j = 0; j < count; ++j) {
 				// XL trigger types can use non-geometric targets; retain rather than reinterpret
-				if (t.type <= 13) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(i));
+				if (t.type <= 14) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(i));
 				t.targets.push_back({ segments[j], sides[j] });
 			}
 			if (t.type > 13) issue(out.unsupported, "trigger_type", i, std::to_string(t.type));
+			if (t.type == 14 && std::abs(std::int64_t(t.time)) >= 100 && std::abs(std::int64_t(t.time)) <= 900000)
+				issue(out.unsupported, "teleport_delay", i, "delayed wall teleport requires the XL event scheduler");
 			if (t.flags & ~7) issue(out.unsupported, "trigger_flags", i, std::to_string(t.flags));
 			out.triggers.push_back(t);
 		}

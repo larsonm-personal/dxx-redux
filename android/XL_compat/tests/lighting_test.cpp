@@ -17,6 +17,44 @@ void expect(const xl_compat::VertexLighting &input, xl_compat::Rgb expected, int
 int main()
 {
 	try {
+		// Reference colored-face eligibility is directional, not a camera tint
+		xl_compat::WaterFace water_face;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Dry exterior tinted");
+		water_face.water = true;
+		if (!xl_compat::water_face_colored(water_face)) throw std::runtime_error("Water exterior omitted");
+		water_face.has_child = true;
+		if (!xl_compat::water_face_colored(water_face)) throw std::runtime_error("Matching-function water boundary omitted");
+		water_face.child_water = true;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Internal water face tinted");
+		water_face.child_water = false;
+		water_face.child_function = 1;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Different-function boundary tinted");
+		water_face.child_function = 7;
+		if (!xl_compat::water_face_colored(water_face)) throw std::runtime_error("Team boundary exception omitted");
+		water_face.has_wall = true;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Team boundary wall tinted");
+		water_face = {};
+		water_face.water = true;
+		water_face.fluid_texture = true;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Fluid texture tinted twice");
+		water_face.fluid_texture = false;
+		water_face.colored_segments = false;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Disabled colored segments tinted");
+		water_face.colored_segments = true;
+		water_face.volumetric_fog = true;
+		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Volumetric profile draws legacy tint");
+		xl_compat::VertexLighting water_light;
+		water_light.ambient = { 0.5f, 0.5f, 0.5f };
+		water_light.static_light = 65536;
+		const auto textured_water = xl_compat::shade_water_vertex(water_light, true);
+		const auto portal_water = xl_compat::shade_water_vertex(water_light, false);
+		const xl_compat::Rgb expected_textured{ 0.08002f, 0.18668f, 0.31998f };
+		const xl_compat::Rgb expected_portal{ 0.02f, 0.08f, 0.18f };
+		for (unsigned channel = 0; channel < 3; ++channel) {
+			if (std::abs(textured_water.rgb[channel] - expected_textured[channel]) > 0.000001f ||
+			    std::abs(portal_water.rgb[channel] - expected_portal[channel]) > 0.000001f)
+				throw std::runtime_error("Water material blend differs from static-face path");
+		}
 		xl_compat::GeometryColorInput self_light;
 		self_light.self = true;
 		self_light.light_color = { 1, 0.5f, 0.25f };

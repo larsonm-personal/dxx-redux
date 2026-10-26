@@ -1,0 +1,395 @@
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_modern_properties_runtime",
+            "games": ["d2"],
+            "vars": {
+                "d2": {
+                    "PILOT": "player",
+                },
+            },
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "select",
+        "text": "${PILOT}",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived modern properties",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "player.robots_level": 0,
+            "player.invulnerable": false,
+            "xl_pilot.active": true,
+            "xl_pilot.completed": false,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+            "xl_pilot.unresolved_emitters": 0,
+            "xl_pilot.rebuilt_ambient_vertices": 0,
+            "xl_pilot.water_boundary_depth_failures": 0,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 1,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 1,
+            "xl_pilot.in_no_damage": true,
+            "player.shields": "100.0",
+            "xl_pilot.in_water": true,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "10",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": "100.0",
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 91,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 91,
+            "xl_pilot.in_no_damage": false,
+            "xl_pilot.in_water": true,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "10",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": "90.0",
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 1,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 1,
+            "xl_pilot.in_no_damage": true,
+            "xl_pilot.in_water": true,
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "difficulty": 2,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "difficulty:3",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "difficulty": 3,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "difficulty": 2,
+            "game_window_is_front": true,
+            "time_paused": false,
+            "current_level_num": 1,
+            "xl_pilot.active": true,
+            "xl_pilot.completed": false,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+            "xl_pilot.unresolved_emitters": 0,
+            "player.robots_level": 0,
+            "player.invulnerable": false,
+            "xl_pilot.in_no_damage": true,
+            "position.segment": 1,
+            "player.shields": "90.0",
+            "xl_pilot.rebuilt_ambient_vertices": 0,
+            "xl_pilot.in_water": true,
+            "xl_pilot.water_boundary_depth_failures": 0,
+            "xl_pilot.water_boundary_draws": {
+                "gt": 0,
+            },
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.runtime_active": true,
+            "xl_pilot.menu_indicator_draws": {
+                "gt": 0,
+            },
+        },
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "false",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.runtime_active": false,
+        },
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "difficulty": 0,
+            "xl_pilot.runtime_active": false,
+            "current_level_num": 1,
+            "xl_pilot.active": false,
+            "xl_pilot.completed": false,
+            "xl_pilot.shaded_vertices": 0,
+            "xl_pilot.activated_triggers": 0,
+            "xl_pilot.unresolved_emitters": 0,
+            "xl_pilot.in_no_damage": false,
+            "xl_pilot.rebuilt_ambient_vertices": 0,
+            "xl_pilot.in_water": false,
+            "xl_pilot.water_boundary_depth_failures": 0,
+            "xl_pilot.water_boundary_draws": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "difficulty": 2,
+            "current_level_num": 1,
+            "game_window_is_front": true,
+            "time_paused": false,
+            "xl_pilot.active": true,
+            "xl_pilot.completed": false,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+            "xl_pilot.unresolved_emitters": 0,
+            "player.robots_level": 0,
+            "player.invulnerable": false,
+            "xl_pilot.in_no_damage": true,
+            "position.segment": 1,
+            "player.shields": "90.0",
+            "xl_pilot.rebuilt_ambient_vertices": 0,
+            "xl_pilot.in_water": true,
+            "xl_pilot.water_boundary_depth_failures": 0,
+            "xl_pilot.water_boundary_draws": {
+                "gt": 0,
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "10",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": "90.0",
+            "xl_pilot.in_no_damage": true,
+            "xl_pilot.in_water": true,
+        },
+    },
+    {
+        "side": 1,
+        "action": "face_view",
+        "distance": 6,
+        "segment": 91,
+        "post_delay_ms": 100,
+    },
+    {
+        "axis": 1,
+        "action": "send_axis",
+        "axis_value": -0.5,
+        "post_delay_ms": 300,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.in_water": true,
+            "xl_pilot.water_loops_linked": 1,
+            "xl_pilot.waterfall_loops_linked": 0,
+            "xl_pilot.water_loops_playing": 1,
+        },
+        "timeout_ms": 5000,
+    },
+    {
+        "axis": 1,
+        "action": "send_axis",
+        "axis_value": 0,
+        "post_delay_ms": 100,
+    },
+    {
+        "side": 1,
+        "action": "face_view",
+        "distance": 12,
+        "segment": 91,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.in_water": true,
+            "xl_pilot.water_loops_linked": 0,
+            "xl_pilot.water_loops_playing": 0,
+        },
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "face_view",
+        "segment": 0,
+        "side": 1,
+        "distance": 10,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 0,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+            "xl_pilot.unresolved_emitters": 0,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]

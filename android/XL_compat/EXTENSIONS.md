@@ -1,5 +1,17 @@
 # D2X-XL extension support catalog
 
+The provisional singleplayer roadmap estimates 10-20 further comparable chunks,
+with overlapping work areas and substantial uncertainty around trigger scheduling
+and custom gameplay data. This is not a completion percentage. See the
+[roadmap and wall-teleport plan](../ai%20tool%20plans/mission%20metadata/xl_wall_teleports_20261025.md)
+for estimates, acceptance criteria and the next implementation tranche
+
+Immediate singleplayer wall teleports now use detected requirements, including
+destination validation, actor dispatch, reference-matched rotation and source
+save restoration. Delayed actions, extended flags, object triggers, boosts and
+multiplayer remain blocked. Derived-fixture qualification does not unlock an
+original mission by itself; see [wall-teleport evidence](evidence/wall-teleports.md)
+
 Normal OpenGL D2 builds admit levels by detected requirements and runtime asset checks,
 without a mission-name or hash exception. Stock and XL missions share one binary; software rendering still rejects XL.
 This is per-level eligibility, not campaign qualification. The original Ahayweh Gate
@@ -12,9 +24,23 @@ alone does not admit a level. The executable catalog is `compatibility.cpp`;
 the Android browser displays its per-source evidence. Keep descriptions and
 support text synchronized with this catalog
 
-The new 23/40 path admits only detected supported requirements. Modern split
-properties/damage, multiplayer-only objects, wide wall flags and object triggers
-remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
+The new 23/40 path admits only detected supported requirements. Modern no-damage
+bit 8 now uses the existing protection behavior while preserving independent
+segment functions. Derived native controls verify collision/firing, fusion,
+boundary behavior and normal source-based save restoration. The normal Android APK
+passes 45 derived-fixture protection, rendering-activity and lifecycle checks.
+Modern water bit 1 and combined water/no-damage bit 9 now use ordinary admission
+for the robot-free singleplayer profile. Native controls cover independent
+functions, movement, turbulence, material boundaries, source saves and stock
+isolation. The final normal APK passes 51 water and 45 no-damage checks, including
+actual boundary draws, depth state, contact-loop playback and stock cleanup.
+A matched-camera Android water surface/boundary capture also passes. Legacy water
+remains experimental. Robots/generators in water, other property bits, signed
+damage and multiplayer remain rejected. See the
+[modern-property evidence](evidence/modern-properties.md) and
+[implementation plan](../ai%20tool%20plans/mission%20metadata/xl_modern_properties_20261025.md).
+Other modern properties/damage, multiplayer-only objects, wide wall flags and object
+triggers remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and
 controlled exit dispatch, and stock-to-save restoration. Its 24 detected texture
 emitters all use authored brightness values that differ from defaults. These
@@ -23,7 +49,7 @@ Android APK additionally passes 65 rejection, startup, shading, menu indication,
 stock-transition, emitter-view and POG checks. All seven live replacement payloads
 match their original fingerprints and become GPU-resident. The pinned XL runtime's
 287 baked vertex colors agree with the decoded table within capture precision.
-Android rejects injected modern properties, multiplayer-only objects and malformed
+Android rejects injected unsupported property bits, multiplayer-only objects and malformed
 CLR with specific messages, then successfully loads unchanged Neptune. Bounded
 rendering comparison and authored station/pickup/door checks are reconciled in the
 [Neptune acceptance record](evidence/neptune-acceptance.md); its procedural halo
@@ -287,7 +313,7 @@ unsupported XL extensions
 | `visual_assets` Texture/model formats                 | TGA/OOF, layered/animated materials; broad-corpus counts are not exclusively XL                                                                   | Individual formats/paths need verification                                                          | Orientation, filtering/alpha, model rendering and disclosed fallback                                                       |
 | `mission_flow` Campaign behavior                      | Secret origins/returns, directed exits, dependencies and objectives                                                                               | XL campaign behavior unverified; no modern hub-persistence claim                                    | All branches, transitions/returns and saves; one level never certifies 30                                                  |
 | `runtime` Qualification                               | Combat, progression, presentation, persistence, isolation, replay and multiplayer                                                                 | Bounded OpenGL pilots with explicit evidence; no general campaign or multiplayer claim              | Scope and evidence for each claim; all required categories must qualify                                                    |
-| `navigation` Teleports, boosts and spawn destinations | 108 wall teleports, 281 boosts, 20 spawn-setting actions; object-trigger transport also occurs                                                    | XL movement actions and route-analysis edges unsupported                                            | Disconnected regions, position/orientation/velocity, respawn, collision and guidebot routing                               |
+| `navigation` Teleports, boosts and spawn destinations | 108 wall teleports, 281 boosts, 20 spawn-setting actions; object-trigger transport also occurs | Immediate singleplayer wall teleports supported; delays, extended flags, boosts, spawn actions and teleport route-analysis edges remain unsupported | Reference transforms, actor crossings, arrival collision and source save restoration verified; campaign and guidebot routing unqualified |
 | `generators` Equipment and spawning                   | 53 equipment generators in 11 levels; distinct from robot matcens; spawn/countdown actions                                                        | Classic robot matcens exist; XL behavior unverified                                                 | Activation, replenishment/exhaustion, ordering, capacity and restore                                                       |
 | `wall_materials` Authored opacity/materials           | Type-8 colored walls (Glass House: 126), opacity on ordinary walls; pilot has 14 nonzero cloak/opacity records                                    | Classic cloaking/bitmap transparency exists; XL semantics unverified                                | Visibility, collision, targeting and projectiles independently; fixed opacity and layers                                   |
 | `effect_objects` Particles, lightning, ambient sound  | In 129 decoded sections: 330 particle, 151 lightning, 1335 sound records                                                                          | XL payloads and behavior unverified                                                                 | Versioned payload ends, preserved IDs/references, activation, looping-audio cleanup; cues may affect gameplay              |

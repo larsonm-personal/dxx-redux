@@ -90,6 +90,7 @@ if(BUILD_TESTING)
     set(XL_REFERENCE_GEOMETRY_ROOT "" CACHE PATH "Pinned XL source root for face hit-point oracle")
     if(XL_REFERENCE_GEOMETRY_ROOT)
         include(tests/reference_face_point.cmake)
+        include(tests/reference_teleport.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")
@@ -148,6 +149,35 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/neptune_layout.cmake)
         set_tests_properties(xl_neptune_native_layout PROPERTIES TIMEOUT 70)
         if(XL_NEPTUNE_DESCRIPTOR)
+            set(xl_teleport_oracle_args)
+            if(TARGET xl_teleport_reference)
+                list(APPEND xl_teleport_oracle_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_teleport_reference>")
+            endif()
+            add_test(
+                NAME xl_wall_teleports
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/wall-teleports ${xl_teleport_oracle_args}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/teleport.cmake)
+            set_tests_properties(xl_wall_teleports PROPERTIES TIMEOUT 85)
+            add_test(
+                NAME xl_modern_properties
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/modern-properties -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/modern_properties.cmake)
+            set_tests_properties(xl_modern_properties PROPERTIES TIMEOUT 85)
+            add_test(
+                NAME xl_modern_water
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA} -DMODE=water
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/modern-water -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/modern_properties.cmake)
+            set_tests_properties(xl_modern_water PROPERTIES TIMEOUT 85)
             add_test(
                 NAME xl_neptune_native_features
                 COMMAND

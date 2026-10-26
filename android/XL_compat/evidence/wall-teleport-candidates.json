@@ -1,0 +1,504 @@
+{
+    "scope": "Native inspection of the ten HOGs containing wall teleports in the supplied study; not a gameplay qualification",
+    "candidates": [
+        {
+            "path": "missions/diedel/etombz.hog",
+            "sha256": "b60638943aae22778bd597c02be8e3aa813d0834deb0f1640709a59c37ae3ded",
+            "levels": [
+                {
+                    "level": "etombz.rl2",
+                    "layout": [23, 40],
+                    "wall_teleports": 4,
+                    "remaining_decoded_blockers": {
+                        "segment_function_v21: 2": 6,
+                        "segment_function_v21: 7": 4,
+                        "segment_function_v21: 8": 4,
+                        "segment_owner_group: -1/54": 9,
+                        "segment_owner_group: 0/0": 17,
+                        "segment_owner_group: 0/20": 9,
+                        "segment_owner_group: 0/21": 3,
+                        "segment_owner_group: 1/51": 12,
+                        "segment_owner_group: 1/52": 12,
+                        "segment_owner_group: 1/54": 12,
+                        "segment_owner_group: 2/0": 3,
+                        "segment_owner_group: 2/1": 9,
+                        "segment_owner_group: 2/2": 6,
+                        "segment_owner_group: 2/3": 9,
+                        "segment_owner_group: 2/4": 9
+                    },
+                    "capacities": {
+                        "vertices": {
+                            "count": 1638,
+                            "limit": 36000,
+                            "exceeded": false
+                        },
+                        "segments": {
+                            "count": 539,
+                            "limit": 9000,
+                            "exceeded": false
+                        },
+                        "walls": {
+                            "count": 117,
+                            "limit": 255,
+                            "exceeded": false
+                        },
+                        "objects": {
+                            "count": 84,
+                            "limit": 1000,
+                            "exceeded": false
+                        },
+                        "triggers": {
+                            "count": 17,
+                            "limit": 100,
+                            "exceeded": false
+                        },
+                        "matcens": {
+                            "count": 7,
+                            "limit": 20,
+                            "exceeded": false
+                        },
+                        "light_indices": {
+                            "count": 51,
+                            "limit": 500,
+                            "exceeded": false
+                        },
+                        "delta_lights": {
+                            "count": 4432,
+                            "limit": 32000,
+                            "exceeded": false
+                        },
+                        "flicker_lights": {
+                            "count": 0,
+                            "limit": 100,
+                            "exceeded": false
+                        }
+                    },
+                    "translated_light_indices": {
+                        "count": 52,
+                        "limit": 500,
+                        "exceeded": false
+                    },
+                    "asset_closure": "Not qualified; declared resources require normal runtime validation, and XL level-specific HXM is currently rejected"
+                }
+            ],
+            "archive_assets": ["etombz.lgt", "etombz.clr", "etombz.pog", "etombz.hxm"],
+            "known_asset_blockers": ["etombz.hxm"]
+        },
+        {
+            "path": "missions/diedel/g-house.hog",
+            "sha256": "bcdbf127464ff1b82431997edba654c259462b405f9c388f58f6a09445f87980",
+            "levels": [
+                {
+                    "level": "g-house.rl2",
+                    "layout": [23, 40],
+                    "wall_teleports": 18,
+                    "remaining_decoded_blockers": {
+                        "object_trigger_tail: 165 bytes require reference interpretation": 1,
+                        "object_triggers: 3": 1,
+                        "object_type: 16": 3,
+                        "segment_function_v21: 2": 14,
+                        "segment_properties: 16": 179,
+                        "segment_properties: 20": 4,
+                        "segment_properties: 4": 424,
+                        "trigger_type: 15": 47,
+                        "trigger_type: 16": 1,
+                        "wall_type: 8": 126
+                    },
+                    "capacities": {
+                        "vertices": {
+                            "count": 3204,
+                            "limit": 36000,
+                            "exceeded": false
+                        },
+                        "segments": {
+                            "count": 1251,
+                            "limit": 9000,
+                            "exceeded": false
+                        },
+                        "walls": {
+                            "count": 228,
+                            "limit": 255,
+                            "exceeded": false
+                        },
+                        "objects": {
+                            "count": 129,
+                            "limit": 1000,
+                            "exceeded": false
+                        },
+                        "triggers": {
+                            "count": 66,
+                            "limit": 100,
+                            "exceeded": false
+                        },
+                        "matcens": {
+                            "count": 0,
+                            "limit": 20,
+                            "exceeded": false
+                        },
+                        "light_indices": {
+                            "count": 11,
+                            "limit": 500,
+                            "exceeded": false
+                        },
+                        "delta_lights": {
+                            "count": 702,
+                            "limit": 32000,
+                            "exceeded": false
+                        },
+                        "flicker_lights": {
+                            "count": 0,
+                            "limit": 100,
+                            "exceeded": false
+                        }
+                    },
+                    "translated_light_indices": {
+                        "count": 11,
+                        "limit": 500,
+                        "exceeded": false
+                    },
+                    "asset_closure": "Not qualified; declared resources require normal runtime validation, and XL level-specific HXM is currently rejected"
+                }
+            ],
+            "archive_assets": ["g-house.lgt", "g-house.clr", "g-house.pog", "g-house.hxm"],
+            "known_asset_blockers": ["g-house.hxm"]
+        },
+        {
+            "path": "missions/diedel/ptech-d3.hog",
+            "sha256": "d93ba6500ca8d55f9806df6376a025abeb17d30b30590a90d1905fcd23e1658c",
+            "levels": [
+                {
+                    "level": "ptech-d3.rl2",
+                    "parse_rejection": "offset 147840: unsupported render layout at object 163",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": ["ptech-d3.lgt", "ptech-d3.clr", "ptech-d3.pog", "ptech-d3.hxm"],
+            "known_asset_blockers": ["ptech-d3.hxm"]
+        },
+        {
+            "path": "missions/diedel/speed.hog",
+            "sha256": "b35c6ce6dccbf8819b578e7d65d041bef947635730ce6b5fad533db068a188d0",
+            "levels": [
+                {
+                    "level": "speed.rl2",
+                    "parse_rejection": "offset 390470: unsupported render layout at object 163",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": ["speed.lgt", "speed.clr", "speed.pog", "speed.hxm"],
+            "known_asset_blockers": ["speed.hxm"]
+        },
+        {
+            "path": "missions/diedel/styx-d3.hog",
+            "sha256": "0c5932b446de6235d1c9b807083ba9ee1e9b18c50470b1f6321c8e74ba9b4afb",
+            "levels": [
+                {
+                    "level": "styx.rl2",
+                    "parse_rejection": "offset 360479: unsupported render layout at object 178",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": ["STYX.AUT", "styx.lgt", "styx.clr", "styx.pog", "styx.hxm"],
+            "known_asset_blockers": ["styx.hxm"]
+        },
+        {
+            "path": "missions/diedel/tankboy.hog",
+            "sha256": "85ce8e6aee4207c062c281a6544c170a0c13409b24e0755ea7c216db824f4bd4",
+            "levels": [
+                {
+                    "level": "tankboy.rl2",
+                    "parse_rejection": "offset 286409: unsupported render layout at object 153",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": ["TANKBOY.AUT", "tankboy.lgt", "tankboy.clr", "tankboy.pog", "tankboy.hxm"],
+            "known_asset_blockers": ["tankboy.hxm"]
+        },
+        {
+            "path": "missions/single/boilpnt.hog",
+            "sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "levels": [
+                {
+                    "level": "boilpnt.rl2",
+                    "parse_rejection": "offset 318192: unsupported render layout at object 29",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "watrwrks.rl2",
+                    "parse_rejection": "offset 742547: unsupported render layout at object 58",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "canyon.rl2",
+                    "parse_rejection": "offset 553921: unsupported render layout at object 50",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "subzero.rl2",
+                    "parse_rejection": "unsupported movement layout at object 4",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "canyon2.rl2",
+                    "parse_rejection": "offset 548109: unsupported render layout at object 38",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "control2.rl2",
+                    "parse_rejection": "offset 806624: unsupported render layout at object 27",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "control.rl2",
+                    "parse_rejection": "offset 783001: unsupported render layout at object 31",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": [
+                "brief03b.pcx",
+                "boilpntb.pcx",
+                "teleprtb.pcx",
+                "watrwrkb.pcx",
+                "ctltowrb.pcx",
+                "canyonb.pcx",
+                "subzerob.pcx",
+                "boilpt2b.pcx",
+                "canyon2b.pcx",
+                "contrl2b.pcx",
+                "lifeb.pcx",
+                "boilpnt.txb",
+                "boilpnt.lgt",
+                "boilpnt.clr",
+                "boilpnt.hxm",
+                "watrwrks.lgt",
+                "watrwrks.clr",
+                "watrwrks.hxm",
+                "canyon.lgt",
+                "canyon.clr",
+                "canyon.hxm",
+                "subzero.lgt",
+                "subzero.clr",
+                "subzero.hxm",
+                "canyon2.lgt",
+                "canyon2.clr",
+                "canyon2.hxm",
+                "control2.lgt",
+                "control2.clr",
+                "control2.hxm",
+                "control.lgt",
+                "control.clr",
+                "control.hxm"
+            ],
+            "known_asset_blockers": [
+                "boilpnt.hxm",
+                "watrwrks.hxm",
+                "canyon.hxm",
+                "subzero.hxm",
+                "canyon2.hxm",
+                "control2.hxm",
+                "control.hxm"
+            ]
+        },
+        {
+            "path": "missions/single/dinter.hog",
+            "sha256": "5ddc056fe00971851fa55a0e93a316a4a0bce3591c65a7eb1b81dc21d168f4d3",
+            "levels": [
+                {
+                    "level": "dinter.rl2",
+                    "parse_rejection": "offset 2119101: unsupported render layout at object 1480",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": [
+                "dinter.snd",
+                "dinter.msg",
+                "asterb.pcx",
+                "canalb.pcx",
+                "caverb.pcx",
+                "cityb.pcx",
+                "desertb.pcx",
+                "dib.pcx",
+                "finalb.pcx",
+                "forestb.pcx",
+                "forgeb.pcx",
+                "glacib.pcx",
+                "gorgeb.pcx",
+                "aster.pcx",
+                "canal.pcx",
+                "caver.pcx",
+                "city.pcx",
+                "desert.pcx",
+                "di.pcx",
+                "forest.pcx",
+                "forge.pcx",
+                "glaci.pcx",
+                "gorge.pcx",
+                "dinter.txb",
+                "dinter.ctb",
+                "dinter.lgt",
+                "dinter.clr",
+                "dinter.pog",
+                "dinter.hxm"
+            ],
+            "known_asset_blockers": ["dinter.hxm"]
+        },
+        {
+            "path": "missions/single/sphere.hog",
+            "sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "levels": [
+                {
+                    "level": "sp-01.rl2",
+                    "parse_rejection": "offset 604456: unsupported render layout at object 299",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "sp-02.rl2",
+                    "parse_rejection": "offset 1013720: unsupported render layout at object 434",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "sp-03.rl2",
+                    "parse_rejection": "offset 931690: unsupported render layout at object 486",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "sp-04.rl2",
+                    "parse_rejection": "offset 1238935: unsupported render layout at object 480",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                },
+                {
+                    "level": "sp-s.rl2",
+                    "parse_rejection": "offset 597636: unsupported render layout at object 365",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": [
+                "sp-01.msg",
+                "sphere1b.pcx",
+                "sphere2b.pcx",
+                "sphere3b.pcx",
+                "sphere4b.pcx",
+                "sphere5b.pcx",
+                "sphere6b.pcx",
+                "sphere7b.pcx",
+                "sphere8b.pcx",
+                "sp-03.msg",
+                "sp-04.msg",
+                "sp-02.msg",
+                "sphere.txb",
+                "sp-01.lgt",
+                "sp-01.clr",
+                "sp-01.pog",
+                "sp-01.hxm",
+                "sp-02.lgt",
+                "sp-02.clr",
+                "sp-02.pog",
+                "sp-02.hxm",
+                "sp-03.lgt",
+                "sp-03.clr",
+                "sp-03.hxm",
+                "sp-04.lgt",
+                "sp-04.clr",
+                "sp-04.pog",
+                "sp-04.hxm",
+                "sp-s.lgt",
+                "sp-s.clr",
+                "sp-s.pog",
+                "sp-s.hxm"
+            ],
+            "known_asset_blockers": ["sp-01.hxm", "sp-02.hxm", "sp-03.hxm", "sp-04.hxm", "sp-s.hxm"]
+        },
+        {
+            "path": "missions/sirius/antholgy.hog",
+            "sha256": "1433a2dc2a20e4a067bad46b5edf7a91524664e9e7149a054a48aa83bef97165",
+            "levels": [
+                {
+                    "level": "antholgy.rl2",
+                    "parse_rejection": "offset 1787446: unsupported render layout at object 1251",
+                    "remaining_requirements": "Unknown beyond the parse rejection"
+                }
+            ],
+            "archive_assets": [
+                "drggreycap1",
+                "tugmagnet",
+                "model85.oof",
+                "cautstrp.tga",
+                "lev8bws.tga",
+                "orbitall.tga",
+                "orbotmai.tga",
+                "orbotlen.tga",
+                "purpleengine",
+                "scrubtec.tga",
+                "slbarrel.tga",
+                "stacks32.tga",
+                "stngface.tga",
+                "model83.oof",
+                "bluehull.tga",
+                "damage.tga",
+                "gyroface.tga",
+                "gyrofrnt.tga",
+                "gyrohead.tga",
+                "gyroside.tga",
+                "sfl-bhul.tga",
+                "sfl-engn.tga",
+                "sfl-fins.tga",
+                "sfl-insg.tga",
+                "flashers.tga",
+                "model86.oof",
+                "turrmap.tga",
+                "squideye.tga",
+                "squidfr.tga",
+                "squidgun.tga",
+                "squidlog.tga",
+                "squidthr.tga",
+                "model49.oof",
+                "model70.oof",
+                "greymetl.tga",
+                "tharmti.tga",
+                "tharmtib.tga",
+                "tharmto.tga",
+                "tharmtob.tga",
+                "thback.tga",
+                "thbackb.tga",
+                "thbelly.tga",
+                "thbellyb.tga",
+                "thchest.tga",
+                "thchestb.tga",
+                "thchin.tga",
+                "thchinb.tga",
+                "thelbow.tga",
+                "thelbowb.tga",
+                "thfaceg.tga",
+                "thfacegb.tga",
+                "thfacemp.tga",
+                "thhead.tga",
+                "thheadb.tga",
+                "thjaw.tga",
+                "thjawb.tga",
+                "thouarm.tga",
+                "thouarmb.tga",
+                "thrtsh.tga",
+                "thrtshb.tga",
+                "thshldf.tga",
+                "thshldfb.tga",
+                "thside.tga",
+                "thsideb.tga",
+                "bluflare.tga",
+                "grnflare.tga",
+                "redflare.tga",
+                "model87.oof",
+                "bluels.tga",
+                "redls.tga",
+                "stingtb.tga",
+                "stingwf.tga",
+                "model82.oof",
+                "antholgy.msg",
+                "antholgy.lgt",
+                "antholgy.clr",
+                "antholgy.pog",
+                "antholgy.hxm"
+            ],
+            "known_asset_blockers": ["antholgy.hxm"]
+        }
+    ]
+}

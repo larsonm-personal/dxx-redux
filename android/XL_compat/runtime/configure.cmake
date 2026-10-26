@@ -21,6 +21,7 @@ foreach(xl_target IN LISTS xl_targets)
     target_sources(
         ${xl_target}
         PRIVATE "${xl_runtime_dir}/preview.cpp"
+                "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/../inventory.cpp"
                 "${xl_runtime_dir}/../admission.cpp"
                 "${xl_runtime_dir}/../probe.cpp"
@@ -49,7 +50,8 @@ if(DXX_XL_DEVELOPER_TESTS)
     target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE DXX_XL_DEVELOPER_PROBE)
 endif()
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}")
-target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}/corona_renderer.c")
+target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}/corona_renderer.c"
+                                                    "${xl_runtime_dir}/water_renderer.c")
 if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
     # Export earned private checkpoints with Android's real source-definition trailer
     set(xl_checkpoint_sources "${xl_runtime_dir}/checkpoint_export.cpp"

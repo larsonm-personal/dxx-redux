@@ -112,6 +112,45 @@ std::string feature_row(const std::string &json, const char *id)
 	check(begin != std::string::npos, "feature row missing");
 	return json.substr(begin, json.find('}', begin) - begin);
 }
+void teleport_inventory_contract()
+{
+	for (const int version : { 15, 17, 23 }) {
+		auto bytes = fixture(version);
+		const auto inventory = xl_compat::inspect_level(bytes);
+		const auto section = std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const xl_compat::Section &s) { return s.name == "triggers"; });
+		check(section != inventory.sections.end(), "missing fixture trigger section");
+		const auto offset = static_cast<std::size_t>(section->offset);
+		bytes.insert(bytes.begin() + offset, 52, 0);
+		// Only the trigger section has a payload in this fixture
+		const auto game = inventory.game_offset;
+		patch(bytes, game + 75, 1);
+		patch(bytes, offset, 14, 1);
+		patch(bytes, offset + 2, 1, 1);
+		patch(bytes, offset + 8, 0xffffffff);
+		check(xl_compat::inspect_level(bytes).triggers.size() == 1, "teleport record lost");
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(bytes)).empty(), "immediate teleport blocked by feature admission");
+		auto boost = bytes;
+		patch(boost, offset, 15, 1);
+		check(!xl_compat::runtime_blockers(xl_compat::inspect_level(boost)).empty(), "teleport support admitted speed boost");
+		for (const auto field : { offset + 12, offset + 32 }) {
+			auto invalid = bytes;
+			patch(invalid, field, 0xffff, 2);
+			rejects([&] { xl_compat::inspect_level(invalid); });
+			patch(invalid, field, field == offset + 12 ? 1 : 6, 2);
+			rejects([&] { xl_compat::inspect_level(invalid); });
+		}
+		for (const int time : { -900001, -900000, -100, -99, 0, 99, 100, 900000, 900001, (-2147483647 - 1) }) {
+			auto delayed = bytes;
+			patch(delayed, offset + 8, static_cast<std::uint32_t>(time));
+			const auto parsed = xl_compat::inspect_level(delayed);
+			const bool found = std::any_of(parsed.unsupported.begin(), parsed.unsupported.end(), [](const xl_compat::Issue &issue) { return issue.feature == "teleport_delay"; });
+			const auto magnitude = time < 0 ? -std::int64_t(time) : std::int64_t(time);
+			check(found == (magnitude >= 100 && magnitude <= 900000), "teleport delay admission differs from reference");
+			check(xl_compat::runtime_blockers(parsed).empty() == !found, "runtime admission ignored teleport scheduler requirement");
+		}
+	}
+}
+
 void feature_contract()
 {
 	auto bytes = fixture();
@@ -138,7 +177,8 @@ void feature_contract()
 	patch(bytes, game + 75, 5);
 	auto json = xl_compat::compatibility_json("features.rl2", bytes);
 	auto row = feature_row(json, "wall_teleports");
-	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "wall teleports not counted or falsely supported");
+	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "immediate wall teleport feature count or support differs");
+	check(json.find("\"status\": \"blocked\"") == json.find("\"status\":"), "teleport support hid unsupported boost/camera requirements");
 	check(json.find("Wall speed boosts") != std::string::npos && json.find("Wall camera triggers") != std::string::npos && json.find("Wall master triggers") != std::string::npos, "action counts lost wall-only scope");
 	check(feature_row(json, "speed_boosts").find("\"count\": 1") != std::string::npos, "boost count");
 	check(feature_row(json, "master_triggers").find("\"status\": \"not_required\"") != std::string::npos, "absent feature not distinct");
@@ -254,9 +294,11 @@ void version_23_contract()
 		auto bad = bytes;
 		patch(bad, segment + 4, property, 1);
 		check(xl_compat::inspect_level(bad).segments.at(0).properties == property, "property bit lost");
-		if (property == 8) {
-			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), "no_damage_segments");
-			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "browser lost split no-damage requirement or claimed support");
+		if (property == 1 || property == 8) {
+			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), property == 1 ? "water_segments" : "no_damage_segments");
+			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "browser lost split no-damage support");
+			check(!xl_compat::prepare_gameplay_probe(bad).stock_level.empty(), "modern no-damage was not translated");
+			continue;
 		}
 		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
 	}
@@ -266,6 +308,30 @@ void version_23_contract()
 		patch(bad, segment + 7, damage, 2);
 		check(xl_compat::inspect_level(bad).segments.at(0).damage == std::array<int, 2>{ damage, damage }, "signed damage changed");
 		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	for (int bits = 0; bits < 256; ++bits) {
+		auto combined = bytes;
+		patch(combined, segment + 4, bits, 1);
+		const auto decoded = xl_compat::inspect_level(combined);
+		check(xl_compat::runtime_blockers(decoded).empty() == (bits == 0 || bits == 1 || bits == 8 || bits == 9), "normal modern admission accepted unsupported property combination");
+		check(xl_compat::runtime_blockers(decoded, true).empty() == (bits == 0 || bits == 1 || bits == 8 || bits == 9), "experimental water profile accepted unrelated property bits");
+		if (bits == 1 || bits == 9) {
+			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
+			for (int actor = 0; actor < 3; ++actor) {
+				auto unsupported_actor = decoded;
+				if (actor == 2) unsupported_actor.matcens.resize(1);
+				else {
+					xl_compat::Object object{};
+					if (actor == 0) object.type = 2;
+					else {
+						object.contains_type = 2;
+						object.contains_count = 1;
+					}
+					unsupported_actor.objects.push_back(object);
+				}
+				check(xl_compat::blocker_message(xl_compat::runtime_blockers(unsupported_actor)).find("water actors") != std::string::npos, "water robot/generator gate lost");
+			}
+		}
 	}
 	auto bad = bytes;
 	patch(bad, inventory.game_offset + 2, 36, 2);
@@ -516,12 +582,24 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		// Independent encoding controls: modern functions never imply old properties
+		xl_compat::Segment property_segment{};
+		const int legacy_properties[] = { 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 4, 8, 4, 0, 16 };
+		for (int function = 0; function < 17; ++function) {
+			property_segment.function = function;
+			for (int bits = 0; bits < 256; ++bits) {
+				property_segment.properties = bits;
+				check(xl_compat::segment_property_bits(23, property_segment) == bits, "modern property/function independence lost");
+				check(xl_compat::segment_property_bits(17, property_segment) == legacy_properties[function], "modern property field leaked into legacy interpretation");
+			}
+		}
 		check(argc == 1 || argc == 2 || (argc == 3 && std::string(argv[1]) == "--neptune"), "expected optional original HOG path");
 		if (argc == 2) original_observatory(argv[1]);
 		if (argc == 3) original_neptune(argv[2]);
 		version_17_contract();
 		version_23_contract();
 		serialization_17_contract();
+		teleport_inventory_contract();
 		feature_contract();
 		segment_flags_contract();
 		light_count_contract();

@@ -2563,10 +2563,14 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 						Automap_visited[segnum]=1;
 					}
 
-					for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)
+					for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++) {
 						if (WALL_IS_DOORWAY(seg,sn) == WID_TRANSPARENT_WALL || WALL_IS_DOORWAY(seg,sn) == WID_TRANSILLUSORY_WALL ||
 						WALL_IS_DOORWAY(seg,sn) & WID_CLOAKED_FLAG)
 							render_side(seg, sn);
+#ifdef DXX_XL_RUNTIME
+						xl_preview_draw_water_portal(segnum, sn);
+#endif
+					}
 				}
 			}
 			visited[segnum]=255;

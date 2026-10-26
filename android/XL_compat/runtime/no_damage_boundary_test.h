@@ -7,10 +7,11 @@ static void no_damage_boundary_test(const xl_compat::Inventory &source)
 {
 	int protected_segment = -1, ordinary_segment = -1, portal_side = -1;
 	for (int segment = 0; segment < Num_segments && protected_segment < 0; ++segment) {
-		if (source.segments[segment].function != 13) continue;
+		if (!(xl_compat::segment_property_bits(source.level_version, source.segments[segment]) & xl_compat::segment_no_damage)) continue;
 		for (int side = 0; side < 6; ++side) {
 			const int child = Segments[segment].children[side];
 			if (child < 0 || source.segments[child].function != 0 ||
+			    (xl_compat::segment_property_bits(source.level_version, source.segments[child]) & xl_compat::segment_no_damage) ||
 			    Segments[segment].sides[side].wall_num != -1) continue;
 			protected_segment = segment;
 			ordinary_segment = child;
@@ -46,8 +47,10 @@ static void no_damage_boundary_test(const xl_compat::Inventory &source)
 	            find_point_seg(&outside, ordinary_segment) == ordinary_segment,
 	        "no-damage boundary endpoints are not in their authored cells");
 	auto neutral = source;
-	for (auto &segment : neutral.segments)
-		if (segment.function == 13) segment.function = 0;
+	for (auto &segment : neutral.segments) {
+		if (neutral.level_version >= 21) segment.properties &= ~xl_compat::segment_no_damage;
+		else if (segment.function == 13) segment.function = 0;
+	}
 	FrameTime = F1_0 / 4;
 	for (bool entering : { true, false }) {
 		const int from = entering ? ordinary_segment : protected_segment;

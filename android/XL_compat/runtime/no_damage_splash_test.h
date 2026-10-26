@@ -36,7 +36,8 @@ static void no_damage_splash_test(const xl_compat::Inventory &source, int segmen
 	            (protected_physics.rotvel.x || protected_physics.rotvel.y || protected_physics.rotvel.z),
 	        "protected splash lost force/rotation or applied damage flash");
 	auto neutral = source;
-	neutral.segments[segment].function = 0;
+	if (neutral.level_version >= 21) neutral.segments[segment].properties &= ~xl_compat::segment_no_damage;
+	else neutral.segments[segment].function = 0;
 	xl_test_bind_no_damage(neutral);
 	explode();
 	require(Players[Player_num].shields < i2f(100) && PaletteRedAdd > 0 &&

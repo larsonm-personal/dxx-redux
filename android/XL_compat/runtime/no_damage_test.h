@@ -17,8 +17,8 @@ static void no_damage_collision_test(const xl_compat::Inventory &source)
 {
 	int protected_segment = -1, ordinary_segment = -1;
 	for (int i = 0; i < Num_segments; ++i) {
-		if (source.segments[i].function == 13) protected_segment = i;
-		if (source.segments[i].function == 0) ordinary_segment = i;
+		if (xl_compat::segment_property_bits(source.level_version, source.segments[i]) & xl_compat::segment_no_damage) protected_segment = i;
+		else if (source.segments[i].function == 0) ordinary_segment = i;
 	}
 	require(protected_segment >= 0 && ordinary_segment >= 0, "no-damage control requires both segment types");
 	xl_test_bind_no_damage(source);

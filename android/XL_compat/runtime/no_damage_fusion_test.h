@@ -80,8 +80,10 @@ static void no_damage_fusion_test(const xl_compat::Inventory &source, int protec
 			        "fusion exit bolts lost retained charge multiplier");
 	// Same queued state without the detected property retains classic FireLaser behavior
 	auto neutral = source;
-	for (auto &segment : neutral.segments)
-		if (segment.function == 13) segment.function = 0;
+	for (auto &segment : neutral.segments) {
+		if (neutral.level_version >= 21) segment.properties &= ~xl_compat::segment_no_damage;
+		else if (segment.function == 13) segment.function = 0;
+	}
 	xl_test_bind_no_damage(neutral);
 	Fusion_charge = F1_0;
 	Global_laser_firing_count = 1;

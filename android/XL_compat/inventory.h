@@ -39,6 +39,30 @@ struct Segment {
 	std::array<int, 2> damage{};
 };
 
+enum SegmentProperty {
+	segment_water = 1,
+	segment_lava = 2,
+	segment_blocked = 4,
+	segment_no_damage = 8,
+	segment_outdoors = 16
+};
+
+// XL v21 separates properties from function; legacy combined IDs must not leak
+// into modern team functions. This decodes semantics, not runtime admission
+inline int segment_property_bits(int level_version, const Segment &segment)
+{
+	if (level_version >= 21) return segment.properties;
+	switch (segment.function) {
+		case 7: return segment_water;
+		case 8: return segment_lava;
+		case 12:
+		case 14: return segment_blocked;
+		case 13: return segment_no_damage;
+		case 16: return segment_outdoors;
+		default: return 0;
+	}
+}
+
 struct Color {
 	int index;
 	std::array<double, 3> rgb;
