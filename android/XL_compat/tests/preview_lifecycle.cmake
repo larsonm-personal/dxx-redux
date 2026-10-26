@@ -67,6 +67,10 @@ execute_process(
     OUTPUT_FILE "${fixture}/preview.log"
     ERROR_FILE "${fixture}/preview-error.log")
 if(NOT result EQUAL 0)
+    if(LEVEL_TWO_ROUTE)
+        include("${CMAKE_CURRENT_LIST_DIR}/experimental_acceptance.cmake")
+        xl_report_experimental_route_failure("${result}" "${fixture}")
+    endif()
     message(FATAL_ERROR "XL preview lifecycle failed: ${result}; see ${fixture}")
 endif()
 file(READ "${fixture}/preview.log" report)

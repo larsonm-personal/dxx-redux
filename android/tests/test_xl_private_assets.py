@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import struct
+import subprocess
+import xml.etree.ElementTree as ET
 import tempfile
 import unittest
 import zipfile
@@ -268,25 +270,44 @@ class XlPrivateTests(unittest.TestCase):
     def test_native_experimental_policy(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "native.xml"
+            marker = "XL_EXPERIMENTAL_ACCEPTANCE: xl_level_two_keys route_incomplete"
 
             def receipt(experimental, code=8, required_failure=False):
                 body = "".join(
-                    '<testcase name="' + name + '">' + ("<failure/>" if required_failure else "") + "</testcase>"
+                    '<testcase name="'
+                    + name
+                    + '" status="run">'
+                    + ('<failure message="Failed"/>' if required_failure else "")
+                    + "</testcase>"
                     for name in sorted(runner.CORE_TESTS)
                 )
                 path.write_text("<testsuite>" + body + experimental + "</testsuite>")
                 return runner.native_receipt(path, code)
 
-            failed = '<testcase name="xl_level_two_keys"><failure/></testcase>'
-            passed = '<testcase name="xl_level_two_keys"/>'
+            failed = (
+                '<testcase name="xl_level_two_keys" status="fail"><failure message="Failed"/>'
+                "<system-out>" + marker + "</system-out></testcase>"
+            )
+            passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
             self.assertEqual(receipt(passed, 0)["required_passed"], 40)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
+            invalid = [
+                "",
+                failed + failed,
+                failed.replace(marker, ""),
+                failed.replace(marker, marker + "\n" + marker),
+                '<testcase name="xl_level_two_keys" status="disabled"/>',
+                '<testcase name="xl_level_two_keys" status="notrun"/>',
+                passed.replace("/>", "><skipped/></testcase>"),
+                passed.replace("/>", "><error/></testcase>"),
+                *[
+                    failed.replace('message="Failed"', 'message="' + kind + '"')
+                    for kind in ("Timeout", "SEGFAULT", "BAD_COMMAND")
+                ],
+            ]
             for body, code, required_failure in (
-                ("", 8, False),
-                (failed + failed, 8, False),
-                ('<testcase name="xl_level_two_keys"><skipped/></testcase>', 8, False),
-                ('<testcase name="xl_level_two_keys"><error/></testcase>', 8, False),
+                *[(body, 8, False) for body in invalid],
                 (failed, 0, False),
                 (passed, 8, False),
                 (failed, 8, True),
@@ -294,6 +315,67 @@ class XlPrivateTests(unittest.TestCase):
                 with self.subTest(body=body, code=code, required_failure=required_failure):
                     with self.assertRaises(ValueError):
                         receipt(body, code, required_failure)
+
+    def test_private_route_failure_classification(self):
+        helper = Path(__file__).resolve().parents[1] / "XL_compat/tests/experimental_acceptance.cmake"
+        marker = "XL_EXPERIMENTAL_ACCEPTANCE: xl_level_two_keys route_incomplete"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            script = root / "classify.cmake"
+            script.write_text(
+                'include("' + helper.as_posix() + '")\nxl_report_experimental_route_failure("${RESULT}" "${FIXTURE}")\n'
+            )
+            blue = "Level two ordinary blue key: frames=20 alive=1 checkpoint=restored\n"
+            red = "Level two route result: key=5 frames=30 dead=1 shields=-1 complete=0\n"
+            error = "XL lifecycle FAILED: level-two ordinary key route incomplete\n"
+            for result, output, errors, expected in (
+                ("1", blue + red, error, True),
+                ("Process terminated due to timeout", blue + red, error, False),
+                ("Subprocess aborted", blue + red, error, False),
+                ("1", blue + red, "XL lifecycle FAILED: different assertion\n", False),
+                ("1", blue + red, error + error, False),
+                ("1", red, error, False),
+                ("1", blue, error, False),
+                ("1", blue + red + red, error, False),
+                ("0", blue + red, error, False),
+            ):
+                with self.subTest(result=result, output=output, errors=errors):
+                    (root / "preview.log").write_text(output)
+                    (root / "preview-error.log").write_text(errors)
+                    run = subprocess.run(
+                        ["cmake", "-DRESULT=" + result, "-DFIXTURE=" + root.as_posix(), "-P", str(script)],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=True,
+                    )
+                    self.assertEqual(marker in run.stderr, expected)
+
+    def test_actual_ctest_nonexecution_and_timeout_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "CTestTestfile.cmake").write_text(
+                "add_test(timeout cmake -E sleep 2)\nset_tests_properties(timeout PROPERTIES TIMEOUT 0.1)\n"
+                "add_test(disabled cmake -E true)\nset_tests_properties(disabled PROPERTIES DISABLED TRUE)\n"
+                'add_test(missing "' + (root / "absent-command").as_posix() + '")\n'
+            )
+            report = root / "ctest.xml"
+            run = subprocess.run(
+                ["ctest", "--test-dir", str(root), "--output-junit", str(report)], capture_output=True, timeout=15
+            )
+            self.assertEqual(run.returncode, 8)
+            actual = ET.parse(report).getroot().findall(".//testcase")
+            self.assertEqual({c.get("name") for c in actual}, {"timeout", "disabled", "missing"})
+            for case in actual:
+                with self.subTest(kind=case.get("name")):
+                    case.set("name", "xl_level_two_keys")
+                    suite = ET.Element("testsuite")
+                    for name in runner.CORE_TESTS:
+                        ET.SubElement(suite, "testcase", name=name, status="run")
+                    suite.append(case)
+                    ET.ElementTree(suite).write(report)
+                    with self.assertRaises(ValueError):
+                        runner.native_receipt(report, 8)
 
     def test_private_campaign_requires_trust_pin_and_both_owners(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))

@@ -1541,7 +1541,7 @@
       "path": "android/tests/test_xl_private_assets.py",
       "estimated_seconds": 30,
       "python_modules": [],
-      "executables": [],
+      "executables": ["cmake", "ctest"],
       "coverage_scope": "Synthetic XL private staging, complete receipts and trusted campaign gates; no private bytes.",
       "constraints": []
     }

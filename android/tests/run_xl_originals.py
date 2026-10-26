@@ -61,7 +61,18 @@ def native_receipt(path, returncode):
         name = case.get("name")
         if any(case.find(tag) is not None for tag in ("skipped", "error")):
             raise ValueError("Original XL execution was skipped or errored")
-        failed = case.find("failure") is not None
+        failures = case.findall("failure")
+        failed = bool(failures)
+        if case.get("status") != ("fail" if failed else "run") or len(failures) > 1:
+            raise ValueError("Original XL result did not execute normally")
+        if failed and (
+            failures[0].get("message") != "Failed"
+            or (case.findtext("system-out") or "")
+            .splitlines()
+            .count("XL_EXPERIMENTAL_ACCEPTANCE: xl_level_two_keys route_incomplete")
+            != 1
+        ):
+            raise ValueError("Original XL failure is not classified campaign acceptance")
         if name in CORE_TESTS and failed:
             raise ValueError("Required original XL regression failed")
         if name in EXPERIMENTAL_TESTS:

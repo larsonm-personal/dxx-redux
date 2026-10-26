@@ -56,3 +56,9 @@ The follow-up is based on cmake b46efc833, which includes merged PR140. Its
 23/40 original witness now requires successful inspection alongside 15/33 and
 17/36; the six other witnessed pairs still require explicit rejection. This
 updates the historical minimum above without admitting gameplay from inspection.
+
+Experimental failure allowance is restricted to the known incomplete red-route
+assertion after earned blue-key recovery. The native wrapper must finish normally
+with that exact assertion and route evidence before emitting a fixed classification.
+CTest disabled/not-run cases, timeouts, crashes, missing commands, unknown inner
+failures and inconsistent statuses remain blocking. Raw logs stay private.
