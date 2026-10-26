@@ -18,7 +18,7 @@ struct Category {
 };
 const Category categories[] = {
 	{ "container", "Archive and descriptor dialect", "Standard DHF and d2x-name descriptors; gameplay requires supported extended-level features and owned resources; extended HOG unsupported", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
-	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33 and 17/36 layouts after feature checks", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
+	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 17/36 and 23/40 layouts after feature checks", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported", "Larger mines can require wider references and more segments, vertices, walls, objects or triggers. A readable file can still exceed engine limits." },
 	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. They are distinct from a wall texture." },
 	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported", "Wall types and flags control doors, barriers and other surfaces. Visibility, collision and activation behavior must agree." },
@@ -41,7 +41,7 @@ const Category categories[] = {
 	{ "scoped_sounds", "Mission WAV effects and sound banks", "Opt-in imported-D1 WAV path implemented; playback unqualified; scoped banks unsupported", "Sound effects are distinct from music. A mission sound bank can suppress external WAV lookup. Names, scope, sample conversion, playback and cleanup must be verified for the selected game." },
 	{ "scoped_music", "Mission playlists and ordinal music", "SNG and nested music paths exist; XL playlist and secret-level precedence unqualified", "Music selection can depend on HOG options, mission playlists and signed level ordinals. Finding or preserving an audio file does not prove that the intended track plays or stops on transition." },
 	{ "scoped_models", "Mission models and model skins", "ASE infrastructure exists; scoped aliases and skins unqualified; OOF unsupported", "Model format, model-number mapping and skin ownership are separate requirements. A skin must resolve in the owning model scope rather than borrowing a same-named file from another mission." },
-	{ "companion_lighting", "LGT and CLR lighting companions", "D2 extended levels use owned level-named LGT overrides for texture emitters; malformed or foreign companions and D2 CLR overrides are rejected; package presence requires separate inspection", "Level-named LGT and CLR files describe texture brightness and colors. They are not HAM definitions or proof of embedded level lighting; their values and renderer use must be checked separately." },
+	{ "companion_lighting", "LGT and CLR lighting companions", "Owned level-named LGT overrides feed D2 emitters; 23/40 embedded texture colors replace CLR; other D2 CLR profiles, malformed or foreign companions remain rejected", "Level-named LGT and CLR files describe texture brightness and colors. They are not HAM definitions or proof of embedded level lighting; their values, precedence and renderer use must be checked separately." },
 	{ "package_options", "Mission configuration and presentation options", "Packaged INI, wallpapers and extended briefing options unqualified", "Recognizing packaged configuration does not authorize executing it. Each supported option needs bounded parsing, explicit semantics, resource dependencies and restoration on mission changes." },
 	{ "distribution_archive", "Distribution archive extraction", "ZIP, 7z and RAR readers exist; codec and original-package extraction require verification", "The downloaded archive is separate from the mission HOG. Recognizing a 7z catalog does not prove its compression methods can be decoded. Extraction must preserve owned paths and pass byte, integrity and collision checks before mission resources can be evaluated." },
 };
@@ -78,8 +78,15 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
 	const int segment_types[] = { 7, 8, 12, 13 };
-	for (std::size_t i = 0; i < 4; ++i)
-		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) { return s.function == segment_types[i]; }));
+	for (std::size_t i = 0; i < 4; ++i) {
+		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) {
+			return v.level_version >= 21 ? (s.properties & (1 << i)) != 0 : s.function == segment_types[i];
+		}));
+		if (v.level_version >= 21) {
+			features[i + 4].present_status = "blocked";
+			features[i + 4].support = "Split segment property detected; runtime translation is not implemented";
+		}
+	}
 	features[8].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.type == 8; }));
 	features[9].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; }));
 	features[10].count = static_cast<int>(std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; }));

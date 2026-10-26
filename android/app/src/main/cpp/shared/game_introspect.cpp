@@ -27,6 +27,7 @@
 #include "input_demo_codec.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "resource_validation.h"
 #endif
 
 using json = nlohmann::json;
@@ -743,6 +744,15 @@ static json serialize_surface_asset(int texture)
 	const auto &bitmap = GameBitmaps[index];
 	const char *name = piggy_game_bitmap_name(&GameBitmaps[index]);
 	json asset = { { "texture", texture }, { "bitmap", index }, { "name", name ? name : "" }, { "effect", TmapInfo[texture].eclip_num }, { "damage", f2fl(TmapInfo[texture].damage) }, { "bitmap_flags", piggy_bitmap_get_flags(&GameBitmaps[index]) }, { "indexed_mod_owned", android_mod_bitmap_is_owned(index) != 0 } };
+#ifdef DXX_XL_RUNTIME
+	unsigned payload_bytes = 0, payload_hash = 0;
+	const bool pog_installed = xl_prepared_pog_receipt(index, &payload_bytes, &payload_hash) != 0;
+	asset["xl_pog_installed"] = pog_installed;
+	if (pog_installed) {
+		asset["xl_pog_payload_bytes"] = payload_bytes;
+		asset["xl_pog_payload_fnv1a"] = payload_hash;
+	}
+#endif
 #ifdef OGL
 	const auto *gpu = bitmap.gltexture;
 	const bool resident = gpu && gpu->handle;

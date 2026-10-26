@@ -193,7 +193,7 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader header(bytes, 0, bytes.size());
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
-	require(out.level_version == 15 || out.level_version == 17, "unsupported level version " + std::to_string(out.level_version));
+	require(out.level_version == 15 || out.level_version == 17 || out.level_version == 23, "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -201,11 +201,11 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader game(bytes, out.game_offset, bytes.size());
 	require(game.u16() == 0x6705, "invalid game data signature");
 	out.game_version = game.u16();
-	require((out.level_version == 15 && out.game_version == 33) || (out.level_version == 17 && out.game_version == 36),
+	require((out.level_version == 15 && out.game_version == 33) || (out.level_version == 17 && out.game_version == 36) || (out.level_version == 23 && out.game_version == 40),
 	        "unsupported level/game version pair " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version));
 	game.skip(31);
 	const char *section_names[] = { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights", "equipment" };
-	const unsigned section_count = out.level_version == 17 ? 10 : 9;
+	const unsigned section_count = out.level_version >= 17 ? 10 : 9;
 	for (unsigned i = 0; i < section_count; ++i) {
 		const auto *name = section_names[i];
 		Section s{ name, game.s32(), game.s32(), game.s32() };
@@ -294,8 +294,14 @@ Inventory inspect_level(const Bytes &bytes)
 		seg.producer = mine.s8();
 		seg.value = mine.s8();
 		seg.flags = mine.u8();
+		if (out.level_version == 23) {
+			seg.properties = mine.u8();
+			seg.damage = { mine.s16(), mine.s16() };
+			if (seg.properties) issue(out.unsupported, "segment_properties", i, std::to_string(seg.properties));
+			if (seg.damage[0] || seg.damage[1]) issue(out.unsupported, "segment_damage", i, std::to_string(seg.damage[0]) + "/" + std::to_string(seg.damage[1]));
+		}
 		seg.light = mine.s32();
-		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, "segment_function", i, std::to_string(seg.function));
+		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, out.level_version == 23 ? "segment_function_v21" : "segment_function", i, std::to_string(seg.function));
 		if (seg.flags & ~3) {
 			// Pinned 17/36 reference consumes only ambient bits 0/1; retain all raw bits
 			// See evidence/segment-flags-17-36.md; other profiles stay unaudited
@@ -311,12 +317,13 @@ Inventory inspect_level(const Bytes &bytes)
 
 	const auto &walls = section(out, "walls");
 	if (walls.count) {
-		auto r = section_reader(bytes, out, walls, 24);
+		auto r = section_reader(bytes, out, walls, out.game_version == 40 ? 25 : 24);
 		for (int i = 0; i < walls.count; ++i) {
-			Wall w{ r.s32(), r.s32(), r.s32(), r.s32(), r.u8(), r.u8(), r.u8(), r.u8(), r.s8(), r.u8(), r.s8(), r.u8() };
+			Wall w{ r.s32(), r.s32(), r.s32(), r.s32(), r.u8(), out.game_version == 40 ? r.u16() : r.u8(), r.u8(), r.u8(), r.s8(), r.u8(), r.s8(), r.u8() };
 			require(w.segment >= 0 && w.segment < segment_count && w.side >= 0 && w.side < 6, "invalid wall location " + std::to_string(i));
 			require(w.linked_wall >= -1 && w.linked_wall < walls.count, "invalid linked wall " + std::to_string(i));
 			require(w.trigger == 255 || w.trigger < section(out, "triggers").count, "invalid wall trigger " + std::to_string(i));
+			if (w.flags > 255) issue(out.unsupported, "wall_flags", i, std::to_string(w.flags));
 			if (w.type > 7) issue(out.unsupported, "wall_type", i, std::to_string(w.type));
 			if (w.flags & 4) issue(out.unsupported, "additive_wall_rendering", i, std::to_string(w.flags));
 			if (w.state > 6) issue(out.unsupported, "wall_state", i, std::to_string(w.state));
@@ -357,6 +364,8 @@ Inventory inspect_level(const Bytes &bytes)
 			// The reference also permits omitting this neutral tail entirely
 			if (remaining) require(r.u16() == 0, "nonempty game-36 object reference table is not supported");
 			require(r.position() == section_end(out, triggers, bytes.size()), "unexpected game-36 object reference tail");
+		} else if (!out.object_triggers && out.game_version == 40) {
+			require(remaining == 0, "unexpected game-40 object reference tail");
 		} else if (!out.object_triggers && remaining == 1400) {
 			// Older writers retain the 700-entry object head table even with no triggers
 			for (int i = 0; i < 700; ++i) {
@@ -370,15 +379,20 @@ Inventory inspect_level(const Bytes &bytes)
 	}
 	const auto &objects = section(out, "objects");
 	if (objects.count) {
-		auto r = section_reader(bytes, out, objects, 79);
+		auto r = section_reader(bytes, out, objects, out.game_version == 40 ? 80 : 79);
 		for (int i = 0; i < objects.count; ++i) {
 			Object o{};
+			o.source_offset = r.position();
 			o.type = r.u8();
 			o.id = r.u8();
 			o.control = r.u8();
 			o.movement = r.u8();
 			o.render = r.u8();
 			o.flags = r.u8();
+			if (out.game_version == 40) {
+				o.multiplayer = r.u8();
+				if (o.multiplayer) issue(out.unsupported, "multiplayer_only_object", i, std::to_string(o.multiplayer));
+			}
 			o.segment = r.s16();
 			require(o.segment >= 0 && o.segment < segment_count, "invalid object segment " + std::to_string(i));
 			for (auto &v : o.position) v = r.s32();
@@ -443,6 +457,7 @@ Inventory inspect_level(const Bytes &bytes)
 				case 3: break;
 				default: r.fail("unsupported render layout at object " + std::to_string(i));
 			}
+			o.source_end = r.position();
 			out.objects.push_back(o);
 		}
 		if (r.position() != section_end(out, objects, bytes.size())) issue(out.unknown, "object_trailing_bytes", -1, std::to_string(section_end(out, objects, bytes.size()) - r.position()));
@@ -467,7 +482,7 @@ Inventory inspect_level(const Bytes &bytes)
 		for (int i = 0; i < matcens.count; ++i) out.matcens.push_back({ r.s32(), r.s32(), r.s32(), r.s32(), r.s16(), r.s16() });
 	}
 	const auto &indices = section(out, "light_indices"), &deltas = section(out, "delta_lights");
-	if (out.level_version == 17) {
+	if (out.level_version >= 17) {
 		const auto &equipment = section(out, "equipment");
 		if (equipment.count) {
 			// Bound the payload without pretending to implement equipment generators
@@ -479,7 +494,7 @@ Inventory inspect_level(const Bytes &bytes)
 		auto r = section_reader(bytes, out, indices, 6);
 		for (int i = 0; i < indices.count; ++i) {
 			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
-			if (out.game_version == 36) {
+			if (out.game_version >= 36) {
 				// XL packs side into 3 bits and count into the remaining 13 bits
 				values[2] = (values[2] << 5) | (values[1] >> 3);
 				values[1] &= 7;
@@ -562,7 +577,12 @@ std::string inventory_json(const Inventory &v)
 		if (i) s << ',';
 		const auto &x = v.segments[i];
 		s << "\n    {\"owner\": " << x.owner << ", \"group\": " << x.group << ", \"function\": " << x.function << ", \"producer\": " << x.producer
-		  << ", \"value\": " << x.value << ", \"flags\": " << x.flags << ", \"light\": " << x.light << ", \"children\": ";
+		  << ", \"value\": " << x.value << ", \"flags\": " << x.flags << ", \"light\": " << x.light;
+		if (v.level_version == 23) {
+			s << ", \"properties\": " << x.properties << ", \"damage\": ";
+			array_json(s, x.damage);
+		}
+		s << ", \"children\": ";
 		array_json(s, x.children);
 		s << ", \"vertices\": ";
 		array_json(s, x.vertices);
@@ -615,6 +635,7 @@ std::string inventory_json(const Inventory &v)
 		array_json(s, o.last_position);
 		s << ", \"size\": " << o.size << ", \"shields\": " << o.shields << ", \"contains_type\": " << o.contains_type << ", \"contains_id\": " << o.contains_id
 		  << ", \"contains_count\": " << o.contains_count;
+		if (v.game_version == 40) s << ", \"multiplayer\": " << o.multiplayer;
 		const std::pair<const char *, const std::vector<int> *> payloads[] = { { "movement_data", &o.movement_data }, { "control_data", &o.control_data }, { "render_data", &o.render_data } };
 		for (const auto &entry : payloads) {
 			s << ", " << json_string(entry.first) << ": [";

@@ -6,11 +6,34 @@ This is per-level eligibility, not campaign qualification. The original Ahayweh 
 singleplayer pilot is now verified in the OpenGL runtime; see its
 [acceptance record](evidence/pilot-acceptance-audit.md) and
 [requirement reconciliation](evidence/pilot-requirements.md). This does not grant
-campaign-wide compatibility. The native 15/33 and 17/36 inventory, bounded 15/33 and 17/36
+campaign-wide compatibility. The native 15/33, 17/36 and 23/40 inventory and bounded
 translation and Robotech water arena remain separate qualifications; inspection
 alone does not admit a level. The executable catalog is `compatibility.cpp`;
 the Android browser displays its per-source evidence. Keep descriptions and
 support text synchronized with this catalog
+
+The new 23/40 path admits only detected supported requirements. Modern split
+properties/damage, multiplayer-only objects, wide wall flags and object triggers
+remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
+startup, all authored LGT entries, switched-light save/restore, reactor/door and
+controlled exit dispatch, and stock-to-save restoration. Its 24 detected texture
+emitters all use authored brightness values that differ from defaults. These
+controlled checks do not establish traversal or rendered-scene fidelity. A normal
+Android APK additionally passes 65 rejection, startup, shading, menu indication, save/restore,
+stock-transition, emitter-view and POG checks. All seven live replacement payloads
+match their original fingerprints and become GPU-resident. The pinned XL runtime's
+287 baked vertex colors agree with the decoded table within capture precision.
+Android rejects injected modern properties, multiplayer-only objects and malformed
+CLR with specific messages, then successfully loads unchanged Neptune. Bounded
+rendering comparison and authored station/pickup/door checks are reconciled in the
+[Neptune acceptance record](evidence/neptune-acceptance.md); its procedural halo
+differs visibly from XL's bitmap glare. Detailed checkpoints remain in the
+[Neptune plan](../ai%20tool%20plans/mission%20metadata/xl_neptune_support_20261025.md).
+For 23/40, owned CLR is decoded and validated but the complete embedded texture
+color table takes precedence, matching the pinned XL readers. Original,
+conflicting and absent CLR controls preserve those colors. Foreign LGT/CLR and
+malformed owned companions remain rejected before commit. Other D2 CLR profiles
+remain blocked.
 
 The 17/36 [segment-flag audit](evidence/segment-flags-17-36.md) resolves
 Observatory's 37 high-bit records as preserved reserved data in the pinned
@@ -239,7 +262,7 @@ This revision incorporates Dot's survey, checked on 2026-10-23. See
 decoded records, not a fresh scan of all mission bytes. The 131 distinct XL
 payloads span 56 HOGs, level versions 11/15/17/18/19/21/23 and game-data versions
 31/33/34/35/36/40. Our native reader and OpenGL translator support bounded 15/33
-and 17/36 layouts; other layout combinations remain rejected.
+17/36 and 23/40 layouts; other layout combinations remain rejected.
 
 ## Maintained categories
 
@@ -251,7 +274,7 @@ unsupported XL extensions
 | Browser ID / category                                 | Inventory and corpus evidence                                                                                                                     | Current production support / investigation                                                          | Acceptance slice                                                                                                           |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `container` Archive/descriptor dialect                | DHF versus D2X, signed member sizes, long names, `d2x-name`; survey reports one D2X HOG and 48 XL descriptors                                     | DHF and d2x-name supported with per-level feature/resource checks; extended archives unsupported    | Bounds, truncation, name collisions, descriptor precedence and dependency closure                                          |
-| `serialization` Versioned layouts                     | Separate level/game versions; v13 wall-width, v21 segment-layout and color/object transitions                                                     | OpenGL builds: stock 1-8 and bounded XL 15/33 and 17/36                                             | Exact section ends, malformed references and version fixtures; never just relax version checks                             |
+| `serialization` Versioned layouts                     | Separate level/game versions; v13 wall-width, v21 segment-layout and color/object transitions                                                     | OpenGL builds: stock 1-8 and bounded XL 15/33, 17/36 and 23/40                                      | Exact section ends, malformed references and version fixtures; never just relax version checks                             |
 | `capacity` Tables and reference widths                | 21 levels exceed 255 walls; two exceed 1000 objects; two exceed 100 triggers                                                                      | Stock: 9000 segments, 36000 vertices, 255 walls, 1000 objects, 100 triggers; no general XL widening | Indices 254/255/256, sentinels, allocation headroom, saves/demos/network and metadata consumers                            |
 | `segments` Physics, properties, ownership             | Old combined types versus v21+ split properties; blocked, water/lava, outdoor, no-damage, shield/energy damage, teams/groups                      | Classic repair centers exist; XL semantics unverified                                               | Equivalent old/new encodings, damage timing, traversal and ownership                                                       |
 | `walls` Wall types and flags                          | Extended types/flags; paired sides and door/open/close/cloak transitions                                                                          | Classic subset; XL parity unverified                                                                | Collision, projectile passage, activation and persistence                                                                  |
@@ -259,7 +282,7 @@ unsupported XL extensions
 | `object_triggers` Object activation                   | 212 triggers in 22 levels; damage/destruction activation and stable references                                                                    | Unsupported                                                                                         | Threshold/destruction, ordering, once/repeat flags, restore and network identity                                           |
 | `objects` Objects and AI                              | Type/control/movement/render variants, identities and robot behavior                                                                              | Classic behavior exists; field agreement is not AI parity                                           | Ordinary combat, collisions, contained items and object lifecycle                                                          |
 | `gameplay_assets` Custom game data                    | Robot/weapon/model dependencies, HAM/HXM/PMH and expanded tables                                                                                  | Substantial classic HXM/extra-HAM exists; XL alternate formats/counts unverified                    | Reference closure, failure rollback and custom weapons/robots; never alias PO2 PMH into stock HAM                          |
-| `baked_lighting` Embedded and sidecar colors          | Non-gray vertex/side/texture tables in 124/58/129 levels; CLR is a separate resource source                                                       | OpenGL 15/33 and 17/36 embedded colors; D2 CLR overrides rejected                                   | Float/integer transitions, resolved color precedence and matched reference frames                                          |
+| `baked_lighting` Embedded and sidecar colors          | Non-gray vertex/side/texture tables in 124/58/129 levels; CLR is a separate resource source                                                       | OpenGL 15/33, 17/36 and 23/40 embedded colors; 23/40 embedded table supersedes CLR                  | Float/integer transitions, resolved color precedence and matched reference frames                                          |
 | `dynamic_lighting` Changing lights and modes          | Switchable/flickering lights, dynamic sources, reactor/seismic flash, per-pixel/lightmap/shadow settings                                          | Arithmetic comparison exists; full integration/modes unverified                                     | Light on/off, shot sources, flash, save/reload; pin profile, never extrapolate across modes                                |
 | `visual_assets` Texture/model formats                 | TGA/OOF, layered/animated materials; broad-corpus counts are not exclusively XL                                                                   | Individual formats/paths need verification                                                          | Orientation, filtering/alpha, model rendering and disclosed fallback                                                       |
 | `mission_flow` Campaign behavior                      | Secret origins/returns, directed exits, dependencies and objectives                                                                               | XL campaign behavior unverified; no modern hub-persistence claim                                    | All branches, transitions/returns and saves; one level never certifies 30                                                  |

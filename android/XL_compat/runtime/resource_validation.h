@@ -17,6 +17,7 @@ void xl_discard_prepared_resources(void);
 int xl_install_prepared_hxm(const char *level_filename);
 int xl_install_prepared_pog(const char *level_filename);
 int xl_prepared_texture_brightness(int texture, int *brightness);
+int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a);
 #ifdef __cplusplus
 }
 
@@ -27,17 +28,22 @@ namespace xl_assets
 {
 struct ObjectDependencies;
 }
+namespace xl_compat
+{
+struct Inventory;
+}
 
 // Own the definitions used by both companion and level dependency checks
 class XlPreparedResources
 {
   public:
-	explicit XlPreparedResources(const char *level_filename);
+	explicit XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level = nullptr);
 	~XlPreparedResources();
 	xl_assets::ObjectDependencies &dependencies();
 	void install_hxm();
 	void install_pog();
 	bool texture_brightness(int texture, int &brightness) const;
+	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 
   private:
 	struct State;

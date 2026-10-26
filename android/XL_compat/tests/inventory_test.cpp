@@ -65,6 +65,7 @@ Bytes fixture(int version = 15, int segment_flags = 0)
 	put(b, 255, 1);
 	put(b, 255, 1);
 	put(b, segment_flags, 1);
+	if (version == 23) b.resize(b.size() + 5);
 	put(b, 65536, 4);
 	for (int i = 0; i < 14; ++i) {
 		put(b, 1, 1);
@@ -88,7 +89,9 @@ Bytes fixture(int version = 15, int segment_flags = 0)
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, version == 15 ? 33 : 36, 2);
+	put(b, version == 15 ? 33 : version == 23 ? 40
+	                                          : 36,
+	    2);
 	b.resize(b.size() + 31);
 	for (int i = 0; i < (version == 15 ? 9 : 10); ++i) {
 		put(b, 0xffffffff, 4);
@@ -225,6 +228,51 @@ void version_17_contract()
 	rejects([&] { xl_compat::inspect_level(bad); });
 	lights.pop_back();
 	rejects([&] { xl_compat::inspect_level(lights); });
+}
+
+void version_23_contract()
+{
+	const auto bytes = fixture(23);
+	const auto inventory = xl_compat::inspect_level(bytes);
+	check(inventory.level_version == 23 && inventory.game_version == 40, "23/40 versions");
+	check(inventory.segments.at(0).properties == 0 && inventory.segments.at(0).damage == std::array<int, 2>{ 0, 0 }, "split properties lost");
+	check(inventory.segments.at(0).light == 65536, "split properties shifted ambient light");
+	check(!xl_compat::prepare_gameplay_probe(bytes).stock_level.empty(), "23/40 normal translation failed");
+	check(!xl_compat::prepare_serialization_probe_23_40(bytes).stock_level.empty(), "23/40 qualification failed");
+	rejects([&] { xl_compat::prepare_serialization_probe_23_40(fixture(17)); });
+	const auto segment = inventory.mine_offset + 277;
+	for (const int function : { 7, 13 }) {
+		auto bad = bytes;
+		patch(bad, segment, function, 1);
+		const auto decoded = xl_compat::inspect_level(bad);
+		check(std::any_of(decoded.unsupported.begin(), decoded.unsupported.end(), [](const auto &issue) { return issue.feature == "segment_function_v21"; }), "modern function confused with old water/no-damage");
+		const auto report = xl_compat::compatibility_json("modern-function.rl2", bad);
+		check(feature_row(report, "water_segments").find("\"count\": 0") != std::string::npos && feature_row(report, "no_damage_segments").find("\"count\": 0") != std::string::npos, "browser confuses modern functions with old properties");
+		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	for (const int property : { 1, 2, 4, 8, 16, 32, 64, 128 }) {
+		auto bad = bytes;
+		patch(bad, segment + 4, property, 1);
+		check(xl_compat::inspect_level(bad).segments.at(0).properties == property, "property bit lost");
+		if (property == 8) {
+			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), "no_damage_segments");
+			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"blocked\"") != std::string::npos, "browser lost split no-damage requirement or claimed support");
+		}
+		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	for (const int damage : { -32768, -1, 1, 32767 }) {
+		auto bad = bytes;
+		patch(bad, segment + 5, damage, 2);
+		patch(bad, segment + 7, damage, 2);
+		check(xl_compat::inspect_level(bad).segments.at(0).damage == std::array<int, 2>{ damage, damage }, "signed damage changed");
+		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	auto bad = bytes;
+	patch(bad, inventory.game_offset + 2, 36, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = bytes;
+	bad.pop_back();
+	rejects([&] { xl_compat::inspect_level(bad); });
 }
 
 void light_count_contract()
@@ -371,6 +419,53 @@ void segment_flags_contract()
 	rejects([&] { xl_compat::prepare_gameplay_probe(legacy_bytes); });
 }
 
+void original_neptune(const char *path)
+{
+	std::ifstream input(path, std::ios::binary);
+	check(bool(input), "Neptune HOG open failed");
+	const Bytes bytes((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+	const auto members = xl_compat::read_hog(bytes);
+	check(members.size() == 4, "Neptune resource inventory changed");
+	const auto level = std::find_if(members.begin(), members.end(), [](const auto &member) { return member.name == "neptunxl.rl2"; });
+	check(level != members.end() && level->bytes.size() == 48977, "original Neptune level missing");
+	const auto probe = xl_compat::prepare_serialization_probe_23_40(level->bytes);
+	const auto &v = probe.source;
+	check(v.segments.size() == 93 && v.objects.size() == 49 && v.walls.size() == 30 && v.triggers.size() == 1, "Neptune inventory changed");
+	check(v.object_triggers == 0 && v.object_trigger_heads.empty(), "Neptune object trigger tail changed");
+	check(xl_compat::prepare_gameplay_probe(level->bytes).stock_level == probe.stock_level, "normal Neptune translation differs from qualification");
+	const auto read32 = [&](std::size_t offset) {
+		std::uint32_t n = 0;
+		for (int i = 0; i < 4; ++i) n |= std::uint32_t(probe.stock_level.at(offset + i)) << (8 * i);
+		return n;
+	};
+	const auto game = read32(12);
+	std::size_t cursor = read32(game + 35);
+	for (const auto &object : v.objects) {
+		for (auto source = object.source_offset; source < object.source_end; ++source) {
+			if (source == object.source_offset + 6) continue;
+			check(probe.stock_level.at(cursor++) == level->bytes.at(source), "translated object payload differs");
+		}
+	}
+	check(cursor == read32(game + 47), "object record boundary differs");
+	for (std::size_t i = 0; i < v.walls.size(); ++i) {
+		for (std::size_t field = 0; field < 25; ++field) {
+			if (field == 18) continue;
+			check(probe.stock_level.at(cursor++) == level->bytes.at(v.sections.at(1).offset + i * 25 + field), "translated wall payload differs");
+		}
+	}
+	for (const auto &object : v.objects) {
+		auto bad = level->bytes;
+		patch(bad, object.source_offset + 6, 1, 1);
+		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	for (std::size_t i = 0; i < v.walls.size(); ++i) {
+		auto bad = level->bytes;
+		patch(bad, v.sections.at(1).offset + i * 25 + 18, 1, 1);
+		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+	}
+	std::cout << "Original Neptune 23/40 inspection and record translation passed; gameplay and resources remain unqualified\n";
+}
+
 void original_observatory(const char *path)
 {
 	std::ifstream input(path, std::ios::binary | std::ios::ate);
@@ -421,9 +516,11 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
-		check(argc == 1 || argc == 2, "expected optional original Observatory HOG path");
+		check(argc == 1 || argc == 2 || (argc == 3 && std::string(argv[1]) == "--neptune"), "expected optional original HOG path");
 		if (argc == 2) original_observatory(argv[1]);
+		if (argc == 3) original_neptune(argv[2]);
 		version_17_contract();
+		version_23_contract();
 		serialization_17_contract();
 		feature_contract();
 		segment_flags_contract();

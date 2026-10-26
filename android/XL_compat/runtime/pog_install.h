@@ -86,3 +86,29 @@ int xl_pog_install(struct xl_pog_resources *resources)
 	texmerge_flush();
 	return 1;
 }
+
+int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int index, unsigned *bytes, unsigned *fnv1a)
+{
+	int i, j;
+	if (!resources || !bytes || !fnv1a || !Bitmap_replacement_data || index < 0 || index >= Num_bitmap_files) return 0;
+	for (i = 0; i < resources->count; ++i) {
+		size_t begin, end, k;
+		unsigned hash = 2166136261u;
+		const DiskBitmapHeader *header;
+		const grs_bitmap *bitmap;
+		if (resources->indices[i] != index) continue;
+		header = &resources->headers[i];
+		begin = (size_t) header->offset;
+		end = resources->data_size;
+		for (j = 0; j < resources->count; ++j)
+			if ((size_t) resources->headers[j].offset > begin && (size_t) resources->headers[j].offset < end)
+				end = (size_t) resources->headers[j].offset;
+		bitmap = &GameBitmaps[index];
+		if (begin >= end || bitmap->bm_data != Bitmap_replacement_data + begin || GameBitmapOffset[index] != 0) return 0;
+		for (k = 0; k < end - begin; ++k) hash = (hash ^ bitmap->bm_data[k]) * 16777619u;
+		*bytes = (unsigned) (end - begin);
+		*fnv1a = hash;
+		return 1;
+	}
+	return 0;
+}

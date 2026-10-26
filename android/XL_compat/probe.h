@@ -21,6 +21,8 @@ GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments = 
 // Explicit 17/36 entry point for layout qualification fixtures
 // All unsupported semantic requirements, including equipment generators, still apply
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source);
+// Explicit 23/40 entry point for layout qualification fixtures
+GameplayProbe prepare_serialization_probe_23_40(const Bytes &source);
 
 } // namespace xl_compat
 #ifdef _MSC_VER
