@@ -1,0 +1,28 @@
+if(NOT EXISTS "${ENGINE}")
+    message(FATAL_ERROR "Native fixture executable is required")
+endif()
+set(profile "${CMAKE_CURRENT_BINARY_DIR}/keyboard-rebind")
+file(MAKE_DIRECTORY "${profile}")
+file(REMOVE "${profile}/keytest.plr" "${profile}/keytest.plx" "${profile}/descent.cfg")
+foreach(phase prepare read-rebound restore read-restored)
+    execute_process(COMMAND "${ENGINE}" --keyboard-rebind "${phase}"
+                    WORKING_DIRECTORY "${profile}" RESULT_VARIABLE result
+                    OUTPUT_VARIABLE output ERROR_VARIABLE errors TIMEOUT 15)
+    if(NOT "${result}" STREQUAL "0" OR NOT output MATCHES "PASS: native keyboard ${phase}")
+        message(FATAL_ERROR "Keyboard ${phase} failed: ${result}\n${output}\n${errors}")
+    endif()
+    if(phase STREQUAL "prepare")
+        set(wrong_phase "read-restored")
+    elseif(phase STREQUAL "restore")
+        set(wrong_phase "read-rebound")
+    else()
+        continue()
+    endif()
+    execute_process(COMMAND "${ENGINE}" --keyboard-rebind "${wrong_phase}"
+                    WORKING_DIRECTORY "${profile}" RESULT_VARIABLE result
+                    OUTPUT_VARIABLE output ERROR_VARIABLE errors TIMEOUT 15)
+    if(NOT "${result}" STREQUAL "1" OR NOT "${output}${errors}" MATCHES "whole persisted control map matches expected binding state")
+        message(FATAL_ERROR "Wrong-state negative control did not reject the persisted map: ${result}\n${output}\n${errors}")
+    endif()
+endforeach()
+message(STATUS "PASS: native keyboard cancellation, rebind, input and restart persistence")

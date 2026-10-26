@@ -12,6 +12,10 @@ if(TARGET test_upstream_compat)
         set_tests_properties(test_music_pcm PROPERTIES TIMEOUT 30
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/music-pcm")
     endif()
+    add_test(NAME test_keyboard_rebind
+             COMMAND ${CMAKE_COMMAND} -DENGINE=$<TARGET_FILE:test_upstream_compat> -P
+                     ${CMAKE_CURRENT_LIST_DIR}/test_keyboard_rebind.cmake)
+    set_tests_properties(test_keyboard_rebind PROPERTIES TIMEOUT 90)
     add_test(NAME test_headless_connectivity_warning COMMAND test_upstream_compat
                                                              --headless-connectivity)
     set_tests_properties(test_headless_connectivity_warning PROPERTIES TIMEOUT 30 SKIP_RETURN_CODE

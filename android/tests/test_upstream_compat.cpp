@@ -11555,6 +11555,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 #include "pickup_autoselect_fixture.hpp"
 #include "coop_pickup_reward_fixture.hpp"
 #include "config_policy_fixture.hpp"
+#include "keyboard_rebind_fixture.hpp"
 #include "secret_origins_fixture.hpp"
 #include "d1_text_loader_fixture.hpp"
 extern "C" {
@@ -12773,6 +12774,11 @@ int main(int argc, char **argv)
 	}
 	if (argc == 3 && std::strcmp(argv[1], "--matcen-stations") == 0) {
 		test_matcen_stations(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
+	if (argc == 3 && std::strcmp(argv[1], "--keyboard-rebind") == 0) {
+		keyboard_rebind_fixture::run(argv[2]);
 		PHYSFS_deinit();
 		return 0;
 	}
