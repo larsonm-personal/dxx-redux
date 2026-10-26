@@ -33,6 +33,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "cntrlcen.h"
 #include "dxxerror.h"
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#include "xl_animation_phase.h"
+#endif
 
 int Num_effects;
 eclip Effects[MAX_EFFECTS];
@@ -129,8 +132,13 @@ void stop_effect(int effect_num)
 	ec->frame_count = 0;
 	//*ec->bm_ptr = &GameBitmaps[ec->vc.frames[0].index];
 
-	if (ec->changing_wall_texture != -1)
+	if (ec->changing_wall_texture != -1) {
 		Textures[ec->changing_wall_texture] = ec->vc.frames[0];
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+		dxx_xl_wall_mapped_phase(effect_num, ec->vc.frames[0].index,
+		                         ec->vc.num_frames, ec->vc.frame_time, 0, ec->vc.frame_time, 1);
+#endif
+	}
 	
 	if (ec->changing_object_texture != -1)
 		ObjBitmaps[ec->changing_object_texture] = ec->vc.frames[0];

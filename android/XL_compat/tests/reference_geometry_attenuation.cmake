@@ -1,0 +1,20 @@
+file(SHA256 "${XL_REFERENCE_OGL_COLOR}" reference_hash)
+if(NOT reference_hash STREQUAL "2f4e1ac609fa0043027d989b64b27c520de1fc25df9be0cab03b6268b258ab43")
+    message(FATAL_ERROR "XL geometry lighting source differs from audited revision")
+endif()
+file(READ "${XL_REFERENCE_OGL_COLOR}" reference_text)
+string(FIND "${reference_text}" "\tfLightDist *= ogl.m_states.fLightRange;" start)
+string(FIND "${reference_text}" "\tvertColor = *gameData.renderData.vertColor.matAmbient.XYZ ();"
+            end)
+if(start LESS 0 OR end LESS start)
+    message(FATAL_ERROR "Missing reference attenuation fragment")
+endif()
+math(EXPR length "${end} - ${start}")
+string(SUBSTRING "${reference_text}" ${start} ${length} fragment)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_geometry_attenuation.h"
+     CONTENT "${fragment}")
+add_executable(xl_geometry_attenuation_test
+               "${CMAKE_CURRENT_LIST_DIR}/reference_geometry_attenuation_test.cpp")
+target_include_directories(xl_geometry_attenuation_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(xl_geometry_attenuation_test PRIVATE xl_inventory)
+add_test(NAME xl_geometry_attenuation_reference COMMAND xl_geometry_attenuation_test)

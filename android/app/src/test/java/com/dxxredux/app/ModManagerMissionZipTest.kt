@@ -129,12 +129,18 @@ class ModManagerMissionZipTest {
 
         manager.writeEnabledModPaths("d2")
         val record = requireNotNull(store.reusableRecord(imported.filename, archive))
+        val initialCatalog = manager.buildMissionLaunchCatalog("d2")
+        val initialKey = initialCatalog.missions.single().key
+        val initialRevision = initialCatalog.revisionFor(initialKey)
         val timestamps = record.files.map { File(record.rootDir, it.relativePath).lastModified() }
         val pathsFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val paths = pathsFile.readText()
         val marker = File(record.rootDir, "mission_music_names.json").apply { writeText("background metadata") }
         val reloaded = ModManager(filesDir)
         reloaded.writeEnabledModPaths("d2")
+        val cachedCatalog = reloaded.buildMissionLaunchCatalog("d2")
+        assertEquals(initialCatalog.missions, cachedCatalog.missions)
+        assertEquals(initialRevision, cachedCatalog.revisionFor(initialKey))
         assertEquals(paths, pathsFile.readText())
         assertEquals(timestamps, record.files.map { File(record.rootDir, it.relativePath).lastModified() })
         assertEquals("background metadata", marker.readText())
@@ -304,6 +310,24 @@ class ModManagerMissionZipTest {
         assertTrue(requireNotNull(MissionZip.inspect(storedArchive)).constituents.any { it.path.startsWith("cache/") })
         assertTrue(File(filesDir, "mods/.extracted_mission_zips/SevenPack.7z/docs/readme.txt").isFile)
         assertFalse(File(filesDir, "mods/.extracted_mission_zips/SevenPack.7z/cache").exists())
+        val compatibility = ModManager(filesDir).checkEnabledModCompatibility("d2", File(filesDir, "set"))
+        assertTrue(compatibility.toUserMessage(), compatibility.ok)
+    }
+
+    @Test
+    fun extensionlessSevenZipOwnerUsesSignatureForCompatibility() {
+        val filesDir =
+            kotlin.io.path
+                .createTempDirectory("mission-7z-extensionless")
+                .toFile()
+        val manager = ModManager(filesDir)
+        val imported = requireNotNull(manager.importMissionZipFile(createMission7z(), "ExtensionlessOwner"))
+        assertEquals("extracted_bundle", imported.importMode)
+        assertEquals("ExtensionlessOwner", imported.filename)
+        val compatibility = manager.checkEnabledModCompatibility("d2", File(filesDir, "set"))
+        assertTrue(compatibility.toUserMessage(), compatibility.ok)
+        manager.writeEnabledModPaths("d2", includeD1MissionZipsForD2 = false)
+        assertTrue(contextMounts(filesDir, "d2").any { it.endsWith("missions/Seven.dxa") })
     }
 
     @Test

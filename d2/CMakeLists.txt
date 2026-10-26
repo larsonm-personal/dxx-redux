@@ -15,6 +15,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../android/app/src/main/cpp/shared)
 
+option(DXX_XL_PILOT "Build the opt-in XL pilot runtime and lifecycle test" OFF)
 option(OPENGL "Build with OpenGL support [default: ON]" ON)
 option(SDLMIXER "Build with SDL_Mixer support for sound and music (includes external music support) [default: ON]" ON)
 option(ASM "Build with ASSEMBLER code (only with OpenGL OFF, requires NASM and x86) [default: OFF]" OFF)
@@ -167,4 +168,8 @@ if(BUILD_TESTING AND NOT ANDROID)
         "${CMAKE_CURRENT_LIST_DIR}/../android/tests"
         "${CMAKE_CURRENT_BINARY_DIR}/tests"
         )
+endif()
+
+if(DXX_XL_PILOT)
+    include("${CMAKE_CURRENT_LIST_DIR}/../android/XL_compat/runtime/configure.cmake")
 endif()

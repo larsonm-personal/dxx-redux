@@ -1,0 +1,282 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_classic_lighting_lifecycle",
+        },
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "dlog_game logs_enabled",
+            "value": true,
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "expect": {
+            "xl_pilot.classic_lighting_requested": false,
+            "framebuffer_probe.main_view.valid": false,
+            "xl_pilot.classic_lighting_vertices": 0,
+            "xl_pilot.classic_legacy_fans": false,
+        },
+        "action": "wait_for",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_classic_lighting",
+        "value": "enable",
+    },
+    {
+        "expect": {
+            "xl_pilot.classic_lighting_requested": true,
+            "xl_pilot.classic_lighting_vertices": 0,
+            "xl_pilot.classic_legacy_fans": false,
+        },
+        "action": "assert",
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Dragon pit outpost",
+        "timeout_ms": 60000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "current_level_name": "drgpit",
+            "mod_usage.scoped_sound_context.current": true,
+            "mod_usage.scoped_sound_context.identity": "drgpit",
+            "player.invulnerable": false,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "xl_pilot.runtime_active": true,
+            "framebuffer_probe.main_view.valid": true,
+            "xl_pilot.classic_lighting_vertices": 1737,
+            "xl_pilot.classic_legacy_fans": true,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "set_debug",
+        "field": "capture_framebuffer",
+        "value": "once",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "pixel_capture.status": "saved",
+            "pixel_capture.main_view.visual_profile": "legacy_fan",
+            "pixel_capture.main_view.diagnostic_reference_fans": false,
+            "pixel_capture.main_view.diagnostic_still_view": false,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "difficulty:3",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "difficulty": 3,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "difficulty": 2,
+            "current_level_name": "drgpit",
+            "xl_pilot.classic_lighting_vertices": 1737,
+            "xl_pilot.classic_legacy_fans": true,
+            "xl_pilot.runtime_active": true,
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "false",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "set_debug",
+        "field": "capture_framebuffer",
+        "value": "once",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "pixel_capture.status": "failed",
+            "framebuffer_probe.main_view.valid": false,
+        },
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "difficulty": 0,
+            "mod_usage.scoped_sound_context.current": false,
+            "xl_pilot.runtime_active": false,
+            "xl_pilot.classic_lighting_requested": true,
+            "xl_pilot.classic_lighting_vertices": 0,
+            "xl_pilot.classic_legacy_fans": false,
+            "xl_pilot.shaded_vertices": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "difficulty": 2,
+            "current_level_name": "drgpit",
+            "xl_pilot.classic_lighting_vertices": 1737,
+            "xl_pilot.classic_legacy_fans": true,
+            "xl_pilot.runtime_active": true,
+            "xl_pilot.shaded_vertices": {
+                "gt": 0,
+            },
+            "mod_usage.scoped_sound_context.current": true,
+            "mod_usage.scoped_sound_context.identity": "drgpit",
+            "mod_usage.scoped_sound_context.signed_ordinal": 1,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "cockpit_view_left",
+        "value": "2",
+    },
+    {
+        "action": "set_debug",
+        "field": "capture_framebuffer",
+        "value": "once",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "pixel_capture.status": "saved",
+            "pixel_capture.main_view.visual_profile": "legacy_fan",
+            "pixel_capture.main_view.diagnostic_reference_fans": false,
+            "pixel_capture.main_view.diagnostic_still_view": false,
+            "pixel_capture.main_view.valid": true,
+            "pixel_capture.main_view.forward_fixed[2]": { "range": [65536, 65536] },
+            "cockpit_views[0]": { "range": [2, 2] },
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]

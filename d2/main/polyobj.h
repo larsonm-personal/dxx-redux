@@ -113,6 +113,8 @@ extern int polymodel_read_n(polymodel *pm, int n, PHYSFS_file *fp);
  * routine which allocates, reads, and inits a polymodel's model_data
  */
 void polygon_model_data_read(polymodel *pm, PHYSFS_file *fp);
+/* Initialize an owned raw model payload using the native loading sequence */
+void polygon_model_data_init(polymodel *pm);
 #ifdef WORDS_NEED_ALIGNMENT
 void align_polygon_model_data(polymodel *pm);
 #endif

@@ -1,0 +1,48 @@
+#include "admission.h"
+#include <sstream>
+
+namespace xl_compat
+{
+std::vector<Issue> runtime_blockers(const Inventory &level)
+{
+	std::vector<Issue> result;
+	for (const auto &issue : level.unsupported)
+		if (issue.feature != "embedded_lighting") result.push_back(issue);
+	for (const auto &issue : level.unknown)
+		// These describe validation stages, not serialized unknown features
+		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
+			result.push_back(issue);
+	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
+		if (exceeded) result.push_back({ feature, -1, detail });
+	};
+	limit(level.level_version != 15 || level.game_version != 33, "serialization", "requires level version 15 and game-data version 33");
+	limit(level.walls.size() > 255, "wall capacity", "more than 255 walls");
+	limit(level.objects.size() > 1000, "object capacity", "more than 1000 objects");
+	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
+	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
+	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
+	limit(level.light_indices.size() > 500 || level.delta_lights.size() > 32000, "lighting capacity", "more than 500 light indices or 32000 delta lights");
+	// Translation splits counts into signed-byte chunks, preserving zero-count records
+	std::size_t translated_indices = 0;
+	for (const auto &index : level.light_indices)
+		translated_indices += index[2] ? (index[2] + 126) / 127 : 1;
+	limit(translated_indices > 500, "changing-light capacity", "lossless translation requires more than 500 light indices");
+	limit(level.flicker_lights.size() > 100, "flicker capacity", "more than 100 flickering lights");
+	limit(level.object_triggers != 0, "object triggers", "object-attached triggers are not implemented");
+	return result;
+}
+
+std::string blocker_message(const std::vector<Issue> &blockers)
+{
+	std::ostringstream message;
+	for (std::size_t i = 0; i < blockers.size() && i < 4; ++i) {
+		if (i) message << '\n';
+		message << blockers[i].feature;
+		if (blockers[i].record >= 0) message << " at record " << blockers[i].record;
+		message << ": " << blockers[i].detail;
+	}
+	if (blockers.size() > 4) message << "\n"
+		                             << blockers.size() - 4 << " additional unsupported requirements";
+	return message.str();
+}
+} // namespace xl_compat

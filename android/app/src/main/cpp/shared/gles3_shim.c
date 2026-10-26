@@ -152,6 +152,10 @@ static GLint u_tex;
 static GLint u_tex_enabled;
 static GLint u_alpha_test;
 static GLint u_alpha_ref;
+static GLint u_binary_texture;
+static int binary_texture;
+static GLint u_soft_surface_pass;
+static int soft_surface_pass;
 static GLint u_use_color_attr;
 static GLint u_flat_color;
 static GLint u_debug_mode;
@@ -193,6 +197,8 @@ static const char *fs_src =
     "uniform int uTexEnabled;\n"
     "uniform int uAlphaTest;\n"
     "uniform float uAlphaRef;\n"
+    "uniform int uBinaryTexture;\n"
+    "uniform int uSoftSurfacePass;\n"
     "uniform int uDebugMode;\n"
     "out vec4 fragColor;\n"
     "void main() {\n"
@@ -212,6 +218,13 @@ static const char *fs_src =
     "    fragColor = vec4(vTexCoord, 0.0, 1.0);\n"
     "    return;\n"
     "  }\n"
+    "  if (uSoftSurfacePass != 0) {\n"
+    "    if (uSoftSurfacePass == 1 && tex.a < 1.0) discard;\n"
+    "    if (uSoftSurfacePass == 2 && (tex.a <= 0.0 || tex.a >= 1.0)) discard;\n"
+    "    fragColor = vColor * tex;\n"
+    "    return;\n"
+    "  }\n"
+    "  if (uBinaryTexture != 0) tex.a = step(0.5, tex.a);\n"
     "  c *= tex;\n"
     "  if (uAlphaTest != 0 && c.a < uAlphaRef)\n"
     "    discard;\n"
@@ -359,6 +372,8 @@ void gles3_shim_init(void)
 	tex2d_enabled = 0;
 	alpha_test_enabled = 0;
 	alpha_ref = 0.0f;
+	binary_texture = 0;
+	soft_surface_pass = 0;
 	flat_color[0] = flat_color[1] = flat_color[2] = flat_color[3] = 1.0f;
 
 	vertex_array_enabled = 0;
@@ -407,6 +422,8 @@ void gles3_shim_init(void)
 	u_tex_enabled = glGetUniformLocation(shim_prog, "uTexEnabled");
 	u_alpha_test = glGetUniformLocation(shim_prog, "uAlphaTest");
 	u_alpha_ref = glGetUniformLocation(shim_prog, "uAlphaRef");
+	u_binary_texture = glGetUniformLocation(shim_prog, "uBinaryTexture");
+	u_soft_surface_pass = glGetUniformLocation(shim_prog, "uSoftSurfacePass");
 	u_use_color_attr = glGetUniformLocation(shim_prog, "uUseColorAttr");
 	u_flat_color = glGetUniformLocation(shim_prog, "uFlatColor");
 	u_debug_mode = glGetUniformLocation(shim_prog, "uDebugMode");
@@ -663,6 +680,27 @@ void gles3_shim_color4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a)
 	state_dirty = 1;
 }
 
+int gles3_shim_set_soft_surface_pass(int pass)
+{
+	const int previous = soft_surface_pass;
+	soft_surface_pass = pass >= 1 && pass <= 2 ? pass : 0;
+	state_dirty = 1;
+	return previous;
+}
+
+int gles3_shim_external_active(void)
+{
+	return external_prog != 0;
+}
+
+int gles3_shim_set_binary_texture(int enabled)
+{
+	const int previous = binary_texture;
+	binary_texture = enabled != 0;
+	state_dirty = 1;
+	return previous;
+}
+
 void gles3_shim_alpha_func(GLenum func, GLfloat ref)
 {
 	alpha_func_val = func;
@@ -725,6 +763,8 @@ void gles3_shim_flush_state(void)
 	glUniform1i(u_tex_enabled, tex2d_enabled);
 	glUniform1i(u_alpha_test, alpha_test_enabled);
 	glUniform1f(u_alpha_ref, alpha_ref);
+	glUniform1i(u_binary_texture, binary_texture);
+	glUniform1i(u_soft_surface_pass, soft_surface_pass);
 
 	glUniform1i(u_use_color_attr, color_array_enabled);
 	glUniform4fv(u_flat_color, 1, flat_color);

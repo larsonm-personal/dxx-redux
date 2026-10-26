@@ -1,0 +1,43 @@
+name: XL compatibility contracts
+
+on:
+  pull_request:
+    paths:
+      - "android/XL_compat/**"
+      - ".github/workflows/xl-compat.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xl-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Asset-free XL checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Verify preserved static survey evidence
+        run: python android/XL_compat/evidence/audit_survey.py
+
+      - name: Configure standalone XL checks
+        run: cmake -S android/XL_compat -B temp/xl-public-ci -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+
+      - name: Build inventory and lighting contracts
+        run: cmake --build temp/xl-public-ci --config Debug --parallel 2
+
+      # Private mission bytes and reference-engine sources are deliberately absent
+      # Passing these contracts does not qualify pilot gameplay or Android support
+      - name: Run asset-free contracts
+        run: ctest --test-dir temp/xl-public-ci -C Debug --output-on-failure --no-tests=error --timeout 60

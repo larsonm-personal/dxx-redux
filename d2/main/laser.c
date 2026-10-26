@@ -18,6 +18,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 #include <stdlib.h>
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 #include <stdio.h>
 #include <time.h>
 
@@ -45,6 +48,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "player.h"
 #include "input_demo_hooks.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "game_automate.h"
+#endif
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_energy_trace.h"
@@ -742,6 +748,10 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	//	Don't let homing blobs make muzzle flash.
 	if (Objects[parent].type == OBJ_ROBOT)
 		do_muzzle_stuff(segnum, position);
+#ifdef DXX_XL_PILOT
+	else if (&Objects[parent] == ConsoleObject && xl_preview_no_damage_segment(ConsoleObject->segnum))
+		return -1;
+#endif
 
 	objnum = create_weapon_object(weapon_type,segnum,position);
 
@@ -1685,6 +1695,11 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	Fate = find_vector_intersection(&fq, &hit_data);
 
 	LaserSeg = hit_data.hit_seg;
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (obj == ConsoleObject)
+		game_automate_observe_flight_shot("muzzle", laser_type, gun_num, Fate, LaserSeg, -1);
+#endif
+
 
 	if (LaserSeg == -1)		//some sort of annoying error
 		return;
@@ -1714,6 +1729,10 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	}
 
 	objnum = Laser_create_new( &LaserDir, &LaserPos, LaserSeg, obj-Objects, laser_type, make_sound );
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (obj == ConsoleObject)
+		game_automate_observe_flight_shot("created", laser_type, gun_num, Fate, LaserSeg, objnum);
+#endif
 	if (objnum != -1 && input_demo_replay_homing_desync_probe_active()) {
 		char probe[256];
 
@@ -2110,6 +2129,9 @@ extern int Player_fired_laser_this_frame;
 
 void do_laser_firing_player(void)
 {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return;
+#endif
 	player	*plp = &Players[Player_num];
 	fix		energy_used;
 	int		ammo_used,primary_ammo;
@@ -2854,6 +2876,10 @@ void do_missile_firing(int drop_bomb)
 		}
 
 		Laser_player_fire( ConsoleObject, weapon_index, weapon_gun, 1, 0, orient);
+#ifdef DXX_XL_PILOT
+		// Creation was refused after ammo/cooldown accounting, as in the reference
+		if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return;
+#endif
 
 		if (rng_probe) {
 			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_after_fire|gt=%lld|weapon=%d|weapon_index=%d|weapon_gun=%d|sim_calls=%d|sim_state=%u\n",

@@ -9,18 +9,29 @@ extern "C" {
 
 void android_mission_assets_init(void);
 void android_mission_assets_shutdown(void);
-/* Preflight and begin teardown, returning the selected descriptor's real virtual path */
+/* Acquire candidate mounts before teardown, returning the descriptor's real virtual path */
 int android_mission_assets_prepare(const char *descriptor, char *resolved, size_t capacity);
 int android_mission_assets_activate(void);
 void android_mission_assets_free_begin(void);
 void android_mission_assets_free_end(void);
 int android_mission_assets_discover(const char *descriptor);
+/* Resolve a discovery alias without activating or mounting its mission */
+int android_mission_assets_descriptor_source(const char *alias, char *path, size_t capacity);
 const char *android_mission_assets_owner(void);
 const char *android_mission_assets_key(void);
 /* Snapshot consumed by RouteMetadataBackground and jni_level_metadata */
 const char *android_mission_assets_context_json(void);
 int android_mission_assets_resolve_key(const char *key, char *mission_path, size_t capacity);
 unsigned android_mission_assets_generation(void);
+/* A file from this selected context only; never a global or sibling fallback */
+int android_mission_assets_find_owned_file(const char *path, char *resolved, size_t capacity);
+/* Static-name TGA lookup; caller supplies the selected HOG and validates decoded opacity */
+int android_mission_assets_find_static_texture(const char *hog, const char *bitmap, char *resolved, size_t capacity);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_PILOT)
+int android_mission_assets_test_acquisition_failure(void);
+#endif
+
+int android_mission_assets_find_animation_texture(const char *hog, const char *bitmap, char *resolved, size_t capacity);
 
 /* Engine-specific data lifetime hooks, implemented in android_mission_asset_reset.c */
 void android_mission_asset_reset_before(void);

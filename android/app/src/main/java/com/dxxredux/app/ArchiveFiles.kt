@@ -1,6 +1,9 @@
 package com.dxxredux.app
 
+import net.sf.sevenzipjbinding.ExtractAskMode
 import net.sf.sevenzipjbinding.ExtractOperationResult
+import net.sf.sevenzipjbinding.IArchiveExtractCallback
+import net.sf.sevenzipjbinding.IInArchive
 import net.sf.sevenzipjbinding.ISequentialOutStream
 import net.sf.sevenzipjbinding.PropID
 import net.sf.sevenzipjbinding.SevenZip
@@ -44,6 +47,19 @@ internal interface ReadableArchiveFile : Closeable {
 }
 
 internal object ArchiveFiles {
+    // Bounded format dispatch only; extraction still validates the complete archive
+    fun isNonZipDistribution(file: File): Boolean =
+        RandomAccessFile(file, "r").use { archive ->
+            val header = ByteArray(minOf(8L, archive.length()).toInt())
+            archive.readFully(header)
+            val sevenZip = byteArrayOf(0x37, 0x7a, 0xbc.toByte(), 0xaf.toByte(), 0x27, 0x1c)
+            val rar4 = byteArrayOf(0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00)
+            val rar5 = byteArrayOf(0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00)
+            listOf(sevenZip, rar4, rar5).any { signature ->
+                header.size >= signature.size && signature.indices.all { header[it] == signature[it] }
+            }
+        }
+
     fun isSupportedArchiveName(name: String): Boolean = GameFileFormats.extensionOf(name) in setOf("zip", "7z", "rar")
 
     fun open(file: File): ReadableArchiveFile {
@@ -194,6 +210,7 @@ private class SevenZReadableArchive(
             .setFile(file)
             .setMaxMemoryLimitKiB(ExtractionLimits.MAX_SEVEN_Z_DECODER_MEMORY_KIB)
             .get()
+    private var nativeArchive: ReadableArchiveFile? = null
     override val format: String = "7z"
     override val entries: List<ArchiveFileEntry> =
         try {
@@ -222,11 +239,45 @@ private class SevenZReadableArchive(
             throw error
         }
 
-    override fun openInputStream(entry: ArchiveFileEntry): InputStream =
-        sevenZ.getInputStream(entry.handle as SevenZArchiveEntry)
+    private val sourceFile = file
 
-    override fun close() = sevenZ.close()
+    override fun openInputStream(entry: ArchiveFileEntry): InputStream {
+        nativeArchive?.let { return nativeInput(it, entry) }
+        return try {
+            sevenZ.getInputStream(entry.handle as SevenZArchiveEntry)
+        } catch (error: IOException) {
+            // Commons can catalog BCJ2 folders but cannot construct their decoder
+            if (!isSevenZMultiStreamUnsupported(error)) throw error
+            val extracted = ExtractedReadableArchive(sourceFile, "7z")
+            nativeArchive = extracted
+            nativeInput(extracted, entry)
+        }
+    }
+
+    private fun nativeInput(
+        archive: ReadableArchiveFile,
+        entry: ArchiveFileEntry,
+    ): InputStream {
+        val selected =
+            archive.entries.singleOrNull {
+                it.path == normalizeArchivePath(entry.path) &&
+                    it.sizeBytes == entry.sizeBytes
+            }
+                ?: throw IOException("Native 7z catalog differs for ${entry.path}")
+        return archive.openInputStream(selected)
+    }
+
+    override fun close() {
+        try {
+            nativeArchive?.close()
+        } finally {
+            sevenZ.close()
+        }
+    }
 }
+
+internal fun isSevenZMultiStreamUnsupported(error: IOException): Boolean =
+    error.message == "Multi input/output stream coders are not yet supported"
 
 private class ExtractedReadableArchive(
     file: File,
@@ -244,7 +295,11 @@ private class ExtractedReadableArchive(
     init {
         try {
             val originalDates = readRarModificationDates(file)
-            extractRarArchiveToDirectory(file, root)
+            if (format == "7z") {
+                extractRarWithSevenZipBinding(file, root, solid = true)
+            } else {
+                extractRarArchiveToDirectory(file, root)
+            }
             val budget = ExtractionBudget()
             entries =
                 root
@@ -309,7 +364,7 @@ private fun readRarModificationDates(file: File): Map<String, String> =
 internal fun extractRarArchiveToDirectory(
     archive: File,
     targetRoot: File,
-    nativeExtractor: (File, File) -> Unit = ::extractRarWithSevenZipBinding,
+    nativeExtractor: (File, File) -> Unit = { archive, root -> extractRarWithSevenZipBinding(archive, root) },
 ) {
     targetRoot.mkdirs()
     try {
@@ -360,6 +415,7 @@ private fun nativeRarCapabilityFailure(error: Throwable): RarNativeCapabilityExc
 private fun extractRarWithSevenZipBinding(
     archive: File,
     targetRoot: File,
+    solid: Boolean = false,
 ) {
     val canonicalRoot = targetRoot.canonicalFile
     RandomAccessFile(archive, "r").use { randomAccessFile ->
@@ -382,7 +438,11 @@ private fun extractRarWithSevenZipBinding(
                         override fun packedSize(index: Int): Long =
                             (inArchive.getProperty(index, PropID.PACKED_SIZE) as? Number)?.toLong() ?: -1L
                     }
-                enumerateRarCatalog(source).use { catalog ->
+                enumerateRarCatalog(source).use catalogUse@{ catalog ->
+                    if (solid) {
+                        extractSolidCatalog(inArchive, catalog, canonicalRoot)
+                        return@catalogUse
+                    }
                     val budget = catalog.extractionBudget
                     for (item in catalog.items) {
                         val index = item.index
@@ -424,5 +484,110 @@ private fun extractRarWithSevenZipBinding(
         } finally {
             input.close()
         }
+    }
+}
+
+// Decode each solid block once while retaining the admitted catalog and byte budget
+internal fun extractSolidCatalog(
+    archive: IInArchive,
+    catalog: RarCatalog,
+    root: File,
+) {
+    val items = catalog.items.associateBy { it.index }
+    val completed = mutableSetOf<Int>()
+    var current: RarExtractionItem? = null
+    var output: FileOutputStream? = null
+    var entryBytes = 0L
+    val callback =
+        object : IArchiveExtractCallback {
+            override fun setTotal(total: Long) = Unit
+
+            override fun setCompleted(complete: Long) {
+                if (Thread.currentThread().isInterrupted) throw IOException("Archive extraction interrupted")
+            }
+
+            override fun prepareOperation(mode: ExtractAskMode) = Unit
+
+            override fun getStream(
+                index: Int,
+                mode: ExtractAskMode,
+            ): ISequentialOutStream? {
+                check(current == null && output == null) { "Native archive did not finish the previous entry" }
+                if (mode != ExtractAskMode.EXTRACT) return null
+                val item = items[index] ?: throw IOException("Native archive requested an unadmitted entry")
+                check(index !in completed) { "Native archive repeated an entry" }
+                current = item
+                entryBytes = 0
+                val destination = File(root, item.path.replace('/', File.separatorChar)).canonicalFile
+                if (!destination.path.startsWith(
+                        root.path + File.separator,
+                    )
+                ) {
+                    throw IOException("Archive output escaped its root")
+                }
+                if (item.isDirectory) {
+                    if (!destination.isDirectory &&
+                        !destination.mkdirs()
+                    ) {
+                        throw IOException("Cannot create archive directory")
+                    }
+                    return null
+                }
+                destination.parentFile?.mkdirs()
+                val stream = FileOutputStream(destination)
+                output = stream
+                return ISequentialOutStream { data ->
+                    if (Thread.currentThread().isInterrupted) throw IOException("Archive extraction interrupted")
+                    entryBytes += data.size
+                    catalog.extractionBudget.accountActual(data.size, entryBytes, item.packedSize, item.path)
+                    if (entryBytes >
+                        item.size
+                    ) {
+                        throw IOException("Archive entry exceeds its declared size: ${item.path}")
+                    }
+                    if (entryBytes % (8L * 1024L * 1024L) < data.size) {
+                        ImportStorageGuard.requireFreeSpace(root, 0, "extract ${item.path}")
+                    }
+                    stream.write(data)
+                    data.size
+                }
+            }
+
+            override fun setOperationResult(result: ExtractOperationResult) {
+                output?.close()
+                output = null
+                val item = current
+                current = null
+                if (result !=
+                    ExtractOperationResult.OK
+                ) {
+                    throw IOException("7-Zip extraction returned $result for ${item?.path}")
+                }
+                if (item != null) {
+                    if (!item.isDirectory &&
+                        entryBytes != item.size
+                    ) {
+                        throw IOException("Incomplete archive entry: ${item.path}")
+                    }
+                    completed.add(item.index)
+                }
+            }
+        }
+    try {
+        archive.extract(
+            catalog.items
+                .map { it.index }
+                .sorted()
+                .toIntArray(),
+            false,
+            callback,
+        )
+        if (current != null ||
+            completed.size != items.size
+        ) {
+            throw IOException("Native archive extraction did not complete its catalog")
+        }
+    } finally {
+        output?.close()
     }
 }

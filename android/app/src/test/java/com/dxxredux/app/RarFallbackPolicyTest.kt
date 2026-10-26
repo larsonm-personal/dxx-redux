@@ -11,6 +11,22 @@ import java.nio.file.Files
 
 class RarFallbackPolicyTest {
     @Test
+    fun sevenZFallbackOnlyAcceptsTheUnsupportedDecoderSignal() {
+        assertTrue(
+            isSevenZMultiStreamUnsupported(IOException("Multi input/output stream coders are not yet supported")),
+        )
+        for (message in listOf(
+            "CRC error",
+            "Archive exceeds 4096 entries",
+            "Memory limit exceeded",
+            "Truncated archive",
+            "cancelled",
+        )) {
+            assertFalse(isSevenZMultiStreamUnsupported(IOException(message)))
+        }
+    }
+
+    @Test
     fun unavailableNativeBackendFailsClosed() {
         assertCapabilityRejected(RarNativeBackendUnavailableException("unavailable"))
     }

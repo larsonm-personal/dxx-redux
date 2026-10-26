@@ -1,3 +1,9 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#ifdef __ANDROID__
+#include "corona_probe.h"
+#endif
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -70,6 +76,7 @@ int g_replay_robot_labels_enabled = 0;
 #include "render_gameplay_view.h"
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 #include "ogl_msaa_probe_android.h"
+#include "game_introspect.h"
 #endif
 #endif
 #ifdef ANDROID
@@ -422,6 +429,10 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		}
 	}
 
+#ifdef DXX_XL_PILOT
+	xl_preview_begin_face(segnum, sidenum);
+	for (i = 0; i < nv; ++i) xl_preview_vertex(vp[i], uvlp[i].l, &dyn_light[i].r, &dyn_light[i].g, &dyn_light[i].b);
+#endif
 	if ( PlayerCfg.AlphaEffects && ( TmapInfo[tmap1].eclip_num == ECLIP_NUM_FUELCEN || TmapInfo[tmap1].eclip_num == ECLIP_NUM_FORCE_FIELD ) ) // set nice transparency/blending for some special effects (if we do more, we should maybe use switch here)
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_ADDITIVE_C);
 
@@ -445,6 +456,9 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		android_texture_debug_add_merged_labels((const g3s_point *const *)pointlist, nv, tmap1, tmap2);
 #endif
 
+#ifdef DXX_XL_PILOT
+	xl_preview_end_face();
+#endif
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL); // revert any transparency/blending setting back to normal
 
 #ifndef NDEBUG
@@ -635,6 +649,21 @@ void render_side(segment *segp, int sidenum)
 		//	the face is, how normal to the surfaces the view is.
 		//	Now, if both dot products are close to 1.0, then render two triangles as a single quad.
 		v_dot_n1 = vm_vec_dot(&tvec, &normals[1]);
+#ifdef DXX_XL_PILOT
+		if (xl_classic_legacy_fans_active() || xl_preview_reference_fans()) {
+			if (xl_preview_split_face_visible(segp-Segments, sidenum, Viewer_eye.x, Viewer_eye.y, Viewer_eye.z)) {
+#ifdef ANDROID
+				android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
+					sidep->tmap_num2, wid_flags, 4, 0);
+				android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+					wid_flags, f2fl(v_dot_n0), 4, 0);
+#endif
+				render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
+			}
+			return;
+		}
+#endif
+
 
 		if (v_dot_n0 < v_dot_n1) {
 			min_dot = v_dot_n0;
@@ -1898,6 +1927,11 @@ void render_frame(fix eye_offset, int window_num)
 
 	start_seg_num = render_setup_view(eye_offset);
 
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (window_num == 0)
+		game_introspect_record_main_view(start_seg_num);
+#endif
+
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)
 			Clear_window_color = BM_XRGB(0, 0, 0);	//BM_XRGB(31, 15, 7);
@@ -2255,6 +2289,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 	if (eye_offset<=0) // Do for left eye or zero.
 		set_dynamic_light();
+#ifdef DXX_XL_PILOT
+		xl_preview_dynamic_frame();
+#endif
 
 	if (!_search_mode && Clear_window == 2) {
 		if (first_terminal_seg < N_render_segs) {
@@ -2280,7 +2317,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 
 #ifdef OGL
-	if (GameCfg.ClassicDepth) {
+	if (ogl_use_classic_depth()) {
 #ifdef ANDROID
 		g_merged_wall_render_pass = 1;
 #endif
@@ -2411,6 +2448,12 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Second Pass: Objects
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+	if (Viewer == ConsoleObject) {
+		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
+		xl_corona_object_probe(0, eye);
+	}
+#endif
 #ifdef ANDROID
 	g_merged_wall_render_pass = 2;
 #endif
@@ -2470,6 +2513,12 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Third Pass - Render Transculent level geometry with normal Alpha-Func
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+	if (Viewer == ConsoleObject) {
+		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
+		xl_corona_object_probe(1, eye);
+	}
+#endif
 #ifdef ANDROID
 	g_merged_wall_render_pass = 3;
 #endif
@@ -2526,6 +2575,15 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 #endif
 
+#ifdef DXX_XL_PILOT
+	{
+		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
+#ifdef __ANDROID__
+		xl_corona_scene_probe(eye, Viewer->segnum);
+#endif
+		xl_preview_render_emitters(Render_list, N_render_segs, eye, Viewer->segnum);
+	}
+#endif
 	// -- commented out by mk on 09/14/94...did i do a good thing??  object_render_targets();
 	{
 		const input_demo_render_probe_lists probe_lists = {

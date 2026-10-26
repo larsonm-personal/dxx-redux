@@ -1,0 +1,13 @@
+# Private original bytes are never copied into public fixtures or CI artifacts
+file(SHA256 "${HOG}" before_hash)
+if(NOT before_hash STREQUAL "e89acaad09cefa0c09fc4b487c56b6077477cfe20169f364fe54f627040b01e7")
+    message(FATAL_ERROR "Observatory inspection requires the audited original HOG")
+endif()
+execute_process(COMMAND "${TEST}" "${HOG}" RESULT_VARIABLE result TIMEOUT 20)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Original Observatory inventory failed: ${result}")
+endif()
+file(SHA256 "${HOG}" after_hash)
+if(NOT after_hash STREQUAL before_hash)
+    message(FATAL_ERROR "Original Observatory HOG changed during inspection")
+endif()

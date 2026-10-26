@@ -68,6 +68,8 @@ internal data class LevelMetadataTarget(
     val provenanceDates: List<ArchiveProvenanceDate> = emptyList(),
     // Engine selects the worker/cache namespace; content selects its native asset lifecycle
     val contentGame: String = game,
+    // Snapshot from the verified extraction catalog; never used for runtime admission
+    val packageCompatibility: XlCompatibilityReport? = null,
 )
 
 internal data class LevelMetadataCheckpointUpdate(
@@ -1360,6 +1362,7 @@ internal object LevelMetadataAnalyzer {
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
         withContext(Dispatchers.IO) {
+            xlCompatibilityAnalysisFailure(target)?.let { return@withContext it }
             val stepCount = 5
             val expectedLevelCount =
                 if (moviesOnly) 0 else (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)

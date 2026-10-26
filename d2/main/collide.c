@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -416,6 +419,9 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 	}
 
 	//	** Damage from hitting wall **
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(hitseg)) return;
+#endif
 	//	If the player has less than 10% shields, don't take damage from bump
 	// Note: Does quad damage if hit a force field - JL
 	damage = (hitspeed / WALL_DAMAGE_SCALE) * (ForceFieldHit*8 + 1);
@@ -504,12 +510,20 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 
 	d = TmapInfo[tmap_num].damage;
 	water = (TmapInfo[tmap_num].flags & TMI_WATER);
+#ifdef DXX_XL_PILOT
+	if (!d && !water && xl_preview_water_segment(segnum))
+		return xl_preview_water_contact(obj-Objects, segnum);
+#endif
 
 	if (d > 0 || water) {
 
 		if (obj->id == Player_num) {
 
-			if (d > 0) {
+			if (d > 0
+#ifdef DXX_XL_PILOT
+			    && !xl_preview_no_damage_segment(segnum)
+#endif
+			) {
 				fix damage = fixmul(d,FrameTime);
 
 				damage = d1_in_d2_contact_damage(damage);
@@ -531,7 +545,12 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 			}
 
 			/* D1 draws the shove direction before the rotational kick */
-			if (!d1_in_d2_use_d1_gameplay()) {
+			if (!d1_in_d2_use_d1_gameplay()
+#ifdef DXX_XL_PILOT
+			    && (!xl_preview_no_damage_segment(segnum) || obj->mtype.phys_info.thrust.x ||
+			        obj->mtype.phys_info.thrust.y || obj->mtype.phys_info.thrust.z)
+#endif
+			) {
 				// SIM RNG: D2 spins the hit object before its wall bump
 				obj->mtype.phys_info.rotvel.x = (d_rand() - 16384)/2;
 				obj->mtype.phys_info.rotvel.z = (d_rand() - 16384)/2;
@@ -2075,6 +2094,9 @@ void collide_hostage_and_player( object * hostage, object * player, vms_vector *
 
 void collide_player_and_player( object * player1, object * player2, vms_vector *collision_point )
 {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(player1->segnum)) return;
+#endif
 	if ((player1->id == Player_num || player2->id == Player_num) && is_observer()) {
 		return;
 	}
@@ -2521,6 +2543,9 @@ extern fix64 Buddy_sorry_time;
 
 void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte possibly_friendly)
 {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(playerobj->segnum)) return;
+#endif
 #ifdef __ANDROID__
 	/* Each ship's accepted damage stops at its transition freeze boundary */
 	if (coop_travel_blocks_gameplay()) return;
@@ -2643,6 +2668,9 @@ char* weapon_id_to_name(int weapon_id) {
 
 void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector *collision_point )
 {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(playerobj->segnum)) return;
+#endif
 	fix		damage = weapon->shields;
 	object * killer=NULL;
 	int boss_objnum;
@@ -3032,6 +3060,9 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 //##}
 
 void collide_player_and_clutter( object * playerobj, object * clutter, vms_vector *collision_point ) {
+#ifdef DXX_XL_PILOT
+	if (xl_preview_no_damage_segment(playerobj->segnum)) return;
+#endif
 	if (object_is_observer(playerobj)) {
 		return;
 	}

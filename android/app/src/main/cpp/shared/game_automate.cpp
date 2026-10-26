@@ -11,6 +11,7 @@
 
 #ifdef INTROSPECT_ON
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -20,6 +21,11 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#include "persistence_probe.h"
+#include "corona_probe.h"
+#endif
 
 using json = nlohmann::json;
 
@@ -46,6 +52,7 @@ extern "C" {
 #include "game_automate.h"
 #include "game_automate_weapon_art.h"
 #include "game_introspect.h"
+#include "render.h"
 #include "input_demo_replay.h"
 #include "overlay_ringbuf.h"
 #include "android_save_meta.h"
@@ -68,6 +75,7 @@ extern "C" {
 #endif
 #endif
 #include "android_log.h"
+#include "android_mission_assets.h"
 #include "android_crash_handler.h"
 #include "android_menu_scale.h"
 #include "android_music_control.h"
@@ -101,6 +109,7 @@ void multi_save_game(ubyte slot, uint id, char *desc);
 #include "newmenu.h"
 #include "newdemo.h"
 #include "laser.h"
+#include "fvi.h"
 #include "gameseg.h"
 #include "endlevel.h"
 #include "gameseq.h"
@@ -135,6 +144,7 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "endlevel_validation.h"
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
+#include "kconfig.h"
 #include "ai.h"
 #include "escort.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
@@ -544,7 +554,10 @@ enum step_type {
 	STEP_SET_DEBUG,             /* set a debug flag (e.g. tex_overlay) */
 	STEP_SET_SECRET_REVEAL,     /* automation-only: set automap secret reveal */
 	STEP_SET_OBJECTIVE_OVERLAY, /* automation-only: set objective display mode */
-	STEP_SET_MENU_VIEWPORT      /* automation-only: set Android menu zoom/pan */
+	STEP_SET_MENU_VIEWPORT,     /* automation-only: set Android menu zoom/pan */
+	STEP_FLY_TO,                /* ordinary controller translation toward a waypoint */
+	STEP_ATTACK_OBJECT,         /* ordinary aim/fire input against a specified robot */
+	STEP_ENGAGE_OBJECT          /* bounded engagement; outcome does not assert a kill */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -600,23 +613,29 @@ struct auto_step {
 	int music_track = -1;                  /* STEP_MUSIC_CONTROL: index for play */
 	int music_last_track = -1;             /* STEP_MUSIC_CONTROL: range end */
 	bool music_expect_success = true;      /* STEP_MUSIC_CONTROL: expected result */
+	bool combat_secondary = false;         /* use owned missile ammo through normal fire input */
+	bool flight_combat = false;            /* ordinary aim/fire while flying */
+	bool flight_settle = true;             /* false crosses within two units without waiting for rest */
+	int target_object = -1;                /* STEP_ATTACK_OBJECT: live robot slot */
 	int segment = -1;                      /* STEP_FACE_VIEW: target segment */
 	int side = -1;                         /* STEP_FACE_VIEW: target side */
 	int face = 0;                          /* STEP_FACE_VIEW: target face on side */
 	float distance = 4.0f;                 /* STEP_FACE_VIEW: distance inside segment */
 	float pos_x = 0.0f;                    /* STEP_POSE_VIEW: target X position */
-	float pos_y = 0.0f;                    /* STEP_POSE_VIEW: target Y position */
-	float pos_z = 0.0f;                    /* STEP_POSE_VIEW: target Z position */
-	int pitch = 0;                         /* STEP_POSE_VIEW: exact pitch */
-	int bank = 0;                          /* STEP_POSE_VIEW: exact bank */
-	int heading = 0;                       /* STEP_POSE_VIEW: exact heading */
-	int request_frame = -1;                /* STEP_PROBE_CROSSHAIR: request frame */
-	bool enabled = false;                  /* STEP_SET_SECRET_REVEAL */
-	std::string match_label_a;             /* STEP_ASSERT_PROBE_MATCH: first label */
-	std::string match_label_b;             /* STEP_ASSERT_PROBE_MATCH: second label */
-	float hot_xy_tolerance = 0.02f;        /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
-	int require_hash_match = 0;            /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
-	float max_mean_luma_diff = 0.0f;       /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
+	bool pose_fixed = false;               /* Exact renderer fixture coordinates */
+	vms_vector fixed_position = {};
+	float pos_y = 0.0f;              /* STEP_POSE_VIEW: target Y position */
+	float pos_z = 0.0f;              /* STEP_POSE_VIEW: target Z position */
+	int pitch = 0;                   /* STEP_POSE_VIEW: exact pitch */
+	int bank = 0;                    /* STEP_POSE_VIEW: exact bank */
+	int heading = 0;                 /* STEP_POSE_VIEW: exact heading */
+	int request_frame = -1;          /* STEP_PROBE_CROSSHAIR: request frame */
+	bool enabled = false;            /* STEP_SET_SECRET_REVEAL */
+	std::string match_label_a;       /* STEP_ASSERT_PROBE_MATCH: first label */
+	std::string match_label_b;       /* STEP_ASSERT_PROBE_MATCH: second label */
+	float hot_xy_tolerance = 0.02f;  /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
+	int require_hash_match = 0;      /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
+	float max_mean_luma_diff = 0.0f; /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -845,6 +864,9 @@ static const char *step_type_name(step_type t)
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
 		case STEP_FACE_VIEW: return "face_view";
 		case STEP_FACE_FIRST_MERGED: return "face_first_merged";
+		case STEP_FLY_TO: return "fly_to";
+		case STEP_ATTACK_OBJECT: return "attack_object";
+		case STEP_ENGAGE_OBJECT: return "engage_object";
 		case STEP_POSE_VIEW: return "pose_view";
 		case STEP_POSE_ROUTE_GUIDANCE: return "pose_route_guidance";
 		case STEP_PROBE_CROSSHAIR: return "probe_crosshair";
@@ -985,6 +1007,44 @@ static void log_append(const char *action, const char *status, const char *detai
 	        action ? action : "", status ? status : "",
 	        (unsigned) elapsed, detail ? detail : "");
 	fflush(g_log_fp);
+}
+
+extern "C" void game_automate_observe_flight_shot(const char *stage, int weapon, int gun, int fate, int segment, int created_object)
+{
+	if (!g_active || g_failed || g_current_step < 0 || g_current_step >= (int) g_steps.size()) return;
+	const auto type = g_steps[g_current_step].type;
+	if (type != STEP_FLY_TO && type != STEP_ATTACK_OBJECT && type != STEP_ENGAGE_OBJECT) return;
+	char detail[192];
+	snprintf(detail, sizeof(detail), "weapon=%d gun=%d fate=%d segment=%d created_object=%d", weapon, gun, fate, segment, created_object);
+	log_append("flight_shot", stage, detail);
+}
+
+extern "C" void game_automate_observe_flight_collision(int kind, int wall_segment, int wall_side, int object_num)
+{
+	if (!g_active || g_failed || g_current_step < 0 || g_current_step >= (int) g_steps.size() ||
+	    g_steps[g_current_step].type != STEP_FLY_TO) return;
+	static Uint32 last_time;
+	static int last_kind = -1, last_wall = -1, last_side = -1, last_object = -1;
+	const Uint32 now = SDL_GetTicks();
+	if (kind == last_kind && wall_segment == last_wall && wall_side == last_side &&
+	    object_num == last_object && now - last_time < 100) return;
+	last_time = now;
+	last_kind = kind;
+	last_wall = wall_segment;
+	last_side = wall_side;
+	last_object = object_num;
+	int type = -1, id = -1;
+	double radius = 0;
+	if (object_num >= 0 && object_num <= Highest_object_index) {
+		const object &hit = Objects[object_num];
+		type = hit.type;
+		id = hit.id;
+		radius = f2fl(hit.size);
+	}
+	char detail[256];
+	snprintf(detail, sizeof(detail), "kind=%d wall_segment=%d wall_side=%d object=%d type=%d id=%d radius=%.5f",
+	         kind, wall_segment, wall_side, object_num, type, id, radius);
+	log_append("fly_to", "collision", detail);
 }
 
 static void open_log_file(void)
@@ -1145,13 +1205,31 @@ static void inject_axis(int axis, float value, bool touch_source,
 	}
 }
 
+/* Production axes owned by fly_to must also be released on failure/replacement */
+static unsigned g_flight_axis_mask;
+static int g_flight_fire_button = -1;
+static bool g_flight_fire_active;
+static int g_flight_secondary_button = -1;
+static bool g_flight_secondary_active;
+
 static void clear_held_axes(void)
 {
 	int axis;
 
 #ifdef ANDROID
 	android_axis_mailbox_release_automation();
+	if (g_flight_fire_button >= 0) android_automation_joystick_button(g_flight_fire_button, 0);
+	if (g_flight_secondary_button >= 0) android_automation_joystick_button(g_flight_secondary_button, 0);
 #endif
+	g_flight_fire_button = -1;
+	g_flight_fire_active = false;
+	g_flight_secondary_button = -1;
+	g_flight_secondary_active = false;
+#ifdef ANDROID
+	for (axis = 0; axis < 8; ++axis)
+		if (g_flight_axis_mask & (1u << axis)) android_joystick_axis_publish(axis, 0, 0);
+#endif
+	g_flight_axis_mask = 0;
 	for (axis = 0; axis < 8; ++axis) {
 		g_held_axis_active[axis] = 0;
 		g_held_axis_value[axis] = 0.0f;
@@ -1970,6 +2048,7 @@ static int move_player_to_pose(const auto_step &s, char *reason, size_t reason_s
 	new_pos.x = fl2f(s.pos_x);
 	new_pos.y = fl2f(s.pos_y);
 	new_pos.z = fl2f(s.pos_z);
+	if (s.pose_fixed) new_pos = s.fixed_position;
 	search_seg = s.segment >= 0 ? s.segment : ConsoleObject->segnum;
 	if (search_seg < 0 || search_seg > Highest_segment_index)
 		search_seg = ConsoleObject->segnum;
@@ -2621,6 +2700,9 @@ static int parse_script(const char *json_text)
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
 			else if (action == "face_view") s.type = STEP_FACE_VIEW;
 			else if (action == "face_first_merged") s.type = STEP_FACE_FIRST_MERGED;
+			else if (action == "attack_object") s.type = STEP_ATTACK_OBJECT;
+			else if (action == "engage_object") s.type = STEP_ENGAGE_OBJECT;
+			else if (action == "fly_to") s.type = STEP_FLY_TO;
 			else if (action == "pose_view") s.type = STEP_POSE_VIEW;
 			else if (action == "pose_route_guidance") s.type = STEP_POSE_ROUTE_GUIDANCE;
 			else if (action == "probe_crosshair") s.type = STEP_PROBE_CROSSHAIR;
@@ -2693,11 +2775,25 @@ static int parse_script(const char *json_text)
 			s.music_track = step_json.value("track", -1);
 			s.music_last_track = step_json.value("last_track", -1);
 			s.music_expect_success = step_json.value("expect_success", true);
+			s.combat_secondary = step_json.value("secondary_fire", false);
+			s.flight_combat = step_json.value("combat", false);
+			s.flight_settle = step_json.value("settle", true);
+			s.target_object = step_json.value("object", -1);
 			s.segment = step_json.value("segment", -1);
 			s.side = step_json.value("side", -1);
 			s.face = step_json.value("face", 0);
-			s.distance = step_json.value("distance", 4.0f);
+			s.distance = step_json.value("distance", (s.type == STEP_ATTACK_OBJECT || s.type == STEP_ENGAGE_OBJECT) ? 80.0f : 4.0f);
 			s.pos_x = step_json.value("x", 0.0f);
+			if (step_json.contains("position_fixed")) {
+				const auto &position = step_json.at("position_fixed");
+				if (!position.is_array() || position.size() != 3)
+					throw std::runtime_error("position_fixed requires three fixed-point integers");
+				for (const auto &value : position)
+					if (!value.is_number_integer() || std::fabs(value.get<double>()) > 30000.0 * F1_0)
+						throw std::runtime_error("position_fixed coordinate is outside the supported range");
+				s.pose_fixed = true;
+				s.fixed_position = { position[0].get<fix>(), position[1].get<fix>(), position[2].get<fix>() };
+			}
 			s.pos_y = step_json.value("y", 0.0f);
 			s.pos_z = step_json.value("z", 0.0f);
 			s.pitch = step_json.value("pitch", 0);
@@ -3095,8 +3191,51 @@ static std::string run_assertions(auto_step &s, bool log_success, bool log_failu
 
 /* -- Advance to next step --------------------------------------------- */
 
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+static bool Still_view_active;
+static bool Still_view_reference_fans;
+static fix Still_view_saved_zoom;
+static int Still_view_wiggle, Still_view_signature, Still_view_level;
+static unsigned Still_view_mission_generation;
+#endif
+
+extern "C" int game_automate_still_view_active(void)
+{
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+	return Still_view_active;
+#else
+	return 0;
+#endif
+}
+
+extern "C" int game_automate_reference_fans_active(void)
+{
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT)
+	return Still_view_active && Still_view_reference_fans && ConsoleObject &&
+	       ConsoleObject->signature == Still_view_signature && Current_level_num == Still_view_level &&
+	       android_mission_assets_generation() == Still_view_mission_generation &&
+	       Current_mission && Current_mission->descent_version == 1 && xl_classic_lighting_requested();
+#else
+	return 0;
+#endif
+}
+
+static void restore_still_view(void)
+{
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+	Still_view_reference_fans = false;
+	if (!Still_view_active) return;
+	Render_zoom = Still_view_saved_zoom;
+	if (ConsoleObject && ConsoleObject->signature == Still_view_signature &&
+	    Current_level_num == Still_view_level && android_mission_assets_generation() == Still_view_mission_generation)
+		ConsoleObject->mtype.phys_info.flags = (ConsoleObject->mtype.phys_info.flags & ~PF_WIGGLE) | Still_view_wiggle;
+	Still_view_active = false;
+#endif
+}
+
 static void stop_script_fail(const char *reason)
 {
+	restore_still_view();
 	LOGE("SCRIPT_RESULT: FAIL at step %d/%d -- %s",
 	     g_current_step + 1, (int) g_steps.size(), reason);
 	clear_held_axes();
@@ -3125,6 +3264,7 @@ static void advance_step(void)
 	g_inject_axis_logged = 0;
 
 	if (g_current_step >= (int) g_steps.size()) {
+		restore_still_view();
 		LOGI("SCRIPT_RESULT: PASS (%d steps)", (int) g_steps.size());
 		clear_held_axes();
 		write_result_file("PASS", NULL);
@@ -3226,6 +3366,270 @@ extern "C" void game_automate_observe_axis_controls(
 	g_axis_probe.throttle_time = throttle_time;
 }
 
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+static bool center_ray_open(const object &candidate)
+{
+	fvi_query query = {};
+	fvi_info hit = {};
+	vms_vector target_point = candidate.pos;
+	query.p0 = &ConsoleObject->pos;
+	query.p1 = &target_point;
+	query.startseg = ConsoleObject->segnum;
+	query.thisobjnum = (int) (ConsoleObject - Objects);
+	/* Conservative selection: no transparent-wall bypass, no claim about gun offsets */
+	return find_vector_intersection(&query, &hit) == HIT_NONE;
+}
+
+/* Estimate an ordinary laser's first intersection with a moving target sphere
+ * This drives input only; engine collision, damage and cooldown remain authoritative */
+static int combat_laser_muzzle_mask(const object &target)
+{
+	if (Players[Player_num].primary_weapon != LASER_INDEX) return -1;
+	const int level = Players[Player_num].laser_level;
+	const int weapon = level <= MAX_LASER_LEVEL ? LASER_ID + level : SUPER_LASER_ID + level - MAX_LASER_LEVEL - 1;
+	if (level < 0 || level > MAX_SUPER_LASER_LEVEL || weapon < 0 || weapon >= N_weapon_types ||
+	    Difficulty_level < 0 || Difficulty_level >= NDL || Weapon_info[weapon].speedvar != 128 || Weapon_info[weapon].thrust) return -1;
+	const double speed = f2fl(Weapon_info[weapon].speed[Difficulty_level]);
+	if (speed <= 0) return -1;
+	const object &ship = *ConsoleObject;
+	const vms_vector velocity = target.movement_type == MT_PHYSICS ? target.mtype.phys_info.velocity : vms_vector{};
+	const double shot[3] = { speed * f2fl(ship.orient.fvec.x), speed * f2fl(ship.orient.fvec.y), speed * f2fl(ship.orient.fvec.z) };
+	const double relative[3] = { f2fl(velocity.x) - shot[0], f2fl(velocity.y) - shot[1], f2fl(velocity.z) - shot[2] };
+	const double a = relative[0] * relative[0] + relative[1] * relative[1] + relative[2] * relative[2];
+	if (a <= 0.001) return 0;
+	vms_matrix rotation;
+	vm_copy_transpose_matrix(&rotation, &ship.orient);
+	int mask = 0;
+	for (int gun = 0; gun < 2; ++gun) {
+		vms_vector offset, muzzle;
+		vm_vec_rotate(&offset, &Player_ship->gun_points[gun], &rotation);
+		vm_vec_add(&muzzle, &ship.pos, &offset);
+		const double delta[3] = { f2fl(target.pos.x) - f2fl(muzzle.x), f2fl(target.pos.y) - f2fl(muzzle.y), f2fl(target.pos.z) - f2fl(muzzle.z) };
+		const double radius = f2fl(target.size);
+		const double b = delta[0] * relative[0] + delta[1] * relative[1] + delta[2] * relative[2];
+		const double c = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2] - radius * radius;
+		const double discriminant = b * b - a * c;
+		if (radius <= 0 || c <= 0 || b >= 0 || discriminant < 0) continue;
+		const double time = (-b - std::sqrt(discriminant)) / a;
+		if (time <= 0 || time >= 2) continue;
+		fvi_query query = {};
+		fvi_info hit = {};
+		vms_vector ship_position = ship.pos;
+		query.p0 = &ship_position;
+		query.p1 = &muzzle;
+		query.startseg = ship.segnum;
+		query.thisobjnum = (int) (ConsoleObject - Objects);
+		query.rad = 0x10;
+		if (find_vector_intersection(&query, &hit) != HIT_NONE || hit.hit_seg < 0) continue;
+		vms_vector end = { fl2f(f2fl(muzzle.x) + shot[0] * time), fl2f(f2fl(muzzle.y) + shot[1] * time), fl2f(f2fl(muzzle.z) + shot[2] * time) };
+		query.p0 = &muzzle;
+		query.p1 = &end;
+		query.startseg = hit.hit_seg;
+		/* No transparent-wall bypass; ignore objects whose future positions are unknown */
+		if (find_vector_intersection(&query, &hit) == HIT_NONE) mask |= 1 << gun;
+	}
+	return mask;
+}
+
+static int nearest_combat_target(double range)
+{
+	int target_slot = -1;
+	double nearest = range;
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		const object &candidate = Objects[i];
+		if (candidate.type != OBJ_ROBOT || candidate.shields < 0 ||
+		    (candidate.flags & OF_SHOULD_BE_DEAD) || Robot_info[candidate.id].companion) continue;
+		const double dx = f2fl(candidate.pos.x) - f2fl(ConsoleObject->pos.x);
+		const double dy = f2fl(candidate.pos.y) - f2fl(ConsoleObject->pos.y);
+		const double dz = f2fl(candidate.pos.z) - f2fl(ConsoleObject->pos.z);
+		const double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+		if (distance < nearest && center_ray_open(candidate)) {
+			target_slot = i;
+			nearest = distance;
+		}
+	}
+	return target_slot;
+}
+
+static const char *drive_combat_input(const object *target_ptr, unsigned translation_mask, Uint32 now, const char *action, bool use_secondary = false)
+{
+	/* Same mapping indices and inversion conventions as kconfig.c */
+	const int items[2] = { 13, 15 };
+	int axes[2], signs[2], button = -1, mapped = 0;
+	unsigned mask = 0;
+	const char *name = NULL;
+	int type = 0;
+	for (int i = 0; i < 2; ++i) {
+		int inverted = 0;
+		kconfig_get_joystick_item(items[i], &name, &type, &axes[i]);
+		kconfig_get_joystick_item(items[i] + 1, &name, &type, &inverted);
+		if (axes[i] < 0 || axes[i] >= 8 || (mask & (1u << axes[i]))) break;
+		mask |= 1u << axes[i];
+		signs[i] = inverted ? -1 : 1;
+		++mapped;
+	}
+	kconfig_get_joystick_item(0, &name, &type, &button);
+	if (mapped != 2 || button < 0 || button >= 255 ||
+	    (mask & translation_mask) ||
+	    (g_flight_axis_mask && g_flight_axis_mask != translation_mask && g_flight_axis_mask != (mask | translation_mask)) ||
+	    (g_flight_fire_button >= 0 && g_flight_fire_button != button)) {
+		return "Combat requires stable, distinct translation/aim axes and primary fire";
+	}
+	g_flight_axis_mask = mask | translation_mask;
+	g_flight_fire_button = button;
+	if (use_secondary) {
+		int secondary = -1;
+		kconfig_get_joystick_item(1, &name, &type, &secondary);
+		if (secondary < 0 || secondary >= 255 || secondary == button ||
+		    (g_flight_secondary_button >= 0 && g_flight_secondary_button != secondary))
+			return "Combat requires a stable, distinct secondary-fire binding";
+		g_flight_secondary_button = secondary;
+	}
+
+	if (!target_ptr) {
+		for (int i = 0; i < 2; ++i) inject_axis(axes[i], 0, false, false, true, false);
+		if (g_flight_fire_active) inject_button(button, 0);
+		g_flight_fire_active = false;
+		if (g_flight_secondary_active) inject_button(g_flight_secondary_button, 0);
+		g_flight_secondary_active = false;
+		return NULL;
+	}
+	const object &target = *target_ptr;
+	const object &ship = *ConsoleObject;
+	double delta[3] = { f2fl(target.pos.x) - f2fl(ship.pos.x), f2fl(target.pos.y) - f2fl(ship.pos.y), f2fl(target.pos.z) - f2fl(ship.pos.z) };
+	const double distance = std::sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
+	const vms_vector target_velocity = target.movement_type == MT_PHYSICS ? target.mtype.phys_info.velocity : vms_vector{};
+	const double velocity[3] = { f2fl(target_velocity.x), f2fl(target_velocity.y), f2fl(target_velocity.z) };
+	double relative_velocity[3] = { velocity[0] - f2fl(ship.mtype.phys_info.velocity.x),
+		                            velocity[1] - f2fl(ship.mtype.phys_info.velocity.y),
+		                            velocity[2] - f2fl(ship.mtype.phys_info.velocity.z) };
+	double lead_seconds = 0;
+	/* Predict constant-speed laser interception through ordinary aim input
+	 * Match do_laser_firing's level mapping; lasers inherit no ship velocity */
+	if (Players[Player_num].primary_weapon == LASER_INDEX) {
+		const int level = Players[Player_num].laser_level;
+		const int weapon = level <= MAX_LASER_LEVEL ? LASER_ID + level : SUPER_LASER_ID + level - MAX_LASER_LEVEL - 1;
+		if (level <= MAX_SUPER_LASER_LEVEL && weapon >= 0 && weapon < N_weapon_types &&
+		    Difficulty_level >= 0 && Difficulty_level < NDL && Weapon_info[weapon].speedvar == 128 && !Weapon_info[weapon].thrust) {
+			const double speed = f2fl(Weapon_info[weapon].speed[Difficulty_level]);
+			const double a = velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2] - speed * speed;
+			const double b = 2 * (delta[0] * velocity[0] + delta[1] * velocity[1] + delta[2] * velocity[2]);
+			const double c = distance * distance;
+			const double discriminant = b * b - 4 * a * c;
+			if (speed > 0 && a < -0.001 && discriminant >= 0) {
+				const double t = (-b - std::sqrt(discriminant)) / (2 * a);
+				if (t > 0 && t < 2) {
+					double predicted[3];
+					for (int i = 0; i < 3; ++i) predicted[i] = delta[i] + velocity[i] * t;
+					const double denominator = predicted[0] * velocity[0] + predicted[1] * velocity[1] + predicted[2] * velocity[2] - speed * speed * t;
+					if (std::fabs(denominator) > 0.001) {
+						const double time_rate = -(predicted[0] * relative_velocity[0] + predicted[1] * relative_velocity[1] + predicted[2] * relative_velocity[2]) / denominator;
+						lead_seconds = t;
+						for (int i = 0; i < 3; ++i) {
+							delta[i] = predicted[i];
+							relative_velocity[i] += velocity[i] * time_rate;
+						}
+					}
+				}
+			}
+		}
+	}
+	const vms_vector basis[3] = { ship.orient.rvec, ship.orient.uvec, ship.orient.fvec };
+	double local[3] = {};
+	for (int i = 0; i < 3; ++i)
+		local[i] = delta[0] * f2fl(basis[i].x) + delta[1] * f2fl(basis[i].y) + delta[2] * f2fl(basis[i].z);
+	const double aim_distance = std::sqrt(local[0] * local[0] + local[1] * local[1] + local[2] * local[2]);
+	const double cosine = aim_distance > 0.001 ? local[2] / aim_distance : 0;
+	const double turns[2] = { std::atan2(local[1], std::hypot(local[0], local[2])) / 6.283185307179586,
+		                      std::atan2(local[0], local[2]) / 6.283185307179586 };
+	/* Relative translation changes the required aim direction in turns/second
+	 * Match that rate through stick input instead of damping it as unwanted rotation */
+	double local_velocity[3] = {};
+	for (int i = 0; i < 3; ++i)
+		local_velocity[i] = relative_velocity[0] * f2fl(basis[i].x) + relative_velocity[1] * f2fl(basis[i].y) + relative_velocity[2] * f2fl(basis[i].z);
+	const double horizontal = std::hypot(local[0], local[2]);
+	double aim_rate[2] = {};
+	if (horizontal > 0.01 && aim_distance > 0.01) {
+		const double horizontal_rate = (local[0] * local_velocity[0] + local[2] * local_velocity[2]) / horizontal;
+		aim_rate[0] = (horizontal * local_velocity[1] - local[1] * horizontal_rate) / (aim_distance * aim_distance * 6.283185307179586);
+		aim_rate[1] = (local[2] * local_velocity[0] - local[0] * local_velocity[2]) / (horizontal * horizontal * 6.283185307179586);
+	}
+	for (int i = 0; i < 2; ++i) {
+		if (aim_rate[i] > 1.0) aim_rate[i] = 1.0;
+		if (aim_rate[i] < -1.0) aim_rate[i] = -1.0;
+	}
+	const double damping[2] = { f2fl(ship.mtype.phys_info.rotvel.x), -f2fl(ship.mtype.phys_info.rotvel.y) };
+	double requested_stick[2] = {};
+	double rate_feedforward[2] = {};
+	/* Full-substep equilibrium of physics.c / d1_in_d2_integrate_rotation
+	 * This estimates ordinary input, never changes angular velocity or physics */
+	const double rotational_drag = f2fl((ship.mtype.phys_info.drag * 5) / 2);
+	const double mass = f2fl(ship.mtype.phys_info.mass);
+	const double rotational_thrust = f2fl(Player_ship->max_rotthrust);
+	const double steady_rate = mass > 0 && rotational_drag > 0 && rotational_drag < 1 && rotational_thrust > 0
+	                               ? rotational_thrust * (1 - rotational_drag) / (mass * rotational_drag)
+	                               : 0;
+	bool valid = true;
+	for (int i = 0; i < 2; ++i) {
+		const int control = i == 0 ? 1 : 0;
+		const int deadzone = PlayerCfg.JoystickDead[control] * 8;
+		if (deadzone < 0 || deadzone >= 128) {
+			valid = false;
+			break;
+		}
+		/* Match joystick_axis_time's sensitivity scale before its native axis clamp */
+		const double sensitivity = PlayerCfg.JoystickSens[control] * (PlayerCfg.JoystickUndercalibrate[control] + 1) / 8.0;
+		if (steady_rate > 0.001 && sensitivity > 0)
+			rate_feedforward[i] = aim_rate[i] / (steady_rate * sensitivity);
+		double command = rate_feedforward[i] + 4.0 * turns[i] + 1.5 * (aim_rate[i] + damping[i]);
+		if (command > 0.6) command = 0.6;
+		if (command < -0.6) command = -0.6;
+		if (std::fabs(command) >= 1.0 / 128.0) {
+			const int desired = (int) std::ceil(std::fabs(command) * 128.0);
+			const int raw = deadzone + (desired * (128 - deadzone) + 127) / 128;
+			command = (command < 0 ? -1 : 1) * (raw * 256.0 + 128.0) / 32767.0;
+		} else command = 0;
+		requested_stick[i] = command * signs[i];
+		inject_axis(axes[i], requested_stick[i], false, false, true, false);
+	}
+	if (!valid) {
+		return "Combat requires usable aim-axis deadzones";
+	}
+	const bool ray_open = center_ray_open(target);
+	const int laser_muzzle_mask = combat_laser_muzzle_mask(target);
+	const bool fire = ray_open && (laser_muzzle_mask >= 0 ? laser_muzzle_mask != 0 : cosine > 0.99);
+	if (fire != g_flight_fire_active) {
+		inject_button(button, fire ? 1 : 0);
+		g_flight_fire_active = fire;
+	}
+	/* Keep concussion splash away from the player; the engine owns ammo/cooldown */
+	const bool secondary_fire = use_secondary && fire && cosine > 0.995 && distance > 30.0 && distance < 80.0;
+	if (secondary_fire != g_flight_secondary_active) {
+		inject_button(g_flight_secondary_button, secondary_fire ? 1 : 0);
+		g_flight_secondary_active = secondary_fire;
+	}
+	static Uint32 last_sample;
+	if (!last_sample || now - last_sample >= 100) {
+		/* Observe predicted aim relative to the two ordinary laser muzzles
+		 * These are geometry measurements, not collision or hit assertions */
+		char geometry[384];
+		snprintf(geometry, sizeof(geometry), "object=%d signature=%d primary=%d laser_muzzle_mask=%d radius=%.5f aim_x=%.5f aim_y=%.5f aim_z=%.5f gun0_x=%.5f gun0_y=%.5f gun0_z=%.5f gun1_x=%.5f gun1_y=%.5f gun1_z=%.5f",
+		         (int) (target_ptr - Objects), target.signature, Players[Player_num].primary_weapon, laser_muzzle_mask, f2fl(target.size), local[0], local[1], local[2],
+		         f2fl(Player_ship->gun_points[0].x), f2fl(Player_ship->gun_points[0].y), f2fl(Player_ship->gun_points[0].z),
+		         f2fl(Player_ship->gun_points[1].x), f2fl(Player_ship->gun_points[1].y), f2fl(Player_ship->gun_points[1].z));
+		log_append(action, "aim_geometry", geometry);
+		char detail[768];
+		snprintf(detail, sizeof(detail), "object=%d signature=%d distance=%.4f cosine=%.5f pitch=%.4f yaw=%.4f pitch_rate=%.4f yaw_rate=%.4f target_shields=%.3f player_shields=%.3f center_ray_open=%d fire=%d secondary_fire=%d lead_seconds=%.4f stick_pitch=%.4f stick_yaw=%.4f rotvel_x=%.5f rotvel_y=%.5f mass=%.5f drag=%.5f max_rotthrust=%.5f pitch_sens=%d yaw_sens=%d pitch_under=%d yaw_under=%d frame=%.5f ff_pitch=%.5f ff_yaw=%.5f",
+		         (int) (target_ptr - Objects), target.signature, distance, cosine, turns[0], turns[1], aim_rate[0], aim_rate[1], f2fl(target.shields), f2fl(Players[Player_num].shields), ray_open ? 1 : 0, fire ? 1 : 0, secondary_fire ? 1 : 0, lead_seconds,
+		         requested_stick[0], requested_stick[1], f2fl(ship.mtype.phys_info.rotvel.x), f2fl(ship.mtype.phys_info.rotvel.y), f2fl(ship.mtype.phys_info.mass), f2fl(ship.mtype.phys_info.drag), f2fl(Player_ship->max_rotthrust),
+		         PlayerCfg.JoystickSens[1], PlayerCfg.JoystickSens[0], PlayerCfg.JoystickUndercalibrate[1], PlayerCfg.JoystickUndercalibrate[0], f2fl(FrameTime), rate_feedforward[0], rate_feedforward[1]);
+		log_append(action, "sample", detail);
+		last_sample = now;
+	}
+	return NULL;
+}
+#endif
+
 extern "C" void game_automate_tick(void)
 {
 #if defined(ANDROID) && defined(OGL)
@@ -3255,6 +3659,7 @@ extern "C" void game_automate_tick(void)
 		     request.start_step, g_active_run_id);
 
 		remove_stale_result();
+		restore_still_view();
 		open_log_file();
 		clear_held_axes();
 		/* A rejected replacement must never continue the previous script */
@@ -3853,6 +4258,217 @@ extern "C" void game_automate_tick(void)
 			}
 			break;
 
+		case STEP_ATTACK_OBJECT:
+		case STEP_ENGAGE_OBJECT:
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+		{
+			const bool bounded = s.type == STEP_ENGAGE_OBJECT;
+			const char *action = bounded ? "engage_object" : "attack_object";
+			const auto finish_engagement = [&](const char *outcome) {
+				clear_held_axes();
+				log_append(action, "outcome", outcome);
+				advance_step();
+			};
+			if (!Game_wind || window_get_front() != Game_wind || !ConsoleObject ||
+			    (Game_mode & GM_MULTI) || Player_is_dead || Endlevel_sequence ||
+			    game_is_time_paused() || input_demo_replay_is_loaded()) {
+				stop_script_fail("attack_object requires live foreground single-player gameplay");
+				break;
+			}
+			if (s.target_object < -1 || s.target_object >= MAX_OBJECTS ||
+			    !std::isfinite(s.distance) || s.distance <= 0 || s.distance > 300 ||
+			    s.timeout_ms < 1 || s.timeout_ms > 60000) {
+				stop_script_fail("attack_object requires object -1 or a valid slot, distance 0..300 and timeout_ms 1..60000");
+				break;
+			}
+			static int target_signature, target_slot;
+
+			if (!g_key_phase) {
+				target_slot = s.target_object;
+				if (target_slot == -1) target_slot = nearest_combat_target(s.distance);
+				if (target_slot < 0 || target_slot > Highest_object_index) {
+					if (bounded && s.target_object == -1) {
+						finish_engagement("no_visible_target");
+						break;
+					}
+					stop_script_fail("attack_object found no nearby live robot with an open center ray");
+					break;
+				}
+			}
+			const object &target = Objects[target_slot];
+			if (!g_key_phase) {
+				if (target.type != OBJ_ROBOT || target.shields < 0 || (target.flags & OF_SHOULD_BE_DEAD)) {
+					stop_script_fail("attack_object requires an initially live robot");
+					break;
+				}
+				clear_held_axes();
+				target_signature = target.signature;
+				g_key_phase = 1;
+			}
+			if (target.signature != target_signature || target.type != OBJ_ROBOT ||
+			    target.shields < 0 || (target.flags & OF_SHOULD_BE_DEAD)) {
+				if (bounded) {
+					finish_engagement("target_removed; verify kill count separately");
+					break;
+				}
+				clear_held_axes();
+				log_append("attack_object", "done", "Tracked robot removed or destroyed; verify the kill count separately");
+				advance_step();
+				break;
+			}
+			if (elapsed >= (Uint32) s.timeout_ms) {
+				if (bounded) {
+					finish_engagement("duration_elapsed; target still alive");
+					break;
+				}
+				stop_script_fail("attack_object timed out with the robot still alive");
+				break;
+			}
+			if (bounded && !center_ray_open(target)) {
+				finish_engagement("lost_visibility; target still alive");
+				break;
+			}
+			if (const char *failure = drive_combat_input(&target, 0, now, action, s.combat_secondary)) stop_script_fail(failure);
+			break;
+		}
+#else
+			stop_script_fail("attack_object requires the Android D2 engine");
+			break;
+#endif
+
+		case STEP_FLY_TO:
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+		{
+			if (!Game_wind || window_get_front() != Game_wind || !ConsoleObject ||
+			    (Game_mode & GM_MULTI) || Player_is_dead || Endlevel_sequence ||
+			    game_is_time_paused() || input_demo_replay_is_loaded()) {
+				stop_script_fail("fly_to requires live foreground single-player gameplay");
+				break;
+			}
+			if (s.segment < 0 || s.segment > Highest_segment_index ||
+			    !std::isfinite(s.pos_x) || !std::isfinite(s.pos_y) || !std::isfinite(s.pos_z) ||
+			    std::fabs(s.pos_x) > 30000 || std::fabs(s.pos_y) > 30000 || std::fabs(s.pos_z) > 30000 ||
+			    s.timeout_ms < 1 || s.timeout_ms > 60000) {
+				stop_script_fail("fly_to requires a segment, finite coordinates and timeout_ms 1..60000");
+				break;
+			}
+			const vms_vector target = { fl2f(s.pos_x), fl2f(s.pos_y), fl2f(s.pos_z) };
+			if (find_point_seg(&target, s.segment) != s.segment) {
+				stop_script_fail("fly_to target is outside the requested segment");
+				break;
+			}
+			if (elapsed >= (Uint32) s.timeout_ms) {
+				stop_script_fail(s.flight_settle ? "fly_to timed out without reaching and settling at the waypoint" : "fly_to timed out without crossing the waypoint");
+				break;
+			}
+			/* Keep these indices synchronized with kconfig.c / ControllerConfigPage */
+			const int binding_items[3] = { 17, 19, 23 };
+			int axes[3], signs[3];
+			unsigned mask = 0;
+			int mapped = 0;
+			for (int i = 0; i < 3; ++i) {
+				const char *name = NULL;
+				int type = 0, inverted = 0;
+				kconfig_get_joystick_item(binding_items[i], &name, &type, &axes[i]);
+				kconfig_get_joystick_item(binding_items[i] + 1, &name, &type, &inverted);
+				if (axes[i] < 0 || axes[i] >= 8 || (mask & (1u << axes[i]))) break;
+				mask |= 1u << axes[i];
+				++mapped;
+				signs[i] = (inverted ? -1 : 1) * (i == 2 ? -1 : 1);
+			}
+			if (mapped != 3) {
+				stop_script_fail("fly_to requires three distinct mapped translation axes");
+				break;
+			}
+			static int combat_target = -1, combat_signature = -1, combat_level = 0;
+			static Uint32 combat_script_start = 0;
+			if (g_key_phase == 0) {
+				if (combat_script_start != g_script_start || combat_level != Current_level_num || !s.flight_combat)
+					combat_target = -1;
+				combat_script_start = g_script_start;
+				combat_level = Current_level_num;
+				clear_held_axes();
+				g_key_phase = 1;
+			}
+			if (g_flight_axis_mask && (s.flight_combat ? (g_flight_axis_mask & mask) != mask : g_flight_axis_mask != mask)) {
+				stop_script_fail("fly_to axis bindings changed during flight");
+				break;
+			}
+			g_flight_axis_mask |= mask;
+			const object *ship = ConsoleObject;
+			const double error[3] = { s.pos_x - f2fl(ship->pos.x), s.pos_y - f2fl(ship->pos.y), s.pos_z - f2fl(ship->pos.z) };
+			const vms_vector &v = ship->mtype.phys_info.velocity;
+			const double velocity[3] = { f2fl(v.x), f2fl(v.y), f2fl(v.z) };
+			double distance_squared = 0, speed_squared = 0;
+			for (int i = 0; i < 3; ++i) {
+				distance_squared += error[i] * error[i];
+				speed_squared += velocity[i] * velocity[i];
+			}
+			if (!g_repeat_start || now - g_repeat_start >= 100) {
+				char detail[512];
+				snprintf(detail, sizeof(detail),
+				         "segment=%d position=%.4f,%.4f,%.4f velocity=%.4f,%.4f,%.4f distance=%.4f speed=%.4f thrust=%.4f,%.4f,%.4f frame=%.5f",
+				         ship->segnum, f2fl(ship->pos.x), f2fl(ship->pos.y), f2fl(ship->pos.z),
+				         velocity[0], velocity[1], velocity[2], std::sqrt(distance_squared), std::sqrt(speed_squared),
+				         f2fl(ship->mtype.phys_info.thrust.x), f2fl(ship->mtype.phys_info.thrust.y),
+				         f2fl(ship->mtype.phys_info.thrust.z), f2fl(FrameTime));
+				log_append("fly_to", "sample", detail);
+				g_repeat_start = now;
+			}
+			const double arrival_distance_squared = s.flight_settle ? 0.25 : 4.0;
+			if (ship->segnum == s.segment && distance_squared < arrival_distance_squared &&
+			    (!s.flight_settle || speed_squared < 0.25)) {
+				clear_held_axes();
+				log_append("fly_to", "done", s.flight_settle ? "Waypoint reached with ordinary controller input" : "Waypoint crossed within two units with ordinary controller input; no settling requested");
+				advance_step();
+				break;
+			}
+			const vms_vector basis[3] = { ship->orient.rvec, ship->orient.uvec, ship->orient.fvec };
+			for (int i = 0; i < 3; ++i) {
+				const double b[3] = { f2fl(basis[i].x), f2fl(basis[i].y), f2fl(basis[i].z) };
+				double e = 0, speed = 0;
+				for (int j = 0; j < 3; ++j) {
+					e += error[j] * b[j];
+					speed += velocity[j] * b[j];
+				}
+				/* Bounded proportional steering with measured-velocity braking */
+				double command = 0.10f * e - 0.08f * speed;
+				if (command > 0.75f) command = 0.75f;
+				if (command < -0.75f) command = -0.75f;
+				/* Invert kconfig.c's legacy deadzone and joy.c's integer quantization
+				 * Choose a real stick deflection; do not change the player's settings */
+				const int controls[3] = { 2, 3, 5 };
+				const int deadzone = PlayerCfg.JoystickDead[controls[i]] * (i == 2 ? 3 : 8);
+				if (deadzone < 0 || deadzone >= 128) {
+					stop_script_fail("fly_to requires a usable translation-axis deadzone");
+					break;
+				}
+				if (std::fabs(command) >= 1.0 / 128.0) {
+					const int desired = (int) std::ceil(std::fabs(command) * 128.0);
+					const int raw = deadzone + (desired * (128 - deadzone) + 127) / 128;
+					command = (command < 0 ? -1 : 1) * (raw * 256.0 + 128.0) / 32767.0;
+				} else command = 0;
+				inject_axis(axes[i], command * signs[i], false, false, true, false);
+			}
+			if (s.flight_combat && g_active && !g_failed) {
+				if (combat_target < 0 || combat_target > Highest_object_index ||
+				    Objects[combat_target].type != OBJ_ROBOT || Objects[combat_target].signature != combat_signature ||
+				    Objects[combat_target].shields < 0 || (Objects[combat_target].flags & OF_SHOULD_BE_DEAD) ||
+				    !center_ray_open(Objects[combat_target])) {
+					combat_target = nearest_combat_target(80.0);
+					if (combat_target >= 0) combat_signature = Objects[combat_target].signature;
+				}
+				if (const char *failure = drive_combat_input(combat_target >= 0 ? &Objects[combat_target] : NULL, mask, now, "fly_combat", s.combat_secondary))
+					stop_script_fail(failure);
+			}
+
+			break;
+		}
+#else
+			stop_script_fail("fly_to requires the Android D2 engine");
+			break;
+#endif
+
 		case STEP_POSE_VIEW:
 			if (g_key_phase == 0) {
 				char reason[256];
@@ -4316,6 +4932,51 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("capture_audio: Android-only action");
 				break;
 #endif
+			} else if (s.field == "still_view_zoom_fixed") {
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+				if (s.value == "restore") {
+					restore_still_view();
+				} else {
+					char *end = nullptr;
+					const long zoom = strtol(s.value.c_str(), &end, 10);
+					if (!end || *end || zoom < F1_0 / 4 || zoom > 4 * F1_0 ||
+					    !Game_wind || window_get_front() != Game_wind || !ConsoleObject || Player_is_dead || (Game_mode & GM_MULTI)) {
+						stop_script_fail("still_view_zoom_fixed requires live single-player gameplay and zoom16384..262144");
+						break;
+					}
+					if (!Still_view_active) {
+						Still_view_saved_zoom = Render_zoom;
+						Still_view_wiggle = ConsoleObject->mtype.phys_info.flags & PF_WIGGLE;
+						Still_view_signature = ConsoleObject->signature;
+						Still_view_level = Current_level_num;
+						Still_view_mission_generation = android_mission_assets_generation();
+						Still_view_active = true;
+					}
+					ConsoleObject->mtype.phys_info.flags &= ~PF_WIGGLE;
+					Render_zoom = (fix) zoom;
+				}
+#else
+				stop_script_fail("still_view_zoom_fixed requires Android D2");
+				break;
+#endif
+			} else if (s.field == "still_view_reference_fans") {
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT)
+				if ((s.value != "on" && s.value != "off") || !Still_view_active ||
+				    !Current_mission || Current_mission->descent_version != 1 || !xl_classic_lighting_requested()) {
+					stop_script_fail("still_view_reference_fans requires on/off and a classic-lighting D1 still-view fixture");
+					break;
+				}
+				Still_view_reference_fans = s.value == "on";
+#else
+				stop_script_fail("still_view_reference_fans requires Android D2 XL pilot");
+				break;
+#endif
+			} else if (s.field == "capture_framebuffer") {
+				if (s.value != "once") {
+					stop_script_fail("capture_framebuffer requires once");
+					break;
+				}
+				game_introspect_request_pixel_capture();
 			} else if (s.field == "tex_overlay")
 				g_debug_tex_overlay_active = (int) std::stod(s.value);
 			else if (s.field == "texture_target")
@@ -6830,6 +7491,66 @@ extern "C" void game_automate_tick(void)
 				} else stop_script_fail("Unknown snapshot probe action");
 #else
 				stop_script_fail("Snapshot probe requires Android D2");
+#endif
+			} else if (s.field == "xl_corona_objects") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (s.value == "request") xl_corona_object_probe_request();
+				else if (s.value == "verify") {
+					const auto report = json::parse(xl_corona_object_probe_result());
+					LOGI("XL corona object probe: %s", xl_corona_object_probe_result());
+					if (!report.is_object() || !report.value("passed", false)) stop_script_fail("XL corona object-depth verification failed");
+				} else stop_script_fail("Unknown XL corona object probe action");
+#else
+				stop_script_fail("XL corona object probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_corona_scene") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (s.value == "request") xl_corona_scene_probe_request();
+				else if (s.value == "verify") {
+					const auto report = json::parse(xl_corona_scene_probe_result());
+					LOGI("XL corona scene probe: %s", xl_corona_scene_probe_result());
+					if (!report.is_object() || !report.value("passed", false)) stop_script_fail("XL corona scene-depth verification failed");
+				} else stop_script_fail("Unknown XL corona scene probe action");
+#else
+				stop_script_fail("XL corona scene probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_corona_pixels") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				xl_corona_pixel_probe();
+				const auto report = json::parse(xl_corona_pixel_probe_result());
+				LOGI("XL corona pixel probe: %s", xl_corona_pixel_probe_result());
+				if (!report.value("passed", false)) stop_script_fail("XL corona framebuffer verification failed");
+#else
+				stop_script_fail("XL corona framebuffer probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_asset_acquisition_failure") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (s.value != "verify" || !Game_wind || !android_mission_assets_test_acquisition_failure())
+					stop_script_fail("XL asset acquisition failure did not preserve the active context");
+				else LOGI("XL asset acquisition failure preserved ownership and search path after partial acquisition");
+#else
+				stop_script_fail("XL asset acquisition failure probe requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_classic_lighting") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if ((s.value != "enable" && s.value != "disable") || !xl_preview_set_classic_light_test_profile(s.value == "enable"))
+					stop_script_fail("Experimental classic lighting requires enable/disable outside gameplay");
+#else
+				stop_script_fail("Experimental classic lighting requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_water_physics") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if ((s.value != "enable" && s.value != "disable") || !xl_preview_set_water_test_profile(s.value == "enable"))
+					stop_script_fail("XL water profile requires enable/disable outside gameplay");
+#else
+				stop_script_fail("XL water profile requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_pilot_persistence") {
+#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+				if (const char *failure = xl_pilot_persistence_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled persistence %s passed", s.value.c_str());
+#else
+				stop_script_fail("XL persistence fixture requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "save_probe") {
 #ifdef __ANDROID__

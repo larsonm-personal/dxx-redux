@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1509,8 +1512,20 @@ int no_old_level_file_error=0;
 
 //loads a level (.LVL) file from disk
 //returns 0 if success, else error code
-int load_level(const char * filename_passed)
+#ifdef DXX_XL_PILOT
+int load_level(const char *filename)
 {
+	return xl_preview_load_level(filename);
+}
+int xl_stock_load_level(const char *filename_passed)
+#else
+int load_level(const char * filename_passed)
+#endif
+{
+	if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL) {
+		con_printf(CON_URGENT, "XL descriptor loaded, but level gameplay remains unqualified\n");
+		return 1;
+	}
 	level_texture_diagnostics_reset();
 #ifdef EDITOR
 	int use_compiled_level=1;
@@ -1569,7 +1584,11 @@ int load_level(const char * filename_passed)
 	if (!PHYSFSX_exists(filename,1))
 		sprintf(filename,"%s%s",MISSION_DIR,filename_passed);
 
+#ifdef DXX_XL_PILOT
+	LoadFile = PHYSFSX_openReadBuffered(xl_preview_level_path(filename));
+#else
 	LoadFile = PHYSFSX_openReadBuffered( filename );
+#endif
 
 	if (!LoadFile)	{
 		#ifdef EDITOR

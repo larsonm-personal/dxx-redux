@@ -400,7 +400,8 @@ void start_endlevel_sequence()
 	}
 #endif
 
-	window_set_visible(Game_wind, 0);	// suspend the game, including drawing
+	if (Game_wind)
+		window_set_visible(Game_wind, 0);	// suspend the game, including drawing
 	endlevel_movie_played = MOVIE_NOT_PLAYED;
 	
 	if (PLAYING_BUILTIN_MISSION) // only play movie for built-in mission
@@ -416,13 +417,14 @@ void start_endlevel_sequence()
 			endlevel_movie_played = start_endlevel_movie();
 		}
 	
-	window_set_visible(Game_wind,
+	if (Game_wind)
+		window_set_visible(Game_wind,
 #ifdef __ANDROID__
-	                   !coop_flyout_active()
+		                   !coop_flyout_active()
 #else
-	                   1
+		                   1
 #endif
-	                  );
+		                  );
 
 	if ((!(Game_mode & GM_MULTI)
 #ifdef __ANDROID__

@@ -66,6 +66,12 @@ void gles3_shim_delete_buffers(GLsizei count, const GLuint *buffers);
 /* ---------- fixed-function state ---------- */
 void gles3_shim_color4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a);
 void gles3_shim_alpha_func(GLenum func, GLfloat ref);
+/* Threshold source coverage before fade/color modulation; returns previous state */
+int gles3_shim_set_binary_texture(int enabled);
+/* Explicit premultiplied material passes: 0 normal, 1 opaque, 2 partial. */
+int gles3_shim_set_soft_surface_pass(int pass);
+int gles3_shim_external_active(void);
+extern volatile int gles3_shim_debug_mode;
 void gles3_shim_shade_model(GLenum mode);
 void gles3_shim_tex_envi(GLenum target, GLenum pname, GLint param);
 

@@ -166,4 +166,3 @@ function Invoke-CoopDeathScenario {
     }
     return $true
 }
-

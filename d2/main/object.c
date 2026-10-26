@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1042,6 +1045,9 @@ void check_and_fix_matrix(vms_matrix *m);
 
 void reset_player_object()
 {
+#ifdef DXX_XL_PILOT
+	xl_preview_reset_player_thrust();
+#endif
 	render_reset_gameplay_view_objects();
 	int i;
 
@@ -2512,21 +2518,17 @@ void object_move_one( object * obj )
 	if (obj->type == OBJ_PLAYER && obj->movement_type==MT_PHYSICS)	{
 		if (previous_segment != obj->segnum) {
 			int	connect_side,i;
-#ifdef NETWORK
 			int	old_level = Current_level_num;
-#endif
 			for (i=0;i<n_phys_segs-1;i++) {
 				connect_side = find_connect_side(&Segments[phys_seglist[i+1]], &Segments[phys_seglist[i]]);
 				if (connect_side != -1)
 					check_trigger(&Segments[phys_seglist[i]], connect_side, obj-Objects,0);
 
 				//maybe we've gone on to the next level.  if so, bail!
-#ifdef NETWORK
 				if (Current_level_num != old_level) {
 					input_demo_rng_trace_clear_object_context();
 					return;
 				}
-#endif
 			}
 		}
 
@@ -2544,14 +2546,25 @@ void object_move_one( object * obj )
 						if ((type=check_volatile_wall(obj,obj->segnum,sidenum,&obj->pos))!=0) {
 							int sound = (type==1)?SOUND_LAVAFALL_HISS:SOUND_SHIP_IN_WATERFALL;
 							under_lavafall = 1;
+#ifdef DXX_XL_PILOT
+							sound = xl_preview_water_sound(obj-Objects, sidenum, sound);
+							lavafall_hiss_playing[obj->id] = xl_preview_fluid_loop(obj-Objects, sound, lavafall_hiss_playing[obj->id]);
+#else
 							if (!lavafall_hiss_playing[obj->id]) {
 								digi_link_sound_to_object3( sound, obj-Objects, 1, F1_0, i2f(256), -1, -1);
 								lavafall_hiss_playing[obj->id] = 1;
 							}
+#endif
 						}
 					}
 			}
 	
+#ifdef DXX_XL_PILOT
+			if (!under_lavafall && xl_preview_water_frame(obj-Objects)) {
+				under_lavafall = 1;
+				lavafall_hiss_playing[obj->id] = xl_preview_fluid_loop(obj-Objects, SOUND_SHIP_IN_WATER, lavafall_hiss_playing[obj->id]);
+			}
+#endif
 			if (!under_lavafall && lavafall_hiss_playing[obj->id]) {
 				digi_kill_sound_linked_to_object( obj-Objects);
 				lavafall_hiss_playing[obj->id] = 0;
@@ -2623,6 +2636,7 @@ void object_move_all()
 {
 	int i;
 	object *objp;
+	const int frame_level = Current_level_num;
 
 	if (Highest_object_index > MAX_USED_OBJECTS)
 		free_object_slots(MAX_USED_OBJECTS);		//	Free all possible object slots.
@@ -2671,6 +2685,8 @@ void object_move_all()
 			input_demo_current_move_id = -1;
 			input_demo_current_move_segnum = -1;
 			input_demo_current_move_control_type = -1;
+			// A trigger can replace Objects and reset timing while this slot runs
+			if (Current_level_num != frame_level) return;
 		}
 		objp++;
 	}

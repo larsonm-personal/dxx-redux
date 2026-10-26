@@ -1,0 +1,117 @@
+{
+  "bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+  "scope": "Recomputed supplied static records; no corpus rescan or runtime qualification",
+  "payloads": 131,
+  "distinct_hashes": 131,
+  "hogs": 56,
+  "level_versions": {
+    "11": 1,
+    "15": 46,
+    "17": 24,
+    "18": 2,
+    "19": 1,
+    "21": 1,
+    "23": 56
+  },
+  "game_versions": [
+    31,
+    33,
+    34,
+    35,
+    36,
+    40
+  ],
+  "geometry_endpoint_matches": 131,
+  "object_endpoint_matches": 129,
+  "object_exclusions": [
+    "d2xxl_downloads/levelpack.7z::missions/diedel/playgdxl.hog::playgdxl.rl2",
+    "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::subzero.rl2"
+  ],
+  "over_stock_capacity": {
+    "vertices_36000": 0,
+    "segments_9000": 0,
+    "walls_255": 21,
+    "objects_1000": 2,
+    "triggers_100": 2
+  },
+  "wall_trigger_types": {
+    "0": 564,
+    "1": 16,
+    "2": 554,
+    "3": 139,
+    "4": 14,
+    "5": 4,
+    "6": 9,
+    "7": 203,
+    "8": 17,
+    "9": 599,
+    "10": 139,
+    "11": 6,
+    "12": 15,
+    "13": 2,
+    "14": 108,
+    "15": 281,
+    "16": 19,
+    "17": 3,
+    "18": 1,
+    "19": 11,
+    "22": 1,
+    "28": 20,
+    "29": 44,
+    "30": 34,
+    "31": 99,
+    "32": 14,
+    "33": 19
+  },
+  "object_triggers": 212,
+  "levels_with_object_triggers": 22,
+  "equipment_generators": 53,
+  "levels_with_equipment_generators": 11,
+  "levels_with_chromatic_colors": {
+    "vertex_colors": 124,
+    "side_colors": 58,
+    "texture_colors": 129
+  },
+  "effect_records_in_129_sections": {
+    "11": 330,
+    "12": 151,
+    "13": 1335
+  },
+  "pilot": {
+    "sha256": "5e835e76e984c658531175640294a4b05f6127904884ba7acfd65c93165be5b2",
+    "path": "d2xxl_downloads/levelpack.7z::missions/single/d2-xl.hog::d2leva-1.rl2",
+    "version": 15,
+    "game_version": 33,
+    "vertices": 828,
+    "segments": 228,
+    "wall_types": {
+      "2": 34,
+      "5": 22,
+      "3": 14,
+      "6": 8,
+      "1": 4,
+      "4": 4
+    },
+    "nonzero_cloak": {
+      "21": 12,
+      "31": 2
+    },
+    "vertex_colors": {
+      "count": 828,
+      "active": 760,
+      "non_gray": 392
+    },
+    "side_colors": {
+      "count": 1368,
+      "active": 114,
+      "non_gray": 36
+    },
+    "texture_colors": {
+      "count": 910,
+      "active": 15,
+      "non_gray": 8
+    }
+  },
+  "native_pilot_comparison": "Pilot bytes match survey hash; native counts, offsets, versions, wall types/cloak and chromatic color counts agree",
+  "playable": false
+}

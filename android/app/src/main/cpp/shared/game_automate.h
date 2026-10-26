@@ -65,8 +65,16 @@ void game_automate_load_script(const char *script_path, int start_step, const ch
  */
 void game_automate_tick(void);
 
+/* Read-only D2 collision observations while the ordinary-input flight action runs */
+void game_automate_observe_flight_collision(int kind, int wall_segment, int wall_side, int object_num);
+/* Actual player muzzle query and projectile creation; observes without changing fire */
+void game_automate_observe_flight_shot(const char *stage, int weapon, int gun, int fate, int segment, int created_object);
+
 /* Debug-only slow-motion clock for the single-player exit capture fixture */
 int game_automate_capture_frame_time(int frame_time);
+/* Explicit visual fixture only; never normal gameplay qualification */
+int game_automate_still_view_active(void);
+int game_automate_reference_fans_active(void);
 void game_automate_capture_clock(int *fps, int *frame);
 
 /* Copies the latest source-correlated axis probe. Returns nonzero when valid. */

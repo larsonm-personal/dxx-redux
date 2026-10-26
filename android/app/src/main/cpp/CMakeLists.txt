@@ -22,6 +22,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cma
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-build-metadata.cmake)
 
 get_filename_component(DXX_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
+add_subdirectory("${DXX_PROJECT_ROOT}/android/XL_compat/android" xl_compat_metadata)
 if(NOT DEFINED DXX_ANDROID_BUILD_INFO_DIR)
     set(DXX_ANDROID_BUILD_INFO_DIR
         "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/generated/native-build-info")

@@ -1,3 +1,6 @@
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -41,6 +44,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "game_automate.h"
+#endif
 
 //Global variables for physics system
 
@@ -453,7 +459,11 @@ void do_physics_sim(object *obj)
 		//con_printf(CON_DEBUG, "Moving %d.\n", objnum); 
 
 		//Move the object
+#ifdef DXX_XL_PILOT
+		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, xl_preview_motion_time(orig_segnum, sim_time));
+#else
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, sim_time);
+#endif
 
 		if ( (frame_vec.x==0) && (frame_vec.y==0) && (frame_vec.z==0) )	
 			break;
@@ -493,6 +503,13 @@ void do_physics_sim(object *obj)
 			fq.flags |= FQ_GET_SEGLIST;
 
 		fate = find_vector_intersection(&fq,&hit_info);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+		if (obj == ConsoleObject && fate != HIT_NONE)
+			game_automate_observe_flight_collision(fate,
+				fate == HIT_WALL ? hit_info.hit_side_seg : -1,
+				fate == HIT_WALL ? hit_info.hit_side : -1,
+				fate == HIT_OBJECT ? hit_info.hit_object : -1);
+#endif
 		input_demo_log_replay_physics_fvi_fate(obj, fate, &hit_info,
 			&frame_vec, &new_pos, sim_time, n_ignore_objs);
 
@@ -849,14 +866,23 @@ void do_physics_sim(object *obj)
 	d1_in_d2_note_physics_result(obj, &start_pos, fate, obj_stopped, bounced);
 
 	// After collision with objects and walls, set velocity from actual movement
-	if (!obj_stopped && !bounced 
-		&& ((obj->type == OBJ_PLAYER) || (obj->type == OBJ_ROBOT) || (obj->type == OBJ_DEBRIS)) 
-		&& ((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0))
-		)
+	int reconstruct_velocity =
+		((obj->type == OBJ_PLAYER) || (obj->type == OBJ_ROBOT) || (obj->type == OBJ_DEBRIS)) &&
+		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0));
+#ifdef DXX_XL_PILOT
+	// XL's fluid profile reconstructs all object types after wall/bad-start hits
+	if (xl_preview_water_segment(orig_segnum))
+		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
+#endif
+	if (!obj_stopped && !bounced && reconstruct_velocity)
 	{	
 		vms_vector moved_vec;
 		vm_vec_sub(&moved_vec,&obj->pos,&start_pos);
+#ifdef DXX_XL_PILOT
+		vm_vec_copy_scale(&obj->mtype.phys_info.velocity,&moved_vec,xl_preview_motion_time(orig_segnum,fixdiv(f1_0,FrameTime)));
+#else
 		vm_vec_copy_scale(&obj->mtype.phys_info.velocity,&moved_vec,fixdiv(f1_0,FrameTime));
+#endif
 	}
 
 	fix_illegal_wall_intersection(obj, &start_pos);

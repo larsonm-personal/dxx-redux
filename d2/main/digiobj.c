@@ -76,6 +76,10 @@ int N_active_sound_objects=0;
 
 int digi_sounds_initialized=0;
 
+#ifdef DXX_XL_PILOT
+#include "audio_state.h"
+#endif
+
 /* Find the sound which actually equates to a sound number */
 int digi_xlat_sound(int soundno)
 {

@@ -1073,6 +1073,17 @@ class MatchmakingServiceFlowTest {
             directory.deleteRecursively()
         }
         failure.get()?.let { throw AssertionError("Owned proof fixture failed", it) }
+        // disconnect requests cancellation; real-dispatcher children may still be
+        // completing their finally blocks after the socket thread has exited
+        val serviceScope = field("scope").get(service) as kotlinx.coroutines.CoroutineScope
+        kotlinx.coroutines.runBlocking {
+            kotlinx.coroutines.withTimeout(3000) {
+                checkNotNull(
+                    serviceScope.coroutineContext[kotlinx.coroutines.Job],
+                ).children.toList().forEach { it.join() }
+            }
+        }
+        // Do not cancel jobs from the fixture: leaked work must still fail
         assertEquals(0, service.resourceDiagnostics()["background_jobs"])
     }
 

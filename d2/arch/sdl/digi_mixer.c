@@ -126,6 +126,9 @@ void digi_mixer_close() {
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_close (SDL_Mixer)\n");
 	if (!digi_initialised) return;
 	digi_initialised = 0;
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	android_sound_completion_stop(-1);
+#endif
 	Mix_CloseAudio();
 }
 
@@ -141,6 +144,9 @@ int digi_mixer_find_channel()
 
 void digi_mixer_free_channel(int channel_num)
 {
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	android_sound_completion_finished(channel_num);
+#endif
 	channels[channel_num] = 0;
 }
 
@@ -232,8 +238,17 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 	                         digi_mixer_source_rate(soundnum), channel);
 #endif
 #ifdef __ANDROID__
+	/* Register before playback so even a short sample has a completion callback */
+	Mix_ChannelFinished(digi_mixer_free_channel);
+#ifdef INTROSPECT_ON
+	android_sound_completion_begin(channel, soundnum, SoundChunks[soundnum].alen, looping);
+#endif
 	if (Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop) >= 0)
 		android_mod_sound_played(soundnum);
+#ifdef INTROSPECT_ON
+	else
+		android_sound_completion_failed(channel);
+#endif
 #else
 	Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop);
 #endif
@@ -268,6 +283,9 @@ void digi_mixer_set_channel_pan(int channel, int pan)
 void digi_mixer_stop_sound(int channel) {
 	if (!digi_initialised) return;
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_stop_sound %d\n", channel);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	android_sound_completion_stop(channel);
+#endif
 	Mix_HaltChannel(channel);
 	channels[channel] = 0;
 }
@@ -295,6 +313,9 @@ int digi_mixer_is_channel_playing(int channel) { return 0; }
 void digi_mixer_reset() {}
 void digi_mixer_stop_all_channels()
 {
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	android_sound_completion_stop(-1);
+#endif
 	Mix_HaltChannel(-1);
 	memset(channels, 0, MAX_SOUND_SLOTS);
 }

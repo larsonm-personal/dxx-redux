@@ -15,12 +15,15 @@ endfunction()
 extract_automation_fragment(types "enum step_type {" "/* -- Script state")
 extract_automation_fragment(request "struct automation_load_request {" "static char g_automate_dir")
 extract_automation_fragment(parser "static int parse_script(" "/* -- Assert: check introspection")
-extract_automation_fragment(result "static FILE *begin_result_file(" "static void write_result_file_continue(")
+extract_automation_fragment(result "static FILE *begin_result_file("
+                            "static void write_result_file_continue(")
 extract_automation_fragment(stale "static void remove_stale_result(void)" "/* -- Key injection")
 extract_automation_fragment(terminal "static void stop_script_fail(" "/* -- Public API")
-extract_automation_fragment(load "\t/* Handle pending load request (from JNI thread) */" "\n\tif (!g_active || g_current_step >= (int) g_steps.size())")
+extract_automation_fragment(load "\t/* Handle pending load request (from JNI thread) */"
+                            "\n\tif (!g_active || g_current_step >= (int) g_steps.size())")
 
 add_executable(test_game_automate_input "${CMAKE_CURRENT_LIST_DIR}/test_game_automate_input.cpp")
-target_include_directories(test_game_automate_input PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(test_game_automate_input PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+                                                            "${DXX_TEST_SHARED_SOURCE_DIR}")
 target_compile_features(test_game_automate_input PRIVATE cxx_std_17)
 target_link_libraries(test_game_automate_input PRIVATE nlohmann_json::nlohmann_json)

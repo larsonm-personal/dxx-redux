@@ -14,6 +14,9 @@
 #include "d1_in_d2_presentation.h"
 #include "d1_in_d2_cockpit.h"
 #include "d1_in_d2_ai.h"
+#ifdef DXX_XL_PILOT
+#include "resource_validation.h"
+#endif
 #ifdef OGL
 #include "xmodel.h"
 #endif
@@ -146,6 +149,14 @@ void d1_in_d2_prepare_intro_assets(void)
 
 int d1_in_d2_load_mission_assets(void)
 {
+#ifndef DXX_XL_PILOT
+	/* Ordinary builds retain descriptor-only XL discovery */
+	if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL) return 0;
+#endif
+#ifdef DXX_XL_PILOT
+	/* Reject changed base resources before freeing the still-active model payloads */
+	if (*xl_resource_base_rejection()) return 0;
+#endif
 	const int leaving_d1 = d1_in_d2_has_native_assets();
 	int extra_robots;
 

@@ -446,11 +446,12 @@ android {
 
         externalNativeBuild {
             cmake {
-                targets 'dxx-redux-d1', 'dxx-redux-d2', 'dxx_graphics_safety'
+                targets 'dxx-redux-d1', 'dxx-redux-d2', 'dxx_graphics_safety', 'xl_compat_metadata'
                 arguments '-DANDROID_STL=c++_shared',
                           "-DDXX_ANDROID_BUILD_INFO_DIR=${nativeBuildInfoFile.get().asFile.parentFile.absolutePath.replace(File.separatorChar, '/' as char)}",
                           '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
-                          "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}"
+                          "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}",
+                          "-DDXX_XL_PILOT=${(project.findProperty('xlPilot') ?: 'false').toBoolean() ? 'ON' : 'OFF'}"
             }
         }
     }
@@ -499,6 +500,7 @@ android {
 
     sourceSets {
         main {
+            kotlin.srcDir('../XL_compat/kotlin')
             kotlin.srcDir(githubRelease ? 'src/directInstall/java' : 'src/playServices/java')
             kotlin.srcDir(ciApk ? 'src/noGoogleIdentity/java' : 'src/googleIdentity/java')
             if (githubRelease) {

@@ -57,12 +57,16 @@ class RecoveryInstrumentation : Instrumentation() {
     private var enemyWithinImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
+    private var xlCompatibilityOnly = false
+    private var xlDragonPackageArchive: String? = null
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
             engineProbeHost = arguments.getString("host")
             engineProbeGame = arguments.getString("game") ?: "d2"
         }
+        xlCompatibilityOnly = arguments?.getString("suite") == "xl_compatibility"
+        xlDragonPackageArchive = arguments?.getString("dragon_package_archive")
         installationWorkOnly = arguments?.getString("suite") == "installation_work"
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
         verifyPublishedDocuments = arguments?.getString("published") == "true"
@@ -83,6 +87,13 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (xlCompatibilityOnly) {
+                val checks = XlCompatibilityViewChecks(this)
+                xlDragonPackageArchive?.let { checks.runDragonPackage(it) } ?: checks.run()
+                result.putString("stream", "PASS: XL compatibility dialog text and colors\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (installationWorkOnly) {
                 OnlineInstallationWorkChecks.run { line ->
                     sendStatus(0, Bundle().apply { putString("stream", line + "\n") })

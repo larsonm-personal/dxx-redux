@@ -21,6 +21,25 @@ int main(void)
 	int value;
 	unsigned extra_origins;
 
+	expect(mission_descriptor_key_is("  D2X-Name \t= Arena", "d2x-name"), "XL key ignores case and surrounding whitespace");
+	expect(!mission_descriptor_key_is("d2x-name-extra = Arena", "d2x-name"), "XL key suffix rejected");
+	expect(!mission_descriptor_key_is("d2x-name", "d2x-name"), "XL key requires equals");
+	expect(!mission_descriptor_key_is("d2x", "d2x-name"), "truncated XL key rejected");
+	expect(!mission_descriptor_key_is(NULL, "d2x-name"), "null XL key rejected");
+	expect(!mission_descriptor_key_is("d2x-name = Arena", ""), "empty expected key rejected");
+
+	{
+		char title[26];
+		expect(mission_descriptor_copy_title("  Observatory XL ; comment", title, sizeof(title)) &&
+		           !strcmp(title, "Observatory XL"),
+		       "title whitespace and comment handled");
+		expect(mission_descriptor_copy_title("1234567890123456789012345", title, sizeof(title)), "maximum native title accepted");
+		expect(!mission_descriptor_copy_title("12345678901234567890123456", title, sizeof(title)), "overlong title rejected");
+		expect(!mission_descriptor_copy_title("A                                                                                B", title, sizeof(title)), "late nonspace title byte is not truncated away");
+		expect(!mission_descriptor_copy_title(" ; comment", title, sizeof(title)), "comment-only title rejected");
+		expect(!mission_descriptor_copy_title(NULL, title, sizeof(title)), "null title rejected");
+	}
+
 	expect(!mission_descriptor_value(NULL), "null line has no value");
 	expect(!mission_descriptor_value(missing), "missing equals has no value");
 	expect(!mission_descriptor_value(empty), "empty value is rejected");

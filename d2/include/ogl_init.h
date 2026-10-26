@@ -78,6 +78,7 @@ typedef struct _ogl_texture {
 	int authored_mip_count, mip_base_level;
 	unsigned int replacement_source;
 	int sprite_additive;
+	int scoped_static, scoped_super, scoped_soft, scoped_opaque; /* Renderer-only XL source classification */
 	unsigned int additive_draws; /* Android diagnostics: actual sprite draw submissions */
 #endif
 } ogl_texture;
@@ -115,6 +116,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname);
 void ogl_freebmtexture(grs_bitmap *bm);
 
 void ogl_start_frame(void);
+int ogl_use_classic_depth(void);
 void ogl_end_frame(void);
 void ogl_prepare_framebuffer_readback(void);
 #ifdef ANDROID

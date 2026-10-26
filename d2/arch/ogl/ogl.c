@@ -1,3 +1,11 @@
+#ifdef DXX_XL_PILOT
+#define XL_FACE_ALPHA(value) xl_preview_alpha(value)
+#else
+#define XL_FACE_ALPHA(value) (value)
+#endif
+#ifdef DXX_XL_PILOT
+#include "preview.h"
+#endif
 /*
  *
  * Graphics support functions for OpenGL.
@@ -65,6 +73,12 @@ static void android_clear_texture_replacement_path_cache(void);
 
 #include "3d.h"
 #include "piggy.h"
+#ifdef ANDROID
+#include "mission.h"
+#ifdef DXX_XL_PILOT
+#include "resource_validation.h"
+#endif
+#endif
 #include "../../3d/globvars.h"
 #include "../../3d/clipper.h"
 #include "dxxerror.h"
@@ -388,6 +402,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->authored_mip_count = t->mip_base_level = 0;
 	t->replacement_source = 0;
 	t->sprite_additive = 0;
+	t->scoped_static = t->scoped_super = t->scoped_soft = t->scoped_opaque = 0;
 	t->additive_draws = 0;
 #endif
 }
@@ -406,6 +421,12 @@ static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
 int g_cache_time_ms = 0; /* time spent in ogl_cache_level_textures */
 #endif
 
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+int ogl_allow_png(void);
+ogl_texture *ogl_get_free_texture(void);
+#include "xl_wall_animation.h"
+#endif
+
 void ogl_reset_texture_stats_internal(void){
 	int i;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
@@ -421,6 +442,9 @@ void ogl_reset_texture_stats_internal(void){
 }
 
 void ogl_init_texture_list_internal(void){
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	xl_wall_animation_clear();
+#endif
 	int i;
 #ifdef ANDROID
 	android_ogl_reset_transient_blit_texture(&ogl_bind_texture_state, 0);
@@ -438,6 +462,9 @@ void ogl_init_texture_list_internal(void){
 }
 
 void ogl_smash_texture_list_internal(void){
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	xl_wall_animation_clear();
+#endif
 	int i;
 #ifdef ANDROID
 	if (android_egl_discarding_lost_context_resources()) {
@@ -507,6 +534,9 @@ int ogl_allow_png(void){
 }
 
 void ogl_smash_png_textures(void){
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	xl_wall_animation_clear();
+#endif
 	int i;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++){
 		if (ogl_texture_list[i].handle>0 && ogl_texture_list[i].is_png){
@@ -1209,6 +1239,9 @@ extern void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist);
  */ 
 bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light_rgb,grs_bitmap *bm)
 {
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	if (tmap_drawer_ptr == draw_tmap) bm = xl_wall_animation_bitmap(bm, 0, 0);
+#endif
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoord_array[MAX_VERTS * 2];
 	GLfloat color_alpha = 1.0;
@@ -1259,7 +1292,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 #ifdef ANDROID
 		android_texture_debug_log_render_bind(&r_etc2_render_log_count, bm);
 #endif
-		color_alpha = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
+		color_alpha = XL_FACE_ALPHA((grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0)));
 #if defined(ANDROID) && defined(OGL_MERGE)
 		cover_shader = "single";
 #endif
@@ -1311,8 +1344,14 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 			(const struct g3s_point **)pointlist, uvl_list, nv);
 #endif
 
+#ifdef ANDROID
+	const int previous_binary = gles3_shim_set_binary_texture(tmap_drawer_ptr == draw_tmap && bm->gltexture && bm->gltexture->scoped_static);
+#endif
 	if (!skip_merged_wall_cover_draw)
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
+#ifdef ANDROID
+	gles3_shim_set_binary_texture(previous_binary);
+#endif
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -1335,11 +1374,19 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	return 0;
 }
 
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#include "xl_soft_base_pass_impl.h"
+#endif
+
 /*
  * Everything texturemapped with secondary texture (walls with secondary texture)
  */
 static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot, grs_bitmap *bmovl, int orient, int label_nv, const g3s_point **label_pointlist)
 {
+#if defined(ANDROID) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+	bmbot = xl_wall_animation_bitmap(bmbot, 0, 0);
+	bmovl = xl_wall_animation_bitmap(bmovl, 1, 0);
+#endif
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
 	int skip_merged_wall_cover_draw = 0;
@@ -1391,10 +1438,28 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 
+#if defined(ANDROID) && defined(DXX_XL_PILOT)
+	if (!bmovl->gltexture->scoped_static && xl_soft_overlay_base_opaque(bmbot) &&
+	    grd_curcanv->cv_blend_func == GR_BLEND_NORMAL && grd_curcanv->cv_fade_level >= GR_FADE_OFF && XL_FACE_ALPHA(1.0f) == 1.0f) {
+		grs_bitmap *selected = xl_wall_animation_bitmap(bmovl, 1, 1);
+		bmovl = selected;
+		/* Selection can upload before rejecting a frame mapping or budget.
+		 * Restore both units even when the original bitmap is returned. */
+		android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
+		OGL_ACTIVETEXTURE(GL_TEXTURE0);
+		ogl_bindbmtex(bmbot);
+		OGL_ACTIVETEXTURE(GL_TEXTURE1);
+		ogl_bindbmtex(bmovl);
+		ogl_texwrap(bmovl->gltexture, GL_REPEAT);
+	}
+#endif
 	/* Compute super after bindbmtex -- on first encounter bm_flags may be
 	 * BM_FLAG_PAGED_OUT (no SUPER_TRANSPARENT) and gltexture_mask NULL.
 	 * bindbmtex pages in the bitmap and generates the mask. */
 	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
+#ifdef ANDROID
+	if (bmovl->gltexture->scoped_super && bmovl->gltexture_mask) super = 1;
+#endif
 	#if defined(ANDROID)
 	is_logging_target_plain = !super && android_merged_wall_is_logging_target_bitmap(bmovl);
 	merged_wall_force_two_pass = is_logging_target_plain && g_merged_wall_force_two_pass;
@@ -1417,7 +1482,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 
 	OGL_ACTIVETEXTURE(GL_TEXTURE0);
 	#if defined(ANDROID)
-	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
+	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT) &&
+	    !bmbot->gltexture->scoped_static && !bmovl->gltexture->scoped_static) {
 		if (merged_wall_force_two_pass) {
 			android_merged_wall_log_tmap2_route("force_two_pass",
 				bmbot, bmovl, label_nv, orient);
@@ -1492,7 +1558,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		color_array[index4]      = bmbot->bm_flags & BM_FLAG_NO_LIGHTING ? 1.0 : minf(1.0, f2glf(light_rgb[c].r));
 		color_array[index4+1]    = bmbot->bm_flags & BM_FLAG_NO_LIGHTING ? 1.0 : minf(1.0, f2glf(light_rgb[c].g));
 		color_array[index4+2]    = bmbot->bm_flags & BM_FLAG_NO_LIGHTING ? 1.0 : minf(1.0, f2glf(light_rgb[c].b));
-		color_array[index4+3]    = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
+		color_array[index4+3]    = XL_FACE_ALPHA((grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0)));
 		
 		vertex_array[index3]     = f2glf(pointlist[c]->p3_vec.x);
 		vertex_array[index3+1]   = f2glf(pointlist[c]->p3_vec.y);
@@ -1531,8 +1597,13 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #ifdef ANDROID
 	gles3_shim_use_external(prog);
 	ogl_prog_set_tex2_current_matrix(gles3_shim_get_mvp(), super);
+	ogl_prog_set_tex2_base_binary(bmbot->gltexture->scoped_static, super);
+	ogl_prog_set_tex2_soft(bmovl->gltexture->scoped_soft, super);
 	r_shader_switches++;
-	if (super) r_mask_draws++;
+	if (super) {
+		++r_mask_draws;
+		ogl_prog_set_tex2m_binary(bmovl->gltexture->scoped_static);
+	}
 #else
 	glUseProgram(prog);
 #endif
@@ -1610,6 +1681,9 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 
 #if defined(ANDROID)
+	ogl_prog_set_tex2_base_binary(0, super);
+	ogl_prog_set_tex2_soft(0, super);
+	if (super) ogl_prog_set_tex2m_binary(0);
 	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {
 		android_merged_wall_track_face((const struct g3s_point **)pointlist,
@@ -1987,7 +2061,7 @@ bool g3_draw_bitmap_full(vms_vector *pos,fix width,fix height,grs_bitmap *bm,
 		color_array[i*4]    = r;
 		color_array[i*4+1]  = g;
 		color_array[i*4+2]  = b;
-		color_array[i*4+3]  = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
+		color_array[i*4+3]  = XL_FACE_ALPHA((grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0)));
 		
 		vertex_array[i*3]   = f2glf(pv.x);
 		vertex_array[i*3+1] = f2glf(pv.y);
@@ -2158,6 +2232,15 @@ void ogl_set_blending()
 
 GLubyte *pixels = NULL;
 
+int ogl_use_classic_depth(void)
+{
+#ifdef DXX_XL_PILOT
+	/* Authored emitters need scene depth; preserve the user's stock preference */
+	if (xl_preview_pilot_active()) return 0;
+#endif
+	return GameCfg.ClassicDepth;
+}
+
 void ogl_start_frame(void){
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID
@@ -2216,7 +2299,7 @@ void ogl_start_frame(void){
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GEQUAL,0.02);
 
-	if (GameCfg.ClassicDepth)
+	if (ogl_use_classic_depth())
 		glDisable(GL_DEPTH_TEST);
 	else
 		glEnable(GL_DEPTH_TEST);
@@ -2463,6 +2546,9 @@ void gr_flip(void)
 		}
 	}
 	ogl_android_apply_pending_runtime_options("gr_flip");
+#ifdef INTROSPECT_ON
+	game_introspect_finish_render_frame();
+#endif
 #endif
 
 #ifdef ANDROID
@@ -3113,6 +3199,19 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 
 		while (bm->bm_parent)
 			bm=bm->bm_parent;
+#ifdef ANDROID
+	/* A replacement-only flush leaves bitmap pointers alive. Retire scoped
+	 * dimensions/classification/mask together before reloading or stock fallback. */
+	if (bm->gltexture && bm->gltexture->scoped_static && !bm->gltexture->handle) {
+		ogl_reset_texture(bm->gltexture);
+		bm->gltexture = NULL;
+		if (bm->gltexture_mask) {
+			if (bm->gltexture_mask->handle) ogl_freetexture(bm->gltexture_mask);
+			else ogl_reset_texture(bm->gltexture_mask);
+			bm->gltexture_mask = NULL;
+		}
+	}
+#endif
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
 #ifdef OGL_MERGE
@@ -3133,6 +3232,11 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		int png_loaded = 0;
 
 #ifdef ANDROID
+#ifdef DXX_XL_PILOT
+		const char *scoped_hog = !d1_in_d2_use_d1_gameplay() && xl_resource_texture_scope_enabled() ? mission_resource_archive() : NULL;
+#else
+		const char *scoped_hog = NULL;
+#endif
 		char texture_set_bitmapname[256];
 		char prefixed_bitmapname[256];
 		int have_d2_texture_root = android_have_d2_texture_root();
@@ -3147,7 +3251,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		const char *replacement_names[] = { have_texture_set_bitmapname ? texture_set_bitmapname : NULL, have_prefixed_bitmapname ? prefixed_bitmapname : NULL, bitmapname };
 		const int replacement_slots[] = { ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_SET, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE };
 		etc2_file_data edata;
-		int replacement = android_ogl_read_replacement(filename, sizeof(filename),
+		int replacement = android_ogl_read_replacement(filename, sizeof(filename), scoped_hog,
 			replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
 			!ogl_etc2_broken, bm, &pdata, &edata, &lookup_metrics,
 			&profile_ktx2_read_us, &profile_png_read_us);
@@ -3218,7 +3322,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		skip_ktx2:
 		if (replacement == 2) {
 			long long previous_png_us = profile_png_read_us;
-			png_loaded = android_ogl_read_replacement(filename, sizeof(filename),
+			png_loaded = android_ogl_read_replacement(filename, sizeof(filename), scoped_hog,
 				replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
 				0, bm, &pdata, &edata, &lookup_metrics,
 				&profile_ktx2_read_us, &profile_png_read_us) == 1;
@@ -3277,10 +3381,15 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 						free(pdata.palette);
 					} else {
 				#ifdef OGL_MERGE
-				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
+				if ((real_flags & BM_FLAG_SUPER_TRANSPARENT)
+#ifdef ANDROID
+				    || pdata.scoped_static
+#endif
+				) {
 #ifdef ANDROID
 					android_perf_clock_now(&stage_start);
-					if (!android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture)) {
+					if (!(pdata.scoped_static ? android_ogl_load_scoped_mask(&pdata, bm, texfilt, ogl_loadtexture)
+				                         : android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture))) {
 						free(pdata.data);
 						if (pdata.palette) free(pdata.palette);
 						ogl_freebmtexture(bm);

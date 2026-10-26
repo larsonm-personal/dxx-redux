@@ -14,12 +14,25 @@ typedef struct _png_data {
 	unsigned char *data;
 	unsigned char *palette;
 	int num_palette;
+#ifdef ANDROID
+	/* Mask aliases data allocation; free only data. Shared D1/D2 Android ABI */
+	unsigned char *scoped_mask;
+	int scoped_static, scoped_super, scoped_soft;
+#endif
 } png_data;
 
 extern int read_png(const char *filename, png_data *pdata);
 extern int write_png(const char *filename, png_data *pdata);
 
 #ifdef ANDROID
+/* Reject alpha and XL transparency keys before image fitting; global lookup is unchanged. */
+extern int read_png_scoped_opaque(const char *filename, png_data *pdata);
+extern int read_png_scoped_static(const char *filename, png_data *pdata);
+/* Opaque square-frame strip, original pixels retained for independent frame fitting */
+extern int read_png_scoped_animation(const char *filename, png_data *pdata);
+/* Binary coverage strip; raw source pixels retained, partial alpha rejected */
+extern int read_png_scoped_binary_animation(const char *filename, png_data *pdata);
+extern int read_png_scoped_soft_animation(const char *filename, png_data *pdata);
 /* Pre-compressed ETC2 texture file (.etc2 format) */
 typedef struct _etc2_file_data {
 	unsigned int width;

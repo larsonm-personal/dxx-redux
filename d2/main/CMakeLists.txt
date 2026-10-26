@@ -1,4 +1,10 @@
+# Format detection is available even when the optional XL runtime is disabled
+add_library(dxx_xl_mission_label OBJECT ../../android/XL_compat/mission_label.cpp)
+target_compile_features(dxx_xl_mission_label PRIVATE cxx_std_17)
+set_target_properties(dxx_xl_mission_label PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 set(D2X_MAIN_SOURCES
+    $<TARGET_OBJECTS:dxx_xl_mission_label>
     ai.c
     ai2.c
     aipath.c
@@ -347,9 +353,14 @@ if(NOT ANDROID)
         # Replay must use the same Guide-Bot navigation rules as the desktop game
         PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER DXX_GUIDEBOT_LIVE_ESCORT
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve)
+    if(DXX_XL_PILOT)
+        set(metadata_entry ../../android/XL_compat/runtime/lifecycle_test.cpp)
+    else()
+        set(metadata_entry ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp)
+    endif()
     dxx_add_headless_target(
         dxx-redux-d2-headless-metadata
-        ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp
+        ${metadata_entry}
         GAME_SOURCES ${D2X_HEADLESS_SOURCES}
         PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
