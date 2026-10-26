@@ -122,6 +122,19 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	};
 	rebase(27); // Legacy unused player block
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
+	// XL Read normalizes authored master semaphores, but save restoration retains
+	// the live raw count. Apply this only to the source-level translation
+	const auto trigger_offset = read_offset(out, new_game_offset + 71);
+	for (std::size_t i = 0; i < v.triggers.size(); ++i) {
+		const auto &trigger = v.triggers[i];
+		if (trigger.type != 31) continue;
+		const auto offset = static_cast<std::size_t>(trigger_offset) + i * 52;
+		if (v.game_version < 39) patch(out, offset + 4, 0);
+		else if (trigger.value > 0) {
+			patch(out, offset + 4, trigger.value / 65536);
+			patch(out, offset + 1, trigger.flags | 4, 1);
+		}
+	}
 	if (serialization_23_40) {
 		// Stock uses explicit section offsets. Retain the original game payload as
 		// inert evidence, then point at records with the audited stock widths

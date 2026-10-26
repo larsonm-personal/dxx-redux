@@ -91,6 +91,7 @@ if(BUILD_TESTING)
     if(XL_REFERENCE_GEOMETRY_ROOT)
         include(tests/reference_face_point.cmake)
         include(tests/reference_teleport.cmake)
+        include(tests/reference_trigger.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")
@@ -162,6 +163,19 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/wall-teleports ${xl_teleport_oracle_args}
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/teleport.cmake)
             set_tests_properties(xl_wall_teleports PROPERTIES TIMEOUT 85)
+            set(xl_trigger_oracle_args)
+            if(TARGET xl_trigger_reference)
+                list(APPEND xl_trigger_oracle_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_trigger_reference>")
+            endif()
+            add_test(
+                NAME xl_wall_trigger_chains
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/trigger-chains
+                    ${xl_trigger_oracle_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/trigger_chain.cmake)
+            set_tests_properties(xl_wall_trigger_chains PROPERTIES TIMEOUT 85)
             add_test(
                 NAME xl_modern_properties
                 COMMAND

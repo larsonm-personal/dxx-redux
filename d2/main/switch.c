@@ -525,7 +525,7 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 		return 1;
 
 #ifdef DXX_XL_RUNTIME
-	const int xl_result = xl_wall_teleport(trigger_num, Players[pnum].objnum, shot);
+	const int xl_result = xl_wall_trigger(trigger_num, Players[pnum].objnum, shot);
 	if (xl_result >= 0) {
 		xl_preview_trigger_result(trigger_num, shot, xl_result);
 		return xl_result;
@@ -561,11 +561,17 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 			  digi_stop_digi_sounds();  //Sound shouldn't cut out when exiting a D1 lvl
 
 			if (Current_level_num > 0) {
+#ifdef DXX_XL_RUNTIME
+				xl_wall_trigger_exit();
+#endif
 				start_endlevel_sequence();
 			} else if (Current_level_num < 0) {
 				if ((Players[Player_num].shields < 0) || Player_is_dead)
 					break;
 				// Authored secret exits can also have a rendered escape tunnel
+#ifdef DXX_XL_RUNTIME
+				xl_wall_trigger_exit();
+#endif
 				start_endlevel_sequence();
 				return 1;
 			} else {
@@ -616,6 +622,9 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 
 			digi_stop_digi_sounds();
 
+#ifdef DXX_XL_RUNTIME
+			xl_wall_trigger_exit();
+#endif
 			EnterSecretLevel();
 			Control_center_destroyed = 0;
 			return 1;
@@ -723,7 +732,7 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 		const int xl_wall = seg->sides[side].wall_num;
 		if (xl_wall >= 0 && xl_wall < Num_walls) {
 			const int xl_trigger = Walls[xl_wall].trigger;
-			const int xl_result = xl_wall_teleport(xl_trigger, objnum, shot);
+			const int xl_result = xl_wall_trigger(xl_trigger, objnum, shot);
 			if (xl_result >= 0) {
 				xl_preview_trigger_result(xl_trigger, shot, xl_result);
 				return;
@@ -799,8 +808,8 @@ void triggers_frame_process()
 
 	for (i=0;i<Num_triggers;i++) {
 #ifdef DXX_XL_RUNTIME
-		/* Immediate XL teleport time is a scheduling descriptor, not a stock countdown */
-		if (xl_level_extensions_active() && Triggers[i].type == 14)
+		/* XL time is a scheduling descriptor, not a stock countdown */
+		if (xl_level_extensions_active())
 			continue;
 #endif
 		if (Triggers[i].time >= 0)
