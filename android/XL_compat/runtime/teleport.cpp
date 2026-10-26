@@ -73,7 +73,7 @@ extern "C" int xl_wall_teleport_actor(int object_index)
 }
 
 // Return -1 for stock dispatch, otherwise the ordinary trigger result convention
-extern "C" int xl_wall_teleport(int trigger_index, int object_index, int shot)
+extern "C" int xl_wall_teleport_action(int trigger_index, int object_index, int shot)
 {
 	if (!xl_level_extensions_active() || trigger_index < 0 || trigger_index >= Num_triggers || Triggers[trigger_index].type != 14) return -1;
 	auto &trigger = Triggers[trigger_index];
@@ -83,8 +83,7 @@ extern "C" int xl_wall_teleport(int trigger_index, int object_index, int shot)
 	if (player) {
 		if (object_index != Players[Player_num].objnum || Players[Player_num].shields < 0 || Player_is_dead) return 1;
 	} else if (object.type != OBJ_ROBOT && object.type != OBJ_DEBRIS && object.type != OBJ_CNTRLCEN && object.type != OBJ_HOSTAGE && object.type != OBJ_POWERUP) return 1;
-	const auto delay = std::abs(std::int64_t(trigger.time));
-	if ((trigger.flags & ~7) || (delay >= 100 && delay <= 900000) || trigger.num_links < 0 || trigger.num_links > MAX_WALLS_PER_LINK) return 1;
+	if (trigger.num_links < 0 || trigger.num_links > MAX_WALLS_PER_LINK) return 1;
 	for (int i = 0; i < trigger.num_links; ++i)
 		if (trigger.seg[i] < 0 || trigger.seg[i] > Highest_segment_index || trigger.side[i] < 0 || trigger.side[i] >= 6) return 1;
 	if (trigger.num_links) {
@@ -118,6 +117,5 @@ extern "C" int xl_wall_teleport(int trigger_index, int object_index, int shot)
 	}
 	digi_play_sample(SOUND_SECRET_EXIT, F1_0);
 	if (player && shot && !(trigger.flags & TF_NO_MESSAGE)) HUD_init_message_literal(HM_DEFAULT, "Teleport!");
-	if (trigger.flags & TF_ONE_SHOT) trigger.flags |= TF_DISABLED;
 	return 0;
 }

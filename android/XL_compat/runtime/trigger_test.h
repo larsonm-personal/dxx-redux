@@ -1,4 +1,63 @@
 #include "../admission.h"
+static void write_trigger_chain_fixture(const std::filesystem::path &root)
+{
+	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
+	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() };
+	xl_compat::Bytes derived{ 'D', 'H', 'F' };
+	for (auto member : xl_compat::read_hog(bytes)) {
+		if (member.name == "neptunxl.rl2") {
+			const auto inventory = xl_compat::inspect_level(member.bytes);
+			const auto &section = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
+			require(section.count == 1 && inventory.walls.size() >= 8, "unexpected trigger chain source geometry");
+			const auto patch = [&](std::size_t offset, std::uint32_t value, int width = 4) {
+				for (int i = 0; i < width; ++i) member.bytes.at(offset + i) = static_cast<unsigned char>(value >> (i * 8));
+			};
+			member.bytes.insert(member.bytes.begin() + section.offset, 7 * 52, 0);
+			for (std::size_t i = 0; i < inventory.sections.size(); ++i)
+				if (inventory.sections[i].offset > section.offset) patch(inventory.game_offset + 35 + i * 12, inventory.sections[i].offset + 7 * 52);
+			patch(inventory.game_offset + 75, 8);
+			const auto &walls = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "walls"; });
+			for (std::size_t i = 0; i < inventory.walls.size(); ++i) patch(walls.offset + i * 25 + 20, i < 8 ? static_cast<unsigned>(i) : 255, 1);
+			std::fill(member.bytes.begin() + section.offset, member.bytes.begin() + section.offset + 8 * 52, 0);
+			const auto action = [&](int index, int type, int flags, int value, std::initializer_list<int> links) {
+				const auto offset = section.offset + index * 52;
+				patch(offset, type, 1);
+				patch(offset + 1, flags, 1);
+				patch(offset + 2, static_cast<unsigned>(links.size()), 1);
+				patch(offset + 4, value);
+				patch(offset + 8, 0xffffffff);
+				int i = 0;
+				for (int target : links) {
+					const auto &wall = inventory.walls.at(target);
+					patch(offset + 12 + i * 2, wall.segment, 2);
+					patch(offset + 32 + i * 2, wall.side, 2);
+					++i;
+				}
+			};
+			action(0, 31, TF_ONE_SHOT, 0, { 2, 1, 3, 1 });
+			action(1, 14, TF_DISABLED, 0, {});
+			patch(section.offset + 52 + 2, 1, 1);
+			patch(section.offset + 52 + 12, 1, 2);
+			action(2, 32, 0, 0, { 1 });
+			action(3, 33, 0, 0, { 1 });
+			action(4, 31, 0, 2 * F1_0, { 1 });
+			action(5, 31, 0, 0, { 0 });
+			action(6, 32, 0, 0, { 4 });
+			action(7, 33, 0, 0, { 4 });
+			require(xl_compat::runtime_blockers(xl_compat::inspect_level(member.bytes)).empty(), "derived chain source failed admission");
+		}
+		char name[13] = {};
+		require(member.name.size() < sizeof(name), "chain HOG member exceeds bound");
+		std::strcpy(name, member.name.c_str());
+		derived.insert(derived.end(), name, name + sizeof(name));
+		for (unsigned shift = 0; shift < 32; shift += 8) derived.push_back(static_cast<unsigned char>(member.bytes.size() >> shift));
+		derived.insert(derived.end(), member.bytes.begin(), member.bytes.end());
+	}
+	write_bytes((root / "chain.hog").string().c_str(), derived);
+	std::ofstream descriptor(root / "chain.mn2");
+	descriptor << "d2x-name = Derived chain controls\nnum_levels = 1\nneptunxl.rl2\n";
+	descriptor.close();
+}
 static int trigger_chain_test(int argc, char **argv)
 {
 	try {
@@ -6,62 +65,7 @@ static int trigger_chain_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
-		std::ifstream original(root / "neptunxl.hog", std::ios::binary);
-		xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() };
-		xl_compat::Bytes derived{ 'D', 'H', 'F' };
-		for (auto member : xl_compat::read_hog(bytes)) {
-			if (member.name == "neptunxl.rl2") {
-				const auto inventory = xl_compat::inspect_level(member.bytes);
-				const auto &section = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
-				require(section.count == 1 && inventory.walls.size() >= 8, "unexpected trigger chain source geometry");
-				const auto patch = [&](std::size_t offset, std::uint32_t value, int width = 4) {
-					for (int i = 0; i < width; ++i) member.bytes.at(offset + i) = static_cast<unsigned char>(value >> (i * 8));
-				};
-				member.bytes.insert(member.bytes.begin() + section.offset, 7 * 52, 0);
-				for (std::size_t i = 0; i < inventory.sections.size(); ++i)
-					if (inventory.sections[i].offset > section.offset) patch(inventory.game_offset + 35 + i * 12, inventory.sections[i].offset + 7 * 52);
-				patch(inventory.game_offset + 75, 8);
-				const auto &walls = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "walls"; });
-				for (std::size_t i = 0; i < inventory.walls.size(); ++i) patch(walls.offset + i * 25 + 20, i < 8 ? static_cast<unsigned>(i) : 255, 1);
-				std::fill(member.bytes.begin() + section.offset, member.bytes.begin() + section.offset + 8 * 52, 0);
-				const auto action = [&](int index, int type, int flags, int value, std::initializer_list<int> links) {
-					const auto offset = section.offset + index * 52;
-					patch(offset, type, 1);
-					patch(offset + 1, flags, 1);
-					patch(offset + 2, static_cast<unsigned>(links.size()), 1);
-					patch(offset + 4, value);
-					patch(offset + 8, 0xffffffff);
-					int i = 0;
-					for (int target : links) {
-						const auto &wall = inventory.walls.at(target);
-						patch(offset + 12 + i * 2, wall.segment, 2);
-						patch(offset + 32 + i * 2, wall.side, 2);
-						++i;
-					}
-				};
-				action(0, 31, TF_ONE_SHOT, 0, { 2, 1, 3, 1 });
-				action(1, 14, TF_DISABLED, 0, {});
-				patch(section.offset + 52 + 2, 1, 1);
-				patch(section.offset + 52 + 12, 1, 2);
-				action(2, 32, 0, 0, { 1 });
-				action(3, 33, 0, 0, { 1 });
-				action(4, 31, 0, 2 * F1_0, { 1 });
-				action(5, 31, 0, 0, { 0 });
-				action(6, 32, 0, 0, { 4 });
-				action(7, 33, 0, 0, { 4 });
-				require(xl_compat::runtime_blockers(xl_compat::inspect_level(member.bytes)).empty(), "derived chain source failed admission");
-			}
-			char name[13] = {};
-			require(member.name.size() < sizeof(name), "chain HOG member exceeds bound");
-			std::strcpy(name, member.name.c_str());
-			derived.insert(derived.end(), name, name + sizeof(name));
-			for (unsigned shift = 0; shift < 32; shift += 8) derived.push_back(static_cast<unsigned char>(member.bytes.size() >> shift));
-			derived.insert(derived.end(), member.bytes.begin(), member.bytes.end());
-		}
-		write_bytes((root / "chain.hog").string().c_str(), derived);
-		std::ofstream descriptor(root / "chain.mn2");
-		descriptor << "d2x-name = Derived chain controls\nnum_levels = 1\nneptunxl.rl2\n";
-		descriptor.close();
+		write_trigger_chain_fixture(root);
 		require(load_base_mission("chain", error, sizeof(error)), error);
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);

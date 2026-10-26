@@ -547,7 +547,11 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 	if (trig->flags & TF_DISABLED)
 		return 1;		//1 means don't send trigger hit to other players
 
-	if (trig->flags & TF_ONE_SHOT)		//if this is a one-shot...
+	if ((trig->flags & TF_ONE_SHOT)
+#ifdef DXX_XL_RUNTIME
+	    && !xl_wall_trigger_stock_active()
+#endif
+	)		//if this is a one-shot...
 		trig->flags |= TF_DISABLED;		//..then don't let it happen again
 
 	switch (trig->type) {
@@ -728,14 +732,18 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 	input_demo_log_trigger_probe("entry", seg, side, objnum, shot, -1);
 
 #ifdef DXX_XL_RUNTIME
-	if (side >= 0 && side < MAX_SIDES_PER_SEGMENT) {
+	if (xl_level_extensions_active() && side >= 0 && side < MAX_SIDES_PER_SEGMENT) {
 		const int xl_wall = seg->sides[side].wall_num;
 		if (xl_wall >= 0 && xl_wall < Num_walls) {
 			const int xl_trigger = Walls[xl_wall].trigger;
-			const int xl_result = xl_wall_trigger(xl_trigger, objnum, shot);
-			if (xl_result >= 0) {
-				xl_preview_trigger_result(xl_trigger, shot, xl_result);
-				return;
+			/* Classic player actions retain recording and route-confirmation entry gates */
+			if (xl_trigger >= 0 && xl_trigger < Num_triggers &&
+			    (Triggers[xl_trigger].type > 13 || (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type != OBJ_PLAYER))) {
+				const int xl_result = xl_wall_trigger(xl_trigger, objnum, shot);
+				if (xl_result >= 0) {
+					xl_preview_trigger_result(xl_trigger, shot, xl_result);
+					return;
+				}
 			}
 		}
 	}
@@ -805,6 +813,9 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 void triggers_frame_process()
 {
 	int i;
+#ifdef DXX_XL_RUNTIME
+	xl_wall_trigger_frame();
+#endif
 
 	for (i=0;i<Num_triggers;i++) {
 #ifdef DXX_XL_RUNTIME

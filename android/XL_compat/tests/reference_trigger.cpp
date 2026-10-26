@@ -144,18 +144,21 @@ int main(int argc, char **argv)
 		}
 		if (!samples.eof() || count != 40) throw std::runtime_error("Missing or malformed runtime samples");
 		for (int version : { 33, 36, 40 })
-			for (int value : { -65536, 0, 1, 65535, 65536, 131072 }) {
-				CFile file;
-				file.bytes.resize(52);
-				file.bytes[0] = TT_MASTER;
-				for (unsigned i = 0; i < 4; ++i) file.bytes[4 + i] = std::uint32_t(value) >> (i * 8);
-				CTrigger read;
-				gameTopFileInfo.fileinfoVersion = version;
-				read.Read(file, 0);
-				const int expected = version < 39 ? 0 : value > 0 ? value / 65536
-				                                                  : value;
-				if (read.value != expected || read.flags != (version >= 39 && value > 0 ? TF_DISABLED : 0) || file.position != 52) throw std::runtime_error("Reference master source normalization changed");
-			}
+			for (int value : { -65536, 0, 1, 65535, 65536, 131072 })
+				for (int flags : { 0, 8, 128, 136 }) {
+					CFile file;
+					file.bytes.resize(52);
+					file.bytes[0] = TT_MASTER;
+					file.bytes[1] = static_cast<std::uint8_t>(flags);
+					for (unsigned i = 0; i < 4; ++i) file.bytes[4 + i] = std::uint32_t(value) >> (i * 8);
+					CTrigger read;
+					gameTopFileInfo.fileinfoVersion = version;
+					read.Read(file, 0);
+					const int expected = version < 39 ? 0 : value > 0 ? value / 65536
+					                                                  : value;
+					const int expected_flags = version >= 39 && value > 0 ? (flags | TF_DISABLED) & (flags & TF_AUTOPLAY ? ~TF_PERMANENT : ~0) : flags;
+					if (read.value != expected || read.flags != expected_flags || file.position != 52) throw std::runtime_error("Reference master source normalization changed");
+				}
 		CTrigger master;
 		master.m_nLinks = 3;
 		for (int i = 0; i < 3; ++i) {

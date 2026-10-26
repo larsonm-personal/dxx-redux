@@ -132,7 +132,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		if (v.game_version < 39) patch(out, offset + 4, 0);
 		else if (trigger.value > 0) {
 			patch(out, offset + 4, trigger.value / 65536);
-			patch(out, offset + 1, trigger.flags | 4, 1);
+			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
 	if (serialization_23_40) {

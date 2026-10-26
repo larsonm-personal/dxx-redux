@@ -8,9 +8,11 @@ orientation, velocity rotation, actor filtering, repeat/one-shot behavior and
 saved disabled state are covered by the controls below. There is no production
 mission-name or hash exception
 
-Delayed teleports (absolute serialized time 100 through 900000), extended flags
-outside the classic low three bits, object-attached triggers, speed boosts,
-spawn-setting actions and multiplayer remain rejected. Other level, capacity and
+The immediate tranche is extended by [scheduler support](trigger-scheduler.md):
+absolute serialized times 100 through 900000 and permanent/alternate/autoplay
+flags now have runtime and persistence controls. Orientation/silent flags,
+object-attached triggers, speed boosts, spawn-setting actions and multiplayer
+remain rejected. Other level, capacity and
 asset requirements still apply. Software-renderer XL admission is unchanged
 
 This tranche does not qualify another original mission or campaign. Surveyed
