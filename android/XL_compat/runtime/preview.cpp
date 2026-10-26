@@ -451,6 +451,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_wall_trigger_reset();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;

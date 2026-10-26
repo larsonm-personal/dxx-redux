@@ -1,0 +1,103 @@
+{
+    "scope": "Supplied static survey only; no new mission qualification or complete native inventory inferred",
+    "survey_bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "playable": false,
+    "payloads": [
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/single/dinter.hog::dinter.rl2",
+            "sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 65,
+            "enable_actions": 2,
+            "disable_actions": 14,
+            "actions_with_unsupported_flags": 40,
+            "delayed_chain_actions": 12,
+            "effect_object_switch_targets": 15
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-01.rl2",
+            "sha256": "5b4ac91a472acf5a2f2e2fc06eaefa447777eedd7af8b60234bcecc8429f55cd",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 6,
+            "enable_actions": 4,
+            "disable_actions": 0,
+            "actions_with_unsupported_flags": 4,
+            "delayed_chain_actions": 0,
+            "effect_object_switch_targets": 0
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-02.rl2",
+            "sha256": "499524589c8019e5d3ab9265493f71c0e35fa0287f3f945fc02a877ff6a19ab3",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 5,
+            "enable_actions": 4,
+            "disable_actions": 0,
+            "actions_with_unsupported_flags": 4,
+            "delayed_chain_actions": 0,
+            "effect_object_switch_targets": 0
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-03.rl2",
+            "sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 10,
+            "enable_actions": 0,
+            "disable_actions": 0,
+            "actions_with_unsupported_flags": 8,
+            "delayed_chain_actions": 2,
+            "effect_object_switch_targets": 0
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-04.rl2",
+            "sha256": "bb7c41c638e01443a553615c24e8dfcd1ec31cbb6cc6a36883489c3be755469d",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 3,
+            "enable_actions": 1,
+            "disable_actions": 1,
+            "actions_with_unsupported_flags": 1,
+            "delayed_chain_actions": 0,
+            "effect_object_switch_targets": 1
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/diedel/styx-d3.hog::styx.rl2",
+            "sha256": "2a3679ac920b1347922b3b971b4caf0922744fbe58d16a32e03d67ae54be23a1",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 8,
+            "enable_actions": 3,
+            "disable_actions": 4,
+            "actions_with_unsupported_flags": 9,
+            "delayed_chain_actions": 5,
+            "effect_object_switch_targets": 0
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/sirius/antho1-3.hog::antho-d2.rl2",
+            "sha256": "8d3381c785698ec3984a4723da7fd0ead9bbe9c208808ba1b6e93b1659d1de2f",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 1,
+            "enable_actions": 0,
+            "disable_actions": 0,
+            "actions_with_unsupported_flags": 0,
+            "delayed_chain_actions": 0,
+            "effect_object_switch_targets": 0
+        },
+        {
+            "source": "d2xxl_downloads/levelpack.7z::missions/sirius/antholgy.hog::antholgy.rl2",
+            "sha256": "6ec9cf65b1858ce811a0e598161a043933bbd6c0a67f568bf09420fd33f9c9e2",
+            "level_version": 23,
+            "game_version": 40,
+            "master_actions": 1,
+            "enable_actions": 0,
+            "disable_actions": 0,
+            "actions_with_unsupported_flags": 0,
+            "delayed_chain_actions": 0,
+            "effect_object_switch_targets": 0
+        }
+    ]
+}

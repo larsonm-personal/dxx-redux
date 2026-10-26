@@ -348,12 +348,18 @@ Inventory inspect_level(const Bytes &bytes)
 			for (auto &v : sides) v = r.s16();
 			for (int j = 0; j < count; ++j) {
 				// XL trigger types can use non-geometric targets; retain rather than reinterpret
-				if (t.type <= 14) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(i));
+				if (t.type <= 14 || t.type == 31) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(i));
+				if (t.type == 32 || t.type == 33) {
+					if (sides[j] < 0) issue(out.unsupported, "effect_trigger_target", i, "enable/disable effect-object targets require effect runtime support");
+					else require(segments[j] >= 0 && segments[j] < segment_count && sides[j] < 6, "invalid trigger target " + std::to_string(i));
+				}
 				t.targets.push_back({ segments[j], sides[j] });
 			}
 			if (t.type > 13) issue(out.unsupported, "trigger_type", i, std::to_string(t.type));
 			if (t.type == 14 && std::abs(std::int64_t(t.time)) >= 100 && std::abs(std::int64_t(t.time)) <= 900000)
 				issue(out.unsupported, "teleport_delay", i, "delayed wall teleport requires the XL event scheduler");
+			if (t.type != 14 && t.type != 25 && t.type != 29 && t.type != 30 && std::abs(std::int64_t(t.time)) >= 100 && std::abs(std::int64_t(t.time)) <= 900000)
+				issue(out.unsupported, "trigger_delay", i, "delayed wall action requires the XL event scheduler");
 			if (t.flags & ~7) issue(out.unsupported, "trigger_flags", i, std::to_string(t.flags));
 			out.triggers.push_back(t);
 		}

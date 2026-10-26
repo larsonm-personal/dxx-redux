@@ -11991,6 +11991,7 @@ static void write_render_candidates_trace(const char *directory, bool public_ass
 void test_autoselect();
 
 #ifdef USE_SDLMIXER
+#include "music_pcm_fixture.hpp"
 // Exercise the real mixer with simultaneous D1 and optional D2 sample rates
 static void test_mixed_rate_sound_conversion()
 {
@@ -12839,6 +12840,11 @@ int main(int argc, char **argv)
 	}
 #endif
 #ifdef USE_SDLMIXER
+	if (argc == 2 && std::strcmp(argv[1], "--music-pcm") == 0) {
+		music_pcm_fixture::run();
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--sound-mixer-test") == 0) {
 		test_mixed_rate_sound_conversion();
 		return 0;

@@ -1,0 +1,353 @@
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_wall_trigger_chains_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived chain controls",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 3,
+            "xl_pilot.active": true,
+            "xl_pilot.wall_triggers.4.value": 2,
+            "xl_pilot.wall_triggers.4.flags": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 1,
+            "xl_pilot.activated_triggers": 15,
+            "xl_pilot.wall_triggers.0.flags": 6,
+            "xl_pilot.wall_triggers.1.flags": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "6",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.wall_triggers.4.value": 1,
+            "xl_pilot.wall_triggers.4.flags": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "6",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.wall_triggers.4.value": 0,
+            "xl_pilot.wall_triggers.4.flags": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "7",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.wall_triggers.4.value": 1,
+            "xl_pilot.wall_triggers.4.flags": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "6",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "2",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "4",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 1,
+            "xl_pilot.wall_triggers.4.value": 0,
+            "xl_pilot.wall_triggers.4.flags": 0,
+            "xl_pilot.wall_triggers.1.flags": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.active": true,
+            "time_paused": false,
+            "position.segment": 1,
+            "xl_pilot.wall_triggers.4.value": 1,
+            "xl_pilot.wall_triggers.4.flags": 4,
+            "xl_pilot.wall_triggers.1.flags": 4,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "4",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 3,
+            "xl_pilot.wall_triggers.0.flags": 6,
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "false",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": false,
+            "xl_pilot.runtime_active": false,
+            "xl_pilot.activated_triggers": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.active": true,
+            "time_paused": false,
+            "difficulty": 2,
+            "position.segment": 1,
+            "xl_pilot.wall_triggers.4.value": 1,
+            "xl_pilot.wall_triggers.4.flags": 4,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "6",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "2",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "4",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 850,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 1,
+            "xl_pilot.wall_triggers.4.value": 0,
+            "xl_pilot.wall_triggers.4.flags": 0,
+            "xl_pilot.wall_triggers.0.flags": 6,
+        },
+    },
+]
