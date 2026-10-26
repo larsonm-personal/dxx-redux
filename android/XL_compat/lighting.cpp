@@ -651,8 +651,8 @@ void DynamicVertexLight::add(std::int32_t contribution, const Rgb *source_color,
 
 std::vector<float> vertex_brightness(const Inventory &level)
 {
-	if (level.level_version != 15 || level.game_version != 33)
-		throw std::runtime_error("XL brightness requires audited level 15/game 33 geometry");
+	if (!((level.level_version == 15 && level.game_version == 33) || (level.level_version == 17 && level.game_version == 36)))
+		throw std::runtime_error("XL brightness requires audited 15/33 or 17/36 geometry");
 	// Pinned XL segment.cpp sideVertIndex; only the audited four-corner layout
 	constexpr unsigned corners[6][4] = {
 		{ 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 }

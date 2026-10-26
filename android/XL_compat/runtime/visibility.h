@@ -6,7 +6,9 @@
 #include "../lighting.h"
 namespace xl_compat
 {
-// Classic D1 portal eligibility for BuildSegList(..., bIgnoreDoors=true)
+// Geometry lighting is available for D1 or an admitted singleplayer XL source
+bool geometry_lighting_available();
+// D1 or admitted XL portal eligibility for BuildSegList(..., bIgnoreDoors=true)
 // Does not establish projected segment or vertex visibility
 bool classic_light_portal_passable(int segment, int side);
 // Router topology uses IsPassable(..., false) & (transparent | passable)

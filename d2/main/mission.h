@@ -150,11 +150,11 @@ int mission_compatibility_warning_text(int warning_index, char *buffer, unsigned
 
 /* Whether a resource comes from the active custom mission HOG */
 int mission_owns_resource_archive(const char *source);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 /* Ownership identity only; each consumer must apply its resource capability policy */
 const char *mission_resource_archive(void);
 #endif
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 const char *mission_descriptor_snapshot(void);
 #endif
 

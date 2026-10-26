@@ -15,11 +15,11 @@ struct GameplayProbe {
 	Inventory source;
 };
 
-// Developer validation only, not mission admission
+// Translate only supported layouts and decoded feature requirements
 // Lighting remains in source and must be integrated before faithful play is claimed
 GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments = false);
-// Layout qualification only: runtime admission still rejects 17/36
-// All semantic blockers (including no-damage and equipment generators) still apply
+// Explicit 17/36 entry point for layout qualification fixtures
+// All unsupported semantic requirements, including equipment generators, still apply
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source);
 
 } // namespace xl_compat

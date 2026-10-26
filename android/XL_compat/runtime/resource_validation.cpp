@@ -10,6 +10,7 @@
 #include "picosha2.h"
 #include "asset_dependencies.h"
 #include "pog_resources.h"
+#include "companion_resources.h"
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
@@ -339,6 +340,7 @@ struct XlPreparedResources::State {
 	xl_assets::ObjectDependencies graph;
 	bool has_hxm = false;
 	HxmChanges changes;
+	xl_compat::MissionLightingCompanions lighting;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 
@@ -385,6 +387,13 @@ XlPreparedResources::XlPreparedResources(const char *level_filename)
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
+	if (PHYSFSX_exists((base + ".lgt").c_str(), 1) || PHYSFSX_exists((base + ".clr").c_str(), 1)) {
+		if (!*mission_resource_archive())
+			throw std::runtime_error("D2 XL lighting companions require an owned mission HOG: " + base);
+		state->lighting = xl_compat::load_mission_lighting_companions(level_filename);
+		if (state->lighting.colors)
+			throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
+	}
 	const auto hxm_name = base + ".HXM";
 	if (auto file = companion(hxm_name)) {
 		if (!bm_validate_level_hxm(file.get()))
@@ -408,6 +417,18 @@ XlPreparedResources::XlPreparedResources(const char *level_filename)
 void XlPreparedResources::install_pog()
 {
 	if (!xl_pog_install(state->pog.get())) throw std::runtime_error("cannot allocate prepared POG bitmap storage");
+}
+
+bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
+{
+	if (!state->lighting.brightness || texture < 0 || std::size_t(texture) >= state->lighting.brightness->size()) return false;
+	brightness = (*state->lighting.brightness)[texture];
+	return true;
+}
+
+extern "C" int xl_prepared_texture_brightness(int texture, int *brightness)
+{
+	return brightness && prepared_resources && prepared_resources->texture_brightness(texture, *brightness);
 }
 
 void XlPreparedResources::install_hxm()

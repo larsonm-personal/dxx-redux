@@ -32,7 +32,7 @@ std::vector<std::string> acquired;
 int active = -1, pending = -1;
 bool enabled, transitioning;
 unsigned generation;
-#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_PILOT)
+#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_RUNTIME)
 bool test_fail_second_acquisition;
 #endif
 
@@ -172,7 +172,7 @@ int android_mission_assets_prepare(const char *descriptor, char *resolved, size_
 		size_t count = 0;
 		for (const auto &path : ownership) {
 			bool injected_failure = false;
-#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_PILOT)
+#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_RUNTIME)
 			injected_failure = test_fail_second_acquisition && count == 1;
 			if (injected_failure) test_fail_second_acquisition = false;
 #endif
@@ -196,7 +196,7 @@ int android_mission_assets_prepare(const char *descriptor, char *resolved, size_
 	return 1;
 }
 
-#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_PILOT)
+#if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_RUNTIME)
 int android_mission_assets_test_acquisition_failure(void)
 {
 	if (!enabled || transitioning || !PHYSFS_getWriteDir()) return 0;

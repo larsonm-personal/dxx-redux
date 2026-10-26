@@ -35,7 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "grdef.h"
 #include "u_mem.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "resource_validation.h"
 #endif
 #include "iff.h"
@@ -993,7 +993,7 @@ int read_hamfile()
 		PHYSFS_close(ham_fp);
 		return 0;
 	}
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (!Current_mission)
 		xl_resource_note_startup_ham(shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED, ham_fp);
 #endif
@@ -2088,7 +2088,7 @@ invalid_flags:
 	return 0;
 }
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "pog_install.h"
 #endif
 
@@ -2098,7 +2098,7 @@ void load_bitmap_replacements(char *level_name)
 	PHYSFS_file *ifile;
 	int i;
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_install_prepared_pog(level_name)) return;
 #endif
 	//first, free up data allocated for old bitmaps

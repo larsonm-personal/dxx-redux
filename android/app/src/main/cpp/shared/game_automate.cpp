@@ -21,7 +21,7 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "persistence_probe.h"
 #include "corona_probe.h"
@@ -3210,7 +3210,7 @@ extern "C" int game_automate_still_view_active(void)
 
 extern "C" int game_automate_reference_fans_active(void)
 {
-#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT)
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_RUNTIME)
 	return Still_view_active && Still_view_reference_fans && ConsoleObject &&
 	       ConsoleObject->signature == Still_view_signature && Current_level_num == Still_view_level &&
 	       android_mission_assets_generation() == Still_view_mission_generation &&
@@ -4960,7 +4960,7 @@ extern "C" void game_automate_tick(void)
 				break;
 #endif
 			} else if (s.field == "still_view_reference_fans") {
-#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT)
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_RUNTIME)
 				if ((s.value != "on" && s.value != "off") || !Still_view_active ||
 				    !Current_mission || Current_mission->descent_version != 1 || !xl_classic_lighting_requested()) {
 					stop_script_fail("still_view_reference_fans requires on/off and a classic-lighting D1 still-view fixture");
@@ -7493,7 +7493,7 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("Snapshot probe requires Android D2");
 #endif
 			} else if (s.field == "xl_corona_objects") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if (s.value == "request") xl_corona_object_probe_request();
 				else if (s.value == "verify") {
 					const auto report = json::parse(xl_corona_object_probe_result());
@@ -7504,7 +7504,7 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("XL corona object probe requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_corona_scene") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if (s.value == "request") xl_corona_scene_probe_request();
 				else if (s.value == "verify") {
 					const auto report = json::parse(xl_corona_scene_probe_result());
@@ -7515,7 +7515,7 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("XL corona scene probe requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_corona_pixels") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				xl_corona_pixel_probe();
 				const auto report = json::parse(xl_corona_pixel_probe_result());
 				LOGI("XL corona pixel probe: %s", xl_corona_pixel_probe_result());
@@ -7524,7 +7524,7 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("XL corona framebuffer probe requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_asset_acquisition_failure") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if (s.value != "verify" || !Game_wind || !android_mission_assets_test_acquisition_failure())
 					stop_script_fail("XL asset acquisition failure did not preserve the active context");
 				else LOGI("XL asset acquisition failure preserved ownership and search path after partial acquisition");
@@ -7532,21 +7532,21 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("XL asset acquisition failure probe requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_classic_lighting") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if ((s.value != "enable" && s.value != "disable") || !xl_preview_set_classic_light_test_profile(s.value == "enable"))
 					stop_script_fail("Experimental classic lighting requires enable/disable outside gameplay");
 #else
 				stop_script_fail("Experimental classic lighting requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_water_physics") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if ((s.value != "enable" && s.value != "disable") || !xl_preview_set_water_test_profile(s.value == "enable"))
 					stop_script_fail("XL water profile requires enable/disable outside gameplay");
 #else
 				stop_script_fail("XL water profile requires the opt-in Android pilot");
 #endif
 			} else if (s.field == "xl_pilot_persistence") {
-#if defined(DXX_XL_PILOT) && defined(__ANDROID__)
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if (const char *failure = xl_pilot_persistence_probe(s.value.c_str())) stop_script_fail(failure);
 				else LOGI("XL controlled persistence %s passed", s.value.c_str());
 #else

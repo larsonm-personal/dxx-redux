@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -139,7 +139,7 @@ int check_transparency( segment * seg, int side )
 //		WID_ILLUSORY_WALL			3	//	1/1/0		illusory wall
 //		WID_TRANSILLUSORY_WALL	7	//	1/1/1		transparent illusory wall
 //		WID_NO_WALL					5	//	1/0/1		no wall, can fly through
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 int wall_is_doorway(segment *seg, int side)
 {
 	return xl_preview_wall_is_doorway(seg - Segments, side);

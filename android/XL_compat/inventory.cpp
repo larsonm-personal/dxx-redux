@@ -519,6 +519,17 @@ std::string json_string(const std::string &value)
 	return s.str();
 }
 
+bool has_registered_colors(const Inventory &inventory)
+{
+	for (const auto *table : { &inventory.vertex_colors, &inventory.side_colors })
+		for (const auto &color : *table)
+			for (const auto channel : color.rgb) {
+				const float loaded = static_cast<float>(channel);
+				if (loaded > 0 && loaded < 1) return true;
+			}
+	return false;
+}
+
 std::string inventory_json(const Inventory &v)
 {
 	std::ostringstream s;

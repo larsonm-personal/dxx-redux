@@ -24,7 +24,7 @@ static inline int dxx_xl_wclip_frame(int stock_frames, int stock_frame, int sour
 	return stock_frames == 1 ? 0 : stock_frame * (source_frames - 1) / (stock_frames - 1);
 }
 
-#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_PILOT) && defined(OGL_MERGE)
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 /* Renderer-only observation of the clock actually applied to a wall mapping */
 void dxx_xl_wall_mapped_phase(int effect, int bitmap, int frames, int frame_time,
                               int frame, int time_left, int stopped);

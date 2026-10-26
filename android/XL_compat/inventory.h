@@ -93,6 +93,8 @@ struct Inventory {
 // Inspection is not admission: even a decoded file is not approved for gameplay
 // Unsupported version combinations and malformed data throw std::runtime_error
 Inventory inspect_level(const Bytes &bytes);
+// ReadColor registration predicate used by method-0 ambient reconstruction
+bool has_registered_colors(const Inventory &inventory);
 std::string inventory_json(const Inventory &inventory);
 std::string json_string(const std::string &value);
 

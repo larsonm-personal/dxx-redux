@@ -25,7 +25,7 @@
 #include "android_mod_bitmaps.h"
 #include "android_texture_usage.h"
 #include "input_demo_codec.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 
@@ -225,7 +225,7 @@ extern "C" void game_introspect_record_main_view(int segment)
 	Pending_main_view = {
 		{ "diagnostic_still_view", game_automate_still_view_active() != 0 },
 		{ "diagnostic_reference_fans", game_automate_reference_fans_active() != 0 },
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		{ "visual_profile", (xl_classic_legacy_fans_active() || xl_preview_reference_fans()) ? "legacy_fan" : "compiled_splits" },
 #else
 		{ "visual_profile", "compiled_splits" },
@@ -2122,13 +2122,15 @@ extern "C" char *game_introspect_get_state(void)
 	level_metadata_choose_level_display_name(Gamesave_current_filename, Current_level_name,
 	                                         display_level_name, sizeof(display_level_name));
 	j["current_level_name"] = display_level_name;
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	j["xl_pilot"] = {
 		{ "runtime_active", xl_runtime_active() != 0 },
 		{ "classic_lighting_requested", xl_classic_lighting_requested() != 0 },
 		{ "classic_lighting_vertices", xl_classic_lighting_vertex_count() },
 		{ "classic_legacy_fans", xl_classic_legacy_fans_active() != 0 },
 		{ "in_water", Game_wind && ConsoleObject && xl_preview_water_segment(ConsoleObject->segnum) != 0 },
+		{ "in_no_damage", Game_wind && ConsoleObject && xl_preview_no_damage_segment(ConsoleObject->segnum) != 0 },
+		{ "rebuilt_ambient_vertices", xl_preview_rebuilt_ambient_vertices() },
 		{ "water_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 0) : 0 },
 		{ "water_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATER, 1) : 0 },
 		{ "waterfall_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_SHIP_IN_WATERFALL, 0) : 0 },

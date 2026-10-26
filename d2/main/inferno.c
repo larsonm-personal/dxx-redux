@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -659,7 +659,7 @@ int main(int argc, char *argv[])
 		if (route_result < 0)
 		#endif
 		{
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		int replay_result = xl_preview_start();
 #else
 		int replay_result = input_demo_maybe_start_replay_from_cmdline();

@@ -1,4 +1,4 @@
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
 /*
@@ -158,7 +158,7 @@ void ogl_swap_buffers_internal(void)
 	eglSwapBuffers(eglDisplay, eglSurface);
 #endif
 #else
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	xl_preview_before_swap();
 #endif
 	SDL_GL_SwapBuffers();
@@ -1291,7 +1291,7 @@ void save_screen_shot(int automap_flag)
 		HUD_init_message(HM_DEFAULT, "%s '%s'", TXT_DUMPING_SCREEN, savename + strlen(SCRNS_DIR));
 
 #ifndef OGLES
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_DEVELOPER_PROBE
 	glReadBuffer(GL_BACK);
 #else
 	glReadBuffer(GL_FRONT);

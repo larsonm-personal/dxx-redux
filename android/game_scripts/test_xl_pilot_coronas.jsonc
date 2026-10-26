@@ -1,5 +1,5 @@
 // Controlled rendering pose, not normal-input progression or full pilot qualification
-// Requires -PxlPilot=true, imported original d2-xl mission, retail data and player pilot
+// Requires the normal OpenGL APK, imported original d2-xl mission, retail data and player pilot
 // Segment 40 center faces authored orange texture 405; no saves are changed
 [
     {

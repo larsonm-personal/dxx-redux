@@ -7,7 +7,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level)
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported)
-		if (issue.feature != "embedded_lighting") result.push_back(issue);
+		if (issue.feature != "embedded_lighting" &&
+		    !(issue.feature == "segment_function" && issue.detail == "13")) result.push_back(issue);
 	for (const auto &issue : level.unknown)
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
@@ -15,7 +16,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level)
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
-	limit(level.level_version != 15 || level.game_version != 33, "serialization", "requires level version 15 and game-data version 33");
+	limit(!((level.level_version == 15 && level.game_version == 33) || (level.level_version == 17 && level.game_version == 36)), "serialization", "requires audited level/game-data version 15/33 or 17/36");
 	limit(level.walls.size() > 255, "wall capacity", "more than 255 walls");
 	limit(level.objects.size() > 1000, "object capacity", "more than 1000 objects");
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");

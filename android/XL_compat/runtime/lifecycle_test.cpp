@@ -1,4 +1,5 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
+#include "native_crash_diagnostic.h"
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -1522,9 +1523,12 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "format17_test.h"
 #include "descriptor_test.h"
 #include "package_audit.h"
+#include "konflict_test.h"
 
 int main(int argc, char **argv)
 {
+	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-konflict-test")) return konflict_test(argc, argv);
 	if (find_arg_value(argc, argv, "-static-texture-test")) return static_texture_catalog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);

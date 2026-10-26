@@ -80,7 +80,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #include "sounds.h"
 #include "args.h"
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "resource_validation.h"
 #endif
@@ -877,7 +877,7 @@ extern int Robot_replacements_loaded;
 
 void reset_level_robots_file(void)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (*xl_resource_base_rejection()) return;
 #endif
 	if (Robot_replacements_loaded) {
@@ -978,7 +978,7 @@ void LoadLevel(int level_num,int page_in_textures)
 		gr_clear_canvas(BM_XRGB(0, 0, 0));		//so palette switching is less obvious
 	}
 
-#if defined(__ANDROID__) && defined(DXX_XL_PILOT)
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME)
 	android_mod_sound_level_prepare(level_num);
 #endif
 	d1_assets = d1_in_d2_prepare_level_assets(level_name);
@@ -993,7 +993,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	load_ret = load_level(level_name);		//actually load the data from disk!
 
 	if (load_ret) {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		if (*xl_level_rejection())
 			Error("Cannot run XL level: %s", xl_level_rejection());
 		else
@@ -1037,7 +1037,7 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 
 	load_level_robots(level_num);
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (!xl_classic_lighting_prepare(level_name))
 		Error("Cannot prepare experimental XL lighting: %s", xl_level_rejection());
 #endif
@@ -1318,7 +1318,7 @@ void DoEndLevelScoreGlitz(int network)
 
 	Assert(c <= N_GLITZITEMS);
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_preview_pilot_active() && GameArg.SysInputDemoNoRender)
 		return;
 #endif
@@ -1654,7 +1654,7 @@ void EnterSecretLevel(void)
 	if (! (i<-Last_secret_level))		//didn't find level, so must be last
 		Next_level_num = Last_secret_level;
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (Next_level_num < 0 && !xl_level_supported(Secret_level_names[-Next_level_num - 1], 0)) {
 		nm_messagebox("Cannot enter XL secret level", 1, TXT_OK, "%s", xl_level_rejection());
 		if (Game_wind) window_set_visible(Game_wind, 1);
@@ -1801,7 +1801,7 @@ void coop_finish_secret_campaign(void)
 //	Return true if game over.
 void AdvanceLevel(int secret_flag)
 {
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 	if (xl_preview_pilot_active() && xl_test_stop_after_level()) {
 		DoEndLevelScoreGlitz(0);
 		xl_preview_complete_pilot();
@@ -1869,7 +1869,7 @@ void AdvanceLevel(int secret_flag)
 	} else {
 		Next_level_num = Current_level_num + 1;
 
-#ifdef DXX_XL_PILOT
+#ifdef DXX_XL_RUNTIME
 		if (!xl_level_supported(Level_names[Next_level_num - 1], Game_mode & GM_MULTI)) {
 			nm_messagebox("Cannot continue to XL level", 1, TXT_OK, "%s", xl_level_rejection());
 			if (Game_wind) window_close(Game_wind);

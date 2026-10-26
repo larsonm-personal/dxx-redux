@@ -124,6 +124,18 @@ if(BUILD_TESTING)
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     set(XL_OBSERVATORY_DESCRIPTOR "" CACHE FILEPATH "Original Observatory mission descriptor")
+    set(XL_KONFLICT_HOG "" CACHE FILEPATH "Original Konflict HOG for bounded 17/36 coverage")
+    set(XL_KONFLICT_DESCRIPTOR "" CACHE FILEPATH "Original Konflict mission descriptor")
+    if(XL_KONFLICT_HOG AND XL_KONFLICT_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_konflict_features
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_KONFLICT_HOG} -DDESCRIPTOR=${XL_KONFLICT_DESCRIPTOR}
+                -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/konflict-features -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/konflict_features.cmake)
+        set_tests_properties(xl_konflict_features PROPERTIES TIMEOUT 90)
+    endif()
     if(XL_DRAGON_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
             NAME xl_dragon_companion_ownership
@@ -134,6 +146,14 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/dragon_companion_ownership.cmake)
         set_tests_properties(xl_dragon_companion_ownership PROPERTIES TIMEOUT 60)
     endif()
+    set(XL_REFERENCE_WEAPON_CONTROL "" CACHE FILEPATH
+                                             "Pinned XL weapon control for matched no-damage gates")
+    set(xl_reference_gate_args)
+    if(XL_REFERENCE_WEAPON_CONTROL)
+        include(tests/reference_no_damage_gates.cmake)
+        list(APPEND xl_reference_gate_args
+             -DREFERENCE_GATES=$<TARGET_FILE:xl_no_damage_reference_gates>)
+    endif()
     if(XL_OBSERVATORY_HOG AND XL_OBSERVATORY_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
             NAME xl_observatory_descriptor
@@ -141,7 +161,8 @@ if(BUILD_TESTING)
                 ${CMAKE_COMMAND} -DHOG=${XL_OBSERVATORY_HOG}
                 -DDESCRIPTOR=${XL_OBSERVATORY_DESCRIPTOR} -DENGINE=${XL_PREVIEW_LIFECYCLE}
                 -DDATA=${XL_RETAIL_DATA}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/observatory-descriptor -P
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/observatory-descriptor
+                ${xl_reference_gate_args} -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/observatory_descriptor.cmake)
         set_tests_properties(xl_observatory_descriptor PROPERTIES TIMEOUT 90)
     endif()

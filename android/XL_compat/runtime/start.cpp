@@ -43,6 +43,9 @@ bool has_option(const char *name)
 
 extern "C" int xl_preview_start(void)
 {
+#ifndef DXX_XL_DEVELOPER_PROBE
+	return input_demo_maybe_start_replay_from_cmdline();
+#else
 	const bool option = has_option("-xl-preview-start");
 	if (!option) return input_demo_maybe_start_replay_from_cmdline();
 	if (!has_option("-xl-static-light-preview") && !has_option("-xl-classic-light-preview") && !has_option("-xl-pilot") && !has_option("-xl-water-physics")) {
@@ -113,6 +116,7 @@ extern "C" int xl_preview_start(void)
 	}
 	running = true;
 	return 0;
+#endif
 }
 
 extern "C" int xl_preview_reference_fans(void)
@@ -169,8 +173,8 @@ extern "C" void xl_preview_before_swap(void)
 		{ "zoom_fixed", View_zoom },
 		{ "canvas", { Canvas_width, Canvas_height } },
 		{ "screen", { grd_curscreen->sc_w, grd_curscreen->sc_h } },
-		{ "gamma", GameCfg.GammaLevel },
-		{ "texture_filter", GameCfg.TexFilt }
+		{ "gamma", static_cast<int>(GameCfg.GammaLevel) },
+		{ "texture_filter", static_cast<int>(GameCfg.TexFilt) }
 	};
 	const std::string serialized = context.dump(2) + "\n";
 	if (PHYSFS_File *file = PHYSFS_openWrite("xl-preview-camera.json")) {
