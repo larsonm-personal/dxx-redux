@@ -1,0 +1,179 @@
+{
+  "downloads": [
+    {
+      "id": "1080",
+      "url": "https://sectorgame.com/dxma/files/f/1/1080/amalthea.zip",
+      "name": "amalthea.zip",
+      "folder": "levels",
+      "levels": 1,
+      "source": "https://sectorgame.com/dxma/mission?m=1080",
+      "bytes": 986085,
+      "sha256": "55a7182d816904b9d4814f218e15a6e4463501fff21e2fe72799e716735cee2d",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "1083",
+      "url": "https://sectorgame.com/dxma/files/f/1/1083/kalisto.zip",
+      "name": "kalisto.zip",
+      "folder": "levels",
+      "levels": 1,
+      "source": "https://sectorgame.com/dxma/mission?m=1083",
+      "bytes": 736597,
+      "sha256": "5914ac765aadcf7e7616621fce52e2a553bf7ab8596b2a2be0ca96c1fbf413e0",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "1771",
+      "url": "https://sectorgame.com/dxma/files/f/1/1771/sphere-1.6.zip",
+      "name": "sphere-1.6.zip",
+      "folder": "",
+      "levels": 5,
+      "source": "https://sectorgame.com/dxma/mission?m=1771",
+      "bytes": 3955475,
+      "sha256": "f462882ab7488c14648249675964db3c25c33a6a1b7207d8b62643bf6cdac234",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "1804",
+      "url": "https://sectorgame.com/dxma/files/f/1/1804/Super Secret Asteroid.zip",
+      "name": "Super Secret Asteroid.zip",
+      "folder": "levels",
+      "levels": 1,
+      "source": "https://sectorgame.com/dxma/mission?m=1804",
+      "bytes": 230021,
+      "sha256": "a94f6d98d86d30ecb6cbd0d61b4dadcf5c67017f8d8815f689a77c8f1068d67a",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "1820",
+      "url": "https://sectorgame.com/dxma/files/f/24/1820/pmv11dxma.zip",
+      "name": "pmv11dxma.zip",
+      "folder": "",
+      "levels": 12,
+      "source": "https://sectorgame.com/dxma/mission?m=1820",
+      "bytes": 821,
+      "sha256": "99911323e449ca9c01576c130ad6585c8fe6f61aa2768741a27f1c6409725681",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "2269",
+      "url": "https://sectorgame.com/dxma/files/f/71/2269/download castaway xl.zip",
+      "name": "download castaway xl.zip",
+      "folder": "",
+      "levels": 9,
+      "source": "https://sectorgame.com/dxma/mission?m=2269",
+      "bytes": 32914,
+      "sha256": "88cefa2a32d65eef43b1c0591db9016f1640940886d3dd1da3654aa829ce4e45",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "346",
+      "url": "https://sectorgame.com/dxma/files/f/4/346/elitehunt.zip",
+      "name": "elitehunt.zip",
+      "folder": "levels",
+      "levels": 1,
+      "source": "https://sectorgame.com/dxma/mission?m=346",
+      "bytes": 872779,
+      "sha256": "d8f72b290a1a7d3c0c690c3d5e8e322c444ea614403414ab72b5a68bba6e1d60",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "353",
+      "url": "https://sectorgame.com/dxma/files/f/24/353/PumoMines-3L-Demo1.0-Links.zip",
+      "name": "PumoMines-3L-Demo1.0-Links.zip",
+      "folder": "",
+      "levels": 0,
+      "source": "https://sectorgame.com/dxma/mission?m=353",
+      "bytes": 426,
+      "sha256": "2b483fa3cc6db820c934f11ae7c6a9e4367efd8423a9c9dd6078300874455c10",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "355",
+      "url": "https://sectorgame.com/dxma/files/f/4/355/prophxl131beta.zip",
+      "name": "prophxl131beta.zip",
+      "folder": "",
+      "levels": 8,
+      "source": "https://sectorgame.com/dxma/mission?m=355",
+      "bytes": 62974366,
+      "sha256": "b9c5f139ea6ab585636fda37fd4093f98f174433ed562a5bf182189a9b03673a",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "364",
+      "url": "https://sectorgame.com/dxma/files/f/21/364/dxldem02.zip",
+      "name": "dxldem02.zip",
+      "folder": "levels",
+      "levels": 1,
+      "source": "https://sectorgame.com/dxma/mission?m=364",
+      "bytes": 14021543,
+      "sha256": "69c3790e4acd74674c88fd5c20e980b4e94e70eb2d7cfc654eb646ffbcea91a8",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "id": "895",
+      "url": "https://sectorgame.com/dxma/files/f/1/895/kore.zip",
+      "name": "kore.zip",
+      "folder": "levels",
+      "levels": 1,
+      "source": "https://sectorgame.com/dxma/mission?m=895",
+      "bytes": 1517533,
+      "sha256": "73f946be4c29ab0aaf9665b75b3db474365a4cecc6e3ecf1b86e1a84f15fdf23",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "name": "pmines_v11.7z",
+      "id": "1820",
+      "url": "https://pumosoftware.com/files/descent/pmines_v11.7z",
+      "source": "https://sectorgame.com/dxma/mission?m=1820",
+      "bytes": 442181363,
+      "sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "name": "castaway_xl.zip",
+      "id": "2269",
+      "url": "https://drive.google.com/file/d/1z0BV121_WsQywb5S5LKwLrfbkFj1P_78/view",
+      "source": "https://sectorgame.com/dxma/mission?m=2269",
+      "bytes": 211447106,
+      "sha256": "7e489a61e715cda684c73aeb16fada5eefc7aba10207780d5d83d4228c2552b4",
+      "status": "downloaded and archive tested"
+    },
+    {
+      "name": "PMKartsal-3L-Demo-v1.0.rar",
+      "id": "353",
+      "url": "https://www.mediafire.com/file/ls8uwc5la867w7s/PMKartsal-3L-Demo-v1.0.rar/file",
+      "source": "https://sectorgame.com/dxma/mission?m=353",
+      "bytes": 114737737,
+      "sha256": "5de90f21adf600ae71e5de590565f1d1ca7392e5c0ed59cd60158b15015c615c",
+      "status": "downloaded and archive tested"
+    }
+  ],
+  "skipped_existing": [
+    {
+      "id": "224",
+      "name": "Apocalyptic Factor XL"
+    },
+    {
+      "id": "284",
+      "name": "Anthology"
+    },
+    {
+      "id": "433",
+      "name": "Lunar Outpost Reloaded"
+    },
+    {
+      "id": "434",
+      "name": "Boiling Point"
+    },
+    {
+      "id": "435",
+      "name": "Warp Shockwave"
+    }
+  ],
+  "notes": [
+    "The catalog reports 21 results but renders 16 mission entries on its only page",
+    "Three small source archives contain download links only; their actual mission archives were also retrieved",
+    "Sphere 1.6 added alongside existing Sphere 1.51"
+  ]
+}

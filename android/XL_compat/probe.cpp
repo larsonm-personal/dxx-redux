@@ -39,14 +39,18 @@ int read_offset(const Bytes &bytes, std::size_t offset)
 }
 } // namespace
 
-static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, bool require_17_36)
+static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int qualification_version)
 {
 	GameplayProbe result;
 	result.source = inspect_level(source);
 	const auto &v = result.source;
 	auto blockers = runtime_blockers(v);
 	const bool serialization_17_36 = v.level_version == 17 && v.game_version == 36;
-	if (require_17_36) require(serialization_17_36, "layout qualification requires 17/36");
+	const bool serialization_23_40 = v.level_version == 23 && v.game_version == 40;
+	if (qualification_version == 17) require(serialization_17_36, "layout qualification requires 17/36");
+	if (qualification_version == 23) {
+		require(serialization_23_40, "layout qualification requires 23/40");
+	}
 	// Only the explicitly selected experimental fluid profile translates water
 	if (water_segments)
 		blockers.erase(std::remove_if(blockers.begin(), blockers.end(), [](const Issue &issue) {
@@ -104,8 +108,9 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, boo
 	}
 	require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "level size overflow");
 	const int new_game_offset = static_cast<int>(out.size());
-	const int removed_header = serialization_17_36 ? 12 : 0;
-	if (serialization_17_36) {
+	const bool equipment_header = serialization_17_36 || serialization_23_40;
+	const int removed_header = equipment_header ? 12 : 0;
+	if (equipment_header) {
 		require(v.sections.size() == 10 && v.sections[9].name == "equipment" && v.sections[9].count == 0, "equipment section cannot be translated");
 		out.insert(out.end(), source.begin() + v.game_offset, source.begin() + v.game_offset + 143);
 		out.insert(out.end(), source.begin() + v.game_offset + 155, source.end());
@@ -118,12 +123,32 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, boo
 	const auto rebase = [&](std::size_t field) {
 		const int old = read_offset(source, v.game_offset + field);
 		if (old <= 0) return;
-		require(old >= v.game_offset + (serialization_17_36 ? 155 : 0) && static_cast<std::size_t>(old) <= source.size(), "invalid game section offset");
+		require(old >= v.game_offset + (equipment_header ? 155 : 0) && static_cast<std::size_t>(old) <= source.size(), "invalid game section offset");
 		patch(out, new_game_offset + field, old - v.game_offset + new_game_offset - removed_header);
 	};
 	rebase(27); // Legacy unused player block
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
-	if (serialization_17_36 || std::any_of(v.light_indices.begin(), v.light_indices.end(), [](const auto &index) { return index[2] > 127; })) {
+	if (serialization_23_40) {
+		// Stock uses explicit section offsets. Retain the original game payload as
+		// inert evidence, then point at records with the audited stock widths
+		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "object table offset overflow");
+		patch(out, new_game_offset + 35, static_cast<int>(out.size()));
+		for (const auto &object : v.objects) {
+			require(object.multiplayer == 0 && object.source_end >= object.source_offset + 80 && object.source_end <= source.size(), "invalid object translation span");
+			out.insert(out.end(), source.begin() + object.source_offset, source.begin() + object.source_offset + 6);
+			out.insert(out.end(), source.begin() + object.source_offset + 7, source.begin() + object.source_end);
+		}
+		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "wall table offset overflow");
+		patch(out, new_game_offset + 47, static_cast<int>(out.size()));
+		patch(out, new_game_offset + 55, 24);
+		for (std::size_t i = 0; i < v.walls.size(); ++i) {
+			const auto start = static_cast<std::size_t>(v.sections.at(1).offset) + i * 25;
+			require(v.walls[i].flags <= 255 && start + 25 <= source.size(), "invalid wall translation span");
+			out.insert(out.end(), source.begin() + start, source.begin() + start + 18);
+			out.insert(out.end(), source.begin() + start + 19, source.begin() + start + 25);
+		}
+	}
+	if (equipment_header || std::any_of(v.light_indices.begin(), v.light_indices.end(), [](const auto &index) { return index[2] > 127; })) {
 		// Stock traverses every matching source-face entry in order. Split unsigned XL
 		// counts without changing delta order or per-target clamping; retain raw source data
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()) - 500 * 6, "light table offset overflow");
@@ -151,11 +176,16 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, boo
 
 GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments)
 {
-	return prepare_probe(source, water_segments, false);
+	return prepare_probe(source, water_segments, 0);
 }
 
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source)
 {
-	return prepare_probe(source, false, true);
+	return prepare_probe(source, false, 17);
+}
+
+GameplayProbe prepare_serialization_probe_23_40(const Bytes &source)
+{
+	return prepare_probe(source, false, 23);
 }
 } // namespace xl_compat

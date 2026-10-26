@@ -174,6 +174,8 @@ xl_compat::Bytes read_extended_level(const char *filename)
 bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer)
 {
 	const auto level = xl_compat::inspect_level(bytes);
+	// Modern function 7 is a team function, not legacy water
+	if (level.level_version >= 21) return false;
 	const bool water = std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) {
 		return segment.function == 7;
 	});
@@ -361,7 +363,7 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 		}
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
-		XlPreparedResources resources(filename);
+		XlPreparedResources resources(filename, &probe.source);
 		validate_requirements(probe.source, filename, multiplayer != 0, arena, resources.dependencies());
 		return 1;
 	} catch (const std::exception &error) {
@@ -563,7 +565,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		}
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
-		auto resources = std::make_unique<XlPreparedResources>(filename);
+		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source);
 		validate_requirements(probe.source, filename, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
