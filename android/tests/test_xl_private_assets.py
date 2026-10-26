@@ -72,9 +72,7 @@ class XlPrivateTests(unittest.TestCase):
                 data = {
                     "archive": {"path": "pack.7z", **identity(b"pack")},
                     "archives": [],
-                    "original_mission_archives": [
-                        {"path": "missions/D2-XL.7z", **identity(b"original")}
-                    ],
+                    "original_mission_archives": [{"path": "missions/D2-XL.7z", **identity(b"original")}],
                     "format_witnesses": [
                         {
                             "archive_member": "missions/single/d2-xl.hog",
@@ -90,11 +88,7 @@ class XlPrivateTests(unittest.TestCase):
                 for index in range(2 if mode in ("collision", "case-collision") else 1):
                     name = "bundle-" + str(index) + ".zip"
                     content = b"first" if index == 0 else b"conflicting"
-                    member_name = (
-                        "Resource.bin"
-                        if mode == "case-collision" and index
-                        else "resource.bin"
-                    )
+                    member_name = "Resource.bin" if mode == "case-collision" and index else "resource.bin"
                     with zipfile.ZipFile(root / name, "w") as archive:
                         if mode != "missing":
                             archive.writestr(member_name, content)
@@ -117,10 +111,7 @@ class XlPrivateTests(unittest.TestCase):
                     for name, content in files.items():
                         (target / name).write_bytes(content)
 
-                pins = {
-                    name: (len(content), hashlib.sha256(content).hexdigest())
-                    for name, content in files.items()
-                }
+                pins = {name: (len(content), hashlib.sha256(content).hexdigest()) for name, content in files.items()}
                 with (
                     patch.object(assets, "manifest", return_value=data),
                     patch.object(assets, "D2_FILES", pins),
@@ -128,9 +119,7 @@ class XlPrivateTests(unittest.TestCase):
                 ):
                     if mode == "valid":
                         assets.stage_inputs(root, destination, None)
-                        self.assertEqual(
-                            (destination / "witnesses/level.rl2").read_bytes(), level
-                        )
+                        self.assertEqual((destination / "witnesses/level.rl2").read_bytes(), level)
                         assets.verify(destination)
                         with self.assertRaises(ValueError):
                             assets.stage_inputs(root, destination, None)
@@ -161,12 +150,7 @@ class XlPrivateTests(unittest.TestCase):
 
     def test_hog_bounds_duplicate_paths_and_missing_members(self):
         def member(name, content=b"abc", size=None):
-            return (
-                struct.pack(
-                    "<13si", name.encode(), len(content) if size is None else size
-                )
-                + content
-            )
+            return struct.pack("<13si", name.encode(), len(content) if size is None else size) + content
 
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "fixture.hog"
@@ -193,23 +177,16 @@ class XlPrivateTests(unittest.TestCase):
             data = {
                 "missing": [],
                 "mismatched": [],
-                "format_witnesses": [
-                    {"level_version": a, "game_version": b}
-                    for a, b in sorted(assets.PAIRS)
-                ],
+                "format_witnesses": [{"level_version": a, "game_version": b} for a, b in sorted(assets.PAIRS)],
             }
             path.write_text(json.dumps(data))
             with self.assertRaises(ValueError):
                 assets.manifest(path)
-            with patch.object(
-                assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()
-            ):
+            with patch.object(assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()):
                 self.assertEqual(assets.manifest(path), data)
             data["format_witnesses"].pop()
             path.write_text(json.dumps(data))
-            with patch.object(
-                assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()
-            ):
+            with patch.object(assets, "MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()):
                 with self.assertRaises(ValueError):
                     assets.manifest(path)
 
@@ -222,24 +199,47 @@ class XlPrivateTests(unittest.TestCase):
                 "",
                 '<testcase name="other"/>',
                 '<testcase name="required"/><testcase name="required"/>',
-                *(
-                    '<testcase name="required"><' + tag + "/></testcase>"
-                    for tag in ("skipped", "failure", "error")
-                ),
+                *('<testcase name="required"><' + tag + "/></testcase>" for tag in ("skipped", "failure", "error")),
             ):
                 path.write_text("<testsuite>" + body + "</testsuite>")
                 with self.assertRaises(ValueError):
                     runner.require_junit(path, {"required"})
 
+    def test_native_experimental_policy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native.xml"
+
+            def receipt(experimental, code=8, required_failure=False):
+                body = "".join(
+                    '<testcase name="' + name + '">' + ("<failure/>" if required_failure else "") + "</testcase>"
+                    for name in sorted(runner.CORE_TESTS)
+                )
+                path.write_text("<testsuite>" + body + experimental + "</testsuite>")
+                return runner.native_receipt(path, code)
+
+            failed = '<testcase name="xl_level_two_keys"><failure/></testcase>'
+            passed = '<testcase name="xl_level_two_keys"/>'
+            self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
+            self.assertEqual(receipt(passed, 0)["required_passed"], 40)
+            self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
+            for body, code, required_failure in (
+                ("", 8, False),
+                (failed + failed, 8, False),
+                ('<testcase name="xl_level_two_keys"><skipped/></testcase>', 8, False),
+                ('<testcase name="xl_level_two_keys"><error/></testcase>', 8, False),
+                (failed, 0, False),
+                (passed, 8, False),
+                (failed, 8, True),
+            ):
+                with self.subTest(body=body, code=code, required_failure=required_failure):
+                    with self.assertRaises(ValueError):
+                        receipt(body, code, required_failure)
+
     def test_private_campaign_requires_trust_pin_and_both_owners(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         catalog = {
             "schema": 1,
-            "tests": [
-                {"name": e["args"]["suite"]}
-                for e in policy["suites"]
-                if e["owner"] == "master"
-            ],
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
         }
         env = {
             "GITHUB_REPOSITORY": retail.REPOSITORY,
@@ -249,9 +249,7 @@ class XlPrivateTests(unittest.TestCase):
             "RETAIL_ASSETS_COMMIT": assets.ASSETS_COMMIT,
         }
         with patch.dict(os.environ, env, clear=True):
-            plan, _ = sweep.plan_batch(
-                "a" * 40, catalog, policy, retail_assets=retail.configured_identity()
-            )
+            plan, _ = sweep.plan_batch("a" * 40, catalog, policy, retail_assets=retail.configured_identity())
             chosen = sweep.select_xl_originals(plan, policy, catalog)
             self.assertEqual({e["id"] for e in chosen["tests"]}, assets.OWNER_IDS)
             self.assertEqual(set(chosen["lanes"]), {"host", "android-single"})

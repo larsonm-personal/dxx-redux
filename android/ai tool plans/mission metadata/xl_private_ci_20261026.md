@@ -35,3 +35,24 @@ inputs, missing or skipped CTest/JUnit), existing nightly boundary/catalog tests
 local pinned original host/JVM execution, scoped formatting and final-head public
 CI. Trusted private hosted execution is unavailable on an unmerged branch by design;
 do not bypass that gate to obtain a green private run.
+
+## Separate unfinished campaign acceptance
+
+The original native owner runs 40 established, pass-required regressions and one
+experimental acceptance test, `xl_level_two_keys`. The latter is an unfinished
+normal-input campaign controller goal, not a prerequisite for fixture CI. Its
+existing engine test and assertions remain unchanged. Improving the controller
+is a separate future goal; level-two completion is not qualified by this lane.
+
+Both categories must register and execute exactly once. Missing, duplicate,
+skipped or errored results fail the owner, as does any established regression
+failure or an inconsistent CTest exit code. An experimental assertion failure is
+reported explicitly as `failed`, never as a pass. The owner prints a fixed-field
+status receipt and retains its JSON and raw JUnit locally; raw mission output
+remains private. A passing experimental run still needs separate review before
+claiming campaign qualification. No bot policy or gameplay change is included.
+
+The follow-up is based on cmake b46efc833, which includes merged PR140. Its
+23/40 original witness now requires successful inspection alongside 15/33 and
+17/36; the six other witnessed pairs still require explicit rejection. This
+updates the historical minimum above without admitting gameplay from inspection.
