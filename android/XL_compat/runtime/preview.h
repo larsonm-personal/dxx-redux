@@ -66,6 +66,7 @@ int xl_wall_trigger(int trigger_index, int object_index, int shot);
 void xl_wall_trigger_reset(void);
 void xl_wall_trigger_exit(void);
 void xl_wall_trigger_frame(void);
+void xl_object_trigger_event(int object_index, int damage);
 int xl_wall_trigger_stock_active(void);
 void xl_draw_menu_indicator(void);
 uint64_t xl_menu_indicator_draws(void);

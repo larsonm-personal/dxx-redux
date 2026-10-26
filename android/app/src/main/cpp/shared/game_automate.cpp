@@ -7777,6 +7777,41 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("android_game_request: Android-only action");
 				break;
 #endif
+			} else if (s.field == "object_damage") {
+#ifdef DXX_BUILD_DESCENT_II
+				int object = -1;
+				double points = 0;
+				char source[16] = {}, extra;
+				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %lf %15s %c", &object, &points, source, &extra) != 3 || object < 0 || object > Highest_object_index || !std::isfinite(points) || points < 0 || points > 32767 || (strcmp(source, "local") && strcmp(source, "none"))) {
+					stop_script_fail("object_damage requires a singleplayer object, points and local/none source");
+					break;
+				}
+				const int killer = !strcmp(source, "local") ? ConsoleObject - Objects : -1;
+				const fix damage = static_cast<fix>(points * 65536.0);
+				if (Objects[object].type == OBJ_ROBOT) apply_damage_to_robot(&Objects[object], damage, killer);
+				else if (Objects[object].type == OBJ_CNTRLCEN && killer >= 0) apply_damage_to_controlcen(&Objects[object], damage, killer);
+				else {
+					stop_script_fail("object_damage requires a robot or a local-player reactor hit");
+					break;
+				}
+#else
+				stop_script_fail("object_damage currently requires D2");
+#endif
+			} else if (s.field == "object_remove") {
+				int object = -1;
+				char extra;
+				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %c", &object, &extra) != 1 || object < 0 || object > Highest_object_index || (Objects[object].type != OBJ_POWERUP && Objects[object].type != OBJ_HOSTAGE && Objects[object].type != OBJ_DEBRIS)) {
+					stop_script_fail("object_remove requires a singleplayer pickup or debris index");
+					break;
+				}
+				Objects[object].flags |= OF_SHOULD_BE_DEAD;
+			} else if (s.field == "robots_suspended") {
+				if (s.value == "true") Game_suspended |= SUSP_ROBOTS;
+				else if (s.value == "false") Game_suspended &= ~SUSP_ROBOTS;
+				else {
+					stop_script_fail("robots_suspended requires true or false");
+					break;
+				}
 			} else if (s.field == "fire_trigger") {
 				char reason[128];
 				if (!fire_level_trigger(s.value, reason, sizeof(reason))) {

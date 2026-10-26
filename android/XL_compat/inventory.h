@@ -73,6 +73,13 @@ struct Trigger {
 	std::vector<std::array<int, 2>> targets;
 };
 
+struct ObjectTrigger {
+	Trigger action;
+	int object = -1;
+	// Retained legacy fields; XL rebuilds owner groups instead of following links
+	int previous = -1, next = -1;
+};
+
 struct Wall {
 	int segment, side, hitpoints, linked_wall;
 	int type, flags, state, trigger, clip, keys, controlling_trigger, cloak;
@@ -98,6 +105,8 @@ struct Inventory {
 	int mine_offset = 0, game_offset = 0;
 	int object_triggers = 0;
 	std::vector<int> object_trigger_heads;
+	std::vector<ObjectTrigger> object_trigger_records;
+	std::vector<std::array<int, 2>> object_trigger_sparse_heads;
 	std::string palette, level_name;
 	std::vector<std::string> model_names;
 	int countdown = 0, reactor_strength = 0, secret_return_segment = 0;

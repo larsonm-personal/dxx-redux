@@ -52,7 +52,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		require(serialization_23_40, "layout qualification requires 23/40");
 	}
 	require(blockers.empty(), blocker_message(blockers));
-	require(v.object_triggers == 0, "object triggers have no stock equivalent");
+	// Object actions remain in the owned source inventory, outside stock trigger storage
 	// Current stock representation limits, checked again by the unchanged stock loader
 	require(v.walls.size() <= 255 && v.objects.size() <= 1000 && v.segments.size() <= 9000,
 	        "stock representation capacity exceeded");

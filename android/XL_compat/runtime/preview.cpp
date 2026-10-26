@@ -1,5 +1,6 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#include "object_trigger.h"
 #include "no_damage_test_binding.h"
 #include "resource_validation.h"
 #include "light_sources.h"
@@ -280,6 +281,19 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 		graph.sound(SOUND_SECRET_EXIT);
 		graph.clip(VCLIP_PLAYER_APPEARANCE);
 	}
+	for (const auto &entry : level.object_trigger_records) {
+		if (entry.object < 0) continue;
+		bool teleports = entry.action.type == 14;
+		if (entry.action.type == 31)
+			for (int child : xl_compat::object_chain_targets(level, entry.action)) teleports |= level.triggers[child].type == 14;
+		if (!teleports) continue;
+		const auto &owner = level.objects.at(entry.object);
+		if (owner.type == OBJ_ROBOT) {
+			graph.robot(owner.id);
+			if (graph.robot_data[owner.id].boss_flag)
+				throw std::runtime_error("object teleport on a boss requires qualified boss destination bookkeeping");
+		}
+	}
 	for (std::size_t i = 0; i < level.objects.size(); ++i) {
 		const auto &obj = level.objects[i];
 		// Cooperative starts are removed by singleplayer initialization
@@ -452,6 +466,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 extern "C" void xl_preview_clear_mission(void)
 {
 	xl_wall_trigger_reset();
+	xl_object_trigger_clear();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
@@ -605,6 +620,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		xl_object_trigger_load(*source);
 		admitted_water_arena = arena && source->level_version < 21;
 		admitted_pilot = original && !admitted_water_arena;
 		rebuild_xl_ambient();
@@ -755,10 +771,10 @@ extern "C" int xl_level_extensions_active(void)
 
 extern "C" int xl_level_trigger_state_required(void)
 {
-	return source && std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
-		       const auto time = std::abs(std::int64_t(trigger.time));
-		       return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
-	       });
+	return source && (source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
+		                  const auto time = std::abs(std::int64_t(trigger.time));
+		                  return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
+	                  }));
 }
 
 extern "C" uint64_t xl_level_trigger_identity(void)
@@ -779,6 +795,22 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 		for (const auto &target : trigger.targets) {
 			field(target[0]);
 			field(target[1]);
+		}
+	}
+	if (source->object_triggers) {
+		field(source->object_triggers);
+		for (const auto &entry : source->object_trigger_records) {
+			field(entry.object);
+			const auto &action = entry.action;
+			for (int value : { action.type, action.flags, action.value, action.time, static_cast<int>(action.targets.size()) }) field(value);
+			for (const auto &target : action.targets) {
+				field(target[0]);
+				field(target[1]);
+			}
+			if (entry.object >= 0) {
+				field(source->objects[entry.object].type);
+				field(source->objects[entry.object].id);
+			}
 		}
 	}
 	return identity;

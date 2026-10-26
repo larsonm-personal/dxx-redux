@@ -1,0 +1,10 @@
+file(SHA256 "${HOG}" hash)
+if(NOT hash STREQUAL "bcdbf127464ff1b82431997edba654c259462b405f9c388f58f6a09445f87980")
+    message(FATAL_ERROR "GlassHouse source differs from inspected original")
+endif()
+execute_process(COMMAND "${REFERENCE}" "${HOG}" RESULT_VARIABLE result OUTPUT_VARIABLE log
+                ERROR_VARIABLE error)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Original object record comparison failed: ${log}${error}")
+endif()
+message(STATUS "${log}")

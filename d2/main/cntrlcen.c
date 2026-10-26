@@ -284,6 +284,9 @@ void do_countdown_frame()
 //	This code is common to whether control center is implicitly imbedded in a boss,
 //	or is an object of its own.
 //	if objp == NULL that means the boss was the control center and don't set Dead_controlcen_object_num
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 void do_controlcen_destroyed_stuff(object *objp)
 {
 	int i;
@@ -318,6 +321,10 @@ void do_controlcen_destroyed_stuff(object *objp)
 
 	Total_countdown_time = d1_in_d2_reactor_countdown(Total_countdown_time);
 	Countdown_timer = i2f(Total_countdown_time);
+#ifdef DXX_XL_RUNTIME
+	if (objp && objp->type == OBJ_CNTRLCEN)
+		xl_object_trigger_event(objp-Objects, 0);
+#endif
 
 	if (!Control_center_present || objp==NULL)
 		return;
