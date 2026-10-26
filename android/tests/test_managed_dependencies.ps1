@@ -10,18 +10,23 @@ $child = $null
 $fixtureLock = $null
 . (Join-Path $repoRoot 'android/helpers/host_processes.ps1')
 $realProcessInventory = ${function:Get-DxxHostProcessInventory}
-# Hosted runners can have unreadable system tools. Isolate only those already
-# present before this fixture starts; retain real inspection of fixture children
-$unreadableBackground = @(& $realProcessInventory -IncludePaths | Where-Object PathInspectionFailed)
+# Only fixture-owned workers belong in this test's process inventory
+# Production still conservatively protects tools for any unreadable process
+$fixtureProcessId = 0
 $injectUnreadableTool = $false
 $unreadableToolName = 'python3'
 function Get-DxxHostProcessInventory {
     param([switch]$IncludePaths)
-    foreach ($process in (& $realProcessInventory -IncludePaths:$IncludePaths)) {
-        $background = @($unreadableBackground | Where-Object {
-                $_.ProcessId -eq $process.ProcessId -and $_.Name -ceq $process.Name -and $_.CommandLine -ceq $process.CommandLine
-            })
-        if (-not ($process.PathInspectionFailed -and $background.Count)) { $process }
+    if ($fixtureProcessId) {
+        # Reproduce a late-arriving unreadable background tool before the real worker
+        $observed = @(
+            [pscustomobject]@{ ProcessId = -2; Name = 'python3'; PathInspectionFailed = $true }
+            & $realProcessInventory -IncludePaths:$IncludePaths
+        )
+        $owned = @($observed | Where-Object ProcessId -eq $fixtureProcessId)
+        if ($owned.Count -ne 1) { throw "Fixture process $fixtureProcessId missing from real inventory" }
+        # Keep failed-inspection flags: inability to inspect our worker is not permission to delete
+        $owned
     }
     if ($injectUnreadableTool) {
         [pscustomobject]@{
@@ -119,10 +124,12 @@ try {
         if ($child.HasExited -or [DateTime]::UtcNow -gt $deadline) { throw 'Dependency user did not start' }
         Start-Sleep -Milliseconds 50
     }
+    $fixtureProcessId = $child.Id
     $results = @(& $cleaner -RepoRoot $checkouts[0] -Apply)
     Assert-Result $results 'shfmt-1' Protected "active process $($child.Id)"
     $child.Kill()
     $child.WaitForExit()
+    $fixtureProcessId = 0
     $child.Dispose()
     $child = $null
 
@@ -173,12 +180,12 @@ try {
     # finally blocks and leaving the real on-disk retirement journal to recover
     $interruptedCleaner = Join-Path $root 'interrupt-cleaner.ps1'
     Set-Content -LiteralPath $interruptedCleaner -Value @'
-param($Cleaner, $Checkout, $InventoryHelper, $IgnoredProcesses, $FilterDefinition)
+param($Cleaner, $Checkout, $InventoryHelper, $FilterDefinition)
 $ErrorActionPreference = 'Stop'
 # The crash-recovery child must use the same fixture isolation as its parent
 . $InventoryHelper
 $realProcessInventory = ${function:Get-DxxHostProcessInventory}
-$unreadableBackground = @(ConvertFrom-Json $IgnoredProcesses)
+$fixtureProcessId = 0
 $injectUnreadableTool = $false
 Set-Item Function:Get-DxxHostProcessInventory -Value ([scriptblock]::Create($FilterDefinition))
 function Remove-Item {
@@ -199,7 +206,6 @@ throw 'Fixture never interrupted retirement'
     Set-HeadlessProcessArguments -StartInfo $start -Arguments @(
         '-NoProfile', '-File', $interruptedCleaner, $cleaner, $checkouts[0],
         (Join-Path $repoRoot 'android/helpers/host_processes.ps1'),
-        (ConvertTo-Json -InputObject @($unreadableBackground | Select-Object ProcessId, Name, CommandLine) -Compress),
         ${function:Get-DxxHostProcessInventory}.ToString()
     )
     $start.UseShellExecute = $false
