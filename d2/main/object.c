@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "fluids.h"
+#include "blocked.h"
 #include "speed_boost.h"
 #include "boss_spawn.h"
 #endif
@@ -2524,6 +2525,9 @@ void object_move_one( object * obj )
 
 		case MT_PHYSICS:
 			do_physics_sim(obj);
+#ifdef DXX_XL_RUNTIME
+            xl_blocked_note_move(obj-Objects, previous_segment);
+#endif
 			break;	//move by physics
 
 		case MT_SPINNING:		spin_object(obj); break;

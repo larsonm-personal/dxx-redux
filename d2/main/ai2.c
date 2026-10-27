@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "blocked.h"
 #include "boss_spawn.h"
 #endif
 /*
@@ -1611,6 +1612,9 @@ void move_object_to_legal_spot(object *objp)
 	segment	*segp = &Segments[objp->segnum];
 
 	for (i=0; i<MAX_SIDES_PER_SEGMENT; i++) {
+#ifdef DXX_XL_RUNTIME
+        if (xl_blocked_entry(objp-Objects, objp->segnum, i)) continue;
+#endif
 		if (WALL_IS_DOORWAY(segp, i) & WID_FLY_FLAG) {
 			vms_vector	segment_center, goal_dir;
 

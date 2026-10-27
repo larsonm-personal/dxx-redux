@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "fluids.h"
+#include "blocked.h"
 #include "speed_boost.h"
 #endif
 /*
@@ -929,6 +930,7 @@ void do_physics_sim(object *obj)
 			int blocked = !(WALL_IS_DOORWAY(&Segments[orig_segnum],sidenum) & WID_FLY_FLAG);
 #ifdef DXX_XL_RUNTIME
 			blocked |= xl_speed_boost_exit_blocked(objnum, orig_segnum, sidenum);
+			blocked |= xl_blocked_entry(objnum, orig_segnum, sidenum);
 #endif
 			if (blocked) {
 				side *s;

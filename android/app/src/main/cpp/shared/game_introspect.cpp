@@ -37,6 +37,7 @@
 #include "speed_boost.h"
 #include "spawn_points.h"
 #include "fluids.h"
+#include "blocked.h"
 #include "resource_validation.h"
 #endif
 
@@ -2154,6 +2155,9 @@ extern "C" char *game_introspect_get_state(void)
 		{ "classic_legacy_fans", xl_classic_legacy_fans_active() != 0 },
 		{ "in_water", Game_wind && ConsoleObject && xl_preview_water_segment(ConsoleObject->segnum) != 0 },
 		{ "in_lava", Game_wind && ConsoleObject && xl_lava_segment(ConsoleObject->segnum) != 0 },
+		{ "in_blocked", Game_wind && ConsoleObject && xl_blocked_segment(ConsoleObject->segnum) != 0 },
+		{ "blocked_map_calls", xl_blocked_map_calls() },
+		{ "blocked_projectile_entries", xl_blocked_projectile_entries() },
 		{ "fluid_scrape_elapsed", xl_fluid_scrape_elapsed() },
 		{ "lava_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_LAVAFALL_HISS, 0) : 0 },
 		{ "lava_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_LAVAFALL_HISS, 1) : 0 },
@@ -2247,7 +2251,7 @@ extern "C" char *game_introspect_get_state(void)
 					const auto &shot = Objects[child];
 					if (shot.type == OBJ_WEAPON && shot.ctype.laser_info.parent_num == object && shot.ctype.laser_info.parent_signature == robot.signature && !(shot.flags & OF_SHOULD_BE_DEAD)) ++projectiles;
 				}
-				robots.push_back({ { "object", object }, { "id", robot.id }, { "segment", robot.segnum }, { "shields", f2fl(robot.shields) }, { "signature", robot.signature }, { "control", robot.control_type }, { "render", robot.render_type }, { "in_water", xl_preview_water_segment(robot.segnum) != 0 }, { "in_lava", xl_lava_segment(robot.segnum) != 0 }, { "projectiles", projectiles } });
+				robots.push_back({ { "object", object }, { "id", robot.id }, { "segment", robot.segnum }, { "shields", f2fl(robot.shields) }, { "signature", robot.signature }, { "control", robot.control_type }, { "render", robot.render_type }, { "in_water", xl_preview_water_segment(robot.segnum) != 0 }, { "in_lava", xl_lava_segment(robot.segnum) != 0 }, { "in_blocked", xl_blocked_segment(robot.segnum) != 0 }, { "projectiles", projectiles } });
 			}
 			generators[std::to_string(index)] = { { "segment", center.segnum }, { "station", station }, { "flags0", RobotCenters[index].robot_flags[0] }, { "flags1", RobotCenters[index].robot_flags[1] }, { "enabled", center.Enabled != 0 }, { "lives", center.Lives }, { "pending", center.Flag == 1 }, { "capacity", center.Capacity }, { "timer", center.Timer }, { "disable_time", center.Disable_time }, { "alive", robots.size() }, { "robots", robots } };
 		}

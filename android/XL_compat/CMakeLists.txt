@@ -95,6 +95,7 @@ if(BUILD_TESTING)
         include(tests/reference_spawn_points.cmake)
         include(tests/reference_water_actors.cmake)
         include(tests/reference_lava.cmake)
+        include(tests/reference_blocked.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -251,6 +252,18 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/spawn-points ${xl_spawn_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/spawn_points.cmake)
             set_tests_properties(xl_spawn_points PROPERTIES TIMEOUT 90)
+            set(xl_blocked_args)
+            if(TARGET xl_blocked_reference)
+                list(APPEND xl_blocked_args "-DREFERENCE=$<TARGET_FILE:xl_blocked_reference>")
+            endif()
+            add_test(
+                NAME xl_blocked_segments
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/blocked ${xl_blocked_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/blocked.cmake)
+            set_tests_properties(xl_blocked_segments PROPERTIES TIMEOUT 120)
             set(xl_lava_args)
             if(TARGET xl_lava_reference)
                 list(APPEND xl_lava_args "-DREFERENCE=$<TARGET_FILE:xl_lava_reference>"
