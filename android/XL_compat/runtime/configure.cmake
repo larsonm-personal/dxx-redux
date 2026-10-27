@@ -24,7 +24,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/fluids.cpp"
                 "${xl_runtime_dir}/blocked.cpp"
                 "${xl_runtime_dir}/repair.cpp"
-                "${xl_runtime_dir}/keyed_wall.cpp"
+                "${xl_runtime_dir}/doorway.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/speed_boost.cpp"
                 "${xl_runtime_dir}/spawn_points.cpp"

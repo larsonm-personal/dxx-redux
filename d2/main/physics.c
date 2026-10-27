@@ -2,7 +2,7 @@
 #include "preview.h"
 #include "fluids.h"
 #include "blocked.h"
-#include "keyed_wall.h"
+#include "doorway.h"
 #include "speed_boost.h"
 #endif
 /*
@@ -930,8 +930,8 @@ void do_physics_sim(object *obj)
 
 			int blocked = !(WALL_IS_DOORWAY(&Segments[orig_segnum],sidenum) & WID_FLY_FLAG);
 #ifdef DXX_XL_RUNTIME
-            const int closed = xl_closed_wall_doorway(objnum, orig_segnum, sidenum);
-            if (closed >= 0) blocked = !(closed & WID_FLY_FLAG);
+            const int doorway = xl_wall_doorway(objnum, orig_segnum, sidenum);
+            if (doorway >= 0) blocked = !(doorway & WID_FLY_FLAG);
 			blocked |= xl_speed_boost_exit_blocked(objnum, orig_segnum, sidenum);
 			blocked |= xl_blocked_entry(objnum, orig_segnum, sidenum);
 #endif
