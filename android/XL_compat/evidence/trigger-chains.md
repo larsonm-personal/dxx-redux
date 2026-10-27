@@ -1,5 +1,8 @@
 # Immediate wall trigger chains
 
+The later [trigger flag tranche](trigger-flags.md) supersedes the 32/64 restriction
+recorded below. Refer to its action-specific semantics and acceptance scope.
+
 ## Scope and source
 
 Wall master (31), enable (32) and disable (33) actions use detected requirements

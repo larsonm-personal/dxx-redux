@@ -69,6 +69,12 @@ void xl_wall_trigger_exit(void);
 void xl_wall_trigger_frame(void);
 void xl_object_trigger_event(int object_index, int damage);
 int xl_wall_trigger_stock_active(void);
+struct trigger;
+int xl_trigger_cue_enabled(const struct trigger *action, int sound);
+int xl_trigger_illusion_action(const struct trigger *action);
+/* Debug-only process-cumulative cue decisions; not evidence of mixer playback */
+uint64_t xl_trigger_cue_queries(int sound, int enabled);
+int xl_segment_sound_count(int segment, int side, int sound, int playing_only);
 void xl_draw_menu_indicator(void);
 uint64_t xl_menu_indicator_draws(void);
 void xl_preview_complete_pilot(void);

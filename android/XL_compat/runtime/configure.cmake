@@ -23,6 +23,7 @@ foreach(xl_target IN LISTS xl_targets)
         PRIVATE "${xl_runtime_dir}/preview.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/trigger.cpp"
+                "${xl_runtime_dir}/wall_actions.cpp"
                 "${xl_runtime_dir}/trigger_save.cpp"
                 "${xl_runtime_dir}/object_trigger.cpp"
                 "${xl_runtime_dir}/robot_generator.cpp"

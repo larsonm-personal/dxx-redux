@@ -1,5 +1,9 @@
 # Wall action scheduling and stateful flags
 
+The later [trigger flag tranche](trigger-flags.md) supersedes this tranche's
+32/64 restriction. Its reference/native and Android acceptance are recorded there;
+the original scheduling evidence below retains its bounded historical scope.
+
 ## Scope
 
 The shared OpenGL D2 runtime now schedules the previously supported wall actions:

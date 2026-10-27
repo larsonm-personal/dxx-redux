@@ -32,6 +32,8 @@ CORE_TESTS = (
         "xl_generator_assignment_runtime",
         "xl_boss_spawning",
         "xl_boss_transport",
+        "xl_trigger_flags",
+        "xl_trigger_flag_reference",
         "xl_equipment_generators",
         "xl_effect_payloads",
         "xl_effect_decode_reference",

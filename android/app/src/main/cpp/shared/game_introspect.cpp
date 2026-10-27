@@ -12,6 +12,7 @@
 #ifdef INTROSPECT_ON
 
 #include <atomic>
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -3447,6 +3448,29 @@ extern "C" char *game_introspect_get_state(void)
 			};
 		}
 		j["sound_playback"] = std::move(playback);
+#ifdef DXX_XL_RUNTIME
+		// Android-only semantic aliases for existing cumulative mixer diagnostics
+		json cues = json::object();
+		for (const auto &entry : std::array<std::pair<const char *, int>, 3>{ { { "forcefield_off", SOUND_FORCEFIELD_OFF }, { "illusion_off", SOUND_WALL_REMOVED }, { "forcefield_hum", SOUND_FORCEFIELD_HUM } } }) {
+			const int sample = digi_xlat_sound(entry.second);
+			const auto key = std::to_string(sample);
+			json value = j["sound_playback"].value(key, json{ { "attempts", 0 }, { "completed", 0 }, { "stop_requested", 0 }, { "failed", 0 } });
+			value["sample"] = sample;
+			value["enabled_decisions"] = xl_trigger_cue_queries(entry.second, 1);
+			value["suppressed_decisions"] = xl_trigger_cue_queries(entry.second, 0);
+			cues[entry.first] = std::move(value);
+		}
+		json fields = json::object();
+		for (int wall = 0; Game_wind && wall < Num_walls; ++wall) {
+			const int segment = Walls[wall].segnum, side = Walls[wall].sidenum;
+			if (segment < 0 || segment > Highest_segment_index || side < 0 || side >= 6) continue;
+			const int texture = Segments[segment].sides[side].tmap_num;
+			if (texture < 0 || texture >= NumTextures || !(TmapInfo[texture].flags & TMI_FORCE_FIELD)) continue;
+			fields[std::to_string(wall)] = { { "segment", segment }, { "side", side }, { "hum_linked", xl_segment_sound_count(segment, side, SOUND_FORCEFIELD_HUM, 0) }, { "hum_playing", xl_segment_sound_count(segment, side, SOUND_FORCEFIELD_HUM, 1) } };
+		}
+		cues["forcefields"] = std::move(fields);
+		j["xl_pilot"]["trigger_audio"] = std::move(cues);
+#endif
 		j["mod_save"] = { { "status", mod_save_status() }, { "reason", mod_save_reason() }, { "adapted", mod_save_adapted_count() } };
 		j["mission_asset_owner"] = android_mission_assets_owner();
 		j["mission_asset_generation"] = android_mission_assets_generation();
