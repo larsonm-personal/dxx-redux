@@ -2152,6 +2152,8 @@ extern "C" char *game_introspect_get_state(void)
 #ifdef DXX_XL_RUNTIME
 	j["xl_pilot"] = {
 		{ "runtime_active", xl_runtime_active() != 0 },
+		{ "source_level_version", xl_source_level_version() },
+		{ "source_game_version", xl_source_game_version() },
 		{ "classic_lighting_requested", xl_classic_lighting_requested() != 0 },
 		{ "classic_lighting_vertices", xl_classic_lighting_vertex_count() },
 		{ "classic_legacy_fans", xl_classic_legacy_fans_active() != 0 },
@@ -2187,6 +2189,15 @@ extern "C" char *game_introspect_get_state(void)
 		{ "unresolved_emitters", xl_preview_unresolved_emitters() },
 		{ "activated_triggers", xl_preview_trigger_mask() },
 	};
+	// Android diagnostics read actual light masks; chunked indices share one source key
+	j["xl_pilot"]["light_sources"] = json::object();
+	if (Game_wind && xl_runtime_active()) {
+		for (int i = 0; i < Num_static_lights; ++i) {
+			const int segment = Dl_indices[i].segnum, side = Dl_indices[i].sidenum;
+			if (segment < 0 || segment >= Num_segments || side < 0 || side >= 6) continue;
+			j["xl_pilot"]["light_sources"][std::to_string(segment) + "_" + std::to_string(side)] = (Light_subtracted[segment] & (1 << side)) != 0;
+		}
+	}
 	if (Game_wind && xl_level_extensions_active()) {
 		json triggers = json::object();
 		for (int index = 0; index < Num_triggers; ++index) {

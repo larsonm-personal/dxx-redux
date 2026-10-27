@@ -240,10 +240,12 @@ void teleport_inventory_contract()
 
 void object_trigger_inventory_contract(const char *directory = nullptr)
 {
-	for (const int version : { 15, 17, 23 }) {
+	for (const int profile : { 15, 17, 23, 34 }) {
+		const int version = profile == 34 ? 15 : profile;
 		auto bytes = fixture(version);
 		const auto base = xl_compat::inspect_level(bytes);
 		const auto game = base.game_offset;
+		if (profile == 34) patch(bytes, game + 2, 34, 2);
 		const auto old_trigger = std::find_if(base.sections.begin(), base.sections.end(), [](const xl_compat::Section &s) { return s.name == "triggers"; })->offset;
 		bytes.resize(old_trigger);
 		patch(bytes, game + 35, static_cast<std::uint32_t>(bytes.size()));
@@ -386,7 +388,7 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(!xl_compat::runtime_blockers(player_owner).empty(), "unqualified player object ownership admitted");
 		if (directory) {
 			std::filesystem::create_directories(directory);
-			std::ofstream file(std::filesystem::path(directory) / (std::to_string(version) + ".rl2"), std::ios::binary);
+			std::ofstream file(std::filesystem::path(directory) / (std::to_string(profile) + ".rl2"), std::ios::binary);
 			file.write(reinterpret_cast<const char *>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
 			file.close();
 			check(bool(file), "cannot export object reference fixture");
@@ -625,6 +627,78 @@ void version_17_contract()
 	rejects([&] { xl_compat::inspect_level(bad); });
 	lights.pop_back();
 	rejects([&] { xl_compat::inspect_level(lights); });
+}
+
+void version_34_contract()
+{
+	auto bytes = fixture(15);
+	auto inventory = xl_compat::inspect_level(bytes);
+	patch(bytes, inventory.game_offset + 2, 34, 2);
+	inventory = xl_compat::inspect_level(bytes);
+	check(inventory.game_version == 34 && inventory.sections.size() == 9, "15/34 header added an equipment section");
+	check(inventory.texture_colors.at(909).rgb[0] == 1, "15/34 double texture colors lost");
+	check(!xl_compat::prepare_gameplay_probe(bytes).stock_level.empty(), "15/34 admission failed");
+	auto bad = bytes;
+	patch(bad, inventory.game_offset + 2, 35, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	auto lights = bytes;
+	const auto index_offset = lights.size();
+	patch(lights, inventory.game_offset + 35 + 7 * 12, static_cast<std::uint32_t>(index_offset));
+	patch(lights, inventory.game_offset + 39 + 7 * 12, 1);
+	put(lights, 0, 2);
+	put(lights, (300 << 3) | 5, 2);
+	put(lights, 0, 2);
+	patch(lights, inventory.game_offset + 35 + 8 * 12, static_cast<std::uint32_t>(lights.size()));
+	patch(lights, inventory.game_offset + 39 + 8 * 12, 300);
+	for (int i = 0; i < 300; ++i) {
+		put(lights, 0, 2);
+		put(lights, 4, 1);
+		put(lights, 0, 1);
+		for (int corner = 0; corner < 4; ++corner) put(lights, corner + 1, 1);
+	}
+	const auto decoded = xl_compat::inspect_level(lights);
+	check(decoded.light_indices.at(0) == std::array<int, 4>{ 0, 5, 300, 0 } && decoded.delta_lights.size() == 300, "packed light count narrowed or side misdecoded");
+	bad = lights;
+	patch(bad, index_offset + 2, (300 << 3) | 7, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	bad = lights;
+	patch(bad, index_offset + 2, (8191 << 3) | 5, 2);
+	rejects([&] { xl_compat::inspect_level(bad); });
+	lights.pop_back();
+	rejects([&] { xl_compat::inspect_level(lights); });
+	unsigned light_cases = 0;
+	for (int version : { 33, 34 })
+		for (int count : { 0, 1, 31, 32, 127, 128, 255, 256, 300, 8191 })
+			for (int side = 0; side < 8; ++side) {
+				if (version == 33 && count > 255) continue;
+				auto sample = fixture(15);
+				const auto game = xl_compat::inspect_level(sample).game_offset;
+				patch(sample, game + 2, version, 2);
+				patch(sample, game + 35 + 7 * 12, static_cast<std::uint32_t>(sample.size()));
+				patch(sample, game + 39 + 7 * 12, 1);
+				put(sample, 0, 2);
+				put(sample, (count << (version == 34 ? 3 : 8)) | side, 2);
+				put(sample, 0, 2);
+				patch(sample, game + 35 + 8 * 12, static_cast<std::uint32_t>(sample.size()));
+				patch(sample, game + 39 + 8 * 12, count);
+				for (int delta = 0; delta < count; ++delta) {
+					put(sample, 0, 2);
+					put(sample, 4, 1);
+					put(sample, 0, 1);
+					for (int c = 0; c < 4; ++c) put(sample, c + 1, 1);
+				}
+				if (side >= 6) rejects([&] { xl_compat::inspect_level(sample); });
+				else check(xl_compat::inspect_level(sample).light_indices.at(0) == std::array<int, 4>{ 0, side, count, 0 }, "Old/packed light boundary decoded incorrectly");
+				++light_cases;
+			}
+	check(light_cases == 136, "Incomplete old/packed light boundary matrix");
+	for (int flags = 0; flags < 256; ++flags) {
+		auto flagged = fixture(15, flags);
+		patch(flagged, xl_compat::inspect_level(flagged).game_offset + 2, 34, 2);
+		const auto decoded = xl_compat::inspect_level(flagged);
+		check(decoded.segments[0].flags == flags && decoded.observations.size() == (flags & 0xfc ? 1u : 0u), "15/34 reserved flags changed");
+		check(xl_compat::runtime_blockers(decoded).empty(), "15/34 reserved flags treated as gameplay");
+	}
 }
 
 void version_23_contract()
@@ -996,6 +1070,7 @@ int main(int argc, char **argv)
 		trigger_chain_inventory_contract();
 		object_trigger_inventory_contract();
 		feature_contract();
+		version_34_contract();
 		segment_flags_contract();
 		light_count_contract();
 		const auto bytes = fixture();
@@ -1096,7 +1171,7 @@ int main(int argc, char **argv)
 		patch(bad, 12, 8);
 		rejects([&] { xl_compat::inspect_level(bad); });
 		bad = bytes;
-		patch(bad, out.game_offset + 2, 34, 2);
+		patch(bad, out.game_offset + 2, 35, 2);
 		rejects([&] { xl_compat::inspect_level(bad); });
 		bad = bytes;
 		patch(bad, out.mine_offset + 5 + 96 + 3, 8, 2);

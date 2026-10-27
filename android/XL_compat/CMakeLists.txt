@@ -99,6 +99,7 @@ if(BUILD_TESTING)
         include(tests/reference_keyed_wall.cmake)
         include(tests/reference_close_door.cmake)
         include(tests/reference_repair.cmake)
+        include(tests/reference_light_index.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -495,6 +496,22 @@ if(BUILD_TESTING)
                 -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/legacy_repair
                 -DLEGACY=ON ${legacy_repair_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/repair.cmake)
         set_tests_properties(xl_legacy_repair PROPERTIES TIMEOUT 120)
+    endif()
+    set(XL_APOCALYPTIC_HOG "" CACHE FILEPATH
+                                    "Original Apocalyptic Factor XL HOG for 15/34 coverage")
+    if(XL_APOCALYPTIC_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        set(format34_reference_args)
+        if(TARGET xl_light_index_reference)
+            list(APPEND format34_reference_args
+                 "-DREFERENCE=$<TARGET_FILE:xl_light_index_reference>")
+        endif()
+        add_test(
+            NAME xl_format34_native
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_APOCALYPTIC_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/format34
+                ${format34_reference_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/format34.cmake)
+        set_tests_properties(xl_format34_native PROPERTIES TIMEOUT 270)
     endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")

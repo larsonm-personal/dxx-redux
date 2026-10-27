@@ -300,6 +300,9 @@ int main()
 		const std::vector<float> expected_brightness{ 0.125f, 0, 0.75f, 1, 65535.0f / 32768, 0, 0.5f, 0.5f };
 		if (xl_compat::vertex_brightness(level) != expected_brightness)
 			throw std::runtime_error("shared-vertex brightness mismatch");
+		level.game_version = 34;
+		if (xl_compat::vertex_brightness(level) != expected_brightness)
+			throw std::runtime_error("15/34 shared-vertex brightness mismatch");
 		level.level_version = 17;
 		level.game_version = 36;
 		if (xl_compat::vertex_brightness(level) != expected_brightness)

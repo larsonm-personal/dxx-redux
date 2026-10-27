@@ -233,7 +233,7 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader game(bytes, out.game_offset, bytes.size());
 	require(game.u16() == 0x6705, "invalid game data signature");
 	out.game_version = game.u16();
-	require((out.level_version == 15 && out.game_version == 33) || (out.level_version == 17 && out.game_version == 36) || (out.level_version == 23 && out.game_version == 40),
+	require((out.level_version == 15 && (out.game_version == 33 || out.game_version == 34)) || (out.level_version == 17 && out.game_version == 36) || (out.level_version == 23 && out.game_version == 40),
 	        "unsupported level/game version pair " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version));
 	game.skip(31);
 	const char *section_names[] = { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights", "equipment" };
@@ -336,9 +336,8 @@ Inventory inspect_level(const Bytes &bytes)
 		seg.light = mine.s32();
 		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, out.level_version == 23 ? "segment_function_v21" : "segment_function", i, std::to_string(seg.function));
 		if (seg.flags & ~3) {
-			// Pinned 17/36 reference consumes only ambient bits 0/1; retain all raw bits
-			// See evidence/segment-flags-17-36.md; other profiles stay unaudited
-			if (out.level_version == 17 && out.game_version == 36)
+			// Pinned source consumes only ambient bits 0/1 in these audited profiles
+			if ((out.level_version == 17 && out.game_version == 36) || (out.level_version == 15 && out.game_version == 34))
 				issue(out.observations, "reserved_segment_flags", i, std::to_string(seg.flags));
 			else issue(out.unknown, "segment_flags", i, std::to_string(seg.flags));
 		}
@@ -575,12 +574,12 @@ Inventory inspect_level(const Bytes &bytes)
 		auto r = section_reader(bytes, out, indices, 6);
 		for (int i = 0; i < indices.count; ++i) {
 			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
-			if (out.game_version >= 36) {
+			if (out.game_version >= 34) {
 				// XL packs side into 3 bits and count into the remaining 13 bits
 				values[2] = (values[2] << 5) | (values[1] >> 3);
 				values[1] &= 7;
 			}
-			require(values[0] >= 0 && values[0] < segment_count && values[1] < 6 && values[3] <= deltas.count && values[2] <= deltas.count - values[3], "invalid light index " + std::to_string(i));
+			require(values[0] >= 0 && values[0] < segment_count && values[1] < 6 && values[3] <= deltas.count && values[2] <= deltas.count - values[3], (out.game_version >= 34 ? "invalid packed light index " : "invalid light index ") + std::to_string(i) + " in " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version) + ": segment=" + std::to_string(values[0]) + " side=" + std::to_string(values[1]) + " count=" + std::to_string(values[2]) + " first=" + std::to_string(values[3]) + " available=" + std::to_string(deltas.count));
 			out.light_indices.push_back(values);
 		}
 	}
