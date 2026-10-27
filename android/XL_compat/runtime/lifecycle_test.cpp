@@ -1539,6 +1539,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "boss_transport_test.h"
 #include "trigger_flags_test.h"
 #include "boss_groups_test.h"
+#include "player_resources_test.h"
 
 int main(int argc, char **argv)
 {
@@ -1546,6 +1547,7 @@ int main(int argc, char **argv)
 	if (find_arg_value(argc, argv, "-boss-transport-test")) return boss_transport_test(argc, argv);
 	if (find_arg_value(argc, argv, "-trigger-flags-test")) return trigger_flags_test(argc, argv);
 	if (find_arg_value(argc, argv, "-boss-groups-test")) return boss_groups_test(argc, argv);
+	if (find_arg_value(argc, argv, "-player-resources-test")) return player_resources_test(argc, argv);
 	if (find_arg_value(argc, argv, "-effect-inspection-test")) return effect_inspection_test(argc, argv);
 	if (find_arg_value(argc, argv, "-equipment-test")) return equipment_test(argc, argv);
 	if (find_arg_value(argc, argv, "-boss-spawn-test")) return boss_spawn_test(argc, argv);
