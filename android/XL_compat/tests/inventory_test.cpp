@@ -543,7 +543,7 @@ void version_17_contract()
 	equipment.resize(equipment.size() + 20);
 	const auto with_equipment = xl_compat::inspect_level(equipment);
 	rejects([&] { xl_compat::prepare_serialization_probe_17_36(equipment); });
-	check(std::any_of(with_equipment.unsupported.begin(), with_equipment.unsupported.end(), [](const auto &issue) { return issue.feature == "equipment_generators"; }), "equipment payload silently dropped");
+	check(with_equipment.equipment.size() == 1 && with_equipment.equipment[0] == std::array<int, 6>{}, "legacy equipment payload silently dropped");
 	equipment.pop_back();
 	rejects([&] { xl_compat::inspect_level(equipment); });
 
@@ -1027,6 +1027,42 @@ int main(int argc, char **argv)
 		rejects([&] { xl_compat::read_hog(hog); });
 		hog[2] = 'X';
 		rejects([&] { xl_compat::read_hog(hog); });
+		{
+			auto equipment = fixture(23, 0, 2);
+			const auto source = xl_compat::inspect_level(equipment);
+			const auto properties = source.game_offset - (source.vertices.size() + source.segments.size() * 6 + 910 + source.segments.size()) * 13;
+			for (int segment = 0; segment < 2; ++segment) {
+				patch(equipment, properties + segment * 13, 11, 1);
+				patch(equipment, properties + segment * 13 + 1, 1 - segment, 1);
+			}
+			const auto table = equipment.size();
+			patch(equipment, source.game_offset + 35 + 9 * 12, static_cast<unsigned>(table));
+			patch(equipment, source.game_offset + 39 + 9 * 12, 2);
+			patch(equipment, source.game_offset + 43 + 9 * 12, 20);
+			for (int row = 0; row < 2; ++row) {
+				for (unsigned value : { 1u << (row + 1), 0u, 65536u, 327680u }) put(equipment, value, 4);
+				put(equipment, 65535u, 2);
+				put(equipment, 32767u, 2);
+			}
+			const auto admitted = xl_compat::prepare_gameplay_probe(equipment);
+			check(admitted.source.equipment.size() == 2 && admitted.source.equipment[0][4] == -1 && admitted.source.segments[0].producer == 1, "equipment source assignment or raw records lost");
+			check(xl_compat::inventory_json(admitted.source).find("\"equipment\"") != std::string::npos, "equipment records absent from inspection");
+			auto bad_equipment = equipment;
+			bad_equipment.pop_back();
+			rejects([&] { xl_compat::inspect_level(bad_equipment); });
+			bad_equipment = equipment;
+			patch(bad_equipment, properties + 1, 0, 1);
+			rejects([&] { xl_compat::prepare_gameplay_probe(bad_equipment); });
+			for (unsigned id : { 7u, 8u, 24u, 46u, 48u, 49u }) {
+				bad_equipment = equipment;
+				patch(bad_equipment, table, id < 32 ? 1u << id : 0u);
+				patch(bad_equipment, table + 4, id >= 32 ? 1u << (id - 32) : 0u);
+				rejects([&] { xl_compat::prepare_gameplay_probe(bad_equipment); });
+			}
+			bad_equipment = equipment;
+			patch(bad_equipment, table + 4, 0x80000000u);
+			check(xl_compat::prepare_gameplay_probe(bad_equipment).source.equipment[0][1] == INT32_MIN, "inert equipment bits were interpreted or erased");
+		}
 		std::cout << "XL inventory contracts passed\n";
 		return 0;
 	} catch (const std::exception &e) {

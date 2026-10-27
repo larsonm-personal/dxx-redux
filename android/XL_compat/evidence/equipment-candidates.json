@@ -1,0 +1,183 @@
+{
+    "schema": 1,
+    "scope": "Fresh native decoding of hash-matched survey candidates; no admission or gameplay qualification",
+    "bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "levels": [
+        {
+            "archive": "missions/single/pmlev1.hog",
+            "archive_sha256": "1be1b5cefa6e9ff0657dfee778a3129f444df22b6b4ab84752bf872af2397f69",
+            "level": "pmlev1p.rl2",
+            "level_sha256": "dd43019eb3f90318d7196d4ff676927585ffb2a23949ce824979776503a5316c",
+            "survey_profile": "17/35",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 238322,
+                "count": 2,
+                "size": 20
+            },
+            "survey_equipment_segments": 2,
+            "native_rejection": "unsupported level/game version pair 17/35"
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-03.rl2",
+            "level_sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 973150,
+                "count": 2,
+                "size": 20
+            },
+            "survey_equipment_segments": 2,
+            "native_rejection": "offset 931690: unsupported render layout at object 486"
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-04.rl2",
+            "level_sha256": "bb7c41c638e01443a553615c24e8dfcd1ec31cbb6cc6a36883489c3be755469d",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 1281288,
+                "count": 7,
+                "size": 20
+            },
+            "survey_equipment_segments": 7,
+            "native_rejection": "offset 1238935: unsupported render layout at object 480"
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-s.rl2",
+            "level_sha256": "ec0619a747e2c3135a2d132540b51cab36c50c6c054896bc4252a2016234079b",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 614380,
+                "count": 6,
+                "size": 20
+            },
+            "survey_equipment_segments": 6,
+            "native_rejection": "offset 597636: unsupported render layout at object 365"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "boilpnt.rl2",
+            "level_sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 325072,
+                "count": 7,
+                "size": 20
+            },
+            "survey_equipment_segments": 7,
+            "native_rejection": "offset 318192: unsupported render layout at object 29"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "watrwrks.rl2",
+            "level_sha256": "c60ed421f6147e95939e38d07d92d00ed1467397991cc35e933a02675c444205",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 769646,
+                "count": 1,
+                "size": 20
+            },
+            "survey_equipment_segments": 1,
+            "native_rejection": "offset 742547: unsupported render layout at object 58"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "canyon.rl2",
+            "level_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 569264,
+                "count": 14,
+                "size": 20
+            },
+            "survey_equipment_segments": 14,
+            "native_rejection": "offset 553921: unsupported render layout at object 50"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "subzero.rl2",
+            "level_sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 863010,
+                "count": 6,
+                "size": 20
+            },
+            "survey_equipment_segments": 6,
+            "native_rejection": "unsupported movement layout at object 4"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "canyon2.rl2",
+            "level_sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 562173,
+                "count": 3,
+                "size": 20
+            },
+            "survey_equipment_segments": 3,
+            "native_rejection": "offset 548109: unsupported render layout at object 38"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "control2.rl2",
+            "level_sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 839422,
+                "count": 4,
+                "size": 20
+            },
+            "survey_equipment_segments": 4,
+            "native_rejection": "offset 806624: unsupported render layout at object 27"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "control.rl2",
+            "level_sha256": "1bef7c4cb9ebf2ce9da42014a0fe73591828c695b1c689d24a57b01c8d7d946e",
+            "survey_profile": "23/40",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_equipment": {
+                "offset": 814668,
+                "count": 1,
+                "size": 20
+            },
+            "survey_equipment_segments": 1,
+            "native_rejection": "offset 783001: unsupported render layout at object 31"
+        }
+    ]
+}

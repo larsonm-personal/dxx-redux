@@ -32,7 +32,7 @@ const Category categories[] = {
 	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified", "Exits, secret routes and objectives connect gameplay to mission progression. An arena with no exit has different completion criteria from a campaign level." },
 	{ "runtime", "Gameplay and presentation verification", "Static inspection is not gameplay qualification; runtime checks dependencies on every load", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
 	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
-	{ "generators", "Equipment generators and extended spawning", "Bounded robot matcens and XL boss spawn actions implemented with owned lifecycle and disk/rewind state; equipment unsupported", "Robot generation uses authored contents, boss ownership and detected resource requirements. Expanded gameplay data and capacities remain separate gates; derived controls do not qualify a mission." },
+	{ "generators", "Equipment generators and extended spawning", "Bounded robot matcens, modern equipment makers and XL boss spawn actions implemented with owned lifecycle and disk/rewind state", "Robot generation uses authored contents, boss ownership and detected resource requirements. Expanded gameplay data and capacities remain separate gates; derived controls do not qualify a mission." },
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
 	{ "effect_objects", "Particles, lightning and ambient sounds", "XL payloads, activation and audio cues require individual verification", "Particles, lightning and ambient sound objects add effects to the mine. Their payloads, activation and presentation require separate qualification." },
 	{ "resource_scope", "Mission resource precedence and isolation", "Standard HXM/extra-HAM and HMQ paths exist; XL override semantics and transition cleanup unverified", "A mission can override stock resources. The right definitions must load for that mission and be cleared or restored when switching missions." },
@@ -69,7 +69,7 @@ std::vector<CountedFeature> counted_features()
 		{ "opacity_walls", "Wall opacity records", "Experimental pilot; nonzero serialized values are not proof of material parity", "partial", "These walls contain nonzero serialized opacity values. Their presence is not proof of a particular transparency, collision or visibility behavior." },
 		{ "chromatic_vertices", "Colored vertices", "Implemented in OpenGL builds; rendered-scene and campaign parity require qualification", "partial", "These vertices contain authored color channels that are not all equal. The count describes stored lighting data, not proof of correctly rendered colors." },
 		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked", "Object-attached triggers hold actions linked to objects. A declared count is not trusted until the corresponding records and references are validated." },
-		{ "equipment_count", "Equipment generators", "XL item generation unsupported", "blocked", "Equipment generators spawn authored items. Their contents, activation, timing and persistence are separate from classic robot generators." },
+		{ "equipment_count", "Equipment generators", "Bounded modern 23/40 item generation, authored toggles and disk/rewind state implemented", "partial", "Equipment makers use authored powerup contents, independent timing and ordinary pickups. Legacy layouts, addon/multiplayer items, expanded data and original-mission qualification remain separate requirements." },
 		{ "trigger_switches", "Wall trigger enable/disable actions", "Immediate wall targets implemented; effect-object targets unsupported", "supported", "Enable and disable actions change linked wall triggers, including the raw reference count on master triggers. This count excludes object-attached actions." },
 		{ "delayed_wall_actions", "Delayed wall actions", "Positive and randomized delays implemented on supported wall actions", "supported", "Delayed wall actions retain the first activating actor and selected delay. Disabling suspends pending work; permanent actions can rearm after execution." },
 		{ "stateful_trigger_flags", "Permanent, alternate and autoplay wall actions", "Supported actions retain flag transitions and scheduling state across saves", "supported", "Permanent actions rearm, alternating actions switch to their opposite after execution, and autoplay actions start from frame processing. Unsupported actions remain blocked independently." },
@@ -134,6 +134,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[11].limitations = "Delayed object-chain descendants, other extended actions/flags, player owners and boss teleports remain gated. Native derived controls do not qualify an original mission";
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;
+	features[12].present_status = v.level_version == 23 ? "partial" : "blocked";
 	for (const auto &section : v.sections)
 		if (section.name == "equipment") features[12].count = section.count;
 }
@@ -180,9 +181,9 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[7].need = std::to_string(v.objects.size()) + " objects; behavior unverified";
 				const bool wall_spawning = std::any_of(v.triggers.begin(), v.triggers.end(), [](const Trigger &trigger) { return trigger.type == 26; });
 				const bool object_spawning = std::any_of(v.object_trigger_records.begin(), v.object_trigger_records.end(), [](const ObjectTrigger &trigger) { return trigger.action.type == 26; });
-				rows[15] = { std::to_string(v.matcens.size()) + " robot centers, " + std::to_string(features[12].count) + " equipment generators", wall_spawning || features[12].count ? "blocked" : v.matcens.empty() && !object_spawning ? "not_required"
-					                                                                                                                                                                                                                       : "partial",
-					         "Bounded matcens and boss-owned spawn actions have controlled lifecycle checks. Boss definitions and selection resources require runtime validation. Equipment, expanded assets/capacities and wall spawn actions remain gated; original-mission qualification is separate" };
+				rows[15] = { std::to_string(v.matcens.size()) + " robot centers, " + std::to_string(features[12].count) + " equipment generators", wall_spawning ? "blocked" : v.matcens.empty() && v.equipment.empty() && !object_spawning ? "not_required"
+					                                                                                                                                                                                                                        : "partial",
+					         "Bounded matcens, modern equipment makers and boss-owned spawn actions have controlled lifecycle checks. Definitions and selection resources require runtime validation. Legacy equipment layouts, addon/multiplayer items, expanded assets/capacities and wall spawn actions remain gated; original-mission qualification is separate" };
 				const auto opacity = std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; });
 				rows[16].need = std::to_string(opacity) + " walls with nonzero serialized cloak/opacity";
 				rows[16].detail = "Values alone do not establish material semantics or visibility/collision equivalence";
@@ -194,7 +195,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 					else if (issue.feature.find("wall") != std::string::npos) row = 4;
 					else if (issue.feature.find("trigger") != std::string::npos) row = 5;
 					else if (issue.feature.find("object") != std::string::npos) row = 7;
-					else if (issue.feature.find("generator") != std::string::npos) row = 15;
+					else if (issue.feature.find("generator") != std::string::npos || issue.feature.find("equipment") != std::string::npos) row = 15;
 					else if (issue.feature == "embedded_lighting") row = 9;
 					rows[row].status = "blocked";
 					rows[row].detail += issue.feature + " at record " + std::to_string(issue.record) + "; ";

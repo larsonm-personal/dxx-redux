@@ -25,7 +25,7 @@ This is bounded singleplayer feature evidence, not original-mission completion.
   owner records and generator assignments contribute to source identity. All
   wall, object, producer-selection and boss fields validate before publication
 
-Equipment generators, expanded data/capacities, generated/contained bosses, other
+Legacy equipment layouts, expanded data/capacities, generated/contained bosses, other
 boss profiles, boss object-trigger teleports, unsupported object payloads and
 multiplayer remain independently gated. Native classic combat mechanics remain
 the base engine's policy; this does not claim complete reference AI or visual

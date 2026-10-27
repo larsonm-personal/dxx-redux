@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "equipment.h"
 #include "persistence_probe.h"
 #include "corona_probe.h"
 #endif
@@ -7857,6 +7858,32 @@ extern "C" void game_automate_tick(void)
 				}
 #else
 				stop_script_fail("object_damage currently requires D2");
+#endif
+			} else if (s.field == "equipment_pickup") {
+#ifdef DXX_XL_RUNTIME
+				int index = -1, id = -1;
+				char extra;
+				xl_equipment_state state;
+				if (!Game_wind || !ConsoleObject || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %d %c", &index, &id, &extra) != 2 || !xl_equipment_state_get(index, &state)) {
+					stop_script_fail("equipment_pickup requires a singleplayer equipment index and powerup ID");
+					break;
+				}
+				object *item = nullptr;
+				for (int object = Segments[state.segment].objects; object >= 0; object = Objects[object].next)
+					if (Objects[object].type == OBJ_POWERUP && Objects[object].id == id && !(Objects[object].flags & OF_SHOULD_BE_DEAD)) {
+						item = &Objects[object];
+						break;
+					}
+				if (!item) {
+					stop_script_fail("equipment_pickup found no matching live item");
+					break;
+				}
+				ConsoleObject->pos = item->pos;
+				obj_relink(ConsoleObject - Objects, state.segment);
+				ConsoleObject->mtype.phys_info.velocity = vmd_zero_vector;
+				collide_player_and_powerup(ConsoleObject, item, &item->pos);
+#else
+				stop_script_fail("equipment_pickup requires the XL runtime");
 #endif
 			} else if (s.field == "object_remove") {
 				int object = -1;

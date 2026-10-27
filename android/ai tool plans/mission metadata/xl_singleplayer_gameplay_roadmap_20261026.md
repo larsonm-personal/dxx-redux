@@ -21,13 +21,13 @@ The original overlapping work areas remain open until their acceptance evidence
 is complete. In particular, completing a parser or a derived fixture does not
 finish original-mission qualification
 
-| Work area                                                 | Current evidence and remaining acceptance                                                                                                                                                                                                                 |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Teleports, speed boosts, spawn destinations               | Immediate wall teleports verified. Boost direction/constraints/release/orientation, boost-area collision, spawn state and interactions remain open                                                                                                        |
-| Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Orientation/silent flags, delayed object descendants, other object actions/owners and boss teleport bookkeeping remain open         |
-| Segment properties, walls and generators                  | Modern robot-free water/no-damage and bounded robot-matcen assignment, production, contact and persistence verified. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay walls, equipment generators and expanded generator data remain open |
-| Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                                   |
-| Cross-feature regressions and original missions           | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open                      |
+| Work area                                                 | Current evidence and remaining acceptance                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Teleports, speed boosts, spawn destinations               | Immediate wall teleports verified. Boost direction/constraints/release/orientation, boost-area collision, spawn state and interactions remain open                                                                                                                                            |
+| Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Orientation/silent flags, delayed object descendants, other object actions/owners and boss teleport bookkeeping remain open                                             |
+| Segment properties, walls and generators                  | Modern robot-free water/no-damage and bounded robot-matcen assignment, production, contact and persistence verified. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay walls, legacy equipment layouts and expanded generator data remain open; modern equipment controls pass |
+| Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                                                                       |
+| Cross-feature regressions and original missions           | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open                                                          |
 
 ## Chunk ledger
 
@@ -48,7 +48,7 @@ finish original-mission qualification
 5. Robot matcens: complete within the bounded chunk scope. Native/reference and Android disk/rewind, activation,
    selection, generated health, contact impulse/damage/RNG, exhaustion and stock controls pass within the
    [chunk scope](xl_generators_20261026.md) and
-   [evidence](../../XL_compat/evidence/robot-generators.md). Equipment, expanded
+   [evidence](../../XL_compat/evidence/robot-generators.md). Legacy equipment, expanded
    data/capacities remain open; object spawn actions have separate evidence below
 
 6. Object-triggered boss spawning and separate per-owner cloak/teleport/death
@@ -58,8 +58,15 @@ finish original-mission qualification
    [chunk plan](xl_boss_spawning_20261027.md). This does not qualify an original
    mission; boss object teleports and dynamic boss creation remain gated
 
-Next audit equipment generators and the object payload layouts blocking original
-spawn-bot missions.
+7. Modern equipment makers: native/source comparisons and 61 Android steps pass
+   within the [bounded equipment scope](../../XL_compat/evidence/equipment-generators.md)
+   and [chunk plan](xl_equipment_generators_20261027.md). Initial target discovery,
+   shared producer ordering, authored toggles, actual pickups/replenishment and
+   disk/rewind state are covered. Legacy encodings, addon/multiplayer items and
+   all eleven original candidates remain independently gated
+
+Next audit the object payload layouts blocking original spawn-bot and equipment
+missions.
 Missing object payload layouts and capacities
 remain separate blockers; a new action alone must not admit those missions.
 Return to delayed object-chain lifecycle and boss/owner variants as part of the

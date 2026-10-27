@@ -94,7 +94,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	}
 	for (const auto &seg : v.segments) {
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, v.level_version < 21 && ((water_segments && seg.function == 7) || seg.function == 13) ? 0 : seg.function, 1);
+		put(out, (v.level_version < 21 && ((water_segments && seg.function == 7) || seg.function == 13)) || (v.level_version == 23 && seg.function == 11) ? 0 : seg.function, 1);
 		put(out, seg.producer, 1);
 		put(out, seg.value, 1);
 		put(out, seg.flags, 1);
@@ -105,7 +105,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	const bool equipment_header = serialization_17_36 || serialization_23_40;
 	const int removed_header = equipment_header ? 12 : 0;
 	if (equipment_header) {
-		require(v.sections.size() == 10 && v.sections[9].name == "equipment" && v.sections[9].count == 0, "equipment section cannot be translated");
+		require(v.sections.size() == 10 && v.sections[9].name == "equipment" && v.sections[9].count == static_cast<int>(v.equipment.size()), "equipment section does not match decoded records");
 		out.insert(out.end(), source.begin() + v.game_offset, source.begin() + v.game_offset + 143);
 		out.insert(out.end(), source.begin() + v.game_offset + 155, source.end());
 		patch(out, new_game_offset + 4, 143);

@@ -114,6 +114,7 @@ struct Inventory {
 	std::vector<std::array<int, 5>> flicker_lights;
 	std::vector<std::array<int, 2>> reactor_targets;
 	std::vector<std::array<int, 6>> matcens;
+	std::vector<std::array<int, 6>> equipment;
 	std::vector<std::array<int, 4>> light_indices;
 	std::vector<std::array<int, 7>> delta_lights;
 	std::vector<std::array<int, 3>> vertices;
