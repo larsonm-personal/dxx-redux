@@ -52,7 +52,17 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument(
         "--feature",
-        choices=("spawn-bot", "equipment", "spawn-points", "water", "lava", "blocked", "repair", "closed-walls"),
+        choices=(
+            "spawn-bot",
+            "equipment",
+            "spawn-points",
+            "water",
+            "lava",
+            "blocked",
+            "repair",
+            "closed-walls",
+            "close-doors",
+        ),
         default="spawn-bot",
     )
     parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
@@ -68,8 +78,9 @@ def main():
     records = []
     for row in rows:
         actions = [action for action in row.get("object_triggers", []) if action["type"] == 26]
-        if args.feature == "spawn-points":
-            actions = [action for action in row.get("triggers", []) if action["type"] == 28]
+        if args.feature in ("spawn-points", "close-doors"):
+            target_type = 28 if args.feature == "spawn-points" else 1
+            actions = [action for action in row.get("triggers", []) if action["type"] == target_type]
         equipment = row.get("sections", {}).get("equipment", {})
         water = (
             sum(
@@ -168,8 +179,10 @@ def main():
             record["survey_equipment_segments"] = row["segment_functions"].get(
                 "11" if row["version"] >= 21 else "15", 0
             )
-        elif args.feature == "spawn-points":
-            record["survey_wall_spawn_actions"] = record.pop("survey_spawn_actions")
+        elif args.feature in ("spawn-points", "close-doors"):
+            record["survey_wall_spawn_actions" if args.feature == "spawn-points" else "survey_close_door_actions"] = (
+                record.pop("survey_spawn_actions")
+            )
         elif args.feature in ("water", "lava", "blocked", "repair", "closed-walls"):
             del record["survey_spawn_actions"]
             record["survey_closed_walls" if args.feature == "closed-walls" else f"survey_{args.feature}_segments"] = (
@@ -179,6 +192,20 @@ def main():
             record["survey_robot_centers"] = row["sections"]["robots"]["count"]
             record["survey_equipment_centers"] = equipment.get("count", 0)
         if decoded:
+            if args.feature == "close-doors":
+                walls = {(wall["segment"], wall["side"]): wall for wall in inventory["walls"]}
+                record["native_close_targets"] = [
+                    {
+                        "trigger": index,
+                        "segment": target[0],
+                        "side": target[1],
+                        "wall_type": walls.get(tuple(target), {}).get("type"),
+                        "wall_flags": walls.get(tuple(target), {}).get("flags"),
+                    }
+                    for index, trigger in enumerate(inventory["triggers"])
+                    if trigger["type"] == 1
+                    for target in trigger["targets"]
+                ]
             if args.feature == "closed-walls":
                 closed = [wall for wall in inventory["walls"] if wall["type"] == 5]
                 record["native_closed_wall_key_masks"] = {

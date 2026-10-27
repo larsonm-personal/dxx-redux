@@ -1,0 +1,568 @@
+// Controlled authored waiting close, two-sided obstruction, audio and persistence
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_close_door_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived XL close doors",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.flags": 16,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.player_flags": 7,
+            "xl_pilot.doorways.0.motion_audio.attempts": 1,
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 4,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "position.segment": 24,
+            "xl_pilot.doorways.0.motion_audio.attempts": 1,
+        },
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "face_view",
+        "segment": 21,
+        "side": 4,
+        "distance": 4,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "position.segment": 21,
+            "xl_pilot.doorways.0.motion_audio.attempts": 1,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 3,
+            "xl_pilot.doorways.1.state": 3,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.motion_audio.attempts": {
+                "gte": 2,
+            },
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.active_entry": -1,
+            "xl_pilot.doorways.0.player_flags": 2,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.player_flags": 7,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.active_time_ticks": {
+                "gt": 65536,
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 3,
+            "xl_pilot.doorways.1.state": 3,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.motion_audio.attempts": {
+                "gte": 2,
+            },
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.active_entry": -1,
+            "xl_pilot.doorways.0.player_flags": 2,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.player_flags": 7,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 21,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 3,
+            "xl_pilot.doorways.1.state": 3,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.motion_audio.attempts": {
+                "gte": 2,
+            },
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.active_entry": -1,
+            "xl_pilot.doorways.0.player_flags": 2,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.player_flags": 7,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 3,
+            "xl_pilot.doorways.1.state": 3,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.motion_audio.attempts": {
+                "gte": 2,
+            },
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.active_entry": -1,
+            "xl_pilot.doorways.0.player_flags": 2,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 21,
+        "side": 4,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 24,
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.active_entry": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 3,
+            "xl_pilot.doorways.1.state": 3,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.motion_audio.attempts": {
+                "gte": 2,
+            },
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.active_entry": -1,
+            "xl_pilot.doorways.0.player_flags": 2,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 24,
+            "xl_pilot.doorways.0.state": 2,
+            "xl_pilot.doorways.0.player_flags": 7,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 21,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 3,
+            "xl_pilot.doorways.1.state": 3,
+            "xl_pilot.doorways.0.active_entry": 0,
+            "xl_pilot.doorways.0.motion_audio.attempts": {
+                "gte": 2,
+            },
+            "xl_pilot.doorways.0.motion_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.active_entry": -1,
+            "xl_pilot.doorways.0.player_flags": 2,
+        },
+        "timeout_ms": 20000,
+    },
+]

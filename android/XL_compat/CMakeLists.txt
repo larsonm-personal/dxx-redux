@@ -97,6 +97,7 @@ if(BUILD_TESTING)
         include(tests/reference_lava.cmake)
         include(tests/reference_blocked.cmake)
         include(tests/reference_keyed_wall.cmake)
+        include(tests/reference_close_door.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
@@ -266,6 +267,18 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/blocked ${xl_blocked_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/blocked.cmake)
             set_tests_properties(xl_blocked_segments PROPERTIES TIMEOUT 120)
+            set(xl_close_door_args)
+            if(TARGET xl_close_door_reference)
+                list(APPEND xl_close_door_args "-DREFERENCE=$<TARGET_FILE:xl_close_door_reference>")
+            endif()
+            add_test(
+                NAME xl_close_doors
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/close_door ${xl_close_door_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/close_door.cmake)
+            set_tests_properties(xl_close_doors PROPERTIES TIMEOUT 120)
             set(xl_keyed_wall_args)
             if(TARGET xl_keyed_wall_reference)
                 list(APPEND xl_keyed_wall_args "-DREFERENCE=$<TARGET_FILE:xl_keyed_wall_reference>")
