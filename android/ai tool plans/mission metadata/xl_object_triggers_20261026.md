@@ -70,11 +70,21 @@ quicksort's tie ordering, not an assumed stable sort
 
 ## Current acceptance state
 
-In progress. Parsing and original-source inspection do not enable gameplay
-admission. Runtime dispatch, independent reference comparisons, persistence and
-native/Android event integration remain required before this chunk is complete
+In progress. The local runtime admits verified native leaf requirements;
+object masters and the other documented requirements remain gated. Android,
+the remaining independent comparisons and full admission/browser evidence are
+required before this chunk is complete
 
 Parser checkpoint: five focused native CTests pass, including all three
 derived reference layouts and the original GlassHouse records. Scoped mixed
-formatting/lint passes. Continue this same chunk with production event dispatch;
-do not publish it as completed object gameplay support
+formatting/lint passes
+
+Runtime checkpoint: nonlethal local/nonlocal damage, actual lethal explosion/
+cleanup, removal, reactor, autoplay, alternation, ordered wall enable/disable,
+disk/source/stock restoration and slot reuse pass. All 1456 production selection
+samples match the pinned event/shield oracle; 16 corrupt block controls reject
+atomically across wall and object arrays. The focused native selection passes
+11/11, the shared x86_64 Android APK builds, and scoped formatting/lint passes.
+Continue this same chunk with object
+master context, independent teleport/sort controls and Android disk/rewind tests;
+do not publish this checkpoint as completed object gameplay support

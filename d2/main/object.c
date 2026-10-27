@@ -2211,6 +2211,9 @@ void obj_delete_all_that_should_be_dead()
 					// kill_player();
 				}
 			} else {					
+#ifdef DXX_XL_RUNTIME
+				xl_object_trigger_event(i, 0);
+#endif
 				obj_delete(i);
 			}
 		}

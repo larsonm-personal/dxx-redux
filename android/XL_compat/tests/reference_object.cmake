@@ -1,7 +1,8 @@
 foreach(
     pair IN
     ITEMS "main/trigger.cpp|74f1284260fb4a4bb7396bc45eeb83868a7f2dfa5e3fdf0bcb767b94f1b12852"
-          "gameio/loadobjects.cpp|01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c")
+          "gameio/loadobjects.cpp|01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c"
+          "objects/object.cpp|e71b0a906cd686549c783563ab93365d1bbf5cf05f08c1971ef08c7116c67a64")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -12,6 +13,9 @@ foreach(
 endforeach()
 set(extracted "// Hash-pinned object Read and owner-reference loading\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" "void CTrigger::Read (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
+                      "inline int32_t CTrigger::DoExecObjTrigger (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/object.cpp" "float CObject::Damage (")
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp" loader)
 string(FIND "${loader}" "gameData.trigData.m_nTriggers [1] = cf.ReadInt ();" start)
 if(start LESS 0)

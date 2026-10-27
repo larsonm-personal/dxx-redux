@@ -23,7 +23,7 @@ const Category categories[] = {
 	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. They are distinct from a wall texture." },
 	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported", "Wall types and flags control doors, barriers and other surfaces. Visibility, collision and activation behavior must agree." },
 	{ "triggers", "Stateful events and geometry triggers", "Supported wall actions include delayed scheduling and permanent/alternate/autoplay state; other actions, orientation/silent flags and object events remain blocked", "Triggers activate linked actions. XL adds action types, flags and event chains whose live state can matter after save/load." },
-	{ "object_triggers", "Object-attached triggers", "Unsupported", "These actions are attached to objects rather than only to walls. Their activation rules and linked actions need separate inspection." },
+	{ "object_triggers", "Object-attached triggers", "Nonplayer leaf events implemented; full event qualification in progress", "These actions are attached to objects rather than only to walls. Their activation rules, owner lifecycle and linked actions are checked separately." },
 	{ "objects", "Objects and AI behavior", "Stock behavior only; XL behavior parity unverified", "Level objects include players, robots, pickups and effects. Knowing the object count does not establish its behavior or AI compatibility." },
 	{ "gameplay_assets", "Custom robot and weapon definitions", "XL gameplay asset formats and dependencies unverified", "Custom robot and weapon definitions can change behavior and refer to models, animations, projectiles and sounds. Those dependencies must resolve together." },
 	{ "baked_lighting", "Embedded colored lighting", "Baked colors and detected method-0 ambient reconstruction implemented in OpenGL builds", "Authored color tables describe lighting at vertices, sides and textures. Reading the numbers is separate from applying them in the renderer." },
@@ -127,6 +127,11 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[10].count = static_cast<int>(std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; }));
 	// A count is evidence only after all action records and owner references decode
 	if (std::none_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature.find("object_trigger") == 0; })) features[11].count = v.object_triggers;
+	const auto object_blockers = runtime_blockers(v);
+	const bool blocked_objects = std::any_of(object_blockers.begin(), object_blockers.end(), [](const Issue &issue) { return issue.feature.find("object") == 0; });
+	features[11].present_status = blocked_objects ? "blocked" : "partial";
+	features[11].support = "Nonplayer leaf events have native runtime and persistence checks; Android qualification pending";
+	features[11].limitations = "Object masters, other extended actions/flags, player owners and boss teleports remain gated. Native derived controls do not qualify an original mission";
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;
 	for (const auto &section : v.sections)
@@ -170,7 +175,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[3].need = "Segment functions and owner/group records present";
 				rows[4].need = std::to_string(v.walls.size()) + " walls";
 				rows[5].need = std::to_string(v.triggers.size()) + " geometry triggers";
-				rows[6] = v.object_triggers ? Evidence{ "Decoded " + std::to_string(v.object_triggers) + " object triggers and owner references", "blocked", "Activation, linked actions and persistence require production runtime verification" } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
+				rows[6] = v.object_triggers ? Evidence{ "Decoded " + std::to_string(v.object_triggers) + " object triggers and owner references", features[11].present_status, features[11].limitations } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
 				if (!v.object_triggers && features[11].count < 0) rows[6] = {};
 				rows[7].need = std::to_string(v.objects.size()) + " objects; behavior unverified";
 				const auto opacity = std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; });

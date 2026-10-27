@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include "trigger_state.h"
+#include "object_trigger.h"
 #include "save_epoch_format.h"
 extern "C" {
 #include "inferno.h"
@@ -185,6 +186,7 @@ extern "C" void xl_wall_trigger_frame(void)
 			}
 		}
 	}
+	xl_object_trigger_frame();
 }
 
 extern "C" int xl_wall_trigger_state(int index, xl_trigger_state *result)
@@ -196,6 +198,11 @@ extern "C" int xl_wall_trigger_state(int index, xl_trigger_state *result)
 }
 
 extern "C" int xl_wall_trigger_restore(const xl_trigger_state *states, int count)
+{
+	return xl_wall_trigger_restore_mode(states, count, 1);
+}
+
+extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int count, int apply)
 {
 	if (!xl_level_extensions_active() || (!states && count) || count != Num_triggers || count < 0 || count > MAX_TRIGGERS) return 0;
 	for (int i = 0; i < count; ++i) {
@@ -215,6 +222,7 @@ extern "C" int xl_wall_trigger_restore(const xl_trigger_state *states, int count
 			}
 		}
 	}
+	if (!apply) return 1;
 	for (int i = 0; i < count; ++i) {
 		const auto &state = states[i];
 		scheduled[i] = { state.operated != 0, GameTime64 - state.elapsed, state.delay_ms, state.object, state.shot };

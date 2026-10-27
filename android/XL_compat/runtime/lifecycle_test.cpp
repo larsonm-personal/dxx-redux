@@ -1530,10 +1530,12 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "teleport_test.h"
 #include "trigger_test.h"
 #include "scheduler_test.h"
+#include "object_trigger_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-object-trigger-test")) return object_trigger_test(argc, argv);
 	if (find_arg_value(argc, argv, "-trigger-scheduler-test")) return trigger_scheduler_test(argc, argv);
 	if (find_arg_value(argc, argv, "-trigger-chain-test")) return trigger_chain_test(argc, argv);
 	if (find_arg_value(argc, argv, "-modern-properties-test")) return modern_properties_test(argc, argv);

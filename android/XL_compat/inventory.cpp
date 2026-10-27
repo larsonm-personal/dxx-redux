@@ -371,7 +371,7 @@ Inventory inspect_level(const Bytes &bytes)
 		if (out.object_triggers) {
 			const auto width = out.game_version >= 40 ? 55u : 59u;
 			require(static_cast<std::size_t>(out.object_triggers) <= remaining / width, "object trigger count exceeds section extent");
-			issue(out.unsupported, "object_triggers", -1, std::to_string(out.object_triggers) + " decoded records; object event runtime is not implemented");
+			issue(out.unsupported, "object_triggers", -1, std::to_string(out.object_triggers) + " decoded records; runtime admission checks action and owner requirements");
 			for (int i = 0; i < out.object_triggers; ++i) out.object_trigger_records.push_back({ read_trigger(r, out, i, segment_count, true) });
 			for (int i = 0; i < out.object_triggers; ++i) {
 				auto &record = out.object_trigger_records[i];

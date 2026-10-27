@@ -214,6 +214,39 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(feature_row(report, "attached_trigger_count").find("\"count\": 3") != std::string::npos, "decoded object count remains unknown");
 		check(feature_row(report, "object_triggers").find("\"status\": \"blocked\"") != std::string::npos && !xl_compat::runtime_blockers(decoded).empty(), "parsing enabled unverified object events");
 		check(xl_compat::inventory_json(decoded).find("\"object_trigger_records\"") != std::string::npos, "decoded object action evidence missing");
+		auto eligible = bytes;
+		for (int i = 0; i < 3; ++i) {
+			patch(eligible, trigger + 4 + i * 53, 14, 1);
+			patch(eligible, trigger + 5 + i * 53, 8, 2);
+		}
+		const auto admitted = xl_compat::prepare_gameplay_probe(eligible);
+		check(admitted.source.object_trigger_records.size() == 3, "probe discarded admitted object source records");
+		const auto admitted_report = xl_compat::compatibility_json("objects.rl2", eligible);
+		check(feature_row(admitted_report, "attached_trigger_count").find("\"status\": \"partial\"") != std::string::npos, "native checkpoint claimed complete object qualification");
+		for (const int type : { 15, 26, 29, 31 }) {
+			auto bad = eligible;
+			patch(bad, trigger + 4, type, 1);
+			if (type == 31) patch(bad, trigger + 37, 0, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
+		}
+		for (const int flags : { 32, 64, 256, 32768 }) {
+			auto bad = eligible;
+			patch(bad, trigger + 5, flags, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
+		}
+		auto retry_deadlock = eligible;
+		patch(retry_deadlock, trigger + 7, 2, 1);
+		rejects([&] { xl_compat::prepare_gameplay_probe(retry_deadlock); });
+		auto capacity = admitted.source;
+		capacity.object_trigger_records.resize(255, capacity.object_trigger_records[0]);
+		capacity.object_triggers = 255;
+		check(xl_compat::runtime_blockers(capacity).empty(), "bounded object index endpoint was rejected");
+		capacity.object_trigger_records.resize(256, capacity.object_trigger_records[0]);
+		capacity.object_triggers = 256;
+		check(!xl_compat::runtime_blockers(capacity).empty(), "object trigger capacity silently exceeded reference index width");
+		auto player_owner = admitted.source;
+		player_owner.objects[1].type = 4;
+		check(!xl_compat::runtime_blockers(player_owner).empty(), "unqualified player object ownership admitted");
 		if (directory) {
 			std::filesystem::create_directories(directory);
 			std::ofstream file(std::filesystem::path(directory) / (std::to_string(version) + ".rl2"), std::ios::binary);

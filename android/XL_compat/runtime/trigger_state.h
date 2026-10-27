@@ -11,6 +11,7 @@ typedef struct xl_trigger_state {
 } xl_trigger_state;
 int xl_wall_trigger_state(int index, xl_trigger_state *state);
 int xl_wall_trigger_restore(const xl_trigger_state *states, int count);
+int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int count, int apply);
 int xl_wall_trigger_write(rewind_file *file);
 int xl_wall_trigger_read(rewind_file *file);
 int xl_level_trigger_state_required(void);

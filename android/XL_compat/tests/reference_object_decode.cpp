@@ -15,6 +15,42 @@
 #define TF_PERMANENT 8
 #define TF_AUTOPLAY  128
 #define X2I(value)   ((value) >> 16)
+using fix = std::int32_t;
+#define X2F(value)        (float(value) / 65536.0f)
+#define I2X(value)        ((value) * 65536)
+#define TT_TELEPORT       14
+#define TT_SPAWN_BOT      26
+#define OBJ_PLAYER        4
+#define OBJ_ROBOT         2
+#define OBJ_REACTOR       9
+#define OF_EXPLODING      2
+#define OF_SHOULD_BE_DEAD 1
+#define OF_DESTROYED      4
+#define OF_ARMAGEDDON     8
+struct CObject {
+	struct {
+		int nType = OBJ_ROBOT, nId = 0, nFlags = 0;
+		fix xShield = 65536;
+	} info;
+	fix maximum = 65536;
+	float Damage();
+} sample_object;
+fix RobotDefaultShield(CObject *object)
+{
+	return object->maximum;
+}
+fix ReactorStrength()
+{
+	throw std::runtime_error("Unqualified reactor damage oracle branch");
+}
+struct OraclePlayer {
+	fix Shield()
+	{
+		throw std::runtime_error("Unqualified player damage oracle branch");
+	}
+} sample_player;
+#define PLAYER(index) sample_player
+#define OBJECT(index) (&sample_object)
 void check(bool condition, const char *message)
 {
 	if (!condition) throw std::runtime_error(message);
@@ -98,6 +134,7 @@ struct CTrigger : CTriggerTargets {
 		return (flags & bits) != 0;
 	}
 	void Read(CFile &, int32_t);
+	int32_t DoExecObjTrigger(int16_t, int32_t);
 };
 std::vector<CTrigger> object_triggers;
 #define OBJTRIGGERS object_triggers
@@ -145,6 +182,24 @@ void compare_level(const xl_compat::Bytes &bytes)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--events") {
+			std::ifstream samples(argv[2]);
+			int type, value, flags, damage, shields, maximum, fired, changed, count = 0;
+			while (samples >> type >> value >> flags >> damage >> shields >> maximum >> fired >> changed) {
+				CTrigger trigger;
+				trigger.type = type;
+				trigger.value = value;
+				trigger.flags = flags;
+				sample_object.info.xShield = shields;
+				sample_object.maximum = maximum;
+				const bool selected = trigger.DoExecObjTrigger(0, damage) != 0;
+				check((selected && !(flags & TF_DISABLED)) == bool(fired) && trigger.value == changed, "Reference object event selection or consumed value differs");
+				++count;
+			}
+			check(samples.eof() && count == 1456, "Missing or malformed object event samples");
+			std::cout << "Matched " << count << " production object event samples against pinned selection and shield math\n";
+			return 0;
+		}
 		check(argc == 2, "Requires source level or HOG");
 		std::ifstream input(argv[1], std::ios::binary);
 		check(bool(input), "Cannot open source level");
