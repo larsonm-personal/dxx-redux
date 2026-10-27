@@ -142,6 +142,14 @@ The user authorized commits and pushes to finalize xl_more_8 and its CI.
    the retained result, APK hash, native reference log and protected-file hash
    reports match the evidence above.
 3. Finish scoped formatting, both automation catalogs, runner-policy tests and
-   the focused native/reference sweep on the rebased tree.
-4. Push xl_more_8, open a draft PR to cmake, and monitor its CI to terminal
+   the focused native/reference sweep on the rebased tree. Complete: formatting
+   passes, both catalogs pass (392 top-level entries and 445 support scripts),
+   all 12 runner-policy tests pass with installed CMake/CTest on PATH, and the
+   fresh 13-test native/reference sweep passes in 52.63 seconds.
+4. Push xl_more_8, finalize existing PR #151 to cmake, and monitor its CI to terminal
    success. Inspect and fix actual failures without weakening test gates.
+
+The existing android/clean-workspace.ps1 helper reclaimed 9.17 GiB of superseded
+build artifacts, restoring 13.10 GiB free. It preserved current XL evidence,
+native/reference builds, and emulator workspaces. Use this existing helper for
+further space recovery if needed.

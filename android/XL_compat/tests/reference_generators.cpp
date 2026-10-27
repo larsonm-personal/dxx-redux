@@ -22,16 +22,16 @@
 #define SINGLE_LIGHT_ID        0
 #define OBJ_ROBOT              2
 #define OBJ_REACTOR            9
-#define OBJ_PLAYER 4
-#define MT_PHYSICS 1
-#define SEGMENT_SIDE_COUNT 6
-#define WID_PASSABLE_FLAG 1
-#define N_LOCALPLAYER 0
-#define SOUND_PLAYER_GOT_HIT 1
-#define SOUND_ROBOT_HIT 2
-#define ANIM_PLAYER_HIT 0
-#define SPECTATOR(object) false
-#define X2F(value) (float(value) / 65536.0f)
+#define OBJ_PLAYER             4
+#define MT_PHYSICS             1
+#define SEGMENT_SIDE_COUNT     6
+#define WID_PASSABLE_FLAG      1
+#define N_LOCALPLAYER          0
+#define SOUND_PLAYER_GOT_HIT   1
+#define SOUND_ROBOT_HIT        2
+#define ANIM_PLAYER_HIT        0
+#define SPECTATOR(object)      false
+#define X2F(value)             (float(value) / 65536.0f)
 using fix = std::int32_t;
 struct tRobotInfo {
 	fix strength = 0;
@@ -57,8 +57,14 @@ struct CFixVector {
 	static const CFixVector Random();
 	const CFixVector &operator*=(fix value);
 	const CFixVector &operator*=(float value);
-	void SetZero() { v.coord = {}; }
-	bool IsZero() const { return !v.coord.x && !v.coord.y && !v.coord.z; }
+	void SetZero()
+	{
+		v.coord = {};
+	}
+	bool IsZero() const
+	{
+		return !v.coord.x && !v.coord.y && !v.coord.z;
+	}
 	CFixVector operator-(const CFixVector &other) const
 	{
 		return { { { v.coord.x - other.v.coord.x, v.coord.y - other.v.coord.y, v.coord.z - other.v.coord.z } } };
@@ -102,19 +108,38 @@ struct CObject {
 	struct {
 		int nType = 0, nId = 0, nSegment = 0, movementType = MT_PHYSICS;
 		fix xSize = 65536;
-		struct { CFixVector vPos{}; } position;
+		struct {
+			CFixVector vPos{};
+		} position;
 	} info;
-	struct { struct { fix mass = 65536; CFixVector velocity; } physInfo; } mType;
+	struct {
+		struct {
+			fix mass = 65536;
+			CFixVector velocity;
+		} physInfo;
+	} mType;
 	fix damage = 0;
 	int32_t CollidePlayerAndObjProducer();
 	int32_t CollideRobotAndObjProducer();
 	void ApplyForce(CFixVector force);
 	void Bump(CFixVector force, fix damage);
-	int Index() const { return 0; }
-	CFixVector &Velocity() { return mType.physInfo.velocity; }
+	int Index() const
+	{
+		return 0;
+	}
+	CFixVector &Velocity()
+	{
+		return mType.physInfo.velocity;
+	}
 	void CreateSound(int) {}
-	void ApplyDamageToPlayer(CObject *, fix value) { damage += value; }
-	void ApplyDamageToRobot(fix value, int) { damage += value; }
+	void ApplyDamageToPlayer(CObject *, fix value)
+	{
+		damage += value;
+	}
+	void ApplyDamageToRobot(fix value, int)
+	{
+		damage += value;
+	}
 	bool boss = false;
 	bool IsBoss() const
 	{
@@ -154,7 +179,10 @@ int RandShort()
 	++random_calls;
 	return random_token;
 }
-int SRandShort() { return 16383 - RandShort(); }
+int SRandShort()
+{
+	return 16383 - RandShort();
+}
 struct tObjectProducerInfo {
 	int32_t objFlags[3]{};
 	int32_t xHitPoints = 0, xInterval = 0;
@@ -166,8 +194,14 @@ struct CSegment {
 	std::array<int, 8> m_vertices{};
 	int passable = 0;
 	std::array<CFixVector, 6> centers{};
-	int IsPassable(int side, CObject *) const { return passable & (1 << side) ? WID_PASSABLE_FLAG : 0; }
-	CFixVector SideCenter(int side) const { return centers[side]; }
+	int IsPassable(int side, CObject *) const
+	{
+		return passable & (1 << side) ? WID_PASSABLE_FLAG : 0;
+	}
+	CFixVector SideCenter(int side) const
+	{
+		return centers[side];
+	}
 	int Function() const
 	{
 		return m_function;
@@ -195,15 +229,26 @@ struct {
 	struct {
 		std::uint32_t nVertigoBotFlags = 0;
 		CObject *pConsole = nullptr;
-		struct Boost { int bBoosted = 0; } speedBoost[1];
+		struct Boost {
+			int bBoosted = 0;
+		} speedBoost[1];
 	} objData;
 	struct {
 		int nTypes[2]{};
 		tRobotInfo info[2][100]{};
 	} botData;
 } gameData;
-struct { bool active = false; bool Active() const { return active; } } automap;
-tRobotInfo *ROBOTINFO(int id) { return &gameData.botData.info[0][id]; }
+struct {
+	bool active = false;
+	bool Active() const
+	{
+		return active;
+	}
+} automap;
+tRobotInfo *ROBOTINFO(int id)
+{
+	return &gameData.botData.info[0][id];
+}
 void CreateExplosion(int, const CFixVector &, fix, int) {}
 struct CFile {
 	const xl_compat::Bytes &bytes;
@@ -242,7 +287,11 @@ void compare_runtime(const std::filesystem::path &root)
 			for (auto &center : segments[0].centers) contacts >> center.v.coord.x >> center.v.coord.y >> center.v.coord.z;
 			contacts >> vx >> vy >> vz >> damage >> draws;
 			random_transcript.clear();
-			for (int i = 0; i < draws; ++i) { int token; contacts >> token; random_transcript.push_back(token); }
+			for (int i = 0; i < draws; ++i) {
+				int token;
+				contacts >> token;
+				random_transcript.push_back(token);
+			}
 			check(bool(contacts), "truncated contact sample");
 			random_cursor = 0;
 			contact_transcript = true;

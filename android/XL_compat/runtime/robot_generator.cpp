@@ -46,9 +46,19 @@ vms_vector random_direction()
 	vms_vector vector;
 	const int axis = d_rand() % 3;
 	const auto roll = [] { return 16383 - d_rand(); };
-	if (axis == 2) { vector.x = roll() | 1; vector.y = roll(); vector.z = roll(); }
-	else if (axis == 1) { vector.y = roll() | 1; vector.z = roll(); vector.x = roll(); }
-	else { vector.z = roll() | 1; vector.x = roll(); vector.y = roll(); }
+	if (axis == 2) {
+		vector.x = roll() | 1;
+		vector.y = roll();
+		vector.z = roll();
+	} else if (axis == 1) {
+		vector.y = roll() | 1;
+		vector.z = roll();
+		vector.x = roll();
+	} else {
+		vector.z = roll() | 1;
+		vector.x = roll();
+		vector.y = roll();
+	}
 	normalize(vector);
 	return vector;
 }

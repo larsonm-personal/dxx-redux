@@ -31,7 +31,8 @@ static void generator_contact_samples(const std::filesystem::path &output)
 					actor.shields = Players[Player_num].shields = i2f(100);
 					Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
 					actor.movement_type = profile == 3 ? MT_NONE : MT_PHYSICS;
-					actor.mtype.phys_info.mass = profile == 2 ? 0 : profile == 1 ? F1_0 * 3 / 2 : F1_0;
+					actor.mtype.phys_info.mass = profile == 2 ? 0 : profile == 1 ? F1_0 * 3 / 2
+					                                                             : F1_0;
 					actor.mtype.phys_info.velocity = { F1_0, -i2f(2), F1_0 / 7 };
 					Automap_active = profile == 4;
 					int passable = 0;

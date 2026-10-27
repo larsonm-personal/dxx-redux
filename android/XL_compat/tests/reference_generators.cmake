@@ -35,11 +35,12 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadgame.cpp"
                       "void SetVertigoRobotFlags (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadgame.cpp"
                       "fix RobotDefaultShield (")
-foreach(pair IN ITEMS
-    "include/vecmat.h|83d7f73f89a2f588a0b56a08fb9e293b747cc65a5ed22bad6771d64319bdca0f"
-    "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd"
-    "physics/collide.cpp|d10f88f82e5d283077914881d1acb719f06785a86be22e50617d92d6fce47bc9"
-    "physics/physics.cpp|2ca8d5c939f31da9d4686637ed3e4305bf89e208a575f2f7f6ea2b4d2e6fab76")
+foreach(
+    pair IN
+    ITEMS "include/vecmat.h|83d7f73f89a2f588a0b56a08fb9e293b747cc65a5ed22bad6771d64319bdca0f"
+          "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd"
+          "physics/collide.cpp|d10f88f82e5d283077914881d1acb719f06785a86be22e50617d92d6fce47bc9"
+          "physics/physics.cpp|2ca8d5c939f31da9d4686637ed3e4305bf89e208a575f2f7f6ea2b4d2e6fab76")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -54,14 +55,22 @@ string(SUBSTRING "${math_source}" ${begin} -1 tail)
 string(FIND "${tail}" "\n#else" end)
 string(SUBSTRING "${tail}" 0 ${end} operations)
 set(extracted "${extracted}\n#define XRound(value) (fix)(value)\n${operations}\n")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "inline const fix CFixVector::Normalize (")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "inline const CFixVector& CFixVector::operator*= (const fix s)")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "inline const CFixVector& CFixVector::operator*= (const float s)")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp" "const CFixVector CFixVector::Random (")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp" "void CObject::ApplyForce (")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp" "void CObject::Bump (CFixVector vForce, fix xDamage)")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp" "int32_t CObject::CollidePlayerAndObjProducer (")
-extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp" "int32_t CObject::CollideRobotAndObjProducer (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const fix CFixVector::Normalize (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const CFixVector& CFixVector::operator*= (const fix s)")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const CFixVector& CFixVector::operator*= (const float s)")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
+                      "const CFixVector CFixVector::Random (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
+                      "void CObject::ApplyForce (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp"
+                      "void CObject::Bump (CFixVector vForce, fix xDamage)")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp"
+                      "int32_t CObject::CollidePlayerAndObjProducer (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp"
+                      "int32_t CObject::CollideRobotAndObjProducer (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_generators.h" CONTENT "${extracted}")
 add_executable(xl_generator_reference tests/reference_generators.cpp)
 target_link_libraries(xl_generator_reference PRIVATE xl_inventory)

@@ -111,6 +111,11 @@ Android artifacts: temp/xl-robot-generators-android. Trusted native CI now requi
 both generator assignment/reference and runtime controls (46 required passes);
 the runner-policy unit tests pass 12/12
 
+The final rebased/formatted native sweep passes 13/13 in 52.63 seconds. Both
+automation catalogs pass with 392 top-level entries and 445 support scripts.
+The retained native contact reference again matches all 96 impulse/damage/RNG
+cases. Final local logs use the final-* names in temp/xl-generators-20261026
+
 ## Original missions and remaining work
 
 Fresh native inspection of five original HOGs decoded all 34 levels: Ahayweh
