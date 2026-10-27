@@ -254,6 +254,13 @@ if(BUILD_TESTING)
                     -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/trigger-flags -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/trigger_flags.cmake)
             set_tests_properties(xl_trigger_flags PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_boss_groups
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-groups -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_groups.cmake)
+            set_tests_properties(xl_boss_groups PROPERTIES TIMEOUT 90)
             set(xl_equipment_oracle_args)
             if(TARGET xl_equipment_reference)
                 list(APPEND xl_equipment_oracle_args

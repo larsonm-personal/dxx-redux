@@ -1,5 +1,8 @@
 # Boss object teleports
 
+The later [boss group tranche](boss-groups.md) supersedes this record's combined
+owner/group gate for neutral-owner segment groups. Team ownership remains gated.
+
 Boss-owned object teleports now rebuild only the moved boss's cached destinations
 through the separate XL runtime. Direct damage actions and immediate object-master
 children use this path. Redux retains its existing globals and dispatch. No

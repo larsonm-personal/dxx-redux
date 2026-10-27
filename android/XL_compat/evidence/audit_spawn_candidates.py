@@ -128,7 +128,9 @@ def main():
             )
         if decoded:
             record["native_profile"] = f"{inventory['level_version']}/{inventory['game_version']}"
-            record["inspector_findings"] = {key: findings(inventory[key]) for key in ("unsupported", "unknown")}
+            record["inspector_findings"] = {
+                key: findings(inventory.get(key, [])) for key in ("unsupported", "unknown", "observations")
+            }
             record["native_effect_payloads"] = {
                 name: sum(obj["render"] == render for obj in inventory["objects"])
                 for name, render in (("thruster", 8), ("particle", 11), ("lightning", 12), ("sound", 13))
@@ -151,7 +153,7 @@ def main():
     }
     text = json.dumps(report, indent=4, ensure_ascii=True) + "\n"
     if not args.output.exists() or args.output.read_text() != text:
-        args.output.write_text(text, encoding="utf-8")
+        args.output.write_text(text, encoding="utf-8", newline="\n")
     print(f"Inspected {len(records)} original {args.feature} candidates; none promoted")
 
 

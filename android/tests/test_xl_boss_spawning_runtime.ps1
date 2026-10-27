@@ -4,21 +4,27 @@ param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
-    [switch]$Transport
+    [switch]$Transport,
+    [switch]$Groups
 )
 $ErrorActionPreference = 'Stop'
 $expectedHog = if ($Transport) { '09e5deac6470879bd501ab60f982eec79c610f5b65d0dd4afc0e4142f887c1a2' } else { '718b507ed3866a73f36fed6472810c2310d99dc1861aece09002101575c60d9c' }
 $expectedDescriptor = if ($Transport) { '7a929982ead40553557c9364916cc773a15dad23e5a8d895fd142737f936fb2e' } else { '27f367855bbb7748536b29b3fbf84faf8583c216f3276a220eed2be959070ed2' }
+if ($Transport -and $Groups) { throw 'Select only one boss fixture mode' }
+if ($Groups) {
+    $expectedHog = '9a3e99c1d4a9ed79305889c27806e588e54ba28639aadd89ccd0b6296c8575ba'
+    $expectedDescriptor = 'e554ca52fa55d119ddd03bf27fa7b03ec8cc25da90a59797fd7461cff7904f17'
+}
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $expectedDescriptor) {
-    throw 'Requires the pinned derived boss spawning or transport fixture for the selected mode'
+    throw 'Requires the pinned derived boss fixture for the selected mode'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
-$missionBase = if ($Transport) { 'bosstran' } else { 'bosses' }
-$output = Join-Path $PSScriptRoot $(if ($Transport) { '../../temp/xl-boss-transport-android' } else { '../../temp/xl-boss-spawning-android' })
+$missionBase = if ($Groups) { 'bossgrp' } elseif ($Transport) { 'bosstran' } else { 'bosses' }
+$output = Join-Path $PSScriptRoot $(if ($Groups) { '../../temp/xl-boss-groups-android' } elseif ($Transport) { '../../temp/xl-boss-transport-android' } else { '../../temp/xl-boss-spawning-android' })
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-BossSpawningAdb {
@@ -32,7 +38,7 @@ function Invoke-BossSpawningPrivate {
     param([string]$Command)
     Invoke-BossSpawningAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'sh', '-c', "'$Command'")
 }
-$backup = if ($Transport) { 'files/xl-boss_transport-runtime-backup' } else { 'files/xl-boss_spawning-runtime-backup' }
+$backup = if ($Groups) { 'files/xl-boss_groups-runtime-backup' } elseif ($Transport) { 'files/xl-boss_transport-runtime-backup' } else { 'files/xl-boss_spawning-runtime-backup' }
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
     "files/d2x-redux/missions/$missionBase.hog", "files/d2x-redux/missions/$missionBase.mn2")
@@ -50,7 +56,9 @@ try {
     Invoke-BossSpawningAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-boss_spawning.mn2') | Out-Null
     Invoke-BossSpawningPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-boss_spawning.hog files/d2x-redux/missions/$missionBase.hog && cp /data/local/tmp/xl-boss_spawning.mn2 files/d2x-redux/missions/$missionBase.mn2" | Out-Null
     Invoke-BossSpawningAdb -Arguments @('logcat', '-c') | Out-Null
-    if ($Transport) {
+    if ($Groups) {
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_boss_groups_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
+    } elseif ($Transport) {
         & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_boss_transport_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
     } else {
         & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_boss_spawning_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
@@ -65,7 +73,9 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete BossSpawning runtime result' }
     Invoke-BossSpawningAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-boss_spawning.png') | Out-Null
     Invoke-BossSpawningAdb -Arguments @('pull', '/data/local/tmp/xl-boss_spawning.png', "$output/render.png") | Out-Null
-    if ($Transport) {
+    if ($Groups) {
+        Write-Host "PASS: BossGroups Android authored transport, group boundaries, disk/rewind and stock transition ($($result.total_steps) steps)"
+    } elseif ($Transport) {
         Write-Host "PASS: BossTransport Android authored actions, owned destinations, disk/rewind and stock transition ($($result.total_steps) steps)"
     } else {
         Write-Host "PASS: BossSpawning Android activation/spawning/combat, disk/rewind and stock transition ($($result.total_steps) steps)"

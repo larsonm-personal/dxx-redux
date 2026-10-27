@@ -198,6 +198,29 @@ static void matrix_controls()
 			require(objects[0].info.nSegment == 0 && objects[0].info.position.vPos == CFixVector{ 7, 8, 9 }, "Reference setup moved its owner");
 			if (scenario == 3) require(boss.m_teleportSegs.size() == 1, "XL setup unexpectedly crosses a closed first wall");
 		}
+	// Every serialized label, including the default 255, remains a distinct group
+	for (int label = 0; label < 256; ++label)
+		for (int split = 0; split < 2; ++split) {
+			oracle_segments.assign(4, {});
+			gameData.segData.nSegments = 4;
+			for (int i = 0; i < 4; ++i) {
+				auto &segment = oracle_segments[i];
+				segment.m_children.fill(-1);
+				segment.passable.fill(1);
+				segment.fits = true;
+				segment.m_children[0] = (i + 1) % 4;
+				const int raw = split && i == 2 ? (label ^ 128) : label;
+				segment.m_group = raw < 128 ? raw : raw - 256;
+			}
+			objects[0].info.nSegment = 0;
+			auto &boss = gameData.bossData[0];
+			boss = {};
+			boss.m_nObject = 0;
+			require(boss.Setup(0), "Group label source setup failed");
+			const auto actual = xl_compat::boss_destinations(0, 4, [](int i, int side) { return oracle_segments[i].m_children[side]; }, [](int, int) { return true; }, [](int i) { return oracle_segments[i].m_group; }, [](int) { return true; });
+			require(actual.size() == boss.m_teleportSegs.size() && std::equal(actual.begin(), actual.end(), boss.m_teleportSegs.begin()), "Byte label changed source group membership");
+			require((std::find(actual.begin(), actual.end(), 2) != actual.end()) == !split, "Open connection bypassed an authored group boundary");
+		}
 }
 int main(int argc, char **argv)
 {
@@ -261,7 +284,7 @@ int main(int argc, char **argv)
 			}
 			require(bool(input), "Truncated native boss transport samples");
 		}
-		std::cout << "Pinned XL boss transport: " << count << " native cases and 20 graph/capacity controls matched\n";
+		std::cout << "Pinned XL boss transport: " << count << " native cases, 20 graph/capacity and 512 group-label controls matched\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

@@ -53,6 +53,13 @@ and 48 Android steps pass within the [recorded scope](evidence/boss-transport.md
 Delayed object-chain descendants, other owner/action variants and independent
 mission requirements remain gated.
 
+Authored segment groups with neutral ownership now constrain XL boss destinations
+across open connections. Group labels are preserved independently of unsupported
+team ownership; the default label is not a wildcard. Native/source and lifecycle
+controls are recorded in [boss group evidence](evidence/boss-groups.md). This
+supersedes the earlier combined owner/group gate without qualifying a new
+original mission.
+
 Trigger flag bits 32/64 are now admitted for implemented actions. Set-orient is
 inert outside the still-blocked boost action. Silent suppresses forcefield-off
 audio but enables the explicit illusion-off cue, matching the pinned source's

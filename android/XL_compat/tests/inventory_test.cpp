@@ -1030,6 +1030,21 @@ int main(int argc, char **argv)
 		const auto ownership = xl_compat::inspect_level(bad);
 		check(ownership.unknown[0].feature == "segment_owner_group", "ownership silently ignored");
 		rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
+		for (int version : { 15, 17, 23 })
+			for (int group = 0; group < 256; ++group) {
+				auto grouped = fixture(version);
+				const auto start = xl_compat::inspect_level(grouped).mine_offset + 5 + 96;
+				patch(grouped, start + 1, group, 1);
+				const auto decoded = xl_compat::inspect_level(grouped);
+				const int expected = group < 128 ? group : group - 256;
+				check(decoded.segments[0].group == expected && decoded.segments[0].owner == -1, "group byte changed identity or ownership");
+				const auto probe = xl_compat::prepare_gameplay_probe(grouped);
+				check(probe.source.segments[0].group == expected, "neutral group was rejected or lost in admission");
+				const auto row = feature_row(xl_compat::compatibility_json("groups.rl2", grouped), "segment_groups");
+				check(row.find(group == 255 ? "\"status\": \"not_required\"" : "\"status\": \"supported\"") != std::string::npos, "browser does not expose supported groups");
+				patch(grouped, start, 0, 1);
+				rejects([&] { xl_compat::prepare_gameplay_probe(grouped); });
+			}
 		Bytes hog{ 'D', 'H', 'F' };
 		const std::string name = "level.rl2";
 		hog.insert(hog.end(), name.begin(), name.end());

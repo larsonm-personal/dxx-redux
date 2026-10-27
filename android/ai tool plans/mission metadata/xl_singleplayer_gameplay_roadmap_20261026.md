@@ -86,6 +86,13 @@ finish original-mission qualification
     gated. XL's bounded illusion handler intentionally corrects the reference's
     back-side lookup while preserving its counterintuitive cue condition
 
+11. Authored boss destination groups: all byte labels are retained independently
+    of team ownership, with 768 format contracts, 512 new source comparisons,
+    actual native selection and 48 Android lifecycle checks. Open passage/size
+    negative controls and atomic cross-group route rejection establish the
+    [recorded scope](../../XL_compat/evidence/boss-groups.md). Team ownership and
+    original missions retain separate gates
+
 Return to delayed object-chain lifecycle and other owner variants as part of the
 unfinished event area above. Use the refreshed original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as
