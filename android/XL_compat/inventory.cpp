@@ -316,7 +316,8 @@ Inventory inspect_level(const Bytes &bytes)
 				s.uvl[v * 3 + 2] = mine.u16();
 			}
 		}
-		if (seg.owner != -1 || seg.group != -1) issue(out.unknown, "segment_owner_group", i, std::to_string(seg.owner) + "/" + std::to_string(seg.group));
+		if (seg.owner != -1) issue(out.unknown, "segment_owner_group", i, std::to_string(seg.owner) + "/" + std::to_string(seg.group));
+		if (seg.group != -1) issue(out.observations, "segment_group", i, std::to_string(seg.group));
 		out.segments.push_back(seg);
 	}
 	for (int i = 0; i < segment_count; ++i) {

@@ -66,7 +66,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	for (const auto &vertex : v.vertices)
 		for (const auto component : vertex) put(out, component, 4);
 	for (const auto &seg : v.segments) {
-		require(seg.owner == -1 && seg.group == -1, "nonneutral owner/group");
+		require(seg.owner == -1, "nonneutral segment owner");
 		int children = 0, walls = 0;
 		for (int i = 0; i < 6; ++i) {
 			if (seg.children[i] != -1) children |= 1 << i;

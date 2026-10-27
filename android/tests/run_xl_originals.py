@@ -33,6 +33,7 @@ CORE_TESTS = (
         "xl_boss_spawning",
         "xl_boss_transport",
         "xl_trigger_flags",
+        "xl_boss_groups",
         "xl_trigger_flag_reference",
         "xl_equipment_generators",
         "xl_effect_payloads",

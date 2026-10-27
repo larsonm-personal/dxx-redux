@@ -21,7 +21,7 @@ const Category categories[] = {
 	{ "container", "Archive and descriptor dialect", "Standard DHF and d2x-name descriptors; gameplay requires supported extended-level features and owned resources; extended HOG unsupported", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
 	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 17/36 and 23/40 layouts after feature checks", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; 255 walls/1000 objects/100 triggers; XL widening unsupported", "Larger mines can require wider references and more segments, vertices, walls, objects or triggers. A readable file can still exceed engine limits." },
-	{ "segments", "Segment physics, properties and ownership", "Classic functions including repair centers exist; XL environment and ownership parity unverified", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. They are distinct from a wall texture." },
+	{ "segments", "Segment physics, properties and ownership", "XL boss destination groups supported with neutral ownership; environment and team ownership require separate checks", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. Group identity constrains boss destinations independently of walls." },
 	{ "walls", "Wall types and flags", "Stock wall semantics only; XL extensions unsupported", "Wall types and flags control doors, barriers and other surfaces. Visibility, collision and activation behavior must agree." },
 	{ "triggers", "Stateful events and geometry triggers", "Supported wall actions include scheduling, stateful byte flags and action-specific audio cues; unsupported actions and object descendants remain gated", "Triggers activate linked actions. XL adds action types, flags and event chains whose live state can matter after save/load." },
 	{ "object_triggers", "Object-attached triggers", "Nonplayer leaf events and immediate masters implemented; other variants gated", "These actions are attached to objects rather than only to walls. Their activation rules, owner lifecycle and linked actions are checked separately." },
@@ -74,10 +74,12 @@ std::vector<CountedFeature> counted_features()
 		{ "trigger_switches", "Wall trigger enable/disable actions", "Immediate wall targets implemented; effect-object targets unsupported", "supported", "Enable and disable actions change linked wall triggers, including the raw reference count on master triggers. This count excludes object-attached actions." },
 		{ "delayed_wall_actions", "Delayed wall actions", "Positive and randomized delays implemented on supported wall actions", "supported", "Delayed wall actions retain the first activating actor and selected delay. Disabling suspends pending work; permanent actions can rearm after execution." },
 		{ "stateful_trigger_flags", "Permanent, alternate and autoplay wall actions", "Supported actions retain flag transitions and scheduling state across saves", "supported", "Permanent actions rearm, alternating actions switch to their opposite after execution, and autoplay actions start from frame processing. Unsupported actions remain blocked independently." },
+		{ "segment_groups", "Authored segment groups", "Singleplayer XL boss destination groups supported with neutral ownership", "supported", "Boss destination setup stays within its home segment's authored group even across otherwise passable connections. Group labels do not grant team ownership or qualify an original mission." },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 {
+	features[16].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.group != -1; }));
 	const int trigger_types[] = { 14, 15, 16, 31 };
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));

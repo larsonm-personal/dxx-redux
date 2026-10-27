@@ -270,23 +270,6 @@
                     }
                 },
                 "unknown": {
-                    "segment_owner_group": {
-                        "count": 506,
-                        "examples": [
-                            {
-                                "record": 595,
-                                "detail": "-1/3"
-                            },
-                            {
-                                "record": 596,
-                                "detail": "-1/3"
-                            },
-                            {
-                                "record": 597,
-                                "detail": "-1/3"
-                            }
-                        ]
-                    },
                     "object_dependencies": {
                         "count": 1,
                         "examples": [
@@ -311,6 +294,25 @@
                             {
                                 "record": -1,
                                 "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 506,
+                        "examples": [
+                            {
+                                "record": 595,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 596,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 597,
+                                "detail": "3"
                             }
                         ]
                     }
@@ -464,23 +466,6 @@
                     }
                 },
                 "unknown": {
-                    "segment_owner_group": {
-                        "count": 33,
-                        "examples": [
-                            {
-                                "record": 82,
-                                "detail": "-1/1"
-                            },
-                            {
-                                "record": 125,
-                                "detail": "-1/3"
-                            },
-                            {
-                                "record": 128,
-                                "detail": "-1/3"
-                            }
-                        ]
-                    },
                     "object_dependencies": {
                         "count": 1,
                         "examples": [
@@ -505,6 +490,25 @@
                             {
                                 "record": -1,
                                 "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 33,
+                        "examples": [
+                            {
+                                "record": 82,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 125,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 128,
+                                "detail": "3"
                             }
                         ]
                     }
@@ -711,7 +715,8 @@
                             }
                         ]
                     }
-                }
+                },
+                "observations": {}
             },
             "native_effect_payloads": {
                 "thruster": 0,
@@ -858,7 +863,8 @@
                             }
                         ]
                     }
-                }
+                },
+                "observations": {}
             },
             "native_effect_payloads": {
                 "thruster": 0,
@@ -1017,23 +1023,6 @@
                             }
                         ]
                     },
-                    "trigger_flags": {
-                        "count": 6,
-                        "examples": [
-                            {
-                                "record": 58,
-                                "detail": "32"
-                            },
-                            {
-                                "record": 59,
-                                "detail": "32"
-                            },
-                            {
-                                "record": 60,
-                                "detail": "32"
-                            }
-                        ]
-                    },
                     "object_triggers": {
                         "count": 1,
                         "examples": [
@@ -1089,23 +1078,6 @@
                     }
                 },
                 "unknown": {
-                    "segment_owner_group": {
-                        "count": 89,
-                        "examples": [
-                            {
-                                "record": 5155,
-                                "detail": "-1/1"
-                            },
-                            {
-                                "record": 5156,
-                                "detail": "-1/2"
-                            },
-                            {
-                                "record": 5162,
-                                "detail": "-1/1"
-                            }
-                        ]
-                    },
                     "object_dependencies": {
                         "count": 1,
                         "examples": [
@@ -1130,6 +1102,25 @@
                             {
                                 "record": -1,
                                 "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 89,
+                        "examples": [
+                            {
+                                "record": 5155,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 5156,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 5162,
+                                "detail": "1"
                             }
                         ]
                     }
