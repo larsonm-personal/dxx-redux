@@ -31,6 +31,7 @@
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
+#include "equipment.h"
 #include "resource_validation.h"
 #endif
 
@@ -2212,6 +2213,19 @@ extern "C" char *game_introspect_get_state(void)
 			generators[std::to_string(index)] = { { "segment", center.segnum }, { "station", station }, { "flags0", RobotCenters[index].robot_flags[0] }, { "flags1", RobotCenters[index].robot_flags[1] }, { "enabled", center.Enabled != 0 }, { "lives", center.Lives }, { "pending", center.Flag == 1 }, { "capacity", center.Capacity }, { "timer", center.Timer }, { "disable_time", center.Disable_time }, { "alive", robots.size() }, { "robots", robots } };
 		}
 		j["xl_pilot"]["robot_generators"] = std::move(generators);
+		json equipment = json::object();
+		for (int index = 0; index < xl_equipment_count(); ++index) {
+			xl_equipment_state state;
+			if (!xl_equipment_state_get(index, &state)) continue;
+			json items = json::array();
+			for (int object = Segments[state.segment].objects; object >= 0; object = Objects[object].next) {
+				const auto &item = Objects[object];
+				if (item.type != OBJ_POWERUP || (item.flags & OF_SHOULD_BE_DEAD)) continue;
+				items.push_back({ { "object", object }, { "id", item.id }, { "signature", item.signature }, { "count", item.ctype.powerup_info.count }, { "creator", item.matcen_creator }, { "lifeleft", item.lifeleft } });
+			}
+			equipment[std::to_string(index)] = { { "segment", state.segment }, { "enabled", state.enabled != 0 }, { "pending", state.pending != 0 }, { "timer", state.timer }, { "items", items }, { "item_count", items.size() } };
+		}
+		j["xl_pilot"]["equipment_generators"] = std::move(equipment);
 		j["xl_pilot"]["implicit_robot_flags"] = xl_robot_generator_implicit_flags();
 		json bosses = json::object(), spawned = json::array();
 		for (int index = 0; index < xl_boss_spawn_count(); ++index) {

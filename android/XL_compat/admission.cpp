@@ -31,6 +31,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
+		if (level.level_version == 23 && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
 		if (issue.feature == "object_triggers") continue;
 		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "26" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (issue.feature == "trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
@@ -53,6 +54,14 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
+	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
+	limit(!level.equipment.empty() && level.level_version != 23, "equipment layout", "equipment makers require the audited modern 23/40 profile");
+	for (std::size_t row = 0; row < level.equipment.size(); ++row)
+		for (unsigned id = 0; id < 50; ++id)
+			if ((std::uint32_t(level.equipment[row][id / 32]) & (std::uint32_t(1) << (id % 32))) &&
+			    (id == 7 || id == 8 || id == 9 || id == 24 || id == 26 || id == 27 || id >= 46))
+				result.push_back({ "equipment item", static_cast<int>(row), "powerup " + std::to_string(id) + " requires unsupported multiplayer, addon or release pickup behavior" });
+	std::vector<int> equipment_owners(level.equipment.size(), -1);
 	// XL AssignProducer uses the authored segment producer index, ignoring the
 	// redundant links in each disk row. Stock renumbers segments during mine load
 	std::vector<int> generator_owners(level.matcens.size(), -1);
@@ -60,6 +69,14 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	for (std::size_t i = 0; i < level.segments.size(); ++i) {
 		const auto &segment = level.segments[i];
 		if (segment.function >= 1 && segment.function <= 4) ++stations;
+		if (level.level_version == 23 && segment.function == 11) {
+			++stations;
+			if (segment.producer < 0 || static_cast<std::size_t>(segment.producer) >= equipment_owners.size())
+				result.push_back({ "equipment assignment", static_cast<int>(i), "equipment segment has no source record for its producer index" });
+			else if (equipment_owners[segment.producer] >= 0)
+				result.push_back({ "equipment assignment", static_cast<int>(i), "producer index is shared by multiple equipment segments" });
+			else equipment_owners[segment.producer] = static_cast<int>(i);
+		}
 		if (segment.function != 4) continue;
 		if (segment.producer < 0 || static_cast<std::size_t>(segment.producer) >= generator_owners.size())
 			result.push_back({ "generator assignment", static_cast<int>(i), "robotmaker segment has no source record for its producer index" });
@@ -69,9 +86,11 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	}
 	for (std::size_t i = 0; i < generator_owners.size(); ++i)
 		if (generator_owners[i] < 0) result.push_back({ "generator assignment", static_cast<int>(i), "source record has no robotmaker segment with this producer index" });
+	for (std::size_t i = 0; i < equipment_owners.size(); ++i)
+		if (equipment_owners[i] < 0) result.push_back({ "equipment assignment", static_cast<int>(i), "source record has no equipment segment with this producer index" });
 	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
 	const bool modern_water = level.level_version >= 21 && std::any_of(level.segments.begin(), level.segments.end(), [](const Segment &segment) { return (segment.properties & segment_water) != 0; });
-	const bool fluid_actors = !level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) { return object.type == 2 || (object.contains_count > 0 && object.contains_type == 2); });
+	const bool fluid_actors = !level.matcens.empty() || !level.equipment.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) { return object.type == 2 || (object.contains_count > 0 && object.contains_type == 2); });
 	limit(modern_water && fluid_actors, "water actors", "water with robots or robot generators is not qualified; robot-free singleplayer water is supported");
 	limit(level.light_indices.size() > 500 || level.delta_lights.size() > 32000, "lighting capacity", "more than 500 light indices or 32000 delta lights");
 	// Translation splits counts into signed-byte chunks, preserving zero-count records

@@ -26,6 +26,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newmenu.h"
 #include "game.h"
 #include "switch.h"
+#ifdef DXX_XL_RUNTIME
+#include "equipment.h"
+#endif
 #include "d1_in_d2/d1_in_d2_levels.h"
 #include "inferno.h"
 #include "segment.h"
@@ -407,6 +410,9 @@ void do_matcen(const trigger *trig)
 
 	if (trig != NULL) {
 		for (i=0;i<trig->num_links;i++) {
+#ifdef DXX_XL_RUNTIME
+			if (xl_equipment_trigger(trig->seg[i])) continue;
+#endif
 			trigger_matcen(trig->seg[i] );
   		}
   	}

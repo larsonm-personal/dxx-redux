@@ -1,4 +1,4 @@
-"""Reinspect original surveyed spawn-bot levels without qualifying gameplay."""
+"""Reinspect original surveyed gameplay candidates without qualifying gameplay."""
 
 import argparse
 import hashlib
@@ -31,6 +31,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("bundle", "missions-root", "inspector", "work", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--feature", choices=("spawn-bot", "equipment"), default="spawn-bot")
     args = parser.parse_args()
     bundle_hash = hashlib.sha256(args.bundle.read_bytes()).hexdigest()
     if bundle_hash != "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd":
@@ -43,7 +44,8 @@ def main():
     records = []
     for row in rows:
         actions = [action for action in row.get("object_triggers", []) if action["type"] == 26]
-        if not actions:
+        equipment = row.get("sections", {}).get("equipment", {})
+        if not (actions if args.feature == "spawn-bot" else equipment.get("count", 0)):
             continue
         _, archive_name, level_name = row["path"].split("::")
         source = (root / archive_name).resolve()
@@ -94,9 +96,20 @@ def main():
             "native_decoded": decoded,
             "runtime_qualified": False,
         }
+        if args.feature == "equipment":
+            del record["survey_spawn_actions"]
+            record["survey_equipment"] = equipment
+            record["survey_equipment_segments"] = row["segment_functions"].get(
+                "11" if row["version"] >= 21 else "15", 0
+            )
         if decoded:
             record["native_profile"] = f"{inventory['level_version']}/{inventory['game_version']}"
             record["inspector_findings"] = {key: inventory[key] for key in ("unsupported", "unknown")}
+            if args.feature == "equipment":
+                record["native_equipment"] = [
+                    dict(zip(("flags0", "flags1", "hitpoints", "interval", "raw_segment", "raw_station"), maker))
+                    for maker in inventory.get("equipment", [])
+                ]
         else:
             record["native_rejection"] = inventory["reason"]
         records.append(record)
@@ -109,7 +122,7 @@ def main():
     text = json.dumps(report, indent=4, ensure_ascii=True) + "\n"
     if not args.output.exists() or args.output.read_text() != text:
         args.output.write_text(text, encoding="utf-8")
-    print(f"Inspected {len(records)} original spawn-bot candidates; none promoted")
+    print(f"Inspected {len(records)} original {args.feature} candidates; none promoted")
 
 
 if __name__ == "__main__":

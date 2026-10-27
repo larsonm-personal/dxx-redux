@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "robot_generator.h"
+#include "equipment.h"
 #endif
 #include "matcen_regression_capture.h"
 matcen_regression_capture Matcen_regression_capture;
@@ -647,10 +648,17 @@ void fuelcen_update_all()
 {
 	int i;
 	fix AmountToreplenish;
+#ifdef DXX_XL_RUNTIME
+	int xl_first_segment = 0;
+#endif
 	
 	AmountToreplenish = fixmul(FrameTime,Fuelcen_refill_speed);
 
 	for (i=0; i<Num_fuelcenters; i++ )	{
+#ifdef DXX_XL_RUNTIME
+		xl_equipment_frame(xl_first_segment, Station[i].segnum);
+		xl_first_segment = Station[i].segnum + 1;
+#endif
 		if ( Station[i].Type == SEGMENT_IS_ROBOTMAKER )	{
 			if (! (Game_suspended & SUSP_ROBOTS))
 				robotmaker_proc( &Station[i] );
@@ -667,6 +675,9 @@ void fuelcen_update_all()
 			}
 		}
 	}
+#ifdef DXX_XL_RUNTIME
+	xl_equipment_frame(xl_first_segment, Num_segments);
+#endif
 }
 
 #define FUELCEN_SOUND_DELAY (f1_0/4)		//play every half second

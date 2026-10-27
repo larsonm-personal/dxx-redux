@@ -96,6 +96,7 @@ if(BUILD_TESTING)
         include(tests/reference_object.cmake)
         include(tests/reference_generators.cmake)
         include(tests/reference_boss.cmake)
+        include(tests/reference_equipment.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")
@@ -230,6 +231,19 @@ if(BUILD_TESTING)
                     -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-spawning
                     ${xl_boss_oracle_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_spawn.cmake)
             set_tests_properties(xl_boss_spawning PROPERTIES TIMEOUT 90)
+            set(xl_equipment_oracle_args)
+            if(TARGET xl_equipment_reference)
+                list(APPEND xl_equipment_oracle_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_equipment_reference>")
+            endif()
+            add_test(
+                NAME xl_equipment_generators
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/equipment
+                    ${xl_equipment_oracle_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/equipment.cmake)
+            set_tests_properties(xl_equipment_generators PROPERTIES TIMEOUT 90)
             add_test(
                 NAME xl_modern_properties
                 COMMAND

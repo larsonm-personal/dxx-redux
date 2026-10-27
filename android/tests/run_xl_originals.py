@@ -28,6 +28,7 @@ CORE_TESTS = (
         "xl_generator_assignment_reference",
         "xl_generator_assignment_runtime",
         "xl_boss_spawning",
+        "xl_equipment_generators",
         "xl_konflict_features",
         "xl_dragon_lighting_decode",
         "xl_dragon_wave_decode",

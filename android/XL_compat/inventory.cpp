@@ -516,9 +516,8 @@ Inventory inspect_level(const Bytes &bytes)
 	if (out.level_version >= 17) {
 		const auto &equipment = section(out, "equipment");
 		if (equipment.count) {
-			// Bound the payload without pretending to implement equipment generators
-			section_reader(bytes, out, equipment, 20);
-			issue(out.unsupported, "equipment_generators", -1, std::to_string(equipment.count));
+			auto r = section_reader(bytes, out, equipment, 20);
+			for (int i = 0; i < equipment.count; ++i) out.equipment.push_back({ r.s32(), r.s32(), r.s32(), r.s32(), r.s16(), r.s16() });
 		}
 	}
 	if (indices.count) {
@@ -709,6 +708,7 @@ std::string inventory_json(const Inventory &v)
 	rows_json(s, "flicker_lights", v.flicker_lights);
 	rows_json(s, "reactor_targets", v.reactor_targets);
 	rows_json(s, "matcens", v.matcens);
+	if (!v.equipment.empty()) rows_json(s, "equipment", v.equipment);
 	rows_json(s, "light_indices", v.light_indices);
 	rows_json(s, "delta_lights", v.delta_lights);
 	const std::pair<const char *, const std::vector<Color> *> colors[] = { { "vertex_colors", &v.vertex_colors }, { "side_colors", &v.side_colors }, { "texture_colors", &v.texture_colors } };
