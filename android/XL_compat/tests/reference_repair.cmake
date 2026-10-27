@@ -4,6 +4,8 @@ foreach(
         "main/producers.cpp|c79263fcd98f686d99dfcc8f5e12aade60f70f75cc25544795fbab71c93318b6"
         "network/network_init.cpp|6732bb4033ebfdfc0f17563a04beeed1b5620c53c91e36f7b6e798326158c8a2"
         "objects/updateobject.cpp|c4f3b9f1cd225f4dda99bb2a4e42af8546bc37ae36cc0bd19091dad6f48b01ac"
+        "main/segment.cpp|eece1c8ba624bd42e6e77b9f2a3dd9a54489338139ee102245672b2b7353e60d"
+        "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667"
         "include/player.h|4e134411347c2dee70f22c7b60c63717390496022964a77c1eb8dc5b5ff15cf4")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -35,3 +37,20 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_repair.h" CONTENT
 add_executable(xl_repair_reference tests/reference_repair.cpp)
 target_include_directories(xl_repair_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_features(xl_repair_reference PRIVATE cxx_std_17)
+
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/segment.h" segment_header)
+string(REGEX MATCHALL "#define SEGMENT_(FUNC|PROP)_[A-Z_]+[^\n]*" defines "${segment_header}")
+string(JOIN "\n" defines_text ${defines})
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_repair_types.h"
+     CONTENT "${defines_text}\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp" segment_source)
+string(FIND "${segment_source}" "static uint8_t segFuncFromType []" start)
+string(FIND "${segment_source}" "void CSegment::Upgrade (" end)
+if(start LESS 0 OR end LESS start)
+    message(FATAL_ERROR "Missing legacy segment mapping")
+endif()
+math(EXPR length "${end} - ${start}")
+string(SUBSTRING "${segment_source}" ${start} ${length} extracted)
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp" "void CSegment::Upgrade (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_repair_upgrade.h"
+     CONTENT "${extracted}")

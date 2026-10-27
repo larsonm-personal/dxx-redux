@@ -164,6 +164,12 @@ finish original-mission qualification
     candidates retain independent requirements and qualification; dynamic
     capacity, other wall behaviors and optional settings remain open
 
+23. Legacy 17/36 repair centers: extracted Upgrade mapping, 1,440 source samples,
+    12 actual player frames and physical boundary/disk-through-stock controls
+    extend the separate XL repair path. See [legacy repair evidence](../../XL_compat/evidence/legacy-repair.md)
+    for Android acceptance and retained 15/33, optional-settings and original
+    mission requirements. The pinned survey contains no legacy repair candidates
+
 Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as
 required acceptance rather than cosmetic deferral

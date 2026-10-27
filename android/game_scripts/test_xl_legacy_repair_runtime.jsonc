@@ -1,0 +1,440 @@
+// Derived 17/36 repair controls; owned by the repair runner with -Legacy17
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_repair_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived legacy repair",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "face_view",
+        "segment": 6,
+        "side": 3,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "40",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 6,
+            "player.shields": {
+                "range": [60, 60],
+            },
+            "xl_pilot.in_repair": false,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 6,
+        "side": 3,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 0,
+            "xl_pilot.in_repair": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "gte": 70,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [70, 98],
+            },
+            "xl_pilot.repair_cues": {
+                "gte": 1,
+            },
+        },
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "xl_pilot.repair_audio.completed": {
+                "gte": 1,
+            },
+            "xl_pilot.repair_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 0,
+        "side": 1,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 6,
+            "xl_pilot.in_repair": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "40",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 900,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [60, 60],
+            },
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 0,
+        "side": 1,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "key",
+        "key": "tab",
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "automap_active": true,
+            "xl_pilot.repair_map_calls": {
+                "gte": 1,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "automap_active": false,
+            "in_game": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "face_view",
+        "segment": 6,
+        "side": 3,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "10",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 0,
+            "xl_pilot.in_repair": true,
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 6,
+        "side": 3,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "10",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 0,
+            "xl_pilot.in_repair": true,
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+            "xl_pilot.in_repair": false,
+            "xl_pilot.repair_cues": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 0,
+            "xl_pilot.in_repair": true,
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 6,
+        "side": 3,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "20",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "face_view",
+        "segment": 0,
+        "side": 1,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "xl_pilot.repair_cues": {
+                "gte": 1,
+            },
+            "xl_pilot.repair_audio.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+]

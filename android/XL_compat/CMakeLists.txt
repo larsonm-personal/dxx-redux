@@ -483,6 +483,18 @@ if(BUILD_TESTING)
                 ${xl_reference_gate_args} -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/observatory_descriptor.cmake)
         set_tests_properties(xl_observatory_descriptor PROPERTIES TIMEOUT 90)
+        set(legacy_repair_args)
+        if(TARGET xl_repair_reference)
+            list(APPEND legacy_repair_args "-DREFERENCE=$<TARGET_FILE:xl_repair_reference>")
+        endif()
+        add_test(
+            NAME xl_legacy_repair
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_OBSERVATORY_HOG}
+                -DDESCRIPTOR=${XL_OBSERVATORY_DESCRIPTOR} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/legacy_repair
+                -DLEGACY=ON ${legacy_repair_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/repair.cmake)
+        set_tests_properties(xl_legacy_repair PROPERTIES TIMEOUT 120)
     endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")
