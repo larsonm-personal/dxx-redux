@@ -96,6 +96,7 @@ if(BUILD_TESTING)
         include(tests/reference_water_actors.cmake)
         include(tests/reference_lava.cmake)
         include(tests/reference_blocked.cmake)
+        include(tests/reference_repair.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -264,6 +265,18 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/blocked ${xl_blocked_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/blocked.cmake)
             set_tests_properties(xl_blocked_segments PROPERTIES TIMEOUT 120)
+            set(xl_repair_args)
+            if(TARGET xl_repair_reference)
+                list(APPEND xl_repair_args "-DREFERENCE=$<TARGET_FILE:xl_repair_reference>")
+            endif()
+            add_test(
+                NAME xl_repair_centers
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/repair ${xl_repair_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/repair.cmake)
+            set_tests_properties(xl_repair_centers PROPERTIES TIMEOUT 120)
             set(xl_lava_args)
             if(TARGET xl_lava_reference)
                 list(APPEND xl_lava_args "-DREFERENCE=$<TARGET_FILE:xl_lava_reference>"

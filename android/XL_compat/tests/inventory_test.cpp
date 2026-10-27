@@ -638,6 +638,17 @@ void version_23_contract()
 	check(!xl_compat::prepare_serialization_probe_23_40(bytes).stock_level.empty(), "23/40 qualification failed");
 	rejects([&] { xl_compat::prepare_serialization_probe_23_40(fixture(17)); });
 	const auto segment = inventory.mine_offset + 277;
+	{
+		auto repair = bytes;
+		patch(repair, segment, 2, 1);
+		const auto translated = xl_compat::prepare_gameplay_probe(repair);
+		check(!translated.stock_level.empty(), "Modern repair translation rejected");
+		const auto row = feature_row(xl_compat::compatibility_json("repair.rl2", repair), "repair_centers");
+		check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "Repair browser contract missing");
+		auto legacy = fixture(17);
+		patch(legacy, xl_compat::inspect_level(legacy).mine_offset + 277, 2, 1);
+		rejects([&] { xl_compat::prepare_gameplay_probe(legacy); });
+	}
 	for (const int function : { 7, 13 }) {
 		auto bad = bytes;
 		patch(bad, segment, function, 1);

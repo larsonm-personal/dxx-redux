@@ -78,10 +78,13 @@ std::vector<CountedFeature> counted_features()
 		{ "segment_groups", "Authored segment groups", "Singleplayer XL boss destination groups supported with neutral ownership", "supported", "Boss destination setup stays within its home segment's authored group even across otherwise passable connections. Group labels do not grant team ownership or qualify an original mission." },
 		{ "player_resource_actions", "Shield-damage and energy-drain wall actions", "Default singleplayer XL shield units, energy percentages, resource bounds and lethal continuation implemented", "supported", "Authored wall actions change local player resources directly, including through masters and timers. Negative values replenish; combat protections do not suppress these actions. Direct object actions, optional ship scaling/recharge and multiplayer remain unqualified." },
 		{ "spawn_points", "Wall spawn-point actions", "Singleplayer authored spawn transforms, death/respawn, named SPAWN markers and saved state implemented", "supported", "These actions configure destinations used after death without moving the player immediately. Linked destinations cycle across the XL spawn table. This count excludes object-attached actions.", "Controlled source, engine and Android tests cover this feature. Original missions, multiplayer and route analysis need separate qualification" },
+		{ "repair_centers", "Shield repair centers", "Modern singleplayer repair rate, cap, cue timing and source restoration implemented", "blocked", "Repair centers replenish the local player's shields up to the initial shield level. The default XL rate is 11 units per second; Redux retains its separate rate.", "Modern 23/40 default-ship profile only. Legacy layouts, optional ship/producer settings, multiplayer and original-mission qualification remain separate requirements" },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 {
+	features[19].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.function == 2; }));
+	if (v.level_version == 23) features[19].present_status = "supported";
 	features[16].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.group != -1; }));
 	features[17].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return player_resource_action(action.type); }));
 	features[18].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return action.type == 28; }));

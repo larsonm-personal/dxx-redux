@@ -27,6 +27,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "speed_boost.h"
 #include "blocked.h"
+#include "repair.h"
 #endif
 #include "u_mem.h"
 #include "render.h"
@@ -1640,6 +1641,7 @@ void add_segment_edges(automap *am, segment *seg)
 
 #ifdef DXX_XL_RUNTIME
         color = xl_blocked_map_color(segnum, color);
+        color = xl_repair_map_color(segnum, color);
 #endif
 
 		switch( Segment2s[segnum].special )	{

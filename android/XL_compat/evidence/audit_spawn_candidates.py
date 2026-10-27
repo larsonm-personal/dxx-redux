@@ -51,7 +51,9 @@ def main():
     for name in ("bundle", "missions-root", "inspector", "work", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument(
-        "--feature", choices=("spawn-bot", "equipment", "spawn-points", "water", "lava", "blocked"), default="spawn-bot"
+        "--feature",
+        choices=("spawn-bot", "equipment", "spawn-points", "water", "lava", "blocked", "repair"),
+        default="spawn-bot",
     )
     parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
     args = parser.parse_args()
@@ -78,9 +80,11 @@ def main():
             if row["version"] >= 21
             else 0
         )
+        if args.feature == "repair":
+            water = row["segment_functions"].get("2", 0) if row["version"] >= 21 else 0
         if not (
             water
-            if args.feature in ("water", "lava", "blocked")
+            if args.feature in ("water", "lava", "blocked", "repair")
             else equipment.get("count", 0)
             if args.feature == "equipment"
             else actions
@@ -164,7 +168,7 @@ def main():
             )
         elif args.feature == "spawn-points":
             record["survey_wall_spawn_actions"] = record.pop("survey_spawn_actions")
-        elif args.feature in ("water", "lava", "blocked"):
+        elif args.feature in ("water", "lava", "blocked", "repair"):
             del record["survey_spawn_actions"]
             record[f"survey_{args.feature}_segments"] = water
             record["survey_placed_robots"] = sum(obj["type"] == 2 for obj in row.get("object_records", []))

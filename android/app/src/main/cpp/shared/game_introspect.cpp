@@ -38,6 +38,7 @@
 #include "spawn_points.h"
 #include "fluids.h"
 #include "blocked.h"
+#include "repair.h"
 #include "resource_validation.h"
 #endif
 
@@ -2158,6 +2159,10 @@ extern "C" char *game_introspect_get_state(void)
 		{ "in_blocked", Game_wind && ConsoleObject && xl_blocked_segment(ConsoleObject->segnum) != 0 },
 		{ "blocked_map_calls", xl_blocked_map_calls() },
 		{ "blocked_projectile_entries", xl_blocked_projectile_entries() },
+		{ "in_repair", Game_wind && ConsoleObject && xl_repair_segment(ConsoleObject->segnum) != 0 },
+		{ "repair_elapsed", xl_repair_elapsed() },
+		{ "repair_cues", xl_repair_cues() },
+		{ "repair_map_calls", xl_repair_map_calls() },
 		{ "fluid_scrape_elapsed", xl_fluid_scrape_elapsed() },
 		{ "lava_loops_linked", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_LAVAFALL_HISS, 0) : 0 },
 		{ "lava_loops_playing", Game_wind && ConsoleObject ? xl_linked_sound_count(ConsoleObject - Objects, SOUND_LAVAFALL_HISS, 1) : 0 },
@@ -3491,6 +3496,7 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		j["sound_playback"] = std::move(playback);
 #ifdef DXX_XL_RUNTIME
+		j["xl_pilot"]["repair_audio"] = j["sound_playback"].value(std::to_string(digi_xlat_sound(SOUND_REFUEL_STATION_GIVING_FUEL)), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
 		// Android-only semantic aliases for existing cumulative mixer diagnostics
 		json cues = json::object();
 		for (const auto &entry : std::array<std::pair<const char *, int>, 3>{ { { "forcefield_off", SOUND_FORCEFIELD_OFF }, { "illusion_off", SOUND_WALL_REMOVED }, { "forcefield_hum", SOUND_FORCEFIELD_HUM } } }) {
