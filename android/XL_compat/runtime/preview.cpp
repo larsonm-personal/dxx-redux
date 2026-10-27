@@ -289,9 +289,9 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 		if (entry.action.type == 26) {
 			const auto &owner = level.objects.at(entry.object);
 			if (owner.type != OBJ_ROBOT || owner.id < 0 || owner.id >= N_robot_types || !graph.robot_data[owner.id].boss_flag)
-				throw std::runtime_error("spawn-bot action requires a robot boss owner");
+				throw std::runtime_error("spawn-bot action requires a robot boss owner: object " + std::to_string(entry.object) + ", robot definition " + std::to_string(owner.id));
 			graph.robot(owner.id);
-			bool arbitrary = entry.action.targets.empty();
+			bool arbitrary = entry.action.targets.empty() || entry.action.targets[0][0] < 0;
 			if (!arbitrary) {
 				const auto &segment = level.segments.at(entry.action.targets[0][0]);
 				const auto &row = level.matcens.at(segment.producer);
@@ -343,11 +343,7 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 				if (obj.id >= Num_reactors || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
 				graph.weapon(CONTROLCEN_WEAPON_NUM);
 			}
-			if (obj.contains_count > 0) {
-				graph.contents(obj.contains_type, obj.contains_id);
-				if (obj.contains_type == OBJ_ROBOT && graph.robot_data[obj.contains_id].boss_flag)
-					throw std::runtime_error("contained bosses require dynamic boss lifecycle support");
-			}
+			if (obj.contains_count > 0) graph.contents(obj.contains_type, obj.contains_id);
 			if (obj.render == RT_POLYOBJ || obj.render == RT_MORPH) {
 				const int saved = obj.render_data.at(0);
 				if (saved < 0 || std::size_t(saved) >= level.model_names.size()) throw std::runtime_error("model index outside level model table");
@@ -823,6 +819,11 @@ extern "C" int xl_level_extensions_active(void)
 	return source && !(Game_mode & GM_MULTI);
 }
 
+extern "C" int xl_level_segment_group(int segment)
+{
+	return source && segment >= 0 && static_cast<std::size_t>(segment) < source->segments.size() ? source->segments[segment].group : 0;
+}
+
 extern "C" int xl_level_trigger_state_required(void)
 {
 	return source && (xl_boss_spawn_count() || !source->matcens.empty() || source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
@@ -845,11 +846,26 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	field(source->game_version);
 	if (xl_boss_spawn_count()) {
 		field(xl_boss_spawn_count());
+		field(static_cast<int>(source->vertices.size()));
+		field(static_cast<int>(source->segments.size()));
+		field(static_cast<int>(source->walls.size()));
+		field(static_cast<int>(source->objects.size()));
+		for (const auto &vertex : source->vertices)
+			for (int value : vertex) field(value);
+		for (const auto &segment : source->segments) {
+			field(segment.group);
+			for (int child : segment.children) field(child);
+			for (int vertex : segment.vertices) field(vertex);
+		}
+		for (const auto &wall : source->walls)
+			for (int value : { wall.segment, wall.side, wall.type, wall.flags, wall.state }) field(value);
 		for (std::size_t i = 0; i < source->objects.size(); ++i) {
 			const auto &object = source->objects[i];
 			if (object.type == OBJ_ROBOT) {
 				field(static_cast<int>(i));
 				field(object.id);
+				field(object.segment);
+				for (int value : object.position) field(value);
 			}
 		}
 	}

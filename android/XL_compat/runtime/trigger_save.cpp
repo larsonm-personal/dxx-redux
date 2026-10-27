@@ -33,7 +33,8 @@ namespace
 {
 using nlohmann::json;
 constexpr char tag[8] = { 'D', 'X', 'X', 'L', 'T', 'R', '0', '1' };
-constexpr std::uint32_t maximum = 64 * 1024;
+// Bounded wall/object events plus one lifecycle row per native object slot
+constexpr std::uint32_t maximum = 512 * 1024;
 void require(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
@@ -86,7 +87,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			for (int i = 0; i < xl_boss_spawn_count(); ++i) {
 				xl_boss_spawn_state state;
 				require(xl_boss_spawn_state_get(i, &state), "Cannot capture XL boss spawn state");
-				block["bosses"].push_back({ state.elapsed, state.owner, state.signature, state.id, state.interval });
+				block["bosses"].push_back({ state.elapsed, state.cloak_start, state.cloak_end, state.teleport, state.hit, state.death_elapsed, state.owner, state.signature, state.id, state.interval, state.dying, state.sound });
 			}
 		}
 		const auto payload = block.dump();
@@ -136,13 +137,13 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		if (bosses) {
 			require(saved.at("bosses").is_array() && saved.at("bosses").size() == static_cast<unsigned>(xl_boss_spawn_count()), "Invalid XL boss spawn state count");
 			for (const auto &row : saved.at("bosses")) {
-				require(row.is_array() && row.size() == 5, "Invalid XL boss spawn state row");
+				require(row.is_array() && row.size() == 12, "Invalid XL boss spawn state row");
 				for (std::size_t field = 0; field < row.size(); ++field) {
 					const auto &value = row[field];
 					require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= std::uint64_t(INT64_MAX)), "Invalid XL boss spawn state field");
-					require(!field || (value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX), "XL boss spawn state field overflow");
+					require(field < 6 || (value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX), "XL boss spawn state field overflow");
 				}
-				boss_states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>() });
+				boss_states.push_back({ row[0].get<std::int64_t>(), row[1].get<std::int64_t>(), row[2].get<std::int64_t>(), row[3].get<std::int64_t>(), row[4].get<std::int64_t>(), row[5].get<std::int64_t>(), row[6].get<int>(), row[7].get<int>(), row[8].get<int>(), row[9].get<int>(), row[10].get<int>(), row[11].get<int>() });
 			}
 		}
 		std::vector<xl_object_trigger_state> object_states;

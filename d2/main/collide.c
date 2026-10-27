@@ -1532,8 +1532,13 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 
 	if (robot->shields < 0 ) return 0;	//robot already dead...
 
-	if (Robot_info[robot->id].boss_flag && !d1_in_d2_ai_note_boss_damage(robot))
+	if (Robot_info[robot->id].boss_flag && !d1_in_d2_ai_note_boss_damage(robot)) {
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) xl_boss_note_hit(robot - Objects);
+		else
+#endif
 		Boss_hit_time = GameTime64;
+	}
 
 	//	Buddy invulnerable on level 24 so he can give you his important messages.  Bah.
 	//	Also invulnerable if his cheat for firing weapons is in effect.
@@ -1680,18 +1685,17 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 	Assert((d2_boss_index >= 0) && (d2_boss_index < NUM_D2_BOSSES));
 
 	//	See if should spew a bot.
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) xl_boss_weapon_spawn(robot - Objects, weapon - Objects, collision_point);
+	else
+#endif
 	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER)
 		if ((Weapon_info[weapon->id].matter && Boss_spews_bots_matter[d2_boss_index]) || (!Weapon_info[weapon->id].matter && Boss_spews_bots_energy[d2_boss_index])) {
 			if (Boss_spew_more[d2_boss_index])
 				// SIM RNG: this decides whether the boss spits an extra live robot
 				if (d_rand() > 16384) {
-					if (boss_spew_robot(robot, collision_point) != -1) {
-#ifdef DXX_XL_RUNTIME
-						if (xl_level_extensions_active()) xl_boss_spawn_allow_second(robot - Objects);
-						else
-#endif
+					if (boss_spew_robot(robot, collision_point) != -1)
 						Last_gate_time = GameTime64 - Gate_interval - 1;	//	Force allowing spew of another bot.
-					}
 				}
 			boss_spew_robot(robot, collision_point);
 		}
@@ -1797,6 +1801,10 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		}
 
 	if (!d1_in_d2_ai_boss_weapon_hit(robot) && Robot_info[robot->id].boss_flag) {
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) xl_boss_note_hit(robot - Objects);
+		else
+#endif
 		Boss_hit_time = GameTime64;
 		if (Robot_info[robot->id].boss_flag >= BOSS_D2) {
 			damage_flag = do_boss_weapon_collision(robot, weapon, collision_point);

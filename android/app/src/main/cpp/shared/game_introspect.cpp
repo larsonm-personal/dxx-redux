@@ -2217,7 +2217,7 @@ extern "C" char *game_introspect_get_state(void)
 		for (int index = 0; index < xl_boss_spawn_count(); ++index) {
 			xl_boss_spawn_state state;
 			if (!xl_boss_spawn_state_get(index, &state)) continue;
-			bosses[std::to_string(index)] = { { "owner", state.owner }, { "signature", state.signature }, { "id", state.id }, { "elapsed_ticks", state.elapsed }, { "interval_ticks", state.interval } };
+			bosses[std::to_string(index)] = { { "owner", state.owner }, { "signature", state.signature }, { "id", state.id }, { "elapsed_ticks", state.elapsed }, { "interval_ticks", state.interval }, { "cloak_start_delta", state.cloak_start }, { "cloak_end_delta", state.cloak_end }, { "teleport_delta", state.teleport }, { "hit_delta", state.hit }, { "death_elapsed", state.death_elapsed }, { "dying", state.dying }, { "death_sound", state.sound }, { "cloaked", state.owner >= 0 && Objects[state.owner].ctype.ai_info.CLOAKED != 0 } };
 		}
 		for (int index = 0; index <= Highest_object_index; ++index) {
 			const auto &object = Objects[index];

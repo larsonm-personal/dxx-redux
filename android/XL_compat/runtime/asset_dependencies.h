@@ -149,8 +149,10 @@ struct ObjectDependencies {
 	}
 	void contents(int type, int id)
 	{
-		if (type == OBJ_ROBOT) robot(id);
-		else if (type == OBJ_POWERUP) powerup(id);
+		if (type == OBJ_ROBOT) {
+			robot(id);
+			asset_require(!robot_data[id].boss_flag, "contained bosses require dynamic boss lifecycle support");
+		} else if (type == OBJ_POWERUP) powerup(id);
 		else asset_require(false, "unknown contained object dependency");
 	}
 	void robot(int id)

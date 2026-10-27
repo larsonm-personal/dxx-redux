@@ -988,7 +988,12 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 
 	//	Don't let the boss fire while in death roll.  Sorry, this is the easiest way to do this.
 	//	If you try to key the boss off obj->ctype.ai_info.dying_start_time, it will hose the endlevel stuff.
-	if (Boss_dying_start_time && Robot_info[obj->id].boss_flag)
+	if (Robot_info[obj->id].boss_flag &&
+#ifdef DXX_XL_RUNTIME
+	    (xl_level_extensions_active() ? xl_boss_is_dying(obj - Objects) : Boss_dying_start_time != 0))
+#else
+	    Boss_dying_start_time)
+#endif
 		return;
 
 	//	If player is cloaked, maybe don't fire based on how long cloaked and randomness.
@@ -2087,6 +2092,9 @@ int boss_fits_in_seg(object *boss_objp, int segnum)
 // --------------------------------------------------------------------------------------------------------------------
 void teleport_boss(object *objp)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) { xl_boss_teleport(objp - Objects); return; }
+#endif
 	int			rand_segnum, rand_index;
 	vms_vector	boss_dir;
 	Assert(Num_boss_teleport_segs > 0);
@@ -2124,6 +2132,9 @@ void teleport_boss(object *objp)
 //	----------------------------------------------------------------------
 void start_boss_death_sequence(object *objp)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) { xl_boss_start_death(objp - Objects); return; }
+#endif
 	if (Robot_info[objp->id].boss_flag) {
 		Boss_dying = 1;
 		Boss_dying_start_time = GameTime64;
@@ -2185,6 +2196,9 @@ void start_robot_death_sequence(object *objp)
 //	----------------------------------------------------------------------
 void do_boss_dying_frame(object *objp)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) return;
+#endif
 	int	rval;
 	sbyte sound_playing = Boss_dying_sound_playing != 0;
 
@@ -2259,6 +2273,9 @@ fix	Prev_boss_shields = -1;
 //	Do special stuff for a boss.
 void do_boss_stuff(object *objp, int player_visibility)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) { xl_boss_ai_frame(objp - Objects, player_visibility); return; }
+#endif
 	int	boss_id, boss_index;
 
 	boss_id = Robot_info[objp->id].boss_flag;

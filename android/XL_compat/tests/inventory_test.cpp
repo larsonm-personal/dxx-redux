@@ -316,6 +316,19 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 			patch(bad, trigger + 4, type, 1);
 			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
 		}
+		for (const int target : { -1, -32768 }) {
+			auto spawn = eligible;
+			patch(spawn, trigger + 4, 26, 1);
+			patch(spawn, trigger + 17, static_cast<std::uint32_t>(target), 2);
+			const auto prepared = xl_compat::prepare_gameplay_probe(spawn);
+			check(prepared.source.object_trigger_records[0].action.targets[0][0] == target, "arbitrary spawn selection sentinel lost");
+			patch(spawn, trigger + 7, 2, 1);
+			patch(spawn, trigger + 19, 32767, 2);
+			check(xl_compat::prepare_gameplay_probe(spawn).source.object_trigger_records[0].action.targets[1][0] == 32767, "inert extra spawn link was interpreted as geometry");
+			auto owner = prepared.source;
+			owner.objects[1].type = 7;
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(owner)).find("robot boss owner") != std::string::npos, "spawn action accepted a nonrobot owner");
+		}
 		for (const int flags : { 32, 64, 256, 32768 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 5, flags, 2);

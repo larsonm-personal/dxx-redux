@@ -90,7 +90,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 			block(record.object >= 0 && (static_cast<std::size_t>(record.object) >= level.objects.size() || level.objects[record.object].type != 2), "spawn-bot action requires a robot boss owner");
 			if (!action.targets.empty()) {
 				const int segment = action.targets[0][0];
-				block(segment < 0 || static_cast<std::size_t>(segment) >= level.segments.size() || level.segments[segment].function != 4, "spawn-bot selection target must be a robotmaker segment");
+				block(segment >= 0 && (static_cast<std::size_t>(segment) >= level.segments.size() || level.segments[segment].function != 4), "spawn-bot selection target must be a robotmaker segment or negative for arbitrary selection");
 			}
 		}
 		if (action.type == 31)

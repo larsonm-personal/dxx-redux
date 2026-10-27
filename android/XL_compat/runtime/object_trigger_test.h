@@ -279,7 +279,7 @@ static int object_trigger_test(int argc, char **argv)
 		require(state(death).owner == -1 && state(death).type == TT_ILLUSION_ON && (Walls[8].flags & WALL_ILLUSION_OFF) && !state(once).operated, "lethal combat/removal did not select the death event alone");
 		require(state_restore_all_sub(initial, 0) != 0, "event sample source restore failed");
 		std::ofstream samples(root.parent_path() / "object-event-samples.txt");
-		for (int type : { 14, int(TT_ILLUSION_OFF) })
+		for (int type : { 14, 26, int(TT_ILLUSION_OFF) })
 			for (int value : { -65536, -1, 0, 1, 5, 9, 10, 11, 65535, 65536, 5 * 65536, 10 * 65536, INT32_MAX })
 				for (int flags : { 0, 4, 8, 12 })
 					for (int damage : { 0, 1 })

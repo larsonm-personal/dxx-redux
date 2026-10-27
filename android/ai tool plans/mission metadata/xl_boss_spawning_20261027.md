@@ -24,7 +24,8 @@ objects/createobject.cpp, main/segment.cpp and include/maths.h.
    update evidence/catalog/roadmap with exact verified scope and remaining blockers
 
 Use controlled fixtures and introspection. No autonomous 3D navigation or new
-original-mission qualification from derived controls. No commits or pushes requested.
+original-mission qualification from derived controls. Publication authorization
+is recorded under Overnight continuation below.
 
 ## Progress
 
@@ -35,11 +36,14 @@ Reference retries placement five times, adjusts failure cooldown to one quarter
 interval, scales lifetime by difficulty, and suppresses ordinary spew whenever
 the owner retains a spawn action, including disabled actions.
 
-The first production native integration passes two simultaneous boss owners,
+The production native integration passes two simultaneous boss owners,
 linked and arbitrary selection, cooldown, morph/lifetime, disk restoration,
 malformed owner state and a stock transition. The fixture enlarges original
 Neptune geometry eightfold to give actual boss models room for placement retries;
-it supplies no original-level qualification. Android integration is in progress.
+it supplies no original-level qualification. Final Android acceptance passes all
+66 steps with four capture/roundtrip cycles, real generated-robot morph/combat,
+cloak/death restoration and identical protected-file hashes. The maintained
+evidence records the tested APK hash and run ID.
 
 An empty linked producer must use arbitrary selection until its ordinary handler
 initializes the third selection word. The new runtime tracks this initialization
@@ -48,14 +52,30 @@ extension preserves the earned selection initialization across disk and rewind
 restores; this is an intentional persistence correction, not byte-for-byte save
 format compatibility.
 
-Remaining before completion:
+The classic boss restore repair replaces negative shields with half health even
+while the saved boss is dying; the pinned XL reader contains the same repair.
+The separate runtime preserves the actual saved health and validates it against
+owned death state. This intentionally avoids resurrecting a dying boss or counting
+a second lethal hit. Stock restoration retains its existing repair policy.
 
-- Complete independent reference comparisons for placement/retry, timing/caps,
-  failure, lifetime, motion and RNG; expand real combat and owner-release controls
-- Finish the separate XL boss lifecycle where existing cloak/teleport/death
-  globals would otherwise couple concurrent owners. Inspect rendering, firing,
-  hit-time and death dispatch consumers as well as spawn dispatch
-- Complete Android disk/rewind/stock checks on the final APK and verify protected
-  files restore exactly; run formatting and focused regressions/catalog checks
-- Update executable support descriptions and maintained evidence only after the
-  complete acceptance scope passes
+Completed acceptance:
+
+- Independent extracted release-profile comparisons match 50 production cases
+  across five difficulties, including selection, placement/retry, timing/caps,
+  allocation failure, lifetime, motion and RNG. Final native combat controls pass
+- Separate cloak/teleport/death ownership now includes rendering, firing,
+  hit clocks and death dispatch; native rolling-death persistence passes
+- Final Android disk/rewind/stock checks pass and protected files restore exactly
+- All 14 focused native regressions, 12 private-asset policy checks, both catalogs
+  and scoped formatting pass. Executable support descriptions and maintained
+  evidence now describe the verified scope; all seven original candidates remain
+  blocked by independent decoding requirements
+
+## Overnight continuation
+
+The user authorized further chunks, branch/PR creation and publication for green
+CI, with no merges. Finish this chunk and PR first, then continue bounded gameplay
+support on separate branches/PRs. Keep each PR's CI green and preserve explicit
+unsupported requirements. Likely follow-up areas are equipment generators and the
+object payload layouts blocking original spawn-bot missions; audit reference data
+before choosing each subsequent implementation.

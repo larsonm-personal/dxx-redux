@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "boss_spawn.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -640,8 +641,13 @@ void draw_polygon_object(object *obj)
 			draw_cloaked_object(obj,light,engine_glow_value,Players[obj->id].cloak_time,Players[obj->id].cloak_time+CLOAK_TIME_MAX);
 		}
 		else if ((obj->type == OBJ_ROBOT) && (obj->ctype.ai_info.CLOAKED)) {
-			if (Robot_info[obj->id].boss_flag)
-				draw_cloaked_object(obj,light,engine_glow_value, Boss_cloak_start_time, Boss_cloak_end_time);
+			if (Robot_info[obj->id].boss_flag) {
+				fix64 start = Boss_cloak_start_time, end = Boss_cloak_end_time;
+#ifdef DXX_XL_RUNTIME
+				xl_boss_cloak_times(obj - Objects, &start, &end);
+#endif
+				draw_cloaked_object(obj,light,engine_glow_value, start, end);
+			}
 			else
 				draw_cloaked_object(obj,light,engine_glow_value, GameTime64-F1_0*10, GameTime64+F1_0*10);
 		} else {

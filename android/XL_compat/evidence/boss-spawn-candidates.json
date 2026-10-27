@@ -1,0 +1,252 @@
+{
+    "schema": 1,
+    "scope": "Fresh native decoding of hash-matched survey candidates; no admission or gameplay qualification",
+    "bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "levels": [
+        {
+            "archive": "missions/single/dinter.hog",
+            "archive_sha256": "5ddc056fe00971851fa55a0e93a316a4a0bce3591c65a7eb1b81dc21d168f4d3",
+            "level": "dinter.rl2",
+            "level_sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 1402
+                },
+                {
+                    "flags": 9,
+                    "value": 3,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 3983
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 1157
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 3267
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 2856
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 4446
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 3788
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 2287
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 5535
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 5057
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "offset 2119101: unsupported render layout at object 1480"
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-03.rl2",
+            "level_sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 235
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "offset 931690: unsupported render layout at object 486"
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-04.rl2",
+            "level_sha256": "bb7c41c638e01443a553615c24e8dfcd1ec31cbb6cc6a36883489c3be755469d",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 8,
+                    "value": 5,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 2612
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "offset 1238935: unsupported render layout at object 480"
+        },
+        {
+            "archive": "missions/sirius/antho1-3.hog",
+            "archive_sha256": "dd7dc745ffa67f97e8b12be8911ef02a19bedbd96a7800c3caed31b3ac03f9c8",
+            "level": "antho-d1.rl2",
+            "level_sha256": "85f95e124fde4d33b2ff3aabc9df5ad1da0da6548834071c00eeb051b0510759",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 9,
+                    "value": 5,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": -1
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "offset 767159: unsupported render layout at object 459"
+        },
+        {
+            "archive": "missions/sirius/antho1-3.hog",
+            "archive_sha256": "dd7dc745ffa67f97e8b12be8911ef02a19bedbd96a7800c3caed31b3ac03f9c8",
+            "level": "antho-d3.rl2",
+            "level_sha256": "a473016f838121e4b2c060daedb7677fdc1e37ff04a0178ffa999ee514273168",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 556
+                },
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 556
+                },
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 556
+                },
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 555
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "invalid trigger target 6"
+        },
+        {
+            "archive": "missions/sirius/antholgy.hog",
+            "archive_sha256": "1433a2dc2a20e4a067bad46b5edf7a91524664e9e7149a054a48aa83bef97165",
+            "level": "antholgy.rl2",
+            "level_sha256": "6ec9cf65b1858ce811a0e598161a043933bbd6c0a67f568bf09420fd33f9c9e2",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 9,
+                    "value": 5,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 5500
+                },
+                {
+                    "flags": 9,
+                    "value": 5,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 5500
+                },
+                {
+                    "flags": 9,
+                    "value": 5,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 5500
+                },
+                {
+                    "flags": 9,
+                    "value": 1,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 5499
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "offset 1787446: unsupported render layout at object 1251"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "subzero.rl2",
+            "level_sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e",
+            "survey_profile": "23/40",
+            "survey_spawn_actions": [
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 305
+                },
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 304
+                }
+            ],
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "native_rejection": "unsupported movement layout at object 4"
+        }
+    ]
+}

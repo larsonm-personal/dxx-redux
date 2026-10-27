@@ -1,3 +1,6 @@
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1186,7 +1189,11 @@ void nd_write_object(object *obj)
 
 	if (obj->type == OBJ_ROBOT) {
 		if (Robot_info[obj->id].boss_flag) {
-			if ((GameTime64 > Boss_cloak_start_time) && (GameTime64 < Boss_cloak_end_time))
+			if (
+#ifdef DXX_XL_RUNTIME
+			    xl_level_extensions_active() ? obj->ctype.ai_info.CLOAKED != 0 :
+#endif
+			    ((GameTime64 > Boss_cloak_start_time) && (GameTime64 < Boss_cloak_end_time)))
 				nd_write_byte(1);
 			else
 				nd_write_byte(0);

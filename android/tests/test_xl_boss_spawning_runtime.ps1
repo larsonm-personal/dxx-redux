@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = '1852162e1054cb55d97c93c27f6d15c03431a328a743a5a46d31c2f8e2a5738a'
+$expectedHog = '718b507ed3866a73f36fed6472810c2310d99dc1861aece09002101575c60d9c'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne '27f367855bbb7748536b29b3fbf84faf8583c216f3276a220eed2be959070ed2') {
     throw 'Requires the pinned derived fixture from xl_boss_spawning'
