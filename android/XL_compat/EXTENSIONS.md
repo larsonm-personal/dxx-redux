@@ -60,6 +60,12 @@ controls are recorded in [boss group evidence](evidence/boss-groups.md). This
 supersedes the earlier combined owner/group gate without qualifying a new
 original mission.
 
+Shield-damage and energy-drain wall actions now use the XL resource path, including
+percentage drain, replenishment/caps, authored protection bypass, scheduling and
+lethal continuation. Source/native and 62 Android steps pass for the default D2
+profile; Redux remains the alternate. Direct object actions and optional ship
+scaling/recharge remain unqualified. See [resource action evidence](evidence/player-resources.md).
+
 Trigger flag bits 32/64 are now admitted for implemented actions. Set-orient is
 inert outside the still-blocked boost action. Silent suppresses forcefield-off
 audio but enables the explicit illusion-off cue, matching the pinned source's

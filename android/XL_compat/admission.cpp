@@ -35,6 +35,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (issue.feature == "object_triggers") continue;
 		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "26" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (issue.feature == "trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
+		if (issue.feature == "trigger_type" && (issue.detail == "17" || issue.detail == "18")) continue;
 		if (experimental_water) {
 			if (level.level_version < 21 && issue.feature == "segment_function" && issue.detail == "7") continue;
 		}

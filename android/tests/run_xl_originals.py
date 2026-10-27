@@ -34,6 +34,8 @@ CORE_TESTS = (
         "xl_boss_transport",
         "xl_trigger_flags",
         "xl_boss_groups",
+        "xl_player_resources",
+        "xl_player_resource_reference",
         "xl_trigger_flag_reference",
         "xl_equipment_generators",
         "xl_effect_payloads",

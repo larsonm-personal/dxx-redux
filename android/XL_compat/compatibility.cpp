@@ -1,6 +1,7 @@
 #include "compatibility.h"
 #include "admission.h"
 #include "trigger_flags.h"
+#include "player_resources.h"
 #include "companion_lighting.h"
 #include "../app/src/main/cpp/shared/mission_descriptor_safe.h"
 #include <algorithm>
@@ -75,11 +76,13 @@ std::vector<CountedFeature> counted_features()
 		{ "delayed_wall_actions", "Delayed wall actions", "Positive and randomized delays implemented on supported wall actions", "supported", "Delayed wall actions retain the first activating actor and selected delay. Disabling suspends pending work; permanent actions can rearm after execution." },
 		{ "stateful_trigger_flags", "Permanent, alternate and autoplay wall actions", "Supported actions retain flag transitions and scheduling state across saves", "supported", "Permanent actions rearm, alternating actions switch to their opposite after execution, and autoplay actions start from frame processing. Unsupported actions remain blocked independently." },
 		{ "segment_groups", "Authored segment groups", "Singleplayer XL boss destination groups supported with neutral ownership", "supported", "Boss destination setup stays within its home segment's authored group even across otherwise passable connections. Group labels do not grant team ownership or qualify an original mission." },
+		{ "player_resource_actions", "Shield-damage and energy-drain wall actions", "Default singleplayer XL shield units, energy percentages, resource bounds and lethal continuation implemented", "supported", "Authored wall actions change local player resources directly, including through masters and timers. Negative values replenish; combat protections do not suppress these actions. Direct object actions, optional ship scaling/recharge and multiplayer remain unqualified." },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 {
 	features[16].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.group != -1; }));
+	features[17].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return player_resource_action(action.type); }));
 	const int trigger_types[] = { 14, 15, 16, 31 };
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
@@ -103,7 +106,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[14].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { const auto time = std::abs(std::int64_t(t.time)); return t.type != 25 && t.type != 29 && t.type != 30 && time >= 100 && time <= 900000; }));
 	features[15].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { return (t.flags & (8 | 16 | 128)) != 0; }));
 	for (const auto &trigger : v.triggers) {
-		const bool unsupported = (trigger.type > 14 && (trigger.type < 31 || trigger.type > 33)) || (trigger.flags & ~trigger_flags_mask) || std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; });
+		const bool unsupported = (trigger.type > 14 && !player_resource_action(trigger.type) && (trigger.type < 31 || trigger.type > 33)) || (trigger.flags & ~trigger_flags_mask) || (!player_resource_action(trigger.type) && std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; }));
 		const auto time = std::abs(std::int64_t(trigger.time));
 		if (unsupported && trigger.type != 25 && trigger.type != 29 && trigger.type != 30 && time >= 100 && time <= 900000) features[14].present_status = "blocked";
 		if (unsupported && (trigger.flags & (8 | 16 | 128))) features[15].present_status = "blocked";

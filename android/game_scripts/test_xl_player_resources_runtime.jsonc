@@ -1,0 +1,453 @@
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_player_resources_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived XL resources",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 150,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.in_no_damage": true,
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "player.energy": {
+                "range": [100, 100],
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "10",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "player.energy": {
+                "range": [100, 100],
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [97, 97],
+            },
+            "player.energy": {
+                "range": [100, 100],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [97, 97],
+            },
+            "player.energy": {
+                "range": [95, 95],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "6",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [94, 94],
+            },
+            "player.energy": {
+                "range": [90.25, 90.25],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "3",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [119, 119],
+            },
+            "player.energy": {
+                "range": [90.25, 90.25],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "4",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [119, 119],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "7",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [118, 118],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+            "xl_pilot.wall_triggers.7.type": 17,
+            "xl_pilot.wall_triggers.7.flags": 112,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [118, 118],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+            "xl_pilot.wall_triggers.7.type": 17,
+            "xl_pilot.in_no_damage": true,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "5",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [113, 113],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+            "xl_pilot.wall_triggers.5.flags": 4,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [113, 113],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+            "xl_pilot.wall_triggers.5.flags": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": false,
+            "xl_pilot.runtime_active": false,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.active": true,
+            "difficulty": 2,
+            "player.shields": {
+                "range": [113, 113],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+            "xl_pilot.wall_triggers.5.flags": 4,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 5,
+        "post_delay_ms": 150,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "3",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [138, 138],
+            },
+            "player.energy": {
+                "range": [135.375, 135.375],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "4",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "range": [138, 138],
+            },
+            "player.energy": {
+                "range": [200, 200],
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "2",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_dead": true,
+            "player.shields": {
+                "range": [-0.0000152587890625, -0.0000152587890625],
+            },
+            "player.energy": {
+                "range": [200, 200],
+            },
+            "xl_pilot.wall_triggers.2.flags": 6,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player_dead": true,
+            "player.shields": {
+                "range": [-0.0000152587890625, -0.0000152587890625],
+            },
+            "player.energy": {
+                "range": [200, 200],
+            },
+        },
+    },
+]

@@ -93,6 +93,13 @@ finish original-mission qualification
     [recorded scope](../../XL_compat/evidence/boss-groups.md). Team ownership and
     original missions retain separate gates
 
+12. Player-resource wall actions: type-17 shield units and type-18 energy
+    percentages have separate XL semantics, with 840 source comparisons, real
+    native wall/master/scheduler/death controls and 62 Android lifecycle steps.
+    See [resource evidence](../../XL_compat/evidence/player-resources.md). Default
+    ship behavior is qualified within that scope; direct object variants,
+    optional recharge/scaling and original missions retain separate requirements
+
 Return to delayed object-chain lifecycle and other owner variants as part of the
 unfinished event area above. Use the refreshed original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as

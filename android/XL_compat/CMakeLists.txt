@@ -98,6 +98,7 @@ if(BUILD_TESTING)
         include(tests/reference_boss.cmake)
         include(tests/reference_boss_routes.cmake)
         include(tests/reference_trigger_flags.cmake)
+        include(tests/reference_player_resources.cmake)
         include(tests/reference_equipment.cmake)
         include(tests/reference_effects.cmake)
     endif()
@@ -261,6 +262,13 @@ if(BUILD_TESTING)
                     -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-groups -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_groups.cmake)
             set_tests_properties(xl_boss_groups PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_player_resources
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/player-resources
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/player_resources.cmake)
+            set_tests_properties(xl_player_resources PROPERTIES TIMEOUT 90)
             set(xl_equipment_oracle_args)
             if(TARGET xl_equipment_reference)
                 list(APPEND xl_equipment_oracle_args

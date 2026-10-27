@@ -291,6 +291,11 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		}
 		const auto admitted = xl_compat::prepare_gameplay_probe(eligible);
 		check(admitted.source.object_trigger_records.size() == 3, "probe discarded admitted object source records");
+		for (int type : { 17, 18 }) {
+			auto unsupported_resource = eligible;
+			patch(unsupported_resource, trigger + 4, type, 1);
+			rejects([&] { xl_compat::prepare_gameplay_probe(unsupported_resource); });
+		}
 		const auto admitted_report = xl_compat::compatibility_json("objects.rl2", eligible);
 		check(feature_row(admitted_report, "attached_trigger_count").find("\"status\": \"partial\"") != std::string::npos, "native checkpoint claimed complete object qualification");
 		auto chain = admitted.source;
@@ -455,6 +460,22 @@ void trigger_chain_inventory_contract()
 		const auto original = fixture(version);
 		const auto inventory = xl_compat::inspect_level(original);
 		const auto &section = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
+		for (int type : { 17, 18 })
+			for (int value : { INT32_MIN, -65536, 0, 1, 196608, 327680, 13172736, INT32_MAX }) {
+				auto bytes = original;
+				bytes.insert(bytes.begin() + section.offset, 52, 0);
+				patch(bytes, inventory.game_offset + 75, 1);
+				patch(bytes, section.offset, type, 1);
+				patch(bytes, section.offset + 1, 112, 1);
+				patch(bytes, section.offset + 2, 1, 1);
+				patch(bytes, section.offset + 4, value);
+				patch(bytes, section.offset + 8, 500);
+				patch(bytes, section.offset + 12, -32768, 2);
+				patch(bytes, section.offset + 32, -32768, 2);
+				const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+				check(probe.source.triggers[0].value == value && probe.source.triggers[0].targets[0] == std::array<int, 2>{ -32768, -32768 }, "resource action lost raw value or inert links");
+				check(feature_row(xl_compat::compatibility_json("resource.rl2", bytes), "player_resource_actions").find("\"status\": \"supported\"") != std::string::npos, "browser blocks implemented resource action");
+			}
 		for (int type : { 31, 32, 33 }) {
 			auto bytes = original;
 			bytes.insert(bytes.begin() + section.offset, 52, 0);
