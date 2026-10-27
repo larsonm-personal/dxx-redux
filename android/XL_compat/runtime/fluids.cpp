@@ -75,13 +75,12 @@ vms_vector normalize(const vms_vector &value)
 }
 vms_vector random_direction()
 {
-	vms_vector result;
+	fix parts[3];
 	const int first = d_rand() % 3;
-	fix *parts[] = { &result.x, &result.y, &result.z };
 	const int axis = first == 2 ? 0 : first == 1 ? 1
 	                                             : 2;
-	for (int i = 0; i < 3; ++i) *parts[(axis + i) % 3] = (16383 - d_rand()) | (i == 0 ? 1 : 0);
-	return normalize(result);
+	for (int i = 0; i < 3; ++i) parts[(axis + i) % 3] = (16383 - d_rand()) | (i == 0 ? 1 : 0);
+	return normalize({ parts[0], parts[1], parts[2] });
 }
 } // namespace
 
