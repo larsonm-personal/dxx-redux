@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <fstream>
+#include <filesystem>
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -157,6 +158,106 @@ void teleport_inventory_contract()
 	}
 }
 
+void object_trigger_inventory_contract(const char *directory = nullptr)
+{
+	for (const int version : { 15, 17, 23 }) {
+		auto bytes = fixture(version);
+		const auto base = xl_compat::inspect_level(bytes);
+		const auto game = base.game_offset;
+		const auto old_trigger = std::find_if(base.sections.begin(), base.sections.end(), [](const xl_compat::Section &s) { return s.name == "triggers"; })->offset;
+		bytes.resize(old_trigger);
+		patch(bytes, game + 35, static_cast<std::uint32_t>(bytes.size()));
+		patch(bytes, game + 39, 2);
+		for (int i = 0; i < 2; ++i) {
+			const auto start = bytes.size();
+			bytes.resize(start + (version == 23 ? 80 : 79));
+			patch(bytes, start, 2, 1);
+		}
+		const auto trigger = bytes.size();
+		patch(bytes, game + 71, static_cast<std::uint32_t>(trigger));
+		put(bytes, 3, 4);
+		for (const int type : { 14, 0, 31 }) {
+			put(bytes, type, 1);
+			put(bytes, type == 14 ? 1024 | 8 : 16, 2);
+			put(bytes, 1, 1);
+			put(bytes, 0, 1);
+			put(bytes, 5 * 65536, 4);
+			put(bytes, 1000, 4);
+			for (int i = 0; i < 10; ++i) put(bytes, 0, 2);
+			put(bytes, type == 14 ? 0xffff : 0, 2);
+			for (int i = 1; i < 10; ++i) put(bytes, 0, 2);
+		}
+		const auto owners = bytes.size();
+		for (const int owner : { 1, 0, -1 }) {
+			if (version != 23) {
+				put(bytes, 32767, 2);
+				put(bytes, 0xfffe, 2);
+			}
+			put(bytes, static_cast<std::uint32_t>(owner), 2);
+		}
+		const auto tail = bytes.size();
+		if (version == 15) {
+			put(bytes, 1, 2);
+			for (int i = 1; i < 700; ++i) put(bytes, 0xffff, 2);
+		} else if (version == 17) {
+			put(bytes, 2, 2);
+			for (const int value : { 0, 1, 1, 0 }) put(bytes, value, 2);
+		}
+		const auto decoded = xl_compat::inspect_level(bytes);
+		check(decoded.object_triggers == 3 && decoded.object_trigger_records.size() == 3, "object trigger count/records lost");
+		check(decoded.object_trigger_records[0].object == 1 && decoded.object_trigger_records[1].object == 0 && decoded.object_trigger_records[2].object == -1, "object owner order changed");
+		check(decoded.object_trigger_records[0].action.flags == 1032 && decoded.object_trigger_records[0].action.targets[0][1] == -1, "wide flags or inert object teleport side lost");
+		check(decoded.object_trigger_records[2].action.type == 31 && decoded.object_trigger_records[2].action.value == 5 * 65536 && decoded.object_trigger_records[2].action.time == 1000, "inspection normalized authored object fields");
+		check(decoded.object_trigger_records[1].previous == (version == 23 ? -1 : 32767) && decoded.object_trigger_records[1].next == (version == 23 ? -1 : -2), "legacy inert links changed");
+		check(decoded.object_trigger_heads.size() == (version == 15 ? 700u : 0u) && decoded.object_trigger_sparse_heads.size() == (version == 17 ? 2u : 0u), "reference layout changed");
+		const auto report = xl_compat::compatibility_json("objects.rl2", bytes);
+		check(feature_row(report, "attached_trigger_count").find("\"count\": 3") != std::string::npos, "decoded object count remains unknown");
+		check(feature_row(report, "object_triggers").find("\"status\": \"blocked\"") != std::string::npos && !xl_compat::runtime_blockers(decoded).empty(), "parsing enabled unverified object events");
+		check(xl_compat::inventory_json(decoded).find("\"object_trigger_records\"") != std::string::npos, "decoded object action evidence missing");
+		if (directory) {
+			std::filesystem::create_directories(directory);
+			std::ofstream file(std::filesystem::path(directory) / (std::to_string(version) + ".rl2"), std::ios::binary);
+			file.write(reinterpret_cast<const char *>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+			file.close();
+			check(bool(file), "cannot export object reference fixture");
+		}
+		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+		for (const auto value : { 0x7fffffffU, 0xffffffffU }) {
+			auto bad = bytes;
+			patch(bad, trigger, value);
+			rejects([&] { xl_compat::inspect_level(bad); });
+		}
+		for (const auto value : { 2, -2 }) {
+			auto bad = bytes;
+			patch(bad, owners + (version == 23 ? 0 : 4), static_cast<std::uint32_t>(value), 2);
+			rejects([&] { xl_compat::inspect_level(bad); });
+		}
+		for (const auto field : { trigger + 4 + 13, trigger + 4 + 53 + 33 }) {
+			auto bad = bytes;
+			patch(bad, field, 0xffff, 2);
+			rejects([&] { xl_compat::inspect_level(bad); });
+		}
+		for (const auto size : { trigger + 4, owners - 1, tail - 1, bytes.size() - 1 }) {
+			auto bad = bytes;
+			bad.resize(size);
+			rejects([&] { xl_compat::inspect_level(bad); });
+		}
+		auto crossing_section = bytes;
+		patch(crossing_section, game + 83, static_cast<std::uint32_t>(owners + 1));
+		patch(crossing_section, game + 87, 1);
+		rejects([&] { xl_compat::inspect_level(crossing_section); });
+		if (version == 17) {
+			for (const auto value : { 0xffffU, 32767U }) {
+				auto bad = bytes;
+				patch(bad, tail, value, 2);
+				rejects([&] { xl_compat::inspect_level(bad); });
+			}
+		}
+		bytes.push_back(0);
+		rejects([&] { xl_compat::inspect_level(bytes); });
+	}
+}
+
 void feature_contract()
 {
 	auto bytes = fixture();
@@ -164,7 +265,7 @@ void feature_contract()
 	patch(declared, declared.size() - 4, 1);
 	const auto declaration_report = xl_compat::compatibility_json("declaration.rl2", declared);
 	check(feature_row(declaration_report, "attached_trigger_count").find("\"count\": null") != std::string::npos, "unvalidated object declaration became inspected count");
-	check(declaration_report.find("records unverified") != std::string::npos, "object declaration was not qualified");
+	check(declaration_report.find("object trigger count exceeds section extent") != std::string::npos, "truncated object declaration was not rejected");
 	auto nonempty_head = bytes;
 	nonempty_head.resize(bytes.size() + 1400, 255);
 	patch(nonempty_head, bytes.size(), 0, 2);
@@ -652,6 +753,10 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
+			object_trigger_inventory_contract(argv[2]);
+			return 0;
+		}
 		// Independent encoding controls: modern functions never imply old properties
 		xl_compat::Segment property_segment{};
 		const int legacy_properties[] = { 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 4, 8, 4, 0, 16 };
@@ -671,6 +776,7 @@ int main(int argc, char **argv)
 		serialization_17_contract();
 		teleport_inventory_contract();
 		trigger_chain_inventory_contract();
+		object_trigger_inventory_contract();
 		feature_contract();
 		segment_flags_contract();
 		light_count_contract();

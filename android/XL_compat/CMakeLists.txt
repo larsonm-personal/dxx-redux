@@ -93,6 +93,7 @@ if(BUILD_TESTING)
         include(tests/reference_teleport.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
+        include(tests/reference_object.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")

@@ -40,6 +40,10 @@ finish original-mission qualification
    disk/memory controls complete within the
    [scheduler evidence](../../XL_compat/evidence/trigger-scheduler.md) and
    [chunk plan](xl_trigger_scheduler_20261026.md)
+4. Object-attached triggers: in progress. Bounded records/owner decoding and
+   independent reader comparisons are in the
+   [chunk plan](xl_object_triggers_20261026.md); production events, persistence
+   and native/Android gameplay acceptance remain required
 
 Next take object-attached trigger records, references and activation as a coherent
 chunk. Audit damage/death and other event rules before selecting original

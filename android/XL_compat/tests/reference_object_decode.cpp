@@ -1,0 +1,166 @@
+// Storage adapters for the extracted XL reader, with Redux used only for comparison
+#include "inventory.h"
+#include <algorithm>
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <stdexcept>
+#include <vector>
+#define TT_MASTER    31
+#define TT_COUNTDOWN 25
+#define TT_MESSAGE   29
+#define TT_SOUND     30
+#define TF_DISABLED  4
+#define TF_PERMANENT 8
+#define TF_AUTOPLAY  128
+#define X2I(value)   ((value) >> 16)
+void check(bool condition, const char *message)
+{
+	if (!condition) throw std::runtime_error(message);
+}
+void Error(const char *message)
+{
+	throw std::runtime_error(message);
+}
+struct CFile {
+	xl_compat::Bytes bytes;
+	std::size_t position;
+	int ReadByte()
+	{
+		return bytes.at(position++);
+	}
+	int ReadUShort()
+	{
+		const auto low = ReadByte();
+		return low | (ReadByte() << 8);
+	}
+	int ReadShort()
+	{
+		const int value = ReadUShort();
+		return value < 32768 ? value : value - 65536;
+	}
+	int ReadInt()
+	{
+		const auto low = std::uint32_t(ReadUShort());
+		return static_cast<std::int32_t>(low | (std::uint32_t(ReadUShort()) << 16));
+	}
+	int ReadFix()
+	{
+		return ReadInt();
+	}
+	void Seek(std::size_t offset, int origin)
+	{
+		check(origin == SEEK_CUR && offset <= bytes.size() - position, "Reference seek out of bounds");
+		position += offset;
+	}
+};
+struct CTriggerTargets {
+	int segments[10]{}, sides[10]{};
+	void Read(CFile &file)
+	{
+		for (auto &value : segments) value = file.ReadShort();
+		for (auto &value : sides) value = file.ReadShort();
+	}
+};
+struct CTrigger : CTriggerTargets {
+	int type = 0, flags = 0, value = 0, times[2]{}, m_nLinks = 0;
+	struct {
+		int nObject = -1, nPlayer = -1, nChannel = -1, tOperated = -1;
+		void Clear() {}
+	} m_info;
+	int &Type()
+	{
+		return type;
+	}
+	int GetValue() const
+	{
+		return value;
+	}
+	void SetValue(int v)
+	{
+		value = v;
+	}
+	void SetTime(int index, int v)
+	{
+		times[index] = v;
+	}
+	void SetFlags(int bits)
+	{
+		flags |= bits;
+	}
+	void ClearFlags(int bits)
+	{
+		flags &= ~bits;
+	}
+	bool Flagged(int bits) const
+	{
+		return (flags & bits) != 0;
+	}
+	void Read(CFile &, int32_t);
+};
+std::vector<CTrigger> object_triggers;
+#define OBJTRIGGERS object_triggers
+struct {
+	int fileinfoVersion;
+} gameTopFileInfo;
+struct {
+	struct {
+		int m_nTriggers[2]{};
+		bool Create(int count, bool attached)
+		{
+			check(attached && count > 0 && count < 10000, "Unexpected reference allocation");
+			object_triggers.assign(count, CTrigger{});
+			return true;
+		}
+	} trigData;
+} gameData;
+#include "xl_reference_object_read.h"
+
+void compare_level(const xl_compat::Bytes &bytes)
+{
+	const auto inventory = xl_compat::inspect_level(bytes);
+	const auto trigger = std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
+	check(trigger != inventory.sections.end() && inventory.object_triggers > 0, "Missing positive object section");
+	auto end = bytes.size();
+	for (const auto &section : inventory.sections)
+		if (section.offset > trigger->offset) end = std::min(end, static_cast<std::size_t>(section.offset));
+	CFile file{ bytes, static_cast<std::size_t>(trigger->offset) + inventory.triggers.size() * 52 };
+	gameTopFileInfo.fileinfoVersion = inventory.game_version;
+	check(ReadObjectSection(file) == 0 && file.position == end, "Reference consumed a different object section extent");
+	check(object_triggers.size() == inventory.object_trigger_records.size(), "Reference object count differs");
+	for (std::size_t i = 0; i < object_triggers.size(); ++i) {
+		const auto &reference = object_triggers[i];
+		const auto &decoded = inventory.object_trigger_records[i];
+		const auto &action = decoded.action;
+		check(reference.m_info.nObject == decoded.object && reference.type == action.type && reference.flags == action.flags && reference.m_nLinks == static_cast<int>(action.targets.size()), "Reference object identity or action differs");
+		const int time = action.type == TT_COUNTDOWN || action.type == TT_MESSAGE || action.type == TT_SOUND ? action.time : -1;
+		check(reference.value == (action.type == TT_MASTER ? 0 : action.value) && reference.times[0] == time && reference.times[1] == -1, "Reference object normalization differs");
+		for (std::size_t target = 0; target < action.targets.size(); ++target)
+			check(reference.segments[target] == action.targets[target][0] && reference.sides[target] == action.targets[target][1], "Reference object targets differ");
+	}
+	std::cout << "Matched " << object_triggers.size() << " decoded object records and owner references for " << inventory.level_version << '/' << inventory.game_version << '\n';
+}
+
+int main(int argc, char **argv)
+{
+	try {
+		check(argc == 2, "Requires source level or HOG");
+		std::ifstream input(argv[1], std::ios::binary);
+		check(bool(input), "Cannot open source level");
+		xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+		if (bytes.size() >= 3 && bytes[0] == 'D' && bytes[1] == 'H' && bytes[2] == 'F') {
+			int count = 0;
+			for (const auto &member : xl_compat::read_hog(bytes)) {
+				if (member.name.size() < 4 || member.name.substr(member.name.size() - 4) != ".rl2") continue;
+				compare_level(member.bytes);
+				++count;
+			}
+			check(count > 0, "No original levels compared");
+		} else compare_level(bytes);
+		return 0;
+	} catch (const std::exception &error) {
+		std::cerr << error.what() << '\n';
+		return 1;
+	}
+}

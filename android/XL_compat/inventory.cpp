@@ -185,6 +185,35 @@ void issues_json(std::ostream &s, const std::vector<Issue> &issues)
 	}
 	s << (issues.empty() ? "]" : "\n  ]");
 }
+
+Trigger read_trigger(Reader &r, Inventory &out, int index, int segment_count, bool attached)
+{
+	Trigger t{};
+	t.type = r.u8();
+	t.flags = attached ? r.u16() : r.u8();
+	const int count = r.u8();
+	r.skip(1);
+	require(count <= 10, "invalid trigger target count " + std::to_string(index));
+	t.value = r.s32();
+	t.time = r.s32();
+	std::array<int, 10> segments{}, sides{};
+	for (auto &v : segments) v = r.s16();
+	for (auto &v : sides) v = r.s16();
+	const std::string prefix = attached ? "object_" : "";
+	for (int j = 0; j < count; ++j) {
+		// Object teleports use only the segment; their serialized side is inert
+		if (attached && t.type == 14) require(segments[j] >= 0 && segments[j] < segment_count, "invalid object teleport destination " + std::to_string(index));
+		else if (t.type <= 14 || t.type == 31) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(index));
+		if (t.type == 32 || t.type == 33) {
+			if (sides[j] < 0) issue(out.unsupported, prefix + "effect_trigger_target", index, "enable/disable effect-object targets require effect runtime support");
+			else require(segments[j] >= 0 && segments[j] < segment_count && sides[j] < 6, "invalid trigger target " + std::to_string(index));
+		}
+		t.targets.push_back({ segments[j], sides[j] });
+	}
+	if (t.type > 13) issue(out.unsupported, prefix + "trigger_type", index, std::to_string(t.type));
+	if (t.flags & ~159) issue(out.unsupported, prefix + "trigger_flags", index, std::to_string(t.flags));
+	return t;
+}
 } // namespace
 
 Inventory inspect_level(const Bytes &bytes)
@@ -334,44 +363,41 @@ Inventory inspect_level(const Bytes &bytes)
 	const auto &triggers = section(out, "triggers");
 	if (triggers.offset >= 0) {
 		auto r = section_reader(bytes, out, triggers, 52);
-		for (int i = 0; i < triggers.count; ++i) {
-			Trigger t{};
-			t.type = r.u8();
-			t.flags = r.u8();
-			const int count = r.u8();
-			r.skip(1);
-			require(count <= 10, "invalid trigger target count " + std::to_string(i));
-			t.value = r.s32();
-			t.time = r.s32();
-			std::array<int, 10> segments{}, sides{};
-			for (auto &v : segments) v = r.s16();
-			for (auto &v : sides) v = r.s16();
-			for (int j = 0; j < count; ++j) {
-				// XL trigger types can use non-geometric targets; retain rather than reinterpret
-				if (t.type <= 14 || t.type == 31) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(i));
-				if (t.type == 32 || t.type == 33) {
-					if (sides[j] < 0) issue(out.unsupported, "effect_trigger_target", i, "enable/disable effect-object targets require effect runtime support");
-					else require(segments[j] >= 0 && segments[j] < segment_count && sides[j] < 6, "invalid trigger target " + std::to_string(i));
-				}
-				t.targets.push_back({ segments[j], sides[j] });
-			}
-			if (t.type > 13) issue(out.unsupported, "trigger_type", i, std::to_string(t.type));
-			if (t.flags & ~159) issue(out.unsupported, "trigger_flags", i, std::to_string(t.flags));
-			out.triggers.push_back(t);
-		}
+		for (int i = 0; i < triggers.count; ++i) out.triggers.push_back(read_trigger(r, out, i, segment_count, false));
 		out.object_triggers = r.s32();
 		require(out.object_triggers >= 0, "negative object trigger count");
-		if (out.object_triggers) issue(out.unsupported, "object_triggers", -1, std::to_string(out.object_triggers));
-		const auto remaining = section_end(out, triggers, bytes.size()) - r.position();
-		if (!out.object_triggers && out.game_version == 36) {
-			// Observed game-36 writers retain a sparse-reference count even when empty
-			// The reference also permits omitting this neutral tail entirely
-			if (remaining) require(r.u16() == 0, "nonempty game-36 object reference table is not supported");
-			require(r.position() == section_end(out, triggers, bytes.size()), "unexpected game-36 object reference tail");
-		} else if (!out.object_triggers && out.game_version == 40) {
+		const auto end = section_end(out, triggers, bytes.size());
+		const auto remaining = end - r.position();
+		if (out.object_triggers) {
+			const auto width = out.game_version >= 40 ? 55u : 59u;
+			require(static_cast<std::size_t>(out.object_triggers) <= remaining / width, "object trigger count exceeds section extent");
+			issue(out.unsupported, "object_triggers", -1, std::to_string(out.object_triggers) + " decoded records; object event runtime is not implemented");
+			for (int i = 0; i < out.object_triggers; ++i) out.object_trigger_records.push_back({ read_trigger(r, out, i, segment_count, true) });
+			for (int i = 0; i < out.object_triggers; ++i) {
+				auto &record = out.object_trigger_records[i];
+				if (out.game_version < 40) {
+					record.previous = r.s16();
+					record.next = r.s16();
+				}
+				record.object = r.s16();
+				require(record.object >= -1 && record.object < section(out, "objects").count, "invalid object trigger owner " + std::to_string(i));
+			}
+			if (out.game_version < 36) {
+				for (int i = 0; i < 700; ++i) out.object_trigger_heads.push_back(r.s16());
+			} else if (out.game_version < 40) {
+				const int count = r.s16();
+				require(count >= 0 && static_cast<std::size_t>(count) <= (end - r.position()) / 4, "invalid object trigger sparse reference count");
+				for (int i = 0; i < count; ++i) out.object_trigger_sparse_heads.push_back({ r.s16(), r.s16() });
+			}
+			require(r.position() == end, "unexpected object trigger section tail");
+		} else if (out.game_version == 36) {
+			// Observed writers retain an empty sparse count; the reference permits omission
+			if (remaining) require(r.u16() == 0, "nonempty game-36 object reference table without triggers");
+			require(r.position() == end, "unexpected game-36 object reference tail");
+		} else if (out.game_version == 40) {
 			require(remaining == 0, "unexpected game-40 object reference tail");
-		} else if (!out.object_triggers && remaining == 1400) {
-			// Older writers retain the 700-entry object head table even with no triggers
+		} else if (remaining == 1400) {
+			// Neutral legacy padding is accepted independently of the reference read path
 			for (int i = 0; i < 700; ++i) {
 				const auto head = r.s16();
 				out.object_trigger_heads.push_back(head);
@@ -626,6 +652,23 @@ std::string inventory_json(const Inventory &v)
 		s << v.object_trigger_heads[i];
 	}
 	s << ']';
+	if (!v.object_trigger_records.empty()) {
+		s << ",\n  \"object_trigger_records\": [";
+		for (std::size_t i = 0; i < v.object_trigger_records.size(); ++i) {
+			if (i) s << ',';
+			const auto &record = v.object_trigger_records[i];
+			const auto &t = record.action;
+			s << "\n    {\"object\": " << record.object << ", \"previous\": " << record.previous << ", \"next\": " << record.next
+			  << ", \"type\": " << t.type << ", \"flags\": " << t.flags << ", \"value\": " << t.value << ", \"time\": " << t.time << ", \"targets\": [";
+			for (std::size_t j = 0; j < t.targets.size(); ++j) {
+				if (j) s << ", ";
+				array_json(s, t.targets[j]);
+			}
+			s << "]}";
+		}
+		s << "\n  ]";
+	}
+	if (!v.object_trigger_sparse_heads.empty()) rows_json(s, "object_trigger_sparse_heads", v.object_trigger_sparse_heads);
 	s << ",\n  \"objects\": [";
 	for (std::size_t i = 0; i < v.objects.size(); ++i) {
 		if (i) s << ',';
