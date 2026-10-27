@@ -23,15 +23,22 @@ spawn, cloak, teleport, hit and death state. Redux retains its stock implementat
 Admission validates boss ownership and the complete selection-resource closure;
 legacy equipment layouts, expanded data/capacities and boss object teleports remain gated. See the
 [boss evidence](evidence/boss-spawning.md) for reference comparisons, lifecycle
-controls, intentional restore corrections and final Android acceptance. Seven
-surveyed original spawn-bot levels still have independent decoding blockers.
+controls, intentional restore corrections and final Android acceptance. Original
+spawn-bot missions retain independent runtime and resource blockers.
 
 Modern 23/40 equipment makers now have separate XL production and checked
 disk/rewind state. Native/reference and 61-step Android controls cover authored
 activation, timing, allocation, pickups, replenishment and mixed robot/item
 production. Legacy layouts, unsupported item types and independent mission
-requirements remain gated. See [equipment evidence](evidence/equipment-generators.md);
-all eleven surveyed equipment-bearing originals still have decoding blockers.
+requirements remain gated. See [equipment evidence](evidence/equipment-generators.md).
+
+Effect payload inspection now covers particle, lightning, sound and empty thruster
+records, with raw identity preservation and separately exposed reader defaults.
+Five of seven spawn-bot and seven of eleven equipment candidates now decode
+completely; none gains runtime qualification. Unknown layouts and independent
+requirements still reject. The browser shows detected effect counts as
+unsupported. See [effect inspection evidence](evidence/effect-layouts.md) for
+source comparisons, production rejection/recovery and Android dialog checks.
 
 Immediate singleplayer wall teleports now use detected requirements, including
 destination validation, actor dispatch, reference-matched rotation and source
@@ -343,7 +350,7 @@ unsupported XL extensions
 | `navigation` Teleports, boosts and spawn destinations | 108 wall teleports, 281 boosts, 20 spawn-setting actions; object-trigger transport also occurs                                          | Singleplayer wall teleports include delays and stateful flags; orientation/silent flags, boosts, spawn actions and route-analysis edges remain unsupported                                                                 | Reference transforms, actor crossings, arrival collision and source save restoration verified; campaign and guidebot routing unqualified         |
 | `generators` Equipment and spawning                   | 53 equipment generators in 11 levels; robot assignment permutations occur in original Ahayweh Gate levels                               | [Bounded robot matcens verified](evidence/robot-generators.md) natively/on Android, including disk/rewind; modern equipment separately verified; legacy/expanded data gated; boss spawning has separate lifecycle evidence | Assignment, activation, selection, health, contact impulse/RNG, allocation retry, exhaustion and restore; original missions separately qualified |
 | `wall_materials` Authored opacity/materials           | Type-8 colored walls (Glass House: 126), opacity on ordinary walls; pilot has 14 nonzero cloak/opacity records                          | Classic cloaking/bitmap transparency exists; XL semantics unverified                                                                                                                                                       | Visibility, collision, targeting and projectiles independently; fixed opacity and layers                                                         |
-| `effect_objects` Particles, lightning, ambient sound  | In 129 decoded sections: 330 particle, 151 lightning, 1335 sound records                                                                | XL payloads and behavior unverified                                                                                                                                                                                        | Versioned payload ends, preserved IDs/references, activation, looping-audio cleanup; cues may affect gameplay                                    |
+| `effect_objects` Particles, lightning, ambient sound  | In 129 decoded sections: 330 particle, 151 lightning, 1335 sound records                                                                | [Bounded payloads inspected](evidence/effect-layouts.md); runtime activation/audio/interactions unsupported                                                                                                                | Versioned payload ends, preserved IDs/references, activation, looping-audio cleanup; cues may affect gameplay                                    |
 | `resource_scope` Precedence and isolation             | Mission/level textures, models, music, sounds, CLR and custom-data overrides                                                            | Standard resource paths and HMQ dispatch exist; XL precedence/cleanup unverified                                                                                                                                           | Mission A -> stock -> mission B, failed overrides, saves and audio/model/texture cleanup                                                         |
 
 No surveyed level exceeds current segment/vertex capacities (maximum 6744/19257).

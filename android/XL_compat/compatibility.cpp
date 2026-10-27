@@ -34,7 +34,7 @@ const Category categories[] = {
 	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
 	{ "generators", "Equipment generators and extended spawning", "Bounded robot matcens, modern equipment makers and XL boss spawn actions implemented with owned lifecycle and disk/rewind state", "Robot generation uses authored contents, boss ownership and detected resource requirements. Expanded gameplay data and capacities remain separate gates; derived controls do not qualify a mission." },
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
-	{ "effect_objects", "Particles, lightning and ambient sounds", "XL payloads, activation and audio cues require individual verification", "Particles, lightning and ambient sound objects add effects to the mine. Their payloads, activation and presentation require separate qualification." },
+	{ "effect_objects", "Particles, lightning and ambient sounds", "Bounded effect payloads decoded; activation, sound cues and runtime behavior unsupported", "Particles, lightning and ambient sound objects add effects to the mine. Payload inspection does not implement their activation, audio or gameplay interactions." },
 	{ "resource_scope", "Mission resource precedence and isolation", "Standard HXM/extra-HAM and HMQ paths exist; XL override semantics and transition cleanup unverified", "A mission can override stock resources. The right definitions must load for that mission and be cleared or restored when switching missions." },
 	{ "package_identity", "Package identity and resource ownership", "Descriptor ownership and immutable publication exist; HOG aliases and ambiguous wrappers need qualification", "Archive name, mission title, descriptor and selected HOG are different identities. Package resources must belong to the selected mission; a level-only report cannot establish their ownership or absence." },
 	{ "scoped_textures", "Mission and level texture folders", "Android XL-enabled mission-owned static TGA lookup is partial; GLES3 merged walls support power-of-two binary cutouts and super-hole masks. Opaque and binary-coverage wall/eclip strips use existing effect timing; door/blastable strips map applied stock frames when source count does not exceed stock count. Color and coverage masks follow the same frame. Partial-alpha overlays are limited to proven opaque bases on full-opacity normal-blend GLES3 walls. Soft base/standalone surfaces, vclips, sub-frame door interpolation and ordinal folders remain unqualified", "Authored textures can live under a mission mod folder or signed level ordinal. Preserving a TGA does not prove selection, decoding, animation or transparency. Exact frames, fallback frames and POG precedence require separate checks." },
@@ -187,14 +187,20 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				const auto opacity = std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; });
 				rows[16].need = std::to_string(opacity) + " walls with nonzero serialized cloak/opacity";
 				rows[16].detail = "Values alone do not establish material semantics or visibility/collision equivalence";
+				const auto effect_count = [&](int render) { return std::count_if(v.objects.begin(), v.objects.end(), [render](const Object &object) { return object.render == render; }); };
+				const auto particles = effect_count(11), lightning = effect_count(12), sounds = effect_count(13), thrusters = effect_count(8);
+				const auto effect_types = std::count_if(v.objects.begin(), v.objects.end(), [](const Object &object) { return object.type == 18 || object.type == 19 || object.type == 20; });
+				if (particles || lightning || sounds || thrusters || effect_types)
+					rows[17] = { std::to_string(particles) + " particle, " + std::to_string(lightning) + " lightning, " + std::to_string(sounds) + " sound payloads; " + std::to_string(thrusters) + " thrusters; " + std::to_string(effect_types) + " effect-type objects", "blocked", "Payloads and reference-reader defaults are inspected. Runtime effects, audio cues and activation are unimplemented; no gameplay admission is granted" };
 				const auto colored = std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; });
 				rows[9] = { std::to_string(colored) + " chromatic vertex colors; side and texture color tables present", "eligible", has_registered_colors(v) ? "Registered baked colors retained; this report does not verify the rendered scene" : "No registered baked colors: method-0 ambient reconstruction required and implemented; this report does not verify the rendered scene" };
 				for (const auto &issue : blockers) {
 					std::size_t row = 13;
-					if (issue.feature.find("segment") != std::string::npos) row = 3;
+					if (issue.feature.find("effect_") == 0) row = 17;
+					else if (issue.feature.find("segment") != std::string::npos) row = 3;
 					else if (issue.feature.find("wall") != std::string::npos) row = 4;
 					else if (issue.feature.find("trigger") != std::string::npos) row = 5;
-					else if (issue.feature.find("object") != std::string::npos) row = 7;
+					else if (issue.feature.find("object") != std::string::npos || issue.feature == "static_movement" || issue.feature == "waypoint_controllers") row = 7;
 					else if (issue.feature.find("generator") != std::string::npos || issue.feature.find("equipment") != std::string::npos) row = 15;
 					else if (issue.feature == "embedded_lighting") row = 9;
 					rows[row].status = "blocked";

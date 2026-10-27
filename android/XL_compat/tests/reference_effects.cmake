@@ -1,0 +1,29 @@
+foreach(
+    pair IN
+    ITEMS "objects/objectio.cpp|528f64e09469b5a452e9c6cf0ae8e9d5dd3eaffeaf5478378669f0783deaf68f"
+          "include/object.h|ed546edd2bbda56a84e9fef8543706707d47a08b48e36616852346b5a2f96127")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Effect reader reference differs from audited revision: ${path}")
+    endif()
+endforeach()
+set(extracted "// Actual pinned object reader and effect identity normalization\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"
+                      "void CObject::FixEffectRenderType (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"
+                      "void CObject::Read (CFile& cf)")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_effects.h" CONTENT "${extracted}")
+add_executable(xl_effect_reference tests/reference_effects.cpp)
+target_link_libraries(xl_effect_reference PRIVATE xl_inventory)
+target_include_directories(xl_effect_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_features(xl_effect_reference PRIVATE cxx_std_17)
+add_test(
+    NAME xl_effect_decode_reference
+    COMMAND
+        ${CMAKE_COMMAND} -DFIXTURE=$<TARGET_FILE:xl_inventory_test>
+        -DREFERENCE=$<TARGET_FILE:xl_effect_reference>
+        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/effect-decode -P
+        ${CMAKE_CURRENT_LIST_DIR}/effect_decode.cmake)

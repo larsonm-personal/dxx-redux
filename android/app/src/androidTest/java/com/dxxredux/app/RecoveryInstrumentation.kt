@@ -59,6 +59,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var installationWorkOnly = false
     private var xlCompatibilityOnly = false
     private var xlDragonPackageArchive: String? = null
+    private var xlEffectFixture: String? = null
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
@@ -67,6 +68,7 @@ class RecoveryInstrumentation : Instrumentation() {
         }
         xlCompatibilityOnly = arguments?.getString("suite") == "xl_compatibility"
         xlDragonPackageArchive = arguments?.getString("dragon_package_archive")
+        xlEffectFixture = arguments?.getString("effect_fixture")
         installationWorkOnly = arguments?.getString("suite") == "installation_work"
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
         verifyPublishedDocuments = arguments?.getString("published") == "true"
@@ -89,7 +91,11 @@ class RecoveryInstrumentation : Instrumentation() {
         try {
             if (xlCompatibilityOnly) {
                 val checks = XlCompatibilityViewChecks(this)
-                xlDragonPackageArchive?.let { checks.runDragonPackage(it) } ?: checks.run()
+                when {
+                    xlEffectFixture != null -> checks.runEffectFixture(checkNotNull(xlEffectFixture))
+                    xlDragonPackageArchive != null -> checks.runDragonPackage(checkNotNull(xlDragonPackageArchive))
+                    else -> checks.run()
+                }
                 result.putString("stream", "PASS: XL compatibility dialog text and colors\n")
                 finish(Activity.RESULT_OK, result)
                 return

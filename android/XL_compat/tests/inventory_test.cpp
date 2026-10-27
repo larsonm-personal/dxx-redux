@@ -7,6 +7,7 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
@@ -881,11 +882,20 @@ void original_observatory(const char *path)
 	check(xl_compat::prepare_gameplay_probe(level->bytes).source.segments.size() == 110, "original no-damage translation failed");
 	std::cout << "Original Observatory 17/36 inventory passed; 26 no-damage segments retained; normal feature translation eligible; runtime assets checked separately\n";
 }
+#include "effect_layout_contract.h"
 } // namespace
 
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 2 && std::string(argv[1]) == "--effects") {
+			effect_layout_contract();
+			return 0;
+		}
+		if (argc == 3 && std::string(argv[1]) == "--effect-fixtures") {
+			effect_layout_contract(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--generator-fixtures") {
 			generator_assignment_contract(argv[2]);
 			return 0;

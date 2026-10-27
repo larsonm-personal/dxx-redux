@@ -1534,10 +1534,12 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "generator_test.h"
 #include "boss_spawn_test.h"
 #include "equipment_test.h"
+#include "effect_inspection_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-effect-inspection-test")) return effect_inspection_test(argc, argv);
 	if (find_arg_value(argc, argv, "-equipment-test")) return equipment_test(argc, argv);
 	if (find_arg_value(argc, argv, "-boss-spawn-test")) return boss_spawn_test(argc, argv);
 	if (find_arg_value(argc, argv, "-generator-assignment-test")) return generator_assignment_test(argc, argv);

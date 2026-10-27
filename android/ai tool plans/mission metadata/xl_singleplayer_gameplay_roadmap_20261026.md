@@ -65,12 +65,18 @@ finish original-mission qualification
    disk/rewind state are covered. Legacy encodings, addon/multiplayer items and
    all eleven original candidates remain independently gated
 
-Next audit the object payload layouts blocking original spawn-bot and equipment
-missions.
-Missing object payload layouts and capacities
-remain separate blockers; a new action alone must not admit those missions.
+8. Effect payload inspection: versioned particle/lightning/sound/thruster records,
+   waypoint controllers and known static movement now have bounded decoding and
+   separately reported reference defaults. Native/source and Android metadata
+   controls pass; all new behavior remains gated. The
+   [evidence](../../XL_compat/evidence/effect-layouts.md) reconciles original
+   candidates without gameplay promotion. Unknown payloads, capacities and
+   independent event/property/resource requirements remain open
+
 Return to delayed object-chain lifecycle and boss/owner variants as part of the
-unfinished event area above
+unfinished event area above. Use the refreshed original counts to prioritize
+effect/audio behavior, with activation, gameplay cues and cleanup treated as
+required acceptance rather than cosmetic deferral
 
 After that, continue the unfinished areas above one chunk at a time. Do not mark
 the overall goal complete from a count of completed chunks or green fixture

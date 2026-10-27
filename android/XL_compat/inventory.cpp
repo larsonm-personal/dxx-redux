@@ -411,6 +411,9 @@ Inventory inspect_level(const Bytes &bytes)
 	const auto &objects = section(out, "objects");
 	if (objects.count) {
 		auto r = section_reader(bytes, out, objects, out.game_version == 40 ? 80 : 79);
+		std::array<int, 21> effect_types{};
+		std::array<int, 14> effect_renders{};
+		int static_objects = 0, waypoints = 0;
 		for (int i = 0; i < objects.count; ++i) {
 			Object o{};
 			o.source_offset = r.position();
@@ -419,6 +422,8 @@ Inventory inspect_level(const Bytes &bytes)
 			o.control = r.u8();
 			o.movement = r.u8();
 			o.render = r.u8();
+			o.reader_id = o.id;
+			o.reader_render = o.render;
 			o.flags = r.u8();
 			if (out.game_version == 40) {
 				o.multiplayer = r.u8();
@@ -434,14 +439,18 @@ Inventory inspect_level(const Bytes &bytes)
 			o.contains_type = r.s8();
 			o.contains_id = r.s8();
 			o.contains_count = r.s8();
-			if (o.type > 15 && o.type != 255) issue(out.unsupported, "object_type", i, std::to_string(o.type));
+			if (o.type == 18 || o.type == 19 || o.type == 20) ++effect_types[o.type];
+			else if (o.type > 15 && o.type != 255) issue(out.unsupported, "object_type", i, std::to_string(o.type));
 			if (o.movement == 1) {
 				for (int j = 0; j < 15; ++j) o.movement_data.push_back(r.s32());
 				o.movement_data.push_back(r.s16());
 				o.movement_data.push_back(r.u16());
 			} else if (o.movement == 3) {
 				for (int j = 0; j < 3; ++j) o.movement_data.push_back(r.s32());
-			} else require(o.movement == 0, "unsupported movement layout at object " + std::to_string(i));
+			} else if (o.movement == 2) {
+				// MT_STATIC is defined, but CObject::Read warns and consumes no payload
+				++static_objects;
+			} else if (o.movement != 0) r.fail("unsupported movement layout " + std::to_string(o.movement) + " at object " + std::to_string(i));
 			switch (o.control) {
 				case 1:
 					for (int j = 0; j < 12; ++j) o.control_data.push_back(r.u8());
@@ -461,12 +470,17 @@ Inventory inspect_level(const Bytes &bytes)
 				case 14:
 					o.control_data.push_back(r.s32());
 					break;
+				case 17:
+					for (int j = 0; j < 3; ++j) o.control_data.push_back(r.s32());
+					o.reader_id = 3; // CT_WAYPOINT normalizes identity before rendering data
+					++waypoints;
+					break;
 				case 0:
 				case 4:
 				case 5:
 				case 12:
 				case 16: break;
-				default: r.fail("unsupported control layout at object " + std::to_string(i));
+				default: r.fail("unsupported control layout " + std::to_string(o.control) + " at object " + std::to_string(i));
 			}
 			switch (o.render) {
 				case 1:
@@ -486,12 +500,46 @@ Inventory inspect_level(const Bytes &bytes)
 					break;
 				case 0:
 				case 3: break;
-				default: r.fail("unsupported render layout at object " + std::to_string(i));
+				case 8:
+					++effect_renders[o.render];
+					break;
+				case 11:
+					for (int j = 0; j < 6; ++j) o.render_data.push_back(r.s32());
+					for (int j = 0; j < 5; ++j) o.render_data.push_back(r.u8());
+					o.render_data.push_back(out.level_version < 18 ? 0 : r.u8());
+					o.render_data.push_back(out.level_version < 19 ? 1 : r.u8());
+					o.reader_id = 0;
+					++effect_renders[o.render];
+					break;
+				case 12:
+					for (int j = 0; j < 5; ++j) o.render_data.push_back(r.s32());
+					o.render_data.push_back(out.level_version <= 22 ? -1 : r.s32());
+					for (int j = 0; j < 6; ++j) o.render_data.push_back(r.s16());
+					o.render_data.push_back(out.level_version <= 21 ? 3 : r.u8());
+					for (int j = 0; j < 12; ++j) o.render_data.push_back(r.u8());
+					o.render_data.push_back(out.level_version < 19 ? 1 : r.u8());
+					if (o.reader_id != 1) o.reader_render = o.reader_id == 2 ? 13 : 11;
+					++effect_renders[o.render];
+					break;
+				case 13:
+					for (int j = 0; j < 40; ++j) o.render_data.push_back(r.u8());
+					o.render_data.push_back(r.s32()); // Serialized volume, before float scaling
+					o.render_data.push_back(out.level_version < 19 ? 1 : r.u8());
+					o.reader_id = 2;
+					++effect_renders[o.render];
+					break;
+				default: r.fail("unsupported render layout " + std::to_string(o.render) + " at object " + std::to_string(i));
 			}
 			o.source_end = r.position();
 			out.objects.push_back(o);
 		}
 		if (r.position() != section_end(out, objects, bytes.size())) issue(out.unknown, "object_trailing_bytes", -1, std::to_string(section_end(out, objects, bytes.size()) - r.position()));
+		for (int type : { 18, 19, 20 })
+			if (effect_types[type]) issue(out.unsupported, "effect_object_types", -1, std::to_string(effect_types[type]) + " objects of type " + std::to_string(type) + "; runtime behavior unimplemented");
+		for (const auto &entry : std::array<std::pair<int, const char *>, 4>{ { { 8, "effect_thrusters" }, { 11, "effect_particles" }, { 12, "effect_lightning" }, { 13, "effect_sounds" } } })
+			if (effect_renders[entry.first]) issue(out.unsupported, entry.second, -1, std::to_string(effect_renders[entry.first]) + " decoded payloads; runtime behavior unimplemented");
+		if (static_objects) issue(out.unsupported, "static_movement", -1, std::to_string(static_objects) + " static objects; reference reader warns, runtime behavior unimplemented");
+		if (waypoints) issue(out.unsupported, "waypoint_controllers", -1, std::to_string(waypoints) + " decoded controllers; runtime behavior unimplemented");
 	}
 	const auto &reactor = section(out, "reactor");
 	require(reactor.count <= 1, "multiple reactor trigger records");
@@ -683,6 +731,27 @@ std::string inventory_json(const Inventory &v)
 		s << ", \"size\": " << o.size << ", \"shields\": " << o.shields << ", \"contains_type\": " << o.contains_type << ", \"contains_id\": " << o.contains_id
 		  << ", \"contains_count\": " << o.contains_count;
 		if (v.game_version == 40) s << ", \"multiplayer\": " << o.multiplayer;
+		if (o.render >= 8 || o.control == 17 || o.movement == 2 || (o.type >= 18 && o.type <= 20)) {
+			s << ", \"source_offset\": " << o.source_offset << ", \"source_end\": " << o.source_end
+			  << ", \"reference_read_id\": " << o.reader_id << ", \"reference_read_render\": " << o.reader_render;
+			if (o.render == 11) s << ", \"particle_type\": " << o.render_data[11] << ", \"effect_enabled\": " << o.render_data[12];
+			if (o.render == 12) s << ", \"lightning_waypoint\": " << o.render_data[5] << ", \"lightning_width\": " << o.render_data[12]
+				                  << ", \"lightning_sound\": " << o.render_data[18] << ", \"effect_enabled\": " << o.render_data[25];
+			if (o.render == 13) {
+				std::string filename;
+				bool ascii = true;
+				for (int j = 0; j < 39 && o.render_data[j]; ++j) {
+					const int byte = o.render_data[j];
+					if (byte < 32 || byte > 126) {
+						ascii = false;
+						break;
+					}
+					filename += static_cast<char>(byte >= 'A' && byte <= 'Z' ? byte + ('a' - 'A') : byte);
+				}
+				if (ascii) s << ", \"sound_filename_ascii\": " << json_string(filename);
+				s << ", \"sound_volume_raw\": " << o.render_data[40] << ", \"effect_enabled\": " << o.render_data[41];
+			}
+		}
 		const std::pair<const char *, const std::vector<int> *> payloads[] = { { "movement_data", &o.movement_data }, { "control_data", &o.control_data }, { "render_data", &o.render_data } };
 		for (const auto &entry : payloads) {
 			s << ", " << json_string(entry.first) << ": [";
