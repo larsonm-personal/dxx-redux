@@ -97,6 +97,7 @@ if(BUILD_TESTING)
         include(tests/reference_generators.cmake)
         include(tests/reference_boss.cmake)
         include(tests/reference_equipment.cmake)
+        include(tests/reference_effects.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")
@@ -113,6 +114,7 @@ if(BUILD_TESTING)
     add_executable(xl_inventory_test tests/inventory_test.cpp)
     target_link_libraries(xl_inventory_test PRIVATE xl_inventory)
     add_test(NAME xl_inventory_contract COMMAND xl_inventory_test)
+    add_test(NAME xl_effect_payloads COMMAND xl_inventory_test --effects)
     set(XL_NEPTUNE_HOG "" CACHE FILEPATH "Original Neptune XL HOG for private 23/40 qualification")
     set(XL_NEPTUNE_DESCRIPTOR "" CACHE FILEPATH "Original Neptune XL mission descriptor")
     set(XL_REFERENCE_COLOR_ROOT "" CACHE PATH "Pinned XL source for CLR/embedded precedence oracle")
@@ -244,6 +246,14 @@ if(BUILD_TESTING)
                     ${xl_equipment_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/equipment.cmake)
             set_tests_properties(xl_equipment_generators PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_effect_inspection_gate
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DFIXTURE=$<TARGET_FILE:xl_inventory_test>
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/effect-inspection -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/effect_inspection.cmake)
+            set_tests_properties(xl_effect_inspection_gate PROPERTIES TIMEOUT 90)
             add_test(
                 NAME xl_modern_properties
                 COMMAND

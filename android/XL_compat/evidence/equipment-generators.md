@@ -95,10 +95,12 @@ temp/xl-equipment-20261027 and temp/xl-equipment-android.
 
 ## Original missions
 
-Fresh native inspection of all eleven hash-matched survey candidates still
-rejects nine unsupported render payloads, Subzero's movement payload and pmlev1p's
-17/35 layout. pmlev1p uses two legacy type-15 makers; the modern levels use
-function 11. See [the candidate evidence](equipment-candidates.json).
+At this chunk's completion, native inspection rejected all eleven hash-matched
+survey candidates. Subsequent [effect inspection](effect-layouts.md) now completely
+decodes seven, with effect runtime and other requirements still blocked. Subzero,
+pmlev1p, control2 and control retain complete-inspection failures. pmlev1p uses
+two legacy type-15 makers; the modern levels use function 11. See the refreshed
+[candidate evidence](equipment-candidates.json).
 
 Reproduce with `evidence/audit_spawn_candidates.py --feature equipment` and the
 pinned survey bundle, original missions root and native inspector. Original HOGs

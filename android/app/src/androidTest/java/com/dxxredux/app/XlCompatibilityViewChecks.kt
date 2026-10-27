@@ -433,6 +433,41 @@ internal class XlCompatibilityViewChecks(
         }
     }
 
+    /** Production native inspection and dialog witness; no mission import or gameplay admission */
+    fun runEffectFixture(fixturePath: String) {
+        val context = instrumentation.targetContext
+        val report = checkNotNull(XlCompatibility.inspect("effect.rl2", File(fixturePath).readBytes()))
+        check(report.status == "blocked" && report.blocksAnalysis)
+        val format = report.rows.single { it.id == "serialization" }
+        check(format.requirement.contains("23") && format.requirement.contains("40"))
+        check(!format.evidence.contains("detailed inspection rejected"))
+        val effect = report.rows.single { it.id == "effect_objects" }
+        check(effect.status == "blocked" && effect.requirement.contains("1 sound payloads"))
+        check(effect.evidence.contains("effect_sounds") && effect.support.contains("unsupported"))
+        val launcher =
+            instrumentation.startActivitySync(
+                Intent(context, SetupActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            ) as SetupActivity
+        try {
+            instrumentation.runOnMainSync {
+                launcher.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                launcher.setContent { MaterialTheme { XlCompatibilityButton(listOf(report)) } }
+            }
+            instrumentation.waitForIdleSync()
+            click("D2X-XL compatibility: cannot load")
+            scrollTo(effect.feature)
+            click(effect.feature)
+            awaitText("What XL does")
+            scrollTo("1 sound payloads")
+            capture("xl-feature-effect-payloads.png").recycle()
+            check(find("Supported") == null)
+            click("Back to features")
+            click("Close")
+        } finally {
+            instrumentation.runOnMainSync { launcher.finish() }
+        }
+    }
+
     /** Optional original-package witness; requires an already imported, unchanged fixture */
     fun runDragonPackage(archivePath: String) {
         val context = instrumentation.targetContext

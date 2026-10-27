@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [string]$DragonPackageArchive)
+param([string]$Serial, [string]$DragonPackageArchive, [string]$EffectFixture)
 $ErrorActionPreference = 'Stop'
+if ($DragonPackageArchive -and $EffectFixture) { throw 'Choose one optional XL browser fixture' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
@@ -13,6 +14,7 @@ try {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     $instrumentArgs = @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'xl_compatibility')
     if ($DragonPackageArchive) { $instrumentArgs += @('-e', 'dragon_package_archive', $DragonPackageArchive) }
+    if ($EffectFixture) { $instrumentArgs += @('-e', 'effect_fixture', $EffectFixture) }
     $instrumentArgs += "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation"
     $result = Adb -Seconds 240 -AdbArgs $instrumentArgs
     Write-Output $result
@@ -21,7 +23,7 @@ try {
         throw 'XL compatibility dialog instrumentation failed'
     }
 } finally {
-    $captures = if ($DragonPackageArchive) { @('dragon-sounds') } else { @('browser-light', 'browser-dark', 'water-light', 'water-dark', 'scroll-failure') }
+    $captures = if ($DragonPackageArchive) { @('dragon-sounds') } elseif ($EffectFixture) { @('effect-payloads') } else { @('browser-light', 'browser-dark', 'water-light', 'water-dark', 'scroll-failure') }
     foreach ($theme in $captures) {
         try { Adb -AdbArgs @('pull', "/sdcard/Android/data/$($script:PACKAGE)/files/xl-feature-$theme.png", $output) | Out-Null }
         catch { Write-Warning "No $theme screenshot: $_" }

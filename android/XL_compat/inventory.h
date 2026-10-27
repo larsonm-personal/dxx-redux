@@ -92,6 +92,7 @@ struct Section {
 
 struct Object {
 	int type, id, control, movement, render, flags, segment;
+	int reader_id = -1, reader_render = -1;
 	int multiplayer = 0;
 	std::size_t source_offset = 0, source_end = 0;
 	std::array<int, 3> position, last_position;

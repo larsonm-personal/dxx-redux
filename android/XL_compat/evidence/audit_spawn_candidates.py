@@ -9,6 +9,17 @@ import subprocess
 import zipfile
 
 
+def findings(rows):
+    """Bound report size while retaining every feature count and sample records."""
+    grouped = {}
+    for row in rows:
+        group = grouped.setdefault(row["feature"], {"count": 0, "examples": []})
+        group["count"] += 1
+        if len(group["examples"]) < 3:
+            group["examples"].append({key: row[key] for key in ("record", "detail")})
+    return grouped
+
+
 def members(data):
     if data[:3] != b"DHF":
         raise ValueError("Candidate requires a classic HOG container")
@@ -32,6 +43,7 @@ def main():
     for name in ("bundle", "missions-root", "inspector", "work", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--feature", choices=("spawn-bot", "equipment"), default="spawn-bot")
+    parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
     args = parser.parse_args()
     bundle_hash = hashlib.sha256(args.bundle.read_bytes()).hexdigest()
     if bundle_hash != "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd":
@@ -68,8 +80,20 @@ def main():
                 raise ValueError("Candidate inspection made a gameplay claim")
             if hashlib.sha256(source.read_bytes()).hexdigest() != digest:
                 raise ValueError("Original HOG changed during inspection")
-            cached[source] = (digest, members(data), inspection)
-        digest, payloads, inspection = cached[source]
+            reference = None
+            if args.reference and any(level["inventory"].get("status") != "rejected" for level in inspection["levels"]):
+                check = subprocess.run(
+                    [str(args.reference.resolve()), str(source)], capture_output=True, text=True, timeout=60, check=True
+                )
+                reference = check.stdout.strip()
+                if not reference.startswith("Pinned XL object reader:") or not reference.endswith(
+                    "effect payloads matched"
+                ):
+                    raise ValueError("Missing original reference-reader witness")
+            if hashlib.sha256(source.read_bytes()).hexdigest() != digest:
+                raise ValueError("Original HOG changed during reference comparison")
+            cached[source] = (digest, members(data), inspection, reference)
+        digest, payloads, inspection, reference = cached[source]
         payload_hash = hashlib.sha256(payloads[level_name.lower()]).hexdigest()
         if payload_hash != row["sha256"]:
             raise ValueError("Original candidate does not match surveyed payload")
@@ -104,7 +128,13 @@ def main():
             )
         if decoded:
             record["native_profile"] = f"{inventory['level_version']}/{inventory['game_version']}"
-            record["inspector_findings"] = {key: inventory[key] for key in ("unsupported", "unknown")}
+            record["inspector_findings"] = {key: findings(inventory[key]) for key in ("unsupported", "unknown")}
+            record["native_effect_payloads"] = {
+                name: sum(obj["render"] == render for obj in inventory["objects"])
+                for name, render in (("thruster", 8), ("particle", 11), ("lightning", 12), ("sound", 13))
+            }
+            if reference:
+                record["archive_reference_reader"] = reference
             if args.feature == "equipment":
                 record["native_equipment"] = [
                     dict(zip(("flags0", "flags1", "hitpoints", "interval", "raw_segment", "raw_station"), maker))
@@ -114,7 +144,7 @@ def main():
             record["native_rejection"] = inventory["reason"]
         records.append(record)
     report = {
-        "schema": 1,
+        "schema": 2,
         "scope": "Fresh native decoding of hash-matched survey candidates; no admission or gameplay qualification",
         "bundle_sha256": bundle_hash,
         "levels": records,

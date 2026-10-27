@@ -97,8 +97,9 @@ temp/xl-boss-spawning-android.
 
 The hash-matched research survey identifies action 26 in seven levels across
 Dinter, Sphere, Anthology and Boiling Point distributions. Fresh native inspection
-of the original bytes still rejects each: Dinter, Sphere and most Anthology
-levels contain unsupported render payload layouts; Anthology D3 has an invalid
-trigger target; Subzero has an unsupported movement layout. See the retained
+at this chunk's completion rejected each. Subsequent
+[effect inspection](effect-layouts.md) now completely decodes five, while keeping
+effect behavior and independent requirements blocked. Anthology D3 still has an
+invalid trigger target; Subzero has an unknown movement layout. See the refreshed
 [candidate evidence](boss-spawn-candidates.json) and reproducible
 `audit_spawn_candidates.py`. No original mission is promoted by this chunk.
