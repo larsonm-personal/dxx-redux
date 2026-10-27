@@ -131,7 +131,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	const bool blocked_objects = std::any_of(object_blockers.begin(), object_blockers.end(), [](const Issue &issue) { return issue.feature.find("object") == 0; });
 	features[11].present_status = blocked_objects ? "blocked" : "partial";
 	features[11].support = "Nonplayer leaf events, immediate masters and boss spawn actions have controlled activation and disk/rewind checks";
-	features[11].limitations = "Delayed object-chain descendants, other extended actions/flags, player owners and boss teleports remain gated. Native derived controls do not qualify an original mission";
+	features[11].limitations = "Boss object teleports rebuild owned destinations and preserve them through disk/rewind. Delayed object-chain descendants, other extended actions/flags and player owners remain gated. Native derived controls do not qualify an original mission";
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;
 	features[12].present_status = v.level_version == 23 ? "partial" : "blocked";

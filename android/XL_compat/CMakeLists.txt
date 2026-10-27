@@ -96,6 +96,7 @@ if(BUILD_TESTING)
         include(tests/reference_object.cmake)
         include(tests/reference_generators.cmake)
         include(tests/reference_boss.cmake)
+        include(tests/reference_boss_routes.cmake)
         include(tests/reference_equipment.cmake)
         include(tests/reference_effects.cmake)
     endif()
@@ -233,6 +234,18 @@ if(BUILD_TESTING)
                     -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-spawning
                     ${xl_boss_oracle_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_spawn.cmake)
             set_tests_properties(xl_boss_spawning PROPERTIES TIMEOUT 90)
+            set(xl_boss_route_args)
+            if(TARGET xl_boss_routes_reference)
+                list(APPEND xl_boss_route_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_boss_routes_reference>")
+            endif()
+            add_test(
+                NAME xl_boss_transport
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-transport
+                    ${xl_boss_route_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_transport.cmake)
+            set_tests_properties(xl_boss_transport PROPERTIES TIMEOUT 90)
             set(xl_equipment_oracle_args)
             if(TARGET xl_equipment_reference)
                 list(APPEND xl_equipment_oracle_args

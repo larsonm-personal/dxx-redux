@@ -21,7 +21,7 @@ flags/actions rather than interpreting a parsed timer as proof of support
 Object-triggered robot spawning now has a separate XL boss runtime with per-owner
 spawn, cloak, teleport, hit and death state. Redux retains its stock implementation.
 Admission validates boss ownership and the complete selection-resource closure;
-legacy equipment layouts, expanded data/capacities and boss object teleports remain gated. See the
+legacy equipment layouts, expanded data/capacities and dynamic boss creation remain gated. See the
 [boss evidence](evidence/boss-spawning.md) for reference comparisons, lifecycle
 controls, intentional restore corrections and final Android acceptance. Original
 spawn-bot missions retain independent runtime and resource blockers.
@@ -42,9 +42,16 @@ source comparisons, production rejection/recovery and Android dialog checks.
 
 Immediate singleplayer wall teleports now use detected requirements, including
 destination validation, actor dispatch, reference-matched rotation and source
-save restoration. Orientation/silent flags, boss object teleports, boosts and
+save restoration. Orientation/silent flags, boosts and
 multiplayer remain blocked. Derived-fixture qualification does not unlock an
 original mission by itself; see [wall-teleport evidence](evidence/wall-teleports.md)
+
+Boss object teleports now rebuild only that owner's cached destinations, with
+source-matched ordering and checked schema-5 disk/rewind state. Same-segment
+actions retain the earned list even after walls change. Native/source controls
+and 48 Android steps pass within the [recorded scope](evidence/boss-transport.md).
+Delayed object-chain descendants, other owner/action variants and independent
+mission requirements remain gated.
 
 Normal OpenGL D2 builds admit levels by detected requirements and runtime asset checks,
 without a mission-name or hash exception. Stock and XL missions share one binary; software rendering still rejects XL.

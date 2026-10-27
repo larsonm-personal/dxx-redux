@@ -30,6 +30,7 @@ void xl_boss_weapon_spawn(int owner, int weapon, const struct vms_vector *positi
 void xl_boss_ai_frame(int owner, int visible);
 void xl_boss_note_hit(int owner);
 void xl_boss_teleport(int owner);
+void xl_boss_object_teleported(int owner);
 void xl_boss_start_death(int owner);
 int xl_boss_is_dying(int owner);
 void xl_boss_deaths_frame(void);

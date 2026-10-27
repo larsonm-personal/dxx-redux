@@ -313,16 +313,6 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 			}
 			graph.clip(VCLIP_MORPHING_ROBOT);
 		}
-		bool teleports = entry.action.type == 14;
-		if (entry.action.type == 31)
-			for (int child : xl_compat::object_chain_targets(level, entry.action)) teleports |= level.triggers[child].type == 14;
-		if (!teleports) continue;
-		const auto &owner = level.objects.at(entry.object);
-		if (owner.type == OBJ_ROBOT) {
-			graph.robot(owner.id);
-			if (graph.robot_data[owner.id].boss_flag)
-				throw std::runtime_error("object teleport on a boss requires qualified boss destination bookkeeping");
-		}
 	}
 	for (std::size_t i = 0; i < level.objects.size(); ++i) {
 		const auto &obj = level.objects[i];
