@@ -7822,9 +7822,14 @@ extern "C" void game_automate_tick(void)
 #ifdef DXX_BUILD_DESCENT_II
 				int object = -1;
 				double points = 0;
-				char source[16] = {}, extra;
-				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %lf %15s %c", &object, &points, source, &extra) != 3 || object < 0 || object > Highest_object_index || !std::isfinite(points) || points < 0 || points > 32767 || (strcmp(source, "local") && strcmp(source, "none"))) {
+				char source[16] = {}, amount[64] = {}, extra, *end = nullptr;
+				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %63s %15s %c", &object, amount, source, &extra) != 3 || object < 0 || object > Highest_object_index || (strcmp(source, "local") && strcmp(source, "none"))) {
 					stop_script_fail("object_damage requires a singleplayer object, points and local/none source");
+					break;
+				}
+				points = !strcmp(amount, "half") ? f2fl(Objects[object].shields / 2) : strtod(amount, &end);
+				if ((end && (!*amount || *end)) || !std::isfinite(points) || points < 0 || points > 32767) {
+					stop_script_fail("object_damage amount must be half or finite points in 0..32767");
 					break;
 				}
 				const int killer = !strcmp(source, "local") ? ConsoleObject - Objects : -1;

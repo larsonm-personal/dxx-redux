@@ -1,3 +1,7 @@
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "boss_spawn.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1974,6 +1978,10 @@ int	Max_spew_bots[NUM_D2_BOSSES] = {2, 1, 2, 3, 3, 3,  3, 3};
 //	objp points at a boss.  He was presumably just hit and he's supposed to create a bot at the hit location *pos.
 int boss_spew_robot(object *objp, vms_vector *pos)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active())
+		return xl_boss_spawn_robot(objp - Objects, -1, pos, 0);
+#endif
 	int		objnum, segnum;
 	int		boss_index;
 

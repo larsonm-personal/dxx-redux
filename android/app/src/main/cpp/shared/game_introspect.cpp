@@ -30,6 +30,7 @@
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
+#include "boss_spawn.h"
 #include "resource_validation.h"
 #endif
 
@@ -2212,6 +2213,20 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		j["xl_pilot"]["robot_generators"] = std::move(generators);
 		j["xl_pilot"]["implicit_robot_flags"] = xl_robot_generator_implicit_flags();
+		json bosses = json::object(), spawned = json::array();
+		for (int index = 0; index < xl_boss_spawn_count(); ++index) {
+			xl_boss_spawn_state state;
+			if (!xl_boss_spawn_state_get(index, &state)) continue;
+			bosses[std::to_string(index)] = { { "owner", state.owner }, { "signature", state.signature }, { "id", state.id }, { "elapsed_ticks", state.elapsed }, { "interval_ticks", state.interval } };
+		}
+		for (int index = 0; index <= Highest_object_index; ++index) {
+			const auto &object = Objects[index];
+			if (object.type == OBJ_ROBOT && !Robot_info[object.id].boss_flag && object.matcen_creator == BOSS_GATE_MATCEN_NUM && !(object.flags & (OF_SHOULD_BE_DEAD | OF_EXPLODING)))
+				spawned.push_back({ { "object", index }, { "id", object.id }, { "signature", object.signature }, { "segment", object.segnum }, { "lifeleft", object.lifeleft }, { "control", object.control_type }, { "shields", f2fl(object.shields) } });
+		}
+		j["xl_pilot"]["bosses"] = std::move(bosses);
+		j["xl_pilot"]["boss_spawned"] = std::move(spawned);
+		j["xl_pilot"]["boss_spawned_count"] = j["xl_pilot"]["boss_spawned"].size();
 	}
 #endif
 	{

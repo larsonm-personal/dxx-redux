@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "robot_generator.h"
+#include "boss_spawn.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -1684,8 +1685,13 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 			if (Boss_spew_more[d2_boss_index])
 				// SIM RNG: this decides whether the boss spits an extra live robot
 				if (d_rand() > 16384) {
-					if (boss_spew_robot(robot, collision_point) != -1)
+					if (boss_spew_robot(robot, collision_point) != -1) {
+#ifdef DXX_XL_RUNTIME
+						if (xl_level_extensions_active()) xl_boss_spawn_allow_second(robot - Objects);
+						else
+#endif
 						Last_gate_time = GameTime64 - Gate_interval - 1;	//	Force allowing spew of another bot.
+					}
 				}
 			boss_spew_robot(robot, collision_point);
 		}

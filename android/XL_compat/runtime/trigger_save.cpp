@@ -9,6 +9,7 @@
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
+#include "boss_spawn.h"
 #include "preview.h"
 extern "C" {
 #include "inferno.h"
@@ -78,6 +79,16 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 				block["objects"].push_back({ state.owner, state.signature, state.type, state.flags, state.value, state.operated, state.destination });
 			}
 		}
+		if (xl_boss_spawn_count()) {
+			block["schema"] = 3;
+			block["producer_implicit"] = xl_robot_generator_ready_mask();
+			block["bosses"] = json::array();
+			for (int i = 0; i < xl_boss_spawn_count(); ++i) {
+				xl_boss_spawn_state state;
+				require(xl_boss_spawn_state_get(i, &state), "Cannot capture XL boss spawn state");
+				block["bosses"].push_back({ state.elapsed, state.owner, state.signature, state.id, state.interval });
+			}
+		}
 		const auto payload = block.dump();
 		require(payload.size() <= maximum && xl_write(file, tag, 1, sizeof(tag)) == sizeof(tag), "Cannot write XL trigger state");
 		write_u32(file, static_cast<std::uint32_t>(payload.size()));
@@ -109,7 +120,31 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_read(file, payload.data(), 1, size) == size && checksum(payload) == expected, "Corrupt XL trigger state payload");
 		const auto saved = json::parse(payload);
 		const bool objects = xl_object_trigger_count() != 0;
-		require(saved.is_object() && saved.size() == (objects ? 4u : 3u) && saved.at("schema") == (objects ? 2 : 1) && saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS, "Invalid XL trigger state layout or authored source identity");
+		const bool bosses = xl_boss_spawn_count() != 0;
+		require(saved.is_object() && saved.size() == 3u + unsigned(objects) + 2u * unsigned(bosses) && saved.at("schema") == (bosses ? 3 : objects ? 2
+		                                                                                                                                           : 1) &&
+		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
+		        "Invalid XL trigger state layout or authored source identity");
+		std::uint32_t ready_mask = 0;
+		if (bosses) {
+			const auto &value = saved.at("producer_implicit");
+			require(value.is_number_unsigned() && value.get<std::uint64_t>() <= UINT32_MAX, "Invalid XL producer implicit selection state");
+			ready_mask = value.get<std::uint32_t>();
+			require(xl_robot_generator_restore_ready(ready_mask, 0), "Invalid XL producer implicit selection mask");
+		}
+		std::vector<xl_boss_spawn_state> boss_states;
+		if (bosses) {
+			require(saved.at("bosses").is_array() && saved.at("bosses").size() == static_cast<unsigned>(xl_boss_spawn_count()), "Invalid XL boss spawn state count");
+			for (const auto &row : saved.at("bosses")) {
+				require(row.is_array() && row.size() == 5, "Invalid XL boss spawn state row");
+				for (std::size_t field = 0; field < row.size(); ++field) {
+					const auto &value = row[field];
+					require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= std::uint64_t(INT64_MAX)), "Invalid XL boss spawn state field");
+					require(!field || (value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX), "XL boss spawn state field overflow");
+				}
+				boss_states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>() });
+			}
+		}
 		std::vector<xl_object_trigger_state> object_states;
 		if (objects) {
 			require(saved.at("objects").is_array() && saved.at("objects").size() == static_cast<unsigned>(xl_object_trigger_count()), "Invalid XL object state count");
@@ -130,9 +165,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0 });
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
-		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0), "Invalid XL event state");
+		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0), "Invalid XL event state");
 		xl_wall_trigger_restore(states.data(), static_cast<int>(states.size()));
 		xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 1);
+		xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 1);
+		if (bosses) xl_robot_generator_restore_ready(ready_mask, 1);
 		return 1;
 	} catch (const std::exception &error) {
 		con_printf(CON_URGENT, "XL trigger restore rejected: %s\n", error.what());

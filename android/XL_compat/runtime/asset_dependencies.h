@@ -25,6 +25,7 @@ inline void asset_require(bool condition, const char *message)
 	if (!condition) throw std::runtime_error(message);
 }
 struct ObjectDependencies {
+	bool xl_boss_spawning = false;
 	// Read-only views permit validating staged HXM definitions before installation
 	const robot_info *robot_data = Robot_info;
 	const jointpos *joint_data = Robot_joints;
@@ -168,7 +169,7 @@ struct ObjectDependencies {
 		clip(r.exp2_vclip_num);
 		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
 		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
-		asset_require(!r.boss_flag, "boss spawn dependencies need a separate audit");
+		asset_require(!r.boss_flag || (xl_boss_spawning && r.boss_flag >= 21 && r.boss_flag < 29), "boss profile requires an implemented XL boss runtime");
 		asset_require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
 		for (int gun = 0; gun <= r.n_guns; ++gun)
 			for (int state = 0; state < N_ANIM_STATES; ++state) {

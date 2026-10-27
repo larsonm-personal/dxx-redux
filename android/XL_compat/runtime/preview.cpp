@@ -2,6 +2,7 @@
 #include "preview.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
+#include "boss_spawn.h"
 #include "no_damage_test_binding.h"
 #include "resource_validation.h"
 #include "light_sources.h"
@@ -217,6 +218,7 @@ bool mission_has_companion(const char *extension)
 
 void validate_requirements(const xl_compat::Inventory &level, const char *filename, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph)
 {
+	graph.xl_boss_spawning = true;
 	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
 	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
@@ -284,6 +286,32 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 	}
 	for (const auto &entry : level.object_trigger_records) {
 		if (entry.object < 0) continue;
+		if (entry.action.type == 26) {
+			const auto &owner = level.objects.at(entry.object);
+			if (owner.type != OBJ_ROBOT || owner.id < 0 || owner.id >= N_robot_types || !graph.robot_data[owner.id].boss_flag)
+				throw std::runtime_error("spawn-bot action requires a robot boss owner");
+			graph.robot(owner.id);
+			bool arbitrary = entry.action.targets.empty();
+			if (!arbitrary) {
+				const auto &segment = level.segments.at(entry.action.targets[0][0]);
+				const auto &row = level.matcens.at(segment.producer);
+				// Even with implicit candidates, a fresh empty producer selects arbitrarily
+				// until its normal handler has initialized the third selection word
+				arbitrary = !row[0] && !row[1];
+			}
+			if (arbitrary) {
+				int eligible = 0;
+				for (int id = 0; id < N_robot_types; ++id) {
+					const auto &robot = graph.robot_data[id];
+					if (!robot.boss_flag && !robot.companion && robot.score_value >= 700) {
+						graph.robot(id);
+						++eligible;
+					}
+				}
+				if (!eligible) throw std::runtime_error("spawn-bot action has no eligible arbitrary robot definitions");
+			}
+			graph.clip(VCLIP_MORPHING_ROBOT);
+		}
 		bool teleports = entry.action.type == 14;
 		if (entry.action.type == 31)
 			for (int child : xl_compat::object_chain_targets(level, entry.action)) teleports |= level.triggers[child].type == 14;
@@ -300,14 +328,26 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 		// Cooperative starts are removed by singleplayer initialization
 		if (obj.type == OBJ_NONE || obj.type == OBJ_COOP) continue;
 		try {
-			if (obj.type == OBJ_ROBOT) graph.robot(obj.id);
+			if (obj.type == OBJ_ROBOT) {
+				graph.robot(obj.id);
+				if (graph.robot_data[obj.id].boss_flag) {
+					const bool authored_spawn = std::any_of(level.object_trigger_records.begin(), level.object_trigger_records.end(), [&](const xl_compat::ObjectTrigger &entry) { return entry.object == static_cast<int>(i) && entry.action.type == 26; });
+					if (!authored_spawn)
+						for (int index = 0, id; (id = xl_boss_spawn_default_type(graph.robot_data[obj.id].boss_flag, index)) >= 0; ++index) graph.robot(id);
+					graph.clip(VCLIP_MORPHING_ROBOT);
+				}
+			}
 			if (obj.type == OBJ_POWERUP) graph.powerup(obj.id);
 			if (obj.type == OBJ_WEAPON) graph.weapon(obj.id);
 			if (obj.type == OBJ_CNTRLCEN) {
 				if (obj.id >= Num_reactors || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
 				graph.weapon(CONTROLCEN_WEAPON_NUM);
 			}
-			if (obj.contains_count > 0) graph.contents(obj.contains_type, obj.contains_id);
+			if (obj.contains_count > 0) {
+				graph.contents(obj.contains_type, obj.contains_id);
+				if (obj.contains_type == OBJ_ROBOT && graph.robot_data[obj.contains_id].boss_flag)
+					throw std::runtime_error("contained bosses require dynamic boss lifecycle support");
+			}
 			if (obj.render == RT_POLYOBJ || obj.render == RT_MORPH) {
 				const int saved = obj.render_data.at(0);
 				if (saved < 0 || std::size_t(saved) >= level.model_names.size()) throw std::runtime_error("model index outside level model table");
@@ -333,7 +373,10 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 	}
 	for (const auto &matcen : level.matcens)
 		for (unsigned bit = 0; bit < 64; ++bit)
-			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) graph.robot(int(bit));
+			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) {
+				graph.robot(int(bit));
+				if (graph.robot_data[bit].boss_flag) throw std::runtime_error("generator-created bosses require dynamic boss lifecycle support");
+			}
 	if (!level.matcens.empty()) {
 		graph.clip(VCLIP_MORPHING_ROBOT);
 		graph.clip(VCLIP_PLAYER_HIT);
@@ -475,6 +518,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_wall_trigger_reset();
 	xl_object_trigger_clear();
 	xl_robot_generator_clear();
+	xl_boss_spawn_clear();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
@@ -630,6 +674,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		source = std::move(level);
 		xl_object_trigger_load(*source);
 		xl_robot_generator_load();
+		xl_boss_spawn_load();
 		admitted_water_arena = arena && source->level_version < 21;
 		admitted_pilot = original && !admitted_water_arena;
 		rebuild_xl_ambient();
@@ -780,10 +825,10 @@ extern "C" int xl_level_extensions_active(void)
 
 extern "C" int xl_level_trigger_state_required(void)
 {
-	return source && (!source->matcens.empty() || source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
-		       const auto time = std::abs(std::int64_t(trigger.time));
-		       return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
-	       }));
+	return source && (xl_boss_spawn_count() || !source->matcens.empty() || source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
+		                  const auto time = std::abs(std::int64_t(trigger.time));
+		                  return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
+	                  }));
 }
 
 extern "C" uint64_t xl_level_trigger_identity(void)
@@ -798,6 +843,16 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
+	if (xl_boss_spawn_count()) {
+		field(xl_boss_spawn_count());
+		for (std::size_t i = 0; i < source->objects.size(); ++i) {
+			const auto &object = source->objects[i];
+			if (object.type == OBJ_ROBOT) {
+				field(static_cast<int>(i));
+				field(object.id);
+			}
+		}
+	}
 	if (!source->matcens.empty()) {
 		field(static_cast<int>(source->matcens.size()));
 		for (const auto &row : source->matcens)

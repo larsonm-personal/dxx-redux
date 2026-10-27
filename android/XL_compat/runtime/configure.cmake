@@ -26,6 +26,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/trigger_save.cpp"
                 "${xl_runtime_dir}/object_trigger.cpp"
                 "${xl_runtime_dir}/robot_generator.cpp"
+                "${xl_runtime_dir}/boss_spawn.cpp"
                 "${xl_runtime_dir}/../inventory.cpp"
                 "${xl_runtime_dir}/../admission.cpp"
                 "${xl_runtime_dir}/../probe.cpp"

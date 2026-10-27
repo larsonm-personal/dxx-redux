@@ -219,6 +219,13 @@ if(BUILD_TESTING)
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/generator_runtime.cmake)
             set_tests_properties(xl_generator_assignment_runtime PROPERTIES TIMEOUT 90)
             add_test(
+                NAME xl_boss_spawning
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-spawning -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_spawn.cmake)
+            set_tests_properties(xl_boss_spawning PROPERTIES TIMEOUT 90)
+            add_test(
                 NAME xl_modern_properties
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
