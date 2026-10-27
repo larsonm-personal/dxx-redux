@@ -2,6 +2,7 @@
 #include "preview.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
+#include "fluids.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -273,6 +274,8 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 	if ((!water_pilot || robot_requirements) && (PHYSFSX_exists(hxm.c_str(), 1) || PHYSFSX_exists((std::string(MISSION_DIR) + hxm).c_str(), 1)))
 		throw std::runtime_error("level-specific HXM definitions: XL override support is not verified");
 	xl_validate_level_graphics(level.palette);
+	if (NumTextures <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
+		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
 	// Weapons can be collected or restored even when not placed as weapon objects
 	for (const auto id : Primary_weapon_to_weapon_info) graph.weapon(id);
 	for (const auto id : Secondary_weapon_to_weapon_info) graph.weapon(id);
@@ -512,6 +515,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_wall_trigger_reset();
 	xl_speed_boost_clear();
 	xl_spawn_clear();
+	xl_fluid_clear();
 	xl_object_trigger_clear();
 	xl_robot_generator_clear();
 	xl_boss_spawn_clear();
@@ -740,7 +744,14 @@ extern "C" int xl_preview_water_segment(int segment)
 
 extern "C" int32_t xl_preview_motion_time(int segment, int32_t time)
 {
-	return xl_preview_water_segment(segment) ? int32_t(int64_t(time) * 75 / 100) : time;
+	return xl_preview_water_segment(segment) ? int32_t(int64_t(time) * 75 / 100) : xl_lava_segment(segment) ? int32_t(int64_t(time) * 66 / 100)
+	                                                                                                        : time;
+}
+
+extern "C" int xl_lava_segment(int segment)
+{
+	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 &&
+	       std::size_t(segment) < source->segments.size() && (source->segments[segment].properties & xl_compat::segment_lava);
 }
 
 extern "C" int xl_preview_water_contact(int object_index, int segment)
@@ -786,7 +797,7 @@ extern "C" int xl_preview_fluid_loop(int object_index, int sound, int playing)
 {
 	if (object_index < 0 || object_index > Highest_object_index) return playing;
 	// Preserve the classic one-loop behavior outside water and on classic builds
-	const bool fluid = xl_preview_water_segment(Objects[object_index].segnum) || playing == SOUND_SHIP_IN_WATER + 1;
+	const bool fluid = xl_level_extensions_active() || playing == SOUND_SHIP_IN_WATER + 1 || playing == SOUND_LAVAFALL_HISS + 1;
 	// Native reset/restore can remove the sound while the frame-local marker survives
 	if (fluid && playing && !xl_linked_sound_count(object_index, playing - 1, 0)) playing = 0;
 	if (fluid && playing && playing != sound + 1) {
@@ -869,10 +880,8 @@ extern "C" int xl_level_segment_group(int segment)
 
 extern "C" int xl_level_trigger_state_required(void)
 {
-	return source && (xl_boss_spawn_count() || !source->equipment.empty() || !source->matcens.empty() || source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
-		                  const auto time = std::abs(std::int64_t(trigger.time));
-		                  return trigger.type == 15 || trigger.type == 28 || (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
-	                  }));
+	// Surface scraping carries a simulation clock even in otherwise ordinary XL geometry
+	return source != nullptr;
 }
 
 extern "C" uint64_t xl_level_trigger_identity(void)

@@ -42,7 +42,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("bundle", "missions-root", "inspector", "work", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
-    parser.add_argument("--feature", choices=("spawn-bot", "equipment", "spawn-points", "water"), default="spawn-bot")
+    parser.add_argument(
+        "--feature", choices=("spawn-bot", "equipment", "spawn-points", "water", "lava"), default="spawn-bot"
+    )
     parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
     args = parser.parse_args()
     bundle_hash = hashlib.sha256(args.bundle.read_bytes()).hexdigest()
@@ -60,12 +62,20 @@ def main():
             actions = [action for action in row.get("triggers", []) if action["type"] == 28]
         equipment = row.get("sections", {}).get("equipment", {})
         water = (
-            sum(count for bits, count in row["segment_properties"].items() if int(bits) & 1)
+            sum(
+                count
+                for bits, count in row["segment_properties"].items()
+                if int(bits) & (2 if args.feature == "lava" else 1)
+            )
             if row["version"] >= 21
             else 0
         )
         if not (
-            water if args.feature == "water" else equipment.get("count", 0) if args.feature == "equipment" else actions
+            water
+            if args.feature in ("water", "lava")
+            else equipment.get("count", 0)
+            if args.feature == "equipment"
+            else actions
         ):
             continue
         _, archive_name, level_name = row["path"].split("::")
@@ -137,9 +147,9 @@ def main():
             )
         elif args.feature == "spawn-points":
             record["survey_wall_spawn_actions"] = record.pop("survey_spawn_actions")
-        elif args.feature == "water":
+        elif args.feature in ("water", "lava"):
             del record["survey_spawn_actions"]
-            record["survey_water_segments"] = water
+            record[f"survey_{args.feature}_segments"] = water
             record["survey_placed_robots"] = sum(obj["type"] == 2 for obj in row.get("object_records", []))
             record["survey_robot_centers"] = row["sections"]["robots"]["count"]
             record["survey_equipment_centers"] = equipment.get("count", 0)

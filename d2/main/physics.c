@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "fluids.h"
 #include "speed_boost.h"
 #endif
 /*
@@ -895,7 +896,7 @@ void do_physics_sim(object *obj)
 #ifdef DXX_XL_RUNTIME
 	if (speed_boost) reconstruct_velocity = 0;
 	// XL's fluid profile reconstructs all object types after wall/bad-start hits
-	if (!speed_boost && xl_preview_water_segment(orig_segnum))
+	if (!speed_boost && (xl_preview_water_segment(orig_segnum) || xl_lava_segment(orig_segnum)))
 		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
 #endif
 	if (!obj_stopped && !bounced && reconstruct_velocity)

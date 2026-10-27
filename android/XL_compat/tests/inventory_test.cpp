@@ -651,8 +651,9 @@ void version_23_contract()
 		auto bad = bytes;
 		patch(bad, segment + 4, property, 1);
 		check(xl_compat::inspect_level(bad).segments.at(0).properties == property, "property bit lost");
-		if (property == 1 || property == 8) {
-			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), property == 1 ? "water_segments" : "no_damage_segments");
+		if (property == 1 || property == 2 || property == 8) {
+			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), property == 1 ? "water_segments" : property == 2 ? "lava_segments"
+			                                                                                                                                         : "no_damage_segments");
 			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "browser lost split no-damage support");
 			check(!xl_compat::prepare_gameplay_probe(bad).stock_level.empty(), "modern no-damage was not translated");
 			continue;
@@ -670,8 +671,8 @@ void version_23_contract()
 		auto combined = bytes;
 		patch(combined, segment + 4, bits, 1);
 		const auto decoded = xl_compat::inspect_level(combined);
-		check(xl_compat::runtime_blockers(decoded).empty() == (bits == 0 || bits == 1 || bits == 8 || bits == 9), "normal modern admission accepted unsupported property combination");
-		check(xl_compat::runtime_blockers(decoded, true).empty() == (bits == 0 || bits == 1 || bits == 8 || bits == 9), "experimental water profile accepted unrelated property bits");
+		check(xl_compat::runtime_blockers(decoded).empty() == !(bits & ~11), "normal modern admission accepted unsupported property combination");
+		check(xl_compat::runtime_blockers(decoded, true).empty() == !(bits & ~11), "experimental water profile accepted unrelated property bits");
 		if (bits == 1 || bits == 9) {
 			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
 			for (int actor = 0; actor < 3; ++actor) {

@@ -118,7 +118,12 @@ actual boundary draws, depth state, contact-loop playback and stock cleanup.
 A matched-camera Android water surface/boundary capture also passes. Legacy water
 remains experimental. Modern water with stock robots and admitted robot/item
 generators now has separate [combined controls](evidence/water-actors.md).
-Other property bits, signed damage and multiplayer remain rejected. See the
+Modern lava bit 2 and its water/no-damage combinations now have a separate XL
+contact path, reference-matched motion/damage/scrape impulses, and a saved relative
+scrape clock. See [lava evidence](evidence/lava-volumes.md) for the current
+acceptance record. Development schema 9 replaces schema 8. Original lava missions
+retain independent requirements and qualification; other property bits, signed
+damage and multiplayer remain rejected. See the
 [modern-property evidence](evidence/modern-properties.md) and
 [implementation plan](../ai%20tool%20plans/mission%20metadata/xl_modern_properties_20261025.md).
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented

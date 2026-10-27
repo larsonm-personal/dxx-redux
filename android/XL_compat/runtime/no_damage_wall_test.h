@@ -8,6 +8,8 @@ static void no_damage_wall_test(int protected_segment, int ordinary_segment)
 {
 	const auto saved_protected = Segments[protected_segment].sides[0];
 	const auto saved_ordinary = Segments[ordinary_segment].sides[0];
+	const auto protected_child = Segments[protected_segment].children[0];
+	const auto ordinary_child = Segments[ordinary_segment].children[0];
 	const auto saved_texture = TmapInfo[0];
 	const auto saved_frame = FrameTime;
 	unsigned saved_rng = 0;
@@ -16,6 +18,8 @@ static void no_damage_wall_test(int protected_segment, int ordinary_segment)
 		Segments[segment].sides[0].tmap_num = 0;
 		Segments[segment].sides[0].tmap_num2 = 0;
 		Segments[segment].sides[0].wall_num = -1;
+		// XL classifies physical sides, not an arbitrary texture on an open portal
+		Segments[segment].children[0] = -1;
 	}
 	TmapInfo[0].damage = 0;
 	TmapInfo[0].flags = 0;
@@ -84,6 +88,8 @@ static void no_damage_wall_test(int protected_segment, int ordinary_segment)
 	TmapInfo[0] = saved_texture;
 	Segments[protected_segment].sides[0] = saved_protected;
 	Segments[ordinary_segment].sides[0] = saved_ordinary;
+	Segments[protected_segment].children[0] = protected_child;
+	Segments[ordinary_segment].children[0] = ordinary_child;
 	FrameTime = saved_frame;
 	d_rand_set_state(saved_rng);
 	std::cout << "No-damage native wall controls: hit-segment damage suppression, retained force-field response, lava/water classification and thrust-dependent rotation verified\n";
