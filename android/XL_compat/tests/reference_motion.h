@@ -169,6 +169,31 @@ struct tObjTransformation {
 };
 struct CPhysSimData;
 struct CObject {
+	int Type() const
+	{
+		return info.nType;
+	}
+	int Id() const
+	{
+		return info.nId;
+	}
+	int Segment() const
+	{
+		return info.nSegment;
+	}
+	bool IsMissile() const
+	{
+		return info.nType == 5;
+	}
+	CFixVector &Position()
+	{
+		return info.position.vPos;
+	}
+	CFixVector StartVel() const
+	{
+		return {};
+	}
+	int32_t UpdateOffset(CPhysSimData &);
 	int MaxSpeedScaled() const
 	{
 		return 60;
@@ -180,6 +205,7 @@ struct CObject {
 	void ProcessDrag(CPhysSimData &);
 	struct {
 		tObjTransformation position;
+		int nType = 0, nId = 0, nSegment = 0;
 	} info;
 	struct {
 		struct {
@@ -192,6 +218,15 @@ struct CObject {
 auto &object = objects[0];
 struct Segment {
 	CFixVector normal, center;
+	bool water = false;
+	bool HasWaterProp() const
+	{
+		return water;
+	}
+	bool HasLavaProp() const
+	{
+		return false;
+	}
 	int m_function = 0;
 	int child = -1;
 	int ChildId(int)
@@ -226,11 +261,14 @@ Segment *SEGMENT(int index)
 }
 struct {
 	struct {
-		int bD1Mission = 0;
+		int bD1Mission = 0, bNostalgia = 0;
 	} app;
 	struct {
 		CFixVector vTgtDir;
 		int nDirSteps = 0;
+		struct {
+			float fSpeed = 1.0f;
+		} slowmo[2];
 	} gameplay;
 	struct {
 		int bControlsSkipFrame = 0;

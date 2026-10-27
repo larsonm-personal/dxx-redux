@@ -1,0 +1,583 @@
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_water_actors_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived water actors",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 20,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.equipment_generators.0.segment": 20,
+            "xl_pilot.equipment_generators.1.segment": 23,
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.1.enabled": false,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.equipment_generators.0.segment": 20,
+            "xl_pilot.equipment_generators.1.segment": 23,
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.1.enabled": false,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.equipment_generators.0.pending": true,
+            "xl_pilot.equipment_generators.1.pending": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.1.enabled": false,
+            "xl_pilot.equipment_generators.0.pending": true,
+            "xl_pilot.equipment_generators.1.pending": true,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.1.enabled": false,
+            "xl_pilot.equipment_generators.0.pending": true,
+            "xl_pilot.equipment_generators.1.pending": true,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "false",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": false,
+            "xl_pilot.runtime_active": false,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.active": true,
+            "time_paused": false,
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.1.enabled": false,
+            "xl_pilot.equipment_generators.0.pending": true,
+            "xl_pilot.equipment_generators.1.pending": true,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.equipment_generators.0.item_count": 1,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.equipment_generators.0.items": {
+                "contains_object": {
+                    "id": 1,
+                    "count": 1,
+                    "creator": -1,
+                    "lifeleft": 1073741823,
+                },
+            },
+            "xl_pilot.equipment_generators.1.items": {
+                "contains_object": {
+                    "id": 22,
+                    "count": 98,
+                    "creator": -1,
+                    "lifeleft": 1073741823,
+                },
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "player_energy",
+        "value": "50",
+    },
+    {
+        "action": "set_debug",
+        "field": "equipment_pickup",
+        "value": "0 1",
+    },
+    {
+        "action": "face_view",
+        "segment": 3,
+        "side": 0,
+        "distance": 20,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.energy": {
+                "range": [62, 62],
+            },
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.energy": {
+                "range": [62, 62],
+            },
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.energy": {
+                "range": [62, 62],
+            },
+            "xl_pilot.equipment_generators.0.enabled": false,
+            "xl_pilot.equipment_generators.0.item_count": 0,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.equipment_generators.0.item_count": 1,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "false",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.robot_generators.0.alive": {
+                "gte": 1,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.equipment_generators.0.item_count": 1,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+            "xl_pilot.robot_generators.0.alive": {
+                "gte": 1,
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "false",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.robot_generators.0.robots[0].control": 1,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "matcen_combat_pose",
+        "value": "0 60",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.in_water": true,
+            "xl_pilot.robot_generators.0.robots[0].id": 0,
+            "xl_pilot.robot_generators.0.robots[0].in_water": true,
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.in_water": true,
+            "xl_pilot.robot_generators.0.robots[0].in_water": true,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "false",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.robot_generators.0.robots[0].projectiles": {
+                "gte": 1,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.shields": {
+                "lt": 100,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "matcen_combat_pose",
+        "value": "0 60",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "key",
+        "key": "lctrl",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.robot_generators.0.robots[0].shields": {
+                "lt": 100,
+            },
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "matcen_robot_damage",
+        "value": "0 10000",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.robot_generators.0.alive": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.in_water": true,
+            "xl_pilot.robot_generators.0.alive": 1,
+            "xl_pilot.robot_generators.0.robots[0].id": 0,
+            "xl_pilot.robot_generators.0.robots[0].in_water": true,
+            "xl_pilot.robot_generators.0.robots[0].shields": {
+                "lt": 100,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+]

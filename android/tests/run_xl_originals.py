@@ -30,6 +30,7 @@ CORE_TESTS = (
         "xl_object_chain_delays",
         "xl_speed_boosts",
         "xl_spawn_points",
+        "xl_water_actors",
         "xl_object_trigger_decode_reference",
         "xl_generator_assignment_reference",
         "xl_generator_assignment_runtime",

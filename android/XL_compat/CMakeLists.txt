@@ -93,6 +93,7 @@ if(BUILD_TESTING)
         include(tests/reference_teleport.cmake)
         include(tests/reference_speed_boost.cmake)
         include(tests/reference_spawn_points.cmake)
+        include(tests/reference_water_actors.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -249,6 +250,19 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/spawn-points ${xl_spawn_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/spawn_points.cmake)
             set_tests_properties(xl_spawn_points PROPERTIES TIMEOUT 90)
+            set(xl_water_actor_args)
+            if(TARGET xl_water_actors_reference)
+                list(APPEND xl_water_actor_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_water_actors_reference>")
+            endif()
+            add_test(
+                NAME xl_water_actors
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/water-actors ${xl_water_actor_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/water_actors.cmake)
+            set_tests_properties(xl_water_actors PROPERTIES TIMEOUT 120)
             set(xl_generator_oracle_args)
             if(TARGET xl_generator_reference)
                 list(APPEND xl_generator_oracle_args

@@ -2237,7 +2237,12 @@ extern "C" char *game_introspect_get_state(void)
 			for (int object = 0; object <= Highest_object_index; ++object) {
 				const auto &robot = Objects[object];
 				if (robot.type != OBJ_ROBOT || static_cast<unsigned char>(robot.matcen_creator) != (station | 0x80) || (robot.flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))) continue;
-				robots.push_back({ { "object", object }, { "id", robot.id }, { "segment", robot.segnum }, { "shields", f2fl(robot.shields) }, { "signature", robot.signature }, { "control", robot.control_type }, { "render", robot.render_type } });
+				int projectiles = 0;
+				for (int child = 0; child <= Highest_object_index; ++child) {
+					const auto &shot = Objects[child];
+					if (shot.type == OBJ_WEAPON && shot.ctype.laser_info.parent_num == object && shot.ctype.laser_info.parent_signature == robot.signature && !(shot.flags & OF_SHOULD_BE_DEAD)) ++projectiles;
+				}
+				robots.push_back({ { "object", object }, { "id", robot.id }, { "segment", robot.segnum }, { "shields", f2fl(robot.shields) }, { "signature", robot.signature }, { "control", robot.control_type }, { "render", robot.render_type }, { "in_water", xl_preview_water_segment(robot.segnum) != 0 }, { "projectiles", projectiles } });
 			}
 			generators[std::to_string(index)] = { { "segment", center.segnum }, { "station", station }, { "flags0", RobotCenters[index].robot_flags[0] }, { "flags1", RobotCenters[index].robot_flags[1] }, { "enabled", center.Enabled != 0 }, { "lives", center.Lives }, { "pending", center.Flag == 1 }, { "capacity", center.Capacity }, { "timer", center.Timer }, { "disable_time", center.Disable_time }, { "alive", robots.size() }, { "robots", robots } };
 		}

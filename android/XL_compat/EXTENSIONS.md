@@ -116,8 +116,9 @@ functions, movement, turbulence, material boundaries, source saves and stock
 isolation. The final normal APK passes 51 water and 45 no-damage checks, including
 actual boundary draws, depth state, contact-loop playback and stock cleanup.
 A matched-camera Android water surface/boundary capture also passes. Legacy water
-remains experimental. Robots/generators in water, other property bits, signed
-damage and multiplayer remain rejected. See the
+remains experimental. Modern water with stock robots and admitted robot/item
+generators now has separate [combined controls](evidence/water-actors.md).
+Other property bits, signed damage and multiplayer remain rejected. See the
 [modern-property evidence](evidence/modern-properties.md) and
 [implementation plan](../ai%20tool%20plans/mission%20metadata/xl_modern_properties_20261025.md).
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented

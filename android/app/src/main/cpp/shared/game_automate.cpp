@@ -7795,6 +7795,51 @@ extern "C" void game_automate_tick(void)
 #else
 				stop_script_fail("matcen_player_contact requires D2");
 #endif
+			} else if (s.field == "matcen_combat_pose") {
+#ifdef DXX_BUILD_DESCENT_II
+				int center = -1, segment = -1;
+				char extra;
+				if (!Game_wind || !ConsoleObject || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %d %c", &center, &segment, &extra) != 2 || center < 0 || center >= Num_robot_centers || segment < 0 || segment >= Num_segments) {
+					stop_script_fail("matcen_combat_pose requires a singleplayer center and segment");
+					break;
+				}
+				const int station = matcen_get_station_num(center);
+				int actor = -1;
+				for (int index = 0; station >= 0 && index <= Highest_object_index; ++index)
+					if (Objects[index].type == OBJ_ROBOT && Objects[index].control_type == CT_AI && static_cast<unsigned char>(Objects[index].matcen_creator) == (station | 0x80) && !(Objects[index].flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))) {
+						actor = index;
+						break;
+					}
+				if (actor < 0) {
+					stop_script_fail("matcen_combat_pose requires a live generated AI robot");
+					break;
+				}
+				auto &robot = Objects[actor];
+				vms_vector robot_pos, player_pos;
+				compute_segment_center(&robot_pos, &Segments[segment]);
+				player_pos = robot_pos;
+				robot_pos.z -= i2f(10);
+				player_pos.z += i2f(10);
+				if (get_seg_masks(&robot_pos, segment, robot.size, const_cast<char *>(__FILE__), __LINE__).sidemask || get_seg_masks(&player_pos, segment, ConsoleObject->size, const_cast<char *>(__FILE__), __LINE__).sidemask) {
+					stop_script_fail("matcen_combat_pose requires room for both actors");
+					break;
+				}
+				obj_relink(actor, segment);
+				robot.pos = robot_pos;
+				robot.orient = vmd_identity_matrix;
+				robot.mtype.phys_info.velocity = robot.mtype.phys_info.thrust = vmd_zero_vector;
+				obj_relink(ConsoleObject - Objects, segment);
+				ConsoleObject->pos = player_pos;
+				ConsoleObject->mtype.phys_info.velocity = ConsoleObject->mtype.phys_info.thrust = vmd_zero_vector;
+				vms_vector direction = { 0, 0, -F1_0 };
+				vm_vector_2_matrix(&ConsoleObject->orient, &direction, nullptr, nullptr);
+				robot.ctype.ai_info.behavior = AIB_NORMAL;
+				Ai_local_info[actor].mode = AIM_CHASE_OBJECT;
+				Ai_local_info[actor].player_awareness_type = PA_PLAYER_COLLISION;
+				Ai_local_info[actor].player_awareness_time = i2f(10);
+#else
+				stop_script_fail("matcen_combat_pose requires D2");
+#endif
 			} else if (s.field == "matcen_robot_damage") {
 #ifdef DXX_BUILD_DESCENT_II
 				int center = -1;

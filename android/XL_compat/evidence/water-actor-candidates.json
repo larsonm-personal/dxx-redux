@@ -1,0 +1,2594 @@
+{
+    "schema": 2,
+    "scope": "Fresh native decoding of hash-matched survey candidates; no admission or gameplay qualification",
+    "bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "levels": [
+        {
+            "archive": "missions/single/dinter.hog",
+            "archive_sha256": "5ddc056fe00971851fa55a0e93a316a4a0bce3591c65a7eb1b81dc21d168f4d3",
+            "level": "dinter.rl2",
+            "level_sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 117,
+            "survey_placed_robots": 862,
+            "survey_robot_centers": 16,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 1633,
+                        "examples": [
+                            {
+                                "record": 36,
+                                "detail": "1670"
+                            },
+                            {
+                                "record": 37,
+                                "detail": "1677"
+                            },
+                            {
+                                "record": 37,
+                                "detail": "1678"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 1055,
+                        "examples": [
+                            {
+                                "record": 1427,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 1428,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 1429,
+                                "detail": "4"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 599,
+                        "examples": [
+                            {
+                                "record": 1427,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 1428,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 1429,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "segment_damage": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 2215,
+                                "detail": "3/5"
+                            }
+                        ]
+                    },
+                    "wall_flags": {
+                        "count": 83,
+                        "examples": [
+                            {
+                                "record": 673,
+                                "detail": "264"
+                            },
+                            {
+                                "record": 674,
+                                "detail": "264"
+                            },
+                            {
+                                "record": 675,
+                                "detail": "264"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 165,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "14"
+                            }
+                        ]
+                    },
+                    "effect_trigger_target": {
+                        "count": 15,
+                        "examples": [
+                            {
+                                "record": 179,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            },
+                            {
+                                "record": 179,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            },
+                            {
+                                "record": 179,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "96 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 60,
+                        "examples": [
+                            {
+                                "record": 2,
+                                "detail": "29"
+                            },
+                            {
+                                "record": 3,
+                                "detail": "32"
+                            },
+                            {
+                                "record": 6,
+                                "detail": "29"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "377 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "41 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "39 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "297 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 506,
+                        "examples": [
+                            {
+                                "record": 595,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 596,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 597,
+                                "detail": "3"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 41,
+                "lightning": 39,
+                "sound": 297
+            }
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-01.rl2",
+            "level_sha256": "5b4ac91a472acf5a2f2e2fc06eaefa447777eedd7af8b60234bcecc8429f55cd",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 96,
+            "survey_placed_robots": 163,
+            "survey_robot_centers": 3,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 774,
+                        "examples": [
+                            {
+                                "record": 116,
+                                "detail": "308"
+                            },
+                            {
+                                "record": 116,
+                                "detail": "306"
+                            },
+                            {
+                                "record": 117,
+                                "detail": "307"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 404,
+                                "detail": "9"
+                            },
+                            {
+                                "record": 1223,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 2164,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 10,
+                        "examples": [
+                            {
+                                "record": 1296,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 1297,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 1299,
+                                "detail": "4"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 17,
+                        "examples": [
+                            {
+                                "record": 6,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 7,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 8,
+                                "detail": "14"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "45 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "44 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 1,
+                "lightning": 0,
+                "sound": 44
+            }
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-02.rl2",
+            "level_sha256": "499524589c8019e5d3ab9265493f71c0e35fa0287f3f945fc02a877ff6a19ab3",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 14,
+            "survey_placed_robots": 245,
+            "survey_robot_centers": 9,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 572,
+                        "examples": [
+                            {
+                                "record": 71,
+                                "detail": "686"
+                            },
+                            {
+                                "record": 72,
+                                "detail": "687"
+                            },
+                            {
+                                "record": 76,
+                                "detail": "688"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 3053,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 3054,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 3055,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 16,
+                        "examples": [
+                            {
+                                "record": 5,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 10,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 12,
+                                "detail": "29"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "4 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 3,
+                                "detail": "25"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "118 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "4 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "6 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "108 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 4,
+                "lightning": 6,
+                "sound": 108
+            }
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-03.rl2",
+            "level_sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 201,
+            "survey_placed_robots": 223,
+            "survey_robot_centers": 19,
+            "survey_equipment_centers": 2,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 566,
+                        "examples": [
+                            {
+                                "record": 108,
+                                "detail": "457"
+                            },
+                            {
+                                "record": 109,
+                                "detail": "729"
+                            },
+                            {
+                                "record": 227,
+                                "detail": "728"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 3058,
+                                "detail": "11"
+                            },
+                            {
+                                "record": 3059,
+                                "detail": "11"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 18,
+                        "examples": [
+                            {
+                                "record": 13,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 26,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 30,
+                                "detail": "29"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "21 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 11,
+                        "examples": [
+                            {
+                                "record": 1,
+                                "detail": "25"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "26"
+                            },
+                            {
+                                "record": 4,
+                                "detail": "32"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "122 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "16 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "8 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "98 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 33,
+                        "examples": [
+                            {
+                                "record": 82,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 125,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 128,
+                                "detail": "3"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 16,
+                "lightning": 8,
+                "sound": 98
+            }
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-04.rl2",
+            "level_sha256": "bb7c41c638e01443a553615c24e8dfcd1ec31cbb6cc6a36883489c3be755469d",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 10,
+            "survey_placed_robots": 259,
+            "survey_robot_centers": 8,
+            "survey_equipment_centers": 7,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 783,
+                        "examples": [
+                            {
+                                "record": 62,
+                                "detail": "567"
+                            },
+                            {
+                                "record": 95,
+                                "detail": "1025"
+                            },
+                            {
+                                "record": 164,
+                                "detail": "665"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 16,
+                        "examples": [
+                            {
+                                "record": 485,
+                                "detail": "11"
+                            },
+                            {
+                                "record": 486,
+                                "detail": "11"
+                            },
+                            {
+                                "record": 487,
+                                "detail": "11"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 17,
+                        "examples": [
+                            {
+                                "record": 3912,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 3986,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 3988,
+                                "detail": "4"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 35,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "14"
+                            }
+                        ]
+                    },
+                    "effect_trigger_target": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 26,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "7 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 3,
+                                "detail": "25"
+                            },
+                            {
+                                "record": 4,
+                                "detail": "26"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "100 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "2 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "8 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "90 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 2,
+                "lightning": 8,
+                "sound": 90
+            }
+        },
+        {
+            "archive": "missions/diedel/styx-d3.hog",
+            "archive_sha256": "0c5932b446de6235d1c9b807083ba9ee1e9b18c50470b1f6321c8e74ba9b4afb",
+            "level": "styx.rl2",
+            "level_sha256": "2a3679ac920b1347922b3b971b4caf0922744fbe58d16a32e03d67ae54be23a1",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 1,
+            "survey_placed_robots": 1,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "segment_function_v21": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 64,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 165,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 622,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 161,
+                        "examples": [
+                            {
+                                "record": 136,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 137,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 138,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "wall_flags": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 116,
+                                "detail": "272"
+                            },
+                            {
+                                "record": 117,
+                                "detail": "272"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 21,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "54 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "4 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "8 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "42 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 4,
+                "lightning": 8,
+                "sound": 42
+            }
+        },
+        {
+            "archive": "missions/diedel/subspace.hog",
+            "archive_sha256": "3c707f4d6a27f4f4d1c2c7d3c94a85f7d24db699e7b62652c17da186d393060e",
+            "level": "subspace.rl2",
+            "level_sha256": "2bb8f8359ccc81db2ac6b7ee3973c766c434338bcf37da96956be3affd5a292a",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 139,
+            "survey_placed_robots": 0,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "segment_function_v21": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 230,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 232,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 233,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 28,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "30"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "30"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "30"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "7 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "7 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 672,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "1"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 0,
+                "lightning": 0,
+                "sound": 7
+            }
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "watrwrks.rl2",
+            "level_sha256": "c60ed421f6147e95939e38d07d92d00ed1467397991cc35e933a02675c444205",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 141,
+            "survey_placed_robots": 27,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 1,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 588,
+                        "examples": [
+                            {
+                                "record": 1207,
+                                "detail": "830"
+                            },
+                            {
+                                "record": 1207,
+                                "detail": "777"
+                            },
+                            {
+                                "record": 1208,
+                                "detail": "828"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 251,
+                        "examples": [
+                            {
+                                "record": 943,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 944,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 945,
+                                "detail": "4"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 20,
+                        "examples": [
+                            {
+                                "record": 943,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 944,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 945,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 34,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "15"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "3 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 1,
+                                "detail": "19"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "object_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 57,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "32 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "7 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "3 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "22 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 688,
+                        "examples": [
+                            {
+                                "record": 1332,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 1333,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 1334,
+                                "detail": "1"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 7,
+                "lightning": 3,
+                "sound": 22
+            }
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "canyon.rl2",
+            "level_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 165,
+            "survey_placed_robots": 30,
+            "survey_robot_centers": 10,
+            "survey_equipment_centers": 14,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 98,
+                        "examples": [
+                            {
+                                "record": 8,
+                                "detail": "315"
+                            },
+                            {
+                                "record": 9,
+                                "detail": "322"
+                            },
+                            {
+                                "record": 19,
+                                "detail": "319"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 71,
+                        "examples": [
+                            {
+                                "record": 94,
+                                "detail": "11"
+                            },
+                            {
+                                "record": 246,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 247,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 480,
+                        "examples": [
+                            {
+                                "record": 238,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 239,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 240,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 12,
+                        "examples": [
+                            {
+                                "record": 18,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 19,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 20,
+                                "detail": "15"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "2 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 1,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "object_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 48,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 objects of type 19; runtime behavior unimplemented"
+                            },
+                            {
+                                "record": -1,
+                                "detail": "23 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "5 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "17 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 672,
+                        "examples": [
+                            {
+                                "record": 734,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 735,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 736,
+                                "detail": "1"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 5,
+                "lightning": 1,
+                "sound": 17
+            }
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "canyon2.rl2",
+            "level_sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 166,
+            "survey_placed_robots": 28,
+            "survey_robot_centers": 7,
+            "survey_equipment_centers": 3,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 76,
+                        "examples": [
+                            {
+                                "record": 12,
+                                "detail": "328"
+                            },
+                            {
+                                "record": 17,
+                                "detail": "285"
+                            },
+                            {
+                                "record": 19,
+                                "detail": "325"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 60,
+                        "examples": [
+                            {
+                                "record": 94,
+                                "detail": "11"
+                            },
+                            {
+                                "record": 246,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 247,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 228,
+                        "examples": [
+                            {
+                                "record": 238,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 239,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 240,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 12,
+                        "examples": [
+                            {
+                                "record": 12,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 13,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 14,
+                                "detail": "15"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "object_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 36,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 objects of type 19; runtime behavior unimplemented"
+                            },
+                            {
+                                "record": -1,
+                                "detail": "21 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "5 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "15 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 672,
+                        "examples": [
+                            {
+                                "record": 710,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 711,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 712,
+                                "detail": "1"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 5,
+                "lightning": 1,
+                "sound": 15
+            }
+        },
+        {
+            "archive": "missions/diedel/tankboy.hog",
+            "archive_sha256": "85ce8e6aee4207c062c281a6544c170a0c13409b24e0755ea7c216db824f4bd4",
+            "level": "tankboy.rl2",
+            "level_sha256": "389105fe9e6d2bfc7dcc771654cb6235767c81f42a3b28bb7fa16454e4ded47e",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 95,
+            "survey_placed_robots": 0,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 8,
+                        "examples": [
+                            {
+                                "record": 141,
+                                "detail": "259"
+                            },
+                            {
+                                "record": 292,
+                                "detail": "261"
+                            },
+                            {
+                                "record": 695,
+                                "detail": "262"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 9,
+                        "examples": [
+                            {
+                                "record": 27,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 40,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 41,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 234,
+                        "examples": [
+                            {
+                                "record": 63,
+                                "detail": "16"
+                            },
+                            {
+                                "record": 128,
+                                "detail": "16"
+                            },
+                            {
+                                "record": 129,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 8,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "15"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "15"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "2 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "16"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "object_type": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 151,
+                                "detail": "16"
+                            },
+                            {
+                                "record": 152,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "50 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "11 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "6 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "33 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 11,
+                "lightning": 6,
+                "sound": 33
+            }
+        },
+        {
+            "archive": "missions/diedel/toxic-d3.hog",
+            "archive_sha256": "0df49a334ac2134816105269e99a69adfac3b2d6d49985ebfa574ee115dbc300",
+            "level": "toxic-d3.rl2",
+            "level_sha256": "a73a09432943f2892e1a663bf44a07357822eb81e0e87c13428e5b4e3620d558",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 11,
+            "survey_placed_robots": 0,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "segment_function_v21": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 102,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 35,
+                        "examples": [
+                            {
+                                "record": 247,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 248,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 249,
+                                "detail": "4"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "12 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "4 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "8 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "no trigger section to inspect"
+                            }
+                        ]
+                    },
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 4,
+                "lightning": 0,
+                "sound": 8
+            }
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "icecavrn.rl2",
+            "level_sha256": "089fed1632ece46ec52087547959b99c4e72e8ef51a8992795934c2edffa338c",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 30,
+            "survey_placed_robots": 81,
+            "survey_robot_centers": 3,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 56,
+                                "detail": "255"
+                            },
+                            {
+                                "record": 462,
+                                "detail": "257"
+                            },
+                            {
+                                "record": 911,
+                                "detail": "256"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 33,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "32 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "32 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 128,
+                        "examples": [
+                            {
+                                "record": 67,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 68,
+                                "detail": "1"
+                            },
+                            {
+                                "record": 69,
+                                "detail": "1"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 0,
+                "lightning": 0,
+                "sound": 32
+            }
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "sewerats.rl2",
+            "level_sha256": "ed3bf938c7baa462e5bb59e2bde46f10f52d3e74c5c2eeb29d7caa2631327fae",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 239,
+            "survey_placed_robots": 62,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "28 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "8 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "20 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 8,
+                "lightning": 0,
+                "sound": 20
+            }
+        },
+        {
+            "archive": "missions/darkflamewolf/acat-xl.hog",
+            "archive_sha256": "08586805895d643f86db5d18039b46ee88e3ef80a3ff2635296dfb507b43f946",
+            "level": "acat-xl.rl2",
+            "level_sha256": "b59c381c079eddeae4934ab99ca8e81e5795f30055aca0206490525d49ef1e16",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_water_segments": 188,
+            "survey_placed_robots": 0,
+            "survey_robot_centers": 0,
+            "survey_equipment_centers": 0,
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "segment_function_v21": {
+                        "count": 16,
+                        "examples": [
+                            {
+                                "record": 36,
+                                "detail": "7"
+                            },
+                            {
+                                "record": 48,
+                                "detail": "8"
+                            },
+                            {
+                                "record": 137,
+                                "detail": "7"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 223,
+                        "examples": [
+                            {
+                                "record": 78,
+                                "detail": "4"
+                            },
+                            {
+                                "record": 113,
+                                "detail": "5"
+                            },
+                            {
+                                "record": 262,
+                                "detail": "5"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "21 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "3 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "18 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "no trigger section to inspect"
+                            }
+                        ]
+                    },
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 3,
+                "lightning": 0,
+                "sound": 18
+            }
+        }
+    ]
+}
