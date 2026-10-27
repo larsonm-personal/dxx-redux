@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "speed_boost.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
 #endif
@@ -292,6 +293,9 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 //	-----------------------------------------------------------------------------
 void bump_this_object(object *objp, object *other_objp, vms_vector *force, int damage_flag)
 {
+#ifdef DXX_XL_RUNTIME
+	if (objp == ConsoleObject && xl_speed_boost_player_locked()) return;
+#endif
 	fix force_mag;
 
 	if (! (objp->mtype.phys_info.flags & PF_PERSISTENT))

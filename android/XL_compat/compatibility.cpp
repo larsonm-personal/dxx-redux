@@ -33,7 +33,7 @@ const Category categories[] = {
 	{ "visual_assets", "Texture and model formats", "XL asset formats require individual verification", "Textures and models give the mine its appearance. XL asset formats and their referenced resources need verification beyond level parsing." },
 	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified", "Exits, secret routes and objectives connect gameplay to mission progression. An arena with no exit has different completion criteria from a campaign level." },
 	{ "runtime", "Gameplay and presentation verification", "Static inspection is not gameplay qualification; runtime checks dependencies on every load", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
-	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
+	{ "navigation", "Teleports, boosts and spawn destinations", "Singleplayer teleports and boosts implemented; spawn destinations and route-analysis edges remain unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
 	{ "generators", "Equipment generators and extended spawning", "Bounded robot matcens, modern equipment makers and XL boss spawn actions implemented with owned lifecycle and disk/rewind state", "Robot generation uses authored contents, boss ownership and detected resource requirements. Expanded gameplay data and capacities remain separate gates; derived controls do not qualify a mission." },
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
 	{ "effect_objects", "Particles, lightning and ambient sounds", "Bounded effect payloads decoded; activation, sound cues and runtime behavior unsupported", "Particles, lightning and ambient sound objects add effects to the mine. Payload inspection does not implement their activation, audio or gameplay interactions." },
@@ -91,22 +91,25 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	});
 	features[0].present_status = blocked_teleport ? "blocked" : "supported";
 	features[0].support = blocked_teleport ? "Wall teleport requires unsupported flags" : "Singleplayer wall teleports include delayed scheduling, destination rotation, actor dispatch and saved state";
-	features[0].limitations = "All byte flags are retained. Set-orientation is inert on teleport actions; silent is not a global mute. Speed boosts and multiplayer remain unsupported. Object events have separate lifecycle checks; derived controls do not qualify an original mission";
+	features[0].limitations = "All byte flags are retained. Set-orientation is inert on teleport actions; silent is not a global mute. Multiplayer remains unsupported. Wall teleports reset speed to 60 before rotating velocity. Object events have separate lifecycle checks; derived controls do not qualify an original mission";
 	const auto chain_blocked = [&](int type) {
 		return std::any_of(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) {
 			return t.type == type && ((t.flags & ~trigger_flags_mask) || std::any_of(t.targets.begin(), t.targets.end(), [](const auto &target) { return target[1] < 0; }));
 		});
 	};
+	features[1].present_status = chain_blocked(15) ? "blocked" : "supported";
+	features[1].support = "Singleplayer authored boosts include steering limits, release, orientation, area boundaries and saved actor state";
+	features[1].limitations = "Default D2 ship and boost strength. Source math and controlled engine/Android fixtures cover the feature; this does not qualify original missions, optional ship/physics settings, multiplayer or route analysis";
 	features[3].present_status = chain_blocked(31) ? "blocked" : "supported";
 	features[3].support = "Singleplayer wall chains preserve link order, delayed scheduling, stateful flags and saved enable counters";
-	features[3].limitations = "Set-orientation is inert outside speed boosts; silent has action-specific wall cue behavior. Delayed object descendants and multiplayer remain gated. Every child action and resource is checked independently; this does not qualify an original mission";
+	features[3].limitations = "Set-orientation is inert outside speed boosts; silent has action-specific wall cue behavior. Delayed object descendants retain their original actor; multiplayer remains gated. Every child action and resource is checked independently; this does not qualify an original mission";
 	features[13].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { return t.type == 32 || t.type == 33; }));
 	features[13].present_status = chain_blocked(32) || chain_blocked(33) ? "blocked" : "supported";
 	features[13].limitations = features[3].limitations;
 	features[14].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { const auto time = std::abs(std::int64_t(t.time)); return t.type != 25 && t.type != 29 && t.type != 30 && time >= 100 && time <= 900000; }));
 	features[15].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { return (t.flags & (8 | 16 | 128)) != 0; }));
 	for (const auto &trigger : v.triggers) {
-		const bool unsupported = (trigger.type > 14 && !player_resource_action(trigger.type) && (trigger.type < 31 || trigger.type > 33)) || (trigger.flags & ~trigger_flags_mask) || (!player_resource_action(trigger.type) && std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; }));
+		const bool unsupported = (trigger.type > 15 && !player_resource_action(trigger.type) && (trigger.type < 31 || trigger.type > 33)) || (trigger.flags & ~trigger_flags_mask) || (!player_resource_action(trigger.type) && std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; }));
 		const auto time = std::abs(std::int64_t(trigger.time));
 		if (unsupported && trigger.type != 25 && trigger.type != 29 && trigger.type != 30 && time >= 100 && time <= 900000) features[14].present_status = "blocked";
 		if (unsupported && (trigger.flags & (8 | 16 | 128))) features[15].present_status = "blocked";

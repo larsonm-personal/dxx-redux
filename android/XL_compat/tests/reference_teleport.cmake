@@ -38,6 +38,8 @@ foreach(
         "inline CFixVector CFixMatrix::operator* (const CFixVector& v)")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
 endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
+                      "const CAngleVector CFixMatrix::ComputeAngles (void) const")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" "void TriggerSetOrient (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" "void TriggerSetObjOrient (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_teleport.h" CONTENT "${extracted}")

@@ -13,10 +13,12 @@
 #include "boss_routes.h"
 #include "equipment.h"
 #include "preview.h"
+#include "speed_boost.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
 #include "segment.h"
+#include "object.h"
 #include "console.h"
 }
 
@@ -109,7 +111,16 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 6;
+		block["schema"] = 7;
+		block["boosts"] = { { "speed", xl_speed_boost_last_speed() }, { "states", json::array() } };
+		for (int index = 0; index < xl_speed_boost_state_count(); ++index) {
+			xl_speed_boost_state state;
+			require(xl_speed_boost_state_get(index, &state), "Cannot capture XL boost state");
+			json row = { state.owner, state.signature, state.boosted, state.speed, state.steps, state.phase };
+			for (const auto *vector : { state.velocity, state.minimum, state.maximum, state.source, state.destination, state.direction })
+				for (int axis = 0; axis < 3; ++axis) row.push_back(vector[axis]);
+			block["boosts"]["states"].push_back(std::move(row));
+		}
 		block["actors"] = std::move(actors);
 		const auto payload = block.dump();
 		require(payload.size() <= maximum && xl_write(file, tag, 1, sizeof(tag)) == sizeof(tag), "Cannot write XL trigger state");
@@ -144,9 +155,31 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 4u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 6 &&
+		require(saved.is_object() && saved.size() == 5u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 7 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		std::vector<xl_speed_boost_state> boosts;
+		const auto &boost_block = saved.at("boosts");
+		require(boost_block.is_object() && boost_block.size() == 2 && boost_block.at("speed").is_number_integer() && boost_block.at("speed") >= 0 && boost_block.at("speed") <= 10, "Invalid XL last boost speed");
+		const int boost_speed = boost_block.at("speed");
+		const auto &boost_rows = boost_block.at("states");
+		require(boost_rows.is_array() && boost_rows.size() <= MAX_OBJECTS, "Invalid XL boost state count");
+		for (const auto &row : boost_rows) {
+			require(row.is_array() && row.size() == 24, "Invalid XL boost state row");
+			for (const auto &field : row)
+				require(field.is_number_integer() && (!field.is_number_unsigned() || field.get<std::uint64_t>() <= INT32_MAX) && field.get<std::int64_t>() >= INT32_MIN && field.get<std::int64_t>() <= INT32_MAX, "Invalid XL boost state field");
+			xl_speed_boost_state state{};
+			state.owner = row[0];
+			state.signature = row[1];
+			state.boosted = row[2];
+			state.speed = row[3];
+			state.steps = row[4];
+			state.phase = row[5];
+			int field = 6;
+			for (auto *vector : { state.velocity, state.minimum, state.maximum, state.source, state.destination, state.direction })
+				for (int axis = 0; axis < 3; ++axis) vector[axis] = row[field++];
+			boosts.push_back(state);
+		}
 		std::vector<xl_compat::BossRoutes> boss_routes;
 		if (bosses) {
 			const auto &routes = saved.at("boss_routes");
@@ -221,7 +254,8 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0, actor[0].get<int>(), actor[1].get<int>() });
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
-		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
+		require(xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
+		xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 1);
 		xl_wall_trigger_restore(states.data(), static_cast<int>(states.size()));
 		xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 1);
 		xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 1);

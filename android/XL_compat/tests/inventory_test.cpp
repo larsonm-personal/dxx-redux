@@ -36,7 +36,7 @@ void rejects(const std::function<void()> &action)
 	}
 	check(rejected, "malformed input accepted");
 }
-Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1)
+Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, int segment_function = 0)
 {
 	Bytes b;
 	put(b, 0x504c564c, 4);
@@ -66,7 +66,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1)
 		}
 	}
 	for (int segment = 0; segment < segment_count; ++segment) {
-		put(b, 0, 1);
+		put(b, segment_function, 1);
 		put(b, 255, 1);
 		put(b, 255, 1);
 		put(b, segment_flags, 1);
@@ -202,18 +202,20 @@ void teleport_inventory_contract()
 		check(xl_compat::runtime_blockers(xl_compat::inspect_level(bytes)).empty(), "immediate teleport blocked by feature admission");
 		auto boost = bytes;
 		patch(boost, offset, 15, 1);
-		check(!xl_compat::runtime_blockers(xl_compat::inspect_level(boost)).empty(), "teleport support admitted speed boost");
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(boost)).empty(), "audited speed boost rejected");
 		patch(boost, offset + 8, 1000);
 		patch(boost, offset + 1, 8, 1);
-		const auto blocked_timing = xl_compat::compatibility_json("boost.rl2", boost);
-		check(feature_row(blocked_timing, "delayed_wall_actions").find("\"status\": \"blocked\"") != std::string::npos && feature_row(blocked_timing, "stateful_trigger_flags").find("\"status\": \"blocked\"") != std::string::npos, "scheduler browser rows hide unsupported action requirements");
-		for (const auto field : { offset + 12, offset + 32 }) {
-			auto invalid = bytes;
-			patch(invalid, field, 0xffff, 2);
-			rejects([&] { xl_compat::inspect_level(invalid); });
-			patch(invalid, field, field == offset + 12 ? 1 : 6, 2);
-			rejects([&] { xl_compat::inspect_level(invalid); });
-		}
+		const auto supported_timing = xl_compat::compatibility_json("boost.rl2", boost);
+		check(feature_row(supported_timing, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos && feature_row(supported_timing, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos, "scheduler browser rows reject implemented boost requirements");
+		for (const int type : { 14, 15 })
+			for (const auto field : { offset + 12, offset + 32 }) {
+				auto invalid = bytes;
+				patch(invalid, offset, type, 1);
+				patch(invalid, field, 0xffff, 2);
+				rejects([&] { xl_compat::inspect_level(invalid); });
+				patch(invalid, field, field == offset + 12 ? 1 : 6, 2);
+				rejects([&] { xl_compat::inspect_level(invalid); });
+			}
 		for (const int time : { -900001, -900000, -100, -99, 0, 99, 100, 900000, 900001, (-2147483647 - 1) }) {
 			auto delayed = bytes;
 			patch(delayed, offset + 8, static_cast<std::uint32_t>(time));
@@ -317,7 +319,18 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(!xl_compat::runtime_blockers(chain).empty(), "object chain admitted duplicate-segment retry deadlock");
 		chain.triggers[0].targets = { { 0, 0 } };
 		check(xl_compat::runtime_blockers(chain).empty(), "bounded immediate cyclic object chain rejected");
-		for (const int type : { 15, 26, 29 }) {
+		auto boost = eligible;
+		patch(boost, trigger + 4, 15, 1);
+		patch(boost, trigger + 37, 0, 2);
+		check(xl_compat::prepare_gameplay_probe(boost).source.object_trigger_records[0].action.type == 15, "supported object speed boost rejected");
+		for (const auto field : { trigger + 17, trigger + 37 }) {
+			auto invalid = boost;
+			patch(invalid, field, 0xffff, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
+			patch(invalid, field, field == trigger + 17 ? 1 : 6, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
+		}
+		for (const int type : { 16, 26, 29 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);
 			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
@@ -429,7 +442,7 @@ void feature_contract()
 	auto json = xl_compat::compatibility_json("features.rl2", bytes);
 	auto row = feature_row(json, "wall_teleports");
 	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "immediate wall teleport feature count or support differs");
-	check(json.find("\"status\": \"blocked\"") == json.find("\"status\":"), "teleport support hid unsupported boost/camera requirements");
+	check(json.find("\"status\": \"blocked\"") == json.find("\"status\":"), "movement support hid unsupported camera requirements");
 	check(json.find("Wall speed boosts") != std::string::npos && json.find("Wall camera triggers") != std::string::npos && json.find("Wall master triggers") != std::string::npos, "action counts lost wall-only scope");
 	check(feature_row(json, "speed_boosts").find("\"count\": 1") != std::string::npos, "boost count");
 	check(feature_row(json, "master_triggers").find("\"status\": \"not_required\"") != std::string::npos, "absent feature not distinct");
@@ -1019,6 +1032,20 @@ int main(int argc, char **argv)
 		check(probe.stock_level[4] == 8 && probe.stock_level.size() < bytes.size(), "probe stock envelope");
 		check(probe.source.vertex_colors.size() == 8 && probe.source.texture_colors.size() == 910, "probe must retain lighting evidence");
 		check(xl_compat::runtime_blockers(probe.source).empty(), "implemented XL features rejected");
+		for (int version : { 15, 17, 23 }) {
+			const int function = version == 23 ? 9 : 11;
+			const auto translated = xl_compat::prepare_gameplay_probe(fixture(version, 0, 1, function));
+			check(translated.source.segments[0].function == function && !translated.stock_level.empty(), "serialized boost area was rejected or lost its source function");
+			auto boost = translated.source;
+			boost.unsupported.push_back({ "trigger_type", 0, "15" });
+			boost.unsupported.push_back({ version == 23 ? "segment_function_v21" : "segment_function", 0, version == 23 ? "9" : "11" });
+			boost.triggers.resize(1);
+			boost.triggers[0].type = 15;
+			boost.segments[0].function = version == 23 ? 9 : 11;
+			check(xl_compat::runtime_blockers(boost).empty(), "audited boost/action encoding rejected");
+			boost.unsupported.push_back({ "trigger_type", 1, "16" });
+			check(!xl_compat::runtime_blockers(boost).empty(), "camera trigger confused with speed boost");
+		}
 		auto unsupported = probe.source;
 		unsupported.unsupported.push_back({ "trigger_type", 2, "teleport action is not implemented" });
 		check(xl_compat::blocker_message(xl_compat::runtime_blockers(unsupported)).find("teleport") != std::string::npos, "missing actionable trigger rejection");

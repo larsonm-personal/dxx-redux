@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "speed_boost.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -237,7 +238,11 @@ void read_flying_controls( object * obj )
 
 	velocity_before_wiggle = obj->mtype.phys_info.velocity;
 
-	if (!is_observer() && obj->mtype.phys_info.flags & PF_WIGGLE)
+	if (!is_observer() && obj->mtype.phys_info.flags & PF_WIGGLE
+#ifdef DXX_XL_RUNTIME
+	    && xl_speed_boost_active(obj-Objects) < 1
+#endif
+	   )
 	{
 		fix_fastsincos((fix)controls_get_wiggle_phase(), &raw_swiggle, NULL);
 		scaled_swiggle = raw_swiggle;

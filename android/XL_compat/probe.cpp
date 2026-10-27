@@ -94,7 +94,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	}
 	for (const auto &seg : v.segments) {
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (v.level_version < 21 && ((water_segments && seg.function == 7) || seg.function == 13)) || (v.level_version == 23 && seg.function == 11) ? 0 : seg.function, 1);
+		put(out, (v.level_version < 21 && ((water_segments && seg.function == 7) || seg.function == 13 || seg.function == 11)) || (v.level_version == 23 && (seg.function == 11 || seg.function == 9)) ? 0 : seg.function, 1);
 		put(out, seg.producer, 1);
 		put(out, seg.value, 1);
 		put(out, seg.flags, 1);

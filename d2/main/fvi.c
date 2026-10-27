@@ -25,6 +25,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "u_mem.h"
 #include "dxxerror.h"
 #include "inferno.h"
+#ifdef DXX_XL_RUNTIME
+#include "speed_boost.h"
+#endif
 #include "fvi.h"
 #include "segment.h"
 #include "object.h"
@@ -957,12 +960,16 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							face_hit_type, wid_flag, startmask, endmask, centermask,
 							flags, p0, p1, &hit_point, rad);
 
-						if ((wid_flag & WID_FLY_FLAG) ||
+						int boost_blocked = 0;
+#ifdef DXX_XL_RUNTIME
+						boost_blocked = xl_speed_boost_exit_blocked(thisobjnum, startseg, side);
+#endif
+						if (!boost_blocked && ((wid_flag & WID_FLY_FLAG) ||
 							(fvi_active_wall_is_passable && seg->children[side] >= 0 &&
 							 fvi_active_wall_is_passable(
 							     fvi_active_wall_is_passable_user, startseg, side)) ||
 							(d1_in_d2_use_d1_gameplay() ? d1_in_d2_transparent_wall_crossable(wid_flag, seg, side, flags, &hit_point, face, thisobjnum) : (((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
-								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face)))))) {
+								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face))))))) {
 
 							int newsegnum;
 							vms_vector sub_hit_point;

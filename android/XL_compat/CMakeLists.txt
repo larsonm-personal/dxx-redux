@@ -91,6 +91,7 @@ if(BUILD_TESTING)
     if(XL_REFERENCE_GEOMETRY_ROOT)
         include(tests/reference_face_point.cmake)
         include(tests/reference_teleport.cmake)
+        include(tests/reference_speed_boost.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -221,6 +222,19 @@ if(BUILD_TESTING)
                     ${xl_scheduler_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/object_chain_delay.cmake)
             set_tests_properties(xl_object_chain_delays PROPERTIES TIMEOUT 90)
+            set(xl_boost_oracle_args)
+            if(TARGET xl_speed_boost_reference)
+                list(APPEND xl_boost_oracle_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_speed_boost_reference>")
+            endif()
+            add_test(
+                NAME xl_speed_boosts
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/speed-boosts ${xl_boost_oracle_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/speed_boost.cmake)
+            set_tests_properties(xl_speed_boosts PROPERTIES TIMEOUT 90)
             set(xl_generator_oracle_args)
             if(TARGET xl_generator_reference)
                 list(APPEND xl_generator_oracle_args

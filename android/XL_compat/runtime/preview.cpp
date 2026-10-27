@@ -1,5 +1,6 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#include "speed_boost.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -507,6 +508,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 extern "C" void xl_preview_clear_mission(void)
 {
 	xl_wall_trigger_reset();
+	xl_speed_boost_clear();
 	xl_object_trigger_clear();
 	xl_robot_generator_clear();
 	xl_boss_spawn_clear();
@@ -816,6 +818,29 @@ extern "C" int xl_level_extensions_active(void)
 	return source && !(Game_mode & GM_MULTI);
 }
 
+extern "C" int xl_speed_boost_destination_valid(const int32_t point[3])
+{
+	if (!source || !point) return 0;
+	const auto matches = [&](const xl_compat::Trigger &action) {
+		if (action.type != 15 || action.targets.empty()) return false;
+		const auto &target = action.targets[0];
+		if (target[0] < 0 || target[0] >= Num_segments || target[1] < 0 || target[1] >= 6) return false;
+		const auto side = xl_compat::compile_classic_lighting_side(target[0], target[1]);
+		return std::equal(side.center.begin(), side.center.end(), point);
+	};
+	for (const auto &action : source->triggers)
+		if (matches(action)) return 1;
+	for (const auto &record : source->object_trigger_records)
+		if (matches(record.action)) return 1;
+	return 0;
+}
+
+extern "C" int xl_speed_boost_segment(int segment)
+{
+	if (!source || segment < 0 || static_cast<std::size_t>(segment) >= source->segments.size()) return 0;
+	return source->segments[segment].function == (source->level_version >= 21 ? 9 : 11);
+}
+
 extern "C" int xl_level_segment_group(int segment)
 {
 	return source && segment >= 0 && static_cast<std::size_t>(segment) < source->segments.size() ? source->segments[segment].group : 0;
@@ -825,7 +850,7 @@ extern "C" int xl_level_trigger_state_required(void)
 {
 	return source && (xl_boss_spawn_count() || !source->equipment.empty() || !source->matcens.empty() || source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
 		                  const auto time = std::abs(std::int64_t(trigger.time));
-		                  return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
+		                  return trigger.type == 15 || (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
 	                  }));
 }
 
@@ -841,7 +866,9 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
-	if (xl_boss_spawn_count() || !source->equipment.empty()) {
+	const bool boosts = std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &action) { return action.type == 15; }) ||
+	                    std::any_of(source->object_trigger_records.begin(), source->object_trigger_records.end(), [](const xl_compat::ObjectTrigger &record) { return record.action.type == 15; });
+	if (boosts || xl_boss_spawn_count() || !source->equipment.empty()) {
 		field(xl_boss_spawn_count());
 		field(static_cast<int>(source->vertices.size()));
 		field(static_cast<int>(source->segments.size()));
@@ -851,6 +878,7 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 			for (int value : vertex) field(value);
 		for (const auto &segment : source->segments) {
 			field(segment.group);
+			if (boosts) field(segment.function);
 			for (int child : segment.children) field(child);
 			for (int vertex : segment.vertices) field(vertex);
 		}

@@ -237,6 +237,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_trigger_flags_runtime'
             'test_xl_player_resources_runtime'
             'test_xl_object_chain_delays_runtime'
+            'test_xl_speed_boosts_runtime'
             'test_xl_equipment_runtime'
             'test_xl_classic_lighting_lifecycle'
             'test_xl_classic_sound_lifecycle'
