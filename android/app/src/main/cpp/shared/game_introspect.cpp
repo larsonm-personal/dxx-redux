@@ -29,6 +29,7 @@
 #include "preview.h"
 #include "trigger_state.h"
 #include "object_trigger.h"
+#include "robot_generator.h"
 #include "resource_validation.h"
 #endif
 
@@ -98,6 +99,7 @@ extern "C" {
 #include "net_udp.h"
 #include "multibot.h"
 #include "matcen_mode.h"
+#include "fuelcen.h"
 #include "songs.h"
 #include "songs_android_shared.h"
 #ifdef OGL
@@ -2195,6 +2197,21 @@ extern "C" char *game_introspect_get_state(void)
 			row["shields"] = state.owner >= 0 ? json(f2fl(Objects[state.owner].shields)) : json(nullptr);
 		}
 		j["xl_pilot"]["object_triggers"] = std::move(objects);
+		json generators = json::object();
+		for (int index = 0; index < Num_robot_centers; ++index) {
+			const int station = matcen_get_station_num(index);
+			if (station < 0) continue;
+			const auto &center = Station[station];
+			json robots = json::array();
+			for (int object = 0; object <= Highest_object_index; ++object) {
+				const auto &robot = Objects[object];
+				if (robot.type != OBJ_ROBOT || static_cast<unsigned char>(robot.matcen_creator) != (station | 0x80) || (robot.flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))) continue;
+				robots.push_back({ { "object", object }, { "id", robot.id }, { "segment", robot.segnum }, { "shields", f2fl(robot.shields) }, { "signature", robot.signature }, { "control", robot.control_type }, { "render", robot.render_type } });
+			}
+			generators[std::to_string(index)] = { { "segment", center.segnum }, { "station", station }, { "flags0", RobotCenters[index].robot_flags[0] }, { "flags1", RobotCenters[index].robot_flags[1] }, { "enabled", center.Enabled != 0 }, { "lives", center.Lives }, { "pending", center.Flag == 1 }, { "capacity", center.Capacity }, { "timer", center.Timer }, { "disable_time", center.Disable_time }, { "alive", robots.size() }, { "robots", robots } };
+		}
+		j["xl_pilot"]["robot_generators"] = std::move(generators);
+		j["xl_pilot"]["implicit_robot_flags"] = xl_robot_generator_implicit_flags();
 	}
 #endif
 	{

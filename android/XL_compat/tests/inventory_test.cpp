@@ -35,7 +35,7 @@ void rejects(const std::function<void()> &action)
 	}
 	check(rejected, "malformed input accepted");
 }
-Bytes fixture(int version = 15, int segment_flags = 0)
+Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1)
 {
 	Bytes b;
 	put(b, 0x504c564c, 4);
@@ -51,24 +51,28 @@ Bytes fixture(int version = 15, int segment_flags = 0)
 	patch(b, 8, static_cast<std::uint32_t>(b.size()));
 	put(b, 0, 1);
 	put(b, 8, 2);
-	put(b, 1, 2);
+	put(b, segment_count, 2);
 	for (int i = 0; i < 24; ++i) put(b, i * 65536, 4);
-	put(b, 255, 1);
-	put(b, 255, 1);
-	put(b, 0, 1);
-	for (int i = 0; i < 8; ++i) put(b, i, 2);
-	put(b, 0, 1);
-	for (int side = 0; side < 6; ++side) {
-		put(b, side + 1, 2);
-		for (int i = 0; i < 12; ++i) put(b, i, 2);
+	for (int segment = 0; segment < segment_count; ++segment) {
+		put(b, 255, 1);
+		put(b, 255, 1);
+		put(b, 0, 1);
+		for (int i = 0; i < 8; ++i) put(b, i, 2);
+		put(b, 0, 1);
+		for (int side = 0; side < 6; ++side) {
+			put(b, side + 1, 2);
+			for (int i = 0; i < 12; ++i) put(b, i, 2);
+		}
 	}
-	put(b, 0, 1);
-	put(b, 255, 1);
-	put(b, 255, 1);
-	put(b, segment_flags, 1);
-	if (version == 23) b.resize(b.size() + 5);
-	put(b, 65536, 4);
-	for (int i = 0; i < 14; ++i) {
+	for (int segment = 0; segment < segment_count; ++segment) {
+		put(b, 0, 1);
+		put(b, 255, 1);
+		put(b, 255, 1);
+		put(b, segment_flags, 1);
+		if (version == 23) b.resize(b.size() + 5);
+		put(b, 65536, 4);
+	}
+	for (int i = 0; i < 8 + segment_count * 6; ++i) {
 		put(b, 1, 1);
 		put(b, 2147483647, 4);
 		put(b, 1073741824, 4);
@@ -105,6 +109,71 @@ Bytes fixture(int version = 15, int segment_flags = 0)
 	put(b, 0, 4);
 	if (version == 17) put(b, 0, 2);
 	return b;
+}
+
+std::string feature_row(const std::string &json, const char *id);
+
+void generator_assignment_contract(const char *directory = nullptr)
+{
+	for (int version : { 15, 17, 23 }) {
+		auto bytes = fixture(version, 0, 5);
+		const auto base = xl_compat::inspect_level(bytes);
+		const auto properties = base.mine_offset + 5 + 8 * 12 + 5 * 176;
+		const int stride = version == 23 ? 13 : 8;
+		for (const auto &entry : std::array<std::array<int, 3>, 4>{ { { 0, 4, 2 }, { 1, 1, -1 }, { 2, 4, 0 }, { 3, 4, 1 } } }) {
+			patch(bytes, properties + entry[0] * stride, entry[1], 1);
+			patch(bytes, properties + entry[0] * stride + 1, entry[2], 1);
+		}
+		patch(bytes, base.game_offset + 35 + 6 * 12, static_cast<unsigned>(bytes.size()));
+		patch(bytes, base.game_offset + 39 + 6 * 12, 3);
+		patch(bytes, base.game_offset + 43 + 6 * 12, 20);
+		for (int row = 0; row < 3; ++row) {
+			put(bytes, 1u << row, 4);
+			put(bytes, 0x80000000u >> row, 4);
+			put(bytes, (row + 1) * 65536, 4);
+			put(bytes, (row + 4) * 65536, 4);
+			put(bytes, 0xffff, 2);
+			put(bytes, 32767, 2);
+		}
+		const auto parsed = xl_compat::inspect_level(bytes);
+		check(parsed.matcens.size() == 3 && parsed.matcens[0][4] == -1 && parsed.matcens[0][5] == 32767, "authored generator fields normalized during inspection");
+		check(feature_row(xl_compat::compatibility_json("generators.rl2", bytes), "generators").find("\"status\": \"partial\"") != std::string::npos, "bounded matcens incorrectly claim complete generator support");
+		const auto translated = xl_compat::prepare_gameplay_probe(bytes).stock_level;
+		const auto read = [&](std::size_t offset, unsigned width = 4) {
+			std::uint32_t value = 0;
+			for (unsigned i = 0; i < width; ++i) value |= std::uint32_t(translated.at(offset + i)) << (i * 8);
+			return value;
+		};
+		const auto records = read(read(12) + 35 + 6 * 12);
+		for (int native = 0; native < 3; ++native) {
+			const int source = std::array<int, 3>{ 2, 0, 1 }[native];
+			for (int field = 0; field < 4; ++field)
+				check(read(records + native * 20 + field * 4) == std::uint32_t(parsed.matcens[source][field]), "XL source-to-native generator contents swapped");
+			check(read(records + native * 20 + 16, 2) == unsigned(native ? native + 1 : 0), "translated generator segment differs");
+			check(read(records + native * 20 + 18, 2) == unsigned(native ? native + 1 : 0), "translated generator station differs");
+		}
+		if (directory) {
+			std::filesystem::create_directories(directory);
+			std::ofstream output(std::filesystem::path(directory) / ("generators-" + std::to_string(version) + ".rl2"), std::ios::binary);
+			output.write(reinterpret_cast<const char *>(bytes.data()), bytes.size());
+		}
+		for (int malformed = 0; malformed < 4; ++malformed) {
+			auto invalid = bytes;
+			const auto offset = properties + (malformed == 3 ? 4 : 3) * stride;
+			if (malformed == 0) patch(invalid, offset + 1, 0, 1);
+			if (malformed == 1) patch(invalid, offset + 1, 255, 1);
+			if (malformed == 2) patch(invalid, offset + 1, 3, 1);
+			if (malformed == 3) {
+				patch(invalid, offset, 4, 1);
+				patch(invalid, offset + 1, 1, 1);
+			}
+			const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(invalid));
+			check(xl_compat::blocker_message(blockers).find("generator assignment") != std::string::npos, "invalid generator assignment lacks useful rejection");
+			check(feature_row(xl_compat::compatibility_json("generators.rl2", invalid), "generators").find("\"status\": \"blocked\"") != std::string::npos, "generator browser category hides assignment blocker");
+			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
+		}
+	}
+	std::cout << "XL generator assignment: three layouts, source permutation, ignored authored links, station mapping and malformed controls passed\n";
 }
 
 std::string feature_row(const std::string &json, const char *id)
@@ -804,6 +873,11 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--generator-fixtures") {
+			generator_assignment_contract(argv[2]);
+			return 0;
+		}
+		generator_assignment_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
 			object_trigger_inventory_contract(argv[2]);
 			return 0;
@@ -868,7 +942,8 @@ int main(int argc, char **argv)
 		check(compatibility.find("\"status\": \"eligible\"") != std::string::npos, "supported features should be eligible for runtime validation");
 		check(compatibility.find("\"playable\": false") != std::string::npos, "compatibility must remain nonplayable");
 		check(compatibility.find("Object-attached triggers") != std::string::npos, "catalog missing category");
-		for (const auto id : { "navigation", "generators", "wall_materials", "effect_objects", "resource_scope" }) {
+		check(feature_row(compatibility, "generators").find("\"status\": \"not_required\"") != std::string::npos, "fully decoded absence of generators remains unknown");
+		for (const auto id : { "navigation", "wall_materials", "effect_objects", "resource_scope" }) {
 			const auto begin = compatibility.find(std::string("\"id\": \"") + id + "\"");
 			check(begin != std::string::npos, "survey category missing");
 			const auto row = compatibility.substr(begin, compatibility.find('}', begin) - begin);

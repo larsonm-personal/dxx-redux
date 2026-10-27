@@ -122,6 +122,24 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	};
 	rebase(27); // Legacy unused player block
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
+	if (!v.matcens.empty()) {
+		// XL binds row i to the segment with authored producer i; the native mine
+		// loader rebuilds generator/station indices in segment order instead
+		patch(out, new_game_offset + 35 + 6 * 12, static_cast<int>(out.size()));
+		patch(out, new_game_offset + 43 + 6 * 12, 20);
+		int station = 0;
+		for (std::size_t segment = 0; segment < v.segments.size(); ++segment) {
+			const auto &source_segment = v.segments[segment];
+			if (source_segment.function < 1 || source_segment.function > 4) continue;
+			if (source_segment.function == 4) {
+				const auto &row = v.matcens.at(source_segment.producer);
+				for (int field = 0; field < 4; ++field) put(out, row[field], 4);
+				put(out, static_cast<int>(segment), 2);
+				put(out, station, 2);
+			}
+			++station;
+		}
+	}
 	// XL Read normalizes authored master semaphores, but save restoration retains
 	// the live raw count. Apply this only to the source-level translation
 	const auto trigger_offset = read_offset(out, new_game_offset + 71);

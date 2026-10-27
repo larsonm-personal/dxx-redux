@@ -45,9 +45,14 @@ finish original-mission qualification
    [recorded scope](../../XL_compat/evidence/object-triggers.md) and
    [chunk plan](xl_object_triggers_20261026.md). Delayed descendants, other
    actions/owners and boss bookkeeping remain explicitly gated
+5. Robot matcens: final contact audit in progress. Native/reference and Android disk/rewind, activation,
+   selection, generated health, exhaustion and stock controls pass within the
+   [chunk scope](xl_generators_20261026.md) and
+   [evidence](../../XL_compat/evidence/robot-generators.md). Equipment, expanded
+   data/capacities and object spawn actions remain open
 
-Next audit object-trigger robot spawning and generator interactions against the
-original mission requirements. Missing object payload layouts and capacities
+Next audit object-trigger robot spawning and its boss lifecycle requirements.
+Missing object payload layouts and capacities
 remain separate blockers; a new action alone must not admit those missions.
 Return to delayed object-chain lifecycle and boss/owner variants as part of the
 unfinished event area above

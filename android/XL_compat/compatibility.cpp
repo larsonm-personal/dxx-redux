@@ -32,7 +32,7 @@ const Category categories[] = {
 	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified", "Exits, secret routes and objectives connect gameplay to mission progression. An arena with no exit has different completion criteria from a campaign level." },
 	{ "runtime", "Gameplay and presentation verification", "Static inspection is not gameplay qualification; runtime checks dependencies on every load", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
 	{ "navigation", "Teleports, boosts and spawn destinations", "XL movement actions and route-analysis edges unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
-	{ "generators", "Equipment generators and extended spawning", "Classic robot matcens exist; XL item generation and spawning unverified", "XL can generate equipment as well as robots. Spawn contents, timing, activation and saved state need matching behavior." },
+	{ "generators", "Equipment generators and extended spawning", "Singleplayer robot matcen assignment, timing, activation, health and disk/rewind checked; equipment and object spawning unsupported", "Robot generation uses authored contents and detected source requirements. Expanded gameplay data and capacities remain separate gates; derived controls do not qualify a mission." },
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
 	{ "effect_objects", "Particles, lightning and ambient sounds", "XL payloads, activation and audio cues require individual verification", "Particles, lightning and ambient sound objects add effects to the mine. Their payloads, activation and presentation require separate qualification." },
 	{ "resource_scope", "Mission resource precedence and isolation", "Standard HXM/extra-HAM and HMQ paths exist; XL override semantics and transition cleanup unverified", "A mission can override stock resources. The right definitions must load for that mission and be cleared or restored when switching missions." },
@@ -178,6 +178,11 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[6] = v.object_triggers ? Evidence{ "Decoded " + std::to_string(v.object_triggers) + " object triggers and owner references", features[11].present_status, features[11].limitations } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
 				if (!v.object_triggers && features[11].count < 0) rows[6] = {};
 				rows[7].need = std::to_string(v.objects.size()) + " objects; behavior unverified";
+				const bool spawning = std::any_of(v.triggers.begin(), v.triggers.end(), [](const Trigger &trigger) { return trigger.type == 26; }) ||
+				                      std::any_of(v.object_trigger_records.begin(), v.object_trigger_records.end(), [](const ObjectTrigger &trigger) { return trigger.action.type == 26; });
+				rows[15] = { std::to_string(v.matcens.size()) + " robot centers, " + std::to_string(features[12].count) + " equipment generators", spawning || features[12].count ? "blocked" : v.matcens.empty() ? "not_required"
+					                                                                                                                                                                                              : "partial",
+					         "Default-profile robot matcen controls pass; implicit high-ID selection is algorithm-tested with synthetic definitions, while expanded assets remain gated. Equipment and object spawn actions are unsupported; original-mission qualification is separate" };
 				const auto opacity = std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; });
 				rows[16].need = std::to_string(opacity) + " walls with nonzero serialized cloak/opacity";
 				rows[16].detail = "Values alone do not establish material semantics or visibility/collision equivalence";
@@ -189,6 +194,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 					else if (issue.feature.find("wall") != std::string::npos) row = 4;
 					else if (issue.feature.find("trigger") != std::string::npos) row = 5;
 					else if (issue.feature.find("object") != std::string::npos) row = 7;
+					else if (issue.feature.find("generator") != std::string::npos) row = 15;
 					else if (issue.feature == "embedded_lighting") row = 9;
 					rows[row].status = "blocked";
 					rows[row].detail += issue.feature + " at record " + std::to_string(issue.record) + "; ";

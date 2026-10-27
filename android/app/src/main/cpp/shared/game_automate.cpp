@@ -128,6 +128,7 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "boss_hud.h"
 #include "hudmsg.h"
 #include "robot.h"
+#include "fuelcen.h"
 #include "coop/coop_save.h"
 #include "coop/coop_campaign.h"
 #include "android_rewind.h"
@@ -7776,6 +7777,46 @@ extern "C" void game_automate_tick(void)
 #else
 				stop_script_fail("android_game_request: Android-only action");
 				break;
+#endif
+			} else if (s.field == "matcen_player_contact") {
+#ifdef DXX_BUILD_DESCENT_II
+				int center = -1;
+				char extra;
+				if (!Game_wind || !ConsoleObject || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %c", &center, &extra) != 1 || center < 0 || center >= Num_robot_centers || matcen_get_station_num(center) < 0) {
+					stop_script_fail("matcen_player_contact requires a singleplayer robot center");
+					break;
+				}
+				const int segment = RobotCenters[center].segnum;
+				obj_relink(ConsoleObject - Objects, segment);
+				compute_segment_center(&ConsoleObject->pos, &Segments[segment]);
+				ConsoleObject->mtype.phys_info.velocity = vmd_zero_vector;
+				collide_player_and_materialization_center(ConsoleObject);
+#else
+				stop_script_fail("matcen_player_contact requires D2");
+#endif
+			} else if (s.field == "matcen_robot_damage") {
+#ifdef DXX_BUILD_DESCENT_II
+				int center = -1;
+				double points = 0;
+				char extra;
+				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %lf %c", &center, &points, &extra) != 2 || center < 0 || center >= Num_robot_centers || !std::isfinite(points) || points < 0 || points > 32767) {
+					stop_script_fail("matcen_robot_damage requires a singleplayer center index and damage points");
+					break;
+				}
+				const int station = matcen_get_station_num(center);
+				int actor = -1;
+				for (int object = 0; station >= 0 && object <= Highest_object_index; ++object)
+					if (Objects[object].type == OBJ_ROBOT && static_cast<unsigned char>(Objects[object].matcen_creator) == (station | 0x80) && !(Objects[object].flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))) {
+						actor = object;
+						break;
+					}
+				if (actor < 0) {
+					stop_script_fail("matcen_robot_damage found no live robot from this center");
+					break;
+				}
+				apply_damage_to_robot(&Objects[actor], static_cast<fix>(points * 65536.0), ConsoleObject - Objects);
+#else
+				stop_script_fail("matcen_robot_damage requires D2");
 #endif
 			} else if (s.field == "object_damage") {
 #ifdef DXX_BUILD_DESCENT_II

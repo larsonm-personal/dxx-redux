@@ -1,6 +1,7 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
 #include "object_trigger.h"
+#include "robot_generator.h"
 #include "no_damage_test_binding.h"
 #include "resource_validation.h"
 #include "light_sources.h"
@@ -333,6 +334,12 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 	for (const auto &matcen : level.matcens)
 		for (unsigned bit = 0; bit < 64; ++bit)
 			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) graph.robot(int(bit));
+	if (!level.matcens.empty()) {
+		graph.clip(VCLIP_MORPHING_ROBOT);
+		graph.clip(VCLIP_PLAYER_HIT);
+		graph.sound(SOUND_PLAYER_GOT_HIT);
+		graph.sound(SOUND_ROBOT_HIT);
+	}
 	for (const auto &segment : level.segments)
 		for (const auto &side : segment.sides) {
 			if (side.texture >= 0) graph.texture(side.texture);
@@ -467,6 +474,7 @@ extern "C" void xl_preview_clear_mission(void)
 {
 	xl_wall_trigger_reset();
 	xl_object_trigger_clear();
+	xl_robot_generator_clear();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
@@ -621,6 +629,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
 		xl_object_trigger_load(*source);
+		xl_robot_generator_load();
 		admitted_water_arena = arena && source->level_version < 21;
 		admitted_pilot = original && !admitted_water_arena;
 		rebuild_xl_ambient();
@@ -771,10 +780,10 @@ extern "C" int xl_level_extensions_active(void)
 
 extern "C" int xl_level_trigger_state_required(void)
 {
-	return source && (source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
-		                  const auto time = std::abs(std::int64_t(trigger.time));
-		                  return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
-	                  }));
+	return source && (!source->matcens.empty() || source->object_triggers || std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &trigger) {
+		       const auto time = std::abs(std::int64_t(trigger.time));
+		       return (trigger.flags & (8 | 16 | 128)) || (time >= 100 && time <= 900000);
+	       }));
 }
 
 extern "C" uint64_t xl_level_trigger_identity(void)
@@ -789,6 +798,17 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
+	if (!source->matcens.empty()) {
+		field(static_cast<int>(source->matcens.size()));
+		for (const auto &row : source->matcens)
+			for (int value : row) field(value);
+		for (const auto &segment : source->segments) {
+			field(segment.function);
+			field(segment.producer);
+		}
+		for (const auto &object : source->objects)
+			if (object.type == OBJ_ROBOT) field(object.id);
+	}
 	field(static_cast<int>(source->triggers.size()));
 	for (const auto &trigger : source->triggers) {
 		for (int value : { trigger.type, trigger.flags, trigger.value, trigger.time, static_cast<int>(trigger.targets.size()) }) field(value);

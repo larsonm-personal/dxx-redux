@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "robot_generator.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -2914,6 +2915,9 @@ void collide_player_and_nasty_robot( object * playerobj, object * robot, vms_vec
 
 void collide_player_and_materialization_center(object *objp)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_robot_generator_contact(objp - Objects)) return;
+#endif
 	if (is_observer()) {
 		return;
 	}
@@ -2953,6 +2957,9 @@ void collide_player_and_materialization_center(object *objp)
 
 void collide_robot_and_materialization_center(object *objp)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_robot_generator_contact(objp - Objects)) return;
+#endif
 	int	side;
 	vms_vector	exit_dir;
 	segment *segp=&Segments[objp->segnum];

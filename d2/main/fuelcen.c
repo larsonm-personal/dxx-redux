@@ -23,6 +23,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 
 #include "fuelcen.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "robot_generator.h"
+#endif
 #include "matcen_regression_capture.h"
 matcen_regression_capture Matcen_regression_capture;
 #include "gameseg.h"
@@ -282,7 +286,11 @@ void trigger_matcen(int segnum)
 	if (robotcen->Enabled == 1)
 		return;
 
-	if (!robotcen->Lives)
+	if (!robotcen->Lives
+#ifdef DXX_XL_RUNTIME
+	    && (!xl_level_extensions_active() || Difficulty_level + 1 < NDL || matcen_mode_get() == MATCEN_MODE_ONE_ROUND)
+#endif
+	)
 		return;
 
 	if (!matcen_mode_can_activate(seg2p->matcen_num))
@@ -307,6 +315,9 @@ void trigger_matcen(int segnum)
 		Objects[objnum].lifeleft = MATCEN_LIFE;
 		Objects[objnum].ctype.light_info.intensity = i2f(8);	//	Light cast by a fuelcen.
 	} else {
+#ifdef DXX_XL_RUNTIME
+		if (!xl_level_extensions_active())
+#endif
 		Int3();
 	}
 }
@@ -400,6 +411,9 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 	obj->mtype.phys_info.flags |= (PF_LEVELLING);
 
 	obj->shields = Robot_info[obj->id].strength;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) obj->shields = xl_robot_generator_shields(obj->id);
+#endif
 	
 	default_behavior = Robot_info[obj->id].behavior;
 
@@ -462,7 +476,11 @@ void robotmaker_proc( FuelCenter * robotcen )
 		return;
 	}
 
-	if (RobotCenters[matcen_num].robot_flags[0]==0 && RobotCenters[matcen_num].robot_flags[1]==0) {
+	if (RobotCenters[matcen_num].robot_flags[0]==0 && RobotCenters[matcen_num].robot_flags[1]==0
+#ifdef DXX_XL_RUNTIME
+	    && !xl_robot_generator_has_types(matcen_num)
+#endif
+	) {
 		return;
 	}
 
@@ -483,6 +501,9 @@ void robotmaker_proc( FuelCenter * robotcen )
 		else
 		{
 			dist_to_player = vm_vec_dist_quick( &ConsoleObject->pos, &robotcen->Center );
+#ifdef DXX_XL_RUNTIME
+			if (xl_level_extensions_active()) dist_to_player = xl_robot_generator_distance(&ConsoleObject->pos, &robotcen->Center);
+#endif
 			// SIM RNG: these rolls set live matcen spawn timing
 			top_time = dist_to_player/64 + d_rand() * 2 + F1_0*2;
 			if ( top_time > ROBOT_GEN_TIME )
@@ -491,7 +512,11 @@ void robotmaker_proc( FuelCenter * robotcen )
 				top_time = F1_0*3/2 + d_rand()*2;
 		}
 
-		if (robotcen->Timer > top_time )	{
+		if (robotcen->Timer > top_time
+#ifdef DXX_XL_RUNTIME
+		    || (xl_level_extensions_active() && robotcen->Timer == top_time)
+#endif
+		)	{
 			int	count=0;
 			int	i, my_station_num = robotcen-Station;
 			object *obj;
@@ -529,6 +554,9 @@ void robotmaker_proc( FuelCenter * robotcen )
 			compute_segment_center(&cur_object_loc, &Segments[robotcen->segnum]);
 			// HACK!!! The 10 under here should be something equal to the 1/2 the size of the segment.
 			obj = object_create_explosion(robotcen->segnum, &cur_object_loc, i2f(10), VCLIP_MORPHING_ROBOT );
+#ifdef DXX_XL_RUNTIME
+			if (!obj && xl_level_extensions_active()) return;
+#endif
 
 			if (obj)
 				extract_orient_from_segment(&obj->orient,&Segments[robotcen->segnum]);
@@ -551,7 +579,11 @@ void robotmaker_proc( FuelCenter * robotcen )
 			compute_segment_center(&cur_object_loc, &Segments[robotcen->segnum]);
 
 			// If this is the first materialization, set to valid robot.
-			if (RobotCenters[matcen_num].robot_flags[0] != 0 || RobotCenters[matcen_num].robot_flags[1] != 0) {
+			if (RobotCenters[matcen_num].robot_flags[0] != 0 || RobotCenters[matcen_num].robot_flags[1] != 0
+#ifdef DXX_XL_RUNTIME
+			    || xl_robot_generator_has_types(matcen_num)
+#endif
+			) {
 				int	type;
 				uint	flags;
 				sbyte   legal_types[64];   // 64 bits, the width of robot_flags[].
@@ -569,6 +601,11 @@ void robotmaker_proc( FuelCenter * robotcen )
 					}
 				}
 
+#ifdef DXX_XL_RUNTIME
+				if (xl_level_extensions_active())
+					type = xl_robot_generator_type(matcen_num);
+				else
+#endif
 				if (num_types == 1)
 					type = legal_types[0];
 				else
