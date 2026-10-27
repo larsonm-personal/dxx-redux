@@ -116,8 +116,6 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (action.type == 31)
 			for (int target : object_chain_targets(level, action)) {
 				const auto &child = level.triggers[target];
-				const auto magnitude = child.time < 0 ? -std::int64_t(child.time) : std::int64_t(child.time);
-				block(magnitude >= 100 && magnitude <= 900000, "object master reaches a delayed wall action; pending actor/context lifecycle is not qualified");
 				if (child.type == 14 && child.targets.size() > 1)
 					block(std::all_of(child.targets.begin(), child.targets.end(), [&](const auto &link) { return link[0] == child.targets[0][0]; }), "object master teleport child requires distinct destination segments");
 			}

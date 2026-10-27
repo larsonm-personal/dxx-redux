@@ -1,5 +1,9 @@
 # Boss object teleports
 
+The later [delayed-chain tranche](object-chain-delays.md) retains actor identity
+and event context across delays. It replaces the development event trailer with
+schema 6 while preserving the boss destination state verified here
+
 The later [boss group tranche](boss-groups.md) supersedes this record's combined
 owner/group gate for neutral-owner segment groups. Team ownership remains gated.
 

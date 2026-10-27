@@ -67,11 +67,13 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 	try {
 		require(Num_triggers >= 0 && Num_triggers <= MAX_TRIGGERS, "Invalid XL trigger state count");
 		json rows = json::array();
+		json actors = json::array();
 		for (int index = 0; index < Num_triggers; ++index) {
 			xl_trigger_state state;
 			require(xl_wall_trigger_state(index, &state), "Cannot capture XL trigger state");
 			rows.push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated });
 			if (xl_object_trigger_count()) rows.back().push_back(state.destination);
+			actors.push_back({ state.attached, state.signature });
 		}
 		json block = { { "schema", 1 }, { "source", xl_level_trigger_identity() }, { "states", rows } };
 		if (xl_object_trigger_count()) {
@@ -107,6 +109,8 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
+		block["schema"] = 6;
+		block["actors"] = std::move(actors);
 		const auto payload = block.dump();
 		require(payload.size() <= maximum && xl_write(file, tag, 1, sizeof(tag)) == sizeof(tag), "Cannot write XL trigger state");
 		write_u32(file, static_cast<std::uint32_t>(payload.size()));
@@ -140,9 +144,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 3u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == (bosses ? 5 : equipment ? 4
-		                                                                                                                                                     : objects     ? 2
-		                                                                                                                                                                   : 1) &&
+		require(saved.is_object() && saved.size() == 4u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 6 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		std::vector<xl_compat::BossRoutes> boss_routes;
@@ -203,6 +205,8 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			}
 		}
 		std::vector<xl_trigger_state> states;
+		const auto &actors = saved.at("actors");
+		require(actors.is_array() && actors.size() == static_cast<unsigned>(Num_triggers), "Invalid XL pending actor count");
 		for (const auto &row : saved.at("states")) {
 			require(row.is_array() && row.size() == (objects ? 6u : 5u), "Invalid XL trigger state row");
 			for (std::size_t field = 0; field < row.size(); ++field) {
@@ -210,7 +214,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 				require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= std::uint64_t(INT64_MAX)), "Invalid XL trigger state field");
 				require(!field || (value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX), "XL trigger state field overflow");
 			}
-			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0 });
+			const auto &actor = actors[states.size()];
+			require(actor.is_array() && actor.size() == 2, "Invalid XL pending actor row");
+			for (const auto &field : actor)
+				require(field.is_number_integer() && (!field.is_number_unsigned() || field.get<std::uint64_t>() <= INT32_MAX) && field.get<std::int64_t>() >= 0 && field.get<std::int64_t>() <= INT32_MAX, "Invalid XL pending actor field");
+			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0, actor[0].get<int>(), actor[1].get<int>() });
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
 		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");

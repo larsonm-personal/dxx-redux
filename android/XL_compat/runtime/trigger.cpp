@@ -32,6 +32,8 @@ struct ScheduledTrigger {
 	bool operated = false;
 	fix64 started = 0;
 	int delay_ms = -1, object = -1, shot = 0;
+	bool attached = false;
+	int signature = 0;
 };
 std::array<ScheduledTrigger, MAX_TRIGGERS> scheduled{};
 std::array<int, MAX_TRIGGERS> object_destinations{};
@@ -122,7 +124,7 @@ extern "C" void xl_wall_trigger_exit(void)
 }
 
 // Return -1 for ordinary engine dispatch; children retain the original actor
-static int operate_wall(int index, int object_index, int shot, bool attached)
+static int operate_wall(int index, int object_index, int shot, bool attached, int signature = -1)
 {
 	if (!xl_level_extensions_active() || index < 0 || index >= Num_triggers) return -1;
 	if (stock_bypass == index) return -1;
@@ -131,13 +133,17 @@ static int operate_wall(int index, int object_index, int shot, bool attached)
 	const bool chain = action.type >= 31 && action.type <= 33;
 	const bool resource = xl_compat::player_resource_action(action.type);
 	if (!chain && action.type > 14 && !resource) return 1;
-	if ((Game_mode & GM_MULTI) || (action.flags & TF_DISABLED) || index >= MAX_TRIGGERS || object_index < 0 || object_index > Highest_object_index) return 1;
-	const int actor = Objects[object_index].type;
+	if ((Game_mode & GM_MULTI) || (action.flags & TF_DISABLED) || index >= MAX_TRIGGERS || object_index < 0 || object_index >= MAX_OBJECTS) return 1;
+	const bool live = object_index <= Highest_object_index && (Objects[object_index].type == OBJ_PLAYER || xl_wall_teleport_actor(object_index)) && (signature < 0 || Objects[object_index].signature == signature);
+	// Attached events outlive their owner; geometry work does not require an actor
+	// Motion still requires the same live object, never a recycled slot
+	if (!live && (!attached || signature < 0)) return 1;
+	if (signature < 0) signature = Objects[object_index].signature;
+	const int actor = live ? Objects[object_index].type : OBJ_NONE;
 	const bool player = actor == OBJ_PLAYER;
 	if (player) {
 		if (object_index != Players[Player_num].objnum) return 1;
-	} else if ((!attached && action.type != 31 && action.type != 14) || !xl_wall_teleport_actor(object_index)) return 1;
-	if (attached && delayed(action)) return 1;
+	} else if (!attached && action.type != 31 && action.type != 14) return 1;
 	if ((action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK) return 1;
 	for (int i = 0; !resource && i < action.num_links; ++i)
 		if (action.seg[i] < 0 || action.seg[i] > Highest_segment_index || action.side[i] < 0 || action.side[i] >= 6) return 1;
@@ -155,6 +161,8 @@ static int operate_wall(int index, int object_index, int shot, bool attached)
 		state.started = GameTime64;
 		state.object = object_index;
 		state.shot = shot;
+		state.attached = attached;
+		state.signature = signature;
 		if (delayed(action)) {
 			if (action.time > 0) state.delay_ms = action.time;
 			else {
@@ -171,8 +179,9 @@ static int operate_wall(int index, int object_index, int shot, bool attached)
 		xl_player_resource_trigger(&action);
 	} else if (action.type == 14) {
 		// A dead player's teleport skips motion but still reaches post-action flags
-		if (attached) xl_object_teleport_action(&action, object_index, &object_destinations[index]);
-		else xl_wall_teleport_action(index, object_index, shot);
+		if (attached) {
+			if (live) xl_object_teleport_action(&action, object_index, &object_destinations[index]);
+		} else xl_wall_teleport_action(index, object_index, shot);
 	} else if (!chain && attached) {
 		xl_object_classic_action(&action);
 	} else if (!chain) {
@@ -187,7 +196,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached)
 		if (target_index < 0) continue;
 		auto &target = Triggers[target_index];
 		if (action.type == 31) {
-			if (attached) operate_wall(target_index, object_index, 0, true);
+			if (attached) operate_wall(target_index, object_index, 0, true, signature);
 			else if (player) check_trigger_sub(target_index, Player_num, 0);
 			else xl_wall_trigger(target_index, object_index, 0);
 			if (exit_generation != entry_exit) return 1;
@@ -240,7 +249,6 @@ extern "C" int xl_object_master_supported(const trigger *action)
 	add(*action);
 	while (count) {
 		const auto &child = Triggers[pending[--count]];
-		if (delayed(child)) return 0;
 		if (child.type == 14 && child.num_links > 1) {
 			bool distinct = false;
 			for (int i = 1; i < child.num_links; ++i) distinct |= child.seg[i] != child.seg[0];
@@ -265,7 +273,7 @@ extern "C" void xl_wall_trigger_frame(void)
 			if (!delayed(action)) action.flags |= TF_DISABLED;
 		}
 		if (state.operated && delayed(action) && GameTime64 - state.started >= delay_ticks(state.delay_ms)) {
-			xl_wall_trigger(index, state.object, state.shot);
+			operate_wall(index, state.object, state.shot, state.attached, state.signature);
 			if (exit_generation != generation) return;
 			if (action.flags & 8) state.operated = false;
 			else {
@@ -283,6 +291,8 @@ extern "C" int xl_wall_trigger_state(int index, xl_trigger_state *result)
 	const auto &state = scheduled[index];
 	*result = state.operated ? xl_trigger_state{ GameTime64 - state.started, state.delay_ms, state.object, state.shot, 1 } : xl_trigger_state{ 0, -1, -1, 0, 0 };
 	result->destination = object_destinations[index];
+	result->attached = state.operated && state.attached;
+	result->signature = state.operated ? state.signature : 0;
 	return 1;
 }
 
@@ -309,6 +319,8 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 			if (!found) return 0;
 		}
 		if (state.operated < 0 || state.operated > 1 || state.elapsed < 0 || state.elapsed > SAVE_EPOCH_MAX || state.delay_ms < -1 || state.delay_ms > 900000 || state.object < -1 || state.object >= MAX_OBJECTS || state.shot < 0 || state.shot > 1) return 0;
+		if (state.attached < 0 || state.attached > 1 || state.signature < 0 || (state.attached && !xl_object_trigger_count())) return 0;
+		if (!state.operated && (state.attached || state.signature)) return 0;
 		if (!state.operated && (state.elapsed || state.delay_ms != -1 || state.object != -1 || state.shot)) return 0;
 		if (state.operated && state.object < 0) return 0;
 		if (state.operated && delayed(action)) {
@@ -322,7 +334,7 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 	if (!apply) return 1;
 	for (int i = 0; i < count; ++i) {
 		const auto &state = states[i];
-		scheduled[i] = { state.operated != 0, GameTime64 - state.elapsed, state.delay_ms, state.object, state.shot };
+		scheduled[i] = { state.operated != 0, GameTime64 - state.elapsed, state.delay_ms, state.object, state.shot, state.attached != 0, state.signature };
 		object_destinations[i] = state.destination;
 	}
 	activated.fill(false);
