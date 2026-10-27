@@ -143,6 +143,13 @@ finish original-mission qualification
     [repair evidence](../../XL_compat/evidence/repair-centers.md). Twenty-eight
     originals retain independent requirements and qualification
 
+20. Actor-specific closed walls: 55,296 extracted-source comparisons, 120 actual
+    native crossings and all 90 Android key, collision and persistence checks
+    pass within the [recorded scope](../../XL_compat/evidence/keyed-closed-walls.md).
+    Blue/red key ownership affects the player alone; gold, blocked destinations
+    and boost constraints retain source behavior. The audit of 121 originals
+    retains their independent decoding, gameplay and qualification requirements
+
 Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as
 required acceptance rather than cosmetic deferral
