@@ -207,7 +207,15 @@ void teleport_inventory_contract()
 		patch(boost, offset + 1, 8, 1);
 		const auto supported_timing = xl_compat::compatibility_json("boost.rl2", boost);
 		check(feature_row(supported_timing, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos && feature_row(supported_timing, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos, "scheduler browser rows reject implemented boost requirements");
-		for (const int type : { 14, 15 })
+		auto spawns = boost;
+		patch(spawns, offset, 28, 1);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(spawns)).empty(), "authored spawn action rejected");
+		const auto spawn_report = xl_compat::compatibility_json("spawns.rl2", spawns);
+		for (const auto id : { "spawn_points", "delayed_wall_actions", "stateful_trigger_flags" })
+			check(feature_row(spawn_report, id).find("\"status\": \"supported\"") != std::string::npos, "spawn browser row rejects supported action");
+		patch(spawns, offset + 2, 0, 1);
+		rejects([&] { xl_compat::inspect_level(spawns); });
+		for (const int type : { 14, 15, 28 })
 			for (const auto field : { offset + 12, offset + 32 }) {
 				auto invalid = bytes;
 				patch(invalid, offset, type, 1);
@@ -323,6 +331,11 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		patch(boost, trigger + 4, 15, 1);
 		patch(boost, trigger + 37, 0, 2);
 		check(xl_compat::prepare_gameplay_probe(boost).source.object_trigger_records[0].action.type == 15, "supported object speed boost rejected");
+		auto spawns = boost;
+		patch(spawns, trigger + 4, 28, 1);
+		check(xl_compat::prepare_gameplay_probe(spawns).source.object_trigger_records[0].action.type == 28, "supported object spawn points rejected");
+		patch(spawns, trigger + 7, 0, 1);
+		rejects([&] { xl_compat::inspect_level(spawns); });
 		for (const auto field : { trigger + 17, trigger + 37 }) {
 			auto invalid = boost;
 			patch(invalid, field, 0xffff, 2);

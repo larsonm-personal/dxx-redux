@@ -42,7 +42,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("bundle", "missions-root", "inspector", "work", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
-    parser.add_argument("--feature", choices=("spawn-bot", "equipment"), default="spawn-bot")
+    parser.add_argument("--feature", choices=("spawn-bot", "equipment", "spawn-points"), default="spawn-bot")
     parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
     args = parser.parse_args()
     bundle_hash = hashlib.sha256(args.bundle.read_bytes()).hexdigest()
@@ -56,8 +56,10 @@ def main():
     records = []
     for row in rows:
         actions = [action for action in row.get("object_triggers", []) if action["type"] == 26]
+        if args.feature == "spawn-points":
+            actions = [action for action in row.get("triggers", []) if action["type"] == 28]
         equipment = row.get("sections", {}).get("equipment", {})
-        if not (actions if args.feature == "spawn-bot" else equipment.get("count", 0)):
+        if not (equipment.get("count", 0) if args.feature == "equipment" else actions):
             continue
         _, archive_name, level_name = row["path"].split("::")
         source = (root / archive_name).resolve()
@@ -126,6 +128,8 @@ def main():
             record["survey_equipment_segments"] = row["segment_functions"].get(
                 "11" if row["version"] >= 21 else "15", 0
             )
+        elif args.feature == "spawn-points":
+            record["survey_wall_spawn_actions"] = record.pop("survey_spawn_actions")
         if decoded:
             record["native_profile"] = f"{inventory['level_version']}/{inventory['game_version']}"
             record["inspector_findings"] = {

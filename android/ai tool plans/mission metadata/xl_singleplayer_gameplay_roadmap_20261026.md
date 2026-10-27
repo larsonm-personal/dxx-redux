@@ -23,7 +23,7 @@ finish original-mission qualification
 
 | Work area                                                 | Current evidence and remaining acceptance                                                                                                                                                                                                                                                                                                                                              |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Teleports, speed boosts, spawn destinations               | Wall teleports and boost direction/constraints/release/orientation, boost-area collision and saved motion have native/source controls. All 49 Android boost controls pass; spawn destinations and original mission interactions remain open                                                                                                                                            |
+| Teleports, speed boosts, spawn destinations               | Wall teleports and boost direction/constraints/release/orientation, boost-area collision and saved motion have native/source controls. All 49 Android boost and 56 authored-spawn controls pass, including real death/respawn, marker precedence and saved transforms; original mission interactions remain open                                                                                                                                            |
 | Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Action-specific byte flags have reference/native and Android mixer/persistence controls. Delayed descendants now retain event context/actor identity through disk/rewind; other object actions/owners remain open; boss destinations have separate checked state |
 | Segment properties, walls and generators                  | Modern robot-free water/no-damage and bounded robot-matcen assignment, production, contact and persistence verified. Repair/team/ownership/lava/blocked behavior, gameplay walls, legacy equipment layouts and expanded generator data remain open; modern equipment controls pass                                                                                                     |
 | Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                                                                                                                                                                |
@@ -113,6 +113,11 @@ finish original-mission qualification
     stock-transition steps pass; see [boost evidence](../../XL_compat/evidence/speed-boosts.md).
     This covers the default ship/boost-strength profile, not original mission
     qualification or optional physics settings
+
+15. Authored spawn points: 1,536 source transforms, 16 source cue comparisons,
+    native actual death/marker/delayed-event controls and all 56 Android
+    persistence steps pass; see [spawn-point evidence](../../XL_compat/evidence/spawn-points.md).
+    Six surveyed originals retain independent capacity, effect and gameplay gates
 
 Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as

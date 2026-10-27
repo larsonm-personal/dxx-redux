@@ -67,6 +67,12 @@ cover actual crossings, player/robot collisions, release and stock isolation.
 All 49 Android disk/rewind and transition steps pass. See [boost evidence](evidence/speed-boosts.md)
 for the default ship/strength scope and intentional reference corrections.
 
+Authored spawn points now use a separate XL table and the ordinary death/respawn
+path, including named SPAWN marker precedence and checked saved transforms.
+Source, native lifecycle and all 56 Android controls pass within the tested scope.
+See [spawn-point evidence](evidence/spawn-points.md). This replaces development
+schema 7 with schema 8; surveyed originals retain independent requirements.
+
 Authored segment groups with neutral ownership now constrain XL boss destinations
 across open connections. Group labels are preserved independently of unsupported
 team ownership; the default label is not a wildcard. Native/source and lifecycle
