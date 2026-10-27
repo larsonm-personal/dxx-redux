@@ -8,6 +8,7 @@
 #include <vector>
 #include "trigger_state.h"
 #include "object_trigger.h"
+#include "robot_generator.h"
 #include "preview.h"
 extern "C" {
 #include "inferno.h"
@@ -128,6 +129,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			}
 			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0 });
 		}
+		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
 		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0), "Invalid XL event state");
 		xl_wall_trigger_restore(states.data(), static_cast<int>(states.size()));
 		xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 1);

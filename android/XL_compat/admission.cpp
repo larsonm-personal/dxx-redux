@@ -53,6 +53,23 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
+	// XL AssignProducer uses the authored segment producer index, ignoring the
+	// redundant links in each disk row. Stock renumbers segments during mine load
+	std::vector<int> generator_owners(level.matcens.size(), -1);
+	int stations = 0;
+	for (std::size_t i = 0; i < level.segments.size(); ++i) {
+		const auto &segment = level.segments[i];
+		if (segment.function >= 1 && segment.function <= 4) ++stations;
+		if (segment.function != 4) continue;
+		if (segment.producer < 0 || static_cast<std::size_t>(segment.producer) >= generator_owners.size())
+			result.push_back({ "generator assignment", static_cast<int>(i), "robotmaker segment has no source record for its producer index" });
+		else if (generator_owners[segment.producer] >= 0)
+			result.push_back({ "generator assignment", static_cast<int>(i), "producer index is shared by multiple robotmaker segments" });
+		else generator_owners[segment.producer] = static_cast<int>(i);
+	}
+	for (std::size_t i = 0; i < generator_owners.size(); ++i)
+		if (generator_owners[i] < 0) result.push_back({ "generator assignment", static_cast<int>(i), "source record has no robotmaker segment with this producer index" });
+	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
 	const bool modern_water = level.level_version >= 21 && std::any_of(level.segments.begin(), level.segments.end(), [](const Segment &segment) { return (segment.properties & segment_water) != 0; });
 	const bool fluid_actors = !level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) { return object.type == 2 || (object.contains_count > 0 && object.contains_type == 2); });
 	limit(modern_water && fluid_actors, "water actors", "water with robots or robot generators is not qualified; robot-free singleplayer water is supported");
