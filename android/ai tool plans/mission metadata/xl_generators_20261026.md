@@ -1,7 +1,7 @@
 # XL robot generation chunk
 
-Continue the singleplayer roadmap after object events. Branch xl_more_8 starts
-above the three object-event commits in PR #150. Bounded robot-matcen behavior
+Continue the singleplayer roadmap after object events. Branch xl_more_8 is based
+on cmake after object-event PR #150 merged. Bounded robot-matcen behavior
 is verified within the evidence below. Equipment generators, expanded gameplay
 data and object spawn actions remain open in the overall roadmap. No new original
 mission is qualified
@@ -55,6 +55,17 @@ Additional lifecycle pins:
 - maths/vecmat.cpp SHA256
   4115afe844ad77a81e9f0de57ae1bbf577b06d5f49aed8b02d19002ff2021335
 
+Contact reference pins:
+
+- include/vecmat.h SHA256
+  83d7f73f89a2f588a0b56a08fb9e293b747cc65a5ed22bad6771d64319bdca0f
+- include/maths.h SHA256
+  43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd
+- physics/collide.cpp SHA256
+  d10f88f82e5d283077914881d1acb719f06785a86be22e50617d92d6fce47bc9
+- physics/physics.cpp SHA256
+  2ca8d5c939f31da9d4686637ed3e4305bf89e208a575f2f7f6ea2b4d2e6fab76
+
 ## Work and acceptance
 
 1. Correct source-to-native generator assignment with independent pinned reader/
@@ -85,7 +96,7 @@ robot-matcen portion; item 6 remains the next dependent work area
 
 ## Runtime and integration acceptance
 
-The pinned source matches 42 selection/RNG cases, six default-profile distances,
+The pinned source matches 96 contact impulse/damage/RNG cases, 42 selection/RNG cases, six default-profile distances,
 30 difficulty/lives activations and 45 actual generated-robot shield values.
 Implicit high-ID selection uses explicitly synthetic definitions in the native
 control; production still requires valid admitted assets and retains expansion
@@ -100,22 +111,37 @@ Generator source assignments and candidate robot IDs enter the source identity;
 generator saves require the checked extension, and restored table links/contents
 must match the source
 
-Android passes 50/50 steps and six production rewind restores, run ID
-6c855bcc862b4d2580374bdbfb4ca907, elapsed 129572 ms. Pending effects, spawned
+Android passes 53/53 steps and six production rewind restores, run ID
+5852fd1b2af5450f8c6a1947b1edd1f7, elapsed 152589 ms. Pending effects, spawned
 robot identities, native combat, disk restore and stock-to-source restoration
 pass with exact protected-file hashes. The initial run exposed the test-only
 suspension flag resetting on load; the corrected script reapplies that control
 before inspecting pending state rather than waiting for production to advance
 
 Tested APK SHA256:
-485d72a608a627a9418a71fd50068bb3bbaa2544f8b5e1e06642754108f511a6
+a9df1c3e05375a96e368b641a3cd049307686c06a6d299e774a5ef901d842b22
 
 The maintained [evidence](../../XL_compat/evidence/robot-generators.md) records
 fixture hashes, remaining limits and original-level findings. The roadmap remains
-active; no commit or push is authorized by this chunk's completion
+active; completing this chunk does not complete the overall gameplay roadmap
 
-Also found and corrected locally the object-event PR's Linux include order:
+The object-event PR's Linux include order was corrected and merged into cmake:
 object_trigger.h must precede trigger_state.h because rewind_file.h introduces
 engine min/max macros. The old source reproduces CI's error under local GCC;
-the corrected production translation unit passes syntax compilation. No changes
-from this continuation have been committed or pushed, per the user's instruction
+the corrected production translation unit passes syntax compilation
+
+## Finalization
+
+The user authorized commits and pushes to finalize xl_more_8 and its CI.
+
+1. Rebase only generator commit 515b6693d onto origin/cmake after PR #150 merged.
+   Complete: range-diff drops only the already-merged trigger include fix. The
+   complete tree difference consists exactly of five upstream settings-test files.
+   The original commit remains at backup/xl-more-8-before-cmake-rebase-20261026.
+2. Reconcile the final 53-step Android and 96-case contact evidence. Complete:
+   the retained result, APK hash, native reference log and protected-file hash
+   reports match the evidence above.
+3. Finish scoped formatting, both automation catalogs, runner-policy tests and
+   the focused native/reference sweep on the rebased tree.
+4. Push xl_more_8, open a draft PR to cmake, and monitor its CI to terminal
+   success. Inspect and fix actual failures without weakening test gates.

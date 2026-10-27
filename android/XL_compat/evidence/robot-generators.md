@@ -1,8 +1,8 @@
 # Robot generator fidelity
 
-The final contact audit is still in progress: damage amounts are verified, but
-the newly discovered XL knockback normalization/RNG path needs independent
-comparison and integration. Earlier controls below retain their recorded scope.
+Bounded robot-matcen assignment, production, contact and persistence behavior is
+verified by the native/reference and Android controls below. Contact impulses,
+damage and RNG consumption match 96 independent pinned-source comparisons.
 Equipment generators, expanded gameplay data/capacities and object spawn actions
 remain unsupported. This does not qualify a new original mission or finish the
 singleplayer roadmap
@@ -64,6 +64,14 @@ population-cap suppression/recovery, three exhausted waves/lives, final disable
 frame and user one-round/paused modes. Stock dispatch retains its previous timer
 boundary and generated health; real stock/source transitions also pass
 
+Contact handling uses the reference's default math-format-2 normalization,
+random-direction axis and draw order, player direction perturbation, and
+floating-point mass scaling. Ninety-six production/reference samples compare
+the exact impulse, damage and RNG transcript for players and robots, offset
+positions, four RNG seeds, fractional/zero mass, nonphysical movement, automap
+and closed exits. The Android control also exercises production contact and
+checks the player's shield change from 100 to 96 and resulting movement
+
 The pinned per-station population expression uses a signed creator byte before
 XOR. Redux retains that behavior rather than silently imposing a different limit;
 the global 15-extra-robot cap is verified. Introspection interprets creator bytes
@@ -79,8 +87,8 @@ validated against the loaded source before publishing extension event state.
 Seven malformed count/contents/link controls reject without publishing saved
 wall state. The stock save layout remains unchanged
 
-Android passes 50/50 steps, run ID 6c855bcc862b4d2580374bdbfb4ca907, elapsed
-129572 ms. Two captures each undergo three real authoritative rewind restores,
+Android passes 53/53 steps, run ID 5852fd1b2af5450f8c6a1947b1edd1f7, elapsed
+152589 ms. Two captures each undergo three real authoritative rewind restores,
 covering pending generation and spawned robots. Native combat, pending disk
 restore and stock-to-source restoration pass. Protected files have identical
 before/after hashes; emulator-5556 was not used
@@ -91,7 +99,7 @@ generation continue. The initial failing run and the successful corrected run
 both restored protected files exactly
 
 Tested APK SHA256:
-485d72a608a627a9418a71fd50068bb3bbaa2544f8b5e1e06642754108f511a6
+a9df1c3e05375a96e368b641a3cd049307686c06a6d299e774a5ef901d842b22
 
 Derived fixture HOG SHA256:
 1cdbbe99c38ebca641bdd5184d342de21172163f051c3379592b3468f8ff3e77

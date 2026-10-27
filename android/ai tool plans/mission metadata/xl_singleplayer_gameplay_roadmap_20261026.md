@@ -25,7 +25,7 @@ finish original-mission qualification
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Teleports, speed boosts, spawn destinations               | Immediate wall teleports verified. Boost direction/constraints/release/orientation, boost-area collision, spawn state and interactions remain open                                                                                                |
 | Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Orientation/silent flags, delayed object descendants, other object actions/owners and boss teleport bookkeeping remain open |
-| Segment properties, walls and generators                  | Modern robot-free water and no-damage gates verified within documented limits. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay wall semantics, equipment generators and XL robot-generation differences remain open              |
+| Segment properties, walls and generators                  | Modern robot-free water/no-damage and bounded robot-matcen assignment, production, contact and persistence verified. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay walls, equipment generators and expanded generator data remain open              |
 | Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                           |
 | Cross-feature regressions and original missions           | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open              |
 
@@ -45,8 +45,8 @@ finish original-mission qualification
    [recorded scope](../../XL_compat/evidence/object-triggers.md) and
    [chunk plan](xl_object_triggers_20261026.md). Delayed descendants, other
    actions/owners and boss bookkeeping remain explicitly gated
-5. Robot matcens: final contact audit in progress. Native/reference and Android disk/rewind, activation,
-   selection, generated health, exhaustion and stock controls pass within the
+5. Robot matcens: complete within the bounded chunk scope. Native/reference and Android disk/rewind, activation,
+   selection, generated health, contact impulse/damage/RNG, exhaustion and stock controls pass within the
    [chunk scope](xl_generators_20261026.md) and
    [evidence](../../XL_compat/evidence/robot-generators.md). Equipment, expanded
    data/capacities and object spawn actions remain open
