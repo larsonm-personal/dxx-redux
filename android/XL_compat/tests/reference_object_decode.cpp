@@ -328,7 +328,7 @@ int main(int argc, char **argv)
 				check((selected && !(flags & TF_DISABLED)) == bool(fired) && trigger.value == changed, "Reference object event selection or consumed value differs");
 				++count;
 			}
-			check(samples.eof() && count == 1456, "Missing or malformed object event samples");
+			check(samples.eof() && count == 2184, "Missing or malformed object event samples");
 			std::cout << "Matched " << count << " production object event samples against pinned selection and shield math\n";
 			return 0;
 		}

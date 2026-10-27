@@ -49,9 +49,17 @@ finish original-mission qualification
    selection, generated health, contact impulse/damage/RNG, exhaustion and stock controls pass within the
    [chunk scope](xl_generators_20261026.md) and
    [evidence](../../XL_compat/evidence/robot-generators.md). Equipment, expanded
-   data/capacities and object spawn actions remain open
+   data/capacities remain open; object spawn actions have separate evidence below
 
-Next audit object-trigger robot spawning and its boss lifecycle requirements.
+6. Object-triggered boss spawning and separate per-owner cloak/teleport/death
+   lifecycle: native/reference and all 66 Android lifecycle/combat checks pass.
+   Final generated-robot combat and formatted-build verification are recorded in
+   [the boss evidence](../../XL_compat/evidence/boss-spawning.md) and
+   [chunk plan](xl_boss_spawning_20261027.md). This does not qualify an original
+   mission; boss object teleports and dynamic boss creation remain gated
+
+Next audit equipment generators and the object payload layouts blocking original
+spawn-bot missions.
 Missing object payload layouts and capacities
 remain separate blockers; a new action alone must not admit those missions.
 Return to delayed object-chain lifecycle and boss/owner variants as part of the

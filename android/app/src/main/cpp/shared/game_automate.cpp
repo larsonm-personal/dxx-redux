@@ -7818,13 +7818,33 @@ extern "C" void game_automate_tick(void)
 #else
 				stop_script_fail("matcen_robot_damage requires D2");
 #endif
-			} else if (s.field == "object_damage") {
+			} else if (s.field == "object_damage" || s.field == "boss_robot_damage") {
 #ifdef DXX_BUILD_DESCENT_II
 				int object = -1;
 				double points = 0;
-				char source[16] = {}, extra;
-				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %lf %15s %c", &object, &points, source, &extra) != 3 || object < 0 || object > Highest_object_index || !std::isfinite(points) || points < 0 || points > 32767 || (strcmp(source, "local") && strcmp(source, "none"))) {
+				char source[16] = {}, amount[64] = {}, extra, *end = nullptr;
+				if (!Game_wind || (Game_mode & GM_MULTI) || sscanf(s.value.c_str(), "%d %63s %15s %c", &object, amount, source, &extra) != 3 || object < 0 || (s.field == "boss_robot_damage" ? object >= N_robot_types : object > Highest_object_index) || (strcmp(source, "local") && strcmp(source, "none"))) {
 					stop_script_fail("object_damage requires a singleplayer object, points and local/none source");
+					break;
+				}
+				if (s.field == "boss_robot_damage") {
+					const int id = object;
+					object = -1;
+					for (int index = 0; index <= Highest_object_index; ++index) {
+						const auto &candidate = Objects[index];
+						if (candidate.type == OBJ_ROBOT && candidate.id == id && !Robot_info[id].boss_flag && candidate.matcen_creator == BOSS_GATE_MATCEN_NUM && !(candidate.flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))) {
+							object = index;
+							break;
+						}
+					}
+					if (object < 0) {
+						stop_script_fail("boss_robot_damage requires a live boss-created robot ID");
+						break;
+					}
+				}
+				points = !strcmp(amount, "half") ? f2fl(Objects[object].shields / 2) : strtod(amount, &end);
+				if ((end && (!*amount || *end)) || !std::isfinite(points) || points < 0 || points > 32767) {
+					stop_script_fail("object_damage amount must be half or finite points in 0..32767");
 					break;
 				}
 				const int killer = !strcmp(source, "local") ? ConsoleObject - Objects : -1;

@@ -26,6 +26,7 @@ extern "C" {
 namespace
 {
 std::uint32_t implicit_flags = 0;
+std::uint32_t ready_mask = 0;
 std::array<matcen_info, MAX_ROBOT_CENTERS> authored{};
 int authored_count = 0;
 
@@ -67,6 +68,7 @@ vms_vector random_direction()
 extern "C" void xl_robot_generator_clear(void)
 {
 	implicit_flags = 0;
+	ready_mask = 0;
 	authored_count = 0;
 }
 
@@ -93,7 +95,30 @@ extern "C" std::uint32_t xl_robot_generator_implicit_flags(void)
 extern "C" int xl_robot_generator_has_types(int center)
 {
 	if (!xl_level_extensions_active() || center < 0 || center >= Num_robot_centers) return 0;
+	if (!RobotCenters[center].robot_flags[0] && !RobotCenters[center].robot_flags[1]) ready_mask |= std::uint32_t(1) << center;
 	return RobotCenters[center].robot_flags[0] || RobotCenters[center].robot_flags[1] || implicit_flags;
+}
+
+extern "C" std::uint32_t xl_robot_generator_ready_mask(void)
+{
+	return ready_mask;
+}
+extern "C" int xl_robot_generator_restore_ready(std::uint32_t mask, int apply)
+{
+	if (Num_robot_centers < 0 || Num_robot_centers > MAX_ROBOT_CENTERS || (mask >> Num_robot_centers)) return 0;
+	for (int i = 0; i < Num_robot_centers; ++i)
+		if ((mask & (std::uint32_t(1) << i)) && (RobotCenters[i].robot_flags[0] || RobotCenters[i].robot_flags[1])) return 0;
+	if (apply) ready_mask = mask;
+	return 1;
+}
+
+extern "C" int xl_robot_generator_spawn_type(int center)
+{
+	if (!xl_level_extensions_active() || center < 0 || center >= Num_robot_centers) return -1;
+	const auto &source = RobotCenters[center];
+	// OperateRobotMaker reads word 2 but does not invoke VertigoObjFlags itself
+	if (!source.robot_flags[0] && !source.robot_flags[1] && !(ready_mask & (std::uint32_t(1) << center))) return -1;
+	return xl_robot_generator_type(center);
 }
 
 extern "C" int xl_robot_generator_type(int center)

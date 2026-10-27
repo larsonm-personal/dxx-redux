@@ -32,7 +32,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
 		if (issue.feature == "object_triggers") continue;
-		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
+		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "26" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (issue.feature == "trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (experimental_water) {
 			if (level.level_version < 21 && issue.feature == "segment_function" && issue.detail == "7") continue;
@@ -86,6 +86,13 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		const auto &record = level.object_trigger_records[i];
 		const auto &action = record.action;
 		const auto block = [&](bool condition, const char *detail) { if (condition) result.push_back({ "object triggers", static_cast<int>(i), detail }); };
+		if (action.type == 26) {
+			block(record.object >= 0 && (static_cast<std::size_t>(record.object) >= level.objects.size() || level.objects[record.object].type != 2), "spawn-bot action requires a robot boss owner");
+			if (!action.targets.empty()) {
+				const int segment = action.targets[0][0];
+				block(segment >= 0 && (static_cast<std::size_t>(segment) >= level.segments.size() || level.segments[segment].function != 4), "spawn-bot selection target must be a robotmaker segment or negative for arbitrary selection");
+			}
+		}
 		if (action.type == 31)
 			for (int target : object_chain_targets(level, action)) {
 				const auto &child = level.triggers[target];

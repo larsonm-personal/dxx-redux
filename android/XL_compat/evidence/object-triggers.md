@@ -56,7 +56,8 @@ flags, values, operated state and teleport destination history across source and
 stock transitions. A deleted/reused object slot does not inherit the binding.
 Direct stock illusion-off/on dispatch also passes after the shared leaf refactor
 
-All 1456 exported production event samples match extracted reference
+All 2184 exported production event samples, including 728 spawn-bot threshold
+and consumption cases, match extracted reference
 DoExecObjTrigger and CObject::Damage calculations across types, raw/fixed values,
 disabled/permanent flags, event kind and shield boundaries. Eighteen malformed
 extension controls reject count, owner, signature, type, flags, value, operated,

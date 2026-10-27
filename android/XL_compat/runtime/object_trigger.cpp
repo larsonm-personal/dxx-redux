@@ -1,5 +1,6 @@
 #include "object_trigger.h"
 #include "preview.h"
+#include "boss_spawn.h"
 #include <algorithm>
 #include <cstdint>
 #include <stdexcept>
@@ -73,6 +74,7 @@ void operate(ObjectAction &entry)
 	if (!bound(entry) || (action.flags & TF_DISABLED)) return;
 	entry.operated = true;
 	if (action.type == 14) xl_object_teleport_action(&action, entry.owner, &entry.destination);
+	else if (action.type == 26) xl_boss_spawn_action(entry.owner, action.num_links ? action.seg[0] : -1);
 	else if (action.type == 31) xl_object_master_action(&action, entry.owner);
 	else if (action.type == 32 || action.type == 33) {
 		for (int link = 0; link < action.num_links; ++link) {
@@ -136,7 +138,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 	if (level.object_trigger_records.size() > 255) throw std::runtime_error("object trigger capacity exceeds 255 inspected records");
 	for (const auto &record : level.object_trigger_records) {
 		const auto &source = record.action;
-		if ((source.type > 14 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK)
+		if ((source.type > 14 && source.type != 26 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK)
 			throw std::runtime_error("object trigger action or flags are not implemented");
 		ObjectAction entry;
 		entry.authored_owner = entry.owner = record.object;
@@ -179,7 +181,7 @@ extern "C" void xl_object_trigger_event(int object_index, int damage)
 			continue;
 		}
 		auto &action = entry.action;
-		if (bool(damage) == (action.type == 14)) {
+		if (bool(damage) == (action.type == 14 || action.type == 26)) {
 			bool fire = true;
 			if (damage) {
 				const auto value = action.value >= F1_0 ? action.value / F1_0 : action.value;
@@ -209,6 +211,14 @@ extern "C" int xl_object_trigger_count(void)
 	return xl_level_extensions_active() ? static_cast<int>(actions.size()) : 0;
 }
 
+extern "C" int xl_object_trigger_has_spawn(int object)
+{
+	if (!xl_level_extensions_active()) return 0;
+	for (const auto &entry : actions)
+		if (entry.owner == object && entry.action.type == 26 && bound(entry)) return 1;
+	return 0;
+}
+
 extern "C" int xl_object_trigger_state_get(int index, xl_object_trigger_state *result)
 {
 	if (!result || index < 0 || index >= xl_object_trigger_count()) return 0;
@@ -231,7 +241,7 @@ extern "C" int xl_object_trigger_restore(const xl_object_trigger_state *states, 
 		if (state.operated < 0 || state.operated > 1 || (state.type != original.action.type && (!(original.action.flags & 16) || state.type != opposite(original.action.type)))) return 0;
 		if ((state.flags & ~TF_DISABLED) != (original.action.flags & ~TF_DISABLED) || (state.flags & ~flags_mask)) return 0;
 		if ((original.action.flags & TF_DISABLED) && !(state.flags & TF_DISABLED)) return 0;
-		if (state.value != original.action.value && (state.value != 0 || original.action.type != 14 || (original.action.flags & 8))) return 0;
+		if (state.value != original.action.value && (state.value != 0 || (original.action.type != 14 && original.action.type != 26) || (original.action.flags & 8))) return 0;
 		if (state.destination != 0) {
 			bool found = false;
 			for (int link = 0; link < original.action.num_links; ++link) found |= original.action.seg[link] == state.destination;

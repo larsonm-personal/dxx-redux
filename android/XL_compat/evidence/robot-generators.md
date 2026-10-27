@@ -3,8 +3,9 @@
 Bounded robot-matcen assignment, production, contact and persistence behavior is
 verified by the native/reference and Android controls below. Contact impulses,
 damage and RNG consumption match 96 independent pinned-source comparisons.
-Equipment generators, expanded gameplay data/capacities and object spawn actions
-remain unsupported. This does not qualify a new original mission or finish the
+Equipment generators and expanded gameplay data/capacities remain unsupported.
+Object spawn actions now have [separate boss lifecycle evidence](boss-spawning.md);
+matcen checks alone do not qualify them. This does not qualify a new original mission or finish the
 singleplayer roadmap
 
 ## Assignment correction

@@ -14,6 +14,7 @@ void xl_object_trigger_clear(void);
 void xl_object_trigger_event(int object, int damage);
 void xl_object_trigger_frame(void);
 int xl_object_trigger_count(void);
+int xl_object_trigger_has_spawn(int object);
 int xl_object_trigger_state_get(int index, xl_object_trigger_state *state);
 int xl_object_trigger_restore(const xl_object_trigger_state *states, int count, int apply);
 #ifdef __cplusplus

@@ -1,3 +1,7 @@
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "boss_spawn.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1919,6 +1923,10 @@ void do_ai_frame_all(void)
 	}
 
 	// (Moved here from do_boss_stuff() because that only gets called if robot aware of player.)
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) xl_boss_deaths_frame();
+	else
+#endif
 	if (Boss_dying) {
 		for (i=0; i<=Highest_object_index; i++)
 			if (Objects[i].type == OBJ_ROBOT)

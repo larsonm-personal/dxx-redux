@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #ifdef DXX_XL_RUNTIME
 #include "trigger_state.h"
+#include "preview.h"
 #endif
 #include "game.h"
 #include "effects.h"
@@ -3634,6 +3635,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 		//look for, and fix, D2 boss with bogus shields; native D1 preserves saved health
 		if (obj->type == OBJ_ROBOT && Robot_info[obj->id].boss_flag &&
+#ifdef DXX_XL_RUNTIME
+		    !xl_level_extensions_active() &&
+#endif
 		    d1_in_d2_ai_actor_role(obj) == D1_AI_ENGINE_ACTOR) {
 			fix save_shields = obj->shields;
 			fix default_shields;
