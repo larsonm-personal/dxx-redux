@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "object_trigger.h"
 #include "trigger_state.h"
+#include "../trigger_flags.h"
 #include "save_epoch_format.h"
 extern "C" {
 #include "inferno.h"
@@ -16,6 +17,7 @@ extern "C" {
 #include "wall.h"
 #include "timer.h"
 #include "rng_shared.h"
+#include "sounds.h"
 int xl_object_classic_action(const trigger *action);
 }
 
@@ -32,8 +34,11 @@ struct ScheduledTrigger {
 };
 std::array<ScheduledTrigger, MAX_TRIGGERS> scheduled{};
 std::array<int, MAX_TRIGGERS> object_destinations{};
+#if defined(INTROSPECT_ON) || defined(DXX_XL_DEVELOPER_PROBE)
+std::array<std::array<std::uint64_t, 2>, 2> cue_queries{};
+#endif
 int stock_bypass = -1;
-constexpr int supported_flags = 1 | 2 | 4 | 8 | 16 | 128;
+constexpr int supported_flags = xl_compat::trigger_flags_mask;
 bool delayed(const trigger &action)
 {
 	const auto magnitude = std::abs(std::int64_t(action.time));
@@ -82,6 +87,32 @@ extern "C" void xl_wall_trigger_reset(void)
 extern "C" int xl_wall_trigger_stock_active(void)
 {
 	return stock_bypass >= 0;
+}
+
+extern "C" int xl_trigger_cue_enabled(const trigger *action, int sound)
+{
+	if (!xl_level_extensions_active() || !action) return 1;
+	const int slot = sound == SOUND_FORCEFIELD_OFF ? 0 : sound == SOUND_WALL_REMOVED ? 1
+	                                                                                 : -1;
+	if (slot < 0) return 1;
+	const bool enabled = xl_compat::trigger_cue_enabled(action->flags, slot ? xl_compat::TriggerCue::IllusionOff : xl_compat::TriggerCue::ForcefieldOff);
+#if defined(INTROSPECT_ON) || defined(DXX_XL_DEVELOPER_PROBE)
+	++cue_queries[slot][enabled ? 1 : 0];
+#endif
+	return enabled;
+}
+
+extern "C" std::uint64_t xl_trigger_cue_queries(int sound, int enabled)
+{
+#if defined(INTROSPECT_ON) || defined(DXX_XL_DEVELOPER_PROBE)
+	const int slot = sound == SOUND_FORCEFIELD_OFF ? 0 : sound == SOUND_WALL_REMOVED ? 1
+	                                                                                 : -1;
+	if (slot >= 0 && (enabled == 0 || enabled == 1)) return cue_queries[slot][enabled];
+#else
+	(void) sound;
+	(void) enabled;
+#endif
+	return 0;
 }
 
 extern "C" void xl_wall_trigger_exit(void)

@@ -21,13 +21,13 @@ The original overlapping work areas remain open until their acceptance evidence
 is complete. In particular, completing a parser or a derived fixture does not
 finish original-mission qualification
 
-| Work area                                                 | Current evidence and remaining acceptance                                                                                                                                                                                                                                                     |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Teleports, speed boosts, spawn destinations               | Immediate wall teleports verified. Boost direction/constraints/release/orientation, boost-area collision, spawn state and interactions remain open                                                                                                                                            |
-| Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Orientation/silent flags, delayed object descendants, other object actions/owners remain open; boss destinations have separate checked state                            |
-| Segment properties, walls and generators                  | Modern robot-free water/no-damage and bounded robot-matcen assignment, production, contact and persistence verified. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay walls, legacy equipment layouts and expanded generator data remain open; modern equipment controls pass |
-| Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                                                                       |
-| Cross-feature regressions and original missions           | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open                                                          |
+| Work area                                                 | Current evidence and remaining acceptance                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Teleports, speed boosts, spawn destinations               | Immediate wall teleports verified. Boost direction/constraints/release/orientation, boost-area collision, spawn state and interactions remain open                                                                                                                                                                                |
+| Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Action-specific byte flags have reference/native and Android mixer/persistence controls. Delayed object descendants, other object actions/owners remain open; boss destinations have separate checked state |
+| Segment properties, walls and generators                  | Modern robot-free water/no-damage and bounded robot-matcen assignment, production, contact and persistence verified. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay walls, legacy equipment layouts and expanded generator data remain open; modern equipment controls pass                                     |
+| Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                                                                                                           |
+| Cross-feature regressions and original missions           | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open                                                                                              |
 
 ## Chunk ledger
 
@@ -78,6 +78,13 @@ finish original-mission qualification
    controls within the [recorded scope](../../XL_compat/evidence/boss-transport.md).
    This supersedes the earlier boss-teleport gate; original missions remain
    separately qualified
+
+10. Action-specific byte flags: 6,400 source comparisons, native scheduling,
+    one-shot/alternate/combat/teleport controls and all 66 Android mixer/lifecycle
+    steps pass within the [recorded scope](../../XL_compat/evidence/trigger-flags.md).
+    Bits 32/64 are admitted for implemented actions; boost orientation remains
+    gated. XL's bounded illusion handler intentionally corrects the reference's
+    back-side lookup while preserving its counterintuitive cue condition
 
 Return to delayed object-chain lifecycle and other owner variants as part of the
 unfinished event area above. Use the refreshed original counts to prioritize

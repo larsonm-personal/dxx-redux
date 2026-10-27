@@ -1,6 +1,7 @@
 #include "object_trigger.h"
 #include "preview.h"
 #include "boss_spawn.h"
+#include "../trigger_flags.h"
 #include <algorithm>
 #include <cstdint>
 #include <stdexcept>
@@ -31,7 +32,7 @@ struct ObjectAction {
 	bool operated = false;
 };
 std::vector<ObjectAction> actions, authored;
-constexpr int flags_mask = 159;
+constexpr int flags_mask = xl_compat::trigger_flags_mask;
 
 int opposite(int type)
 {

@@ -305,6 +305,9 @@ int do_change_walls(const trigger *trig)
 					if ((TmapInfo[segp->sides[side].tmap_num].flags & TMI_FORCE_FIELD)) {
 						vms_vector pos;
 						compute_center_point_on_side(&pos, segp, side );
+						#ifdef DXX_XL_RUNTIME
+						if (xl_trigger_cue_enabled(trig, SOUND_FORCEFIELD_OFF))
+						#endif
 						digi_link_sound_to_pos( SOUND_FORCEFIELD_OFF, segp-Segments, side, &pos, 0, F1_0 );
 						Walls[segp->sides[side].wall_num].type = new_wall_type;
 						digi_kill_sound_linked_to_segment(segp-Segments,side,SOUND_FORCEFIELD_HUM);
@@ -422,6 +425,9 @@ void do_matcen(const trigger *trig)
 void do_il_on(const trigger *trig)
 {
 	int i;
+#ifdef DXX_XL_RUNTIME
+	if (xl_trigger_illusion_action(trig)) return;
+#endif
 
 	if (trig != NULL) {
 		for (i=0;i<trig->num_links;i++) {
@@ -433,6 +439,9 @@ void do_il_on(const trigger *trig)
 void do_il_off(const trigger *trig)
 {
 	int i;
+#ifdef DXX_XL_RUNTIME
+	if (xl_trigger_illusion_action(trig)) return;
+#endif
 
 	if (trig != NULL) {
 		for (i=0;i<trig->num_links;i++) {

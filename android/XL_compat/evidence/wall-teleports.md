@@ -1,5 +1,9 @@
 # Immediate wall-trigger teleport evidence
 
+The later [trigger flag tranche](trigger-flags.md) supersedes the 32/64 restriction
+below with action-specific semantics. Object events also have their separate
+[lifecycle evidence](object-triggers.md); this original tranche remains scoped.
+
 ## Scope
 
 Detected type-14 wall actions are implemented in the shared OpenGL D2 binary for

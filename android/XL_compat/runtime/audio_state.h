@@ -25,3 +25,25 @@ int xl_linked_sound_count(int object_index, int sound, int playing_only)
 	}
 	return count;
 }
+
+int xl_segment_sound_count(int segment, int side, int sound, int playing_only)
+{
+	int i, count = 0;
+	const int sample = digi_xlat_sound(sound);
+	if (segment < 0 || segment > Highest_segment_index || side < 0 || side >= 6 || sample < 0) return 0;
+	for (i = 0; i < MAX_SOUND_OBJECTS; ++i) {
+		const sound_object *entry = &SoundObjects[i];
+		if ((entry->flags & (SOF_USED | SOF_LINK_TO_POS)) != (SOF_USED | SOF_LINK_TO_POS) ||
+		    entry->link_type.pos.segnum != segment || entry->link_type.pos.sidenum != side || entry->soundnum != sample) continue;
+		if (playing_only) {
+			if (entry->channel < 0) continue;
+#if defined(__ANDROID__) && defined(USE_SDLMIXER)
+			if (!Mix_Playing(entry->channel)) continue;
+#else
+			if (!digi_is_channel_playing(entry->channel)) continue;
+#endif
+		}
+		++count;
+	}
+	return count;
+}

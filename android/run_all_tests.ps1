@@ -505,6 +505,7 @@ $testTimeouts = @{
     "test_xl_object_events_runtime" = 480
     "test_xl_robot_generators_runtime" = 480
     "test_xl_boss_spawning_runtime" = 480
+    "test_xl_trigger_flags_runtime" = 480
     "test_xl_equipment_runtime" = 480
     "test_xl_pilot_import" = 300
     "test_xl_pilot_coronas" = 300

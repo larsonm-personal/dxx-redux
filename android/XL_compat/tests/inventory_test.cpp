@@ -330,7 +330,12 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 			owner.objects[1].type = 7;
 			check(xl_compat::blocker_message(xl_compat::runtime_blockers(owner)).find("robot boss owner") != std::string::npos, "spawn action accepted a nonrobot owner");
 		}
-		for (const int flags : { 32, 64, 256, 32768 }) {
+		for (const int flags : { 32, 64, 96, 255 }) {
+			auto supported = eligible;
+			patch(supported, trigger + 5, flags, 2);
+			check(xl_compat::prepare_gameplay_probe(supported).source.object_trigger_records[0].action.flags == flags, "implemented object flag bits were rejected or lost");
+		}
+		for (const int flags : { 256, 32768 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 5, flags, 2);
 			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
@@ -480,11 +485,11 @@ void trigger_chain_inventory_contract()
 			const auto row = feature_row(xl_compat::compatibility_json("chain.rl2", bytes), type == 31 ? "master_triggers" : "trigger_switches");
 			check(row.find("\"status\": \"supported\"") != std::string::npos && row.find("\"count\": 1") != std::string::npos, "browser does not expose supported chain action");
 			for (int flags : { 32, 64 }) {
-				auto bad = bytes;
-				patch(bad, section.offset + 1, flags, 1);
-				check(!xl_compat::runtime_blockers(xl_compat::inspect_level(bad)).empty(), "unimplemented chain flag admitted");
+				auto supported = bytes;
+				patch(supported, section.offset + 1, flags, 1);
+				check(xl_compat::runtime_blockers(xl_compat::inspect_level(supported)).empty(), "inert chain flag rejected");
 			}
-			for (int flags : { 8, 16, 128, 24, 136, 152, 159 }) {
+			for (int flags : { 8, 16, 32, 64, 96, 128, 24, 136, 152, 159, 255 }) {
 				auto supported = bytes;
 				patch(supported, section.offset + 1, flags, 1);
 				check(xl_compat::runtime_blockers(xl_compat::inspect_level(supported)).empty(), "implemented stateful flags rejected");

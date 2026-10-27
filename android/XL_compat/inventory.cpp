@@ -1,4 +1,5 @@
 #include "inventory.h"
+#include "trigger_flags.h"
 
 #include <algorithm>
 #include <cmath>
@@ -212,7 +213,7 @@ Trigger read_trigger(Reader &r, Inventory &out, int index, int segment_count, bo
 		t.targets.push_back({ segments[j], sides[j] });
 	}
 	if (t.type > 13) issue(out.unsupported, prefix + "trigger_type", index, std::to_string(t.type));
-	if (t.flags & ~159) issue(out.unsupported, prefix + "trigger_flags", index, std::to_string(t.flags));
+	if (t.flags & ~trigger_flags_mask) issue(out.unsupported, prefix + "trigger_flags", index, std::to_string(t.flags));
 	return t;
 }
 } // namespace
