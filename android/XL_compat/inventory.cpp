@@ -356,11 +356,7 @@ Inventory inspect_level(const Bytes &bytes)
 				t.targets.push_back({ segments[j], sides[j] });
 			}
 			if (t.type > 13) issue(out.unsupported, "trigger_type", i, std::to_string(t.type));
-			if (t.type == 14 && std::abs(std::int64_t(t.time)) >= 100 && std::abs(std::int64_t(t.time)) <= 900000)
-				issue(out.unsupported, "teleport_delay", i, "delayed wall teleport requires the XL event scheduler");
-			if (t.type != 14 && t.type != 25 && t.type != 29 && t.type != 30 && std::abs(std::int64_t(t.time)) >= 100 && std::abs(std::int64_t(t.time)) <= 900000)
-				issue(out.unsupported, "trigger_delay", i, "delayed wall action requires the XL event scheduler");
-			if (t.flags & ~7) issue(out.unsupported, "trigger_flags", i, std::to_string(t.flags));
+			if (t.flags & ~159) issue(out.unsupported, "trigger_flags", i, std::to_string(t.flags));
 			out.triggers.push_back(t);
 		}
 		out.object_triggers = r.s32();

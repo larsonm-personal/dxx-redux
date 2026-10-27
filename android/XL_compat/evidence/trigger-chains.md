@@ -26,7 +26,9 @@ main/trigger.cpp SHA-256
 - A real exit child aborts later links and the master's one-shot update. Redux
   unwinds its dispatch scope on that path rather than retaining stale depth
 
-Delayed actions, flags outside the low three bits, negative-side effect-object
+The original tranche covered immediate actions and the low three flag bits.
+[Scheduler support](trigger-scheduler.md) now adds delays and permanent,
+alternate and autoplay flags. Orientation/silent flags, negative-side effect-object
 targets, object-attached triggers and multiplayer retain explicit blockers.
 Every other level action, capacity and asset requirement is checked separately.
 Stock trigger behavior remains selected when no XL source is loaded

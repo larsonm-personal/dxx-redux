@@ -24,7 +24,7 @@ finish original-mission qualification
 | Work area | Current evidence and remaining acceptance |
 | --- | --- |
 | Teleports, speed boosts, spawn destinations | Immediate wall teleports verified. Boost direction/constraints/release/orientation, boost-area collision, spawn state and interactions remain open |
-| Trigger chains, timing/flags, object events | Immediate wall masters and enable/disable are the active chunk. Delayed/permanent/alternating/autoplay behavior, cancellation, scheduling state, object activation and saved chains remain open |
+| Trigger chains, timing/flags, object events | Wall chains, delays, permanent/alternate/autoplay and saved scheduling state verified. Orientation/silent flags, object activation and object-attached saved chains remain open |
 | Segment properties, walls and generators | Modern robot-free water and no-damage gates verified within documented limits. Repair/team/ownership/lava/blocked/speed-area behavior, gameplay wall semantics, equipment generators and XL robot-generation differences remain open |
 | Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open |
 | Cross-feature regressions and original missions | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open |
@@ -36,11 +36,15 @@ finish original-mission qualification
 2. Immediate wall trigger chains and enable/disable counters: native and Android
    checks complete within the [recorded scope](../../XL_compat/evidence/trigger-chains.md)
    and [chunk plan](xl_trigger_chains_20261026.md)
+3. Delayed wall actions and permanent/alternate/autoplay flags: native and Android
+   disk/memory controls complete within the
+   [scheduler evidence](../../XL_compat/evidence/trigger-scheduler.md) and
+   [chunk plan](xl_trigger_scheduler_20261026.md)
 
-Next take trigger scheduling and stateful flags as a coherent chunk: positive
-and randomized delays, permanent/repeat behavior, cancellation through disabling,
-and source save/restore. Inspect the reference before choosing the precise
-implementation boundary; scheduling is a known uncertainty in the estimate
+Next take object-attached trigger records, references and activation as a coherent
+chunk. Audit damage/death and other event rules before selecting original
+fixtures, and carry the new wall scheduler's actor and persistence semantics into
+that work. Object payload boundaries and capacities remain separate requirements
 
 After that, continue the unfinished areas above one chunk at a time. Do not mark
 the overall goal complete from a count of completed chunks or green fixture

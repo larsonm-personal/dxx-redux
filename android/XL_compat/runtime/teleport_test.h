@@ -31,18 +31,19 @@ static int teleport_test(int argc, char **argv)
 		}
 		center = { static_cast<fix>(x / 8 * 65536), static_cast<fix>(y / 8 * 65536), static_cast<fix>(z / 8 * 65536) };
 		ConsoleObject->mtype.phys_info.velocity = {};
-		require(xl_wall_teleport(0, player, 0) == 0 && ConsoleObject->segnum == 1 && !std::memcmp(&ConsoleObject->pos, &center, sizeof(center)), "teleport did not relink at destination center");
+		require(xl_wall_trigger(0, player, 0) == 0 && ConsoleObject->segnum == 1 && !std::memcmp(&ConsoleObject->pos, &center, sizeof(center)), "teleport did not relink at destination center");
 		require(vm_vec_mag(&ConsoleObject->mtype.phys_info.velocity) == 0, "stationary teleport acquired velocity");
 		trigger.flags = TF_ONE_SHOT;
-		require(xl_wall_teleport(0, player, 0) == 0 && (trigger.flags & TF_DISABLED), "one-shot teleport did not disable");
+		require(xl_wall_trigger(0, player, 0) == 0 && (trigger.flags & TF_DISABLED), "one-shot teleport did not disable");
 		trigger.seg[0] = 2;
-		require(xl_wall_teleport(0, player, 0) == 1 && ConsoleObject->segnum == 1, "disabled teleport moved player");
+		require(xl_wall_trigger(0, player, 0) == 1 && ConsoleObject->segnum == 1, "disabled teleport moved player");
 		trigger.flags = 0;
+		xl_wall_trigger_reset();
 		trigger.time = 100;
-		require(xl_wall_teleport(0, player, 0) == 1 && ConsoleObject->segnum == 1, "delayed action ran immediately");
+		require(xl_wall_trigger(0, player, 0) == 1 && ConsoleObject->segnum == 1, "delayed action ran immediately");
 		trigger.time = -1;
 		trigger.side[0] = 6;
-		require(xl_wall_teleport(0, player, 0) == 1, "malformed destination accepted at dispatch");
+		require(xl_wall_trigger(0, player, 0) == 1, "malformed destination accepted at dispatch");
 		trigger.side[0] = 0;
 		for (const int time : { 0, 99, 900001 }) {
 			trigger.time = time;
@@ -50,12 +51,13 @@ static int teleport_test(int argc, char **argv)
 			FrameTime = F1_0;
 			triggers_frame_process();
 			FrameTime = frame;
-			require(trigger.time == time && xl_wall_teleport(0, player, 0) == 0, "stock countdown changed immediate XL teleport scheduling");
+			require(trigger.time == time && xl_wall_trigger(0, player, 0) == 0, "stock countdown changed immediate XL teleport scheduling");
 		}
 		trigger.time = -1;
 		const int old_dead = Player_is_dead;
+		const int dead_segment = ConsoleObject->segnum;
 		Player_is_dead = 1;
-		require(xl_wall_teleport(0, player, 0) == 1, "dead player teleported");
+		require(xl_wall_trigger(0, player, 0) == 0 && ConsoleObject->segnum == dead_segment, "dead-player teleport dispatch or motion differs");
 		Player_is_dead = old_dead;
 		// Hit the actual wall entry point, rather than only the new dispatcher
 		const auto wall = Walls[0];
@@ -72,7 +74,7 @@ static int teleport_test(int argc, char **argv)
 		trigger.side[1] = 0;
 		int destinations = 0;
 		for (int i = 0; i < 64; ++i) {
-			require(xl_wall_teleport(0, player, 0) == 0, "repeat teleport was debounced");
+			require(xl_wall_trigger(0, player, 0) == 0, "repeat teleport was debounced");
 			require(ConsoleObject->segnum == 1 || ConsoleObject->segnum == 2, "random destination escaped links");
 			destinations |= 1 << ConsoleObject->segnum;
 		}
@@ -84,7 +86,7 @@ static int teleport_test(int argc, char **argv)
 		for (const int type : { OBJ_ROBOT, OBJ_DEBRIS, OBJ_CNTRLCEN, OBJ_HOSTAGE, OBJ_POWERUP, OBJ_WEAPON, OBJ_CLUTTER }) {
 			ConsoleObject->type = type;
 			const int expected = type == OBJ_WEAPON || type == OBJ_CLUTTER ? 1 : 0;
-			require(xl_wall_teleport(0, player, 0) == expected, "teleport actor dispatch differs from reference");
+			require(xl_wall_trigger(0, player, 0) == expected, "teleport actor dispatch differs from reference");
 		}
 		ConsoleObject->type = old_type;
 		std::ofstream samples(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "teleport-transforms.txt");
@@ -97,7 +99,7 @@ static int teleport_test(int argc, char **argv)
 					for (int axis = 0; axis < 3; ++axis) samples << (std::int64_t(geometry.fixed_normals[0][axis]) + geometry.fixed_normals[1][axis]) / 2 << ' ';
 					samples << velocity.x << ' ' << velocity.y << ' ' << velocity.z << ' ';
 					ConsoleObject->mtype.phys_info.velocity = velocity;
-					require(xl_wall_teleport(0, player, 0) == 0, "reference sample teleport refused");
+					require(xl_wall_trigger(0, player, 0) == 0, "reference sample teleport refused");
 					for (const auto *vector : { &ConsoleObject->orient.rvec, &ConsoleObject->orient.uvec, &ConsoleObject->orient.fvec, &ConsoleObject->mtype.phys_info.velocity }) samples << vector->x << ' ' << vector->y << ' ' << vector->z << ' ';
 					samples << '\n';
 				}
@@ -166,7 +168,7 @@ static int teleport_test(int argc, char **argv)
 		require(Triggers[0].time == F1_0 * 3 / 4, "XL scheduling changed stock trigger countdown");
 		FrameTime = stock_frame;
 		Triggers[0].type = 14;
-		require(xl_wall_teleport(0, ConsoleObject - Objects, 0) == -1, "XL dispatch contaminated stock gameplay");
+		require(xl_wall_trigger(0, ConsoleObject - Objects, 0) == -1, "XL dispatch contaminated stock gameplay");
 		Triggers[0] = stock_trigger;
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
 		std::ifstream hog_file(root / "neptunxl.hog", std::ios::binary);
@@ -250,7 +252,7 @@ static int teleport_test(int argc, char **argv)
 		require(state_restore_all_sub(save, 0) != 0 && !std::strcmp(Current_mission_filename, "teleport"), "teleport source restore failed");
 		require(Triggers[0].type == 14 && (Triggers[0].flags & TF_DISABLED), "restore lost one-shot teleport state");
 		require(ConsoleObject->segnum == destination_segment && !std::memcmp(&ConsoleObject->pos, &destination_position, sizeof(destination_position)) && !std::memcmp(&ConsoleObject->orient, &destination_orientation, sizeof(destination_orientation)), "restore lost teleported pose");
-		require(xl_wall_teleport(0, ConsoleObject - Objects, 0) == 1, "restored one-shot teleport fired again");
+		require(xl_wall_trigger(0, ConsoleObject - Objects, 0) == 1, "restored one-shot teleport fired again");
 		std::cout << "XL serialized teleport admission and save restoration passed\n";
 		std::cout << "XL wall teleport dispatch controls passed\n";
 		return 0;

@@ -22,6 +22,7 @@ CORE_TESTS = (
         "xl_observatory_inventory",
         "xl_observatory_descriptor",
         "xl_wall_trigger_chains",
+        "xl_wall_trigger_scheduler",
         "xl_konflict_features",
         "xl_dragon_lighting_decode",
         "xl_dragon_wave_decode",

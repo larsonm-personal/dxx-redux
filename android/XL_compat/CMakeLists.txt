@@ -92,6 +92,7 @@ if(BUILD_TESTING)
         include(tests/reference_face_point.cmake)
         include(tests/reference_teleport.cmake)
         include(tests/reference_trigger.cmake)
+        include(tests/reference_scheduler.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")
@@ -176,6 +177,19 @@ if(BUILD_TESTING)
                     ${xl_trigger_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/trigger_chain.cmake)
             set_tests_properties(xl_wall_trigger_chains PROPERTIES TIMEOUT 85)
+            set(xl_scheduler_oracle_args)
+            if(TARGET xl_scheduler_reference)
+                list(APPEND xl_scheduler_oracle_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_scheduler_reference>")
+            endif()
+            add_test(
+                NAME xl_wall_trigger_scheduler
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/trigger-scheduler
+                    ${xl_scheduler_oracle_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/trigger_scheduler.cmake)
+            set_tests_properties(xl_wall_trigger_scheduler PROPERTIES TIMEOUT 85)
             add_test(
                 NAME xl_modern_properties
                 COMMAND
