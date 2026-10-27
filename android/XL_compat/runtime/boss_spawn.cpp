@@ -1,8 +1,11 @@
 #include "boss_spawn.h"
+#include "boss_routes.h"
+#include "boss_destinations.h"
 #include "object_trigger.h"
 #include "preview.h"
 #include "robot_generator.h"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <vector>
 extern "C" {
@@ -45,6 +48,7 @@ struct Boss {
 	fix64 last = 0;
 	fix64 cloak_start = 0, cloak_end = 0, teleport = 0, hit = 0, death_start = 0;
 	int dying = 0, sound = 0;
+	int home = -1;
 	std::vector<int> teleport_segments{};
 };
 #ifdef _MSC_VER
@@ -73,30 +77,12 @@ Boss *find(int owner)
 		if (boss.owner == owner && bound(boss)) return &boss;
 	return nullptr;
 }
-std::vector<int> teleport_segments(int owner, int one_wall)
+std::vector<int> teleport_segments(int owner)
 {
 	auto &object = Objects[owner];
-	const int home = object.segnum, group = xl_level_segment_group(home);
+	const int home = object.segnum;
 	const auto position = object.pos;
-	std::vector<int> result{ home }, queue{ home };
-	std::vector<bool> visited(Num_segments);
-	const std::size_t maximum = static_cast<std::size_t>((std::min) (1000, Num_segments));
-	for (std::size_t tail = 0; tail < queue.size(); ++tail) {
-		const int segment = queue[tail];
-		for (int side = 0; side < 6; ++side) {
-			const int child = Segments[segment].children[side];
-			if (!one_wall && !(WALL_IS_DOORWAY(&Segments[segment], side) & WID_FLY_FLAG)) continue;
-			if (child < 0 || child >= Num_segments) continue;
-			if (one_wall) --one_wall;
-			if (visited[child] || xl_level_segment_group(child) != group) continue;
-			visited[child] = true;
-			if (!boss_fits_in_seg(&object, child)) continue;
-			queue.push_back(child);
-			if (result.size() >= maximum - 1) goto done;
-			result.push_back(child);
-		}
-	}
-done:
+	const auto result = xl_compat::boss_destinations(home, Num_segments, [](int segment, int side) { return Segments[segment].children[side]; }, [](int segment, int side) { return (WALL_IS_DOORWAY(&Segments[segment], side) & WID_FLY_FLAG) != 0; }, [](int segment) { return xl_level_segment_group(segment); }, [&](int segment) { return boss_fits_in_seg(&object, segment) != 0; });
 	object.pos = position;
 	obj_relink(owner, home);
 	return result;
@@ -209,9 +195,45 @@ extern "C" void xl_boss_spawn_load(void)
 			bosses.push_back({ i, i, object.signature, object.id, gate_interval(), 0 });
 	}
 	for (auto &boss : bosses) {
-		boss.teleport_segments = teleport_segments(boss.owner, 0);
-		if (boss.teleport_segments.size() == 1) boss.teleport_segments = teleport_segments(boss.owner, 1);
+		boss.home = Objects[boss.owner].segnum;
+		boss.teleport_segments = teleport_segments(boss.owner);
 	}
+}
+extern "C" void xl_boss_object_teleported(int owner)
+{
+	if (auto *boss = find(owner)) {
+		auto segments = teleport_segments(owner);
+		boss->home = Objects[owner].segnum;
+		boss->teleport_segments.swap(segments);
+	}
+}
+
+std::vector<xl_compat::BossRoutes> xl_compat::boss_routes()
+{
+	std::vector<BossRoutes> result;
+	if (xl_level_extensions_active())
+		for (const auto &boss : bosses) result.push_back({ boss.home, boss.teleport_segments });
+	return result;
+}
+
+bool xl_compat::restore_boss_routes(std::vector<BossRoutes> &states, int apply)
+{
+	if (Num_segments < 1 || Num_segments > 9000 || states.size() != static_cast<std::size_t>(xl_boss_spawn_count())) return false;
+	for (const auto &state : states) {
+		if (state.home < 0 || state.home >= Num_segments || state.segments.empty() ||
+		    state.segments.size() > static_cast<std::size_t>((std::min) (1000, Num_segments)) || state.segments.front() != state.home) return false;
+		std::array<unsigned char, 9000> seen{};
+		for (const int segment : state.segments) {
+			if (segment < 0 || segment >= Num_segments || xl_level_segment_group(segment) != xl_level_segment_group(state.home)) return false;
+			if (++seen[segment] > (segment == state.home ? 2 : 1)) return false;
+		}
+	}
+	if (apply)
+		for (std::size_t i = 0; i < states.size(); ++i) {
+			bosses[i].home = states[i].home;
+			bosses[i].teleport_segments.swap(states[i].segments);
+		}
+	return true;
 }
 extern "C" int xl_boss_spawn_count(void)
 {

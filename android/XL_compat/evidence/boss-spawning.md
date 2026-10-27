@@ -26,10 +26,14 @@ This is bounded singleplayer feature evidence, not original-mission completion.
   wall, object, producer-selection and boss fields validate before publication
 
 Legacy equipment layouts, expanded data/capacities, generated/contained bosses, other
-boss profiles, boss object-trigger teleports, unsupported object payloads and
+boss profiles, unsupported object payloads and
 multiplayer remain independently gated. Native classic combat mechanics remain
 the base engine's policy; this does not claim complete reference AI or visual
 parity, optional critical-hit subsystem damage, or old-demo qualification.
+
+Subsequent [boss object-teleport support](boss-transport.md) adds owner-only
+destination rebuilding and captured route lists, superseding the original
+restriction and schema-3-only description above for current builds.
 
 ## Reference and native controls
 

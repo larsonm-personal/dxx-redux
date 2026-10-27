@@ -128,6 +128,7 @@ extern "C" int xl_object_teleport_action(const trigger *action, int object_index
 	if (object.segnum != segment) {
 		compute_segment_center(&object.pos, &Segments[segment]);
 		obj_relink(object_index, segment);
+		xl_boss_object_teleported(object_index);
 	}
 	return 0;
 }

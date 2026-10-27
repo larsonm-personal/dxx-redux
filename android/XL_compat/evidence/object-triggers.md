@@ -3,7 +3,8 @@
 This chunk extends the singleplayer roadmap after wall scheduling. Object
 runtime is verified within the scope below. Admission permits nonplayer leaf
 actions and immediate object masters while delayed descendants, other extended
-actions/flags, player owners and boss teleports remain gated. This is not an
+actions/flags and player owners remain gated. Boss object teleports now have
+[separate destination/lifecycle evidence](boss-transport.md). This is not an
 original-mission qualification
 
 ## Decoded source semantics
@@ -133,7 +134,7 @@ now decodes. Full reports remain in temp/xl-object-triggers-20261026
 
 ## Remaining work
 
-Delayed object-chain lifecycle, boss bookkeeping and other unsupported action/
+Delayed object-chain lifecycle and other unsupported action/
 owner variants remain on the broader gameplay roadmap, together with additional
 layouts/capacities and original missions exercising these features. This finishes
 the selected nonplayer event/immediate-chain chunk. It does not qualify a new

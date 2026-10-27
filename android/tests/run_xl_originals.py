@@ -12,6 +12,9 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from xl_private_assets import verify
 
+REFERENCE_COMMIT = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
+REFERENCE_URL = "https://github.com/arbruijn/d2x-xl.git"
+
 CORE_TESTS = (
     {
         "xl_pilot_archive",
@@ -28,6 +31,7 @@ CORE_TESTS = (
         "xl_generator_assignment_reference",
         "xl_generator_assignment_runtime",
         "xl_boss_spawning",
+        "xl_boss_transport",
         "xl_equipment_generators",
         "xl_effect_payloads",
         "xl_effect_decode_reference",
@@ -126,11 +130,34 @@ def format_results(inspect, stage, work, data):
             raise ValueError("Unsupported XL format was not explicitly rejected")
 
 
+def reference_sources(work, provided, run):
+    """Supply the source tree required to register and execute pinned comparisons."""
+    reference = provided.resolve() if provided else work / "reference-source"
+    if not provided:
+        if not reference.exists():
+            run(["git", "init", reference])
+            # Existing source oracles pin CRLF working-tree bytes on every host
+            run(["git", "-C", reference, "config", "core.autocrlf", "true"])
+            run(["git", "-C", reference, "fetch", "--depth=1", REFERENCE_URL, REFERENCE_COMMIT])
+            run(["git", "-C", reference, "checkout", "--detach", REFERENCE_COMMIT])
+        actual = subprocess.check_output(
+            ["git", "-C", str(reference), "rev-parse", "HEAD"], text=True, timeout=30
+        ).strip()
+        if actual != REFERENCE_COMMIT:
+            raise ValueError("Private XL reference checkout differs from the required commit")
+    if not (reference / "objects/objectio.cpp").is_file():
+        raise ValueError("Private XL source comparisons require the pinned reference tree")
+    return reference
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--jvm-only", action="store_true")
+    parser.add_argument(
+        "--reference-root", type=Path, help="Existing source tree; consumed files are SHA-pinned by CMake"
+    )
     args = parser.parse_args()
     repo, work = args.repo.resolve(), args.work.resolve()
     stage = repo / "game_data/retail-ci/xl"
@@ -196,6 +223,7 @@ def main():
         require_junit(report, {"originalArchiveImportsPublishesAndResolvesStaticTexture"})
         print("PASS: required original texture import/publication/native resolution JVM test")
         return
+    reference = reference_sources(work, args.reference_root, run)
     run(["cmake", "-S", repo / "d2", "-B", stock, "-DCMAKE_BUILD_TYPE=RelWithDebInfo", "-DBUILD_TESTING=ON"])
     run(
         [
@@ -234,6 +262,7 @@ def main():
         "XL_PREVIEW_LIFECYCLE": engine,
         "XL_STOCK_METADATA": stock / "main/dxx-redux-d2-headless-metadata",
         "XL_STOCK_ROUTE": stock / "main/dxx-redux-d2-headless-route",
+        "XL_REFERENCE_GEOMETRY_ROOT": reference,
     }
     if any(not value.exists() for value in parameters.values()):
         raise ValueError("Required XL native fixture or executable missing")

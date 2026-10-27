@@ -10,11 +10,13 @@
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
+#include "boss_routes.h"
 #include "equipment.h"
 #include "preview.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
+#include "segment.h"
 #include "console.h"
 }
 
@@ -34,8 +36,8 @@ namespace
 {
 using nlohmann::json;
 constexpr char tag[8] = { 'D', 'X', 'X', 'L', 'T', 'R', '0', '1' };
-// Bounded wall/object events plus one lifecycle row per native object slot
-constexpr std::uint32_t maximum = 512 * 1024;
+// Bounded events/lifecycle plus up to 1000 destinations per native boss slot
+constexpr std::uint32_t maximum = 8 * 1024 * 1024;
 void require(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
@@ -100,6 +102,11 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 				block["equipment"].push_back({ state.timer, state.segment, state.enabled, state.pending });
 			}
 		}
+		if (xl_boss_spawn_count()) {
+			block["schema"] = 5;
+			block["boss_routes"] = json::array();
+			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
+		}
 		const auto payload = block.dump();
 		require(payload.size() <= maximum && xl_write(file, tag, 1, sizeof(tag)) == sizeof(tag), "Cannot write XL trigger state");
 		write_u32(file, static_cast<std::uint32_t>(payload.size()));
@@ -133,11 +140,26 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 3u + unsigned(objects) + 2u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == (equipment ? 4 : bosses ? 3
-		                                                                                                                                                        : objects  ? 2
+		require(saved.is_object() && saved.size() == 3u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == (bosses ? 5 : equipment ? 4
+		                                                                                                                                                     : objects     ? 2
 		                                                                                                                                                                   : 1) &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		std::vector<xl_compat::BossRoutes> boss_routes;
+		if (bosses) {
+			const auto &routes = saved.at("boss_routes");
+			require(routes.is_array() && routes.size() == static_cast<unsigned>(xl_boss_spawn_count()), "Invalid XL boss destination owner count");
+			for (const auto &row : routes) {
+				require(row.is_array() && row.size() == 2 && row[0].is_number_integer() && row[0].get<std::int64_t>() >= 0 && row[0].get<std::int64_t>() < Num_segments && row[1].is_array() && row[1].size() <= 1000, "Invalid XL boss destination row");
+				xl_compat::BossRoutes route;
+				route.home = row[0].get<int>();
+				for (const auto &segment : row[1]) {
+					require(segment.is_number_integer() && (!segment.is_number_unsigned() || segment.get<std::uint64_t>() < static_cast<std::uint64_t>(Num_segments)) && segment.get<std::int64_t>() >= 0 && segment.get<std::int64_t>() < Num_segments, "Invalid XL boss destination segment");
+					route.segments.push_back(segment.get<int>());
+				}
+				boss_routes.push_back(std::move(route));
+			}
+		}
 		std::uint32_t ready_mask = 0;
 		std::vector<xl_equipment_state> equipment_states;
 		if (equipment) {
@@ -191,10 +213,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0 });
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
-		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
+		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
 		xl_wall_trigger_restore(states.data(), static_cast<int>(states.size()));
 		xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 1);
 		xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 1);
+		xl_compat::restore_boss_routes(boss_routes, 1);
 		xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 1);
 		if (bosses) xl_robot_generator_restore_ready(ready_mask, 1);
 		return 1;
