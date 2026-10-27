@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>
-#include "trigger_state.h"
 #include "object_trigger.h"
+#include "trigger_state.h"
 #include "save_epoch_format.h"
 extern "C" {
 #include "inferno.h"
