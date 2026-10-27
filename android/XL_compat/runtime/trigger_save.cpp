@@ -65,6 +65,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			xl_trigger_state state;
 			require(xl_wall_trigger_state(index, &state), "Cannot capture XL trigger state");
 			rows.push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated });
+			if (xl_object_trigger_count()) rows.back().push_back(state.destination);
 		}
 		json block = { { "schema", 1 }, { "source", xl_level_trigger_identity() }, { "states", rows } };
 		if (xl_object_trigger_count()) {
@@ -119,13 +120,13 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		}
 		std::vector<xl_trigger_state> states;
 		for (const auto &row : saved.at("states")) {
-			require(row.is_array() && row.size() == 5, "Invalid XL trigger state row");
-			for (int field = 0; field < 5; ++field) {
+			require(row.is_array() && row.size() == (objects ? 6u : 5u), "Invalid XL trigger state row");
+			for (std::size_t field = 0; field < row.size(); ++field) {
 				const auto &value = row[field];
 				require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= std::uint64_t(INT64_MAX)), "Invalid XL trigger state field");
 				require(!field || (value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX), "XL trigger state field overflow");
 			}
-			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>() });
+			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0 });
 		}
 		require(xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0), "Invalid XL event state");
 		xl_wall_trigger_restore(states.data(), static_cast<int>(states.size()));

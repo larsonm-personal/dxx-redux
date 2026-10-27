@@ -223,10 +223,28 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(admitted.source.object_trigger_records.size() == 3, "probe discarded admitted object source records");
 		const auto admitted_report = xl_compat::compatibility_json("objects.rl2", eligible);
 		check(feature_row(admitted_report, "attached_trigger_count").find("\"status\": \"partial\"") != std::string::npos, "native checkpoint claimed complete object qualification");
-		for (const int type : { 15, 26, 29, 31 }) {
+		auto chain = admitted.source;
+		chain.object_trigger_records.resize(1);
+		chain.object_triggers = 1;
+		chain.object_trigger_records[0].action.type = 31;
+		chain.object_trigger_records[0].action.targets = { { 0, 0 } };
+		chain.walls.resize(2);
+		chain.walls[0].trigger = 0;
+		chain.walls[1].trigger = 1;
+		chain.segments[0].sides[0].wall = 0;
+		chain.segments[0].sides[1].wall = 1;
+		chain.triggers = { { 31, 0, 0, -1, { { 0, 1 } } }, { 14, 0, 0, -1, { { 0, 0 } } } };
+		check(xl_compat::runtime_blockers(chain).empty(), "immediate nested object master blocked");
+		chain.triggers[1].time = 1000;
+		check(xl_compat::blocker_message(xl_compat::runtime_blockers(chain)).find("delayed wall action") != std::string::npos, "delayed object descendant lost its explicit lifecycle blocker");
+		chain.triggers[1].time = -1;
+		chain.triggers[1].targets.push_back({ 0, 1 });
+		check(!xl_compat::runtime_blockers(chain).empty(), "object chain admitted duplicate-segment retry deadlock");
+		chain.triggers[0].targets = { { 0, 0 } };
+		check(xl_compat::runtime_blockers(chain).empty(), "bounded immediate cyclic object chain rejected");
+		for (const int type : { 15, 26, 29 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);
-			if (type == 31) patch(bad, trigger + 37, 0, 2);
 			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });
 		}
 		for (const int flags : { 32, 64, 256, 32768 }) {

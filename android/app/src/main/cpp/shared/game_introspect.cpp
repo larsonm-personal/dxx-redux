@@ -28,6 +28,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "trigger_state.h"
+#include "object_trigger.h"
 #include "resource_validation.h"
 #endif
 
@@ -2180,9 +2181,20 @@ extern "C" char *game_introspect_get_state(void)
 				row["elapsed_ticks"] = state.elapsed;
 				row["actor"] = state.object;
 				row["shot"] = state.shot;
+				row["object_destination"] = state.destination;
 			}
 		}
 		j["xl_pilot"]["wall_triggers"] = std::move(triggers);
+		json objects = json::object();
+		for (int index = 0; index < xl_object_trigger_count(); ++index) {
+			xl_object_trigger_state state;
+			if (!xl_object_trigger_state_get(index, &state)) continue;
+			auto &row = objects[std::to_string(index)];
+			row = { { "owner", state.owner }, { "signature", state.signature }, { "type", state.type }, { "flags", state.flags }, { "value", state.value }, { "operated", state.operated != 0 }, { "destination", state.destination } };
+			row["segment"] = state.owner >= 0 ? Objects[state.owner].segnum : -1;
+			row["shields"] = state.owner >= 0 ? json(f2fl(Objects[state.owner].shields)) : json(nullptr);
+		}
+		j["xl_pilot"]["object_triggers"] = std::move(objects);
 	}
 #endif
 	{

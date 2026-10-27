@@ -3,6 +3,8 @@
 #ifdef __cplusplus
 #include "../inventory.h"
 void xl_object_trigger_load(const xl_compat::Inventory &level);
+struct trigger;
+extern "C" int xl_object_teleport_action(const trigger *action, int object, int *destination);
 extern "C" {
 #endif
 typedef struct xl_object_trigger_state {

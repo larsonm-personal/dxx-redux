@@ -1,6 +1,7 @@
 // Storage adapters for the extracted XL reader, with Redux used only for comparison
 #include "inventory.h"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -27,13 +28,45 @@ using fix = std::int32_t;
 #define OF_SHOULD_BE_DEAD 1
 #define OF_DESTROYED      4
 #define OF_ARMAGEDDON     8
+std::vector<int> random_tokens;
+std::size_t random_cursor = 0;
+int Rand(int maximum)
+{
+	if (random_cursor >= random_tokens.size()) throw std::runtime_error("Reference random transcript exhausted");
+	const int token = random_tokens[random_cursor++];
+	if (token < 0 || token >= maximum) throw std::runtime_error("Invalid reference random transcript");
+	return token;
+}
+struct OracleSegment {
+	std::array<int, 3> center{};
+	std::array<int, 3> Center() const
+	{
+		return center;
+	}
+} oracle_segments[3];
+#define SEGMENT(index) (&oracle_segments[index])
 struct CObject {
 	struct {
-		int nType = OBJ_ROBOT, nId = 0, nFlags = 0;
+		int nType = OBJ_ROBOT, nId = 0, nFlags = 0, nSegment = 0;
+		struct {
+			std::array<int, 3> vPos{};
+		} position;
 		fix xShield = 65536;
 	} info;
 	fix maximum = 65536;
 	float Damage();
+	bool IsBoss() const
+	{
+		return false;
+	}
+	int Index() const
+	{
+		return 0;
+	}
+	void RelinkToSeg(int segment)
+	{
+		info.nSegment = segment;
+	}
 } sample_object;
 fix RobotDefaultShield(CObject *object)
 {
@@ -92,17 +125,18 @@ struct CFile {
 	}
 };
 struct CTriggerTargets {
-	int segments[10]{}, sides[10]{};
+	int m_segments[10]{}, m_sides[10]{};
 	void Read(CFile &file)
 	{
-		for (auto &value : segments) value = file.ReadShort();
-		for (auto &value : sides) value = file.ReadShort();
+		for (auto &value : m_segments) value = file.ReadShort();
+		for (auto &value : m_sides) value = file.ReadShort();
 	}
 };
 struct CTrigger : CTriggerTargets {
 	int type = 0, flags = 0, value = 0, times[2]{}, m_nLinks = 0;
 	struct {
-		int nObject = -1, nPlayer = -1, nChannel = -1, tOperated = -1;
+		int nObject = -1, nPlayer = -1, nChannel = -1, tOperated = -1, nType = 0;
+		uint16_t nTeleportDest = 0;
 		void Clear() {}
 	} m_info;
 	int &Type()
@@ -135,8 +169,33 @@ struct CTrigger : CTriggerTargets {
 	}
 	void Read(CFile &, int32_t);
 	int32_t DoExecObjTrigger(int16_t, int32_t);
+	void DoTeleportBot(CObject *);
 };
-std::vector<CTrigger> object_triggers;
+struct TriggerArray : std::vector<CTrigger> {
+	CTrigger *Buffer()
+	{
+		return data();
+	}
+	int Length() const
+	{
+		return static_cast<int>(size());
+	}
+} object_triggers;
+#define _CQUICKSORT_H
+// Declarations are storage adapters; all algorithms come from the pinned source
+template <class T>
+class CQuickSort
+{
+  public:
+	using comparator = int32_t (*)(const T *, const T *);
+	void SortAscending(T *, int32_t, int32_t);
+	void SortDescending(T *, int32_t, int32_t);
+	void SortAscending(T *, int32_t, int32_t, comparator);
+	void SortDescending(T *, int32_t, int32_t, comparator);
+	void Swap(T *, T *);
+	int32_t BinSearch(T *, int32_t, int32_t, T);
+};
+#include "xl_reference_quicksort.h"
 #define OBJTRIGGERS object_triggers
 struct {
 	int fileinfoVersion;
@@ -144,6 +203,10 @@ struct {
 struct {
 	struct {
 		int m_nTriggers[2]{};
+		struct Ref {
+			uint8_t nFirst = 255, nCount = 255;
+		};
+		std::array<Ref, 1000> objTriggerRefs;
 		bool Create(int count, bool attached)
 		{
 			check(attached && count > 0 && count < 10000, "Unexpected reference allocation");
@@ -151,6 +214,22 @@ struct {
 			return true;
 		}
 	} trigData;
+	struct {
+		struct Boss {
+			void Setup(int)
+			{
+				throw std::runtime_error("Unqualified boss teleport branch");
+			}
+		} boss;
+		int Find(int) const
+		{
+			return -1;
+		}
+		Boss &operator[](int)
+		{
+			return boss;
+		}
+	} bossData;
 } gameData;
 #include "xl_reference_object_read.h"
 
@@ -174,7 +253,7 @@ void compare_level(const xl_compat::Bytes &bytes)
 		const int time = action.type == TT_COUNTDOWN || action.type == TT_MESSAGE || action.type == TT_SOUND ? action.time : -1;
 		check(reference.value == (action.type == TT_MASTER ? 0 : action.value) && reference.times[0] == time && reference.times[1] == -1, "Reference object normalization differs");
 		for (std::size_t target = 0; target < action.targets.size(); ++target)
-			check(reference.segments[target] == action.targets[target][0] && reference.sides[target] == action.targets[target][1], "Reference object targets differ");
+			check(reference.m_segments[target] == action.targets[target][0] && reference.m_sides[target] == action.targets[target][1], "Reference object targets differ");
 	}
 	std::cout << "Matched " << object_triggers.size() << " decoded object records and owner references for " << inventory.level_version << '/' << inventory.game_version << '\n';
 }
@@ -182,6 +261,59 @@ void compare_level(const xl_compat::Bytes &bytes)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--sort") {
+			std::ifstream samples(argv[2]);
+			int size, cases = 0;
+			while (samples >> size) {
+				check(size > 0 && size <= 255, "Invalid sort sample size");
+				object_triggers.assign(size, CTrigger{});
+				for (auto &entry : object_triggers) {
+					samples >> entry.m_info.nObject >> entry.type >> entry.value;
+					entry.m_info.nType = entry.type;
+				}
+				gameData.trigData.m_nTriggers[1] = size;
+				gameData.trigData.objTriggerRefs.fill({ 255, 255 });
+				BuildObjTriggerRef();
+				for (const auto &entry : object_triggers) {
+					int owner, type, value;
+					samples >> owner >> type >> value;
+					check(owner == entry.m_info.nObject && type == entry.type && value == entry.value, "Reference owner/type/tie ordering differs");
+				}
+				++cases;
+			}
+			check(samples.eof() && cases == 56, "Missing sort samples");
+			std::cout << "Matched 56 production sort cases, including equal keys and 255-record boundary\n";
+			return 0;
+		}
+		if (argc == 3 && std::string(argv[1]) == "--teleports") {
+			std::ifstream samples(argv[2]);
+			for (auto &segment : oracle_segments)
+				for (int &v : segment.center) samples >> v;
+			int links, last, segment, count = 0;
+			while (samples >> links >> last >> segment) {
+				CTrigger trigger;
+				trigger.m_nLinks = links;
+				trigger.m_info.nTeleportDest = last;
+				sample_object.info.nSegment = segment;
+				for (int &v : sample_object.info.position.vPos) samples >> v;
+				int expected_last, expected_segment, draws;
+				std::array<int, 3> expected_position;
+				samples >> expected_last >> expected_segment;
+				for (int &v : expected_position) samples >> v;
+				samples >> draws;
+				check(links >= 0 && links <= 10 && draws >= 0 && draws <= 1000, "Invalid teleport sample bounds");
+				for (int i = 0; i < links; ++i) samples >> trigger.m_segments[i];
+				random_tokens.resize(draws);
+				random_cursor = 0;
+				for (int &token : random_tokens) samples >> token;
+				trigger.DoTeleportBot(&sample_object);
+				check(trigger.m_info.nTeleportDest == expected_last && sample_object.info.nSegment == expected_segment && sample_object.info.position.vPos == expected_position && random_cursor == random_tokens.size(), "Reference object teleport destination, same-segment position or retry RNG differs");
+				++count;
+			}
+			check(samples.eof() && count == 720, "Missing teleport samples");
+			std::cout << "Matched 720 production object teleport samples and complete retry RNG transcripts\n";
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--events") {
 			std::ifstream samples(argv[2]);
 			int type, value, flags, damage, shields, maximum, fired, changed, count = 0;

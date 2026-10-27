@@ -63,17 +63,25 @@ explicit qualification rather than silently using wall teleport behavior
 Object master dispatch passes object-trigger context into linked wall actions,
 while Operate computes an index using the object array. The pinned release
 CArray::Index subtracts unrelated pointers on that path; debug builds instead
-reject a foreign pointer. Audit the intended child semantics and explicitly
-document any correction rather than treating this undefined indexing as an
-independent gameplay oracle. Equal owner/type groups also need the reference
-quicksort's tie ordering, not an assumed stable sort
+reject a foreign pointer. Redux uses the child's actual wall-table identity and
+retains object context through immediate nested dispatch. This is an explicit
+correction to undefined cross-array indexing, not an allocation-dependent
+reference parity claim
+
+Delayed descendants remain rejected: reference wall countdown runs without the
+original object context, and destruction can release or reuse the original
+actor before expiry. This lifecycle requirement remains on the broader roadmap
+rather than being approximated as an immediate chain or a player wall action
+
+The independent oracle now compares equal-key quicksort ordering at up to 255
+records, and object teleport segment centers, same-segment position preservation,
+initial destination zero, single-link history and complete retry RNG transcripts
 
 ## Current acceptance state
 
-In progress. The local runtime admits verified native leaf requirements;
-object masters and the other documented requirements remain gated. Android,
-the remaining independent comparisons and full admission/browser evidence are
-required before this chunk is complete
+Complete for admitted nonplayer leaf actions and immediate object masters.
+Delayed descendants, player owners, boss teleports and other extended action/
+flag variants remain gated and explicitly open in the overall roadmap
 
 Parser checkpoint: five focused native CTests pass, including all three
 derived reference layouts and the original GlassHouse records. Scoped mixed
@@ -82,9 +90,15 @@ formatting/lint passes
 Runtime checkpoint: nonlethal local/nonlocal damage, actual lethal explosion/
 cleanup, removal, reactor, autoplay, alternation, ordered wall enable/disable,
 disk/source/stock restoration and slot reuse pass. All 1456 production selection
-samples match the pinned event/shield oracle; 16 corrupt block controls reject
+samples match the pinned event/shield oracle; 18 corrupt block controls reject
 atomically across wall and object arrays. The focused native selection passes
 11/11, the shared x86_64 Android APK builds, and scoped formatting/lint passes.
-Continue this same chunk with object
-master context, independent teleport/sort controls and Android disk/rewind tests;
-do not publish this checkpoint as completed object gameplay support
+Immediate master actor/context, ordered/nested children, bounded recursion and
+saved wall-child destination history pass. Independent controls match 56 sort
+cases and 720 object teleports, including retry RNG. Android passes 59/59 steps
+and six production rewind restores, with exact protected-file restoration
+
+The [maintained evidence](../../XL_compat/evidence/object-triggers.md) records the
+scope, hashes and run ID. No new original mission/campaign qualification follows
+from this derived fixture. Continue the remaining gameplay areas one chunk at a
+time; the overall goal remains active

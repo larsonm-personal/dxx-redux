@@ -16,6 +16,18 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" "void CTr
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
                       "inline int32_t CTrigger::DoExecObjTrigger (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/object.cpp" "float CObject::Damage (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
+                      "void CTrigger::DoTeleportBot (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
+                      "int32_t CmpObjTriggers (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
+                      "void BuildObjTriggerRef (")
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/cquicksort.cpp" sort_hash)
+if(NOT sort_hash STREQUAL "6c8dd52a524bfaa964bd2659bedabf304665d0c0989d423d196354cd8d6d2401")
+    message(FATAL_ERROR "Object reference sort changed")
+endif()
+configure_file("${XL_REFERENCE_GEOMETRY_ROOT}/include/cquicksort.cpp"
+               "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_quicksort.h" COPYONLY)
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp" loader)
 string(FIND "${loader}" "gameData.trigData.m_nTriggers [1] = cf.ReadInt ();" start)
 if(start LESS 0)

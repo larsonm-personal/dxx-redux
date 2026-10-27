@@ -5,6 +5,19 @@ extern "C" {
 #include "cntrlcen.h"
 #include "fireball.h"
 void obj_delete_all_that_should_be_dead(void);
+int xl_object_master_action(const trigger *action, int object_index);
+}
+
+static void write_object_fixture_json(const std::filesystem::path &path, const nlohmann::json &value)
+{
+	const auto text = value.dump(2) + '\n';
+	std::ifstream previous(path, std::ios::binary);
+	const std::string existing{ std::istreambuf_iterator<char>(previous), std::istreambuf_iterator<char>() };
+	if (text == existing) return;
+	std::ofstream file(path, std::ios::binary);
+	file << text;
+	file.close();
+	require(bool(file), "cannot publish object fixture metadata");
 }
 
 static void write_object_event_fixture(const std::filesystem::path &root)
@@ -25,15 +38,16 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 				for (std::size_t i = 0; i < source.sections.size(); ++i)
 					if (source.sections[i].offset >= static_cast<int>(offset)) patch(source.game_offset + 35 + i * 12, source.sections[i].offset + static_cast<unsigned>(data.size()));
 			};
-			require(inventory.level_version == 23 && inventory.game_version == 40 && inventory.walls.size() >= 16 && inventory.triggers.size() == 1, "unexpected object-event geometry source");
+			require(inventory.level_version == 23 && inventory.game_version == 40 && inventory.walls.size() >= 18 && inventory.triggers.size() == 1, "unexpected object-event geometry source");
 			// Minimal ordinary robot, encoded in the inspected 23/40 object layout
 			xl_compat::Bytes robot;
 			for (int value : std::array<int, 7>{ OBJ_ROBOT, 0, CT_AI, MT_PHYSICS, RT_POLYOBJ, 0, 0 }) append(robot, value, 1);
-			append(robot, 0, 2);
+			// Keep the derived robot separate from the player spawn for device controls
+			append(robot, 20, 2);
 			std::array<int, 3> center{};
 			for (int component = 0; component < 3; ++component) {
 				std::int64_t total = 0;
-				for (int vertex : inventory.segments[0].vertices) total += inventory.vertices[vertex][component];
+				for (int vertex : inventory.segments[20].vertices) total += inventory.vertices[vertex][component];
 				center[component] = static_cast<int>(total / 8);
 				append(robot, center[component], 4);
 			}
@@ -56,13 +70,17 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 			insert(inventory, inventory.objects.back().source_end, robot);
 			patch(inventory.game_offset + 39, robot_index + 1);
 			inventory = xl_compat::inspect_level(member.bytes);
+			const auto old_trigger = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
+			insert(inventory, old_trigger.offset + 52, xl_compat::Bytes(3 * 52));
+			patch(inventory.game_offset + 75, 4);
+			inventory = xl_compat::inspect_level(member.bytes);
 			std::vector<int> powerups;
 			int reactor = -1;
 			for (std::size_t i = 0; i < inventory.objects.size(); ++i) {
 				if (inventory.objects[i].type == OBJ_POWERUP) powerups.push_back(static_cast<int>(i));
 				if (inventory.objects[i].type == OBJ_CNTRLCEN) reactor = static_cast<int>(i);
 			}
-			require(powerups.size() >= 4 && reactor >= 0, "object-event owners absent");
+			require(powerups.size() >= 5 && reactor >= 0, "object-event owners absent");
 			const auto &section = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "triggers"; });
 			const auto &walls = *std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const auto &s) { return s.name == "walls"; });
 			patch(section.offset, 31, 1);
@@ -71,7 +89,7 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 			patch(section.offset + 4, 0);
 			patch(section.offset + 8, -1);
 			patch(walls.offset + 20, 0, 1);
-			for (int wall = 8; wall < 16; ++wall) {
+			for (int wall = 8; wall < 18; ++wall) {
 				patch(walls.offset + wall * 25 + 16, WALL_ILLUSION, 1);
 				patch(walls.offset + wall * 25 + 17, 0, 2);
 			}
@@ -91,6 +109,22 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 				owners.push_back(owner);
 			};
 			const auto wall_target = [&](int wall) { return std::array<int, 2>{ inventory.walls[wall].segment, inventory.walls[wall].side }; };
+			const auto wall_action = [&](int index, int type, int flags, std::initializer_list<std::array<int, 2>> targets) {
+				const auto base = section.offset + index * 52;
+				patch(base, type, 1);
+				patch(base + 1, flags, 1);
+				patch(base + 2, static_cast<unsigned>(targets.size()), 1);
+				patch(base + 8, -1);
+				int link = 0;
+				for (const auto &target : targets) {
+					patch(base + 12 + link * 2, target[0], 2);
+					patch(base + 32 + link++ * 2, target[1], 2);
+				}
+			};
+			wall_action(1, TT_ILLUSION_OFF, 16, { wall_target(16) });
+			wall_action(2, 14, 0, { { 1, 0 }, { 2, 0 } });
+			wall_action(3, 31, 0, { wall_target(2), wall_target(3) });
+			for (const auto &binding : std::array<std::array<int, 2>, 4>{ { { 2, 1 }, { 3, 2 }, { 4, 3 }, { 5, 2 } } }) patch(walls.offset + binding[0] * 25 + 20, binding[1], 1);
 			action(robot_index, 14, 0, 5 * F1_0, { { 1, -1 } });
 			action(robot_index, 14, 8, 5 * F1_0, { { 0, -1 }, { 1, -1 }, { 2, -1 } });
 			action(robot_index, TT_ILLUSION_OFF, 16, 0, { wall_target(8) });
@@ -100,15 +134,15 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 			action(powerups[2], 32, 0, 0, { wall_target(0) });
 			action(reactor, 32, 0, 0, { wall_target(0) });
 			action(powerups[3], TT_ILLUSION_OFF, TF_DISABLED, 0, { wall_target(14) });
+			action(powerups[4], 31, 136, 5 * F1_0, { wall_target(4), wall_target(5), wall_target(2) });
 			for (int owner : owners) append(payload, owner, 2);
-			const auto offset = static_cast<std::size_t>(section.offset) + 52;
+			const auto offset = static_cast<std::size_t>(section.offset) + 4 * 52;
 			patch(offset, static_cast<unsigned>(owners.size()));
 			insert(inventory, offset + 4, payload);
 			const auto final = xl_compat::inspect_level(member.bytes);
 			const auto blockers = xl_compat::runtime_blockers(final);
 			if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
-			std::ofstream manifest(root / "events-fixture.json");
-			manifest << nlohmann::json({ { "robot", robot_index }, { "reactor", reactor }, { "powerups", powerups }, { "object_actions", owners.size() } }).dump(2) << '\n';
+			write_object_fixture_json(root / "events-fixture.json", { { "robot", robot_index }, { "reactor", reactor }, { "powerups", powerups }, { "object_actions", owners.size() } });
 		}
 		char name[13] = {};
 		require(member.name.size() < sizeof(name), "object fixture member exceeds bound");
@@ -130,7 +164,6 @@ static int object_trigger_test(int argc, char **argv)
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
 		write_object_event_fixture(root);
-		if (!std::strcmp(find_arg_value(argc, argv, "-object-trigger-test"), "export")) return 0;
 		std::ifstream manifest_file(root / "events-fixture.json");
 		const auto manifest = nlohmann::json::parse(manifest_file);
 		const int robot = manifest.at("robot"), reactor = manifest.at("reactor");
@@ -139,7 +172,7 @@ static int object_trigger_test(int argc, char **argv)
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
-		require(xl_level_extensions_active() && xl_object_trigger_count() == 9 && Objects[robot].type == OBJ_ROBOT, "object source did not start");
+		require(xl_level_extensions_active() && xl_object_trigger_count() == 10 && Objects[robot].type == OBJ_ROBOT, "object source did not start");
 		const auto state = [](int index) { xl_object_trigger_state result; require(xl_object_trigger_state_get(index, &result), "missing object state"); return result; };
 		const auto find = [&](int owner, int type, int flags) {
 			for (int i = 0; i < xl_object_trigger_count(); ++i) {
@@ -150,6 +183,13 @@ static int object_trigger_test(int argc, char **argv)
 		};
 		const int once = find(robot, 14, 0), repeat = find(robot, 14, 8), death = find(robot, TT_ILLUSION_OFF, 16);
 		const int pickup = find(powerups[0], TT_ILLUSION_OFF, TF_ONE_SHOT), autoplay = find(powerups[1], TT_ILLUSION_OFF, 136), disabled = find(powerups[3], TT_ILLUSION_OFF, TF_DISABLED);
+		const int master = find(powerups[4], 31, 136);
+		write_object_fixture_json(root / "events-order.json", { { "once", once }, { "repeat", repeat }, { "death", death }, { "pickup", pickup }, { "autoplay", autoplay }, { "disabled", disabled }, { "master", master } });
+		if (!std::strcmp(find_arg_value(argc, argv, "-object-trigger-test"), "export")) {
+			std::cout << "Derived object fixture loaded to enumerate source rows; no event qualification\n";
+			return 0;
+		}
+		require(state(master).value == 0, "object master semaphore was not normalized on source load");
 		char initial[] = "xl-object-initial.sav", snapshot[] = "xl-object-live.sav", description[] = "Object events";
 		stop_time();
 		require(state_save_all_sub(initial, description) != 0, "initial object save failed");
@@ -166,8 +206,18 @@ static int object_trigger_test(int argc, char **argv)
 		const int old_destination = state(repeat).destination;
 		apply_damage_to_robot(&Objects[robot], 1, ConsoleObject - Objects);
 		require(state(repeat).destination != old_destination && Objects[robot].segnum == state(repeat).destination, "permanent object teleport repeated its previous destination");
+		const auto master_facing = Objects[powerups[4]].orient;
+		const auto master_motion = Objects[powerups[4]].mtype.phys_info.velocity;
+		const auto ship_position = ConsoleObject->pos;
 		triggers_frame_process();
 		require(state(autoplay).operated && (state(autoplay).flags & TF_DISABLED) && (Walls[12].flags & WALL_ILLUSION_OFF), "permanent object autoplay did not fire and disable");
+		xl_trigger_state child;
+		require(xl_wall_trigger_state(2, &child) && child.destination > 0 && child.destination == Objects[powerups[4]].segnum && child.object == powerups[4] && state(master).operated && (state(master).flags & TF_DISABLED), "object master lost actor, object teleport context or destination history");
+		require(!(Walls[16].flags & WALL_ILLUSION_OFF) && Triggers[1].type == TT_ILLUSION_OFF, "nested master did not preserve ordered alternating children");
+		xl_trigger_state classic_child;
+		require(xl_wall_trigger_state(1, &classic_child) && classic_child.operated && classic_child.object == powerups[4], "object master skipped its nonplayer classic leaf");
+		require(!std::memcmp(&master_facing, &Objects[powerups[4]].orient, sizeof(master_facing)) && !std::memcmp(&master_motion, &Objects[powerups[4]].mtype.phys_info.velocity, sizeof(master_motion)) && !std::memcmp(&ship_position, &ConsoleObject->pos, sizeof(ship_position)), "object master teleported with wall motion or moved the player");
+		const int saved_child_destination = child.destination;
 		Objects[powerups[0]].flags |= OF_SHOULD_BE_DEAD;
 		obj_delete_all_that_should_be_dead();
 		require(state(pickup).owner == -1 && (state(pickup).flags & TF_DISABLED) && (Walls[10].flags & WALL_ILLUSION_OFF), "production removal did not consume one-shot object event");
@@ -205,7 +255,8 @@ static int object_trigger_test(int argc, char **argv)
 		require(check_trigger_sub(0, Player_num, 1) == 0 && (Walls[0].flags & WALL_ILLUSION_OFF), "stock illusion-off dispatch regressed");
 		Triggers[0].type = TT_ILLUSION_ON;
 		require(check_trigger_sub(0, Player_num, 1) == 0 && !(Walls[0].flags & WALL_ILLUSION_OFF), "stock illusion-on dispatch regressed");
-		require(state_restore_all_sub(snapshot, 0) != 0 && xl_object_trigger_count() == 9 && state(repeat).destination == saved_destination, "stock-to-object source restoration failed");
+		require(state_restore_all_sub(snapshot, 0) != 0 && xl_object_trigger_count() == 10 && state(repeat).destination == saved_destination, "stock-to-object source restoration failed");
+		require(xl_wall_trigger_state(2, &child) && child.destination == saved_child_destination, "restore lost object-context wall teleport history");
 		require(state_restore_all_sub(initial, 0) != 0, "initial source restore failed");
 		const int original_signature = Objects[powerups[0]].signature;
 		const int segment = Objects[powerups[0]].segnum;
@@ -251,14 +302,14 @@ static int object_trigger_test(int argc, char **argv)
 		std::ifstream encoded_file(user / "object-state.bin", std::ios::binary);
 		const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(encoded_file), std::istreambuf_iterator<char>() };
 		require(encoded.size() > 16, "object extension missing payload");
-		for (int variant = 0; variant < 16; ++variant) {
+		for (int variant = 0; variant < 18; ++variant) {
 			auto bad = encoded;
 			if (variant == 0) bad.clear();
 			else if (variant == 1) bad.resize(15);
 			else if (variant == 2) bad[12] ^= 1;
 			else {
 				auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
-				block["states"][0] = { 0, -1, ConsoleObject - Objects, 0, 1 };
+				block["states"][0] = { 0, -1, ConsoleObject - Objects, 0, 1, 0 };
 				if (variant == 3) block["objects"].erase(block["objects"].begin());
 				if (variant == 4) block["source"] = block["source"].get<std::uint64_t>() ^ 1;
 				if (variant == 5) block["objects"][once][0] = MAX_OBJECTS;
@@ -275,6 +326,7 @@ static int object_trigger_test(int argc, char **argv)
 					block["states"][0][0] = -1;
 					block["objects"][once][5] = 1;
 				}
+				if (variant == 16) block["states"][2][5] = Num_segments;
 				const auto text = block.dump();
 				bad.resize(16);
 				bad.insert(bad.end(), text.begin(), text.end());
@@ -287,10 +339,88 @@ static int object_trigger_test(int argc, char **argv)
 			}
 			write_bytes((user / "object-corrupt.bin").string().c_str(), bad);
 			file = PHYSFS_openRead("object-corrupt.bin");
+			if (variant == 17) Triggers[2].time = 1000;
 			require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file), "malformed object extension accepted");
+			Triggers[2].time = -1;
 			xl_trigger_state wall;
 			require(xl_wall_trigger_state(0, &wall) && !wall.operated && !state(once).operated && state(once).owner == robot, "malformed extension published partial wall or object state");
 		}
+		std::ofstream sort_samples(root.parent_path() / "object-sort-samples.txt");
+		for (int size : { 1, 2, 3, 10, 63, 100, 255 })
+			for (int seed = 0; seed < 8; ++seed) {
+				xl_compat::Inventory sample;
+				sample.object_triggers = size;
+				sort_samples << size << '\n';
+				const int sample_owners[] = { -1, robot, powerups[0], powerups[1] }, types[] = { 7, 14, 32 };
+				for (int i = 0; i < size; ++i) {
+					const int owner = sample_owners[(i * 7 + seed * 3) % 4], type = types[(i * 5 + seed) % 3], value = i + 100;
+					sample.object_trigger_records.push_back({ { type, 0, value, -1, {} }, owner });
+					sort_samples << owner << ' ' << type << ' ' << value << '\n';
+				}
+				xl_object_trigger_load(sample);
+				for (int i = 0; i < size; ++i) {
+					const auto value = state(i);
+					sort_samples << value.owner << ' ' << value.type << ' ' << value.value << '\n';
+				}
+			}
+		sort_samples.close();
+		require(bool(sort_samples), "object sort samples not written");
+		require(state_restore_all_sub(initial, 0) != 0, "sort overrides did not restore source");
+		std::ofstream teleport_samples(root.parent_path() / "object-teleport-samples.txt");
+		for (int segment = 0; segment < 3; ++segment) {
+			vms_vector center;
+			compute_segment_center(&center, &Segments[segment]);
+			teleport_samples << center.x << ' ' << center.y << ' ' << center.z << '\n';
+		}
+		for (int seed = 0; seed < 20; ++seed)
+			for (int last = 0; last < 3; ++last)
+				for (int segment = 0; segment < 3; ++segment)
+					for (int profile = 0; profile < 4; ++profile) {
+						trigger action{};
+						action.type = 14;
+						action.num_links = profile == 0 ? 0 : profile == 1 ? 1
+						                                                   : 3;
+						action.seg[0] = profile == 2 ? 0 : 1;
+						action.seg[1] = 1;
+						action.seg[2] = 2;
+						obj_relink(robot, segment);
+						compute_segment_center(&Objects[robot].pos, &Segments[segment]);
+						Objects[robot].pos.x += F1_0 / 4;
+						const auto position = Objects[robot].pos, motion = Objects[robot].mtype.phys_info.velocity;
+						const auto facing = Objects[robot].orient;
+						d_rand_set_state(seed + 1);
+						d_rand_set_call_count(0);
+						int selected = last;
+						require(xl_object_teleport_action(&action, robot, &selected) == 0, "valid object teleport sample rejected");
+						const auto draws = d_rand_get_call_count();
+						require(draws < 1000 && !std::memcmp(&facing, &Objects[robot].orient, sizeof(facing)) && !std::memcmp(&motion, &Objects[robot].mtype.phys_info.velocity, sizeof(motion)), "object teleport changed orientation/motion or retry bound");
+						unsigned after;
+						d_rand_get_state(&after);
+						teleport_samples << int(action.num_links) << ' ' << last << ' ' << segment << ' ' << position.x << ' ' << position.y << ' ' << position.z << ' ' << selected << ' ' << Objects[robot].segnum << ' ' << Objects[robot].pos.x << ' ' << Objects[robot].pos.y << ' ' << Objects[robot].pos.z << ' ' << draws;
+						for (int i = 0; i < action.num_links; ++i) teleport_samples << ' ' << action.seg[i];
+						d_rand_set_state(seed + 1);
+						d_rand_set_call_count(0);
+						for (std::uint64_t i = 0; i < draws; ++i) teleport_samples << ' ' << d_rand() % action.num_links;
+						unsigned replayed;
+						d_rand_get_state(&replayed);
+						require(after == replayed, "object teleport sample RNG transcript differs");
+						teleport_samples << '\n';
+					}
+		teleport_samples.close();
+		require(bool(teleport_samples), "object teleport samples not written");
+		require(state_restore_all_sub(initial, 0) != 0, "teleport samples did not restore source");
+		const auto original_master = Triggers[3];
+		Triggers[3].flags = TF_ONE_SHOT;
+		Triggers[3].num_links = 1;
+		Triggers[3].seg[0] = Walls[4].segnum;
+		Triggers[3].side[0] = Walls[4].sidenum;
+		trigger root_master = Triggers[3];
+		root_master.flags = 0;
+		require(xl_object_master_action(&root_master, powerups[4]) == 0 && (Triggers[3].flags & TF_DISABLED), "object master recursion was not bounded");
+		Triggers[3] = original_master;
+		root_master.seg[0] = Walls[2].segnum;
+		root_master.side[0] = Walls[2].sidenum;
+		require(xl_object_master_action(&root_master, powerups[4]) == 0 && (Walls[16].flags & WALL_ILLUSION_OFF), "object master recursion left dispatch context poisoned");
 		std::cout << "XL object event controls passed\n";
 		return 0;
 	} catch (const std::exception &error) {

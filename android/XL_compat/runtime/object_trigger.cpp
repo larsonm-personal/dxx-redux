@@ -18,6 +18,8 @@ extern "C" {
 #include "rng_shared.h"
 #include "boss_health_shared.h"
 int xl_object_classic_action(const trigger *action);
+int xl_object_master_action(const trigger *action, int object_index);
+int xl_object_master_supported(const trigger *action);
 }
 
 namespace
@@ -70,22 +72,9 @@ void operate(ObjectAction &entry)
 	auto &action = entry.action;
 	if (!bound(entry) || (action.flags & TF_DISABLED)) return;
 	entry.operated = true;
-	if (action.type == 14) {
-		if (action.num_links) {
-			int segment = action.seg[0];
-			if (action.num_links > 1) {
-				do {
-					segment = action.seg[d_rand() % action.num_links];
-				} while (segment == entry.destination);
-				entry.destination = segment;
-			}
-			auto &object = Objects[entry.owner];
-			if (object.segnum != segment) {
-				compute_segment_center(&object.pos, &Segments[segment]);
-				obj_relink(entry.owner, segment);
-			}
-		}
-	} else if (action.type == 32 || action.type == 33) {
+	if (action.type == 14) xl_object_teleport_action(&action, entry.owner, &entry.destination);
+	else if (action.type == 31) xl_object_master_action(&action, entry.owner);
+	else if (action.type == 32 || action.type == 33) {
 		for (int link = 0; link < action.num_links; ++link) {
 			const auto wall = Segments[action.seg[link]].sides[action.side[link]].wall_num;
 			if (wall < 0 || wall >= Num_walls) continue;
@@ -117,13 +106,37 @@ float remaining_shields(const object &object)
 }
 } // namespace
 
+extern "C" int xl_object_teleport_action(const trigger *action, int object_index, int *destination)
+{
+	if (!xl_level_extensions_active() || !action || !destination || !xl_wall_teleport_actor(object_index) || action->num_links < 0 || action->num_links > MAX_WALLS_PER_LINK) return 1;
+	for (int i = 0; i < action->num_links; ++i)
+		if (action->seg[i] < 0 || action->seg[i] > Highest_segment_index) return 1;
+	if (!action->num_links) return 0;
+	int segment = action->seg[0];
+	if (action->num_links > 1) {
+		bool distinct = false;
+		for (int i = 1; i < action->num_links; ++i) distinct |= action->seg[i] != segment;
+		if (!distinct) return 1;
+		do {
+			segment = action->seg[d_rand() % action->num_links];
+		} while (segment == *destination);
+		*destination = segment;
+	}
+	auto &object = Objects[object_index];
+	if (object.segnum != segment) {
+		compute_segment_center(&object.pos, &Segments[segment]);
+		obj_relink(object_index, segment);
+	}
+	return 0;
+}
+
 void xl_object_trigger_load(const xl_compat::Inventory &level)
 {
 	xl_object_trigger_clear();
 	if (level.object_trigger_records.size() > 255) throw std::runtime_error("object trigger capacity exceeds 255 inspected records");
 	for (const auto &record : level.object_trigger_records) {
 		const auto &source = record.action;
-		if ((source.type > 14 && source.type != 32 && source.type != 33) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK)
+		if ((source.type > 14 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK)
 			throw std::runtime_error("object trigger action or flags are not implemented");
 		ObjectAction entry;
 		entry.authored_owner = entry.owner = record.object;
@@ -134,7 +147,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 		}
 		entry.action.type = source.type;
 		entry.action.flags = source.flags;
-		entry.action.value = source.value;
+		entry.action.value = source.type == 31 ? 0 : source.value;
 		entry.action.time = -1;
 		entry.action.num_links = static_cast<short>(source.targets.size());
 		for (std::size_t link = 0; link < source.targets.size(); ++link) {
@@ -211,6 +224,7 @@ extern "C" int xl_object_trigger_restore(const xl_object_trigger_state *states, 
 	for (int i = 0; i < count; ++i) {
 		const auto &state = states[i];
 		const auto &original = authored[i];
+		if (original.action.type == 31 && !xl_object_master_supported(&original.action)) return 0;
 		if (state.owner != -1 && state.owner != original.authored_owner) return 0;
 		if (state.signature < (original.authored_owner < 0 ? -1 : 0) || (original.authored_owner < 0 && state.signature != -1)) return 0;
 		if (state.owner >= 0 && (state.owner > Highest_object_index || Objects[state.owner].type == OBJ_NONE || Objects[state.owner].signature != state.signature)) return 0;

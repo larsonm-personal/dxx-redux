@@ -502,6 +502,7 @@ $testTimeouts = @{
     "test_xl_wall_teleports_runtime" = 360
     "test_xl_wall_trigger_chains_runtime" = 360
     "test_xl_wall_trigger_scheduler_runtime" = 480
+    "test_xl_object_events_runtime" = 480
     "test_xl_pilot_import" = 300
     "test_xl_pilot_coronas" = 300
     "test_xl_pilot_completion" = 300

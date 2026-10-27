@@ -1,10 +1,10 @@
-# Object-attached triggers: work in progress
+# Object-attached singleplayer events
 
 This chunk extends the singleplayer roadmap after wall scheduling. Object
-runtime work is under verification. The local branch admits the implemented
-nonplayer leaf actions while object masters, other extended actions/flags,
-player owners and boss teleports remain gated. This is not a completed chunk or
-an original-mission qualification
+runtime is verified within the scope below. Admission permits nonplayer leaf
+actions and immediate object masters while delayed descendants, other extended
+actions/flags, player owners and boss teleports remain gated. This is not an
+original-mission qualification
 
 ## Decoded source semantics
 
@@ -32,20 +32,14 @@ controls include invalid owners and geometric targets, truncated actions/owners/
 tails, negative or overflowing counts, sparse bounds, trailing payload and a
 section boundary before the end of the owner table. A declaration whose payload
 does not decode remains unknown in the browser rather than gaining a trusted
-count. Fully decoded records gain a count while remaining blocked
+count. Fully decoded records gain a count; admission checks action and owner
+requirements independently
 
 `xl_object_trigger_decode_reference` compares three derived records in each of
 the three layouts against hash-pinned extracted reader code. This is decoder
 and normalization evidence; no runtime event dispatch is tested by this check
 
-The current five-test native selection passed: inventory contract, derived
-reference decode, original GlassHouse reference decode, original Neptune
-inventory and original Observatory inventory. The native build reports no new
-warnings, and scoped mixed formatting/lint passes. Logs are retained under
-temp/xl-object-triggers-20261026. No Android event integration has run for this
-chunk yet
-
-## Native runtime checkpoint
+## Runtime evidence
 
 The production loader binds source owners to native signatures and sorts actions
 by owner/type with reference equal-key swaps. Robot damage, cleanup removal and
@@ -64,27 +58,61 @@ Direct stock illusion-off/on dispatch also passes after the shared leaf refactor
 
 All 1456 exported production event samples match extracted reference
 DoExecObjTrigger and CObject::Damage calculations across types, raw/fixed values,
-disabled/permanent flags, event kind and shield boundaries. Sixteen malformed
+disabled/permanent flags, event kind and shield boundaries. Eighteen malformed
 extension controls reject count, owner, signature, type, flags, value, operated,
 destination, numeric overflow, schema, identity, checksum and truncated/missing
 data. Both wall and object records validate before either set is published
 
 Object persistence uses schema 2 of the bounded trigger extension and includes
-object actions/owners in source identity. Existing wall-only sources keep schema
+object actions/owners in source identity. Existing wall-only sources retain
+schema-1 rows. The selected last destination is persisted rather than adopting
+the pinned reference loader's reset on restore. Negative threshold arithmetic is
+widened to avoid signed subtraction overflow at extreme authored values
 
-1. The selected last destination is persisted rather than adopting the pinned
-   reference loader's reset on restore. Negative threshold arithmetic is widened
-   to avoid the reference's signed subtraction overflow at extreme authored values
+Immediate object masters retain their owner through nested wall children,
+including classic leaf dispatch and object-style teleports. Recursion is bounded
+and subsequent dispatch recovers. Source master semaphores normalize to zero.
+Wall-child teleport history is persisted in schema 2's sixth wall-row field;
+wall-only schema 1 keeps its existing five-field rows
 
-The final native checkpoint passes 11/11 focused regressions: inventory,
+The native controls now include 56 independent sort comparisons (3472 total
+records), 720 teleport comparisons with complete retry RNG transcripts, and the
+extracted master's object-context/child-order checks. Eighteen malformed-state
+controls include invalid wall-child history and a restored delayed descendant.
+The inspector rejects both direct and nested delayed descendants before loading
+
+The pinned master's foreign-array pointer subtraction is undefined. Redux uses
+the real wall-child index while passing the object actor/context, as requested
+by DoMasterTrigger. This deterministic indexing correction is documented rather
+than claimed as reference allocator parity. Delayed object-chain context and
+actor-release/reuse semantics remain an explicit unsupported requirement
+
+The final native selection passes 11/11 focused regressions: inventory,
 derived/original object decode, object events, wall teleports/chains/scheduler,
 modern properties/water, original Neptune features and Observatory descriptor.
 Scoped mixed formatting/lint and the final admission-test style check pass
 
-The shared D1/D2 x86_64 Android APK builds successfully. Its checkpoint SHA256 is
-fe04c3f22de74e93c3c2af17e69097073fdd13cbe6ccd83bcf01fb5ad72ab95c.
-This is compilation evidence; Android object-event and rewind acceptance has
-not run. Logs remain under temp/xl-object-triggers-20261026
+The shared D1/D2 x86_64 Android APK passes all 59 registered integration steps,
+run ID 63ca8e197c93414db055f5d58832d030, elapsed 127016 ms. Checks cover local/
+nonlocal threshold damage, actual lethal explosion/removal, disabled and once-
+only cleanup, reactor consumption, master context/history, disk restore and a
+stock-to-source transition. Two captures each undergo three production rewind
+restores, covering live and consumed object state. Protected app-private files
+have identical pre-test and restored hashes; emulator-5556 was not used
+
+Tested APK SHA256:
+617b8073e400092ea2b70be6a081e2429fb52c55a135836935b6c0d3e6c0280b
+
+Derived fixture HOG SHA256:
+80a7d98f01c138716f3650f388216ffca0e45ab829b263726bb77d75f2014cd6
+
+Derived descriptor SHA256:
+221deb90c04e3c1d8b954dce20968c1d6df9f7926d6bda4b0c69bb4b75bcae01
+
+Logs remain under temp/xl-object-triggers-20261026 and
+temp/xl-object-events-android. Both automation catalogs and all 12 runner-policy
+tests pass. Trusted native CI requires object decode and runtime controls and
+now expects 44 required passes; unfinished campaign acceptance remains separate
 
 ## Original mission inspection
 
@@ -102,10 +130,10 @@ Tankboy still rejects other object layouts or malformed geometric targets.
 Those blockers cannot be removed merely because their object-trigger section
 now decodes. Full reports remain in temp/xl-object-triggers-20261026
 
-## Remaining acceptance
+## Remaining work
 
-Object-master child context, independent teleport/sort comparisons, boss
-bookkeeping, Android disk/rewind integration and complete feature-specific
-admission/browser evidence remain open. Repeat affected checks after subsequent
-source changes. Do not claim this chunk complete from
-the current native checkpoint or qualify a new mission from these derived tests
+Delayed object-chain lifecycle, boss bookkeeping and other unsupported action/
+owner variants remain on the broader gameplay roadmap, together with additional
+layouts/capacities and original missions exercising these features. This finishes
+the selected nonplayer event/immediate-chain chunk. It does not qualify a new
+mission or complete the overall gameplay roadmap

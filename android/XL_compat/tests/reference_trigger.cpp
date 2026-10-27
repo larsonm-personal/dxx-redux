@@ -17,6 +17,8 @@
 #define LIGHTNING_ID 1
 #define SOUND_ID     2
 std::vector<int> calls;
+bool expected_attached = false;
+int expected_player = 2;
 struct CFile {
 	std::vector<std::uint8_t> bytes;
 	std::size_t position = 0;
@@ -87,7 +89,7 @@ struct CTrigger : CTriggerTargets {
 	}
 	int Operate(int16_t object, int player, int shot, bool attached)
 	{
-		if (object != 7 || player != 2 || shot != 0 || attached) throw std::runtime_error("master child arguments differ");
+		if (object != 7 || player != expected_player || shot != 0 || attached != expected_attached) throw std::runtime_error("master child arguments differ");
 		calls.push_back(value);
 		return result;
 	}
@@ -167,6 +169,10 @@ int main(int argc, char **argv)
 			targets[i].result = i == 1 ? -1 : 0;
 		}
 		if (master.DoMasterTrigger(7, 2, false) != -1 || calls != std::vector<int>{ 0, 1 }) throw std::runtime_error("Reference chain order or exit propagation changed");
+		calls.clear();
+		expected_attached = true;
+		expected_player = -1;
+		if (master.DoMasterTrigger(7, -1, true) != -1 || calls != std::vector<int>{ 0, 1 }) throw std::runtime_error("Reference object master context or link order changed");
 		std::cout << "Matched 40 runtime master counter samples; reference source normalization, link order and exit propagation checked\n";
 		return 0;
 	} catch (const std::exception &error) {

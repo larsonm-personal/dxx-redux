@@ -282,7 +282,11 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 		graph.clip(VCLIP_PLAYER_APPEARANCE);
 	}
 	for (const auto &entry : level.object_trigger_records) {
-		if (entry.action.type != 14 || entry.object < 0) continue;
+		if (entry.object < 0) continue;
+		bool teleports = entry.action.type == 14;
+		if (entry.action.type == 31)
+			for (int child : xl_compat::object_chain_targets(level, entry.action)) teleports |= level.triggers[child].type == 14;
+		if (!teleports) continue;
 		const auto &owner = level.objects.at(entry.object);
 		if (owner.type == OBJ_ROBOT) {
 			graph.robot(owner.id);

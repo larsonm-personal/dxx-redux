@@ -1,15 +1,38 @@
 #include "admission.h"
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 
 namespace xl_compat
 {
+std::vector<int> object_chain_targets(const Inventory &level, const Trigger &master)
+{
+	std::vector<int> result;
+	std::vector<bool> seen(level.triggers.size());
+	std::vector<const Trigger *> pending{ &master };
+	while (!pending.empty()) {
+		const auto *action = pending.back();
+		pending.pop_back();
+		for (const auto &target : action->targets) {
+			if (target[0] < 0 || static_cast<std::size_t>(target[0]) >= level.segments.size() || target[1] < 0 || target[1] >= 6) continue;
+			const int wall = level.segments[target[0]].sides[target[1]].wall;
+			if (wall < 0 || static_cast<std::size_t>(wall) >= level.walls.size()) continue;
+			const int index = level.walls[wall].trigger;
+			if (index < 0 || static_cast<std::size_t>(index) >= level.triggers.size() || seen[index]) continue;
+			seen[index] = true;
+			result.push_back(index);
+			if (level.triggers[index].type == 31) pending.push_back(&level.triggers[index]);
+		}
+	}
+	return result;
+}
+
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water)
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
 		if (issue.feature == "object_triggers") continue;
-		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "32" || issue.detail == "33")) continue;
+		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (issue.feature == "trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (experimental_water) {
 			if (level.level_version < 21 && issue.feature == "segment_function" && issue.detail == "7") continue;
@@ -46,7 +69,14 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		const auto &record = level.object_trigger_records[i];
 		const auto &action = record.action;
 		const auto block = [&](bool condition, const char *detail) { if (condition) result.push_back({ "object triggers", static_cast<int>(i), detail }); };
-		block(action.type == 31, "object master child context requires further reference/runtime qualification");
+		if (action.type == 31)
+			for (int target : object_chain_targets(level, action)) {
+				const auto &child = level.triggers[target];
+				const auto magnitude = child.time < 0 ? -std::int64_t(child.time) : std::int64_t(child.time);
+				block(magnitude >= 100 && magnitude <= 900000, "object master reaches a delayed wall action; pending actor/context lifecycle is not qualified");
+				if (child.type == 14 && child.targets.size() > 1)
+					block(std::all_of(child.targets.begin(), child.targets.end(), [&](const auto &link) { return link[0] == child.targets[0][0]; }), "object master teleport child requires distinct destination segments");
+			}
 		if (record.object >= 0 && static_cast<std::size_t>(record.object) < level.objects.size()) {
 			const int type = level.objects[record.object].type;
 			block(type != 2 && type != 3 && type != 7 && type != 8 && type != 9, "owner type has no qualified singleplayer event lifecycle");
