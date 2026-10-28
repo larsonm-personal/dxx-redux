@@ -207,13 +207,15 @@ void teleport_inventory_contract()
 		patch(boost, offset + 1, 8, 1);
 		const auto supported_timing = xl_compat::compatibility_json("boost.rl2", boost);
 		check(feature_row(supported_timing, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos && feature_row(supported_timing, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos, "scheduler browser rows reject implemented boost requirements");
-		for (const auto field : { offset + 12, offset + 32 }) {
-			auto invalid = bytes;
-			patch(invalid, field, 0xffff, 2);
-			rejects([&] { xl_compat::inspect_level(invalid); });
-			patch(invalid, field, field == offset + 12 ? 1 : 6, 2);
-			rejects([&] { xl_compat::inspect_level(invalid); });
-		}
+		for (const int type : { 14, 15 })
+			for (const auto field : { offset + 12, offset + 32 }) {
+				auto invalid = bytes;
+				patch(invalid, offset, type, 1);
+				patch(invalid, field, 0xffff, 2);
+				rejects([&] { xl_compat::inspect_level(invalid); });
+				patch(invalid, field, field == offset + 12 ? 1 : 6, 2);
+				rejects([&] { xl_compat::inspect_level(invalid); });
+			}
 		for (const int time : { -900001, -900000, -100, -99, 0, 99, 100, 900000, 900001, (-2147483647 - 1) }) {
 			auto delayed = bytes;
 			patch(delayed, offset + 8, static_cast<std::uint32_t>(time));
@@ -321,6 +323,13 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		patch(boost, trigger + 4, 15, 1);
 		patch(boost, trigger + 37, 0, 2);
 		check(xl_compat::prepare_gameplay_probe(boost).source.object_trigger_records[0].action.type == 15, "supported object speed boost rejected");
+		for (const auto field : { trigger + 17, trigger + 37 }) {
+			auto invalid = boost;
+			patch(invalid, field, 0xffff, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
+			patch(invalid, field, field == trigger + 17 ? 1 : 6, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
+		}
 		for (const int type : { 16, 26, 29 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);

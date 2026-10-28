@@ -94,7 +94,9 @@ Fifteen recomputed-checksum malformed trailers reject without partially changing
 an earlier valid pending event
 
 Inventory contracts cover serialized boost-area functions in 15/33, 17/36 and
-23/40 and object/wall action admission. Camera type 16 remains rejected. Native
+23/40 and object/wall action admission. Every boost destination segment and side
+must be valid; invalid links reject during inspection with the trigger record
+identified, rather than reaching a runtime no-op. Camera type 16 remains rejected. Native
 stock controls prove inactive XL hooks neither constrain drag nor alter velocity
 
 All 26 focused feature regressions pass in 133.95 seconds, including events,
@@ -114,12 +116,18 @@ path also verifies published bytes and restores from disk. Controlled activation
 is renewed before the second capture so prior wall contact cannot turn an active
 boost assertion into a test of an already released boost
 
-Final APK SHA256:
+Android qualification APK SHA256:
 427795c115302a2a4cca632ad423be9487b6bcaf89d34f9da6280978fb8774c5.
 Protected-file hashes match after restoration. The final formatted native build
 passes inventory, teleport and boost controls in 23.41 seconds. Scoped quality,
 all 12 private-policy tests and both automation catalogs pass (398 top-level
 entries, 453 support scripts). The private receipt requires xl_speed_boosts
+
+A subsequent admission-only bounds fix adds wall and object boost negatives for
+negative and out-of-range segment/side links in all three layouts. Its inventory
+controls pass in 15.35 seconds, and the rebuilt native boost integration passes
+in 10.29 seconds. The Android gameplay run above predates that stricter input
+check; its valid fixture bytes and runtime behavior are unchanged
 
 Fixture identities:
 
