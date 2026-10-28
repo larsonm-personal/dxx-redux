@@ -33,13 +33,31 @@ Segment *SEGMENT(int)
 	return &segment;
 }
 struct CWall {
-	int nType = WALL_CLOSED, nSegment = 0, nSide = 0, flags = 0, cloakValue = 0, hps = 0, state = 0, keys = 0;
+	int nType = WALL_CLOSED, nSegment = 0, nSide = 0, flags = 0, hps = 0, state = 0, keys = 0;
+	std::int8_t cloakValue = 0;
 	int32_t IsPassable(CObject *, bool);
 } wall;
 #include "xl_reference_keyed_wall.h"
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[2]) == "doorway") {
+			std::ifstream in(argv[1]);
+			int type, flags, state, cloak, transparent, expected, count = 0;
+			while (in >> type >> flags >> state >> cloak >> transparent >> expected) {
+				wall.nType = type;
+				wall.flags = flags;
+				wall.state = state;
+				wall.cloakValue = cloak;
+				segment.transparent = transparent != 0;
+				if (wall.IsPassable(nullptr, false) != expected)
+					throw std::runtime_error("Doorway mismatch at " + std::to_string(count));
+				++count;
+			}
+			if (count <= 8192) throw std::runtime_error("Incomplete doorway matrix/animation");
+			std::cout << count << " extracted-reference doorway matrix/animation samples passed\n";
+			return 0;
+		}
 		if (argc != 2) throw std::runtime_error("Expected keyed-wall samples");
 		std::ifstream in(argv[1]);
 		int type, keys, owned, cloak, transparent, flags, expected, count = 0;

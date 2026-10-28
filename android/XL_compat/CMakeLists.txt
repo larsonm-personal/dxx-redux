@@ -278,6 +278,14 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/keyed_wall ${xl_keyed_wall_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/keyed_wall.cmake)
             set_tests_properties(xl_keyed_closed_walls PROPERTIES TIMEOUT 120)
+            add_test(
+                NAME xl_doorways
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/doorway ${xl_keyed_wall_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/doorway.cmake)
+            set_tests_properties(xl_doorways PROPERTIES TIMEOUT 120)
             set(xl_repair_args)
             if(TARGET xl_repair_reference)
                 list(APPEND xl_repair_args "-DREFERENCE=$<TARGET_FILE:xl_repair_reference>")

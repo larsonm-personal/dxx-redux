@@ -1,4 +1,4 @@
-#include "keyed_wall.h"
+#include "doorway.h"
 #include "keyed_wall_fixture.h"
 static void keyed_wall_matrix(const std::filesystem::path &output)
 {
@@ -29,7 +29,7 @@ static void keyed_wall_matrix(const std::filesystem::path &output)
 							Walls[0].cloak_value = cloak;
 							Walls[0].flags = flags;
 							bitmap.bm_flags = transparent ? BM_FLAG_TRANSPARENT : 0;
-							const int actual = xl_closed_wall_doorway(type < 0 ? -1 : index, Walls[0].segnum, Walls[0].sidenum);
+							const int actual = xl_wall_doorway(type < 0 ? -1 : index, Walls[0].segnum, Walls[0].sidenum);
 							samples << type << ' ' << keys << ' ' << owned << ' ' << cloak << ' ' << transparent << ' ' << flags << ' ' << actual << '\n';
 							++count;
 						}
@@ -39,7 +39,7 @@ static void keyed_wall_matrix(const std::filesystem::path &output)
 	side = saved_side;
 	Walls[0] = saved_wall;
 	Players[0].flags = saved_keys;
-	require(xl_closed_wall_doorway(ConsoleObject - Objects, -1, 0) == -1 && xl_closed_wall_doorway(ConsoleObject - Objects, 24, 6) == -1 && xl_closed_wall_doorway(Highest_object_index + 1, 24, 5) == WID_TRANSPARENT_WALL, "Keyed-wall invalid index handling failed");
+	require(xl_wall_doorway(ConsoleObject - Objects, -1, 0) == -1 && xl_wall_doorway(ConsoleObject - Objects, 24, 6) == -1 && xl_wall_doorway(Highest_object_index + 1, 24, 5) == WID_TRANSPARENT_WALL, "Keyed-wall invalid index handling failed");
 	std::cout << count << " keyed-wall passability samples written\n";
 }
 static void keyed_wall_crossings()
@@ -110,7 +110,7 @@ static void keyed_wall_crossings()
 	// A malformed object player ID cannot read a foreign player slot
 	const auto id = ConsoleObject->id;
 	ConsoleObject->id = 255;
-	require(xl_closed_wall_doorway(ConsoleObject - Objects, 24, 5) == WID_TRANSPARENT_WALL, "Malformed player ID acquired a key");
+	require(xl_wall_doorway(ConsoleObject - Objects, 24, 5) == WID_TRANSPARENT_WALL, "Malformed player ID acquired a key");
 	ConsoleObject->id = id;
 	std::cout << count << " actual keyed-wall actor crossings and visibility rays passed\n";
 }
@@ -125,22 +125,22 @@ static void keyed_wall_lifecycle()
 	stop_time();
 	require(state_save_all_sub(save, description), "Keyed-wall disk save failed");
 	Players[Player_num].flags = PLAYER_FLAGS_RED_KEY;
-	require(!(xl_closed_wall_doorway(player, 24, 5) & WID_FLY_FLAG), "Removing matching key did not close permission");
+	require(!(xl_wall_doorway(player, 24, 5) & WID_FLY_FLAG), "Removing matching key did not close permission");
 	const auto old_type = Walls[0].type;
 	Walls[0].type = WALL_OPEN;
-	require(xl_closed_wall_doorway(player, 24, 5) == -1 && (WALL_IS_DOORWAY(&Segments[24], 5) & WID_FLY_FLAG), "Live wall transition retained closed-wall dispatch");
+	require(xl_wall_doorway(player, 24, 5) == WID_NO_WALL && (WALL_IS_DOORWAY(&Segments[24], 5) & WID_FLY_FLAG), "Live wall transition retained closed-wall dispatch");
 	Walls[0].type = old_type;
 	char error[256]{};
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2"), "Keyed-wall stock transition failed");
 	const auto stock = *ConsoleObject;
-	require(xl_closed_wall_doorway(ConsoleObject - Objects, ConsoleObject->segnum, 0) == -1 && !std::memcmp(&stock, ConsoleObject, sizeof(stock)), "Keyed-wall rule leaked into Redux");
+	require(xl_wall_doorway(ConsoleObject - Objects, ConsoleObject->segnum, 0) == -1 && !std::memcmp(&stock, ConsoleObject, sizeof(stock)), "Keyed-wall rule leaked into Redux");
 	require(Num_walls > 0, "Stock control lacks walls");
 	const auto wall = Walls[0];
 	Walls[0].type = WALL_CLOSED;
 	Walls[0].flags = WALL_DOOR_OPENED;
 	require(WALL_IS_DOORWAY(&Segments[wall.segnum], wall.sidenum) == WID_TRANSILLUSORY_WALL, "Redux doorway semantics changed");
 	Walls[0] = wall;
-	require(state_restore_all_sub(save, 0) && (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) && xl_closed_wall_doorway(ConsoleObject - Objects, 24, 5) == WID_ILLUSORY_WALL && WALL_IS_DOORWAY(&Segments[24], 5) == WID_TRANSPARENT_WALL, "Disk restore lost keys or mixed actor/visibility state");
+	require(state_restore_all_sub(save, 0) && (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) && xl_wall_doorway(ConsoleObject - Objects, 24, 5) == WID_ILLUSORY_WALL && WALL_IS_DOORWAY(&Segments[24], 5) == WID_TRANSPARENT_WALL, "Disk restore lost keys or mixed actor/visibility state");
 	start_time();
 	// Owning a key does not bypass the source boost-area exit constraint
 	obj_relink(ConsoleObject - Objects, 24);

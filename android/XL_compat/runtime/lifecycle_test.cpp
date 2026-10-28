@@ -1548,12 +1548,14 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "lava_test.h"
 #include "blocked_test.h"
 #include "keyed_wall_test.h"
+#include "doorway_test.h"
 #include "repair_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
 	if (find_arg_value(argc, argv, "-blocked-test")) return blocked_test(argc, argv);
+	if (find_arg_value(argc, argv, "-doorway-test")) return doorway_test(argc, argv);
 	if (find_arg_value(argc, argv, "-keyed_wall-test")) return keyed_wall_test(argc, argv);
 	if (find_arg_value(argc, argv, "-repair-test")) return repair_test(argc, argv);
 	if (find_arg_value(argc, argv, "-lava-test")) return lava_test(argc, argv);

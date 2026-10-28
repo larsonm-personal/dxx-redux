@@ -141,6 +141,11 @@ and all 90 Android crossing and persistence checks pass; see
 [keyed-wall evidence](evidence/keyed-closed-walls.md). Blocked and boost constraints
 still apply. Redux retains its original doorway behavior; no original mission
 is newly qualified by these derived controls.
+All admitted wall types now use a separate XL doorway decision, including closing
+door transparency, wall-type-specific flags and signed cloak bytes. This replaces
+the former additions to Redux's result. Source/native animation, collision and
+persistence controls are recorded in [doorway evidence](evidence/doorways.md),
+including the corrected signed-field adapter from the keyed-wall tranche.
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented
 object-event variants remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and

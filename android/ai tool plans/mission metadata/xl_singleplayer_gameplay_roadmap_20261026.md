@@ -150,6 +150,13 @@ finish original-mission qualification
     and boost constraints retain source behavior. The audit of 121 originals
     retains their independent decoding, gameplay and qualification requirements
 
+21. Separate XL doorway decisions: source comparisons across admitted types,
+    states, flags and signed cloak bytes, plus actual animation, physical and
+    visibility rays, reversal and disk-through-stock controls pass. See the
+    [doorway evidence](../../XL_compat/evidence/doorways.md) for Android acceptance
+    and the signed-byte correction to the preceding keyed-wall adapter. This
+    does not qualify every wall animation or an original mission
+
 Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as
 required acceptance rather than cosmetic deferral

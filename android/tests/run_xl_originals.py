@@ -34,6 +34,7 @@ CORE_TESTS = (
         "xl_lava_volumes",
         "xl_blocked_segments",
         "xl_keyed_closed_walls",
+        "xl_doorways",
         "xl_repair_centers",
         "xl_object_trigger_decode_reference",
         "xl_generator_assignment_reference",
