@@ -4,6 +4,7 @@
 #include "speed_boost.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
+#include "resource_validation.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -1769,8 +1770,13 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 					fix			speed;
 
 					if (weapon->render_type == RT_POLYOBJ) {
+						fix model_radius;
 						Objects[new_obj].rtype.pobj_info.model_num = Weapon_info[Objects[new_obj].id].model_num;
-						Objects[new_obj].size = fixdiv(Polygon_models[Objects[new_obj].rtype.pobj_info.model_num].rad,Weapon_info[Objects[new_obj].id].po_len_to_width_ratio);
+						model_radius = Polygon_models[Objects[new_obj].rtype.pobj_info.model_num].rad;
+#ifdef DXX_XL_RUNTIME
+						model_radius = xl_custom_model_radius(Objects[new_obj].rtype.pobj_info.model_num, model_radius);
+#endif
+						Objects[new_obj].size = fixdiv(model_radius,Weapon_info[Objects[new_obj].id].po_len_to_width_ratio);
 					}
 
 					Objects[new_obj].mtype.phys_info.mass = Weapon_info[weapon->id].mass;

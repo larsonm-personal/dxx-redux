@@ -221,7 +221,7 @@ bool mission_has_companion(const char *extension)
 	return false;
 }
 
-void validate_requirements(const xl_compat::Inventory &level, const char *filename, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph)
+void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph)
 {
 	graph.xl_boss_spawning = true;
 	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
@@ -268,14 +268,6 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 		if (custom_textures && !mission_has_companion(".POG"))
 			throw std::runtime_error("mission declares custom textures, but no level POG was found; install the complete mission package (custom PIG replacements remain unqualified)");
 	}
-	std::string hxm = filename;
-	const auto dot = hxm.find_last_of('.');
-	if (dot != std::string::npos) hxm.replace(dot, std::string::npos, ".hxm");
-	const bool robot_requirements = !level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) {
-		return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
-	});
-	if ((!water_pilot || robot_requirements) && (PHYSFSX_exists(hxm.c_str(), 1) || PHYSFSX_exists((std::string(MISSION_DIR) + hxm).c_str(), 1)))
-		throw std::runtime_error("level-specific HXM definitions: XL override support is not verified");
 	xl_validate_level_graphics(level.palette);
 	if (NumTextures <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
 		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
@@ -427,7 +419,7 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
 		XlPreparedResources resources(filename, &probe.source);
-		validate_requirements(probe.source, filename, multiplayer != 0, arena, resources.dependencies());
+		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies());
 		return 1;
 	} catch (const std::exception &error) {
 		rejection = std::string(filename) + "\n" + error.what();
@@ -641,7 +633,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source);
-		validate_requirements(probe.source, filename, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies());
+		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> output(PHYSFS_openWrite(translated_path), PHYSFS_close);

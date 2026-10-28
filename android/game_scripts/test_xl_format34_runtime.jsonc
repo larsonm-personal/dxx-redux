@@ -1,4 +1,4 @@
-// Derived 15/34 layout with unqualified HXM omitted; saved states rearm the authored one-shot light-on action
+// Derived 15/34 layout isolates lighting from HXM; saved states rearm the authored one-shot light-on action
 [
     {
         "_info": {

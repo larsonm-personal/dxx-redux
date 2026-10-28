@@ -39,17 +39,18 @@ but the pinned reference selects packed decoding for their declared version.
 The port rejects these ranges with the segment, side, count, first index and
 available delta count. It does not silently reinterpret malformed originals.
 
-Alarlof alone decodes. Its original HXM fails existing definition validation,
-and the native integration explicitly requires that rejection before starting
-the derived fixture. [The candidate report](format-15-34-candidates.json) records
-decoding only, with every runtime_qualified value false. All fifteen original
-campaign levels therefore retain independent blockers.
+Alarlof alone decodes. The later [HXM gameplay tranche](hxm-gameplay.md) implements
+its original companion and verifies the authored custom actor, combat and
+restoration. The format integration now requires original admission before
+starting its isolated geometry fixture. [The candidate report](format-15-34-candidates.json)
+records static decoding only, with every runtime_qualified value false; it does
+not summarize the later HXM controls or qualify the campaign.
 
 ## Derived native controls
 
 The fixture removes exactly alarlof.HXM from a copy of the original archive and
 uses a single-level descriptor. Alarlof's RL2 bytes remain unchanged; stock robot
-definitions replace its unqualified HXM only in this labeled test fixture.
+definitions replace its HXM only in this labeled geometry/light test fixture.
 
 - Derived format34.hog: c7d8f979382f162fc17d4c13976b234ba2dc5f9dbd55b5bde6314230f229a378
 - Derived format34.mn2: 8cc94a3d53ce1e251a26d9fa4b2c17e18b595b2dbe60dc1896503271463af5b5

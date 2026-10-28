@@ -1,9 +1,30 @@
 # Singleplayer gameplay support roadmap
 
-Continue the original 10-20 comparable chunks estimate from
-[the teleport plan](xl_wall_teleports_20261025.md). The estimate describes broadly
-useful gameplay fidelity with a longer tail of unusual missions; it is not a
-fixed feature count, percentage, or promise of universal mission support
+The target is complete singleplayer fidelity within an explicitly documented XL
+version/settings scope. The earlier 10-20-chunk estimate described broadly useful
+support, not completion, and no longer determines implementation order. Rejected
+valid content remains unfinished work, even when its rejection is helpful
+
+## Dependency order
+
+1. Complete resource ownership, custom gameplay definitions, remaining layouts
+   and capacities. Later combat and event work should exercise these foundations
+2. Complete actors and lifecycle: custom combat, boss variants, dynamic creation,
+   generators, death and respawn. Keep separate XL and Redux implementations
+   where semantics differ substantially
+3. Close remaining event actions/owners and world interactions, then exercise
+   combinations involving delayed actions, generated actors and removed owners
+4. Complete campaign transitions, secret levels, revisits and resource changes.
+   Persistence is required in every preceding batch, not postponed to this stage
+5. Complete presentation fidelity. Gameplay-affecting audio, visibility and
+   effects accompany the mechanisms that require them; cosmetic work can follow
+6. Finish broad original-mission qualification, long sessions, stress and
+   performance. Original missions and cross-feature controls also run throughout
+
+Use mission frequency to choose representative fixtures, not to leave uncommon
+requirements permanently unimplemented. Pin reference behavior and document
+intentional corrections. Define additional reference versions/settings before
+claiming their support; multiplayer remains a separate later scope
 
 ## Completion requirements
 
@@ -173,13 +194,21 @@ finish original-mission qualification
 24. 15/34 packed light layout: source-reader comparisons and derived geometry,
     all-source light updates and saved-state controls are recorded in
     [format evidence](../../XL_compat/evidence/format-15-34.md). Fourteen surveyed
-    originals retain invalid packed-range rejections; the remaining level's HXM
-    stays blocked. The format tranche does not qualify Apocalyptic Factor XL
+    originals retain invalid packed-range rejections. The remaining level's HXM
+    now has separate gameplay controls below. The format tranche does not qualify
+    Apocalyptic Factor XL
 
-Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
-effect/audio behavior, with activation, gameplay cues and cleanup treated as
-required acceptance rather than cosmetic deferral
+25. Classic HXM gameplay definitions: bounded model geometry, retained base and
+    computed custom radii, robot/gun/joint dependencies and actual AI firing now
+    have source/native controls. Original Alarlof startup, combat, model/texture
+    restoration and stock isolation pass; the registered Android integration
+    covers 42 steps. See [HXM evidence](../../XL_compat/evidence/hxm-gameplay.md).
+    Expanded registries, signed boss profiles and alternate gameplay data remain
+    unfinished; this does not certify the original campaign
 
-After that, continue the unfinished areas above one chunk at a time. Do not mark
+After the HXM batch, continue the capacity and resource foundations, then the
+remaining actor and event variants in dependency order. Use original counts to
+choose effect/audio fixtures, with activation, gameplay cues and cleanup treated
+as required acceptance rather than cosmetic deferral. Do not mark
 the overall goal complete from a count of completed chunks or green fixture
 tests. Audit each area against live behavior and original mission requirements

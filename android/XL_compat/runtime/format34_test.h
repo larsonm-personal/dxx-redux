@@ -23,15 +23,15 @@ static int format34_test(int argc, char **argv)
 			for (unsigned shift = 0; shift < 32; shift += 8) derived.push_back(static_cast<unsigned char>(member.bytes.size() >> shift));
 			derived.insert(derived.end(), member.bytes.begin(), member.bytes.end());
 		}
-		require(removed == 1, "15/34 derived fixture did not remove exactly the unqualified HXM");
+		require(removed == 1, "15/34 layout fixture did not remove exactly one HXM");
 		write_bytes((root / "format34.hog").string().c_str(), derived);
 		{
 			std::ofstream descriptor(root / "format34.mn2", std::ios::binary);
 			descriptor << "d2x-name = Derived format 15-34\nnum_levels = 1\nalarlof.rl2\n";
 		}
 		require(load_base_mission("orig34", error, sizeof(error)), error);
-		require(!xl_level_supported("alarlof.rl2", 0) && std::string(xl_level_rejection()).find("HXM definitions") != std::string::npos, "Original HXM gate was bypassed");
-		std::cout << "Original Alarlof HXM remains rejected; derived layout fixture omits only that member\n";
+		require(xl_level_supported("alarlof.rl2", 0), xl_level_rejection());
+		std::cout << "Original Alarlof HXM admitted; derived layout fixture isolates geometry/light behavior\n";
 		require(load_base_mission("format34", error, sizeof(error)), error);
 		if (!xl_level_supported("alarlof.rl2", 0)) throw std::runtime_error(xl_level_rejection());
 		require(!xl_level_supported("alarlof.rl2", 1), "15/34 multiplayer admitted");

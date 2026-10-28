@@ -372,8 +372,8 @@ int bm_validate_level_hxm(PHYSFS_file *fp)
 	valid = d2_ham_validate_hxm(data, size, &limits,
 	                          N_robot_types, N_robot_joints, N_polygon_models, &report);
 	d_free(data);
-	return valid && !report.inert_robot_records &&
-	       !report.normalized_empty_joint_offsets && !report.ignored_trailing_bytes;
+	/* Empty joint lists are not dereferenced; XL closes after the five tables */
+	return valid && !report.inert_robot_records;
 }
 
 void bm_reset_mission_compatibility_warnings(void)

@@ -1,4 +1,5 @@
 #include "resource_validation.h"
+#include "../model_geometry.h"
 #include <cstring>
 #include <algorithm>
 #include <memory>
@@ -12,6 +13,7 @@
 #include "pog_resources.h"
 #include "companion_resources.h"
 #include "../inventory.h"
+#include "preview.h"
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
@@ -28,6 +30,7 @@ extern int Robot_replacements_loaded;
 
 namespace
 {
+static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, base_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
@@ -93,8 +96,9 @@ struct MissionDefinitions {
 	std::vector<bitmap_index> bitmaps{ ObjBitmaps, ObjBitmaps + MAX_OBJ_BITMAPS };
 	std::vector<ushort> pointers{ ObjBitmapPtrs, ObjBitmapPtrs + MAX_OBJ_BITMAPS };
 	std::vector<std::vector<ubyte>> payloads;
+	std::vector<int> custom_radii;
 
-	MissionDefinitions() : payloads(models.size())
+	MissionDefinitions() : payloads(models.size()), custom_radii(models.size())
 	{
 		for (std::size_t id = 0; id < models.size(); ++id) {
 			auto &model = models[id];
@@ -167,12 +171,16 @@ void validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definition
 	for (int count = PHYSFSX_readInt(file); count > 0; --count) {
 		const int id = PHYSFSX_readInt(file);
 		auto &model = models.at(id);
+		const int base_radius = model.rad;
 		polymodel_read(&model, file);
 		auto &payload = payloads.at(id);
 		payload.resize(model.model_data_size);
 		if (PHYSFS_read(file, payload.data(), 1, static_cast<PHYSFS_uint32>(payload.size())) != static_cast<PHYSFS_sint64>(payload.size()))
 			throw std::runtime_error("HXM model payload read failed");
 		model.model_data = payload.data();
+		definitions.custom_radii.at(id) = xl_compat::ModelGeometry(payload.data(), payload.size(), model.n_models).custom_radius();
+		// XL keeps the base radius across replacements; projectiles request slot 1
+		model.rad = base_radius ? base_radius : definitions.custom_radii.at(id);
 		dying.at(id) = PHYSFSX_readInt(file);
 		dead.at(id) = PHYSFSX_readInt(file);
 		changed_models.insert(id);
@@ -340,6 +348,7 @@ struct XlPreparedResources::State {
 	MissionDefinitions definitions;
 	xl_assets::ObjectDependencies graph;
 	bool has_hxm = false;
+	bool installed = false;
 	HxmChanges changes;
 	xl_compat::MissionLightingCompanions lighting;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
@@ -365,6 +374,7 @@ struct XlPreparedResources::State {
 		graph.object_bitmap_ptrs = definitions.pointers.data();
 		graph.dying_models = definitions.dying.data();
 		graph.dead_models = definitions.dead.data();
+		graph.xl_boss_spawning = true;
 	}
 };
 
@@ -466,6 +476,20 @@ void XlPreparedResources::install_hxm()
 		state->native_models[id]->model.model_data = nullptr;
 	}
 	Robot_replacements_loaded = 1;
+	state->installed = true;
+}
+
+int XlPreparedResources::custom_model_radius(int model, int fallback) const
+{
+	if (!state->installed || model < 0 || std::size_t(model) >= state->definitions.custom_radii.size()) return fallback;
+	const auto radius = state->definitions.custom_radii[model];
+	return radius ? radius : fallback;
+}
+
+extern "C" int xl_custom_model_radius(int model, int fallback)
+{
+	if (!xl_level_extensions_active() || !prepared_resources) return fallback;
+	return prepared_resources->custom_model_radius(model, fallback);
 }
 
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources)

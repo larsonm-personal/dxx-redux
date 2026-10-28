@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "resource_validation.h"
 #endif
 #include <stdio.h>
 #include <time.h>
@@ -290,8 +291,13 @@ int create_weapon_object(int weapon_type,int segnum,vms_vector *position)
 	obj = &Objects[objnum];
 
 	if (Weapon_info[weapon_type].render_type == WEAPON_RENDER_POLYMODEL) {
+		fix model_radius;
 		obj->rtype.pobj_info.model_num = Weapon_info[obj->id].model_num;
-		obj->size = fixdiv(Polygon_models[obj->rtype.pobj_info.model_num].rad,Weapon_info[obj->id].po_len_to_width_ratio);
+		model_radius = Polygon_models[obj->rtype.pobj_info.model_num].rad;
+#ifdef DXX_XL_RUNTIME
+		model_radius = xl_custom_model_radius(obj->rtype.pobj_info.model_num, model_radius);
+#endif
+		obj->size = fixdiv(model_radius,Weapon_info[obj->id].po_len_to_width_ratio);
 	}
 
 	obj->mtype.phys_info.mass = Weapon_info[weapon_type].mass;
