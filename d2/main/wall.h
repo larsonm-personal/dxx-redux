@@ -198,7 +198,12 @@ extern active_door ActiveDoors[MAX_DOORS];  //  Master doors array
 extern int Num_open_doors;              // Number of open doors
 
 #define MAX_CLOAKING_WALLS 10
-extern cloaking_wall CloakingWalls[MAX_CLOAKING_WALLS];
+#ifdef DXX_XL_RUNTIME
+#define MAX_CLOAKING_WALL_STORAGE DXX_XL_MAX_CLOAKING_WALLS
+#else
+#define MAX_CLOAKING_WALL_STORAGE MAX_CLOAKING_WALLS
+#endif
+extern cloaking_wall CloakingWalls[MAX_CLOAKING_WALL_STORAGE];
 extern int Num_cloaking_walls;
 
 extern wclip WallAnims[MAX_WALL_ANIMS];
@@ -320,6 +325,7 @@ extern void active_door_read_n_swap(active_door *ad, int n, int swap, rewind_fil
  * reads n cloaking_wall structs from a PHYSFS_file and swaps if specified
  */
 void cloaking_wall_read_n_swap(cloaking_wall *cw, int n, int swap, rewind_file *fp);
+void cloaking_wall_swap(cloaking_wall *cw, int swap);
 
 extern void wall_write(wall *w, short version, rewind_file *fp);
 void wall_close_door_num(int door_num);

@@ -212,9 +212,16 @@ finish original-mission qualification
     All 21 original survey members match their hashes; 17 decode with other
     blockers and four retain reader failures. See
     [wide-wall evidence](../../XL_compat/evidence/wide-walls.md). Trigger/object
-    capacities and concurrent cloaks remain unfinished
+    capacities remain unfinished; concurrent cloaks are covered below
 
-After the wall-identity batch, continue the capacity and resource foundations, then the
+27. Separate XL cloak lifecycle: 3,200 source comparisons, 100 concurrent entries,
+    active disk through stock, eight malformed/truncated save controls and all
+    81 Android steps pass within the [recorded method-0 scope](../../XL_compat/evidence/cloak-lifecycle.md).
+    Actual flat-draw alpha, completed audio, physical passage/blocking and memory
+    checkpoints are covered. Redux retains ten entries. Other lighting/settings,
+    colored/team walls and complete demo fidelity remain open
+
+After the wall and cloak batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated
 as required acceptance rather than cosmetic deferral. Do not mark

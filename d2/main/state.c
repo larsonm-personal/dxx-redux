@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "trigger_state.h"
 #include "preview.h"
+#include "cloak.h"
 #endif
 #include "game.h"
 #include "effects.h"
@@ -3706,8 +3707,27 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	active_door_read_n_swap(ActiveDoors, Num_open_doors, swap, fp);
 
 	if (version >= 14) {		//Restore cloaking wall info
-		Num_cloaking_walls = PHYSFSX_readSXE32(fp, swap);
-		cloaking_wall_read_n_swap(CloakingWalls, Num_cloaking_walls, swap, fp);
+		cloaking_wall saved_cloaks[MAX_CLOAKING_WALL_STORAGE];
+		int cloak_limit = MAX_CLOAKING_WALLS;
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) cloak_limit = DXX_XL_MAX_CLOAKING_WALLS;
+#endif
+		i = PHYSFSX_readSXE32(fp, swap);
+		if (i < 0 || i > cloak_limit || PHYSFS_read(fp, saved_cloaks, sizeof(cloaking_wall), i) != i) {
+			Warning("Invalid saved cloak table");
+			PHYSFS_close(fp);
+			return 0;
+		}
+		for (j = 0; j < i; ++j) cloaking_wall_swap(&saved_cloaks[j], swap);
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !xl_cloak_saved_valid(saved_cloaks, i)) {
+			Warning("Invalid saved XL cloak state");
+			PHYSFS_close(fp);
+			return 0;
+		}
+#endif
+		memcpy(CloakingWalls, saved_cloaks, i * sizeof(cloaking_wall));
+		Num_cloaking_walls = i;
 	}
 
 	//Restore trigger info

@@ -103,6 +103,9 @@ uint64_t activated_triggers = 0;
 constexpr const char *translated_path = "xl_preview_cache/pilot.rl2";
 // XL palette.h uses 31; stock GR_FADE_LEVELS is 34 and cannot be reused
 constexpr int xl_fade_levels = 31;
+int active_cloak_wall = -1, drawn_cloak_wall = -1, drawn_cloak_value = 0;
+uint64_t cloak_draws = 0;
+float drawn_cloak_alpha = 0;
 bool missile_light(unsigned id)
 {
 	// Pinned XL CObject::InitTables and include/laser.h, including robot IDs
@@ -533,6 +536,10 @@ extern "C" void xl_preview_clear_mission(void)
 	corona_classic_requested_draws = 0;
 	face_alpha = -1;
 	face_water_material = false;
+	active_cloak_wall = drawn_cloak_wall = -1;
+	drawn_cloak_value = 0;
+	cloak_draws = 0;
+	drawn_cloak_alpha = 0;
 	dynamic_vertices.clear();
 	rebuilt_ambient.clear();
 	brightness.clear();
@@ -1257,6 +1264,7 @@ extern "C" void xl_preview_end_face(void)
 {
 	face_alpha = -1;
 	face_water_material = false;
+	active_cloak_wall = -1;
 }
 
 extern "C" int xl_preview_water_portal(int segment_number, int side, int32_t points[4][3], float colors[4][4])
@@ -1320,6 +1328,45 @@ extern "C" uint64_t xl_preview_water_depth_failures(void)
 extern "C" float xl_preview_alpha(float stock_alpha)
 {
 	return face_alpha < 0 ? stock_alpha : face_alpha;
+}
+
+extern "C" int xl_preview_begin_cloak_face(int segment_number, int side)
+{
+	if (!xl_level_extensions_active() || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return 0;
+	const int index = Segments[segment_number].sides[side].wall_num;
+	if (index < 0 || index >= Num_walls) return 0;
+	const auto &wall = Walls[index];
+	if (wall.type != WALL_CLOAKED && wall.state != WALL_DOOR_CLOAKING && wall.state != WALL_DOOR_DECLOAKING) return 0;
+	// Method-0 WallAlpha uses a flat face throughout both transition halves
+	const int cloak = wall.cloak_value;
+	face_alpha = cloak >= xl_fade_levels ? 0.0f : 1.0f - float(cloak) / xl_fade_levels;
+	active_cloak_wall = index;
+	return 1;
+}
+
+extern "C" void xl_preview_record_cloak_draw(float alpha)
+{
+	if (active_cloak_wall < 0 || active_cloak_wall >= Num_walls) return;
+	++cloak_draws;
+	drawn_cloak_wall = active_cloak_wall;
+	drawn_cloak_value = Walls[active_cloak_wall].cloak_value;
+	drawn_cloak_alpha = alpha;
+}
+extern "C" uint64_t xl_preview_cloak_draws(void)
+{
+	return cloak_draws;
+}
+extern "C" int xl_preview_cloak_draw_wall(void)
+{
+	return drawn_cloak_wall;
+}
+extern "C" int xl_preview_cloak_draw_value(void)
+{
+	return drawn_cloak_value;
+}
+extern "C" float xl_preview_cloak_draw_alpha(void)
+{
+	return drawn_cloak_alpha;
 }
 
 extern "C" unsigned xl_preview_unresolved_emitters(void)

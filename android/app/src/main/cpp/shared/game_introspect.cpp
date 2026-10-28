@@ -2202,6 +2202,10 @@ extern "C" char *game_introspect_get_state(void)
 		{ "completed", xl_preview_pilot_completed() != 0 },
 		{ "shaded_vertices", xl_preview_vertex_calls() },
 		{ "corona_draws", xl_preview_corona_draws() },
+		{ "cloak_draws", xl_preview_cloak_draws() },
+		{ "cloak_draw_wall", xl_preview_cloak_draw_wall() },
+		{ "cloak_draw_value", xl_preview_cloak_draw_value() },
+		{ "cloak_draw_alpha", xl_preview_cloak_draw_alpha() },
 		{ "water_boundary_draws", xl_preview_water_draws() },
 		{ "water_boundary_depth_failures", xl_preview_water_depth_failures() },
 		{ "corona_depth_failures", xl_preview_corona_depth_failures() },
@@ -2243,6 +2247,15 @@ extern "C" char *game_introspect_get_state(void)
 			}
 		}
 		j["xl_pilot"]["wall_triggers"] = std::move(triggers);
+		json cloaks = json::object();
+		for (int index = 0; index < Num_cloaking_walls; ++index) {
+			const auto &entry = CloakingWalls[index];
+			cloaks[std::to_string(entry.front_wallnum)] = {
+				{ "front", entry.front_wallnum }, { "back", entry.back_wallnum }, { "time", entry.time }, { "front_lights", { entry.front_ls[0], entry.front_ls[1], entry.front_ls[2], entry.front_ls[3] } }, { "back_lights", { entry.back_ls[0], entry.back_ls[1], entry.back_ls[2], entry.back_ls[3] } }
+			};
+		}
+		j["xl_pilot"]["cloaks"] = std::move(cloaks);
+		j["xl_pilot"]["cloak_count"] = Num_cloaking_walls;
 		json boosts = json::object();
 		for (int index = 0; index < xl_speed_boost_state_count(); ++index) {
 			xl_speed_boost_state state;
@@ -3552,6 +3565,13 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		cues["forcefields"] = std::move(fields);
 		j["xl_pilot"]["trigger_audio"] = std::move(cues);
+		json cloak_audio = json::object();
+		for (const auto &entry : std::array<std::pair<const char *, int>, 2>{ { { "open", SOUND_WALL_CLOAK_ON }, { "close", SOUND_WALL_CLOAK_OFF } } }) {
+			const int sample = digi_xlat_sound(entry.second);
+			cloak_audio[entry.first] = j["sound_playback"].value(std::to_string(sample), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
+			cloak_audio[entry.first]["sample"] = sample;
+		}
+		j["xl_pilot"]["cloak_audio"] = std::move(cloak_audio);
 		json closed_walls = json::object(), doorways = json::object();
 		for (int index = 0; Game_wind && xl_level_extensions_active() && index < Num_walls; ++index) {
 			const auto &wall = Walls[index];
@@ -3559,6 +3579,9 @@ extern "C" char *game_introspect_get_state(void)
 			if (flags < 0) continue;
 			doorways[std::to_string(index)] = { { "type", wall.type }, { "state", wall.state }, { "flags", wall.flags }, { "segment", wall.segnum }, { "side", wall.sidenum }, { "keys", wall.keys }, { "visibility_flags", flags }, { "player_flags", ConsoleObject ? xl_wall_doorway(ConsoleObject - Objects, wall.segnum, wall.sidenum) : -1 } };
 			auto &row = doorways[std::to_string(index)];
+			row["cloak_value"] = wall.cloak_value;
+			const auto &light = Segments[wall.segnum].sides[wall.sidenum].uvls;
+			row["lights"] = { light[0].l, light[1].l, light[2].l, light[3].l };
 			row["active_entry"] = -1;
 			row["active_time_ticks"] = -1;
 			for (int active = 0; active < Num_open_doors && active < MAX_DOORS; ++active)

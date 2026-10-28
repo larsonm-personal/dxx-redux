@@ -318,13 +318,20 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	}
 
 	//handle cloaked walls
-	if (wid_flags & WID_CLOAKED_FLAG) { 
+	int xl_cloaked = 0;
+#ifdef DXX_XL_RUNTIME
+	xl_cloaked = xl_preview_begin_cloak_face(segnum, sidenum);
+#endif
+	if ((wid_flags & WID_CLOAKED_FLAG) || xl_cloaked) {
 		int wall_num = Segments[segnum].sides[sidenum].wall_num;
 		Assert(wall_num != -1);
 		gr_settransblend(Walls[wall_num].cloak_value, GR_BLEND_NORMAL);
 		gr_setcolor(BM_XRGB(0, 0, 0));  // set to black (matters for s3)
 
 		g3_draw_poly(nv, pointlist);    // draw as flat poly
+#ifdef DXX_XL_RUNTIME
+		xl_preview_end_face();
+#endif
 
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 

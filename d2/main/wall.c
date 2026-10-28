@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "cloak.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -85,7 +86,7 @@ int Num_open_doors;						// Number of open doors
 
 #define CLOAKING_WALL_TIME f1_0
 
-cloaking_wall CloakingWalls[MAX_CLOAKING_WALLS];
+cloaking_wall CloakingWalls[MAX_CLOAKING_WALL_STORAGE];
 int Num_cloaking_walls;
 
 //--unused-- grs_bitmap *wall_title_bms[MAX_WALL_ANIMS];
@@ -533,6 +534,9 @@ void wall_open_door(segment *seg, int side)
 // start the transition from closed -> open wall
 void start_wall_cloak(segment *seg, int side)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_start_wall_cloak(seg - Segments, side, 1)) return;
+#endif
 	wall *w;
 	cloaking_wall *d;
 	int Connectside;
@@ -623,6 +627,9 @@ void start_wall_cloak(segment *seg, int side)
 // start the transition from open -> closed wall
 void start_wall_decloak(segment *seg, int side)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_start_wall_cloak(seg - Segments, side, 0)) return;
+#endif
 	wall *w;
 	cloaking_wall *d;
 	int Connectside;
@@ -1435,6 +1442,9 @@ void wall_frame_process()
 		}
 	}
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_cloak_frame_process()) return;
+#endif
 	for (i=0;i<Num_cloaking_walls;i++) {
 		cloaking_wall *d;
 		wall *w;

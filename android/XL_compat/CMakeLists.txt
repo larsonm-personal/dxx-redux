@@ -98,6 +98,7 @@ if(BUILD_TESTING)
         include(tests/reference_blocked.cmake)
         include(tests/reference_keyed_wall.cmake)
         include(tests/reference_close_door.cmake)
+        include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_light_index.cmake)
         include(tests/reference_hxm.cmake)
@@ -290,6 +291,18 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/wide_walls -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/wide_wall.cmake)
             set_tests_properties(xl_wide_walls PROPERTIES TIMEOUT 150)
+            set(xl_cloak_args)
+            if(TARGET xl_cloak_reference)
+                list(APPEND xl_cloak_args "-DREFERENCE=$<TARGET_FILE:xl_cloak_reference>")
+            endif()
+            add_test(
+                NAME xl_cloaks
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/cloaks ${xl_cloak_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/cloak.cmake)
+            set_tests_properties(xl_cloaks PROPERTIES TIMEOUT 150)
             set(xl_keyed_wall_args)
             if(TARGET xl_keyed_wall_reference)
                 list(APPEND xl_keyed_wall_args "-DREFERENCE=$<TARGET_FILE:xl_keyed_wall_reference>")

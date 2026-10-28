@@ -3611,7 +3611,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_read_byte((sbyte*)&front);
 				nd_read_byte((sbyte*)&back);
 				front_wall_num = front;
-				back_wall_num = back;
+				back_wall_num = back == 255 ? -1 : back;
 			}
 			nd_read_byte(&type);
 			nd_read_byte(&state);
@@ -3623,15 +3623,15 @@ int newdemo_read_frame_information(int rewrite)
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (!classic_demo_index_valid(front_wall_num,
 				rewrite || nd_dump_v_active ? wall_limit : min(Num_walls, wall_limit)) ||
-			    !classic_demo_index_valid(back_wall_num,
-				rewrite || nd_dump_v_active ? wall_limit : min(Num_walls, wall_limit)) ||
+			    (back_wall_num != -1 && !classic_demo_index_valid(back_wall_num,
+				rewrite || nd_dump_v_active ? wall_limit : min(Num_walls, wall_limit))) ||
 			    (!rewrite && !nd_dump_v_active &&
 			     (!classic_demo_segment_side_valid(Walls[front_wall_num].segnum,
 				 Highest_segment_index, Walls[front_wall_num].sidenum,
 				 MAX_SIDES_PER_SEGMENT) ||
-			      !classic_demo_segment_side_valid(Walls[back_wall_num].segnum,
+			      (back_wall_num != -1 && !classic_demo_segment_side_valid(Walls[back_wall_num].segnum,
 				  Highest_segment_index, Walls[back_wall_num].sidenum,
-				  MAX_SIDES_PER_SEGMENT)))) {
+				  MAX_SIDES_PER_SEGMENT))))) {
 				if (rewrite) {
 					nd_playback_v_bad_read = -1;
 					done = -1;
@@ -3669,15 +3669,17 @@ int newdemo_read_frame_information(int rewrite)
 			segp->sides[sidenum].uvls[2].l = (int)l2 * (1 << 8);
 			segp->sides[sidenum].uvls[3].l = (int)l3 * (1 << 8);
 
-			Walls[back_wall_num].type = type;
-			Walls[back_wall_num].state = state;
-			Walls[back_wall_num].cloak_value = cloak_value;
-			segp = &Segments[Walls[back_wall_num].segnum];
-			sidenum = Walls[back_wall_num].sidenum;
-			segp->sides[sidenum].uvls[0].l = (int)l0 * (1 << 8);
-			segp->sides[sidenum].uvls[1].l = (int)l1 * (1 << 8);
-			segp->sides[sidenum].uvls[2].l = (int)l2 * (1 << 8);
-			segp->sides[sidenum].uvls[3].l = (int)l3 * (1 << 8);
+			if (back_wall_num >= 0) {
+				Walls[back_wall_num].type = type;
+				Walls[back_wall_num].state = state;
+				Walls[back_wall_num].cloak_value = cloak_value;
+				segp = &Segments[Walls[back_wall_num].segnum];
+				sidenum = Walls[back_wall_num].sidenum;
+				segp->sides[sidenum].uvls[0].l = (int)l0 * (1 << 8);
+				segp->sides[sidenum].uvls[1].l = (int)l1 * (1 << 8);
+				segp->sides[sidenum].uvls[2].l = (int)l2 * (1 << 8);
+				segp->sides[sidenum].uvls[3].l = (int)l3 * (1 << 8);
+			}
 
 			break;
 		}

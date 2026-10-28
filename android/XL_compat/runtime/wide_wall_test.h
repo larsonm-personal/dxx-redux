@@ -51,7 +51,7 @@ static void wide_wall_demo(int front, int back)
 		if (wide) {
 			const std::vector<wall> before(Walls, Walls + Num_walls);
 			for (unsigned offset : { 1u, 3u })
-				for (unsigned invalid : { 2047u, 32767u, 65535u }) {
+				for (unsigned invalid : { 2047u, 32767u, 65534u }) {
 					auto bytes = recorded;
 					bytes[offset] = uint8_t(invalid);
 					bytes[offset + 1] = uint8_t(invalid >> 8);
@@ -67,10 +67,26 @@ static void wide_wall_demo(int front, int back)
 		require(outfile, "Cannot record a one-sided cloak event");
 		Newdemo_state = ND_STATE_RECORDING;
 		newdemo_record_cloaking_wall(first, -1, WALL_CLOAKED, WALL_DOOR_CLOAKING, 12, F1_0, F1_0, F1_0, F1_0);
-		require(PHYSFS_close(outfile), "Cannot close one-sided cloak event");
+		newdemo_record_start_frame(F1_0 / 10);
+		require(PHYSFS_writeBytes(outfile, &eof, 1) == 1 && PHYSFS_close(outfile), "Cannot close one-sided cloak event");
 		outfile = nullptr;
 		const auto one_sided = read("wide-one-sided.dem");
 		require(one_sided[wide ? 3 : 2] == 255 && (!wide || one_sided[4] == 255), "Missing back-wall sentinel changed while recording");
+		Walls[first].type = WALL_NORMAL;
+		Newdemo_state = ND_STATE_PLAYBACK;
+		Newdemo_vcr_state = ND_STATE_PAUSED;
+		for (int rewrite : { 0, 1 }) {
+			infile = PHYSFSX_openReadBuffered("wide-one-sided.dem");
+			if (rewrite) outfile = PHYSFSX_openWriteBuffered("one-sided.rewrite");
+			require(infile && (!rewrite || outfile) && newdemo_read_frame_information(rewrite) == 1 && PHYSFS_close(infile), "One-sided cloak decoding failed");
+			infile = nullptr;
+			require(Walls[first].type == WALL_CLOAKED, "One-sided playback skipped its front wall");
+			if (rewrite) {
+				require(PHYSFS_close(outfile), "One-sided rewrite close failed");
+				outfile = nullptr;
+				require(read("one-sided.rewrite") == xl_compat::Bytes(one_sided.begin(), one_sided.end() - 1), "One-sided rewrite changed its missing back sentinel");
+			}
+		}
 	}
 	Newdemo_state = Newdemo_vcr_state = ND_STATE_NORMAL;
 	std::cout << "Actual classic and wide cloak writers, frame decoding and byte-preserving rewrite passed\n";
