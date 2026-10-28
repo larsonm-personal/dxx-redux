@@ -1853,7 +1853,11 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			obj->ctype.laser_info.creation_framecount = 0;
 			memset(obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 			obj->ctype.laser_info.last_hitobj      = obj_rw->ctype.laser_info.last_hitobj;
-			if (obj->ctype.laser_info.last_hitobj >= 0)
+			if (obj->ctype.laser_info.last_hitobj >= 0 && obj->ctype.laser_info.last_hitobj < MAX_OBJECTS
+#ifdef DXX_XL_RUNTIME
+			    && !xl_level_extensions_active()
+#endif
+			)
 				obj->ctype.laser_info.hitobj_list[obj->ctype.laser_info.last_hitobj] = 1; // restore most recent hitobj to hitobj_list
 			obj->ctype.laser_info.track_goal       = obj_rw->ctype.laser_info.track_goal;
 			obj->ctype.laser_info.multiplier       = obj_rw->ctype.laser_info.multiplier;

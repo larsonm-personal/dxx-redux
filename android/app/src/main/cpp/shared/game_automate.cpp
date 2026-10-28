@@ -25,6 +25,7 @@
 #include "preview.h"
 #include "equipment.h"
 #include "persistence_probe.h"
+#include "projectile_probe.h"
 #include "corona_probe.h"
 #endif
 
@@ -7485,6 +7486,9 @@ extern "C" void game_automate_tick(void)
 					rewind_memory_buffer_discard(&reference);
 					rewind_memory_buffer_discard(&checkpoint);
 					ready = 0;
+				} else if (s.value == "drain") {
+					// Settle the detached worker without advancing paused combat
+					state_checkpoint_drain();
 				} else stop_script_fail("Unknown checkpoint cycle action");
 #else
 				stop_script_fail("Checkpoint cycle requires Android");
@@ -7568,6 +7572,13 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("XL water profile requires enable/disable outside gameplay");
 #else
 				stop_script_fail("XL water profile requires the opt-in Android pilot");
+#endif
+			} else if (s.field == "xl_projectile_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_projectile_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled projectile %s passed", s.value.c_str());
+#else
+				stop_script_fail("Projectile probe requires Android D2");
 #endif
 			} else if (s.field == "xl_pilot_persistence") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

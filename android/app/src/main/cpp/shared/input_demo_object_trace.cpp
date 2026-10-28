@@ -1,4 +1,8 @@
 #include "input_demo_object_trace.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "projectile.h"
+#endif
 #include "input_demo_state_trace.h"
 #include "input_demo_ai_trace.h"
 
@@ -108,8 +112,18 @@ json object_state(const object &o, int slot)
 			FIELD(c, w, track_goal);
 			FIELD(c, w, multiplier);
 			FIELD(c, w, creation_framecount);
-			c["hitobj_list"] = json::array();
-			for (int i = 0; i < MAX_OBJECTS; ++i) c["hitobj_list"].push_back(static_cast<int>(w.hitobj_list[i]));
+#ifdef DXX_XL_RUNTIME
+			if (xl_level_extensions_active()) {
+				c["xl_hit_order"] = json::array();
+				xl_projectile_state state{};
+				if (xl_projectile_state_get(static_cast<int>(&o - Objects), &state))
+					for (int i = 0; i < state.count; ++i) c["xl_hit_order"].push_back(state.victims[i]);
+			} else
+#endif
+			{
+				c["hitobj_list"] = json::array();
+				for (int i = 0; i < MAX_OBJECTS; ++i) c["hitobj_list"].push_back(static_cast<int>(w.hitobj_list[i]));
+			}
 			break;
 		}
 		case CT_EXPLOSION: {

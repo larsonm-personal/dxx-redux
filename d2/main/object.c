@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "projectile.h"
 #include "fluids.h"
 #include "blocked.h"
 #include "speed_boost.h"
@@ -1112,6 +1113,9 @@ void init_player_object()
 //sets up the free list & init player & whatever else
 void init_objects()
 {
+#ifdef DXX_XL_RUNTIME
+	xl_projectile_clear();
+#endif
 	render_reset_gameplay_view_objects();
 	int i;
 
@@ -1456,6 +1460,9 @@ int obj_allocate(void)
 	}
 
 	objnum = free_obj_list[num_objects++];
+#ifdef DXX_XL_RUNTIME
+	xl_projectile_forget(objnum);
+#endif
 
 	if (objnum > Highest_object_index) {
 		Highest_object_index = objnum;
@@ -1750,6 +1757,7 @@ void obj_delete(int objnum)
 
 	#ifdef DXX_XL_RUNTIME
 	xl_speed_boost_forget(objnum);
+	xl_projectile_forget(objnum);
 	#endif
 	input_demo_log_robot_lifecycle_delete(objnum, obj);
 #ifdef __ANDROID__

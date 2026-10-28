@@ -34,6 +34,9 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(xl_projectile_history_test tests/projectile_history_test.cpp)
+    target_compile_features(xl_projectile_history_test PRIVATE cxx_std_17)
+    add_test(NAME xl_projectile_history_contract COMMAND xl_projectile_history_test)
     add_executable(xl_rejection_fixture tests/rejection_fixture.cpp)
     target_link_libraries(xl_rejection_fixture PRIVATE xl_inventory)
     add_executable(xl_animation_phase_test tests/animation_phase_test.cpp)
@@ -104,6 +107,7 @@ if(BUILD_TESTING)
         include(tests/reference_hxm.cmake)
         include(tests/reference_wall_capacity.cmake)
         include(tests/reference_trigger_capacity.cmake)
+        include(tests/reference_projectile.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -312,6 +316,18 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/triggers -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/trigger_capacity.cmake)
             set_tests_properties(xl_trigger_capacity PROPERTIES TIMEOUT 150)
+            set(xl_projectile_args)
+            if(TARGET xl_projectile_reference)
+                list(APPEND xl_projectile_args "-DREFERENCE=$<TARGET_FILE:xl_projectile_reference>")
+            endif()
+            add_test(
+                NAME xl_projectiles
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/projectiles ${xl_projectile_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/projectile.cmake)
+            set_tests_properties(xl_projectiles PROPERTIES TIMEOUT 150)
             set(xl_keyed_wall_args)
             if(TARGET xl_keyed_wall_reference)
                 list(APPEND xl_keyed_wall_args "-DREFERENCE=$<TARGET_FILE:xl_keyed_wall_reference>")

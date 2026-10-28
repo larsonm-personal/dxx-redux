@@ -35,6 +35,7 @@
 #include "boss_routes.h"
 #include "equipment.h"
 #include "speed_boost.h"
+#include "projectile.h"
 #include "spawn_points.h"
 #include "fluids.h"
 #include "blocked.h"
@@ -2257,6 +2258,16 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		j["xl_pilot"]["cloaks"] = std::move(cloaks);
 		j["xl_pilot"]["cloak_count"] = Num_cloaking_walls;
+		json projectiles = json::object();
+		for (int owner = 0; owner <= Highest_object_index; ++owner) {
+			xl_projectile_state state{};
+			if (!xl_projectile_state_get(owner, &state)) continue;
+			auto &row = projectiles[std::to_string(owner)];
+			row = { { "owner", state.owner }, { "signature", state.signature }, { "count", state.count }, { "victims", json::array() } };
+			for (int i = 0; i < state.count; ++i) row["victims"].push_back(state.victims[i]);
+		}
+		j["xl_pilot"]["projectile_count"] = projectiles.size();
+		j["xl_pilot"]["projectiles"] = std::move(projectiles);
 		json boosts = json::object();
 		for (int index = 0; index < xl_speed_boost_state_count(); ++index) {
 			xl_speed_boost_state state;

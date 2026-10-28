@@ -17,6 +17,7 @@
 #include "spawn_points.h"
 #include "fluids.h"
 #include "repair.h"
+#include "projectile.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -114,7 +115,18 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 10;
+		block["schema"] = 11;
+		block["projectiles"] = json::array();
+		std::vector<xl_projectile_state> projectile_states;
+		for (int owner = 0; owner <= Highest_object_index; ++owner) {
+			xl_projectile_state state{};
+			if (!xl_projectile_state_get(owner, &state)) continue;
+			projectile_states.push_back(state);
+			json hits = json::array();
+			for (int i = 0; i < state.count; ++i) hits.push_back(state.victims[i]);
+			block["projectiles"].push_back({ state.owner, state.signature, std::move(hits) });
+		}
+		require(xl_projectile_restore(projectile_states.data(), static_cast<int>(projectile_states.size()), 0), "Cannot capture complete XL projectile histories");
 		block["fluid_scrape_elapsed"] = xl_fluid_scrape_elapsed();
 		block["repair_elapsed"] = xl_repair_elapsed();
 		block["spawns"] = json::array();
@@ -169,9 +181,25 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 8u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 10 &&
+		require(saved.is_object() && saved.size() == 9u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 11 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		std::vector<xl_projectile_state> projectiles;
+		const auto &projectile_rows = saved.at("projectiles");
+		require(projectile_rows.is_array() && projectile_rows.size() <= MAX_OBJECTS, "Invalid XL projectile owner count");
+		for (const auto &row : projectile_rows) {
+			require(row.is_array() && row.size() == 3 && row[2].is_array() && !row[2].empty() && row[2].size() <= XL_PROJECTILE_HITS, "Invalid XL projectile history row");
+			const auto integer = [](const json &value) {
+				require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= INT32_MAX) && value.get<std::int64_t>() >= 0 && value.get<std::int64_t>() <= INT32_MAX, "Invalid XL projectile identity");
+				return value.get<int>();
+			};
+			xl_projectile_state state{};
+			state.owner = integer(row[0]);
+			state.signature = integer(row[1]);
+			for (const auto &victim : row[2]) state.victims[state.count++] = integer(victim);
+			projectiles.push_back(state);
+		}
+		require(xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 0), "Invalid XL projectile owner or hit history");
 		const auto &fluid = saved.at("fluid_scrape_elapsed");
 		require(fluid.is_number_integer() && (!fluid.is_number_unsigned() || fluid.get<std::uint64_t>() <= INT64_MAX) && xl_fluid_restore(fluid.get<std::int64_t>(), 0), "Invalid XL fluid scrape clock");
 		const auto &repair = saved.at("repair_elapsed");
@@ -287,6 +315,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
+		xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 1);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
 		xl_repair_restore(repair.get<std::int64_t>(), 1);
