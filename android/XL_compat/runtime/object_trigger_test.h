@@ -327,6 +327,7 @@ static int object_trigger_test(int argc, char **argv)
 					block["objects"][once][5] = 1;
 				}
 				if (variant == 16) block["states"][2][5] = Num_segments;
+				if (variant == 17) block["actors"][0][0] = 2;
 				const auto text = block.dump();
 				bad.resize(16);
 				bad.insert(bad.end(), text.begin(), text.end());
@@ -339,7 +340,6 @@ static int object_trigger_test(int argc, char **argv)
 			}
 			write_bytes((user / "object-corrupt.bin").string().c_str(), bad);
 			file = PHYSFS_openRead("object-corrupt.bin");
-			if (variant == 17) Triggers[2].time = 1000;
 			require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file), "malformed object extension accepted");
 			Triggers[2].time = -1;
 			xl_trigger_state wall;

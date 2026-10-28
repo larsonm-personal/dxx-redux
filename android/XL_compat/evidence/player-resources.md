@@ -32,7 +32,7 @@ Direct object resource actions remain unsupported: the reference indexes the
 geometry-trigger table with an object-trigger index. Existing immediate object
 masters dispatch the actual linked geometry leaf and its own value; the native
 control verifies this explicitly rather than reproducing that cross-table bug.
-Delayed object descendants retain their separate lifecycle gate.
+Delayed object descendants now have [separate lifecycle evidence](object-chain-delays.md).
 
 The port uses a wide intermediate and final clamp for extreme inputs where the
 reference's float-to-fix narrowing or signed addition is undefined. This is a

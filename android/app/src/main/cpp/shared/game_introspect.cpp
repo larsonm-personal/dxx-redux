@@ -2188,6 +2188,8 @@ extern "C" char *game_introspect_get_state(void)
 				row["actor"] = state.object;
 				row["shot"] = state.shot;
 				row["object_destination"] = state.destination;
+				row["attached_context"] = state.attached != 0;
+				row["actor_signature"] = state.signature;
 			}
 		}
 		j["xl_pilot"]["wall_triggers"] = std::move(triggers);

@@ -212,6 +212,15 @@ if(BUILD_TESTING)
                     ${xl_object_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/object_events.cmake)
             set_tests_properties(xl_object_events PROPERTIES TIMEOUT 90)
+            add_test(
+                NAME xl_object_chain_delays
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/object-chain-delays
+                    ${xl_scheduler_oracle_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/object_chain_delay.cmake)
+            set_tests_properties(xl_object_chain_delays PROPERTIES TIMEOUT 90)
             set(xl_generator_oracle_args)
             if(TARGET xl_generator_reference)
                 list(APPEND xl_generator_oracle_args

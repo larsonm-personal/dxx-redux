@@ -311,7 +311,7 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		chain.triggers = { { 31, 0, 0, -1, { { 0, 1 } } }, { 14, 0, 0, -1, { { 0, 0 } } } };
 		check(xl_compat::runtime_blockers(chain).empty(), "immediate nested object master blocked");
 		chain.triggers[1].time = 1000;
-		check(xl_compat::blocker_message(xl_compat::runtime_blockers(chain)).find("delayed wall action") != std::string::npos, "delayed object descendant lost its explicit lifecycle blocker");
+		check(xl_compat::runtime_blockers(chain).empty(), "delayed object descendant was blocked");
 		chain.triggers[1].time = -1;
 		chain.triggers[1].targets.push_back({ 0, 1 });
 		check(!xl_compat::runtime_blockers(chain).empty(), "object chain admitted duplicate-segment retry deadlock");

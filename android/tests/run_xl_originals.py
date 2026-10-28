@@ -27,6 +27,7 @@ CORE_TESTS = (
         "xl_wall_trigger_chains",
         "xl_wall_trigger_scheduler",
         "xl_object_events",
+        "xl_object_chain_delays",
         "xl_object_trigger_decode_reference",
         "xl_generator_assignment_reference",
         "xl_generator_assignment_runtime",
