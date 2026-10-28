@@ -1552,11 +1552,13 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "close_door_test.h"
 #include "repair_test.h"
 #include "format34_test.h"
+#include "hxm_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
 	if (find_arg_value(argc, argv, "-format34-test")) return format34_test(argc, argv);
+	if (find_arg_value(argc, argv, "-hxm-test")) return hxm_test(argc, argv);
 	if (find_arg_value(argc, argv, "-blocked-test")) return blocked_test(argc, argv);
 	if (find_arg_value(argc, argv, "-close_door-test")) return close_door_test(argc, argv);
 	if (find_arg_value(argc, argv, "-doorway-test")) return doorway_test(argc, argv);

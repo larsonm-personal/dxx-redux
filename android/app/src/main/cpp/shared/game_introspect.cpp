@@ -122,6 +122,7 @@ extern "C" {
 #include "wall.h"
 #ifdef DXX_XL_RUNTIME
 #include "switch.h"
+#include "polyobj.h"
 #endif
 #include "secretarea.h"
 #include "gamesave.h"
@@ -863,6 +864,27 @@ static json serialize_level_scene()
 			// Locate actual combat for mod sprite acceptance without creating test objects
 			vms_vector position = obj.pos;
 			result["robots"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "shields", f2fl(obj.shields) }, { "alive", obj.shields >= 0 && !(obj.flags & OF_SHOULD_BE_DEAD) }, { "radius", f2fl(obj.size) }, { "distance", ConsoleObject ? json(f2fl(vm_vec_dist_quick(&position, &ConsoleObject->pos))) : json(nullptr) } });
+#ifdef DXX_XL_RUNTIME
+			// Android diagnostics: compare installed definitions with the actual actor
+			if (obj.id < N_robot_types) {
+				auto &row = result["robots"].back();
+				const auto &definition = Robot_info[obj.id];
+				row["definition_shields"] = f2fl(definition.strength);
+				row["gun_count"] = definition.n_guns;
+				row["primary_weapon"] = definition.weapon_type;
+				row["secondary_weapon"] = definition.weapon_type2;
+				row["radius_raw"] = obj.size;
+				if (obj.render_type == RT_POLYOBJ || obj.render_type == RT_MORPH) {
+					const int model = obj.rtype.pobj_info.model_num;
+					row["model"] = model;
+					if (model >= 0 && model < N_polygon_models) {
+						row["model_bytes"] = Polygon_models[model].model_data_size;
+						row["base_radius_raw"] = Polygon_models[model].rad;
+						row["custom_radius_raw"] = xl_custom_model_radius(model, Polygon_models[model].rad);
+					}
+				}
+			}
+#endif
 		}
 		if (obj.type != OBJ_CNTRLCEN) continue;
 		result["reactors"].push_back({ { "object", i }, { "position", serialize_scene_point(obj.pos) }, { "radius", f2fl(obj.size) }, { "shields", f2fl(obj.shields) }, { "destroyed", (obj.flags & OF_DESTROYED) != 0 }, { "render_type", obj.render_type }, { "model", obj.render_type == RT_POLYOBJ ? json(obj.rtype.pobj_info.model_num) : json(nullptr) }, { "segment", serialize_scene_segment(obj.segnum) } });

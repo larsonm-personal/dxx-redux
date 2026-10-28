@@ -18,6 +18,7 @@ int xl_install_prepared_hxm(const char *level_filename);
 int xl_install_prepared_pog(const char *level_filename);
 int xl_prepared_texture_brightness(int texture, int *brightness);
 int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a);
+int xl_custom_model_radius(int model, int fallback);
 #ifdef __cplusplus
 }
 
@@ -44,6 +45,7 @@ class XlPreparedResources
 	void install_pog();
 	bool texture_brightness(int texture, int &brightness) const;
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
+	int custom_model_radius(int model, int fallback) const;
 
   private:
 	struct State;

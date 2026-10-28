@@ -107,6 +107,13 @@ struct ObjectDependencies {
 		if (!models.insert(id).second) return;
 		const auto &p = model_data[id];
 		asset_require(p.model_data && p.model_data_size > 0 && p.n_models > 0 && p.n_models <= MAX_SUBMODELS, "object dependency model has no valid payload");
+		for (int child = 1; child < p.n_models; ++child) {
+			int parent = child, remaining = p.n_models;
+			while (parent) {
+				asset_require(parent >= 0 && parent < p.n_models && remaining-- > 0, "model submodel parent chain is invalid or cyclic");
+				parent = p.submodel_parents[parent];
+			}
+		}
 		asset_require(int(p.first_texture) + p.n_textures <= MAX_OBJ_BITMAPS, "model texture pointer range invalid");
 		for (int i = 0; i < p.n_textures; ++i) {
 			const int index = object_bitmap_ptrs[p.first_texture + i];
@@ -173,10 +180,12 @@ struct ObjectDependencies {
 		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
 		asset_require(!r.boss_flag || (xl_boss_spawning && r.boss_flag >= 21 && r.boss_flag < 29), "boss profile requires an implemented XL boss runtime");
 		asset_require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
+		for (int gun = 0; gun < r.n_guns; ++gun)
+			asset_require(r.gun_submodels[gun] < model_data[r.model_num].n_models, "robot gun references missing submodel");
 		for (int gun = 0; gun <= r.n_guns; ++gun)
 			for (int state = 0; state < N_ANIM_STATES; ++state) {
 				const auto &j = r.anim_states[gun][state];
-				asset_require(j.n_joints >= 0 && j.offset >= 0 && j.offset + j.n_joints <= N_robot_joints, "robot joint range invalid");
+				asset_require(j.n_joints >= 0 && (!j.n_joints || (j.offset >= 0 && j.offset + j.n_joints <= N_robot_joints)), "robot joint range invalid");
 				for (int i = 0; i < j.n_joints; ++i)
 					asset_require(joint_data[j.offset + i].jointnum >= 0 && joint_data[j.offset + i].jointnum < model_data[r.model_num].n_models, "robot joint references missing submodel");
 			}
