@@ -131,8 +131,12 @@ void do_close_door(const trigger *trig)
 	int i;
 
 	if (trig != NULL) {
-		for (i=0;i<trig->num_links;i++)
+		for (i=0;i<trig->num_links;i++) {
+#ifdef DXX_XL_RUNTIME
+            if (xl_authored_close_door(trig->seg[i], trig->side[i])) continue;
+#endif
 			wall_close_door(&Segments[trig->seg[i]], trig->side[i]);
+		}
   	}
 }
 

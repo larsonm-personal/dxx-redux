@@ -1,0 +1,1177 @@
+{
+    "schema": 2,
+    "scope": "Fresh native decoding of hash-matched survey candidates; no admission or gameplay qualification",
+    "bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "levels": [
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "ganeshd.rl2",
+            "level_sha256": "e1bd326dc9dae23dba1e2e7a9edde1563d56ba02ea3131669e5bf78019d14e99",
+            "survey_profile": "15/34",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 228
+                }
+            ],
+            "native_rejection": "unsupported level/game version pair 15/34"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "aurabyss.rl2",
+            "level_sha256": "5dcdfa263e99eb4460ffd8514bdcafa03a3d31cf2010397872e484603f13cf43",
+            "survey_profile": "15/34",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 492
+                }
+            ],
+            "native_rejection": "unsupported level/game version pair 15/34"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "thorium.rl2",
+            "level_sha256": "f964ad8e1b6217844af28f0aa8f59ac9f1de4f0e750a21501a97f9d11dbceaad",
+            "survey_profile": "15/34",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 1,
+                    "first_segment": 334
+                }
+            ],
+            "native_rejection": "unsupported level/game version pair 15/34"
+        },
+        {
+            "archive": "missions/d1fsxl/d1fs-xl.hog",
+            "archive_sha256": "c54384784e0b7fa48885c1ee21588031fd3fec34677053b35a75a7a4576a39b9",
+            "level": "d1fs01xl.rl2",
+            "level_sha256": "5ab19fc955deda5ee163307e734c18c34bcb69ffb20a2a3bbb41db3d963b8435",
+            "survey_profile": "18/36",
+            "native_decoded": false,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 0,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 2,
+                    "first_segment": 11
+                }
+            ],
+            "native_rejection": "unsupported level version 18"
+        },
+        {
+            "archive": "missions/single/dinter.hog",
+            "archive_sha256": "5ddc056fe00971851fa55a0e93a316a4a0bce3591c65a7eb1b81dc21d168f4d3",
+            "level": "dinter.rl2",
+            "level_sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 24,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 3,
+                    "first_segment": 5538
+                },
+                {
+                    "flags": 8,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 9,
+                    "first_segment": 2398
+                },
+                {
+                    "flags": 8,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 2608
+                },
+                {
+                    "flags": 8,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 2448
+                },
+                {
+                    "flags": 8,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 2609
+                },
+                {
+                    "flags": 2,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 2,
+                    "first_segment": 5676
+                }
+            ],
+            "native_close_targets": [
+                {
+                    "trigger": 85,
+                    "segment": 5538,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 85,
+                    "segment": 5580,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 85,
+                    "segment": 5576,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2398,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2411,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2461,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2423,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2390,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2387,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 5766,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 2442,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 94,
+                    "segment": 5772,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2608,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2771,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2747,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2725,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2672,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2621,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 96,
+                    "segment": 2650,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2448,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2407,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2393,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2401,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2426,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2437,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 98,
+                    "segment": 2439,
+                    "side": 3,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2609,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2651,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2748,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2726,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2772,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2673,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 100,
+                    "segment": 2622,
+                    "side": 1,
+                    "wall_type": 2,
+                    "wall_flags": 264
+                },
+                {
+                    "trigger": 111,
+                    "segment": 5676,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 0
+                },
+                {
+                    "trigger": 111,
+                    "segment": 5677,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 0
+                }
+            ],
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 1633,
+                        "examples": [
+                            {
+                                "record": 36,
+                                "detail": "1670"
+                            },
+                            {
+                                "record": 37,
+                                "detail": "1677"
+                            },
+                            {
+                                "record": 37,
+                                "detail": "1678"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 599,
+                        "examples": [
+                            {
+                                "record": 1427,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 1428,
+                                "detail": "10"
+                            },
+                            {
+                                "record": 1429,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "segment_damage": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": 2215,
+                                "detail": "3/5"
+                            }
+                        ]
+                    },
+                    "segment_properties": {
+                        "count": 351,
+                        "examples": [
+                            {
+                                "record": 4062,
+                                "detail": "16"
+                            },
+                            {
+                                "record": 4063,
+                                "detail": "16"
+                            },
+                            {
+                                "record": 4064,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "wall_flags": {
+                        "count": 83,
+                        "examples": [
+                            {
+                                "record": 673,
+                                "detail": "264"
+                            },
+                            {
+                                "record": 674,
+                                "detail": "264"
+                            },
+                            {
+                                "record": 675,
+                                "detail": "264"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 165,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "14"
+                            }
+                        ]
+                    },
+                    "effect_trigger_target": {
+                        "count": 15,
+                        "examples": [
+                            {
+                                "record": 179,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            },
+                            {
+                                "record": 179,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            },
+                            {
+                                "record": 179,
+                                "detail": "enable/disable effect-object targets require effect runtime support"
+                            }
+                        ]
+                    },
+                    "object_triggers": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "96 decoded records; runtime admission checks action and owner requirements"
+                            }
+                        ]
+                    },
+                    "object_trigger_type": {
+                        "count": 60,
+                        "examples": [
+                            {
+                                "record": 2,
+                                "detail": "29"
+                            },
+                            {
+                                "record": 3,
+                                "detail": "32"
+                            },
+                            {
+                                "record": 6,
+                                "detail": "29"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "377 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "41 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "39 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "297 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {
+                    "segment_group": {
+                        "count": 506,
+                        "examples": [
+                            {
+                                "record": 595,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 596,
+                                "detail": "3"
+                            },
+                            {
+                                "record": 597,
+                                "detail": "3"
+                            }
+                        ]
+                    }
+                }
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 41,
+                "lightning": 39,
+                "sound": 297
+            }
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-01.rl2",
+            "level_sha256": "5b4ac91a472acf5a2f2e2fc06eaefa447777eedd7af8b60234bcecc8429f55cd",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 2,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 1124
+                },
+                {
+                    "flags": 2,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 1124
+                },
+                {
+                    "flags": 2,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 1124
+                },
+                {
+                    "flags": 2,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 7,
+                    "first_segment": 1124
+                }
+            ],
+            "native_close_targets": [
+                {
+                    "trigger": 25,
+                    "segment": 1124,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 25,
+                    "segment": 1125,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 25,
+                    "segment": 1126,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 25,
+                    "segment": 1127,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 25,
+                    "segment": 1128,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 25,
+                    "segment": 1129,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 25,
+                    "segment": 1130,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1124,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1125,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1126,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1127,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1128,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1129,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 29,
+                    "segment": 1130,
+                    "side": 2,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1124,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1125,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1126,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1127,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1128,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1129,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 31,
+                    "segment": 1130,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1124,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1125,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1126,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1127,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1128,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1129,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                },
+                {
+                    "trigger": 33,
+                    "segment": 1130,
+                    "side": 0,
+                    "wall_type": 2,
+                    "wall_flags": 8
+                }
+            ],
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "wall_reference": {
+                        "count": 774,
+                        "examples": [
+                            {
+                                "record": 116,
+                                "detail": "308"
+                            },
+                            {
+                                "record": 116,
+                                "detail": "306"
+                            },
+                            {
+                                "record": 117,
+                                "detail": "307"
+                            }
+                        ]
+                    },
+                    "segment_function_v21": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 404,
+                                "detail": "9"
+                            },
+                            {
+                                "record": 1223,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 2164,
+                                "detail": "10"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 17,
+                        "examples": [
+                            {
+                                "record": 6,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 7,
+                                "detail": "14"
+                            },
+                            {
+                                "record": 8,
+                                "detail": "14"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "45 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "1 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "44 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 1,
+                "lightning": 0,
+                "sound": 44
+            }
+        },
+        {
+            "archive": "missions/diedel/styx-d3.hog",
+            "archive_sha256": "0c5932b446de6235d1c9b807083ba9ee1e9b18c50470b1f6321c8e74ba9b4afb",
+            "level": "styx.rl2",
+            "level_sha256": "2a3679ac920b1347922b3b971b4caf0922744fbe58d16a32e03d67ae54be23a1",
+            "survey_profile": "23/40",
+            "native_decoded": true,
+            "runtime_qualified": false,
+            "survey_close_door_actions": [
+                {
+                    "flags": 8,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 2,
+                    "first_segment": 942
+                },
+                {
+                    "flags": 8,
+                    "value": 327680,
+                    "time": -1,
+                    "links": 2,
+                    "first_segment": 607
+                }
+            ],
+            "native_close_targets": [
+                {
+                    "trigger": 15,
+                    "segment": 942,
+                    "side": 4,
+                    "wall_type": 2,
+                    "wall_flags": 272
+                },
+                {
+                    "trigger": 15,
+                    "segment": 938,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 272
+                },
+                {
+                    "trigger": 21,
+                    "segment": 607,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 16
+                },
+                {
+                    "trigger": 21,
+                    "segment": 947,
+                    "side": 5,
+                    "wall_type": 2,
+                    "wall_flags": 16
+                }
+            ],
+            "native_profile": "23/40",
+            "inspector_findings": {
+                "unsupported": {
+                    "segment_function_v21": {
+                        "count": 3,
+                        "examples": [
+                            {
+                                "record": 64,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 165,
+                                "detail": "2"
+                            },
+                            {
+                                "record": 622,
+                                "detail": "2"
+                            }
+                        ]
+                    },
+                    "wall_flags": {
+                        "count": 2,
+                        "examples": [
+                            {
+                                "record": 116,
+                                "detail": "272"
+                            },
+                            {
+                                "record": 117,
+                                "detail": "272"
+                            }
+                        ]
+                    },
+                    "trigger_type": {
+                        "count": 21,
+                        "examples": [
+                            {
+                                "record": 0,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 1,
+                                "detail": "31"
+                            },
+                            {
+                                "record": 2,
+                                "detail": "16"
+                            }
+                        ]
+                    },
+                    "effect_object_types": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "54 objects of type 20; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_particles": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "4 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_lightning": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "8 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "effect_sounds": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "42 decoded payloads; runtime behavior unimplemented"
+                            }
+                        ]
+                    },
+                    "embedded_lighting": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "XL color tables decoded but no faithful rendering integration exists"
+                            }
+                        ]
+                    }
+                },
+                "unknown": {
+                    "object_dependencies": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            }
+                        ]
+                    },
+                    "runtime_semantics": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "decoded records require reference comparison and runtime validation"
+                            }
+                        ]
+                    },
+                    "assets": {
+                        "count": 1,
+                        "examples": [
+                            {
+                                "record": -1,
+                                "detail": "mission asset resolution and reference runtime not verified"
+                            }
+                        ]
+                    }
+                },
+                "observations": {}
+            },
+            "native_effect_payloads": {
+                "thruster": 0,
+                "particle": 4,
+                "lightning": 8,
+                "sound": 42
+            }
+        }
+    ]
+}

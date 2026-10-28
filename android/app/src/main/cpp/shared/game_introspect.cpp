@@ -3525,6 +3525,20 @@ extern "C" char *game_introspect_get_state(void)
 			const int flags = xl_wall_doorway(-1, wall.segnum, wall.sidenum);
 			if (flags < 0) continue;
 			doorways[std::to_string(index)] = { { "type", wall.type }, { "state", wall.state }, { "flags", wall.flags }, { "segment", wall.segnum }, { "side", wall.sidenum }, { "keys", wall.keys }, { "visibility_flags", flags }, { "player_flags", ConsoleObject ? xl_wall_doorway(ConsoleObject - Objects, wall.segnum, wall.sidenum) : -1 } };
+			auto &row = doorways[std::to_string(index)];
+			row["active_entry"] = -1;
+			row["active_time_ticks"] = -1;
+			for (int active = 0; active < Num_open_doors && active < MAX_DOORS; ++active)
+				for (int part = 0; part < ActiveDoors[active].n_parts && part < 2; ++part)
+					if (ActiveDoors[active].front_wallnum[part] == index || ActiveDoors[active].back_wallnum[part] == index) {
+						row["active_entry"] = active;
+						row["active_time_ticks"] = ActiveDoors[active].time;
+					}
+			if (wall.type == WALL_DOOR && wall.clip_num >= 0 && wall.clip_num < Num_wall_anims && WallAnims[wall.clip_num].open_sound >= 0) {
+				const int sample = digi_xlat_sound(WallAnims[wall.clip_num].open_sound);
+				row["motion_audio"] = j["sound_playback"].value(std::to_string(sample), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
+				row["motion_audio"]["sample"] = sample;
+			}
 			if (wall.type == WALL_CLOSED) closed_walls[std::to_string(index)] = doorways[std::to_string(index)];
 		}
 		j["xl_pilot"]["doorways"] = std::move(doorways);

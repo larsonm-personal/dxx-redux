@@ -157,6 +157,13 @@ finish original-mission qualification
     and the signed-byte correction to the preceding keyed-wall adapter. This
     does not qualify every wall animation or an original mission
 
+22. Authored close-door actions: the XL path overrides automatic waiting while
+    preserving active entries/timers and obstruction on both sides. Source/native
+    controls and Android acceptance are recorded in
+    [close-door evidence](../../XL_compat/evidence/close-doors.md). Seven original
+    candidates retain independent requirements and qualification; dynamic
+    capacity, other wall behaviors and optional settings remain open
+
 Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as
 required acceptance rather than cosmetic deferral

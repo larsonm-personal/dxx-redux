@@ -515,6 +515,7 @@ $testTimeouts = @{
     "test_xl_blocked_runtime" = 600
     "test_xl_keyed_wall_runtime" = 600
     "test_xl_doorway_runtime" = 600
+    "test_xl_close_door_runtime" = 600
     "test_xl_repair_runtime" = 600
     "test_xl_equipment_runtime" = 480
     "test_xl_pilot_import" = 300
