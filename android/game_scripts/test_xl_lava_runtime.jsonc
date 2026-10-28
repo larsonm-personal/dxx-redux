@@ -1,0 +1,410 @@
+// Derived lava controls use staged poses and actual frames; no mission qualification
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_lava_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived lava volumes",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "face_view",
+        "segment": 63,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 63,
+            "xl_pilot.in_lava": true,
+            "xl_pilot.in_no_damage": true,
+            "xl_pilot.in_water": false,
+            "xl_pilot.lava_loops_linked": 1,
+            "xl_pilot.lava_loops_playing": 1,
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.5,
+        "post_delay_ms": 300,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.speed": {
+                "gt": 2,
+            },
+            "throttle_time": {
+                "gt": 0,
+            },
+            "xl_pilot.in_lava": true,
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "face_view",
+        "segment": 63,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "face_view",
+        "segment": 61,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.in_lava": false,
+            "xl_pilot.in_water": false,
+            "xl_pilot.lava_loops_linked": 0,
+            "xl_pilot.lava_loops_playing": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 60,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.in_lava": true,
+            "xl_pilot.in_water": false,
+            "xl_pilot.in_no_damage": false,
+            "player.shields": {
+                "lt": 99,
+            },
+            "xl_pilot.lava_loops_playing": 1,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 62,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.in_lava": true,
+            "xl_pilot.in_water": true,
+            "xl_pilot.in_no_damage": false,
+            "xl_pilot.lava_loops_playing": 1,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 64,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.in_lava": true,
+            "xl_pilot.in_water": true,
+            "xl_pilot.in_no_damage": true,
+            "xl_pilot.lava_loops_playing": 1,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 63,
+            "xl_pilot.in_lava": true,
+            "xl_pilot.in_no_damage": true,
+            "xl_pilot.lava_loops_linked": 1,
+            "xl_pilot.lava_loops_playing": 1,
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 61,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 63,
+            "xl_pilot.in_lava": true,
+            "xl_pilot.lava_loops_playing": 1,
+            "player.shields": {
+                "range": [100, 100],
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    { "action": "set_debug", "field": "robots_suspended", "value": "false", "post_delay_ms": 0 },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.robot_generators.0.alive": {
+                "gte": 1,
+            },
+            "xl_pilot.equipment_generators.1.item_count": 1,
+        },
+        "timeout_ms": 20000,
+    },
+    { "action": "set_debug", "field": "robots_suspended", "value": "true", "post_delay_ms": 0 },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.robot_generators.0.robots[0].in_lava": true,
+        },
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.robot_generators.0.alive": 1,
+            "xl_pilot.robot_generators.0.robots[0].in_lava": true,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "false",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.runtime_active": false,
+            "xl_pilot.in_lava": false,
+            "xl_pilot.lava_loops_linked": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.runtime_active": true,
+            "position.segment": 63,
+            "xl_pilot.in_lava": true,
+            "xl_pilot.in_no_damage": true,
+            "xl_pilot.lava_loops_playing": 1,
+            "xl_pilot.robot_generators.0.alive": 1,
+            "xl_pilot.robot_generators.0.robots[0].in_lava": true,
+            "xl_pilot.equipment_generators.1.item_count": 1,
+            "player.shields": {
+                "range": [100, 100],
+            },
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "face_view",
+        "segment": 61,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.in_lava": false,
+            "xl_pilot.lava_loops_linked": 0,
+            "xl_pilot.lava_loops_playing": 0,
+        },
+        "timeout_ms": 20000,
+    },
+]

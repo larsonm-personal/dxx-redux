@@ -122,12 +122,15 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 		features[i + 4].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [&](const Segment &s) {
 			return (segment_property_bits(v.level_version, s) & (1 << i)) != 0;
 		}));
-		if (v.level_version >= 21 && i != 0 && i != 3) {
+		if (v.level_version >= 21 && i != 0 && i != 1 && i != 3) {
 			features[i + 4].present_status = "blocked";
 			features[i + 4].support = "Split segment property detected; runtime translation is not implemented";
 		}
 	}
 	if (v.level_version >= 21) {
+		features[5].present_status = "supported";
+		features[5].support = "Modern singleplayer lava motion, volume/contact damage, turbulence, scrape impulses and persistent timing implemented";
+		features[5].limitations = "23/40 profile with default fluid physics. Water/lava combinations retain water motion and lava damage. Source non-volumetric rendering does not tint lava-only boundaries. Custom actors, independent unsupported requirements, optional volumetric fog and multiplayer remain unqualified; derived controls do not certify original missions";
 		features[4].present_status = "supported";
 		features[4].support = "Modern singleplayer water motion, stock robot combat, robot/item generation, material boundaries and source restoration implemented";
 		features[4].limitations = "23/40 profile with default fluid physics and non-volumetric colored boundaries. Custom robot definitions, multiplayer and optional volumetric fog remain unqualified. Derived fixture checks do not qualify an original mission or campaign";

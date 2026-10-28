@@ -4,6 +4,8 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
                       "void CPhysSimData::Setup (void)")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
                       "int32_t CObject::UpdateOffset (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
+                      "void CObject::ProcessDrag (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_water_actors.h"
      CONTENT "${extracted}")
 add_executable(xl_water_actors_reference tests/reference_water_actors.cpp)

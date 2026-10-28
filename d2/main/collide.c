@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "fluids.h"
 #include "speed_boost.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -510,6 +511,11 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 {
 	fix tmap_num,d,water;
 
+#ifdef DXX_XL_RUNTIME
+	const int xl_type = xl_fluid_wall(obj-Objects, segnum, sidenum);
+	if (xl_type >= 0) return xl_type ? ((xl_type & 1) ? 1 : 2) : 0;
+#endif
+
 	Assert(obj->type==OBJ_PLAYER);
 
 	tmap_num = Segments[segnum].sides[sidenum].tmap_num;
@@ -575,6 +581,11 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 void scrape_player_on_wall(object *obj, short hitseg, short hitside, vms_vector * hitpt )
 {
 	int type;
+
+#ifdef DXX_XL_RUNTIME
+	const int32_t point[3] = { hitpt->x, hitpt->y, hitpt->z };
+	if (xl_fluid_scrape(obj-Objects, hitseg, hitside, point)) return;
+#endif
 
 	if (obj->type != OBJ_PLAYER || obj->id != Player_num)
 		return;

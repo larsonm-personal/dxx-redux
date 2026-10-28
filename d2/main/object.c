@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "fluids.h"
 #include "speed_boost.h"
 #include "boss_spawn.h"
 #endif
@@ -2556,6 +2557,10 @@ void object_move_one( object * obj )
 			int sidemask,under_lavafall=0;
 			static int lavafall_hiss_playing[MAX_PLAYERS]={0};
 
+#ifdef DXX_XL_RUNTIME
+			if (!xl_fluid_frame(obj-Objects, &lavafall_hiss_playing[obj->id])) {
+#endif
+
 			sidemask = get_seg_masks(&obj->pos, obj->segnum, obj->size, __FILE__, __LINE__).sidemask;
 			if (sidemask) {
 				int sidenum,bit,wall_num;
@@ -2589,6 +2594,9 @@ void object_move_one( object * obj )
 				digi_kill_sound_linked_to_object( obj-Objects);
 				lavafall_hiss_playing[obj->id] = 0;
 			}
+#ifdef DXX_XL_RUNTIME
+			}
+#endif
 		}
 	}
 

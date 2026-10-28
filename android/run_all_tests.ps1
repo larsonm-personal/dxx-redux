@@ -511,6 +511,7 @@ $testTimeouts = @{
     "test_xl_speed_boosts_runtime" = 480
     "test_xl_spawn_points_runtime" = 480
     "test_xl_water_actors_runtime" = 600
+    "test_xl_lava_runtime" = 600
     "test_xl_equipment_runtime" = 480
     "test_xl_pilot_import" = 300
     "test_xl_pilot_coronas" = 300
