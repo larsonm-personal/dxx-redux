@@ -27,6 +27,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #ifdef DXX_XL_RUNTIME
 #include "speed_boost.h"
+#include "blocked.h"
 #endif
 #include "fvi.h"
 #include "segment.h"
@@ -960,11 +961,13 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							face_hit_type, wid_flag, startmask, endmask, centermask,
 							flags, p0, p1, &hit_point, rad);
 
-						int boost_blocked = 0;
+						int movement_blocked = 0;
 #ifdef DXX_XL_RUNTIME
-						boost_blocked = xl_speed_boost_exit_blocked(thisobjnum, startseg, side);
+						movement_blocked = xl_speed_boost_exit_blocked(thisobjnum, startseg, side);
+                            if (!(thisobjnum == Players[Player_num].objnum && cheats.ghostphysics))
+                                movement_blocked |= xl_blocked_entry(thisobjnum, startseg, side);
 #endif
-						if (!boost_blocked && ((wid_flag & WID_FLY_FLAG) ||
+						if (!movement_blocked && ((wid_flag & WID_FLY_FLAG) ||
 							(fvi_active_wall_is_passable && seg->children[side] >= 0 &&
 							 fvi_active_wall_is_passable(
 							     fvi_active_wall_is_passable_user, startseg, side)) ||

@@ -21,8 +21,8 @@ def findings(rows):
 
 
 def members(data):
-    if data[:3] != b"DHF":
-        raise ValueError("Candidate requires a classic HOG container")
+    if data[:3] not in (b"DHF", b"D2X"):
+        raise ValueError("Unknown candidate HOG signature")
     offset = 3
     result = {}
     while offset < len(data):
@@ -31,6 +31,14 @@ def members(data):
         name = data[offset : offset + 13].split(b"\0", 1)[0].decode("ascii").lower()
         size = struct.unpack_from("<i", data, offset + 13)[0]
         offset += 17
+        # Read-only audit of CLevelHeader::Read's extended name; this does not
+        # enable extended containers in the engine
+        if size < 0:
+            if data[:3] != b"D2X" or offset + 256 > len(data):
+                raise ValueError("Invalid extended candidate HOG header")
+            name = data[offset : offset + 256].split(b"\0", 1)[0].decode("ascii").lower()
+            offset += 256
+            size = -size
         if size < 0 or offset + size > len(data) or name in result:
             raise ValueError("Invalid candidate HOG extent or duplicate member")
         result[name] = data[offset : offset + size]
@@ -43,7 +51,7 @@ def main():
     for name in ("bundle", "missions-root", "inspector", "work", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument(
-        "--feature", choices=("spawn-bot", "equipment", "spawn-points", "water", "lava"), default="spawn-bot"
+        "--feature", choices=("spawn-bot", "equipment", "spawn-points", "water", "lava", "blocked"), default="spawn-bot"
     )
     parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
     args = parser.parse_args()
@@ -65,14 +73,14 @@ def main():
             sum(
                 count
                 for bits, count in row["segment_properties"].items()
-                if int(bits) & (2 if args.feature == "lava" else 1)
+                if int(bits) & (4 if args.feature == "blocked" else 2 if args.feature == "lava" else 1)
             )
             if row["version"] >= 21
             else 0
         )
         if not (
             water
-            if args.feature in ("water", "lava")
+            if args.feature in ("water", "lava", "blocked")
             else equipment.get("count", 0)
             if args.feature == "equipment"
             else actions
@@ -116,9 +124,18 @@ def main():
         payload_hash = hashlib.sha256(payloads[level_name.lower()]).hexdigest()
         if payload_hash != row["sha256"]:
             raise ValueError("Original candidate does not match surveyed payload")
-        inventory = next(
-            level["inventory"] for level in inspection["levels"] if level["name"].lower() == level_name.lower()
-        )
+        if source.read_bytes()[:3] == b"D2X":
+            if any(level["inventory"].get("status") != "rejected" for level in inspection["levels"]):
+                raise ValueError("Extended archive unexpectedly decoded; audit its new contract")
+            inventory = {
+                "status": "rejected",
+                "reason": "Extended D2X HOG unsupported; native container input rejected: "
+                + "; ".join(level["inventory"]["reason"] for level in inspection["levels"]),
+            }
+        else:
+            inventory = next(
+                level["inventory"] for level in inspection["levels"] if level["name"].lower() == level_name.lower()
+            )
         decoded = inventory.get("status") != "rejected"
         record = {
             "archive": archive_name,
@@ -147,7 +164,7 @@ def main():
             )
         elif args.feature == "spawn-points":
             record["survey_wall_spawn_actions"] = record.pop("survey_spawn_actions")
-        elif args.feature in ("water", "lava"):
+        elif args.feature in ("water", "lava", "blocked"):
             del record["survey_spawn_actions"]
             record[f"survey_{args.feature}_segments"] = water
             record["survey_placed_robots"] = sum(obj["type"] == 2 for obj in row.get("object_records", []))

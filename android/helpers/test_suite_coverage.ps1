@@ -241,6 +241,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_spawn_points_runtime'
             'test_xl_water_actors_runtime'
             'test_xl_lava_runtime'
+            'test_xl_blocked_runtime'
             'test_xl_equipment_runtime'
             'test_xl_classic_lighting_lifecycle'
             'test_xl_classic_sound_lifecycle'

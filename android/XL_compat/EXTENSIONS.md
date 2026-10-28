@@ -122,8 +122,11 @@ Modern lava bit 2 and its water/no-damage combinations now have a separate XL
 contact path, reference-matched motion/damage/scrape impulses, and a saved relative
 scrape clock. See [lava evidence](evidence/lava-volumes.md) for the current
 acceptance record. Development schema 9 replaces schema 8. Original lava missions
-retain independent requirements and qualification; other property bits, signed
-damage and multiplayer remain rejected. See the
+retain independent requirements and qualification. Modern blocked bit 4 now
+has actor-specific entry restrictions, allowed exits/projectiles, source automap
+color and disk/rewind restoration. Native/source and 66 Android checks pass;
+see [blocked-segment evidence](evidence/blocked-segments.md). Other property bits,
+signed damage and multiplayer remain rejected. See the
 [modern-property evidence](evidence/modern-properties.md) and
 [implementation plan](../ai%20tool%20plans/mission%20metadata/xl_modern_properties_20261025.md).
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented

@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #ifdef DXX_XL_RUNTIME
 #include "speed_boost.h"
+#include "blocked.h"
 #endif
 #include "u_mem.h"
 #include "render.h"
@@ -1636,6 +1637,10 @@ void add_segment_edges(automap *am, segment *seg)
 		if (seg->children[sn] == -1) {
 			color = am->wall_normal_color;
 		}
+
+#ifdef DXX_XL_RUNTIME
+        color = xl_blocked_map_color(segnum, color);
+#endif
 
 		switch( Segment2s[segnum].special )	{
 		case SEGMENT_IS_FUELCEN:
