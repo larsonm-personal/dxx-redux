@@ -108,6 +108,7 @@ if(BUILD_TESTING)
         include(tests/reference_wall_capacity.cmake)
         include(tests/reference_trigger_capacity.cmake)
         include(tests/reference_projectile.cmake)
+        include(tests/reference_object_capacity.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -328,6 +329,19 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/projectiles ${xl_projectile_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/projectile.cmake)
             set_tests_properties(xl_projectiles PROPERTIES TIMEOUT 150)
+            set(xl_object_capacity_args)
+            if(TARGET xl_object_capacity_reference)
+                list(APPEND xl_object_capacity_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_object_capacity_reference>")
+            endif()
+            add_test(
+                NAME xl_object_capacity
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/objects ${xl_object_capacity_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/object_capacity.cmake)
+            set_tests_properties(xl_object_capacity PROPERTIES TIMEOUT 300)
             set(xl_keyed_wall_args)
             if(TARGET xl_keyed_wall_reference)
                 list(APPEND xl_keyed_wall_args "-DREFERENCE=$<TARGET_FILE:xl_keyed_wall_reference>")

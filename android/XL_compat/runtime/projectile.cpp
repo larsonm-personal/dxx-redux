@@ -13,7 +13,7 @@ namespace
 std::array<xl_projectile_state, MAX_OBJECTS> states{};
 bool live(int owner)
 {
-	return owner >= 0 && owner <= Highest_object_index && owner < MAX_OBJECTS &&
+	return owner >= 0 && owner <= Highest_object_index && owner < object_capacity() &&
 	       Objects[owner].type == OBJ_WEAPON && Objects[owner].control_type == CT_WEAPON;
 }
 const xl_projectile_state *state_for(int owner)
@@ -64,7 +64,7 @@ extern "C" int xl_projectile_restore(const xl_projectile_state *input, int count
 		    Objects[state.owner].ctype.laser_info.last_hitobj != state.victims[state.count - 1]) return 0;
 		for (int i = 0; i < state.count; ++i) {
 			// Victims retain source slot identity even after deletion or reuse
-			if (state.victims[i] < 0 || state.victims[i] >= MAX_OBJECTS ||
+			if (state.victims[i] < 0 || state.victims[i] >= object_capacity() ||
 			    std::find(state.victims, state.victims + i, state.victims[i]) != state.victims + i) return 0;
 		}
 		previous = state.owner;

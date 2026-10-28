@@ -97,6 +97,7 @@ struct MuzzleLight {
 std::vector<MuzzleLight> muzzle_lights;
 vms_vector player_thrust{};
 std::string pending_level;
+int loading_object_capacity = 0;
 bool loading_wide_walls = false;
 bool loading_extended_triggers = false;
 bool admitted_pilot = false, completed_pilot = false, admitted_water_arena = false;
@@ -664,9 +665,11 @@ extern "C" int xl_preview_load_level(const char *filename)
 		committed = true;
 		xl_preview_clear_mission();
 		if (original) pending_level = filename;
+		loading_object_capacity = static_cast<int>(xl_object_capacity_for_count(probe.source.objects.size()));
 		loading_wide_walls = probe.source.walls.size() > DXX_CLASSIC_MAX_WALLS;
 		loading_extended_triggers = probe.source.triggers.size() > DXX_CLASSIC_MAX_TRIGGERS;
 		result = xl_stock_load_level(filename);
+		loading_object_capacity = 0;
 		loading_wide_walls = false;
 		loading_extended_triggers = false;
 		pending_level.clear();
@@ -697,6 +700,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		con_printf(CON_NORMAL, admitted_water_arena ? "XL water physics: detected experimental profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
 		return result;
 	} catch (const std::exception &error) {
+		loading_object_capacity = 0;
 		loading_wide_walls = false;
 		loading_extended_triggers = false;
 		pending_level.clear();
@@ -859,6 +863,12 @@ extern "C" const char *xl_preview_level_path(const char *filename)
 extern "C" int xl_loading_extended_triggers(void)
 {
 	return loading_extended_triggers;
+}
+
+extern "C" int object_capacity(void)
+{
+	if (loading_object_capacity) return loading_object_capacity;
+	return xl_level_extensions_active() ? static_cast<int>(xl_object_capacity_for_count(source->objects.size())) : DXX_CLASSIC_MAX_OBJECTS;
 }
 
 extern "C" int xl_loading_wide_walls(void)

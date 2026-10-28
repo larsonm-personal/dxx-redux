@@ -2011,8 +2011,8 @@ int ai_save_state(PHYSFS_file *fp)
 
 	PHYSFS_write(fp, &Ai_initialized, sizeof(int), 1);
 	PHYSFS_write(fp, &Overall_agitation, sizeof(int), 1);
-	//PHYSFS_write(fp, Ai_local_info, sizeof(ai_local) * MAX_OBJECTS, 1);
-	for (i = 0; i < MAX_OBJECTS; i++)
+	//PHYSFS_write(fp, Ai_local_info, sizeof(ai_local) * object_capacity(), 1);
+	for (i = 0; i < object_capacity(); i++)
 	{
 		ai_local_rw ail_rw;
 		memset(&ail_rw, 0, sizeof(ai_local_rw));
@@ -2227,7 +2227,7 @@ static int ai_restore_preflight(PHYSFS_file *fp, int version, int swap)
 
 	if (start < 0)
 		return 0;
-	locals = (ai_local *)malloc((size_t)MAX_OBJECTS * sizeof(*locals));
+	locals = (ai_local *)malloc((size_t)object_capacity() * sizeof(*locals));
 	points = (point_seg *)malloc((size_t)MAX_POINT_SEGS * sizeof(*points));
 	cloaks = (ai_cloak_info *)malloc((size_t)MAX_AI_CLOAK_INFO * sizeof(*cloaks));
 	if (!locals || !points || !cloaks)
@@ -2238,9 +2238,9 @@ static int ai_restore_preflight(PHYSFS_file *fp, int version, int swap)
 		goto done;
 	stage = 3;
 	block_start = PHYSFS_tell(fp);
-	ai_local_read_n_swap(locals, MAX_OBJECTS, swap, fp);
+	ai_local_read_n_swap(locals, object_capacity(), swap, fp);
 	if (!ai_restore_advanced_exactly(fp, block_start,
-	                                (PHYSFS_uint64)MAX_OBJECTS * 200u))
+	                                (PHYSFS_uint64)object_capacity() * 200u))
 		goto done;
 	stage = 4;
 	block_start = PHYSFS_tell(fp);
@@ -2339,7 +2339,7 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 
 	Ai_initialized = PHYSFSX_readSXE32(fp, swap);
 	Overall_agitation = PHYSFSX_readSXE32(fp, swap);
-	ai_local_read_n_swap(Ai_local_info, MAX_OBJECTS, swap, fp);
+	ai_local_read_n_swap(Ai_local_info, object_capacity(), swap, fp);
 	point_seg_read_n_swap(Point_segs, MAX_POINT_SEGS, swap, fp);
 	ai_cloak_info_read_n_swap(Ai_cloak_info, MAX_AI_CLOAK_INFO, swap, fp);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
@@ -2468,7 +2468,7 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 	}
 
 	if (version < 23) {
-		for (i = 0; i < MAX_OBJECTS; i++) {
+		for (i = 0; i < object_capacity(); i++) {
 			if (Ai_local_info[i].time_player_seen > 0)
 				Ai_local_info[i].time_player_seen = 0;
 			if (Ai_local_info[i].time_player_sound_attacked > 0)

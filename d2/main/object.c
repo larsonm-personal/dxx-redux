@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "projectile.h"
+#include "object_pool.h"
 #include "fluids.h"
 #include "blocked.h"
 #include "speed_boost.h"
@@ -27,6 +28,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include <string.h>	// for memset
 #include <stdio.h>
+#include <limits.h>
 
 #include "inferno.h"
 #include "game.h"
@@ -118,7 +120,8 @@ ubyte CollisionResult[MAX_OBJECT_TYPES][MAX_OBJECT_TYPES];
 object *ConsoleObject;					//the object that is the player
 
 static short free_obj_list[MAX_OBJECTS];
-static short object_signature_seed = 0;
+static int object_cleanup_active;
+static int object_signature_seed = 0;
 
 
 
@@ -152,10 +155,10 @@ static void input_demo_log_allocator_event(const char *step, int objnum,
 	object *objp, int type, int id, int signature, int segnum, int flags)
 {
 	char message[384];
-	const int free0 = (num_objects < MAX_OBJECTS) ? free_obj_list[num_objects] : -1;
-	const int free1 = (num_objects + 1 < MAX_OBJECTS) ? free_obj_list[num_objects + 1] : -1;
-	const int free2 = (num_objects + 2 < MAX_OBJECTS) ? free_obj_list[num_objects + 2] : -1;
-	const int free3 = (num_objects + 3 < MAX_OBJECTS) ? free_obj_list[num_objects + 3] : -1;
+	const int free0 = (num_objects < object_capacity()) ? free_obj_list[num_objects] : -1;
+	const int free1 = (num_objects + 1 < object_capacity()) ? free_obj_list[num_objects + 1] : -1;
+	const int free2 = (num_objects + 2 < object_capacity()) ? free_obj_list[num_objects + 2] : -1;
+	const int free3 = (num_objects + 3 < object_capacity()) ? free_obj_list[num_objects + 3] : -1;
 
 	if (!step || !input_demo_allocator_probe_active())
 		return;
@@ -1150,12 +1153,12 @@ void special_reset_objects(void)
 	render_reset_gameplay_view_objects();
 	int i;
 
-	num_objects=MAX_OBJECTS;
+	num_objects=object_capacity();
 
 	Highest_object_index = 0;
 	Assert(Objects[0].type != OBJ_NONE);		//0 should be used
 
-	for (i=MAX_OBJECTS;i--;)
+	for (i=object_capacity();i--;)
 		if (Objects[i].type == OBJ_NONE)
 			free_obj_list[--num_objects] = i;
 		else
@@ -1165,7 +1168,7 @@ void special_reset_objects(void)
 	object_signature_seed = 0;
 	for (i = 0; i <= Highest_object_index; i++)
 		if (Objects[i].type != OBJ_NONE && Objects[i].signature > object_signature_seed)
-			object_signature_seed = (short)Objects[i].signature;
+			object_signature_seed = Objects[i].signature;
 }
 
 void object_get_runtime_state(object_runtime_state *state)
@@ -1182,6 +1185,14 @@ void object_get_runtime_state(object_runtime_state *state)
 	state->do_homer_frame = doHomerFrame;
 }
 
+static int object_signature_limit(void)
+{
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) return INT_MAX;
+#endif
+	return SHRT_MAX;
+}
+
 int object_validate_runtime_state(const object_runtime_state *state)
 {
 	ubyte free_seen[MAX_OBJECTS];
@@ -1189,13 +1200,13 @@ int object_validate_runtime_state(const object_runtime_state *state)
 	int live_count = 0;
 	int i;
 
-	if (!state || state->num_objects < 0 || state->num_objects > MAX_OBJECTS ||
-	    state->highest_object_index < -1 || state->highest_object_index >= MAX_OBJECTS ||
-	    state->signature_seed < 0 || state->do_homer_frame < 0 || state->do_homer_frame > 1)
+	if (!state || state->num_objects < 0 || state->num_objects > object_capacity() ||
+	    state->highest_object_index < -1 || state->highest_object_index >= object_capacity() ||
+	    state->signature_seed < 0 || state->signature_seed > object_signature_limit() || state->do_homer_frame < 0 || state->do_homer_frame > 1)
 		return 0;
 
 	memset(free_seen, 0, sizeof(free_seen));
-	for (i = 0; i < MAX_OBJECTS; i++) {
+	for (i = 0; i < object_capacity(); i++) {
 		if (Objects[i].type != OBJ_NONE) {
 			live_count++;
 			highest_live = i;
@@ -1203,14 +1214,14 @@ int object_validate_runtime_state(const object_runtime_state *state)
 	}
 	if (state->num_objects != live_count || state->highest_object_index != highest_live)
 		return 0;
-	for (i = state->num_objects; i < MAX_OBJECTS; i++) {
+	for (i = state->num_objects; i < object_capacity(); i++) {
 		int objnum = state->free_obj_list[i];
-		if (objnum < 0 || objnum >= MAX_OBJECTS || free_seen[objnum] ||
+		if (objnum < 0 || objnum >= object_capacity() || free_seen[objnum] ||
 		    Objects[objnum].type != OBJ_NONE)
 			return 0;
 		free_seen[objnum] = 1;
 	}
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < object_capacity(); i++)
 		if ((Objects[i].type == OBJ_NONE) != (free_seen[i] != 0))
 			return 0;
 	return 1;
@@ -1227,8 +1238,10 @@ void object_set_runtime_state(const object_runtime_state *state)
 	Highest_object_index = state->highest_object_index;
 	if (Highest_object_index > Highest_ever_object_index)
 		Highest_ever_object_index = Highest_object_index;
-	memcpy(free_obj_list, state->free_obj_list, sizeof(free_obj_list));
-	object_signature_seed = (short)(state->signature_seed < 0 ? 0 : state->signature_seed);
+	memcpy(free_obj_list, state->free_obj_list, (size_t)object_capacity() * sizeof(free_obj_list[0]));
+	for (i = object_capacity(); i < MAX_OBJECTS; ++i)
+		free_obj_list[i] = i;
+	object_signature_seed = state->signature_seed < 0 ? 0 : state->signature_seed;
 	homerFrameCount = state->homer_frame_count;
 	currentHomerFrameTime = state->current_homer_frame_time;
 	doHomerFrame = state->do_homer_frame;
@@ -1428,10 +1441,8 @@ int obj_get_signature()
 	while (!free)
 	{
 		free = 1;
-		object_signature_seed++;
-		if (object_signature_seed < 0)
-			object_signature_seed = 0;
-		for (i = 0; i < MAX_OBJECTS; i++)
+		object_signature_seed = object_signature_seed >= object_signature_limit() ? 0 : object_signature_seed + 1;
+		for (i = 0; i < object_capacity(); i++)
 		{
 			if ((object_signature_seed == Objects[i].signature) && (Objects[i].type != OBJ_NONE))
 			{
@@ -1454,8 +1465,14 @@ int	Unused_object_slots;
 int obj_allocate(void)
 {
 	int objnum;
+#ifdef DXX_XL_RUNTIME
+	if (!object_cleanup_active && xl_level_extensions_active() && num_objects >= object_capacity() - 2) {
+		xl_object_reclaim(object_capacity() - 10);
+		obj_delete_all_that_should_be_dead();
+	}
+#endif
 
-	if ( num_objects >= MAX_OBJECTS ) {
+	if ( num_objects >= object_capacity() ) {
 		return -1;
 	}
 
@@ -1503,26 +1520,32 @@ void obj_free(int objnum)
 //	Returns number of slots freed.
 static void free_object_slots(int num_used)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_object_reclaim(num_used);
+		return;
+	}
+#endif
 	int	i, olind;
-	int	obj_list[MAX_OBJECTS];
+	int	obj_list[DXX_CLASSIC_MAX_OBJECTS];
 	int	num_already_free, num_to_free;
 
 	olind = 0;
-	num_already_free = MAX_OBJECTS - Highest_object_index - 1;
+	num_already_free = object_capacity() - Highest_object_index - 1;
 
-	if (MAX_OBJECTS - num_already_free < num_used)
+	if (object_capacity() - num_already_free < num_used)
 		return;
 
 	for (i=0; i<=Highest_object_index; i++) {
 		if (Objects[i].flags & OF_SHOULD_BE_DEAD) {
 			num_already_free++;
-			if (MAX_OBJECTS - num_already_free < num_used)
+			if (object_capacity() - num_already_free < num_used)
 				return;
 		} else
 			switch (Objects[i].type) {
 				case OBJ_NONE:
 					num_already_free++;
-					if (MAX_OBJECTS - num_already_free < num_used)
+					if (object_capacity() - num_already_free < num_used)
 						return;
 					break;
 				case OBJ_WALL:
@@ -1548,7 +1571,7 @@ static void free_object_slots(int num_used)
 
 	}
 
-	num_to_free = MAX_OBJECTS - num_used - num_already_free;
+	num_to_free = object_capacity() - num_used - num_already_free;
 
 	if (num_to_free > olind) {
 		num_to_free = olind;
@@ -1686,7 +1709,7 @@ int obj_create(enum object_type_t type,ubyte id,int segnum,const vms_vector *pos
 		obj->ctype.laser_info.creation_time = GameTime64;
 		obj->ctype.laser_info.creation_framecount = homerFrameCount;
 		obj->ctype.laser_info.last_hitobj = -1;
-		memset(&obj->ctype.laser_info.hitobj_list, 0, sizeof(ubyte)*MAX_OBJECTS);
+		memset(&obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 		obj->ctype.laser_info.multiplier = F1_0;
 	}
 
@@ -2217,6 +2240,7 @@ void obj_delete_all_that_should_be_dead()
 	object *objp;
 	int		local_dead_player_object=-1;
 
+	object_cleanup_active = 1;
 	// Move all objects
 	objp = Objects;
 
@@ -2242,6 +2266,7 @@ void obj_delete_all_that_should_be_dead()
 		}
 		objp++;
 	}
+	object_cleanup_active = 0;
 }
 
 //when an object has moved into a new segment, this function unlinks it

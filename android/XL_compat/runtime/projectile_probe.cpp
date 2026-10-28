@@ -88,7 +88,7 @@ std::vector<xl_projectile_state> capture()
 		xl_projectile_state state{};
 		const auto &object = Objects[owner];
 		const int found = xl_projectile_state_get(owner, &state);
-		debug_log(DLOG_GAME, "Projectile probe owner=%d found=%d type=%d control=%d movement=%d signature=%d flags=%d physics=%d velocity=%d,%d,%d life=%d hits=%d", owner, found, object.type, object.control_type, object.movement_type, object.signature, object.flags, object.mtype.phys_info.flags, object.mtype.phys_info.velocity.x, object.mtype.phys_info.velocity.y, object.mtype.phys_info.velocity.z, object.lifeleft, state.count);
+		debug_log_force(DLOG_GAME, "Projectile probe owner=%d found=%d type=%d control=%d movement=%d signature=%d flags=%d physics=%d velocity=%d,%d,%d life=%d hits=%d", owner, found, object.type, object.control_type, object.movement_type, object.signature, object.flags, object.mtype.phys_info.flags, object.mtype.phys_info.velocity.x, object.mtype.phys_info.velocity.y, object.mtype.phys_info.velocity.z, object.lifeleft, state.count);
 		require(found, "Missing earned projectile owner");
 		result.push_back(state);
 	}
@@ -145,13 +145,14 @@ const char *xl_projectile_probe(const char *operation)
 			contact(second, victims.back().owner);
 			victims.front().shields = victims.back().shields = i2f(20);
 			int flight_room = -1, clearance = 0;
+			char source_file[] = __FILE__;
 			vms_vector flight_center{};
 			for (int i = 0; i < Num_segments; ++i) {
 				if (Segments[i].objects >= 0) continue;
 				vms_vector candidate;
 				compute_segment_center(&candidate, &Segments[i]);
 				for (int radius = clearance + 1; radius <= 100; ++radius) {
-					if (get_seg_masks(&candidate, i, i2f(radius), __FILE__, __LINE__).facemask) break;
+					if (get_seg_masks(&candidate, i, i2f(radius), source_file, __LINE__).facemask) break;
 					flight_room = i;
 					flight_center = candidate;
 					clearance = radius;
@@ -165,7 +166,7 @@ const char *xl_projectile_probe(const char *operation)
 				Objects[owner].last_pos = Objects[owner].pos;
 				Objects[owner].mtype.phys_info.velocity = { 0, 0, Weapon_info[FUSION_ID].speed[Difficulty_level] };
 			}
-			debug_log(DLOG_GAME, "Projectile probe flight room=%d clearance=%d", flight_room, clearance);
+			debug_log_force(DLOG_GAME, "Projectile probe flight room=%d clearance=%d", flight_room, clearance);
 			earned = capture();
 			verify();
 		} else if (!std::strcmp(operation, "verify")) {

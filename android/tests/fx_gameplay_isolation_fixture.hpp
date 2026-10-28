@@ -10,7 +10,7 @@ static nlohmann::json fx_isolation_gameplay_snapshot()
 		            { "allocator", { allocator.num_objects, allocator.highest_object_index, allocator.signature_seed } },
 		            { "free", json::array() },
 		            { "objects", json::object() } };
-	for (int i = allocator.num_objects; i < MAX_OBJECTS; ++i) result["free"].push_back(allocator.free_obj_list[i]);
+	for (int i = allocator.num_objects; i < classic_object_capacity; ++i) result["free"].push_back(allocator.free_obj_list[i]);
 	for (int slot = 0; slot <= Highest_object_index; ++slot) {
 		const auto &object = Objects[slot];
 		if (object.type == OBJ_NONE) continue;
@@ -54,7 +54,7 @@ static void test_fireball_original_geometry(bool check_rng = true)
 				init_test_corridor();
 				ConsoleObject->size = condition == 1 ? 512 * F1_0 : F1_0;
 				if (condition == 2)
-					for (int slot = 1; slot < MAX_OBJECTS; ++slot)
+					for (int slot = 1; slot < classic_object_capacity; ++slot)
 						require(obj_create(OBJ_LIGHT, 0, 0, &ConsoleObject->pos, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE) >= 0, "fill actual object pool");
 				const fix scale = 3 * F1_0;
 				d_srand(1234);

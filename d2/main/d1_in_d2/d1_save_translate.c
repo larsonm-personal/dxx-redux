@@ -99,7 +99,7 @@ typedef struct d1_save_translate_world_state {
 typedef struct d1_save_translate_ai_state {
 	int ai_initialized;
 	int overall_agitation;
-	ai_local local_info[MAX_OBJECTS];
+	ai_local local_info[DXX_CLASSIC_MAX_OBJECTS];
 	point_seg point_segs[MAX_POINT_SEGS];
 	ai_cloak_info cloak_info[D1_SAVE_MAX_AI_CLOAK_INFO];
 	fix64 boss_cloak_start_time;
@@ -614,7 +614,7 @@ static int d1_save_translate_read_object_control(d1_save_translate_reader *reade
 		memset(obj->ctype.laser_info.hitobj_list, 0,
 		       sizeof(obj->ctype.laser_info.hitobj_list));
 		if (obj->ctype.laser_info.last_hitobj >= 0 &&
-		    obj->ctype.laser_info.last_hitobj < MAX_OBJECTS)
+		    obj->ctype.laser_info.last_hitobj < DXX_CLASSIC_MAX_OBJECTS)
 			obj->ctype.laser_info
 			    .hitobj_list[obj->ctype.laser_info.last_hitobj] = 1;
 		break;
@@ -1011,7 +1011,7 @@ static int d1_save_translate_read_d1_ai_state(
 	if (!d1_save_translate_read_s32(reader, &state->ai_initialized) ||
 	    !d1_save_translate_read_s32(reader, &state->overall_agitation))
 		return 0;
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < DXX_CLASSIC_MAX_OBJECTS; i++)
 		if (!d1_save_translate_read_ai_local(reader, &state->local_info[i]))
 			return 0;
 	for (i = 0; i < MAX_POINT_SEGS; i++)
@@ -1496,20 +1496,20 @@ static int d1_save_translate_read_weapon_fidelity_state(
 static int d1_save_translate_validate_runtime_allocator(
 	const object_runtime_state *state, const object *objects, int object_count)
 {
-	ubyte seen[MAX_OBJECTS];
+	ubyte seen[DXX_CLASSIC_MAX_OBJECTS];
 	int i;
 	int live_count = 0;
 	int highest_live = -1;
 
-	if (!state || !objects || object_count <= 0 || object_count > MAX_OBJECTS ||
-	    state->num_objects < 0 || state->num_objects > MAX_OBJECTS ||
+	if (!state || !objects || object_count <= 0 || object_count > DXX_CLASSIC_MAX_OBJECTS ||
+	    state->num_objects < 0 || state->num_objects > DXX_CLASSIC_MAX_OBJECTS ||
 	    state->highest_object_index < -1 ||
-	    state->highest_object_index >= MAX_OBJECTS ||
+	    state->highest_object_index >= DXX_CLASSIC_MAX_OBJECTS ||
 	    state->signature_seed < 0 ||
 	    (state->do_homer_frame != 0 && state->do_homer_frame != 1))
 		return 0;
 	memset(seen, 0, sizeof(seen));
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < DXX_CLASSIC_MAX_OBJECTS; i++)
 		if (i < object_count && objects[i].type != OBJ_NONE) {
 			live_count++;
 			highest_live = i;
@@ -1517,14 +1517,14 @@ static int d1_save_translate_validate_runtime_allocator(
 	if (state->num_objects != live_count ||
 	    state->highest_object_index != highest_live)
 		return 0;
-	for (i = state->num_objects; i < MAX_OBJECTS; i++) {
+	for (i = state->num_objects; i < DXX_CLASSIC_MAX_OBJECTS; i++) {
 		int objnum = state->free_obj_list[i];
-		if (objnum < 0 || objnum >= MAX_OBJECTS || seen[objnum] ||
+		if (objnum < 0 || objnum >= DXX_CLASSIC_MAX_OBJECTS || seen[objnum] ||
 		    (objnum < object_count && objects[objnum].type != OBJ_NONE))
 			return 0;
 		seen[objnum] = 1;
 	}
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < DXX_CLASSIC_MAX_OBJECTS; i++)
 		if ((i >= object_count || objects[i].type == OBJ_NONE) != (seen[i] != 0))
 			return 0;
 	return 1;
@@ -1533,7 +1533,7 @@ static int d1_save_translate_validate_runtime_allocator(
 static int d1_save_translate_read_morph_state(d1_save_translate_reader *reader,
                                               const object *objects, int object_count, d1_save_translate_runtime_state *state)
 {
-	ubyte seen[MAX_OBJECTS] = { 0 };
+	ubyte seen[DXX_CLASSIC_MAX_OBJECTS] = { 0 };
 	int i, j;
 	if (!d1_save_translate_read_s32(reader, &state->morph_count) ||
 	    state->morph_count < 0 || state->morph_count > MAX_MORPH_OBJECTS)
@@ -1674,12 +1674,12 @@ static int d1_save_translate_read_runtime_state(
 	                                &state->object_state.highest_object_index))
 		return 0;
 	if (state->object_state.num_objects < 1 ||
-	    state->object_state.num_objects > MAX_OBJECTS ||
+	    state->object_state.num_objects > DXX_CLASSIC_MAX_OBJECTS ||
 	    state->object_state.highest_object_index < 0 ||
-	    state->object_state.highest_object_index >= MAX_OBJECTS ||
+	    state->object_state.highest_object_index >= DXX_CLASSIC_MAX_OBJECTS ||
 	    !game_d_tick_state_is_valid(&state->d_tick_state))
 		return 0;
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < DXX_CLASSIC_MAX_OBJECTS; i++)
 		if (!d1_save_translate_read_s16(
 		        reader, &state->object_state.free_obj_list[i]))
 			return 0;
@@ -1953,7 +1953,7 @@ int d1_save_translate_apply_checkpoint_objects(
 	const char *failure = "allocation";
 
 	if (!data || !start || start->object_count <= 0 ||
-	    start->object_count > MAX_OBJECTS ||
+	    start->object_count > DXX_CLASSIC_MAX_OBJECTS ||
 	    start->object_stream_offset >= size)
 		return 0;
 	translated_objects = (object *)calloc((size_t)start->object_count,

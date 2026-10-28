@@ -12,7 +12,7 @@ extern "C" {
 #define LEVEL_METADATA_MAX_WALLS                            DXX_XL_MAX_WALLS
 #define LEVEL_METADATA_MAX_TRIGGERS                         DXX_XL_MAX_TRIGGERS
 #define LEVEL_METADATA_MAX_TRIGGER_ACTIONS                  16
-#define LEVEL_METADATA_MAX_OBJECTS                          1000
+#define LEVEL_METADATA_MAX_OBJECTS                          DXX_XL_MAX_OBJECTS
 #define LEVEL_METADATA_MAX_SIDES                            6
 #define LEVEL_METADATA_MAX_TARGETS                          512
 #define LEVEL_METADATA_MAX_ROUTE_STEPS                      96

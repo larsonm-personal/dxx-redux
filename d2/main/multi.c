@@ -756,7 +756,7 @@ int objnum_remote_to_local(int remote_objnum, int owner)
 	if (owner == -1)
 		return(remote_objnum);
 
-	if ((remote_objnum < 0) || (remote_objnum >= MAX_OBJECTS))
+	if ((remote_objnum < 0) || (remote_objnum >= DXX_CLASSIC_MAX_OBJECTS))
 		return(-1);
 
 	result = remote_to_local[owner][remote_objnum];
@@ -807,9 +807,9 @@ map_objnum_local_to_remote(int local_objnum, int remote_objnum, int owner)
 	// Add a mapping from a network remote object number to a local one
 
 	Assert(local_objnum > -1);
-	Assert(local_objnum < MAX_OBJECTS);
+	Assert(local_objnum < DXX_CLASSIC_MAX_OBJECTS);
 	Assert(remote_objnum > -1);
-	Assert(remote_objnum < MAX_OBJECTS);
+	Assert(remote_objnum < DXX_CLASSIC_MAX_OBJECTS);
 	Assert(owner > -1);
 	Assert(owner != Player_num);
 
@@ -827,7 +827,7 @@ map_objnum_local_to_local(int local_objnum)
 	// Add a mapping for our locally created objects
 
 	Assert(local_objnum > -1);
-	Assert(local_objnum < MAX_OBJECTS);
+	Assert(local_objnum < DXX_CLASSIC_MAX_OBJECTS);
 
 	object_owner[local_objnum] = Player_num;
 	remote_to_local[Player_num][local_objnum] = local_objnum;
@@ -838,9 +838,9 @@ map_objnum_local_to_local(int local_objnum)
 
 void reset_network_objects()
 {
-	memset(local_to_remote, -1, MAX_OBJECTS*sizeof(short));
-	memset(remote_to_local, -1, MAX_PLAYERS*MAX_OBJECTS*sizeof(short));
-	memset(object_owner, -1, MAX_OBJECTS);
+	memset(local_to_remote, -1, sizeof(local_to_remote));
+	memset(remote_to_local, -1, sizeof(remote_to_local));
+	memset(object_owner, -1, sizeof(object_owner));
 }
 
 int multi_objnum_is_past(int objnum)
@@ -3414,7 +3414,7 @@ void
 multi_reset_player_object(object *objp)
 {
 #ifdef __ANDROID__
-	if (objp >= Objects && objp < Objects + MAX_OBJECTS && objp->type != OBJ_PLAYER && objp->type != OBJ_GHOST) {
+	if (objp >= Objects && objp < Objects + DXX_CLASSIC_MAX_OBJECTS && objp->type != OBJ_PLAYER && objp->type != OBJ_GHOST) {
 		REJOIN_LOG("bad_player_object obj=%d type=%d id=%d", (int) (objp - Objects), objp->type, objp->id);
 		rejoin_diag_world("bad_player_object");
 	}
@@ -3690,7 +3690,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 				return 0;
 			for (int i = 0; i < buf[25]; ++i) {
 				const int remote_objnum = GET_INTEL_SHORT(buf + 26 + 2 * i);
-				if (remote_objnum < -1 || remote_objnum >= MAX_OBJECTS)
+				if (remote_objnum < -1 || remote_objnum >= DXX_CLASSIC_MAX_OBJECTS)
 					return 0;
 			}
 			break;
@@ -3704,7 +3704,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 		case MULTI_REMOVE_OBJECT: {
 			const int remote_objnum = GET_INTEL_SHORT(buf + 1);
 			const int owner = (sbyte) buf[3];
-			if (remote_objnum < 1 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+			if (remote_objnum < 1 || remote_objnum >= DXX_CLASSIC_MAX_OBJECTS || owner < -1 || owner >= N_players)
 				return 0;
 			/* The normal copy can remove the object before its reliable twin is
 			 * validated.  The handler performs the state-dependent safe drop. */
@@ -3717,7 +3717,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 		case MULTI_ROBOT_FIRE: {
 			const int remote_objnum = GET_INTEL_SHORT(buf + 2);
 			const int owner = (sbyte) buf[4];
-			if (remote_objnum < 0 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+			if (remote_objnum < 0 || remote_objnum >= DXX_CLASSIC_MAX_OBJECTS || owner < -1 || owner >= N_players)
 				return 0;
 			/* Robot state can legitimately be obsolete by the time a reliable
 			 * retry arrives.  Each handler bounds and type-checks mapped state. */
@@ -3729,8 +3729,8 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 			const int killer_owner = (sbyte) buf[4];
 			const int remote_objnum = GET_INTEL_SHORT(buf + 5);
 			const int owner = (sbyte) buf[7];
-			if (killer < -1 || killer >= MAX_OBJECTS || killer_owner < -1 || killer_owner >= N_players ||
-			    remote_objnum < 0 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+			if (killer < -1 || killer >= DXX_CLASSIC_MAX_OBJECTS || killer_owner < -1 || killer_owner >= N_players ||
+			    remote_objnum < 0 || remote_objnum >= DXX_CLASSIC_MAX_OBJECTS || owner < -1 || owner >= N_players)
 				return 0;
 			break;
 		}
@@ -3739,7 +3739,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 		case MULTI_KILL_HOST: {
 			const int killer = GET_INTEL_SHORT(buf + 2);
 			const int owner = (sbyte) buf[4];
-			if (killer < -1 || killer >= MAX_OBJECTS || owner < -1 || owner >= N_players)
+			if (killer < -1 || killer >= DXX_CLASSIC_MAX_OBJECTS || owner < -1 || owner >= N_players)
 				return 0;
 			if (killer > 0) {
 				objnum = objnum_remote_to_local(killer, owner);
@@ -3819,7 +3819,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 		case MULTI_DROP_FLAG:
 		case MULTI_DROP_ORB:
 			if (buf[1] >= MAX_POWERUP_TYPES || GET_INTEL_SHORT(buf + 4) < 0 ||
-			    GET_INTEL_SHORT(buf + 4) >= MAX_OBJECTS)
+			    GET_INTEL_SHORT(buf + 4) >= DXX_CLASSIC_MAX_OBJECTS)
 				return 0;
 			break;
 
@@ -3835,7 +3835,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 
 		case MULTI_CREATE_ROBOT:
 			if (buf[2] >= Num_fuelcenters || GET_INTEL_SHORT(buf + 3) < 0 ||
-			    GET_INTEL_SHORT(buf + 3) >= MAX_OBJECTS || buf[5] >= N_robot_types)
+			    GET_INTEL_SHORT(buf + 3) >= DXX_CLASSIC_MAX_OBJECTS || buf[5] >= N_robot_types)
 				return 0;
 			break;
 
@@ -3852,7 +3852,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 			    (action != BOSS_ACTION_HUD_SHOT && (action < 1 || action > 5)) ||
 			    (action == 1 && secondary >= (unsigned) Num_boss_teleport_segs) ||
 			    (action == 3 && (secondary >= N_robot_types || remote_objnum < 0 ||
-			                     remote_objnum >= MAX_OBJECTS || segnum < 0 || segnum > Highest_segment_index)))
+			                     remote_objnum >= DXX_CLASSIC_MAX_OBJECTS || segnum < 0 || segnum > Highest_segment_index)))
 				return 0;
 			break;
 		}
@@ -5113,9 +5113,9 @@ int is_dupable_secondary(int id) {
 
 int multi_received_objects = 0; 
 
-ubyte original_object_types[MAX_OBJECTS];
+ubyte original_object_types[DXX_CLASSIC_MAX_OBJECTS];
 void save_original_objects() {
-	for (int i=0; i<MAX_OBJECTS; i++) {
+	for (int i=0; i<DXX_CLASSIC_MAX_OBJECTS; i++) {
 		original_object_types[i] = Objects[i].type; 
 	}
 }

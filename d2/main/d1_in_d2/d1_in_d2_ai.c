@@ -118,7 +118,7 @@ int d1_in_d2_ai_swap_object(object_rw *saved)
 void d1_in_d2_ai_reset_saved_storage(void)
 {
 	int i;
-	for (i = 0; i < MAX_OBJECTS; ++i) {
+	for (i = 0; i < DXX_CLASSIC_MAX_OBJECTS; ++i) {
 		memset(&Ai_local_info[i].d1_saved, 0, sizeof(Ai_local_info[i].d1_saved));
 		if (Objects[i].control_type == CT_AI || Objects[i].control_type == CT_MORPH)
 			memset(&Objects[i].ctype.ai_info.d1_saved, 0, sizeof(Objects[i].ctype.ai_info.d1_saved));
@@ -127,7 +127,7 @@ void d1_in_d2_ai_reset_saved_storage(void)
 
 void d1_in_d2_ai_write_saved_storage(rewind_file *fp)
 {
-	const int count = d1_in_d2_use_d1_gameplay() ? MAX_OBJECTS : 0;
+	const int count = d1_in_d2_use_d1_gameplay() ? DXX_CLASSIC_MAX_OBJECTS : 0;
 	int i;
 	PHYSFS_write(fp, &count, sizeof(count), 1);
 	for (i = 0; i < count; ++i) {
@@ -148,13 +148,13 @@ void d1_in_d2_ai_write_saved_storage(rewind_file *fp)
 
 int d1_in_d2_ai_read_saved_storage(rewind_file *fp, int swap, int apply)
 {
-	d1_ai_static_storage states[MAX_OBJECTS];
-	d1_ai_local_storage locals[MAX_OBJECTS];
+	d1_ai_static_storage states[DXX_CLASSIC_MAX_OBJECTS];
+	d1_ai_local_storage locals[DXX_CLASSIC_MAX_OBJECTS];
 	int count, i;
 	if (PHYSFS_read(fp, &count, sizeof(count), 1) != 1)
 		return 0;
 	if (swap) count = SWAPINT(count);
-	if (count != (d1_in_d2_use_d1_gameplay() ? MAX_OBJECTS : 0))
+	if (count != (d1_in_d2_use_d1_gameplay() ? DXX_CLASSIC_MAX_OBJECTS : 0))
 		return 0;
 	for (i = 0; i < count; ++i) {
 		d1_ai_static_storage *state = &states[i];

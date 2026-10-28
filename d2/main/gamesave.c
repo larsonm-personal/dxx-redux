@@ -1097,7 +1097,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	Gamesave_num_org_robots = 0;
 	Gamesave_num_players = 0;
 
-	if (!level_section_seek(LoadFile, object_offset, gs_num_objects, MAX_OBJECTS,
+	if (!level_section_seek(LoadFile, object_offset, gs_num_objects, object_capacity(),
 	                        LEVEL_OBJECT_MINIMUM_SERIALIZED_SIZE, "objects"))
 		return -1;
 	if (object_offset > -1) {

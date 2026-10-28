@@ -1,3 +1,4 @@
+#include "object_capacity.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "android_log.h"
@@ -261,7 +262,7 @@ static void remove_world(coop_recovery_item *item, int absorb)
 static int mapped_object(const coop_recovery_item *item)
 {
 	sbyte owner;
-	if (item->world_level != Current_level_num || item->remote_index < 0 || item->remote_index >= MAX_OBJECTS ||
+	if (item->world_level != Current_level_num || item->remote_index < 0 || item->remote_index >= NETWORK_OBJECT_CAPACITY ||
 	    item->network_owner < -1 || item->network_owner >= N_players) return -1;
 	int objnum = objnum_remote_to_local(item->remote_index, item->network_owner);
 	if (objnum < 0 || objnum > Highest_object_index ||
