@@ -1,0 +1,43 @@
+{
+    "status": "inspection_only",
+    "playable": false,
+    "evidence_bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+    "levels": [
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/dinter.hog::dinter.rl2",
+            "level": "dinter.rl2",
+            "sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "format": "23/40",
+            "objects": 1857,
+            "runtime_slots": 3714,
+            "decoded": true,
+            "playable": false,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "lighting capacity",
+                "object_trigger_type",
+                "segment_damage",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger_type",
+                "wall_flags"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/sirius/antholgy.hog::antholgy.rl2",
+            "level": "antholgy.rl2",
+            "sha256": "6ec9cf65b1858ce811a0e598161a043933bbd6c0a67f568bf09420fd33f9c9e2",
+            "format": "23/40",
+            "objects": 1279,
+            "runtime_slots": 2558,
+            "decoded": true,
+            "playable": false,
+            "runtime_blockers": ["effect_object_types", "effect_particles", "segment_function_v21", "trigger_type"]
+        }
+    ]
+}

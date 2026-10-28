@@ -32,8 +32,15 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  * CONSTANTS
  */
  						
-#define MAX_OBJECTS     1000 // What is this, 1994? -- CED //350 // increased on 01/24/95 for multiplayer. --MK;  total number of objects in world
-#define MAX_USED_OBJECTS	(MAX_OBJECTS-20)
+// What is this, 1994? -- CED //350 // increased on 01/24/95 for multiplayer. --MK;  total number of objects in world
+#include "../../android/XL_compat/capacity.h"
+#ifdef DXX_XL_RUNTIME
+#define MAX_OBJECTS DXX_XL_MAX_OBJECTS
+#else
+#define MAX_OBJECTS DXX_CLASSIC_MAX_OBJECTS
+#endif
+#include "object_capacity.h"
+#define MAX_USED_OBJECTS (object_capacity()-20)
 
 // Object types
 enum object_type_t
@@ -199,7 +206,7 @@ typedef struct laser_info {
 	int     parent_signature;   // The object's parent's signature...
 	fix64   creation_time;      // Absolute time of creation.
 	short   last_hitobj;        // For persistent weapons (survive object collision), object it most recently hit.
-	ubyte   hitobj_list[MAX_OBJECTS]; // list of all objects persistent weapon has already damaged (useful in case it's in contact with two objects at the same time)
+	ubyte   hitobj_list[DXX_CLASSIC_MAX_OBJECTS]; // list of all objects persistent weapon has already damaged (useful in case it's in contact with two objects at the same time)
 	short   track_goal;         // Object this object is tracking.
 	fix     multiplier;         // Power if this is a fusion bolt (or other super weapon to be added).
 	int     creation_framecount;
@@ -216,7 +223,7 @@ typedef struct laser_info_rw {
 	fix     multiplier;         // Power if this is a fusion bolt (or other super weapon to be added).
 } __pack__ laser_info_rw;
 
-extern ubyte hitobj_list[MAX_OBJECTS][MAX_OBJECTS];
+extern ubyte hitobj_list[DXX_CLASSIC_MAX_OBJECTS][DXX_CLASSIC_MAX_OBJECTS];
 
 typedef struct explosion_info {
     fix     spawn_time;         // when lifeleft is < this, spawn another

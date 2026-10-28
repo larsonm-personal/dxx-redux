@@ -26,6 +26,7 @@
 #include "equipment.h"
 #include "persistence_probe.h"
 #include "projectile_probe.h"
+#include "object_capacity_probe.h"
 #include "corona_probe.h"
 #endif
 
@@ -126,6 +127,7 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "maths.h"
 #include "coop/coop_powerup_duplication.h"
 #include "object.h"
+#include "object_capacity.h"
 #include "collide.h"
 #include "boss_hud.h"
 #include "hudmsg.h"
@@ -7388,6 +7390,8 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "checkpoint_cycle") {
 #ifdef __ANDROID__
 				static rewind_memory_buffer reference = {}, checkpoint = {};
+				static object_runtime_state captured_allocator{};
+				static int captured_object_capacity;
 				static int ready, level, score, energy, ammo, disk;
 				static vms_vector position;
 				static int64_t captured_time, collision_time;
@@ -7404,6 +7408,8 @@ extern "C" void game_automate_tick(void)
 					ammo = Players[Player_num].secondary_ammo[0];
 					position = ConsoleObject->pos;
 					captured_time = GameTime64;
+					object_get_runtime_state(&captured_allocator);
+					captured_object_capacity = object_capacity();
 					collision_time = collide_get_collision_delay_last_play_time();
 					/* Keep both saves at the same game and wall-clock epoch */
 					stop_time();
@@ -7474,6 +7480,13 @@ extern "C" void game_automate_tick(void)
 						    memcmp(&ConsoleObject->pos, &position, sizeof(position)) ||
 						    memcmp(frozen.data(), restore.buffer.data, frozen.size())) {
 							stop_script_fail("Checkpoint load changed its input or failed to restore captured world state");
+							break;
+						}
+						object_runtime_state restored_allocator{};
+						object_get_runtime_state(&restored_allocator);
+						if (object_capacity() != captured_object_capacity || restored_allocator.num_objects != captured_allocator.num_objects || restored_allocator.highest_object_index != captured_allocator.highest_object_index || restored_allocator.signature_seed != captured_allocator.signature_seed || memcmp(restored_allocator.free_obj_list, captured_allocator.free_obj_list, captured_object_capacity * sizeof(short))) {
+							LOGE("Checkpoint allocator round=%d count=%d/%d highest=%d/%d signature=%d/%d", round, captured_allocator.num_objects, restored_allocator.num_objects, captured_allocator.highest_object_index, restored_allocator.highest_object_index, captured_allocator.signature_seed, restored_allocator.signature_seed);
+							stop_script_fail("Checkpoint did not restore exact object allocator before simulation");
 							break;
 						}
 						stop_time();
@@ -7579,6 +7592,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled projectile %s passed", s.value.c_str());
 #else
 				stop_script_fail("Projectile probe requires Android D2");
+#endif
+			} else if (s.field == "xl_object_capacity_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_object_capacity_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled object pool %s passed", s.value.c_str());
+#else
+				stop_script_fail("Object capacity probe requires Android D2");
 #endif
 			} else if (s.field == "xl_pilot_persistence") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

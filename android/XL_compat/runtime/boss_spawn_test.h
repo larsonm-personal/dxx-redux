@@ -105,7 +105,7 @@ static void boss_reference_samples(const std::filesystem::path &output, char *ba
 				if (object.type == OBJ_ROBOT && object.matcen_creator == BOSS_GATE_MATCEN_NUM) ++population;
 				if (i != owner && object.segnum == segment && (object.type == OBJ_ROBOT || object.type == OBJ_PLAYER || object.type == OBJ_CNTRLCEN)) obstacles.push_back(i);
 			}
-			file << difficulty << ' ' << FrameTime << ' ' << states[0].elapsed << ' ' << states[0].interval << ' ' << requested << ' ' << attached << ' ' << population << ' ' << (num_objects < MAX_OBJECTS) << ' ' << Game_suspended << ' ' << int(Objects[owner].id) << ' ' << Objects[owner].size;
+			file << difficulty << ' ' << FrameTime << ' ' << states[0].elapsed << ' ' << states[0].interval << ' ' << requested << ' ' << attached << ' ' << population << ' ' << (num_objects < object_capacity()) << ' ' << Game_suspended << ' ' << int(Objects[owner].id) << ' ' << Objects[owner].size;
 			vector(Objects[owner].pos);
 			vms_vector center;
 			compute_segment_center(&center, &Segments[segment]);

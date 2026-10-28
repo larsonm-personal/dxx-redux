@@ -202,6 +202,8 @@ extern void init_seismic_disturbances(void);
 #define ND_EVENT_KILL_SOUND_TO_OBJ		50	// record digi_kill_sound_linked_to_object
 #define ND_EVENT_PLAYER_CONTROL_TRACE		51	// player control and wiggle state captured during recording
 #define ND_EVENT_D1_ASSET_IDENTITY		52	// level byte, digest length byte, source digests
+#define ND_OBJECT_WIDE_SIGNATURE 255 /* Private object wrapper; classic render types never use 255 */
+
 #define ND_EVENT_WIDE_CLOAKING_WALL		53	// cloak event with 16-bit wall identities
 
 
@@ -821,6 +823,7 @@ void nd_read_object(object *obj, int capacity_only)
 	object *decoded = &staged;
 	object *attach_parent = NULL;
 	short shortsig = 0;
+	int wide_signature = 0;
 	if (nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE && !nd_playback_v_asset_identity_valid) {
 		nd_playback_v_asset_error = "D1 demo frame has no asset identity";
 		nd_playback_v_bad_read = -1;
@@ -834,12 +837,17 @@ void nd_read_object(object *obj, int capacity_only)
 	 * blow by all other object information
 	 */
 	nd_read_byte((sbyte *) &(decoded->render_type));
+	if (decoded->render_type == ND_OBJECT_WIDE_SIGNATURE) {
+		wide_signature = 1;
+		nd_read_byte((sbyte *) &(decoded->render_type));
+	}
 	nd_read_byte((sbyte *) &(decoded->type));
 	if (nd_playback_v_bad_read || !nd_demo_render_type_valid(decoded->render_type)) {
 		nd_playback_v_bad_read = -1;
 		return;
 	}
 	if ((decoded->render_type == RT_NONE) && (decoded->type != OBJ_CAMERA)) {
+		if (wide_signature) { nd_playback_v_bad_read = -1; return; }
 		if (decoded->type != OBJ_NONE && !nd_demo_object_type_valid(decoded->type)) {
 			nd_playback_v_bad_read = -1;
 			return;
@@ -854,8 +862,16 @@ void nd_read_object(object *obj, int capacity_only)
 
 	nd_read_byte((sbyte *) &(decoded->id));
 	nd_read_byte((sbyte *) &(decoded->flags));
-	nd_read_short(&shortsig);
-	decoded->signature = shortsig;  // It's OKAY! We made sure, obj->signature is never has a value which short cannot handle!!! We cannot do this otherwise, without breaking the demo format!
+	if (wide_signature) {
+		nd_read_int(&decoded->signature);
+		if (nd_playback_v_bad_read || decoded->signature <= SHRT_MAX || nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
+	} else {
+		nd_read_short(&shortsig);
+		decoded->signature = shortsig;
+	}
 	if (!nd_read_shortpos(decoded, capacity_only))
 		return;
 
@@ -1148,7 +1164,7 @@ void nd_read_object(object *obj, int capacity_only)
 void nd_write_object(object *obj)
 {
 	int life;
-	short shortsig = 0;
+	const int wide_signature = obj->signature > SHRT_MAX && (obj->render_type != RT_NONE || obj->type == OBJ_CAMERA);
 
 	if ((obj->type == OBJ_ROBOT) && (obj->id == SPECIAL_REACTOR_ROBOT))
 		Int3();
@@ -1157,6 +1173,7 @@ void nd_write_object(object *obj)
 	 * Do render_type first so on read, we can make determination of
 	 * what else to read in
 	 */
+	if (wide_signature) nd_write_byte((sbyte)ND_OBJECT_WIDE_SIGNATURE);
 	nd_write_byte(obj->render_type);
 	nd_write_byte(obj->type);
 	if ((obj->render_type == RT_NONE) && (obj->type != OBJ_CAMERA))
@@ -1164,8 +1181,8 @@ void nd_write_object(object *obj)
 
 	nd_write_byte(obj->id);
 	nd_write_byte(obj->flags);
-	shortsig = obj->signature;  // It's OKAY! We made sure, obj->signature is never has a value which short cannot handle!!! We cannot do this otherwise, without breaking the demo format!
-	nd_write_short(shortsig);
+	if (wide_signature) nd_write_int(obj->signature);
+	else nd_write_short((short)obj->signature);
 	nd_write_shortpos(obj);
 
 	if ((obj->type != OBJ_HOSTAGE) && (obj->type != OBJ_ROBOT) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_POWERUP) && (obj->type != OBJ_CLUTTER)) {

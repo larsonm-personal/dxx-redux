@@ -55,7 +55,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	require(blockers.empty(), blocker_message(blockers));
 	// Object actions remain in the owned source inventory, outside stock trigger storage
 	// Wide walls use an owned private encoding; other records retain stock widths
-	require(v.walls.size() <= DXX_XL_MAX_WALLS && v.objects.size() <= 1000 && v.segments.size() <= 9000,
+	require(v.walls.size() <= DXX_XL_MAX_WALLS && xl_object_capacity_for_count(v.objects.size()) <= DXX_XL_MAX_OBJECTS && v.segments.size() <= 9000,
 	        "stock representation capacity exceeded");
 	const bool wide_walls = v.walls.size() > DXX_CLASSIC_MAX_WALLS;
 

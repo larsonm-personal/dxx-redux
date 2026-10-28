@@ -3291,7 +3291,7 @@ static int net_udp_validate_sync_object(const object_rw *wire)
 #endif
 	if (decoded.type >= MAX_OBJECT_TYPES || decoded.type == OBJ_NONE ||
 	    decoded.segnum < -1 || decoded.segnum > Highest_segment_index ||
-	    decoded.attached_obj < -1 || decoded.attached_obj >= MAX_OBJECTS)
+	    decoded.attached_obj < -1 || decoded.attached_obj >= DXX_CLASSIC_MAX_OBJECTS)
 		goto invalid;
 	if (decoded.movement_type != MT_NONE && decoded.movement_type != MT_PHYSICS &&
 	    decoded.movement_type != MT_SPINNING)
@@ -3385,10 +3385,10 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 			if (obj_owner < 0)
 				return;
 		} else if (objnum == -2) {
-			if (remote_objnum < 0 || remote_objnum > MAX_OBJECTS)
+			if (remote_objnum < 0 || remote_objnum > DXX_CLASSIC_MAX_OBJECTS)
 				return;
 		} else {
-			if (objnum < 0 || objnum >= MAX_OBJECTS || remote_objnum < 0 || remote_objnum >= MAX_OBJECTS)
+			if (objnum < 0 || objnum >= DXX_CLASSIC_MAX_OBJECTS || remote_objnum < 0 || remote_objnum >= DXX_CLASSIC_MAX_OBJECTS)
 				return;
 			if (data_len - loc < (int) sizeof(object_rw)) {
 #ifdef __ANDROID__
@@ -3566,7 +3566,7 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 				if (obj->segnum != -1)
 					obj_unlink(objnum);
 				Assert(obj->segnum == -1);
-				Assert(objnum < MAX_OBJECTS);
+				Assert(objnum < DXX_CLASSIC_MAX_OBJECTS);
 				// Bounds check: need sizeof(object_rw) for body
 				if (loc + (int)sizeof(object_rw) > data_len) {
 					MPDIAG("read_object_packet: TRUNCATED at body %d/%d, loc=%d need=%d data_len=%d\n",

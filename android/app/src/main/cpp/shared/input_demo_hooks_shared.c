@@ -1,3 +1,4 @@
+#include "object_capacity.h"
 #include "input_demo_cheats.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -1325,11 +1326,11 @@ void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag)
 	diag->object_current_homer_frame_time = object_state.current_homer_frame_time;
 	diag->object_do_homer_frame = object_state.do_homer_frame;
 
-	if (free_start >= 0 && free_start <= MAX_OBJECTS) {
+	if (free_start >= 0 && free_start <= object_capacity()) {
 		int free_index;
 
-		diag->object_free_list_count = MAX_OBJECTS - free_start;
-		for (free_index = free_start; free_index < MAX_OBJECTS; ++free_index) {
+		diag->object_free_list_count = object_capacity() - free_start;
+		for (free_index = free_start; free_index < object_capacity(); ++free_index) {
 			const int head_index = free_index - free_start;
 			const short free_slot = object_state.free_obj_list[free_index];
 

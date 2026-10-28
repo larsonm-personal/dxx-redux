@@ -5,6 +5,7 @@
 #include "capacity.h"
 #include "wide_wall_fixture.h"
 #include "trigger_capacity_fixture.h"
+#include "object_capacity_fixture.h"
 
 #include <functional>
 #include <fstream>
@@ -116,6 +117,26 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 }
 
 std::string feature_row(const std::string &json, const char *id);
+
+void object_capacity_contract()
+{
+	for (int version : { 15, 17, 23 }) {
+		const auto original = fixture(version);
+		for (unsigned count : { 999u, 1000u, 1001u, 16383u, 16384u }) {
+			const auto bytes = xl_test::expand_objects(original, count);
+			const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+			check(probe.source.objects.size() == count, "High object source count lost");
+			check(probe.source.objects.back().type == 13, "High object record lost");
+		}
+		const auto excessive = xl_test::expand_objects(original, 16385);
+		check(xl_compat::blocker_message(xl_compat::runtime_blockers(xl_compat::inspect_level(excessive))).find("supported signed-index pool is 32768") != std::string::npos, "Object capacity rejection lacks exact limit");
+		rejects([&] { xl_compat::prepare_gameplay_probe(excessive); });
+		auto truncated = xl_test::expand_objects(original, 20000);
+		truncated.resize(xl_compat::inspect_level(truncated).objects.back().source_end - 1);
+		rejects([&] { xl_compat::inspect_level(truncated); });
+	}
+	std::cout << "Three-layout XL object boundaries, truncation and useful rejection passed\n";
+}
 
 void wide_wall_contract()
 {
@@ -1137,6 +1158,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		generator_assignment_contract();
+		object_capacity_contract();
 		wide_wall_contract();
 		trigger_capacity_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {

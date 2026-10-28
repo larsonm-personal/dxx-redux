@@ -249,6 +249,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_cloak_runtime'
             'test_xl_trigger_capacity_runtime'
             'test_xl_projectiles_runtime'
+            'test_xl_object_capacity_runtime'
             'test_xl_repair_runtime'
             'test_xl_format34_runtime'
             'test_xl_hxm_runtime'

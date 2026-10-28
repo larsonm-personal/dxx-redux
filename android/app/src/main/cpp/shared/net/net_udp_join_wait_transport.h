@@ -1,3 +1,4 @@
+#include "object_capacity.h"
 #ifndef NET_UDP_JOIN_WAIT_TRANSPORT_H
 #define NET_UDP_JOIN_WAIT_TRANSPORT_H
 
@@ -12,7 +13,7 @@ static int join_transfer_committed, join_previous_connected, join_previous_net_c
 static fix64 join_test_hold_until;
 static int join_test_early_sync, join_objects_complete;
 /* Sender object indices are unique within an attempt, before local remapping */
-static ubyte join_received_objects[MAX_OBJECTS];
+static ubyte join_received_objects[NETWORK_OBJECT_CAPACITY];
 static int join_received_clear;
 static unsigned join_early_syncs;
 static ubyte join_pending_end[UPID_MAX_SIZE];

@@ -58,7 +58,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	};
 	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
-	limit(level.objects.size() > 1000, "object capacity", "more than 1000 objects");
+	limit(xl_object_capacity_for_count(level.objects.size()) > DXX_XL_MAX_OBJECTS, "object capacity", ("authored objects require " + std::to_string(xl_object_capacity_for_count(level.objects.size())) + " runtime slots; supported signed-index pool is 32768").c_str());
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > DXX_XL_MAX_TRIGGERS, "trigger capacity", "more than 254 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");

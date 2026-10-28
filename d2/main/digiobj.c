@@ -63,7 +63,7 @@ typedef struct sound_object {
 		} pos;
 		struct {
 			short			objnum;				// Used if SOF_LINK_TO_OBJ field is used
-			short			objsignature;
+			int			objsignature;
 		} obj;
 	} link_type;
 } sound_object;

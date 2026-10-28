@@ -142,7 +142,7 @@ class save_endian_fixture
 	void ai_records()
 	{
 		words(4, 2);
-		for (int i = 0; i < MAX_OBJECTS; ++i) {
+		for (int i = 0; i < classic_object_capacity; ++i) {
 #ifdef DXX_BUILD_DESCENT_II
 			words(4, 15);
 #else
@@ -177,15 +177,15 @@ class save_endian_fixture
 	}
 	void runtime_records(int version)
 	{
-		words(4, 17);          // firing, RNG, tick and object extent
-		words(2, MAX_OBJECTS); // allocator
-		words(4, 8);           // signature, homing and common laser state
+		words(4, 17);                      // firing, RNG, tick and object extent
+		words(2, classic_object_capacity); // allocator
+		words(4, 8);                       // signature, homing and common laser state
 #ifdef DXX_BUILD_DESCENT_II
 		words(4, 3); // helix, smart mines, omega
 #endif
 		for (int i = 0; i < weapons; ++i) {
 			words(4);
-			skip(MAX_OBJECTS);
+			skip(classic_object_capacity);
 		}
 		for (int i = count(); i; --i) {
 			words(4, 2);         // morph object/signature
@@ -203,8 +203,8 @@ class save_endian_fixture
 			words(4);
 		}
 #ifdef DXX_BUILD_DESCENT_II
-		words(4, 2 + MAX_OBJECTS); // reactor runtime and afterburner clocks
-		words(4, 2);               // path collection and companion polish ticks
+		words(4, 2 + classic_object_capacity); // reactor runtime and afterburner clocks
+		words(4, 2);                           // path collection and companion polish ticks
 #else
 		words(4); // reactor death silence
 		words(4); // path collection tick
@@ -244,7 +244,10 @@ class save_endian_fixture
 		if (version >= 19) words(4, MAX_EXPLODING_WALLS * 3);
 #endif
 #ifdef DXX_BUILD_DESCENT_II
-		if (version >= 45) { skip(MAX_PLAYERS * 8); words(4, 2); }
+		if (version >= 45) {
+			skip(MAX_PLAYERS * 8);
+			words(4, 2);
+		}
 		if (version >= 47) words(4, 14); // seismic52 and flash-active4 // LE guided, host phase and Fusion active
 #else
 		if (version >= 21) words(4, 2); // phase and Fusion active

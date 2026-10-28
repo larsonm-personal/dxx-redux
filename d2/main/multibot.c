@@ -1127,7 +1127,7 @@ multi_do_create_robot(const ubyte *buf)
 
 	objnum = GET_INTEL_SHORT(buf + 3);
 
-	if ((pnum < 0) || (objnum < 0) || (objnum >= MAX_OBJECTS) || (fuelcen_num < 0) ||
+	if ((pnum < 0) || (objnum < 0) || (objnum >= DXX_CLASSIC_MAX_OBJECTS) || (fuelcen_num < 0) ||
 	    (fuelcen_num >= Num_fuelcenters) || (pnum >= N_players) || type < 0 || type >= N_robot_types)
 	{
 		Int3(); // Bogus data
@@ -1177,7 +1177,7 @@ short num_respawnable_bots = 0;
 void reset_respawnable_bots() {
 	num_respawnable_bots = 0; 
 	NextRespawnWave=0;
-	for(int i = 0; i < MAX_OBJECTS && num_respawnable_bots < MAX_ROBOTS; i++) {
+	for(int i = 0; i < DXX_CLASSIC_MAX_OBJECTS && num_respawnable_bots < MAX_ROBOTS; i++) {
 		if (Objects[i].type == OBJ_ROBOT) {
 			roboid_to_objid[num_respawnable_bots] = i;
 			robo_death_time[num_respawnable_bots] = 0;
@@ -1304,7 +1304,7 @@ void multi_do_respawn_robot(const ubyte *buf) {
 	behavior      = buf[loc];                      loc += 1; 
 
 	if (id >= N_robot_types || segnum < 0 || segnum > Highest_segment_index ||
-	    rplr >= MAX_PLAYERS || robjnum < 0 || robjnum >= MAX_OBJECTS)
+	    rplr >= MAX_PLAYERS || robjnum < 0 || robjnum >= DXX_CLASSIC_MAX_OBJECTS)
 		return;
 
 	short objnum = respawn_robot(id, segnum, pos, orient, size, behavior); 
@@ -1450,7 +1450,7 @@ multi_do_boss_actions(const ubyte *buf)
 		case 3: // Gate in robots!
 			{
 				// Do some validity checking
-				if (secondary < 0 || secondary >= N_robot_types || (remote_objnum >= MAX_OBJECTS) ||
+				if (secondary < 0 || secondary >= N_robot_types || (remote_objnum >= DXX_CLASSIC_MAX_OBJECTS) ||
 				    (remote_objnum < 0) || (segnum < 0) || (segnum > Highest_segment_index))
 				{
 					Int3(); // See Rob, bad data in boss gate action message
@@ -1522,7 +1522,7 @@ multi_do_create_robot_powerups(const ubyte *buf)
 	}
 	for (i = 0; i < del_obj.contains_count; i++) {
 		int remote = GET_INTEL_SHORT(buf + loc + 2 * i);
-		if (remote < -1 || remote >= MAX_OBJECTS) return;
+		if (remote < -1 || remote >= DXX_CLASSIC_MAX_OBJECTS) return;
 	}
 
 	Net_create_loc = 0;

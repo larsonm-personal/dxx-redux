@@ -1,3 +1,4 @@
+#include "object_capacity.h"
 #ifndef REJOIN_DIAGNOSTICS_H
 #define REJOIN_DIAGNOSTICS_H
 
@@ -17,7 +18,7 @@ static inline void rejoin_diag_world(const char *stage)
 {
 	if (!debug_log_enabled[DLOG_NETWORK] || !(Game_mode & GM_MULTI_COOP)) return;
 	int live = 0, ships = 0;
-	for (int i = 0; i < MAX_OBJECTS; ++i) {
+	for (int i = 0; i < NETWORK_OBJECT_CAPACITY; ++i) {
 		live += Objects[i].type != OBJ_NONE;
 		ships += Objects[i].type == OBJ_PLAYER || Objects[i].type == OBJ_GHOST;
 	}
@@ -28,7 +29,7 @@ static inline void rejoin_diag_world(const char *stage)
 	           Network_send_object_mode, VerifyPlayerJoined);
 	for (int i = 0; i < MAX_PLAYERS; ++i) {
 		const int index = Players[i].objnum;
-		const object *obj = index >= 0 && index < MAX_OBJECTS ? &Objects[index] : NULL;
+		const object *obj = index >= 0 && index < NETWORK_OBJECT_CAPACITY ? &Objects[index] : NULL;
 		REJOIN_LOG("player stage=%s slot=%d connected=%d obj=%d type=%d id=%d seg=%d owner=%d",
 		           stage, i, Players[i].connected, index, obj ? obj->type : -1,
 		           obj ? obj->id : -1, obj ? obj->segnum : -1, obj ? object_owner[index] : -2);

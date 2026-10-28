@@ -4275,7 +4275,7 @@ void multi_do_escort_spawn(const ubyte *buf, int authenticated_sender)
 	    !escort_owner_packet_sender_valid(buf[1], authenticated_sender) ||
 	    owner < 0 || owner >= N_players || !escort_route_target_mode_valid(target_mode) ||
 	    !escort_owner_generation_is_newer(generation, Escort_spawn_generation) ||
-	    remote_objnum < 0 || remote_objnum >= MAX_OBJECTS ||
+	    remote_objnum < 0 || remote_objnum >= DXX_CLASSIC_MAX_OBJECTS ||
 	    segment < 0 || segment > Highest_segment_index ||
 	    escort_refresh_buddy_objnum() || escort_buddy_is_docked())
 		return;

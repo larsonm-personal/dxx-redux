@@ -576,7 +576,7 @@ static void state_write_weapon_fidelity_state(PHYSFS_file *fp)
 		PHYSFS_write(fp, &Objects[i].ctype.laser_info.creation_framecount,
 			sizeof(Objects[i].ctype.laser_info.creation_framecount), 1);
 		PHYSFS_write(fp, Objects[i].ctype.laser_info.hitobj_list,
-			sizeof(Objects[i].ctype.laser_info.hitobj_list[0]), MAX_OBJECTS);
+			sizeof(Objects[i].ctype.laser_info.hitobj_list[0]), DXX_CLASSIC_MAX_OBJECTS);
 	}
 }
 
@@ -586,7 +586,7 @@ static void state_read_weapon_fidelity_state(PHYSFS_file *fp, int swap, int appl
 
 	for (i = 0; i <= Highest_object_index; i++) {
 		int creation_framecount;
-		ubyte scratch_hitobj_list[MAX_OBJECTS];
+		ubyte scratch_hitobj_list[DXX_CLASSIC_MAX_OBJECTS];
 		ubyte *hitobj_list;
 
 		if (Objects[i].type == OBJ_NONE || Objects[i].control_type != CT_WEAPON)
@@ -594,7 +594,7 @@ static void state_read_weapon_fidelity_state(PHYSFS_file *fp, int swap, int appl
 
 		creation_framecount = PHYSFSX_readSXE32(fp, swap);
 		hitobj_list = apply ? Objects[i].ctype.laser_info.hitobj_list : scratch_hitobj_list;
-		PHYSFS_read(fp, hitobj_list, sizeof(hitobj_list[0]), MAX_OBJECTS);
+		PHYSFS_read(fp, hitobj_list, sizeof(hitobj_list[0]), DXX_CLASSIC_MAX_OBJECTS);
 		if (apply)
 			Objects[i].ctype.laser_info.creation_framecount = creation_framecount;
 	}
@@ -778,7 +778,7 @@ static void state_write_afterburner_runtime_state(PHYSFS_file *fp)
 {
 	int i;
 
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < object_capacity(); i++)
 		state_write_time_delta(fp, Last_afterburner_time[i]);
 }
 
@@ -786,7 +786,7 @@ static void state_read_afterburner_runtime_state(PHYSFS_file *fp, int swap, int 
 {
 	int i;
 
-	for (i = 0; i < MAX_OBJECTS; i++) {
+	for (i = 0; i < object_capacity(); i++) {
 		fix64 last_afterburner_time = GameTime64 + state_read_time_delta(fp, swap);
 		if (apply)
 			Last_afterburner_time[i] = last_afterburner_time;
@@ -911,7 +911,7 @@ static int state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &d_tick_state.timer, sizeof(d_tick_state.timer), 1);
 	PHYSFS_write(fp, &object_state.num_objects, sizeof(object_state.num_objects), 1);
 	PHYSFS_write(fp, &object_state.highest_object_index, sizeof(object_state.highest_object_index), 1);
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < object_capacity(); i++)
 		PHYSFS_write(fp, &object_state.free_obj_list[i], sizeof(object_state.free_obj_list[i]), 1);
 	PHYSFS_write(fp, &object_state.signature_seed, sizeof(object_state.signature_seed), 1);
 	PHYSFS_write(fp, &object_state.homer_frame_count, sizeof(object_state.homer_frame_count), 1);
@@ -1154,7 +1154,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, 
 	if (!state_runtime_read_s32(fp, swap, &object_state.num_objects) ||
 	    !state_runtime_read_s32(fp, swap, &object_state.highest_object_index))
 		goto done;
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < object_capacity(); i++)
 		if (!state_runtime_read_s16(fp, swap, &object_state.free_obj_list[i]))
 			goto done;
 	if (version >= STATE_OBJECT_SIGNATURE_RUNTIME_VERSION) {
@@ -1183,7 +1183,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, 
 		validation_stage = "weapon fidelity";
 		for (i = 0; i <= Highest_object_index; i++)
 			if (Objects[i].type != OBJ_NONE && Objects[i].control_type == CT_WEAPON &&
-			    !state_runtime_skip(fp, sizeof(int) + MAX_OBJECTS))
+			    !state_runtime_skip(fp, sizeof(int) + DXX_CLASSIC_MAX_OBJECTS))
 				goto done;
 		validation_stage = "morph";
 		if (!state_validate_morph_runtime_state(fp, swap))
@@ -1191,7 +1191,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, 
 		validation_stage = "stuck objects";
 		if (!state_validate_stuck_runtime_state(fp, swap))
 			goto done;
-		if (!state_runtime_skip(fp, 2 * sizeof(int) + (size_t)MAX_OBJECTS * sizeof(int)))
+		if (!state_runtime_skip(fp, 2 * sizeof(int) + (size_t)object_capacity() * sizeof(int)))
 			goto done;
 	}
 	if (version >= STATE_AI_PATH_RUNTIME_VERSION &&
@@ -1248,7 +1248,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, 
 			    !state_runtime_read_s32(fp, 0, &signature)) goto done;
 			objnum = INTEL_INT(objnum);
 			signature = INTEL_INT(signature);
-			if (objnum < -1 || objnum >= MAX_OBJECTS || (objnum == -1 && signature != -1)) goto done;
+			if (objnum < -1 || objnum >= object_capacity() || (objnum == -1 && signature != -1)) goto done;
 		}
 	}
 	validation_stage = "wiggle phase";
@@ -1319,7 +1319,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	d_tick_state.timer = PHYSFSX_readSXE32(fp, swap);
 	object_state.num_objects = PHYSFSX_readSXE32(fp, swap);
 	object_state.highest_object_index = PHYSFSX_readSXE32(fp, swap);
-	for (i = 0; i < MAX_OBJECTS; i++)
+	for (i = 0; i < object_capacity(); i++)
 		object_state.free_obj_list[i] = (short)PHYSFSX_readSXE16(fp, swap);
 	if (version >= STATE_OBJECT_SIGNATURE_RUNTIME_VERSION)
 		object_state.signature_seed = PHYSFSX_readSXE32(fp, swap);
@@ -1853,7 +1853,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			obj->ctype.laser_info.creation_framecount = 0;
 			memset(obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 			obj->ctype.laser_info.last_hitobj      = obj_rw->ctype.laser_info.last_hitobj;
-			if (obj->ctype.laser_info.last_hitobj >= 0 && obj->ctype.laser_info.last_hitobj < MAX_OBJECTS
+			if (obj->ctype.laser_info.last_hitobj >= 0 && obj->ctype.laser_info.last_hitobj < DXX_CLASSIC_MAX_OBJECTS
 #ifdef DXX_XL_RUNTIME
 			    && !xl_level_extensions_active()
 #endif
@@ -3589,7 +3589,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	state_clear_afterburner_runtime_state();
 
 	//Read objects, and pop 'em into their respective segments.
-	i = PHYSFSX_readSXE32(fp, swap);
+	if (!state_runtime_read_s32(fp, swap, &i) || i < 1 || i > object_capacity()) {
+		PHYSFS_close(fp);
+		restore_requires_menu = Game_wind != NULL;
+		return 0;
+	}
 	Highest_object_index = i-1;
 	//object_read_n_swap(Objects, i, swap, fp);
 	for (i=0; i<=Highest_object_index; i++ )

@@ -2,8 +2,8 @@
 
 XL now has its own bounded persistent-projectile hit history and impact lifetime
 path in the shared binary. Redux keeps its existing bitmap suppression, reactor
-damage multiplier and persistent-projectile behavior. Object capacity remains
-1000; this prepares the ownership model for the subsequent storage/capacity work
+damage multiplier and persistent-projectile behavior. The later [object-capacity tranche](object-capacity.md) adds source-sized XL pools up to
+32768 slots; Redux retains 1000
 
 Source/native and 53-step Android acceptance pass within the scope below.
 This does not qualify an original campaign or complete XL combat/AI fidelity

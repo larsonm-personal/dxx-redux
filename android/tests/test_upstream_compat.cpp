@@ -1,3 +1,5 @@
+// Classic D1/D2 wire, save and trace widths must stay fixed in XL-capable builds
+static constexpr int classic_object_capacity = 1000;
 #include <algorithm>
 #include <chrono>
 #include <climits>
@@ -1222,7 +1224,7 @@ static void test_object_state_trace()
 		require(input_demo_object_trace_write(1, error, sizeof(error)), "unchanged object delta");
 		Objects[slot].orient.fvec.z = 123;
 		Objects[slot].mtype.phys_info.rotthrust.y = 456;
-		Objects[slot].ctype.laser_info.hitobj_list[MAX_OBJECTS - 1] = 1;
+		Objects[slot].ctype.laser_info.hitobj_list[classic_object_capacity - 1] = 1;
 		require(input_demo_object_trace_write(2, error, sizeof(error)), "object field delta");
 		obj_delete(slot);
 		require(input_demo_object_trace_write(3, error, sizeof(error)), "object deletion delta");
@@ -1247,11 +1249,11 @@ static void test_object_state_trace()
 		require(rows[1]["slots"][key]["signature"] == signature && rows[1]["slots"][key]["orient"][2][2] == F1_0, "trace retains source identity and orientation");
 		require(rows[2]["slots"].empty(), "unchanged slots are losslessly elided");
 		require(rows[3]["slots"][key]["orient"][2][2] == 123 && rows[3]["slots"][key]["physics"]["rotthrust"][1] == 456 &&
-		            rows[3]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 1,
+		            rows[3]["slots"][key]["weapon"]["hitobj_list"][classic_object_capacity - 1] == 1,
 		        "observe fields absent from old hashes");
 		require(rows[4]["slots"].contains(key) && rows[4]["slots"][key].is_null(), "deleted slots emit tombstones");
-		require(rows[5]["slots"][key]["signature"] != signature && rows[5]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 0, "reused slot replaces its complete state");
-		require(rows[5]["allocator"]["free_obj_list"].size() == MAX_OBJECTS && rows[5]["rng"].size() == 2, "allocator and both actual RNG streams are observed");
+		require(rows[5]["slots"][key]["signature"] != signature && rows[5]["slots"][key]["weapon"]["hitobj_list"][classic_object_capacity - 1] == 0, "reused slot replaces its complete state");
+		require(rows[5]["allocator"]["free_obj_list"].size() == classic_object_capacity && rows[5]["rng"].size() == 2, "allocator and both actual RNG streams are observed");
 	}
 }
 
@@ -1279,7 +1281,7 @@ static void test_world_state_trace()
 	Num_walls = 1;
 	Walls[0] = {};
 	Walls[0].hps = 100 * F1_0;
-	const int inactive = MAX_OBJECTS - 1;
+	const int inactive = classic_object_capacity - 1;
 	require(Objects[inactive].type == OBJ_NONE, "AI observation fixture uses an inactive object slot");
 	const std::vector<ai_local> saved_locals(Ai_local_info, Ai_local_info + MAX_OBJECTS);
 	ai_local baseline = {};
@@ -1291,7 +1293,7 @@ static void test_world_state_trace()
 	baseline.d1_saved.last_attack_time = -456;
 	baseline.d1_saved.wait_time = 789;
 #endif
-	std::fill_n(Ai_local_info, MAX_OBJECTS, baseline);
+	std::fill_n(Ai_local_info, classic_object_capacity, baseline);
 	const auto saved_point = Point_segs[MAX_POINT_SEGS - 1];
 	const auto saved_awareness = Awareness_events[MAX_AWARENESS_EVENTS - 1];
 	Ai_local_info[inactive].next_fire = 123456;
@@ -1299,7 +1301,7 @@ static void test_world_state_trace()
 	Point_segs[MAX_POINT_SEGS - 1].point = { 11, 22, 33 };
 	Awareness_events[MAX_AWARENESS_EVENTS - 1].pos = { 44, 55, 66 };
 	std::vector<nlohmann::json> complete_locals;
-	for (int i = 0; i < MAX_OBJECTS; ++i) complete_locals.push_back(input_demo_ai_local_trace_snapshot(i));
+	for (int i = 0; i < classic_object_capacity; ++i) complete_locals.push_back(input_demo_ai_local_trace_snapshot(i));
 	char error[256] = {};
 	const char *path = "world-state-test.jsonl";
 	require(input_demo_state_trace_start(path, "replay", "d1", "d1", 1, 0, "save_checkpoint", 2, error, sizeof(error)), "open real world observation stream");
@@ -1347,12 +1349,12 @@ static void test_world_state_trace()
 	require(ai["local_default"]["d1_saved"] == nlohmann::json({ { "last_see_time", 123 }, { "last_attack_time", -456 }, { "wait_time", 789 } }),
 	        "world observer retains all original saved AI fields in its complete default");
 #endif
-	require(rows[1]["version"] == 10 && ai["local_capacity"] == MAX_OBJECTS &&
+	require(rows[1]["version"] == 10 && ai["local_capacity"] == classic_object_capacity &&
 	            ai["locals"][std::to_string(inactive)]["next_fire"] == 123456,
 	        "complete AI observation retains populated inactive local storage");
 	require(ai["locals"].size() == 1 && ai["local_default"]["time_player_seen"] == -7 * F1_0,
 	        "rebased inactive AI storage uses an explicit nonzero default and one changed slot");
-	for (int i = 0; i < MAX_OBJECTS; ++i) {
+	for (int i = 0; i < classic_object_capacity; ++i) {
 		const auto key = std::to_string(i);
 		const auto &reconstructed = ai["locals"].contains(key) ? ai["locals"][key] : ai["local_default"];
 		require(reconstructed == complete_locals[i], "default plus exceptions reconstructs every field of every AI local slot");
@@ -1371,7 +1373,7 @@ static void test_world_state_trace()
 	require(rows[5]["state"].size() == 6 && rows[5]["state"].contains("walls") && rows[5]["state"].contains("players") &&
 	            rows[5]["state"]["ai"]["locals"][std::to_string(inactive)]["next_fire"] == 123457,
 	        "terminal observation does not consume later world or inactive AI deltas");
-	for (int i = 0; i < MAX_OBJECTS; ++i) {
+	for (int i = 0; i < classic_object_capacity; ++i) {
 		const auto key = std::to_string(i);
 		auto expected = complete_locals[i];
 		if (i == 0) expected["time_player_seen"] = -7 * F1_0 + 1;
@@ -4589,7 +4591,7 @@ static void test_boss_sound_storage()
 	Current_mission = &mission;
 	// All other fields are zero, so both byte orders describe the same valid
 	// AI block, with no path allocation, boss destinations or awareness events
-	const size_t boss_start = 8 + MAX_OBJECTS * 200 + MAX_POINT_SEGS * 16 + MAX_AI_CLOAK_INFO * 20;
+	const size_t boss_start = 8 + classic_object_capacity * 200 + MAX_POINT_SEGS * 16 + MAX_AI_CLOAK_INFO * 20;
 	const size_t sound_offset = boss_start + 10 * 4;
 	const size_t state_size = boss_start + 12 * 4 + 5 * 4 + MAX_STOLEN_ITEMS + 4 + 8 + 4 + 28;
 	for (const int profile : { 2, 1, 2 }) {
@@ -8241,7 +8243,7 @@ static nlohmann::json checkpoint_dynamic_state()
 	result["triggers"] = snapshot_native_triggers();
 	result["ai_saved_storage"] = json::array();
 	result["ai_path_indices"] = json::array();
-	for (int i = 0; i < MAX_OBJECTS; ++i) {
+	for (int i = 0; i < classic_object_capacity; ++i) {
 		const auto &obj = Objects[i];
 #ifdef DXX_BUILD_DESCENT_II
 		const auto &local = Ai_local_info[i].d1_saved;
@@ -8458,7 +8460,7 @@ static void test_d1_ai_storage_scope()
 	require(file && PHYSFS_fileLength(file) == 4 && d1_in_d2_ai_read_saved_storage(file, 0, 0) && PHYSFS_close(file),
 	        "ordinary D2 saves declare no native D1 AI payload");
 	bytes foreign;
-	append_int(foreign, MAX_OBJECTS);
+	append_int(foreign, classic_object_capacity);
 	write_fixture("d1-ai-storage-foreign.bin", foreign);
 	const auto previous = Ai_local_info[0].d1_saved;
 	file = PHYSFS_openRead("d1-ai-storage-foreign.bin");
@@ -9185,7 +9187,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			}
 			source_ai.follow_path_start_seg = static_cast<short>(100 + scenario);
 			source_ai.follow_path_end_seg = static_cast<short>(200 + scenario);
-			for (int slot : { robot_index, MAX_OBJECTS - 1 }) {
+			for (int slot : { robot_index, classic_object_capacity - 1 }) {
 				Ai_local_info[slot].last_see_time = F1_0 + slot + scenario;
 				Ai_local_info[slot].last_attack_time = -2 * F1_0 - slot - scenario;
 				Ai_local_info[slot].wait_time = 3 * F1_0 + slot + scenario;
@@ -9376,13 +9378,13 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				file = PHYSFS_openRead("d1-ai-storage.bin");
 				require(file != nullptr, "read original AI storage fixture");
 				bytes storage(static_cast<size_t>(PHYSFS_fileLength(file)));
-				require(storage.size() == 4 + MAX_OBJECTS * 16 &&
+				require(storage.size() == 4 + classic_object_capacity * 16 &&
 				            PHYSFS_readBytes(file, storage.data(), storage.size()) == static_cast<PHYSFS_sint64>(storage.size()) && PHYSFS_close(file),
 				        "original AI extension contains every local slot");
 				for (int malformed = 0; malformed < 3; ++malformed) {
 					auto damaged = storage;
 					if (malformed == 0) damaged.pop_back();
-					else if (malformed == 1) set_int(damaged, 0, MAX_OBJECTS - 1);
+					else if (malformed == 1) set_int(damaged, 0, classic_object_capacity - 1);
 					else set_short(damaged, 4 + Players[Player_num].objnum * 16, 1);
 					write_fixture("d1-ai-storage-invalid.bin", damaged);
 					file = PHYSFS_openRead("d1-ai-storage-invalid.bin");
@@ -9525,7 +9527,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			require(laser.creation_framecount == 713 + scenario + shot.id &&
 			            laser.hitobj_list[Players[0].objnum] == 1 && laser.hitobj_list[robot_index] == 1,
 			        "native checkpoint preserves projectile creation frame and every prior hit");
-			restored_weapons.push_back({ { "slot", slot }, { "id", shot.id }, { "creation_frame", laser.creation_framecount }, { "hits", std::vector<ubyte>(laser.hitobj_list, laser.hitobj_list + MAX_OBJECTS) }, { "position", vector(shot.pos) }, { "velocity", vector(shot.mtype.phys_info.velocity) }, { "size", shot.size }, { "life", shot.lifeleft } });
+			restored_weapons.push_back({ { "slot", slot }, { "id", shot.id }, { "creation_frame", laser.creation_framecount }, { "hits", std::vector<ubyte>(laser.hitobj_list, laser.hitobj_list + classic_object_capacity) }, { "position", vector(shot.pos) }, { "velocity", vector(shot.mtype.phys_info.velocity) }, { "size", shot.size }, { "life", shot.lifeleft } });
 			if (shot.id == FUSION_ID) {
 				require(shot.mtype.phys_info.flags & PF_PERSISTENT, "native Fusion is a persistent projectile");
 				const fix shields = Objects[robot_index].shields;

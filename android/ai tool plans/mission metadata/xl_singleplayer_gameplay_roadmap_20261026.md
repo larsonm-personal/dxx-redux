@@ -212,7 +212,7 @@ finish original-mission qualification
     All 21 original survey members match their hashes; 17 decode with other
     blockers and four retain reader failures. See
     [wide-wall evidence](../../XL_compat/evidence/wide-walls.md). Wall-trigger capacity now has separate controls below; object allocation
-    capacity remains unfinished; concurrent cloaks are covered below
+    capacity has separate controls below; concurrent cloaks are covered below
 
 27. Separate XL cloak lifecycle: 3,200 source comparisons, 100 concurrent entries,
     active disk through stock, eight malformed/truncated save controls and all
@@ -233,8 +233,15 @@ finish original-mission qualification
     1920 native impact samples, physical piercing, checked disk/memory state and
     all 53 Android steps pass. See
     [projectile evidence](../../XL_compat/evidence/projectile-history.md) for the
-    intentional FIFO/full-save corrections. Wider object storage and remaining
+    intentional FIFO/full-save corrections. Wider object storage has separate controls below; remaining
     combat/AI requirements remain unfinished
+
+30. Expanded object pool: source/native controls cover source-sized pools up to 32768 runtime
+    slots and wide lifetime signatures, separate XL reclamation, high-ID AI/combat/events and exact allocator
+    restoration. All 53 Android disk/checkpoint/stock checks pass. See
+    [object-capacity evidence](../../XL_compat/evidence/object-capacity.md).
+    Dinter and Anthology lose only the object-count blocker. Wider object slot
+    references, other capacities and broad performance remain unfinished.
 
 After the wall, cloak and trigger-capacity batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

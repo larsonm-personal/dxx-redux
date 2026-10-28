@@ -1,3 +1,4 @@
+#include "object_capacity.h"
 #include "input_demo_object_trace.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
@@ -122,7 +123,7 @@ json object_state(const object &o, int slot)
 #endif
 			{
 				c["hitobj_list"] = json::array();
-				for (int i = 0; i < MAX_OBJECTS; ++i) c["hitobj_list"].push_back(static_cast<int>(w.hitobj_list[i]));
+				for (int i = 0; i < (int) sizeof(w.hitobj_list); ++i) c["hitobj_list"].push_back(static_cast<int>(w.hitobj_list[i]));
 			}
 			break;
 		}
@@ -191,11 +192,11 @@ static int write_object_state(uint32_t frame, const char *phase, char *error, si
 {
 	static std::array<json, MAX_OBJECTS> previous;
 	if (frame == 0 && !phase) previous.fill(nullptr);
-	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", MAX_OBJECTS }, { "slots", json::object() } };
+	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", object_capacity() }, { "slots", json::object() } };
 	// Avoid repeatedly copying earlier object snapshots as this ordered map grows
-	record["slots"].get_ref<json::object_t &>().reserve(MAX_OBJECTS);
+	record["slots"].get_ref<json::object_t &>().reserve(object_capacity());
 	if (phase) record["phase"] = phase;
-	for (int i = 0; i < MAX_OBJECTS; ++i) {
+	for (int i = 0; i < object_capacity(); ++i) {
 		json current = Objects[i].type == OBJ_NONE ? json(nullptr) : object_state(Objects[i], i);
 		if (phase ? !current.is_null() : current != previous[i]) record["slots"][std::to_string(i)] = current;
 		if (!phase) previous[i] = std::move(current);
@@ -206,7 +207,7 @@ static int write_object_state(uint32_t frame, const char *phase, char *error, si
 		{ "num_objects", allocator.num_objects }, { "highest_object_index", allocator.highest_object_index }, { "signature_seed", allocator.signature_seed }, { "homer_frame_count", allocator.homer_frame_count }, { "current_homer_frame_time", allocator.current_homer_frame_time }, { "do_homer_frame", allocator.do_homer_frame }
 	};
 	record["allocator"]["free_obj_list"] = json::array();
-	for (int i = 0; i < MAX_OBJECTS; ++i) record["allocator"]["free_obj_list"].push_back(allocator.free_obj_list[i]);
+	for (int i = 0; i < object_capacity(); ++i) record["allocator"]["free_obj_list"].push_back(allocator.free_obj_list[i]);
 	record["segment_heads"] = json::array();
 	for (int i = 0; i <= Highest_segment_index; ++i) record["segment_heads"].push_back(static_cast<int>(Segments[i].objects));
 	record["clock"] = { { "game_time", GameTime64 }, { "frame_time", FrameTime }, { "d_tick_count", d_tick_count } };

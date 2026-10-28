@@ -1,3 +1,4 @@
+#include "object_capacity.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -413,7 +414,7 @@ void coop_powerup_duplication_receive_snapshot_begin(const ubyte *buf)
 	if (!coop_powerup_duplication_active())
 		return;
 	count = GET_INTEL_INT(buf + 1);
-	if (count < 0 || count > MAX_OBJECTS * MAX_PLAYERS)
+	if (count < 0 || count > NETWORK_OBJECT_CAPACITY * MAX_PLAYERS)
 		return;
 	if (count) {
 		snapshot_collections = (coop_powerup_collection *) calloc(
