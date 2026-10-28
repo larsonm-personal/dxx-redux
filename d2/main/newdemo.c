@@ -1995,7 +1995,7 @@ void newdemo_record_laser_level(sbyte old_level, sbyte new_level)
 void newdemo_record_cloaking_wall(int front_wall_num, int back_wall_num, ubyte type, ubyte state, fix cloak_value, fix l0, fix l1, fix l2, fix l3)
 {
 	const int wide = front_wall_num >= DXX_CLASSIC_MAX_WALLS || back_wall_num >= DXX_CLASSIC_MAX_WALLS;
-	Assert(front_wall_num >= 0 && front_wall_num < MAX_WALLS && back_wall_num >= 0 && back_wall_num < MAX_WALLS);
+	Assert(front_wall_num >= 0 && front_wall_num < MAX_WALLS && back_wall_num >= -1 && back_wall_num < MAX_WALLS);
 
 	stop_time();
 	nd_write_byte(wide ? ND_EVENT_WIDE_CLOAKING_WALL : ND_EVENT_CLOAKING_WALL);

@@ -62,6 +62,15 @@ static void wide_wall_demo(int front, int back)
 					require(!std::memcmp(Walls, before.data(), before.size() * sizeof(wall)), "Invalid cloak identity modified walls");
 				}
 		}
+		// A one-sided wall's missing back identity must remain recordable
+		outfile = PHYSFSX_openWriteBuffered("wide-one-sided.dem");
+		require(outfile, "Cannot record a one-sided cloak event");
+		Newdemo_state = ND_STATE_RECORDING;
+		newdemo_record_cloaking_wall(first, -1, WALL_CLOAKED, WALL_DOOR_CLOAKING, 12, F1_0, F1_0, F1_0, F1_0);
+		require(PHYSFS_close(outfile), "Cannot close one-sided cloak event");
+		outfile = nullptr;
+		const auto one_sided = read("wide-one-sided.dem");
+		require(one_sided[wide ? 3 : 2] == 255 && (!wide || one_sided[4] == 255), "Missing back-wall sentinel changed while recording");
 	}
 	Newdemo_state = Newdemo_vcr_state = ND_STATE_NORMAL;
 	std::cout << "Actual classic and wide cloak writers, frame decoding and byte-preserving rewrite passed\n";
