@@ -92,7 +92,7 @@ Json matcen_regression_serialize(bool admitted = true)
 		for (int j = 0; j < t.num_links && j < MAX_WALLS_PER_LINK; ++j)
 			links.push_back({ { "ordinal", j }, { "segment", +t.seg[j] }, { "side", +t.side[j] } });
 		for (int j = 0; j < Num_walls && j < MAX_WALLS; ++j)
-			if (Walls[j].trigger == i) walls.push_back({ { "wall", j }, { "segment", +Walls[j].segnum }, { "side", +Walls[j].sidenum } });
+			if (wall_trigger_index(Walls[j].trigger) == i) walls.push_back({ { "wall", j }, { "segment", +Walls[j].segnum }, { "side", +Walls[j].sidenum } });
 		triggers.push_back({ { "index", i }, { "type", +t.type }, { "flags", +t.flags }, { "value", +t.value }, { "time", +t.time }, { "declared_link_count", +t.num_links }, { "links", links }, { "runtime_source_walls", walls } });
 #ifdef DXX_BUILD_DESCENT_II
 		short source_flags = 0;

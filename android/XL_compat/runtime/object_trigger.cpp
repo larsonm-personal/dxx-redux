@@ -85,8 +85,8 @@ void operate(ObjectAction &entry)
 		for (int link = 0; link < action.num_links; ++link) {
 			const auto wall = Segments[action.seg[link]].sides[action.side[link]].wall_num;
 			if (wall < 0 || wall >= Num_walls) continue;
-			const auto index = Walls[wall].trigger;
-			if (index >= Num_triggers) continue;
+			const auto index = wall_trigger_index(Walls[wall].trigger);
+			if (index < 0 || index >= Num_triggers) continue;
 			auto &target = Triggers[index];
 			if (action.type == 32) {
 				if (target.type == 31 && target.value > 0) --target.value;
@@ -140,8 +140,8 @@ extern "C" int xl_object_teleport_action(const trigger *action, int object_index
 
 void xl_object_trigger_load(const xl_compat::Inventory &level)
 {
+	if (level.object_trigger_records.size() > DXX_XL_MAX_TRIGGERS) throw std::runtime_error("object trigger capacity exceeds 254 inspected records");
 	xl_object_trigger_clear();
-	if (level.object_trigger_records.size() > 255) throw std::runtime_error("object trigger capacity exceeds 255 inspected records");
 	for (const auto &record : level.object_trigger_records) {
 		const auto &source = record.action;
 		if ((source.type > 14 && source.type != 15 && source.type != 26 && source.type != 28 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))

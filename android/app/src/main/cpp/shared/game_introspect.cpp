@@ -2229,6 +2229,7 @@ extern "C" char *game_introspect_get_state(void)
 		for (int index = 0; index < Num_triggers; ++index) {
 			triggers[std::to_string(index)] = {
 				{ "type", Triggers[index].type },
+				{ "activated_since_load", xl_preview_trigger_activated(index) != 0 },
 				{ "flags", Triggers[index].flags },
 				{ "value", Triggers[index].value },
 				{ "time", Triggers[index].time },
@@ -3579,6 +3580,8 @@ extern "C" char *game_introspect_get_state(void)
 			if (flags < 0) continue;
 			doorways[std::to_string(index)] = { { "type", wall.type }, { "state", wall.state }, { "flags", wall.flags }, { "segment", wall.segnum }, { "side", wall.sidenum }, { "keys", wall.keys }, { "visibility_flags", flags }, { "player_flags", ConsoleObject ? xl_wall_doorway(ConsoleObject - Objects, wall.segnum, wall.sidenum) : -1 } };
 			auto &row = doorways[std::to_string(index)];
+			row["trigger"] = wall_trigger_index(wall.trigger);
+			row["controlling_trigger"] = wall_trigger_index(wall.controlling_trigger);
 			row["cloak_value"] = wall.cloak_value;
 			const auto &light = Segments[wall.segnum].sides[wall.sidenum].uvls;
 			row["lights"] = { light[0].l, light[1].l, light[2].l, light[3].l };

@@ -976,13 +976,13 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 	if (branch >= 0) {
 		require(branch < Num_triggers && Triggers[branch].type != TT_EXIT, "invalid branch objective");
 		for (int i = 0; i < Num_walls; ++i)
-			if (Walls[i].trigger == branch) branch_wall = i;
+			if (wall_trigger_index(Walls[i].trigger) == branch) branch_wall = i;
 		require(branch_wall >= 0, "branch has no authored host wall");
 	}
 	int exit_wall = -1;
 	if (escape)
 		for (int i = 0; i < Num_walls; ++i)
-			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) exit_wall = i;
+			if (wall_trigger_index(Walls[i].trigger) >= 0 && wall_trigger_index(Walls[i].trigger) < Num_triggers && Triggers[wall_trigger_index(Walls[i].trigger)].type == TT_EXIT) exit_wall = i;
 	require(escape ? exit_wall >= 0 : key >= 0, "navigation fixture has no objective");
 	if (escape && !campaign) {
 		const int paused = game_is_time_paused();
@@ -1084,7 +1084,7 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 			const auto &host = Walls[branch_wall];
 			if (host.type != WALL_OVERLAY && !(WALL_IS_DOORWAY(&Segments[host.segnum], host.sidenum) & WID_FLY_FLAG)) {
 				for (int wall = 0; wall < Num_walls; ++wall)
-					if (host.controlling_trigger >= 0 && Walls[wall].trigger == host.controlling_trigger) objective_wall = wall;
+					if (wall_trigger_index(host.controlling_trigger) >= 0 && wall_trigger_index(Walls[wall].trigger) == wall_trigger_index(host.controlling_trigger)) objective_wall = wall;
 			}
 			const int approach = switch_approach(objective_wall);
 			if (approach >= 0) {
@@ -1096,10 +1096,10 @@ void navigate_objective(bool reactor, bool escape = false, int branch = -1, int 
 			int best = Highest_segment_index + 1;
 			for (int wall = 0; wall < Num_walls; ++wall) {
 				const auto &host = Walls[wall];
-				if (host.trigger >= Num_triggers) continue;
+				if (wall_trigger_index(host.trigger) < 0 || wall_trigger_index(host.trigger) >= Num_triggers) continue;
 				const int approach = switch_approach(wall);
 				if (approach < 0 || steps[approach] >= best) continue;
-				const auto &trigger = Triggers[host.trigger];
+				const auto &trigger = Triggers[wall_trigger_index(host.trigger)];
 				if ((trigger.flags & TF_DISABLED) || (trigger.type != TT_OPEN_DOOR && trigger.type != TT_OPEN_WALL && trigger.type != TT_UNLOCK_DOOR)) continue;
 				bool opens_frontier = false;
 				for (int link = 0; link < trigger.num_links; ++link) {
@@ -1552,6 +1552,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "close_door_test.h"
 #include "wide_wall_test.h"
 #include "cloak_test.h"
+#include "trigger_capacity_test.h"
 #include "repair_test.h"
 #include "format34_test.h"
 #include "hxm_test.h"
@@ -1564,6 +1565,7 @@ int main(int argc, char **argv)
 	if (find_arg_value(argc, argv, "-blocked-test")) return blocked_test(argc, argv);
 	if (find_arg_value(argc, argv, "-close_door-test")) return close_door_test(argc, argv);
 	if (find_arg_value(argc, argv, "-widewall-test")) return wide_wall_test(argc, argv);
+	if (find_arg_value(argc, argv, "-trigger-capacity-test")) return trigger_capacity_test(argc, argv);
 	if (find_arg_value(argc, argv, "-cloak-test")) return cloak_test(argc, argv);
 	if (find_arg_value(argc, argv, "-doorway-test")) return doorway_test(argc, argv);
 	if (find_arg_value(argc, argv, "-keyed_wall-test")) return keyed_wall_test(argc, argv);

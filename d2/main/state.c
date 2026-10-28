@@ -3731,8 +3731,25 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 
 	//Restore trigger info
-	Num_triggers = PHYSFSX_readSXE32(fp, swap);
-	trigger_read_n_swap(Triggers, Num_triggers, swap, fp);
+	{
+		trigger saved_triggers[MAX_TRIGGERS];
+		int trigger_limit = DXX_CLASSIC_MAX_TRIGGERS;
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) trigger_limit = DXX_XL_MAX_TRIGGERS;
+#endif
+		i = PHYSFSX_readSXE32(fp, swap);
+		if (i < 0 || i > trigger_limit ||
+#ifdef DXX_XL_RUNTIME
+			(xl_level_extensions_active() && i != Num_triggers) ||
+#endif
+			!trigger_read_n_swap(saved_triggers, i, swap, fp)) {
+			Warning("Invalid saved trigger table");
+			PHYSFS_close(fp);
+			return 0;
+		}
+		memcpy(Triggers, saved_triggers, i * sizeof(trigger));
+		Num_triggers = i;
+	}
 
 	//Restore tmap info (to temp values so we can use compiled-in tmap info to compute static_light
 	for (i=0; i<=Highest_segment_index; i++ )	{

@@ -27,7 +27,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stddef.h>
 #include "d1_in_d2/d1_in_d2_trigger_storage.h"
 
-#define MAX_TRIGGERS        100
+#include "../../android/XL_compat/capacity.h"
+#ifdef DXX_XL_RUNTIME
+#define MAX_TRIGGERS DXX_XL_MAX_TRIGGERS
+#else
+#define MAX_TRIGGERS DXX_CLASSIC_MAX_TRIGGERS
+#endif
 #define MAX_WALLS_PER_LINK  10
 
 // Trigger types
@@ -141,7 +146,7 @@ extern void trigger_read(trigger *t, rewind_file *fp);
 /*
  * reads n trigger structs from a PHYSFS_file and swaps if specified
  */
-extern void trigger_read_n_swap(trigger *t, int n, int swap, rewind_file *fp);
+extern int trigger_read_n_swap(trigger *t, int n, int swap, rewind_file *fp);
 
 extern void trigger_write(trigger *t, short version, rewind_file *fp);
 

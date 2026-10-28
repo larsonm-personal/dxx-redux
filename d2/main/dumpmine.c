@@ -136,7 +136,7 @@ void write_exit_text(PHYSFS_file *my_file)
 			//	Find wall pointing to this trigger.
 			count2 = 0;
 			for (j=0; j<Num_walls; j++)
-				if (Walls[j].trigger == i) {
+				if (wall_trigger_index(Walls[j].trigger) == i) {
 					count2++;
 					PHYSFSX_printf(my_file, "Exit trigger %i is in segment %i, on side %i, bound to wall %i\n", i, Walls[j].segnum, Walls[j].sidenum, j);
 				}
@@ -446,10 +446,10 @@ void write_wall_text(PHYSFS_file *my_file)
 		int	segnum, sidenum;
 
 		PHYSFSX_printf(my_file, "Wall %03i: seg=%3i, side=%2i, linked_wall=%3i, type=%s, flags=%4x, hps=%3i, trigger=%2i, clip_num=%2i, keys=%2i, state=%i\n", i,
-			Walls[i].segnum, Walls[i].sidenum, Walls[i].linked_wall, Wall_names[Walls[i].type], Walls[i].flags, Walls[i].hps >> 16, Walls[i].trigger, Walls[i].clip_num, Walls[i].keys, Walls[i].state);
+			Walls[i].segnum, Walls[i].sidenum, Walls[i].linked_wall, Wall_names[Walls[i].type], Walls[i].flags, Walls[i].hps >> 16, wall_trigger_index(Walls[i].trigger), Walls[i].clip_num, Walls[i].keys, Walls[i].state);
 
-		if (Walls[i].trigger >= Num_triggers)
-			PHYSFSX_printf(my_file, "Wall %03d points to invalid trigger %d\n",i,Walls[i].trigger);
+		if (wall_trigger_index(Walls[i].trigger) >= Num_triggers)
+			PHYSFSX_printf(my_file, "Wall %03d points to invalid trigger %d\n",i,wall_trigger_index(Walls[i].trigger));
 
 		segnum = Walls[i].segnum;
 		sidenum = Walls[i].sidenum;
@@ -524,7 +524,7 @@ void write_trigger_text(PHYSFS_file *my_file)
 
 		//	Find which wall this trigger is connected to.
 		for (w=0; w<Num_walls; w++)
-			if (Walls[w].trigger == i)
+			if (wall_trigger_index(Walls[w].trigger) == i)
 				break;
 
 		if (w == Num_walls)

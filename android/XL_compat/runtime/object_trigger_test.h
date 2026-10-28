@@ -346,7 +346,7 @@ static int object_trigger_test(int argc, char **argv)
 			require(xl_wall_trigger_state(0, &wall) && !wall.operated && !state(once).operated && state(once).owner == robot, "malformed extension published partial wall or object state");
 		}
 		std::ofstream sort_samples(root.parent_path() / "object-sort-samples.txt");
-		for (int size : { 1, 2, 3, 10, 63, 100, 255 })
+		for (int size : { 1, 2, 3, 10, 63, 100, DXX_XL_MAX_TRIGGERS })
 			for (int seed = 0; seed < 8; ++seed) {
 				xl_compat::Inventory sample;
 				sample.object_triggers = size;
@@ -363,6 +363,15 @@ static int object_trigger_test(int argc, char **argv)
 					sort_samples << value.owner << ' ' << value.type << ' ' << value.value << '\n';
 				}
 			}
+		xl_compat::Inventory overflow;
+		overflow.object_trigger_records.resize(DXX_XL_MAX_TRIGGERS + 1);
+		bool rejected = false;
+		try {
+			xl_object_trigger_load(overflow);
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && xl_object_trigger_count() == DXX_XL_MAX_TRIGGERS, "Object trigger overflow cleared the live table or bypassed the source bound");
 		sort_samples.close();
 		require(bool(sort_samples), "object sort samples not written");
 		require(state_restore_all_sub(initial, 0) != 0, "sort overrides did not restore source");

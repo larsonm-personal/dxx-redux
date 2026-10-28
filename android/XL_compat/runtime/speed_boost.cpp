@@ -180,7 +180,7 @@ extern "C" int xl_speed_boost_action(const trigger *action, int index, int objec
 		auto direction = side_direction(destination, side);
 		int velocity = 60 + 40 * speed;
 		for (int wall = 0; index >= 0 && wall < Num_walls; ++wall) {
-			if (Walls[wall].trigger != index) continue;
+			if (wall_trigger_index(Walls[wall].trigger) != index) continue;
 			const int from = Walls[wall].segnum, from_side = Walls[wall].sidenum;
 			if (from < 0 || from > Highest_segment_index || from_side < 0 || from_side >= 6) return 1;
 			const auto start = xl_compat::compile_classic_lighting_side(from, from_side);
@@ -288,7 +288,7 @@ extern "C" int xl_speed_boost_exit_blocked(int index, int segment, int side)
 	if (child < 0 || !xl_speed_boost_segment(segment) || xl_speed_boost_segment(child)) return 0;
 	const int wall = Segments[segment].sides[side].wall_num;
 	if (wall < 0 || wall >= Num_walls) return 1;
-	const int action = Walls[wall].trigger;
+	const int action = wall_trigger_index(Walls[wall].trigger);
 	return action < 0 || action >= Num_triggers || Triggers[action].type != 15;
 }
 

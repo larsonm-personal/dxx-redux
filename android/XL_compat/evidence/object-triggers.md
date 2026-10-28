@@ -4,6 +4,10 @@ The later [delayed-chain tranche](object-chain-delays.md) supersedes the delayed
 descendant gate described in this original evidence. It adds retained event
 context, actor signatures and checked schema-6 disk/rewind state
 
+The later [trigger-capacity audit](trigger-capacity.md) corrects the object-action
+bound to the pinned source's persistent limit of 254. Sorting controls now use
+that endpoint; 255 rejects before clearing the live table
+
 This chunk extends the singleplayer roadmap after wall scheduling. Object
 runtime is verified within the scope below. Admission permits nonplayer leaf
 actions and immediate object masters while delayed descendants, other extended

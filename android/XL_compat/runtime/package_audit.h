@@ -493,7 +493,7 @@ static int package_audit(int argc, char **argv)
 		report["walls"] = nlohmann::json::array();
 		for (int i = 0; i < Num_walls; ++i) {
 			const auto &w = Walls[i];
-			report["walls"].push_back({ { "index", i }, { "segment", w.segnum }, { "side", w.sidenum }, { "type", w.type }, { "keys", w.keys }, { "flags", w.flags }, { "trigger", w.trigger } });
+			report["walls"].push_back({ { "index", i }, { "segment", w.segnum }, { "side", w.sidenum }, { "type", w.type }, { "keys", w.keys }, { "flags", w.flags }, { "trigger", wall_trigger_index(w.trigger) } });
 		}
 		report["triggers"] = nlohmann::json::array();
 		for (int i = 0; i < Num_triggers; ++i) {

@@ -498,7 +498,7 @@ static void input_demo_log_trigger_probe(const char *phase, segment *seg, short 
 			wall_type = wallp->type;
 			wall_state = wallp->state;
 			wall_flags = wallp->flags;
-			wall_trigger = wallp->trigger;
+			wall_trigger = wall_trigger_index(wallp->trigger);
 		}
 	}
 	snprintf(probe, sizeof(probe),
@@ -783,7 +783,7 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 	if (xl_level_extensions_active() && side >= 0 && side < MAX_SIDES_PER_SEGMENT) {
 		const int xl_wall = seg->sides[side].wall_num;
 		if (xl_wall >= 0 && xl_wall < Num_walls) {
-			const int xl_trigger = Walls[xl_wall].trigger;
+			const int xl_trigger = wall_trigger_index(Walls[xl_wall].trigger);
 			/* Classic player actions retain recording and route-confirmation entry gates */
 			if (xl_trigger >= 0 && xl_trigger < Num_triggers &&
 			    (Triggers[xl_trigger].type > 13 || (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type != OBJ_PLAYER))) {
@@ -813,7 +813,7 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 			return;
 		}
 
-		trigger_num = Walls[wall_num].trigger;
+		trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 
 		if (trigger_num < 0 || trigger_num >= Num_triggers) {
 			input_demo_log_trigger_probe("skip_no_trigger", seg, side, objnum, shot, -1);
@@ -951,16 +951,17 @@ void trigger_swap(trigger *t, int swap)
 /*
  * reads n trigger structs from a PHYSFS_file and swaps if specified
  */
-void trigger_read_n_swap(trigger *t, int n, int swap, PHYSFS_file *fp)
+int trigger_read_n_swap(trigger *t, int n, int swap, PHYSFS_file *fp)
 {
 	int i;
 
 	for (i = 0; i < n; i++) {
 		memset(&t[i].d1_saved, 0, sizeof(t[i].d1_saved));
-		PHYSFS_read(fp, &t[i], TRIGGER_DISK_SIZE, 1);
+		if (PHYSFS_read(fp, &t[i], TRIGGER_DISK_SIZE, 1) != 1) return 0;
 		if (swap)
 			trigger_swap(&t[i], swap);
 	}
+	return 1;
 }
 
 void trigger_write(trigger *t, short version, PHYSFS_file *fp)

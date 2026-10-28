@@ -64,8 +64,9 @@ void xl_preview_muzzle_snapshot(int64_t current_time);
 void xl_preview_player_thrust(int player, int32_t x, int32_t y, int32_t z);
 void xl_preview_reset_player_thrust(void);
 const char *xl_preview_level_path(const char *filename);
-/* Transient permission for the verified private wide-wall mine adapter */
+/* Transient permissions for verified private XL level adapters */
 int xl_loading_wide_walls(void);
+int xl_loading_extended_triggers(void);
 unsigned xl_preview_unresolved_emitters(void);
 int xl_preview_pilot_active(void);
 int xl_runtime_active(void);
@@ -93,6 +94,8 @@ void xl_preview_complete_pilot(void);
 int xl_preview_pilot_completed(void);
 void xl_preview_trigger_result(int trigger, int shot, int result);
 uint64_t xl_preview_trigger_mask(void);
+// Diagnostic since the current level load, not persisted scheduler state
+int xl_preview_trigger_activated(int index);
 typedef struct xl_texture_emitter {
 	int texture;
 	float rgb[3];

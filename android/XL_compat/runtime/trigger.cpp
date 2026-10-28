@@ -77,7 +77,7 @@ int linked_trigger(const trigger &source, int link)
 	if (segment < 0 || segment > Highest_segment_index || side < 0 || side >= 6) return -1;
 	const int wall = Segments[segment].sides[side].wall_num;
 	if (wall < 0 || wall >= Num_walls) return -1;
-	const int target = Walls[wall].trigger;
+	const int target = wall_trigger_index(Walls[wall].trigger);
 	return target >= 0 && target < Num_triggers ? target : -1;
 }
 } // namespace

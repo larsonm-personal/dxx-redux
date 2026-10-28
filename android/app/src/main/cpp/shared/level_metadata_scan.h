@@ -2,14 +2,15 @@
 #define DXX_LEVEL_METADATA_SCAN_H
 
 #include "guided_missile_route.h"
+#include "../../../../../XL_compat/capacity.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define LEVEL_METADATA_MAX_SEGMENTS                         9000
-#define LEVEL_METADATA_MAX_WALLS                            255
-#define LEVEL_METADATA_MAX_TRIGGERS                         100
+#define LEVEL_METADATA_MAX_WALLS                            DXX_XL_MAX_WALLS
+#define LEVEL_METADATA_MAX_TRIGGERS                         DXX_XL_MAX_TRIGGERS
 #define LEVEL_METADATA_MAX_TRIGGER_ACTIONS                  16
 #define LEVEL_METADATA_MAX_OBJECTS                          1000
 #define LEVEL_METADATA_MAX_SIDES                            6

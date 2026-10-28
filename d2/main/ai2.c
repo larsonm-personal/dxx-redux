@@ -1787,7 +1787,7 @@ int ai_door_is_openable(object *objp, segment *segp, int sidenum)
 		}
 		// -- }
 
-		if ((ailp_mode != AIM_GOTO_PLAYER) && (wallp->controlling_trigger != -1)) {
+		if ((ailp_mode != AIM_GOTO_PLAYER) && (wall_trigger_index(wallp->controlling_trigger) != -1)) {
 			int	clip_num = wallp->clip_num;
 
 			if (clip_num == -1)

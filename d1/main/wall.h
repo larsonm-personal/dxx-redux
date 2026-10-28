@@ -25,6 +25,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "object.h"
 
 #include "rewind_file.h"
+#include "wall_trigger_index.h"
 
 //#include "vclip.h"
 

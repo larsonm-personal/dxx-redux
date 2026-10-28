@@ -1659,7 +1659,7 @@ void add_segment_edges(automap *am, segment *seg)
 
 		if (seg->sides[sn].wall_num > -1)	{
 		
-			trigger_num = Walls[seg->sides[sn].wall_num].trigger;
+			trigger_num = wall_trigger_index(Walls[seg->sides[sn].wall_num].trigger);
 			ttype = trigger_num >= 0 ? Triggers[trigger_num].type : -1;
 			if (ttype==TT_SECRET_EXIT)
 				{

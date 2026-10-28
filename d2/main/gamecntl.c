@@ -850,10 +850,10 @@ dump_door_debugging_info()
 			PHYSFSX_printf(dfile,"    type = %d\n",wall->type);
 			PHYSFSX_printf(dfile,"    flags = %x\n",wall->flags);
 			PHYSFSX_printf(dfile,"    state = %d\n",wall->state);
-			PHYSFSX_printf(dfile,"    trigger = %d\n",wall->trigger);
+			PHYSFSX_printf(dfile,"    trigger = %d\n",wall_trigger_index(wall->trigger));
 			PHYSFSX_printf(dfile,"    clip_num = %d\n",wall->clip_num);
 			PHYSFSX_printf(dfile,"    keys = %x\n",wall->keys);
-			PHYSFSX_printf(dfile,"    controlling_trigger = %d\n",wall->controlling_trigger);
+			PHYSFSX_printf(dfile,"    controlling_trigger = %d\n",wall_trigger_index(wall->controlling_trigger));
 			PHYSFSX_printf(dfile,"    cloak_value = %d\n",wall->cloak_value);
 			PHYSFSX_printf(dfile,"\n");
 
@@ -1425,7 +1425,7 @@ void kill_and_so_forth(void)
 	for (i=0; i<Num_triggers; i++) {
 		if (trigger_exit_flags(i) & TRIGGER_EXIT) {
 			for (j=0; j<Num_walls; j++) {
-				if (Walls[j].trigger == i) {
+				if (wall_trigger_index(Walls[j].trigger) == i) {
 					compute_segment_center(&ConsoleObject->pos, &Segments[Walls[j].segnum]);
 #ifdef COMPACT_SEGS
 					get_side_normal(&Segments[Walls[j].segnum], Walls[j].sidenum, 0, &exit_fvec);

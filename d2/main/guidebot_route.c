@@ -554,7 +554,7 @@ static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
 	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].type : -1,
 	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].state : -1,
 	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].flags : 0,
-	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].controlling_trigger : -1,
+	          wall_num >= 0 && wall_num < Num_walls ? wall_trigger_index(Walls[wall_num].controlling_trigger) : -1,
 	          objp->size,
 	          Escort_route_stall_recovery_count);
 	if (!escort_route_path_recalc_begin("stalled_edge"))

@@ -1655,7 +1655,7 @@ static int side_has_exit_trigger(int seg, int side)
 	wall_num = Segments[seg].sides[side].wall_num;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return 0;
-	trigger_num = Walls[wall_num].trigger;
+	trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
 	return (trigger_exit_flags(trigger_num) & TRIGGER_EXIT) != 0;

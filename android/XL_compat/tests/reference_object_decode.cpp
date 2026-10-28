@@ -265,7 +265,7 @@ int main(int argc, char **argv)
 			std::ifstream samples(argv[2]);
 			int size, cases = 0;
 			while (samples >> size) {
-				check(size > 0 && size <= 255, "Invalid sort sample size");
+				check(size > 0 && size <= 254, "Invalid sort sample size");
 				object_triggers.assign(size, CTrigger{});
 				for (auto &entry : object_triggers) {
 					samples >> entry.m_info.nObject >> entry.type >> entry.value;
@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 				++cases;
 			}
 			check(samples.eof() && cases == 56, "Missing sort samples");
-			std::cout << "Matched 56 production sort cases, including equal keys and 255-record boundary\n";
+			std::cout << "Matched 56 production sort cases, including equal keys and 254-record boundary\n";
 			return 0;
 		}
 		if (argc == 3 && std::string(argv[1]) == "--teleports") {

@@ -581,7 +581,7 @@ int wall_dialog_handler(UI_DIALOG *dlg, d_event *event, wall_dialog *wd)
 					ui_dprintf_at( MainWindow, 223, 6, "            " );
 
 			ui_dprintf_at( MainWindow, 12, 40, " Clip: %d   ", Walls[Cursegp->sides[Curside].wall_num].clip_num );
-			ui_dprintf_at( MainWindow, 12, 57, " Trigger: %d  ", Walls[Cursegp->sides[Curside].wall_num].trigger );
+			ui_dprintf_at( MainWindow, 12, 57, " Trigger: %d  ", wall_trigger_index(Walls[Cursegp->sides[Curside].wall_num].trigger) );
 		}	else {
 			ui_dprintf_at( MainWindow, 12, 6, "Wall: none ");
 			ui_dprintf_at( MainWindow, 12, 23, " Type: none ");
@@ -1077,7 +1077,7 @@ int check_walls()
 
 	trigger_count = 0;
 	for (w1=0; w1<wall_count; w1++) {
-		if (Walls[w1].trigger != -1) trigger_count++;
+		if (wall_trigger_index(Walls[w1].trigger) != -1) trigger_count++;
 	}
 
 	if (trigger_count != Num_triggers) {
@@ -1186,7 +1186,7 @@ int dump_walls_info()
 		//if (Walls[w].flags & WALL_FUELCEN)
 		//	PHYSFSX_printf(fp, "   FUELCEN <--------------------- OUTDATED\n");
 
-		PHYSFSX_printf(fp, "  trigger: %d\n", Walls[w].trigger);
+		PHYSFSX_printf(fp, "  trigger: %d\n", wall_trigger_index(Walls[w].trigger));
 		PHYSFSX_printf(fp, "  clip_num: %d\n", Walls[w].clip_num);
 
 		switch (Walls[w].keys) {
@@ -1227,7 +1227,7 @@ void copy_old_wall_data_to_new(int owall, int nwall)
 
 	Walls[nwall].trigger = -1;
 
-	if (Walls[owall].trigger != -1) {
+	if (wall_trigger_index(Walls[owall].trigger) != -1) {
 		editor_status("Warning: Trigger not copied in group copy.");
 	}
 }

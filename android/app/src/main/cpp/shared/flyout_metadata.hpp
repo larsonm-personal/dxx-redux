@@ -181,7 +181,7 @@ inline double distance(const vms_vector &a, const vms_vector &b)
 inline json route(int wall_num)
 {
 	const auto &wall = Walls[wall_num];
-	json result = { { "trigger", wall.trigger }, { "segment", wall.segnum }, { "side", wall.sidenum }, { "seconds", nullptr }, { "status", "invalid_exit" } };
+	json result = { { "trigger", wall_trigger_index(wall.trigger) }, { "segment", wall.segnum }, { "side", wall.sidenum }, { "seconds", nullptr }, { "status", "invalid_exit" } };
 	if (wall.segnum < 0 || wall.segnum > Highest_segment_index || wall.sidenum < 0 || wall.sidenum >= 6) return result;
 	endlevel_route checked;
 	if (const char *reason = endlevel_validate_route(wall.segnum, wall.sidenum, &checked)) {
@@ -253,7 +253,7 @@ inline json collect(int level_num, const char *level_file)
 	json routes = json::array();
 	double seconds = -1;
 	for (int i = 0; i < Num_walls; ++i) {
-		const int trigger = Walls[i].trigger;
+		const int trigger = wall_trigger_index(Walls[i].trigger);
 		if (trigger < 0 || trigger >= Num_triggers) continue;
 		if (!(trigger_exit_flags(trigger) & TRIGGER_EXIT)) continue;
 		auto path = route(i);

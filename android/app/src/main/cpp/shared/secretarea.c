@@ -1446,7 +1446,7 @@ static int secret_area_wall_trigger(void *user, int wall_num)
 	(void) user;
 	if (!secret_area_wall_index_valid(wall_num))
 		return -1;
-	return Walls[wall_num].trigger;
+	return wall_trigger_index(Walls[wall_num].trigger);
 }
 
 static int secret_area_wall_clip_flags(void *user, int wall_num)
@@ -1781,7 +1781,7 @@ static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 	wall_num = secret_area_wall_num(NULL, seg, side);
 	if (!secret_area_wall_index_valid(wall_num))
 		return 0;
-	trigger_num = Walls[wall_num].trigger;
+	trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
 	return trigger_exit_flags(trigger_num) != 0;
@@ -2400,7 +2400,7 @@ static int level_metadata_wall_shootable_from_position_impl(
 			        "SECRET-AREA-DUMP TRACE blocked_wall_ray from_seg=%d "
 			        "target_wall=%d target_trigger=%d blocker_seg=%d "
 			        "blocker_side=%d blocker_wall=%d",
-			        seg, wall_num, Walls[wall_num].trigger, blocker_seg,
+			        seg, wall_num, wall_trigger_index(Walls[wall_num].trigger), blocker_seg,
 			        blocker_side, blocker_wall);
 			if (blocker_wall >= 0 && blocker_wall < Num_walls)
 				fprintf(stderr,
@@ -2409,7 +2409,7 @@ static int level_metadata_wall_shootable_from_position_impl(
 				        "clip=%d clip_flags=%d linked_wall=%d tmap1=%d "
 				        "tmap2=%d doorway_flags=%d child=%d",
 				        Walls[blocker_wall].type, Walls[blocker_wall].state,
-				        Walls[blocker_wall].flags, Walls[blocker_wall].trigger,
+				        Walls[blocker_wall].flags, wall_trigger_index(Walls[blocker_wall].trigger),
 				        Walls[blocker_wall].keys, Walls[blocker_wall].clip_num,
 				        Walls[blocker_wall].clip_num >= 0 &&
 				                Walls[blocker_wall].clip_num < Num_wall_anims
@@ -2714,7 +2714,7 @@ static void secret_area_rebuild_level_topology(int clearance_radius)
 			for (source_wall = 0; source_wall < secret_area_safe_wall_count(); ++source_wall) {
 				int entry;
 
-				if (Walls[source_wall].trigger != trigger_num)
+				if (wall_trigger_index(Walls[source_wall].trigger) != trigger_num)
 					continue;
 				if (Level_metadata_opener_entry_count >= LEVEL_METADATA_MAX_OPENER_ENTRIES) {
 					Level_metadata_opener_index_valid = 0;
@@ -2780,7 +2780,7 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 		if (!secret_area_trigger_opens_side(trigger_num, seg, side))
 			continue;
 		for (source_wall = 0; source_wall < secret_area_safe_wall_count(); ++source_wall) {
-			if (Walls[source_wall].trigger != trigger_num)
+			if (wall_trigger_index(Walls[source_wall].trigger) != trigger_num)
 				continue;
 			if (found == wanted_index)
 				return source_wall;
@@ -4792,7 +4792,7 @@ static int secret_area_optional_open_trigger(void *user, int seg, int side, cons
 	/* Do not exempt a switch that is itself controlled by another trigger */
 	if (Secret_area_trigger_side[seg][side] != 1 || !secret_area_wall_index_valid(wall))
 		return 0;
-	trigger_num = Walls[wall].trigger;
+	trigger_num = wall_trigger_index(Walls[wall].trigger);
 	if (trigger_num < 0 || trigger_num >= Num_triggers || Triggers[trigger_num].type != TT_OPEN_WALL)
 		return 0;
 	links = secret_area_bounded_trigger_link_count(trigger_num);
@@ -4878,11 +4878,11 @@ static void secret_area_prepare_texture_facts(void)
 	for (seg = 0; seg < Num_segments && seg < SECRET_AREA_MAX_SEGMENTS; ++seg)
 		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
 			int wall = Segments[seg].sides[side].wall_num;
-			if (secret_area_wall_index_valid(wall) && Walls[wall].trigger != -1) {
+			if (secret_area_wall_index_valid(wall) && wall_trigger_index(Walls[wall].trigger) != -1) {
 				Secret_area_trigger_side[seg][side] |= 1;
 #ifdef DXX_BUILD_DESCENT_II
-				if (getenv("DXX_SECRET_LIQUID_TRACE") && Walls[wall].trigger >= 0 && Walls[wall].trigger < Num_triggers)
-					fprintf(stderr, "SECRET-LIQUID source=%d/%d trigger=%d type=%d\n", seg, side, Walls[wall].trigger, Triggers[Walls[wall].trigger].type);
+				if (getenv("DXX_SECRET_LIQUID_TRACE") && wall_trigger_index(Walls[wall].trigger) >= 0 && wall_trigger_index(Walls[wall].trigger) < Num_triggers)
+					fprintf(stderr, "SECRET-LIQUID source=%d/%d trigger=%d type=%d\n", seg, side, wall_trigger_index(Walls[wall].trigger), Triggers[wall_trigger_index(Walls[wall].trigger)].type);
 #endif
 			}
 		}
