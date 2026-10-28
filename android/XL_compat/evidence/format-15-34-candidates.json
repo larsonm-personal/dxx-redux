@@ -1,0 +1,181 @@
+{
+    "schema": 1,
+    "scope": "Original format decoding only; runtime resource validation and gameplay qualification remain separate",
+    "hog_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+    "levels": [
+        {
+            "name": "alarlof.rl2",
+            "sha256": "df172e675c3754db2401ba8cbbf7e8747732666d3682918843a7e05d58d1a7e5",
+            "runtime_qualified": false,
+            "status": "decoded",
+            "level_version": 15,
+            "game_version": 34,
+            "counts": {
+                "vertices": 2577,
+                "segments": 803,
+                "objects": 262,
+                "walls": 202,
+                "triggers": 16,
+                "light_indices": 68,
+                "delta_lights": 5083
+            },
+            "unsupported": {
+                "embedded_lighting": {
+                    "count": 1,
+                    "examples": [
+                        {
+                            "record": -1,
+                            "detail": "XL color tables decoded but no faithful rendering integration exists"
+                        }
+                    ]
+                }
+            },
+            "unknown": {
+                "object_dependencies": {
+                    "count": 1,
+                    "examples": [
+                        {
+                            "record": -1,
+                            "detail": "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                        }
+                    ]
+                },
+                "runtime_semantics": {
+                    "count": 1,
+                    "examples": [
+                        {
+                            "record": -1,
+                            "detail": "decoded records require reference comparison and runtime validation"
+                        }
+                    ]
+                },
+                "assets": {
+                    "count": 1,
+                    "examples": [
+                        {
+                            "record": -1,
+                            "detail": "mission asset resolution and reference runtime not verified"
+                        }
+                    ]
+                }
+            },
+            "observations": {
+                "reserved_segment_flags": {
+                    "count": 530,
+                    "examples": [
+                        {
+                            "record": 2,
+                            "detail": "231"
+                        },
+                        {
+                            "record": 3,
+                            "detail": "231"
+                        },
+                        {
+                            "record": 4,
+                            "detail": "56"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "aurabyss.rl2",
+            "sha256": "5dcdfa263e99eb4460ffd8514bdcafa03a3d31cf2010397872e484603f13cf43",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=3 side=1 count=1344 first=0 available=836"
+        },
+        {
+            "name": "cefispar.rl2",
+            "sha256": "71115d346906d67601639c1c38c8080fb55b7ae0bca77c0d220ef61cde322845",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 26 in 15/34: segment=264 side=2 count=2560 first=468 available=2995"
+        },
+        {
+            "name": "chacshir.rl2",
+            "sha256": "22a3e6afcca34999798df521883c52ecfb86fa58064819dd3e73fc9719dc2587",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=7 side=4 count=1472 first=0 available=1103"
+        },
+        {
+            "name": "esonapri.rl2",
+            "sha256": "3084f78db26c94bbd80748d91ee662619ff91fc6541072e2ceee7b39048f477a",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=52 side=0 count=192 first=0 available=109"
+        },
+        {
+            "name": "fbasin.rl2",
+            "sha256": "d5a9c8bcbbd7be9ca35076eb99f3caa51c792d65b4384a04e0f4fd85dd6c9e4f",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 2 in 15/34: segment=63 side=0 count=2592 first=37 available=1284"
+        },
+        {
+            "name": "ganeshd.rl2",
+            "sha256": "e1bd326dc9dae23dba1e2e7a9edde1563d56ba02ea3131669e5bf78019d14e99",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 2 in 15/34: segment=30 side=1 count=4384 first=139 available=3297"
+        },
+        {
+            "name": "lakshmid.rl2",
+            "sha256": "72270d390f109d3a56bff6212bf4cb822728ffadf49551ef8efff7edbbe129f3",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 18 in 15/34: segment=456 side=4 count=3072 first=932 available=3860"
+        },
+        {
+            "name": "laradhes.rl2",
+            "sha256": "fba369d80ebbee0762ca59fa697a82e0cf1705b9dac82a8221112c6d932c4d0f",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=25 side=1 count=3968 first=0 available=2705"
+        },
+        {
+            "name": "lvoxonbt.rl2",
+            "sha256": "4d5ec57fdb6833b284ee1066050b3154a26fdcbbd6c714c4c97da9083be8e924",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 20 in 15/34: segment=220 side=2 count=3584 first=1167 available=4706"
+        },
+        {
+            "name": "sdg22.rl2",
+            "sha256": "df9ff3bfa2530f8eceb4234d1c4aa50b776a2c532e298cd87a694c8431b5abfb",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=0 side=1 count=3328 first=0 available=1803"
+        },
+        {
+            "name": "serduta.rl2",
+            "sha256": "8f07b772de22d652196e40837dfd9814bb7cb1303cd910b87be49b96f5914194",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 68 in 15/34: segment=607 side=2 count=2560 first=3334 available=4771"
+        },
+        {
+            "name": "tefoleg.rl2",
+            "sha256": "3c6fd53d595d5c201a185a1e9adcef28c15ba1f211ff03fa190297671c39d5ac",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=290 side=4 count=3456 first=0 available=2997"
+        },
+        {
+            "name": "thorium.rl2",
+            "sha256": "f964ad8e1b6217844af28f0aa8f59ac9f1de4f0e750a21501a97f9d11dbceaad",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 0 in 15/34: segment=640 side=4 count=1632 first=0 available=423"
+        },
+        {
+            "name": "ursula.rl2",
+            "sha256": "966f92a2f4944a5e246d5502165b98beb6d8c260ad365e2f238c56a98b0f76c1",
+            "runtime_qualified": false,
+            "status": "rejected",
+            "reason": "invalid packed light index 17 in 15/34: segment=338 side=4 count=2624 first=540 available=2269"
+        }
+    ]
+}

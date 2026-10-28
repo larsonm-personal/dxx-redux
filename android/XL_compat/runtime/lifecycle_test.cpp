@@ -717,7 +717,7 @@ std::vector<int32_t> face_lights()
 				values.push_back(Segments[seg].sides[side].uvls[corner].l);
 	return values;
 }
-void changing_lights(const xl_compat::Inventory &source, const char *filename = "xlprobe.rl2")
+void changing_lights(const xl_compat::Inventory &source, const char *filename = "xlprobe.rl2", unsigned expected_count = 70)
 {
 	unsigned checked = 0, changed = 0, color_changes = 0;
 	for (const auto &light : source.light_indices) {
@@ -763,7 +763,7 @@ void changing_lights(const xl_compat::Inventory &source, const char *filename = 
 		require(add_light(light[0], light[1]) == 0 && face_lights() == expected, "repeated light-on changed state");
 		++checked;
 	}
-	require(checked == 70 && changed > 0 && color_changes > 0, "pilot changing-light coverage missing");
+	require(checked == expected_count && changed > 0 && color_changes > 0, "pilot changing-light coverage missing");
 	std::cout << "XL pilot light updates: " << checked << " sources checked, " << changed << " changed UVLs, " << color_changes << " colored corners changed; legacy scalar path only\n";
 	require(load_level(filename) == 0, "final light fixture reload failed");
 	std::fill(Light_subtracted, Light_subtracted + Num_segments, 0);
@@ -1551,10 +1551,12 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "doorway_test.h"
 #include "close_door_test.h"
 #include "repair_test.h"
+#include "format34_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-format34-test")) return format34_test(argc, argv);
 	if (find_arg_value(argc, argv, "-blocked-test")) return blocked_test(argc, argv);
 	if (find_arg_value(argc, argv, "-close_door-test")) return close_door_test(argc, argv);
 	if (find_arg_value(argc, argv, "-doorway-test")) return doorway_test(argc, argv);

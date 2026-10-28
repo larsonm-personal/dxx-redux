@@ -758,6 +758,15 @@ extern "C" int xl_blocked_segment(int segment)
 	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && (source->segments[segment].properties & xl_compat::segment_blocked);
 }
 
+extern "C" int xl_source_level_version(void)
+{
+	return source ? source->level_version : 0;
+}
+extern "C" int xl_source_game_version(void)
+{
+	return source ? source->game_version : 0;
+}
+
 extern "C" int xl_repair_segment(int segment)
 {
 	return source && (source->level_version == 23 || (source->level_version == 17 && source->game_version == 36)) && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && source->segments[segment].function == 2;

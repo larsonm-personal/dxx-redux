@@ -33,6 +33,8 @@ int xl_classic_legacy_fans_active(void);
 void xl_preview_clear_mission(void);
 int xl_level_supported(const char *filename, int multiplayer);
 int xl_level_segment_group(int segment);
+int xl_source_level_version(void);
+int xl_source_game_version(void);
 const char *xl_level_rejection(void);
 int xl_test_stop_after_level(void);
 int xl_preview_wall_is_doorway(int segment_index, int side);
