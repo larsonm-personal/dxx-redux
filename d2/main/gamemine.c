@@ -51,6 +51,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2/d1_in_d2_levels.h"
 #include "level_section_io.h"
 #include "physfsx_checked_read.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 
 static PHYSFSX_read_status Level_mine_read_status;
 
@@ -655,7 +658,21 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 
 	//=============================== Reading part ==============================
 	compiled_version = PHYSFSX_readByte(LoadFile);
-	(void)compiled_version;
+	if (compiled_version == DXX_XL_WIDE_WALL_MINE) {
+#ifdef DXX_XL_RUNTIME
+		if (!xl_loading_wide_walls())
+#endif
+		{
+			Warning("Private XL wide-wall mine requires a validated source load");
+			return -1;
+		}
+	}
+#ifdef DXX_XL_RUNTIME
+	else if (xl_loading_wide_walls()) {
+		Warning("Validated XL wide-wall mine has an unexpected encoding");
+		return -1;
+	}
+#endif
 
 	if (New_file_format_load)
 		num_vertices = PHYSFSX_readShort(LoadFile);
@@ -732,6 +749,10 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 			ubyte byte_wallnum;
 
 			if (bit_mask & (1 << sidenum)) {
+				if (compiled_version == DXX_XL_WIDE_WALL_MINE) {
+					Segments[segnum].sides[sidenum].wall_num = PHYSFSX_readShort(LoadFile);
+					continue;
+				}
 				byte_wallnum = PHYSFSX_readByte(LoadFile);
 				if ( byte_wallnum == 255 )
 					Segments[segnum].sides[sidenum].wall_num = -1;

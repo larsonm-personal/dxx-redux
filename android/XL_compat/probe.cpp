@@ -1,5 +1,6 @@
 #include "probe.h"
 #include "admission.h"
+#include "capacity.h"
 
 #include <limits>
 #include <algorithm>
@@ -53,14 +54,15 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	}
 	require(blockers.empty(), blocker_message(blockers));
 	// Object actions remain in the owned source inventory, outside stock trigger storage
-	// Current stock representation limits, checked again by the unchanged stock loader
-	require(v.walls.size() <= 255 && v.objects.size() <= 1000 && v.segments.size() <= 9000,
+	// Wide walls use an owned private encoding; other records retain stock widths
+	require(v.walls.size() <= DXX_XL_MAX_WALLS && v.objects.size() <= 1000 && v.segments.size() <= 9000,
 	        "stock representation capacity exceeded");
+	const bool wide_walls = v.walls.size() > DXX_CLASSIC_MAX_WALLS;
 
 	auto &out = result.stock_level;
 	out.assign(source.begin(), source.begin() + v.mine_offset);
 	patch(out, 4, 8);
-	put(out, 0, 1);
+	put(out, wide_walls ? DXX_XL_WIDE_WALL_MINE : 0, 1);
 	put(out, static_cast<int>(v.vertices.size()), 2);
 	put(out, static_cast<int>(v.segments.size()), 2);
 	for (const auto &vertex : v.vertices)
@@ -79,8 +81,8 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		put(out, walls, 1);
 		for (int i = 0; i < 6; ++i) {
 			if (walls & (1 << i)) {
-				require(seg.sides[i].wall >= 0 && seg.sides[i].wall < 255, "unrepresentable wall ID");
-				put(out, seg.sides[i].wall, 1);
+				require(seg.sides[i].wall >= 0 && std::size_t(seg.sides[i].wall) < v.walls.size(), "unrepresentable wall ID");
+				put(out, seg.sides[i].wall, wide_walls ? 2 : 1);
 			}
 		}
 		for (int i = 0; i < 6; ++i) {

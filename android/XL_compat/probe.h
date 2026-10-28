@@ -11,6 +11,8 @@ namespace xl_compat
 {
 
 struct GameplayProbe {
+	// Native adapter bytes; wide walls use the owned private mine encoding
+	// These bytes alone are not a standalone stock-compatible level
 	Bytes stock_level;
 	Inventory source;
 };

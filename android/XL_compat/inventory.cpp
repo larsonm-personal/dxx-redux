@@ -301,7 +301,6 @@ Inventory inspect_level(const Bytes &bytes)
 				s.wall = mine.u16();
 				if (s.wall == 65535) s.wall = -1;
 				require(s.wall < section(out, "walls").count, "invalid wall reference at segment " + std::to_string(i));
-				if (s.wall >= 255) issue(out.unsupported, "wall_reference", i, std::to_string(s.wall));
 			}
 		}
 		for (int side = 0; side < 6; ++side) {

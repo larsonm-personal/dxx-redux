@@ -96,6 +96,7 @@ struct MuzzleLight {
 std::vector<MuzzleLight> muzzle_lights;
 vms_vector player_thrust{};
 std::string pending_level;
+bool loading_wide_walls = false;
 bool admitted_pilot = false, completed_pilot = false, admitted_water_arena = false;
 std::string rejection;
 uint64_t activated_triggers = 0;
@@ -539,6 +540,7 @@ extern "C" void xl_preview_clear_mission(void)
 	muzzle_lights.clear();
 	player_thrust = {};
 	pending_level.clear();
+	loading_wide_walls = false;
 }
 
 // Method-0 GatherStaticLights when ReadColor did not register baked colors
@@ -651,7 +653,9 @@ extern "C" int xl_preview_load_level(const char *filename)
 		committed = true;
 		xl_preview_clear_mission();
 		if (original) pending_level = filename;
+		loading_wide_walls = probe.source.walls.size() > DXX_CLASSIC_MAX_WALLS;
 		result = xl_stock_load_level(filename);
+		loading_wide_walls = false;
 		pending_level.clear();
 		if (result) return result;
 		auto level = std::make_unique<xl_compat::Inventory>(std::move(probe.source));
@@ -680,6 +684,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		con_printf(CON_NORMAL, admitted_water_arena ? "XL water physics: detected experimental profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
 		return result;
 	} catch (const std::exception &error) {
+		loading_wide_walls = false;
 		pending_level.clear();
 		if (committed) xl_preview_clear_mission();
 		rejection = std::string(filename) + "\n" + error.what();
@@ -835,6 +840,11 @@ extern "C" int xl_preview_fluid_loop(int object_index, int sound, int playing)
 extern "C" const char *xl_preview_level_path(const char *filename)
 {
 	return !pending_level.empty() && pending_level == filename ? translated_path : filename;
+}
+
+extern "C" int xl_loading_wide_walls(void)
+{
+	return loading_wide_walls;
 }
 
 extern "C" int xl_preview_pilot_active(void)

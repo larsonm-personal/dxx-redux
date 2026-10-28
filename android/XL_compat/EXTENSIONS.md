@@ -1,16 +1,23 @@
 # D2X-XL extension support catalog
 
-The provisional singleplayer roadmap estimates 10-20 further comparable chunks,
-with overlapping work areas and substantial uncertainty around trigger scheduling
-and custom gameplay data. This is not a completion percentage. See the
-[roadmap and wall-teleport plan](../ai%20tool%20plans/mission%20metadata/xl_wall_teleports_20261025.md)
-for estimates, acceptance criteria and the next implementation tranche
+The target is complete singleplayer fidelity in dependency order. The earlier
+10-20-chunk estimate was for broadly useful support, not completion. Resource
+ownership, data layouts and capacities come before the gameplay systems that
+depend on them; original missions and persistence checks run throughout
 
 The [maintained gameplay roadmap](../ai%20tool%20plans/mission%20metadata/xl_singleplayer_gameplay_roadmap_20261026.md)
 tracks these overlapping areas and their acceptance requirements. Immediate wall
 master chains and trigger enable/disable counters are now implemented, including
 versioned source initialization and saved live state. Native and Android
 controls pass; see [trigger-chain evidence](evidence/trigger-chains.md)
+
+XL wall tables now retain up to 2047 identities through validated native loading,
+doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain
+their 255-wall limit. Native boundary/rejection controls and 80 Android steps
+pass; see [wide-wall evidence](evidence/wide-walls.md). The 21 original high-wall
+survey members are hash-matched, with 17 fully decoded and four still rejected
+by independent readers. None is newly qualified. Trigger/object capacities and
+concurrent cloak capacity remain separate unfinished work
 
 Delayed wall scheduling and permanent/alternate/autoplay flags are now implemented
 for the supported actions. Native, disk-save and memory-checkpoint controls pass.
@@ -426,7 +433,7 @@ unsupported XL extensions
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `container` Archive/descriptor dialect                | DHF versus D2X, signed member sizes, long names, `d2x-name`; survey reports one D2X HOG and 48 XL descriptors                           | DHF and d2x-name supported with per-level feature/resource checks; extended archives unsupported                                                                                                                                    | Bounds, truncation, name collisions, descriptor precedence and dependency closure                                                                |
 | `serialization` Versioned layouts                     | Separate level/game versions; v13 wall-width, v21 segment-layout and color/object transitions                                           | OpenGL builds: stock 1-8 and bounded XL 15/33, 15/34, 17/36 and 23/40                                                                                                                                                               | Exact section ends, malformed references and version fixtures; never just relax version checks                                                   |
-| `capacity` Tables and reference widths                | 21 levels exceed 255 walls; two exceed 1000 objects; two exceed 100 triggers                                                            | Stock: 9000 segments, 36000 vertices, 255 walls, 1000 objects, 100 triggers; no general XL widening                                                                                                                                 | Indices 254/255/256, sentinels, allocation headroom, saves/demos/network and metadata consumers                                                  |
+| `capacity` Tables and reference widths                | 21 levels exceed 255 walls; two exceed 1000 objects; two exceed 100 triggers                                                            | XL 2047 walls with native/Android persistence controls; stock 255. Other limits remain 9000 segments, 36000 vertices, 1000 objects, 100 triggers; concurrent cloaks and other widening unfinished                                   | Indices 254/255/256/2046, sentinels, allocation headroom, saves/demos/network and metadata consumers                                             |
 | `segments` Physics, properties, ownership             | Old combined types versus v21+ split properties; blocked, water/lava, outdoor, no-damage, shield/energy damage, teams/groups            | Modern water/lava/blocked/no-damage, 17/36 and 23/40 repair behavior, plus neutral boss groups, have native/source/Android controls; legacy encodings, signed damage and team ownership retain gates                                | Equivalent old/new encodings, damage timing, traversal and ownership                                                                             |
 | `walls` Wall types and flags                          | Extended types/flags; paired sides and door/open/close/cloak transitions                                                                | Separate XL doorway decisions, blue/red closed-wall keys and authored waiting-close behavior verified; broader animation, colored/team walls and wide flags remain separate                                                         | Collision, projectile passage, activation and persistence                                                                                        |
 | `triggers` Stateful events and wall triggers          | 99 masters, 14 enable and 19 disable wall actions; delayed/permanent/alternating/autoplay flags; versioned master-value initialization  | Wall scheduling, permanent/alternate/autoplay and saved counters implemented; byte flags and action-specific cues implemented; delayed object descendants retain context and actor identity                                         | Finite event interpreter, dependency chain, delay/repeat, cancellation, save/reload; no general scripting language assumed                       |
