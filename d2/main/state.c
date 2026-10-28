@@ -3670,7 +3670,17 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 
 	//Restore wall info
-	Num_walls = PHYSFSX_readSXE32(fp, swap);
+	i = PHYSFSX_readSXE32(fp, swap);
+	if (i < 0 || i > MAX_WALLS
+#ifdef DXX_XL_RUNTIME
+	    || (!xl_level_extensions_active() && i > DXX_CLASSIC_MAX_WALLS)
+#endif
+	) {
+		Warning("Invalid saved wall count %d", i);
+		PHYSFS_close(fp);
+		return 0;
+	}
+	Num_walls = i;
 	wall_read_n_swap(Walls, Num_walls, swap, fp);
 
 	//Check for rebirth linked_wall value

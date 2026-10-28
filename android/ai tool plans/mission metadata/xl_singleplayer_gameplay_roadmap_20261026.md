@@ -206,7 +206,15 @@ finish original-mission qualification
     Expanded registries, signed boss profiles and alternate gameplay data remain
     unfinished; this does not certify the original campaign
 
-After the HXM batch, continue the capacity and resource foundations, then the
+26. Wide wall identities: source/native boundaries and 80 Android steps cover
+    2047-wall loading, authored doors, cloaking, persistence and stock isolation.
+    Classic/wide demo events preserve IDs across recording, playback and rewrite.
+    All 21 original survey members match their hashes; 17 decode with other
+    blockers and four retain reader failures. See
+    [wide-wall evidence](../../XL_compat/evidence/wide-walls.md). Trigger/object
+    capacities and concurrent cloaks remain unfinished
+
+After the wall-identity batch, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated
 as required acceptance rather than cosmetic deferral. Do not mark

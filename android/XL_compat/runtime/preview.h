@@ -58,6 +58,8 @@ void xl_preview_muzzle_snapshot(int64_t current_time);
 void xl_preview_player_thrust(int player, int32_t x, int32_t y, int32_t z);
 void xl_preview_reset_player_thrust(void);
 const char *xl_preview_level_path(const char *filename);
+/* Transient permission for the verified private wide-wall mine adapter */
+int xl_loading_wide_walls(void);
 unsigned xl_preview_unresolved_emitters(void);
 int xl_preview_pilot_active(void);
 int xl_runtime_active(void);

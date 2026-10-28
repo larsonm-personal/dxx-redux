@@ -26,7 +26,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file.h"
 
-#define MAX_WALLS               255 // Maximum number of walls addressable before the 255 no-wall sentinel
+#include "../../android/XL_compat/capacity.h"
+#ifdef DXX_XL_RUNTIME
+#define MAX_WALLS               DXX_XL_MAX_WALLS
+#else
+#define MAX_WALLS               DXX_CLASSIC_MAX_WALLS
+#endif
 #define MAX_WALL_ANIMS          60  // Maximum different types of doors
 #define MAX_DOORS               90  // Maximum number of open doors
 

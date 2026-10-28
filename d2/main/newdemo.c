@@ -202,6 +202,7 @@ extern void init_seismic_disturbances(void);
 #define ND_EVENT_KILL_SOUND_TO_OBJ		50	// record digi_kill_sound_linked_to_object
 #define ND_EVENT_PLAYER_CONTROL_TRACE		51	// player control and wiggle state captured during recording
 #define ND_EVENT_D1_ASSET_IDENTITY		52	// level byte, digest length byte, source digests
+#define ND_EVENT_WIDE_CLOAKING_WALL		53	// cloak event with 16-bit wall identities
 
 
 #define NORMAL_PLAYBACK 			0
@@ -1993,12 +1994,18 @@ void newdemo_record_laser_level(sbyte old_level, sbyte new_level)
 
 void newdemo_record_cloaking_wall(int front_wall_num, int back_wall_num, ubyte type, ubyte state, fix cloak_value, fix l0, fix l1, fix l2, fix l3)
 {
-	Assert(front_wall_num <= 255 && back_wall_num <= 255);
+	const int wide = front_wall_num >= DXX_CLASSIC_MAX_WALLS || back_wall_num >= DXX_CLASSIC_MAX_WALLS;
+	Assert(front_wall_num >= 0 && front_wall_num < MAX_WALLS && back_wall_num >= 0 && back_wall_num < MAX_WALLS);
 
 	stop_time();
-	nd_write_byte(ND_EVENT_CLOAKING_WALL);
-	nd_write_byte(front_wall_num);
-	nd_write_byte(back_wall_num);
+	nd_write_byte(wide ? ND_EVENT_WIDE_CLOAKING_WALL : ND_EVENT_CLOAKING_WALL);
+	if (wide) {
+		nd_write_short(front_wall_num);
+		nd_write_short(back_wall_num);
+	} else {
+		nd_write_byte(front_wall_num);
+		nd_write_byte(back_wall_num);
+	}
 	nd_write_byte(type);
 	nd_write_byte(state);
 	nd_write_byte(cloak_value);
@@ -3587,15 +3594,25 @@ int newdemo_read_frame_information(int rewrite)
 			break;
 		}
 
+		case ND_EVENT_WIDE_CLOAKING_WALL:
 		case ND_EVENT_CLOAKING_WALL: {
 			sbyte type,state,cloak_value;
-			ubyte back_wall_num,front_wall_num;
+			short back_wall_num,front_wall_num;
 			short l0,l1,l2,l3;
 			segment *segp;
 			int sidenum;
+			const int wall_limit = c == ND_EVENT_WIDE_CLOAKING_WALL ? MAX_WALLS : DXX_CLASSIC_MAX_WALLS;
 
-			nd_read_byte((sbyte*)&front_wall_num);
-			nd_read_byte((sbyte*)&back_wall_num);
+			if (c == ND_EVENT_WIDE_CLOAKING_WALL) {
+				nd_read_short(&front_wall_num);
+				nd_read_short(&back_wall_num);
+			} else {
+				ubyte front, back;
+				nd_read_byte((sbyte*)&front);
+				nd_read_byte((sbyte*)&back);
+				front_wall_num = front;
+				back_wall_num = back;
+			}
 			nd_read_byte(&type);
 			nd_read_byte(&state);
 			nd_read_byte(&cloak_value);
@@ -3605,9 +3622,9 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_short(&l3);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (!classic_demo_index_valid(front_wall_num,
-				rewrite || nd_dump_v_active ? MAX_WALLS : Num_walls) ||
+				rewrite || nd_dump_v_active ? wall_limit : min(Num_walls, wall_limit)) ||
 			    !classic_demo_index_valid(back_wall_num,
-				rewrite || nd_dump_v_active ? MAX_WALLS : Num_walls) ||
+				rewrite || nd_dump_v_active ? wall_limit : min(Num_walls, wall_limit)) ||
 			    (!rewrite && !nd_dump_v_active &&
 			     (!classic_demo_segment_side_valid(Walls[front_wall_num].segnum,
 				 Highest_segment_index, Walls[front_wall_num].sidenum,
@@ -3623,8 +3640,13 @@ int newdemo_read_frame_information(int rewrite)
 			}
 			if (rewrite)
 			{
-				nd_write_byte(front_wall_num);
-				nd_write_byte(back_wall_num);
+				if (c == ND_EVENT_WIDE_CLOAKING_WALL) {
+					nd_write_short(front_wall_num);
+					nd_write_short(back_wall_num);
+				} else {
+					nd_write_byte(front_wall_num);
+					nd_write_byte(back_wall_num);
+				}
 				nd_write_byte(type);
 				nd_write_byte(state);
 				nd_write_byte(cloak_value);

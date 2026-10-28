@@ -1117,7 +1117,11 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	//===================== READ WALL INFO ============================
 	// Editors may leave padding between sections; object decoding does not locate the wall table
-	if (!level_section_seek(LoadFile, walls_offset, Num_walls, MAX_WALLS,
+	if (!level_section_seek(LoadFile, walls_offset, Num_walls,
+#ifdef DXX_XL_RUNTIME
+	                        xl_loading_wide_walls() ? MAX_WALLS :
+#endif
+	                        DXX_CLASSIC_MAX_WALLS,
 	                        game_top_fileinfo_version >= 20 ? LEVEL_WALL_SERIALIZED_SIZE :
 	                        game_top_fileinfo_version >= 17 ? LEVEL_WALL_V19_SERIALIZED_SIZE : LEVEL_WALL_V16_SERIALIZED_SIZE,
 	                        "walls"))

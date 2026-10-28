@@ -72,3 +72,12 @@ do not silently rewrite original mission bytes to make a test pass
   session. Do not merge. Finish with green latest-head CI for every PR
 - Reassess the next dependency after each batch. Keep remaining requirements
   visible; do not declare full XL support from a successful load or test count
+
+## Progress
+
+- HXM definitions and custom radii published on xl_more_29_hxm, PR #174, based on
+  cmake e2cc8219a. Native/source controls and 42 Android steps pass
+- Wide wall identities are the next stacked batch, xl_more_30_walls. Native
+  source/boundary/save/demo and 80 Android controls pass. The original 21-member
+  audit is hash-matched; independent requirements remain visible. Concurrent
+  cloak capacity and trigger identities are the next capacity dependencies

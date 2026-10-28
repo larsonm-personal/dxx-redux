@@ -2,6 +2,8 @@
 #include "probe.h"
 #include "compatibility.h"
 #include "admission.h"
+#include "capacity.h"
+#include "wide_wall_fixture.h"
 
 #include <functional>
 #include <fstream>
@@ -113,6 +115,41 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 }
 
 std::string feature_row(const std::string &json, const char *id);
+
+void wide_wall_contract()
+{
+	auto original = fixture();
+	const auto empty = xl_compat::inspect_level(original);
+	const auto mask = empty.mine_offset + 5 + 8 * 12 + 2 + 1 + 16;
+	original.at(mask) = 1;
+	original.insert(original.begin() + mask + 1, 2, 0);
+	const auto game = empty.game_offset + 2;
+	patch(original, 12, game);
+	const auto row = empty.sections[3].offset + 2;
+	patch(original, game + 71, row + 24);
+	patch(original, game + 47, row);
+	patch(original, game + 51, 1);
+	patch(original, game + 55, 24);
+	original.insert(original.begin() + row, 24, 0);
+	patch(original, row + 12, unsigned(-1));
+	for (int field : { 19, 20, 22 }) original.at(row + field) = 255;
+	original.at(row + 21) = 1;
+	for (unsigned count : { 1u, 254u, 255u, 256u, 257u, 2047u }) {
+		const auto source = xl_test::remap_walls(original, count);
+		const auto probe = xl_compat::prepare_gameplay_probe(source);
+		const bool wide = count > DXX_CLASSIC_MAX_WALLS;
+		check(probe.source.walls.size() == count && probe.source.segments[0].sides[0].wall == int(count - 1), "Wide fixture lost source wall identity");
+		check(probe.stock_level.at(empty.mine_offset) == (wide ? DXX_XL_WIDE_WALL_MINE : 0), "Wrong native wall encoding");
+		const auto reference = mask - 2 + 1; // Native geometry omits owner/group
+		const unsigned low = probe.stock_level.at(reference);
+		const unsigned high = wide ? unsigned(probe.stock_level.at(reference + 1)) << 8 : 0;
+		check((low | high) == count - 1, "Native wall translation narrowed identity");
+	}
+	rejects([&] { xl_compat::prepare_gameplay_probe(xl_test::remap_walls(original, 2048)); });
+	auto invalid = xl_test::remap_walls(original, 256);
+	patch(invalid, mask + 1, 256, 2);
+	rejects([&] { xl_compat::inspect_level(invalid); });
+}
 
 void generator_assignment_contract(const char *directory = nullptr)
 {
@@ -1045,6 +1082,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		generator_assignment_contract();
+		wide_wall_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
 			object_trigger_inventory_contract(argv[2]);
 			return 0;

@@ -1348,7 +1348,7 @@ static int d1_save_translate_read_d1_world_state(
 		return 0;
 	memset(state, 0, sizeof(*state));
 	if (!d1_save_translate_read_s32(reader, &state->num_walls) ||
-	    state->num_walls < 0 || state->num_walls > MAX_WALLS)
+	    state->num_walls < 0 || state->num_walls > DXX_CLASSIC_MAX_WALLS)
 		return 0;
 	for (i = 0; i < state->num_walls; i++)
 		if (!d1_save_translate_read_d1_wall(reader, &state->walls[i]))

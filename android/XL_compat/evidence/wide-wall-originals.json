@@ -1,0 +1,461 @@
+{
+    "status": "inspection_only",
+    "playable": false,
+    "evidence_bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+    "levels": [
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/dinter.hog::dinter.rl2",
+            "level": "dinter.rl2",
+            "sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "walls": 1888,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "segment_damage",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger_type",
+                "wall_flags"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "lighting capacity",
+                "object capacity",
+                "object_trigger_type",
+                "segment_damage",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger capacity",
+                "trigger_type",
+                "wall_flags"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/diedel/forest.hog::forest.rl2",
+            "level": "forest.rl2",
+            "sha256": "5958c735b5d4185c49b705a46847fe60dcfaa76442062abdf091a4f02039a9ef",
+            "walls": 256,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_sounds",
+                "embedded_lighting",
+                "segment_function_v21"
+            ],
+            "runtime_blockers": ["effect_lightning", "effect_object_types", "effect_sounds", "segment_function_v21"]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/diedel/speed.hog::speed.rl2",
+            "level": "speed.rl2",
+            "sha256": "214ece9a00ee6f08f2c929d5ebd813e330fec68fd41a30ca1b3dc8780a33bc3c",
+            "walls": 923,
+            "format": "23/40",
+            "decoded": false,
+            "rejection": "invalid reactor trigger count"
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-01.rl2",
+            "level": "sp-01.rl2",
+            "sha256": "5b4ac91a472acf5a2f2e2fc06eaefa447777eedd7af8b60234bcecc8429f55cd",
+            "walls": 1029,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "segment_function_v21",
+                "trigger_type"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-02.rl2",
+            "level": "sp-02.rl2",
+            "sha256": "499524589c8019e5d3ab9265493f71c0e35fa0287f3f945fc02a877ff6a19ab3",
+            "walls": 827,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "trigger_type"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-03.rl2",
+            "level": "sp-03.rl2",
+            "sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "walls": 821,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "lighting capacity",
+                "object_trigger_type",
+                "trigger_type"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-04.rl2",
+            "level": "sp-04.rl2",
+            "sha256": "bb7c41c638e01443a553615c24e8dfcd1ec31cbb6cc6a36883489c3be755469d",
+            "walls": 1038,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "object_trigger_type",
+                "segment_function_v21",
+                "trigger_type"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/sirius/antho1-3.hog::antho-d1.rl2",
+            "level": "antho-d1.rl2",
+            "sha256": "85f95e124fde4d33b2ff3aabc9df5ad1da0da6548834071c00eeb051b0510759",
+            "walls": 390,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_object_types",
+                "effect_particles",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "trigger_type"
+            ],
+            "runtime_blockers": ["effect_object_types", "effect_particles", "object triggers", "trigger_type"]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/sirius/antho1-3.hog::antho-d2.rl2",
+            "level": "antho-d2.rl2",
+            "sha256": "8d3381c785698ec3984a4723da7fd0ead9bbe9c208808ba1b6e93b1659d1de2f",
+            "walls": 642,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": ["effect_object_types", "effect_particles", "embedded_lighting", "trigger_type"],
+            "runtime_blockers": ["effect_object_types", "effect_particles", "trigger_type"]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/sirius/antholgy.hog::antholgy.rl2",
+            "level": "antholgy.rl2",
+            "sha256": "6ec9cf65b1858ce811a0e598161a043933bbd6c0a67f568bf09420fd33f9c9e2",
+            "walls": 1130,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_object_types",
+                "effect_particles",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_object_types",
+                "effect_particles",
+                "object capacity",
+                "segment_function_v21",
+                "trigger capacity",
+                "trigger_type"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::watrwrks.rl2",
+            "level": "watrwrks.rl2",
+            "sha256": "c60ed421f6147e95939e38d07d92d00ed1467397991cc35e933a02675c444205",
+            "walls": 843,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "object_type",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_function_v21"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::canyon.rl2",
+            "level": "canyon.rl2",
+            "sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0",
+            "walls": 353,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "object_type",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_function_v21"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::subzero.rl2",
+            "level": "subzero.rl2",
+            "sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e",
+            "walls": 338,
+            "format": "23/40",
+            "decoded": false,
+            "rejection": "offset 830889: unsupported movement layout 255 at object 4"
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::canyon2.rl2",
+            "level": "canyon2.rl2",
+            "sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d",
+            "walls": 331,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "object_type",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_function_v21"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::control2.rl2",
+            "level": "control2.rl2",
+            "sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef",
+            "walls": 1117,
+            "format": "23/40",
+            "decoded": false,
+            "rejection": "invalid reactor trigger count"
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/boilpnt.hog::control.rl2",
+            "level": "control.rl2",
+            "sha256": "1bef7c4cb9ebf2ce9da42014a0fe73591828c695b1c689d24a57b01c8d7d946e",
+            "walls": 1113,
+            "format": "23/40",
+            "decoded": false,
+            "rejection": "invalid packed light index 0 in 23/40: segment=0 side=5 count=5728 first=28025 available=32769"
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/diedel/tankboy.hog::tankboy.rl2",
+            "level": "tankboy.rl2",
+            "sha256": "389105fe9e6d2bfc7dcc771654cb6235767c81f42a3b28bb7fa16454e4ded47e",
+            "walls": 263,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "object_type",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_properties"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/wshock20.hog::icecavrn.rl2",
+            "level": "icecavrn.rl2",
+            "sha256": "089fed1632ece46ec52087547959b99c4e72e8ef51a8992795934c2edffa338c",
+            "walls": 258,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": ["effect_object_types", "effect_sounds", "embedded_lighting", "trigger_type"],
+            "runtime_blockers": ["effect_object_types", "effect_sounds", "trigger_type"]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/wshock20.hog::wfactory.rl2",
+            "level": "wfactory.rl2",
+            "sha256": "50ce3da30b6fe14bfb3e81bd5e853c43f0b9ed599a9a5fc82418ae4918cc7335",
+            "walls": 259,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_trigger_type",
+                "object_triggers",
+                "object_type",
+                "segment_function_v21"
+            ],
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_owner_group"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/wshock20.hog::nautilus.rl2",
+            "level": "nautilus.rl2",
+            "sha256": "5ce1e28bb7a79bbb39d476f2a55fc14ddd446e5c32f9ac238633d64e00471b8e",
+            "walls": 305,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "additive_wall_rendering",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "object_triggers"
+            ],
+            "runtime_blockers": ["additive_wall_rendering", "effect_object_types", "effect_particles", "effect_sounds"]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/wshock20.hog::volcano.rl2",
+            "level": "volcano.rl2",
+            "sha256": "d7c34ef4cfe3b8ebe9f4fdc69adfd2d23861bd22571a791750de5338fca65a2b",
+            "walls": 414,
+            "format": "23/40",
+            "decoded": true,
+            "inspection_unsupported": [
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "embedded_lighting",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger_type"
+            ],
+            "runtime_blockers": [
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "segment_function_v21",
+                "segment_properties"
+            ]
+        }
+    ]
+}

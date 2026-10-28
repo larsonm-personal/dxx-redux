@@ -1,4 +1,5 @@
 #include "admission.h"
+#include "capacity.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -56,7 +57,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
 	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40");
-	limit(level.walls.size() > 255, "wall capacity", "more than 255 walls");
+	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	limit(level.objects.size() > 1000, "object capacity", "more than 1000 objects");
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
