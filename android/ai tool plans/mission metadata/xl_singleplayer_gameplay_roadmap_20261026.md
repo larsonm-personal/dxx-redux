@@ -211,8 +211,8 @@ finish original-mission qualification
     Classic/wide demo events preserve IDs across recording, playback and rewrite.
     All 21 original survey members match their hashes; 17 decode with other
     blockers and four retain reader failures. See
-    [wide-wall evidence](../../XL_compat/evidence/wide-walls.md). Trigger/object
-    capacities remain unfinished; concurrent cloaks are covered below
+    [wide-wall evidence](../../XL_compat/evidence/wide-walls.md). Wall-trigger capacity now has separate controls below; object allocation
+    capacity remains unfinished; concurrent cloaks are covered below
 
 27. Separate XL cloak lifecycle: 3,200 source comparisons, 100 concurrent entries,
     active disk through stock, eight malformed/truncated save controls and all
@@ -221,7 +221,15 @@ finish original-mission qualification
     checkpoints are covered. Redux retains ten entries. Other lighting/settings,
     colored/team walls and complete demo fidelity remain open
 
-After the wall and cloak batches, continue the capacity and resource foundations, then the
+28. Trigger capacity and byte identities: 254 wall rows, complete signed-byte
+    consumer normalization, checked saved counts/reads and metadata capacity have
+    source/native controls. All 77 Android steps cover authored high-ID actions,
+    a physical crossing, disk through stock and memory checkpoints. See
+    [trigger-capacity evidence](../../XL_compat/evidence/trigger-capacity.md).
+    Stock/imported D1 retain 100; object-action bounds match the source's 254.
+    The two original high-trigger members remain independently blocked
+
+After the wall, cloak and trigger-capacity batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated
 as required acceptance rather than cosmetic deferral. Do not mark

@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "object.h"
 
 #include "rewind_file.h"
+#include "wall_trigger_index.h"
 
 #include "../../android/XL_compat/capacity.h"
 #ifdef DXX_XL_RUNTIME

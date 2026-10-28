@@ -2613,7 +2613,7 @@ void object_move_one( object * obj )
 				int wall_num,trigger_num;
 				wall_num = Segments[previous_segment].sides[connect_side].wall_num;
 				if ( wall_num != -1 ) {
-					trigger_num = Walls[wall_num].trigger;
+					trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 					if (trigger_num != -1)
 						if (trigger_exit_flags(trigger_num) & TRIGGER_EXIT)
 							Guided_missile[Player_num]->lifeleft = 0;

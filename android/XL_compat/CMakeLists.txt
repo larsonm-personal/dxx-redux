@@ -103,6 +103,7 @@ if(BUILD_TESTING)
         include(tests/reference_light_index.cmake)
         include(tests/reference_hxm.cmake)
         include(tests/reference_wall_capacity.cmake)
+        include(tests/reference_trigger_capacity.cmake)
         include(tests/reference_trigger.cmake)
         include(tests/reference_scheduler.cmake)
         include(tests/reference_object.cmake)
@@ -303,6 +304,14 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/cloaks ${xl_cloak_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/cloak.cmake)
             set_tests_properties(xl_cloaks PROPERTIES TIMEOUT 150)
+            add_test(
+                NAME xl_trigger_capacity
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/triggers -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/trigger_capacity.cmake)
+            set_tests_properties(xl_trigger_capacity PROPERTIES TIMEOUT 150)
             set(xl_keyed_wall_args)
             if(TARGET xl_keyed_wall_reference)
                 list(APPEND xl_keyed_wall_args "-DREFERENCE=$<TARGET_FILE:xl_keyed_wall_reference>")

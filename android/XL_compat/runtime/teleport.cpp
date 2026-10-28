@@ -36,7 +36,7 @@ extern "C" void xl_wall_teleport_crossings(int object_index, const int *segments
 		if (side < 0) continue;
 		const int wall = Segments[from].sides[side].wall_num;
 		if (wall < 0 || wall >= Num_walls) continue;
-		const int trigger = Walls[wall].trigger;
+		const int trigger = wall_trigger_index(Walls[wall].trigger);
 		const int result = xl_wall_trigger(trigger, object_index, 0);
 		if (result >= 0) xl_preview_trigger_result(trigger, 0, result);
 	}

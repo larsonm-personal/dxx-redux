@@ -107,12 +107,12 @@ void d1_in_d2_write_trigger_storage(rewind_file *fp)
 
 int d1_in_d2_read_trigger_storage(rewind_file *fp, int swap, int apply)
 {
-	d1_trigger_storage storage[MAX_TRIGGERS];
+	d1_trigger_storage storage[DXX_CLASSIC_MAX_TRIGGERS];
 	int count;
 	if (PHYSFS_read(fp, &count, sizeof(count), 1) != 1)
 		return 0;
 	if (swap) count = SWAPINT(count);
-	if (count < 0 || count > MAX_TRIGGERS || count != (d1_in_d2_use_d1_gameplay() ? Num_triggers : 0))
+	if (count < 0 || count > DXX_CLASSIC_MAX_TRIGGERS || count != (d1_in_d2_use_d1_gameplay() ? Num_triggers : 0))
 		return 0;
 	for (int i = 0; i < count; ++i) {
 		if (!(Triggers[i].flags & D1_TRIGGER_RECORD) ||
@@ -317,7 +317,7 @@ int d1_in_d2_cross_trigger(int trigger_num, segment *seg, int side, int objnum, 
 		const int wall = other->sides[other_side].wall_num;
 		if (wall < 0 || wall >= Num_walls)
 			return 0;
-		const int paired = Walls[wall].trigger;
+		const int paired = wall_trigger_index(Walls[wall].trigger);
 		if (paired >= 0 && paired < Num_triggers && (Triggers[paired].flags & D1_TRIGGER_RECORD))
 			Triggers[paired].flags &= ~D1_TRIGGER_ON;
 	}

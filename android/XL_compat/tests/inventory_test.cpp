@@ -4,6 +4,7 @@
 #include "admission.h"
 #include "capacity.h"
 #include "wide_wall_fixture.h"
+#include "trigger_capacity_fixture.h"
 
 #include <functional>
 #include <fstream>
@@ -149,6 +150,60 @@ void wide_wall_contract()
 	auto invalid = xl_test::remap_walls(original, 256);
 	patch(invalid, mask + 1, 256, 2);
 	rejects([&] { xl_compat::inspect_level(invalid); });
+}
+
+void trigger_capacity_contract()
+{
+	for (int version : { 15, 17, 23 }) {
+		for (unsigned count : { 0u, 1u, 99u, 100u, 101u, 127u, 128u, 254u }) {
+			const auto bytes = xl_test::expand_triggers(fixture(version), count);
+			const auto prepared = xl_compat::prepare_gameplay_probe(bytes);
+			check(prepared.source.triggers.size() == count, "Trigger capacity changed source count");
+			const auto &native = prepared.stock_level;
+			const auto read = [&](std::size_t at) {
+				unsigned value = 0;
+				for (unsigned i = 0; i < 4; ++i) value |= unsigned(native.at(at + i)) << (8 * i);
+				return value;
+			};
+			const auto game = read(12), table = read(game + 71);
+			check(read(game + 75) == count, "Native trigger count narrowed");
+			for (unsigned id = 0; id < count; ++id)
+				check(native.at(table + id * 52) == 13 && read(table + id * 52 + 8) == unsigned(-1), "Native trigger row corrupted");
+		}
+		const auto overflow = xl_test::expand_triggers(fixture(version), 255);
+		const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(overflow));
+		check(xl_compat::blocker_message(blockers).find("more than 254 triggers") != std::string::npos, "Trigger overflow lacks actionable error");
+		rejects([&] { xl_compat::prepare_gameplay_probe(overflow); });
+	}
+	// Native wall records retain a byte identity, including the missing sentinel
+	auto bytes = fixture(23);
+	const auto base = xl_compat::inspect_level(bytes);
+	const auto wall = base.sections[3].offset;
+	bytes.insert(bytes.begin() + wall, 25, 0);
+	patch(bytes, base.game_offset + 47, wall);
+	patch(bytes, base.game_offset + 51, 1);
+	patch(bytes, base.game_offset + 55, 25);
+	patch(bytes, base.game_offset + 71, wall + 25);
+	patch(bytes, wall + 12, unsigned(-1));
+	bytes.at(wall + 20) = bytes.at(wall + 21) = bytes.at(wall + 23) = 255;
+	bytes.at(wall + 22) = 1;
+	bytes = xl_test::expand_triggers(bytes, 254);
+	for (unsigned id : { 99u, 100u, 127u, 128u, 253u, 255u }) {
+		bytes.at(wall + 20) = uint8_t(id);
+		bytes.at(wall + 23) = uint8_t(id);
+		const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+		const auto &native = probe.stock_level;
+		const auto read = [&](std::size_t at) {
+			unsigned value = 0;
+			for (unsigned i = 0; i < 4; ++i) value |= unsigned(native.at(at + i)) << (8 * i);
+			return value;
+		};
+		const auto row = read(read(12) + 47);
+		check(probe.source.walls[0].trigger == int(id) && native.at(row + 19) == id && native.at(row + 22) == id, "Wall trigger byte identity changed");
+	}
+	bytes.at(wall + 20) = 254;
+	rejects([&] { xl_compat::inspect_level(bytes); });
+	std::cout << "Trigger count boundaries in three layouts, native rows, byte IDs and useful overflow rejection passed\n";
 }
 
 void generator_assignment_contract(const char *directory = nullptr)
@@ -414,11 +469,11 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		patch(retry_deadlock, trigger + 7, 2, 1);
 		rejects([&] { xl_compat::prepare_gameplay_probe(retry_deadlock); });
 		auto capacity = admitted.source;
-		capacity.object_trigger_records.resize(255, capacity.object_trigger_records[0]);
-		capacity.object_triggers = 255;
+		capacity.object_trigger_records.resize(DXX_XL_MAX_TRIGGERS, capacity.object_trigger_records[0]);
+		capacity.object_triggers = DXX_XL_MAX_TRIGGERS;
 		check(xl_compat::runtime_blockers(capacity).empty(), "bounded object index endpoint was rejected");
-		capacity.object_trigger_records.resize(256, capacity.object_trigger_records[0]);
-		capacity.object_triggers = 256;
+		capacity.object_trigger_records.resize(DXX_XL_MAX_TRIGGERS + 1, capacity.object_trigger_records[0]);
+		capacity.object_triggers = DXX_XL_MAX_TRIGGERS + 1;
 		check(!xl_compat::runtime_blockers(capacity).empty(), "object trigger capacity silently exceeded reference index width");
 		auto player_owner = admitted.source;
 		player_owner.objects[1].type = 4;
@@ -1083,6 +1138,7 @@ int main(int argc, char **argv)
 		}
 		generator_assignment_contract();
 		wide_wall_contract();
+		trigger_capacity_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
 			object_trigger_inventory_contract(argv[2]);
 			return 0;
@@ -1197,7 +1253,7 @@ int main(int argc, char **argv)
 		unsupported.unknown.push_back({ "unrecognized_feature", 5, "unknown serialized semantics" });
 		check(!xl_compat::runtime_blockers(unsupported).empty(), "unknown feature silently admitted");
 		unsupported = probe.source;
-		unsupported.triggers.resize(101);
+		unsupported.triggers.resize(DXX_XL_MAX_TRIGGERS + 1);
 		check(!xl_compat::runtime_blockers(unsupported).empty(), "runtime trigger capacity ignored");
 		for (const auto n : { std::size_t(0), std::size_t(15), std::size_t(20), bytes.size() - 1 }) {
 			rejects([&] { xl_compat::inspect_level(Bytes(bytes.begin(), bytes.begin() + n)); });

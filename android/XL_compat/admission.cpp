@@ -60,7 +60,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	limit(level.objects.size() > 1000, "object capacity", "more than 1000 objects");
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
-	limit(level.triggers.size() > 100, "trigger capacity", "more than 100 triggers");
+	limit(level.triggers.size() > DXX_XL_MAX_TRIGGERS, "trigger capacity", "more than 254 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
 	limit(!level.equipment.empty() && level.level_version != 23, "equipment layout", "equipment makers require the audited modern 23/40 profile");
@@ -105,7 +105,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(translated_indices > 500, "changing-light capacity", "lossless translation requires more than 500 light indices");
 	limit(level.flicker_lights.size() > 100, "flicker capacity", "more than 100 flickering lights");
 	limit(level.object_triggers < 0 || static_cast<std::size_t>(level.object_triggers) != level.object_trigger_records.size(), "object triggers", "declared records and inspected owners differ");
-	limit(level.object_trigger_records.size() > 255, "object trigger capacity", "more than 255 object-attached actions");
+	limit(level.object_trigger_records.size() > DXX_XL_MAX_TRIGGERS, "object trigger capacity", "more than 254 object-attached actions");
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) {
 		const auto &record = level.object_trigger_records[i];
 		const auto &action = record.action;

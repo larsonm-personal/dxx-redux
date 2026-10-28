@@ -79,7 +79,7 @@ typedef struct d1_save_translate_world_state {
 	int num_open_doors;
 	active_door active_doors[MAX_DOORS];
 	int num_triggers;
-	trigger triggers[MAX_TRIGGERS];
+	trigger triggers[DXX_CLASSIC_MAX_TRIGGERS];
 	d1_save_translate_side_state sides[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 	int control_center_destroyed;
 	int countdown_seconds_left;
@@ -1363,7 +1363,7 @@ static int d1_save_translate_read_d1_world_state(
 			return 0;
 
 	if (!d1_save_translate_read_s32(reader, &state->num_triggers) ||
-	    state->num_triggers < 0 || state->num_triggers > MAX_TRIGGERS)
+	    state->num_triggers < 0 || state->num_triggers > DXX_CLASSIC_MAX_TRIGGERS)
 		return 0;
 	for (i = 0; i < state->num_triggers; i++)
 		if (!d1_save_translate_read_d1_trigger(reader, &state->triggers[i]))

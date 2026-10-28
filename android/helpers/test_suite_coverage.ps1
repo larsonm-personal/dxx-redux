@@ -247,6 +247,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_close_door_runtime'
             'test_xl_wide_wall_runtime'
             'test_xl_cloak_runtime'
+            'test_xl_trigger_capacity_runtime'
             'test_xl_repair_runtime'
             'test_xl_format34_runtime'
             'test_xl_hxm_runtime'

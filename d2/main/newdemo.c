@@ -2716,7 +2716,7 @@ int newdemo_read_frame_information(int rewrite)
 				int wall_num, trigger_num;
 				wall_num = Segments[segnum].sides[side].wall_num;
 				if (wall_num < 0 || wall_num >= Num_walls) break;
-				trigger_num = Walls[wall_num].trigger;
+				trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 				if (trigger_num < 0 || trigger_num >= Num_triggers) break;
 				/* A D2 secret crossing without status was rejected while recording */
 				if (!has_exit_status && Triggers[trigger_num].type == TT_SECRET_EXIT) break;

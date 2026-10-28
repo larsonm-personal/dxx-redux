@@ -6313,13 +6313,13 @@ static void merged_wall_probe_log_side_state(const char *source,
 		wall_type = wallp->type;
 		wall_flags = wallp->flags;
 		wall_state = wallp->state;
-		wall_trigger = wallp->trigger;
+		wall_trigger = wall_trigger_index(wallp->trigger);
 		wall_clip = wallp->clip_num;
 		wall_keys = wallp->keys;
 		wall_hps = wallp->hps;
 		wall_linked = wallp->linked_wall;
 #ifdef DXX_BUILD_DESCENT_II
-		wall_control = wallp->controlling_trigger;
+		wall_control = wall_trigger_index(wallp->controlling_trigger);
 		wall_cloak = wallp->cloak_value;
 #endif
 	}

@@ -209,7 +209,7 @@ static int teleport_test(int argc, char **argv)
 		require(Triggers[0].type == 14 && Triggers[0].num_links == 2 && Triggers[0].flags == TF_ONE_SHOT, "serialized teleport lost at source admission");
 		int source_wall = -1;
 		for (int i = 0; i < Num_walls; ++i)
-			if (Walls[i].trigger == 0) {
+			if (wall_trigger_index(Walls[i].trigger) == 0) {
 				source_wall = i;
 				break;
 			}

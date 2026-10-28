@@ -646,7 +646,7 @@ int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, i
 
 			wall_num = seg->sides[side].wall_num;
 			if ( wall_num != -1 ) {
-				trigger_num = Walls[wall_num].trigger;
+				trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 
 				if (trigger_num != -1)
 					return 0;

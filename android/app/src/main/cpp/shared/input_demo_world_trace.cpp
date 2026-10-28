@@ -245,11 +245,11 @@ json world_state()
 		FIELD(row, w, type);
 		FIELD(row, w, flags);
 		FIELD(row, w, state);
-		FIELD(row, w, trigger);
+		row["trigger"] = wall_trigger_index(w.trigger);
 		FIELD(row, w, clip_num);
 		FIELD(row, w, keys);
 #ifdef DXX_BUILD_DESCENT_II
-		FIELD(row, w, controlling_trigger);
+		row["controlling_trigger"] = wall_trigger_index(w.controlling_trigger);
 		FIELD(row, w, cloak_value);
 #endif
 		out["walls"].push_back(std::move(row));

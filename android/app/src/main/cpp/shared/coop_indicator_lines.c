@@ -140,7 +140,7 @@ static int find_exit_segment(void)
 		if (!(trigger_exit_flags(i) & TRIGGER_EXIT))
 			continue;
 		for (j = 0; j < Num_walls; j++)
-			if (Walls[j].trigger == i)
+			if (wall_trigger_index(Walls[j].trigger) == i)
 				return Walls[j].segnum;
 	}
 	return -1;

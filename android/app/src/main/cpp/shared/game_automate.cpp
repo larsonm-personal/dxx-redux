@@ -2370,6 +2370,28 @@ static int fire_level_trigger(const std::string &value, char *reason, size_t rea
 	return 1;
 }
 
+// Resolve the authored byte identity through the production crossing entry point
+static int fire_wall_trigger(const std::string &value, char *reason, size_t reason_size)
+{
+	char *end = nullptr;
+	const long index = strtol(value.c_str(), &end, 10);
+	if (Screen_mode != SCREEN_GAME || !Game_wind || !ConsoleObject ||
+	    end == value.c_str() || !end || *end || index < 0 || index >= Num_walls) {
+		snprintf(reason, reason_size, "fire_wall_trigger: invalid wall or game is not running");
+		return 0;
+	}
+	const auto &host = Walls[index];
+	if (host.segnum < 0 || host.segnum > Highest_segment_index || host.sidenum < 0 || host.sidenum >= 6 ||
+	    Segments[host.segnum].sides[host.sidenum].wall_num != index) {
+		snprintf(reason, reason_size, "fire_wall_trigger: wall has no matching authored side");
+		return 0;
+	}
+	const int trigger_index = wall_trigger_index(host.trigger);
+	check_trigger(&Segments[host.segnum], static_cast<short>(host.sidenum), static_cast<short>(Players[Player_num].objnum), 0);
+	LOGI("fire_wall_trigger: wall=%ld trigger=%d", index, trigger_index);
+	return 1;
+}
+
 static int complete_route_objective(char *reason, size_t reason_size)
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -4726,7 +4748,7 @@ extern "C" void game_automate_tick(void)
 				/* Start just across a real exit trigger, following the same
 				 * route validation as the cinematic, not an arbitrary depth */
 				for (int w = 0; w < Num_walls; ++w) {
-					const int trigger = Walls[w].trigger;
+					const int trigger = wall_trigger_index(Walls[w].trigger);
 					if (trigger < 0 || trigger >= Num_triggers || !(trigger_exit_flags(trigger) & TRIGGER_EXIT)) continue;
 					const int origin = Walls[w].segnum, face = Walls[w].sidenum;
 					if (origin < 0 || origin > Highest_segment_index || face < 0 || face >= MAX_SIDES_PER_SEGMENT) continue;
@@ -4794,8 +4816,8 @@ extern "C" void game_automate_tick(void)
 			if (s.value == "secret") {
 				int exit_wall = -1;
 				for (int i = 0; i < Num_walls; ++i) {
-					if (Walls[i].trigger >= Num_triggers) continue;
-					const bool secret = (trigger_exit_flags(Walls[i].trigger) & TRIGGER_SECRET_EXIT) != 0;
+					if (wall_trigger_index(Walls[i].trigger) < 0 || wall_trigger_index(Walls[i].trigger) >= Num_triggers) continue;
+					const bool secret = (trigger_exit_flags(wall_trigger_index(Walls[i].trigger)) & TRIGGER_SECRET_EXIT) != 0;
 					if (secret) {
 						exit_wall = i;
 						break;
@@ -5468,7 +5490,7 @@ extern "C" void game_automate_tick(void)
 				if (s.value == "maximum_exit_prepare" || s.value == "maximum_exit_fly" || s.value == "maximum_exit_verify") {
 					/* Authored Maximum L18 fixture: fly through trigger 5 into the next shaft segment */
 					if (!ConsoleObject || Current_level_num != 18 || Num_walls != 65 ||
-					    Walls[41].trigger != 5 || Walls[41].segnum != 36 || Walls[41].sidenum != 4 ||
+					    wall_trigger_index(Walls[41].trigger) != 5 || Walls[41].segnum != 36 || Walls[41].sidenum != 4 ||
 					    Segments[36].children[4] != 34 || Segments[34].children[4] != 119) {
 						stop_script_fail("Maximum exit fixture geometry mismatch");
 						break;
@@ -5540,7 +5562,7 @@ extern "C" void game_automate_tick(void)
 					const int type = normal || Current_level_num < 0 ? TT_EXIT : TT_SECRET_EXIT;
 					int wall = -1;
 					for (int i = 0; i < Num_walls; ++i)
-						if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == type) {
+						if (wall_trigger_index(Walls[i].trigger) >= 0 && wall_trigger_index(Walls[i].trigger) < Num_triggers && Triggers[wall_trigger_index(Walls[i].trigger)].type == type) {
 							wall = i;
 							break;
 						}
@@ -5604,12 +5626,12 @@ extern "C" void game_automate_tick(void)
 						coop_travel_get_physical_state(nullptr, &pending, nullptr);
 						if (pending >= 0 || coop_travel_blocks_gameplay()) stop_script_fail("Rejected secret exit stranded or froze its player");
 						for (int i = 0; i < Num_walls; ++i)
-							if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT &&
+							if (wall_trigger_index(Walls[i].trigger) >= 0 && wall_trigger_index(Walls[i].trigger) < Num_triggers && Triggers[wall_trigger_index(Walls[i].trigger)].type == TT_EXIT &&
 							    coop_travel_exit_side_blocked(Walls[i].segnum, Walls[i].sidenum))
 								stop_script_fail("Normal winner blocked another normal exit");
 					} else {
 						/* A legacy remote trigger packet cannot bypass the request/grant path */
-						check_trigger_sub(Walls[wall].trigger, (Player_num + 1) % N_players, 0);
+						check_trigger_sub(wall_trigger_index(Walls[wall].trigger), (Player_num + 1) % N_players, 0);
 						if (coop_travel_active()) stop_script_fail("Remote trigger broadcast bypassed host arbitration");
 					}
 				} else if (s.value == "physical_delayed_verify") {
@@ -5626,8 +5648,8 @@ extern "C" void game_automate_tick(void)
 					if (s.value == "arrival_guard_verify") {
 						if (blocked) {
 							for (int w = 0; w < Num_walls; ++w) {
-								if (Walls[w].trigger >= Num_triggers || Walls[w].segnum < 0 || Walls[w].segnum > Highest_segment_index) continue;
-								int type = Triggers[Walls[w].trigger].type;
+								if (wall_trigger_index(Walls[w].trigger) < 0 || wall_trigger_index(Walls[w].trigger) >= Num_triggers || Walls[w].segnum < 0 || Walls[w].segnum > Highest_segment_index) continue;
+								int type = Triggers[wall_trigger_index(Walls[w].trigger)].type;
 								if (type != TT_EXIT && !(type == TT_SECRET_EXIT && Current_level_num > 0)) continue;
 								if (ConsoleObject->segnum != Walls[w].segnum &&
 								    ConsoleObject->segnum != Segments[Walls[w].segnum].children[Walls[w].sidenum]) continue;
@@ -5676,8 +5698,8 @@ extern "C" void game_automate_tick(void)
 					for (int seg = 0; ConsoleObject && seg <= Highest_segment_index; ++seg) {
 						bool exit_area = false;
 						for (int w = 0; w < Num_walls; ++w) {
-							if (Walls[w].trigger >= Num_triggers) continue;
-							int type = Triggers[Walls[w].trigger].type;
+							if (wall_trigger_index(Walls[w].trigger) < 0 || wall_trigger_index(Walls[w].trigger) >= Num_triggers) continue;
+							int type = Triggers[wall_trigger_index(Walls[w].trigger)].type;
 							if (type != TT_EXIT && type != TT_SECRET_EXIT) continue;
 							if (seg == Walls[w].segnum || seg == Segments[Walls[w].segnum].children[Walls[w].sidenum]) exit_area = true;
 						}
@@ -6331,7 +6353,7 @@ extern "C" void game_automate_tick(void)
 						stop_script_fail("Secret reactor departure did not retain a destroyed, unavailable secret");
 					int exits = 0;
 					for (int w = 0; w < Num_walls; ++w) {
-						if (Walls[w].trigger >= Num_triggers || Triggers[Walls[w].trigger].type != TT_SECRET_EXIT) continue;
+						if (wall_trigger_index(Walls[w].trigger) < 0 || wall_trigger_index(Walls[w].trigger) >= Num_triggers || Triggers[wall_trigger_index(Walls[w].trigger)].type != TT_SECRET_EXIT) continue;
 						++exits;
 						if (!coop_travel_exit_side_blocked(Walls[w].segnum, Walls[w].sidenum) ||
 						    (WALL_IS_DOORWAY(&Segments[Walls[w].segnum], Walls[w].sidenum) & WID_FLY_FLAG))
@@ -7943,6 +7965,13 @@ extern "C" void game_automate_tick(void)
 				else if (s.value == "false") Game_suspended &= ~SUSP_ROBOTS;
 				else {
 					stop_script_fail("robots_suspended requires true or false");
+					break;
+				}
+			} else if (s.field == "fire_wall_trigger") {
+				char reason[128];
+				if (!fire_wall_trigger(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
 					break;
 				}
 			} else if (s.field == "fire_trigger") {

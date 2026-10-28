@@ -143,7 +143,7 @@ static int player_near_trigger(int player_num, int trigger_num)
 	int objnum = Players[player_num].objnum;
 	if (objnum < 0 || objnum > Highest_object_index) return 0;
 	for (int i = 0; i < Num_walls; ++i) {
-		if (Walls[i].trigger != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
+		if (wall_trigger_index(Walls[i].trigger) != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
 		    Walls[i].sidenum < 0 || Walls[i].sidenum >= 6) continue;
 		if (Objects[objnum].segnum == Walls[i].segnum ||
 		    Objects[objnum].segnum == Segments[Walls[i].segnum].children[Walls[i].sidenum]) return 1;
@@ -163,7 +163,7 @@ static void log_physical_position(const char *event, int trigger_num, int player
 	        obj->mtype.phys_info.velocity.x, obj->mtype.phys_info.velocity.y, obj->mtype.phys_info.velocity.z,
 	        Countdown_seconds_left);
 	for (int i = 0; i < Num_walls; ++i) {
-		if (Walls[i].trigger != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
+		if (wall_trigger_index(Walls[i].trigger) != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
 		    Walls[i].sidenum < 0 || Walls[i].sidenum >= 6) continue;
 		COOPLOG("physical exit source: local=%d trigger=%d wall=%d segment=%d side=%d child=%d",
 		        Player_num, trigger_num, i, Walls[i].segnum, Walls[i].sidenum,
@@ -326,7 +326,7 @@ int coop_travel_exit_side_blocked(int segnum, int side)
 			if (Segments[child].children[s] == segnum) wall_nums[1] = Segments[child].sides[s].wall_num;
 	for (int i = 0; i < 2; ++i) {
 		if (wall_nums[i] < 0 || wall_nums[i] >= Num_walls) continue;
-		coop_operation operation = physical_operation(Walls[wall_nums[i]].trigger);
+		coop_operation operation = physical_operation(wall_trigger_index(Walls[wall_nums[i]].trigger));
 		if (operation == COOP_OP_SECRET_ENTER && !coop_secret_entry_available()) return 1;
 		if (!physical_mode || !armed || source_level != Current_level_num ||
 		    (physical_pending < 0 && (!known || policy.phase == COOP_PHASE_SETTLED))) continue;
@@ -1039,7 +1039,7 @@ static int accept_physical(int trigger_num, int sender, uint64_t generation, int
 	if ((Triggers[trigger_num].flags & TF_DISABLED) &&
 	    !(operation == COOP_OP_NORMAL_EXIT && policy.phase == COOP_PHASE_NORMAL_WAIT)) return 0;
 	for (int i = 0; i < Num_walls; ++i) {
-		if (Walls[i].trigger != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
+		if (wall_trigger_index(Walls[i].trigger) != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
 		    Walls[i].sidenum < 0 || Walls[i].sidenum >= 6) continue;
 		if (crossing_segment == Walls[i].segnum && crossing_side == Walls[i].sidenum) valid_crossing = 1;
 	}

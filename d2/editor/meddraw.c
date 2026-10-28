@@ -500,7 +500,7 @@ void draw_special_wall( segment *seg, int side )
 	
 	draw_wall_side(seg,side);
 
-	if (Walls[seg->sides[side].wall_num].trigger != -1) {
+	if (wall_trigger_index(Walls[seg->sides[side].wall_num].trigger) != -1) {
 		gr_setcolor(TRIGGER_COLOR);
 		draw_trigger_side(seg,side);
 	}

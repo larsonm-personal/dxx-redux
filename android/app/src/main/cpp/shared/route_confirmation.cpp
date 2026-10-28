@@ -200,7 +200,7 @@ int requested_exit_wall(void)
 	if (!trigger_exit_flags(trigger))
 		return -1;
 	for (int wall = 0; wall < Num_walls; ++wall)
-		if (Walls[wall].trigger == trigger)
+		if (wall_trigger_index(Walls[wall].trigger) == trigger)
 			return wall;
 	return -1;
 }
@@ -1147,7 +1147,7 @@ void apply_incidental_crossed_trigger(object *actor)
 	wall_num = Segments[State.previous_actor_seg].sides[side].wall_num;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return;
-	trigger_num = Walls[wall_num].trigger;
+	trigger_num = wall_trigger_index(Walls[wall_num].trigger);
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return;
 	/* The proxy represents the player following Guide-Bot through this portal
@@ -1278,11 +1278,11 @@ void recover_path_door(object *actor)
 	wall_num = Segments[actor->segnum].sides[side].wall_num;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return;
-	controlling_trigger = Walls[wall_num].controlling_trigger;
+	controlling_trigger = wall_trigger_index(Walls[wall_num].controlling_trigger);
 	const int opposite_side = find_connect_side(&Segments[actor->segnum], &Segments[next_seg]);
 	if (opposite_side >= 0) opposite_wall = Segments[next_seg].sides[opposite_side].wall_num;
 	if (controlling_trigger < 0 && opposite_wall >= 0 && opposite_wall < Num_walls)
-		controlling_trigger = Walls[opposite_wall].controlling_trigger;
+		controlling_trigger = wall_trigger_index(Walls[opposite_wall].controlling_trigger);
 	int remote_reopener = 0;
 	const level_metadata_state *metadata = level_metadata_get_live_route_state();
 	if (metadata && opposite_wall >= 0 && opposite_wall < Num_walls &&

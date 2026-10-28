@@ -97,9 +97,10 @@ std::vector<MuzzleLight> muzzle_lights;
 vms_vector player_thrust{};
 std::string pending_level;
 bool loading_wide_walls = false;
+bool loading_extended_triggers = false;
 bool admitted_pilot = false, completed_pilot = false, admitted_water_arena = false;
 std::string rejection;
-uint64_t activated_triggers = 0;
+std::array<bool, DXX_XL_MAX_TRIGGERS> activated_triggers{};
 constexpr const char *translated_path = "xl_preview_cache/pilot.rl2";
 // XL palette.h uses 31; stock GR_FADE_LEVELS is 34 and cannot be reused
 constexpr int xl_fade_levels = 31;
@@ -524,7 +525,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
-	activated_triggers = 0;
+	activated_triggers.fill(false);
 	source.reset();
 #ifdef DXX_XL_DESCRIPTOR_TEST
 	no_damage_test_source.reset();
@@ -548,6 +549,7 @@ extern "C" void xl_preview_clear_mission(void)
 	player_thrust = {};
 	pending_level.clear();
 	loading_wide_walls = false;
+	loading_extended_triggers = false;
 }
 
 // Method-0 GatherStaticLights when ReadColor did not register baked colors
@@ -661,8 +663,10 @@ extern "C" int xl_preview_load_level(const char *filename)
 		xl_preview_clear_mission();
 		if (original) pending_level = filename;
 		loading_wide_walls = probe.source.walls.size() > DXX_CLASSIC_MAX_WALLS;
+		loading_extended_triggers = probe.source.triggers.size() > DXX_CLASSIC_MAX_TRIGGERS;
 		result = xl_stock_load_level(filename);
 		loading_wide_walls = false;
+		loading_extended_triggers = false;
 		pending_level.clear();
 		if (result) return result;
 		auto level = std::make_unique<xl_compat::Inventory>(std::move(probe.source));
@@ -692,6 +696,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		return result;
 	} catch (const std::exception &error) {
 		loading_wide_walls = false;
+		loading_extended_triggers = false;
 		pending_level.clear();
 		if (committed) xl_preview_clear_mission();
 		rejection = std::string(filename) + "\n" + error.what();
@@ -847,6 +852,11 @@ extern "C" int xl_preview_fluid_loop(int object_index, int sound, int playing)
 extern "C" const char *xl_preview_level_path(const char *filename)
 {
 	return !pending_level.empty() && pending_level == filename ? translated_path : filename;
+}
+
+extern "C" int xl_loading_extended_triggers(void)
+{
+	return loading_extended_triggers;
 }
 
 extern "C" int xl_loading_wide_walls(void)
@@ -1025,17 +1035,24 @@ extern "C" int xl_preview_pilot_completed(void)
 
 extern "C" void xl_preview_trigger_result(int trigger, int shot, int result)
 {
-	if (!xl_preview_pilot_active() || trigger < 0 || trigger >= Num_triggers || trigger >= 64) return;
+	if (!xl_preview_pilot_active() || trigger < 0 || trigger >= Num_triggers || trigger >= int(activated_triggers.size())) return;
 	if (result && !(Triggers[trigger].type == TT_EXIT && completed_pilot)) return;
-	const uint64_t bit = uint64_t(1) << trigger;
-	if (activated_triggers & bit) return;
-	activated_triggers |= bit;
+	if (activated_triggers[trigger]) return;
+	activated_triggers[trigger] = true;
 	con_printf(CON_DEBUG, "XL pilot trigger=%d type=%d shot=%d links=%d\n", trigger, Triggers[trigger].type, shot, Triggers[trigger].num_links);
 }
 
 extern "C" uint64_t xl_preview_trigger_mask(void)
 {
-	return activated_triggers;
+	uint64_t mask = 0;
+	for (unsigned index = 0; index < 64; ++index)
+		if (activated_triggers[index]) mask |= uint64_t(1) << index;
+	return mask;
+}
+
+extern "C" int xl_preview_trigger_activated(int index)
+{
+	return index >= 0 && index < int(activated_triggers.size()) && activated_triggers[index];
 }
 
 extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, xl_texture_emitter *emitter)

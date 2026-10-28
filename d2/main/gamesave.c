@@ -957,8 +957,8 @@ static int validate_loaded_level_graph(int game_version, int object_count, int d
 			return 0;
 		}
 		if (!level_optional_index_is_valid(Walls[i].linked_wall, Num_walls) ||
-		    !level_optional_index_is_valid(Walls[i].trigger, Num_triggers)) {
-			Warning("Invalid level wall links wall=%d linked=%d trigger=%d", i, Walls[i].linked_wall, Walls[i].trigger);
+		    !level_optional_index_is_valid(wall_trigger_index(Walls[i].trigger), Num_triggers)) {
+			Warning("Invalid level wall links wall=%d linked=%d trigger=%d", i, Walls[i].linked_wall, wall_trigger_index(Walls[i].trigger));
 			return 0;
 		}
 	}
@@ -1193,7 +1193,11 @@ int load_game_data(PHYSFS_file *LoadFile)
 #endif // 0
 
 	//==================== READ TRIGGER INFO ==========================
-	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, MAX_TRIGGERS,
+	int trigger_limit = DXX_CLASSIC_MAX_TRIGGERS;
+#ifdef DXX_XL_RUNTIME
+	if (xl_loading_extended_triggers()) trigger_limit = DXX_XL_MAX_TRIGGERS;
+#endif
+	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, trigger_limit,
 	                        game_top_fileinfo_version < 30 ? LEVEL_TRIGGER_V29_SERIALIZED_SIZE : LEVEL_TRIGGER_SERIALIZED_SIZE,
 	                        "triggers"))
 		return -1;
@@ -1364,7 +1368,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	//go through all walls, killing references to invalid triggers
 	for (i=0;i<Num_walls;i++)
-		if (Walls[i].trigger >= Num_triggers) {
+		if (wall_trigger_index(Walls[i].trigger) >= Num_triggers) {
 			Walls[i].trigger = -1;	//kill trigger
 		}
 
@@ -1374,7 +1378,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 		//	Find which wall this trigger is connected to.
 		for (w=0; w<Num_walls; w++)
-			if (Walls[w].trigger == i)
+			if (wall_trigger_index(Walls[w].trigger) == i)
 				break;
 
 	#ifdef EDITOR

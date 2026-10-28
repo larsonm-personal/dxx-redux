@@ -182,7 +182,7 @@ static int neptune_test(int argc, char **argv)
 		std::cout << "Neptune: native reactor countdown and linked doors passed; exit trigger preserved\n";
 		int exit_wall = -1;
 		for (int i = 0; i < Num_walls; ++i)
-			if (Walls[i].trigger == 0) exit_wall = i;
+			if (wall_trigger_index(Walls[i].trigger) == 0) exit_wall = i;
 		require(exit_wall >= 0 && xl_test_stop_after_level(), "controlled exit requires bounded completion fixture");
 		const auto &exit = Walls[exit_wall];
 		check_trigger(&Segments[exit.segnum], exit.sidenum, Players[Player_num].objnum, 0);

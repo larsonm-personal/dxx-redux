@@ -185,6 +185,8 @@ static int wide_wall_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_level_extensions_active() && !xl_loading_wide_walls() && Num_walls == DXX_XL_MAX_WALLS, "Wide-wall load or transient context failed");
+		route_snapshot_summary snapshot{};
+		require(level_metadata_get_canonical_route_snapshot(&snapshot) && snapshot.wall_count == DXX_XL_MAX_WALLS && snapshot.trigger_count == Num_triggers, "Metadata snapshot narrowed the XL wall table");
 		const int front = Segments[24].sides[5].wall_num, back = Segments[21].sides[4].wall_num;
 		require(front == 2017 && back == 2018, "Authored wall identities narrowed during native loading");
 		Game_suspended = SUSP_ROBOTS;
