@@ -24,6 +24,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "dxxerror.h"
 #include "3d.h"
 #include "inferno.h"
+#ifdef DXX_XL_RUNTIME
+#include "speed_boost.h"
+#endif
 #include "u_mem.h"
 #include "render.h"
 #include "object.h"
@@ -1176,6 +1179,9 @@ int automap_handler(window *wind, d_event *event, automap *am)
 
 void do_automap()
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_speed_boost_player_locked()) return;
+#endif
 	int pcx_error;
 	ubyte pal[256*3];
 	window *automap_wind = NULL;

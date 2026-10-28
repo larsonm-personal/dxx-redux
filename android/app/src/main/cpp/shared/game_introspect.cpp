@@ -34,6 +34,7 @@
 #include "boss_spawn.h"
 #include "boss_routes.h"
 #include "equipment.h"
+#include "speed_boost.h"
 #include "resource_validation.h"
 #endif
 
@@ -2193,6 +2194,21 @@ extern "C" char *game_introspect_get_state(void)
 			}
 		}
 		j["xl_pilot"]["wall_triggers"] = std::move(triggers);
+		json boosts = json::object();
+		for (int index = 0; index < xl_speed_boost_state_count(); ++index) {
+			xl_speed_boost_state state;
+			if (!xl_speed_boost_state_get(index, &state)) continue;
+			auto &row = boosts[std::to_string(state.owner)];
+			row = { { "owner", state.owner }, { "signature", state.signature }, { "boosted", state.boosted }, { "speed", state.speed }, { "orientation_steps", state.steps }, { "orientation_phase", state.phase } };
+			row["velocity"] = { state.velocity[0], state.velocity[1], state.velocity[2] };
+			row["minimum"] = { state.minimum[0], state.minimum[1], state.minimum[2] };
+			row["maximum"] = { state.maximum[0], state.maximum[1], state.maximum[2] };
+			row["segment"] = Objects[state.owner].segnum;
+		}
+		j["xl_pilot"]["boosts"] = std::move(boosts);
+		j["xl_pilot"]["boost_last_speed"] = xl_speed_boost_last_speed();
+		j["xl_pilot"]["boost_player_locked"] = xl_speed_boost_player_locked() != 0;
+		j["xl_pilot"]["in_boost_area"] = ConsoleObject && xl_speed_boost_segment(ConsoleObject->segnum);
 		json objects = json::object();
 		for (int index = 0; index < xl_object_trigger_count(); ++index) {
 			xl_object_trigger_state state;

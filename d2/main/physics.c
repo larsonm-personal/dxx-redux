@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "speed_boost.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -352,8 +353,10 @@ void do_physics_sim(object *obj)
 	int orig_segnum = obj->segnum;
 	int bounced=0;
 	int record_crossings = obj->type == OBJ_PLAYER;
+	int speed_boost = 0;
 #ifdef DXX_XL_RUNTIME
 	record_crossings |= xl_wall_teleport_actor(obj - Objects);
+	speed_boost = xl_speed_boost_begin(obj - Objects);
 #endif
 
 	Assert(obj->movement_type == MT_PHYSICS);
@@ -409,6 +412,9 @@ void do_physics_sim(object *obj)
 
 	//do thrust & drag
 	// NOTE: this always must be dependent on FrameTime, if sim_time differs!
+	#ifdef DXX_XL_RUNTIME
+	if (!xl_speed_boost_drag(obj-Objects, FrameTime))
+	#endif
 	if ((drag = obj->mtype.phys_info.drag) != 0) {
 
 		int count;
@@ -475,7 +481,8 @@ void do_physics_sim(object *obj)
 		count++;
 
 		//	If retry count is getting large, then we are trying to do something stupid.
-		if (count > 8) break; // in original code this was 3 for all non-player objects. still leave us some limit in case fvi goes apeshit.
+		if (count > 8) { speed_boost = 0; break; } // in original code this was 3 for all non-player objects. still leave us some limit in case fvi goes apeshit.
+		if (speed_boost && obj->type != OBJ_PLAYER && count > 3) break;
 
 		vm_vec_add(&new_pos,&obj->pos,&frame_vec);
 		input_demo_log_player_motion_detail_probe(obj, "pre_fvi", &frame_vec, &new_pos, sim_time);
@@ -609,6 +616,14 @@ void do_physics_sim(object *obj)
 
 				obj_relink(objnum, save_seg );
 
+#ifdef DXX_XL_RUNTIME
+				if (speed_boost && xl_speed_boost_retarget(objnum, start_pos.x, start_pos.y, start_pos.z)) {
+					obj->pos = start_pos;
+					obj_relink(objnum, orig_segnum);
+					try_again = 1;
+					continue;
+				}
+#endif
 				moved_time = 0;
 			}
 			else {
@@ -798,6 +813,10 @@ void do_physics_sim(object *obj)
 					con_printf(CON_DEBUG, "Colliding two objects of size %f + %f = %f while moving %f.\n", fsize0, fsize1, fsize0 + fsize1, sqrt(dx*dx + dy*dy + dz*dz)); 
 					*/
 					collide_two_objects( obj, &Objects[hit_info.hit_object], &pos_hit);
+#ifdef DXX_XL_RUNTIME
+					if (obj == ConsoleObject && speed_boost)
+						obj->mtype.phys_info.velocity = old_vel;
+#endif
 					input_demo_log_player_robot_hit_object_probe("hit_object_post_collide", obj, hit_info.hit_object, &pos_hit, &old_vel, n_ignore_objs, 0, 0);
 
 				}
@@ -874,8 +893,9 @@ void do_physics_sim(object *obj)
 		((obj->type == OBJ_PLAYER) || (obj->type == OBJ_ROBOT) || (obj->type == OBJ_DEBRIS)) &&
 		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0));
 #ifdef DXX_XL_RUNTIME
+	if (speed_boost) reconstruct_velocity = 0;
 	// XL's fluid profile reconstructs all object types after wall/bad-start hits
-	if (xl_preview_water_segment(orig_segnum))
+	if (!speed_boost && xl_preview_water_segment(orig_segnum))
 		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
 #endif
 	if (!obj_stopped && !bounced && reconstruct_velocity)
@@ -905,7 +925,11 @@ void do_physics_sim(object *obj)
 
 		if (sidenum != -1) {
 
-			if (! (WALL_IS_DOORWAY(&Segments[orig_segnum],sidenum) & WID_FLY_FLAG)) {
+			int blocked = !(WALL_IS_DOORWAY(&Segments[orig_segnum],sidenum) & WID_FLY_FLAG);
+#ifdef DXX_XL_RUNTIME
+			blocked |= xl_speed_boost_exit_blocked(objnum, orig_segnum, sidenum);
+#endif
+			if (blocked) {
 				side *s;
 				int vertnum,num_faces,i;
 				fix dist;
@@ -975,6 +999,9 @@ void phys_apply_force(object *obj,vms_vector *force_vec)
 
 	if (obj->movement_type != MT_PHYSICS)
 		return;
+	#ifdef DXX_XL_RUNTIME
+	if (obj == ConsoleObject && xl_speed_boost_player_locked()) return;
+	#endif
 	//Add in acceleration due to force
 	vm_vec_scale_add2(&obj->mtype.phys_info.velocity,force_vec,fixdiv(f1_0,obj->mtype.phys_info.mass));
 

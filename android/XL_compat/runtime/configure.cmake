@@ -22,6 +22,7 @@ foreach(xl_target IN LISTS xl_targets)
         ${xl_target}
         PRIVATE "${xl_runtime_dir}/preview.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
+                "${xl_runtime_dir}/speed_boost.cpp"
                 "${xl_runtime_dir}/trigger.cpp"
                 "${xl_runtime_dir}/wall_actions.cpp"
                 "${xl_runtime_dir}/player_resources.cpp"

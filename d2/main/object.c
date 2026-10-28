@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "speed_boost.h"
 #include "boss_spawn.h"
 #endif
 /*
@@ -1745,6 +1746,9 @@ void obj_delete(int objnum)
 	Assert(obj->type != OBJ_NONE);
 	Assert(obj != ConsoleObject);
 
+	#ifdef DXX_XL_RUNTIME
+	xl_speed_boost_forget(objnum);
+	#endif
 	input_demo_log_robot_lifecycle_delete(objnum, obj);
 #ifdef __ANDROID__
 	escort_route_notify_object_changed(objnum);
@@ -2123,6 +2127,9 @@ void dead_player_frame(void)
 //	------------------------------------------------------------------------------------------------------------------
 void start_player_death_sequence(object *player)
 {
+#ifdef DXX_XL_RUNTIME
+	xl_speed_boost_forget(player-Objects);
+#endif
 	int	objnum;
 
 	Assert(player == ConsoleObject);

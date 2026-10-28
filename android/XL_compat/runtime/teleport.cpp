@@ -1,5 +1,7 @@
 #include "preview.h"
 #include "geometry.h"
+#include "motion_math.h"
+#include "speed_boost.h"
 #include <cstdint>
 #include <cstdlib>
 #include <cmath>
@@ -20,34 +22,9 @@ extern "C" {
 extern int Do_appearance_effect;
 }
 
-static vms_angvec teleport_angles(const vms_vector &vector)
-{
-	const auto direction = xl_compat::geometry_fixed_direction({ vector.x, vector.y, vector.z });
-	vms_angvec angles{};
-	// XL retains the positive endpoint for both signs at exactly unit magnitude
-	angles.p = std::abs(direction[1]) >= F1_0 ? 0x4000 : fix_asin(-direction[1]);
-	angles.h = direction[0] || direction[2] ? fix_atan2(direction[2], direction[0]) : 0;
-	return angles;
-}
-
-static fix teleport_dot(const vms_vector &a, const vms_vector &b)
-{
-	return static_cast<fix>((double(a.x) * b.x + double(a.y) * b.y + double(a.z) * b.z) / 65536.0);
-}
-
-static vms_matrix teleport_matrix(const vms_angvec &angles)
-{
-	const auto sine = [](fixang a) { return static_cast<fix>(std::sin(double(a) * 2.0 * 3.14159265358979323846 / 65536.0) * 65536.0); };
-	const auto cosine = [](fixang a) { return static_cast<fix>(std::cos(double(a) * 2.0 * 3.14159265358979323846 / 65536.0) * 65536.0); };
-	const auto multiply = [](fix a, fix b) { return static_cast<fix>(double(b) / 65536.0 * a); };
-	const fix sp = sine(angles.p), cp = cosine(angles.p), sb = sine(angles.b), cb = cosine(angles.b), sh = sine(angles.h), ch = cosine(angles.h);
-	const fix sbsh = multiply(sb, sh), cbch = multiply(cb, ch), cbsh = multiply(cb, sh), sbch = multiply(sb, ch);
-	vms_matrix result;
-	result.rvec = { cbch + multiply(sp, sbsh), multiply(sb, cp), multiply(sp, sbch) - cbsh };
-	result.uvec = { multiply(sp, cbsh) - sbch, multiply(cb, cp), sbsh + multiply(sp, cbch) };
-	result.fvec = { multiply(sh, cp), -sp, multiply(ch, cp) };
-	return result;
-}
+using xl_compat::teleport_angles;
+using xl_compat::teleport_dot;
+using xl_compat::teleport_matrix;
 
 extern "C" void xl_wall_teleport_crossings(int object_index, const int *segments, int count)
 {
@@ -87,6 +64,7 @@ extern "C" int xl_wall_teleport_action(int trigger_index, int object_index, int 
 	for (int i = 0; i < trigger.num_links; ++i)
 		if (trigger.seg[i] < 0 || trigger.seg[i] > Highest_segment_index || trigger.side[i] < 0 || trigger.side[i] >= 6) return 1;
 	if (trigger.num_links) {
+		xl_speed_boost_stop(object_index);
 		// XL selects rand() % links; use the engine's simulation stream for replay
 		const int destination = d_rand() % trigger.num_links;
 		const int segment = trigger.seg[destination], side = trigger.side[destination];

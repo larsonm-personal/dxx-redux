@@ -1,0 +1,320 @@
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_speed_boosts_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived speed boosts",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.wall_triggers.0.type": 15,
+            "xl_pilot.boosts.49.boosted": 1,
+            "xl_pilot.boosts.49.speed": 3,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 70,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.boost_player_locked": true,
+            "xl_pilot.boosts.0.boosted": 1,
+            "xl_pilot.boosts.0.speed": 5,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.boosts.0.boosted": 1,
+            "xl_pilot.boosts.0.speed": 5,
+            "xl_pilot.boosts.49.boosted": 1,
+            "xl_pilot.boosts.49.speed": 3,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 70,
+        "side": 0,
+        "distance": 20,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.boosts.0.boosted": 1,
+            "xl_pilot.boosts.0.speed": 5,
+            "xl_pilot.boosts.49.boosted": 1,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture_disk",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.boosts.0.boosted": 1,
+            "xl_pilot.boosts.0.speed": 5,
+            "xl_pilot.boosts.49.boosted": 1,
+            "xl_pilot.boosts.49.speed": 3,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.boost_player_locked": false,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 5,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.in_boost_area": true,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "2",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.wall_triggers.2.operated": true,
+            "xl_pilot.wall_triggers.2.delay_ms": 20000,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.active": false,
+            "xl_pilot.runtime_active": false,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.active": true,
+            "xl_pilot.wall_triggers.2.operated": true,
+            "xl_pilot.wall_triggers.2.delay_ms": 20000,
+            "xl_pilot.boosts.49.boosted": 1,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.wall_triggers.2.operated": false,
+            "xl_pilot.wall_triggers.3.operated": false,
+            "xl_pilot.boost_last_speed": 2,
+        },
+        "timeout_ms": 35000,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.boost_player_locked": false,
+        },
+    },
+]

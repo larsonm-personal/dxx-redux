@@ -3,6 +3,9 @@
 The later [trigger flag tranche](trigger-flags.md) supersedes the 32/64 restriction
 below with action-specific semantics. Object events also have their separate
 [lifecycle evidence](object-triggers.md); this original tranche remains scoped.
+The later [boost tranche](speed-boosts.md) adds the source's missing speed-60
+normalization before wall teleport rotation. Its 252 updated source comparisons
+supersede the original velocity results below; object teleports retain motion.
 
 ## Scope
 
