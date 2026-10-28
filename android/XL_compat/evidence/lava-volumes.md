@@ -118,3 +118,19 @@ out because the script left robots suspended. The final script enables robots
 for generation and then suspends them for stable inspection. The failed run also
 restored protected files. Launcher recovery was infrastructure work, not gameplay
 navigation or a feature pass
+
+## Packed-vector portability follow-up
+
+The random direction helper now fills an aligned local fix array before constructing
+the packed vms_vector. This removes pointers to potentially unaligned packed members
+without changing axis selection, arithmetic, normalization or RNG order/count.
+The Android x86_64 build and an ARM64 compilation of fluids.cpp pass without the
+packed-member warnings. ARM64 execution has not been tested
+
+The four existing native lava/water regressions pass in 27.03 seconds, including
+10,240 extracted-source contact comparisons and 672 motion comparisons. The Android
+lava runner passes all 58 steps in 101,090 ms, run
+fad4f2a594a64f5d8ab96e64df7cba58. APK SHA-256:
+b9a1c98b148ccd61148b42e8770ff94b6dff7cbcc63d53adaabd21bd24319736.
+Protected before/after hashes match; emulator-5556 was untouched. These are derived
+controls and do not promote any original mission to runtime-qualified
