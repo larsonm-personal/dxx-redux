@@ -1201,6 +1201,10 @@ bool g3_draw_poly(int nv,const g3s_point **pointlist)
 		color_a = 1.0;
 	else
 		color_a = 1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0);
+	color_a = XL_FACE_ALPHA(color_a);
+#ifdef DXX_XL_RUNTIME
+	xl_preview_record_cloak_draw(color_a);
+#endif
 
 	for (c=0; c<nv; c++){
 		index3 = c * 3;

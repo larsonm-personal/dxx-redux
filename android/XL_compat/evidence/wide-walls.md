@@ -92,8 +92,8 @@ behavior, other capacities and resource validation remain independent
 
 ## Remaining work
 
-The source supports 100 concurrent cloaks while Redux currently supports 10.
-That concurrency is not solved by widening wall identities and is not qualified
-here. Trigger count/identity widths, object headroom and other tables also remain
-unfinished. XL multiplayer remains gated. No mission-specific exception or
+Widening wall identities did not qualify concurrent cloaks in this batch. The
+subsequent [cloak lifecycle batch](cloak-lifecycle.md) verifies 100 XL entries
+while retaining Redux's ten-entry limit. Trigger count/identity widths, object
+headroom and other tables remain unfinished. XL multiplayer remains gated. No mission-specific exception or
 rewriting of original input was used to erase these requirements

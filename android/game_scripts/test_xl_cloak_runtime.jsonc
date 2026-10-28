@@ -1,0 +1,606 @@
+// Authored cloak actions, actual draw/audio, collision and active-state persistence
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_cloak_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived XL cloaks",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": true,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 5,
+            "xl_pilot.doorways.1.type": 5,
+            "xl_pilot.doorways.0.state": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 220,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.cloak_count": 1,
+            "xl_pilot.doorways.0.state": 5,
+            "xl_pilot.cloaks.0.time": {
+                "gt": 0,
+                "lt": 65536,
+            },
+            "xl_pilot.cloak_audio.open.attempts": 1,
+            "xl_pilot.cloak_audio.open.failed": 0,
+        },
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 300,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 4,
+            "xl_pilot.doorways.1.type": 4,
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.player_flags": 5,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.runtime_active": true,
+            "xl_pilot.cloak_count": 1,
+            "xl_pilot.doorways.0.state": 5,
+        },
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 4,
+            "xl_pilot.doorways.1.type": 4,
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.player_flags": 5,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 21,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 5,
+            "xl_pilot.doorways.1.type": 5,
+            "xl_pilot.doorways.0.state": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_audio.close.completed": {
+                "gte": 1,
+            },
+            "xl_pilot.cloak_audio.close.failed": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 1300,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 24,
+        },
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 24,
+            "xl_pilot.cloak_count": 1,
+            "xl_pilot.doorways.0.state": 5,
+        },
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 4,
+            "xl_pilot.doorways.1.type": 4,
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.player_flags": 5,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 650,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.0.state": 5,
+            "xl_pilot.cloak_count": 1,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 4,
+            "xl_pilot.doorways.1.type": 4,
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.player_flags": 5,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 5,
+            "xl_pilot.doorways.1.type": 5,
+            "xl_pilot.doorways.0.state": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+            "xl_pilot.cloak_draws": 0,
+            "active_wall_transition_count": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.runtime_active": true,
+            "xl_pilot.cloak_count": 1,
+            "xl_pilot.doorways.0.state": 5,
+        },
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 4,
+            "xl_pilot.doorways.1.type": 4,
+            "xl_pilot.doorways.0.state": 0,
+            "xl_pilot.doorways.0.player_flags": 5,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 24,
+        "side": 5,
+        "distance": 20,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_count": 0,
+            "xl_pilot.doorways.0.type": 5,
+            "xl_pilot.doorways.1.type": 5,
+            "xl_pilot.doorways.0.state": 0,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.cloak_draw_value": {
+                "gte": 17,
+                "lte": 29,
+            },
+            "xl_pilot.cloak_draw_wall": 0,
+            "xl_pilot.cloak_draw_alpha": {
+                "gt": 0,
+                "lt": 0.5,
+            },
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 15000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.cloak_draws": {
+                "gt": 0,
+            },
+            "xl_pilot.doorways.0.state": 5,
+            "xl_pilot.doorways.0.type": 7,
+            "xl_pilot.cloak_audio.open.failed": 0,
+            "xl_pilot.cloak_audio.close.failed": 0,
+        },
+        "post_delay_ms": 0,
+    },
+]
