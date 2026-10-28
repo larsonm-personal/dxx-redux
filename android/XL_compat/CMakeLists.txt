@@ -101,6 +101,7 @@ if(BUILD_TESTING)
         include(tests/reference_blocked.cmake)
         include(tests/reference_keyed_wall.cmake)
         include(tests/reference_close_door.cmake)
+        include(tests/reference_changing_light.cmake)
         include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_light_index.cmake)
@@ -289,6 +290,19 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/close_door ${xl_close_door_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/close_door.cmake)
             set_tests_properties(xl_close_doors PROPERTIES TIMEOUT 120)
+            set(xl_changing_light_args)
+            if(TARGET xl_changing_light_reference)
+                list(APPEND xl_changing_light_args
+                     "-DREFERENCE=$<TARGET_FILE:xl_changing_light_reference>")
+            endif()
+            add_test(
+                NAME xl_changing_lights
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/changing_lights ${xl_changing_light_args}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/changing_light.cmake)
+            set_tests_properties(xl_changing_lights PROPERTIES TIMEOUT 180)
             add_test(
                 NAME xl_wide_walls
                 COMMAND

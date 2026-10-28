@@ -36,26 +36,7 @@ static int konflict_test(int argc, char **argv)
 			for (int corner = 0; corner < 8; ++corner)
 				require(Segments[i].verts[corner] == original.segments[i].vertices[corner], "translated segment vertex differs");
 		}
-		int native_index = 0;
-		for (const auto &index : original.light_indices) {
-			int remaining = index[2], target = index[3];
-			do {
-				const int chunk = (std::min) (remaining, 127);
-				require(native_index < Num_static_lights, "translated light index missing");
-				const auto &actual = Dl_indices[native_index++];
-				require(actual.segnum == index[0] && actual.sidenum == index[1] && actual.count == chunk && actual.index == target, "translated packed light index differs");
-				remaining -= chunk;
-				target += chunk;
-			} while (remaining);
-		}
-		require(native_index == Num_static_lights, "extra translated light indices");
-		for (std::size_t i = 0; i < original.delta_lights.size(); ++i) {
-			const auto &expected = original.delta_lights[i];
-			const auto &actual = Delta_lights[i];
-			require(actual.segnum == expected[0] && actual.sidenum == expected[1], "translated delta target differs");
-			for (int corner = 0; corner < 4; ++corner)
-				require(actual.vert_light[corner] == expected[corner + 3], "translated delta contribution differs");
-		}
+		require_owned_light_records(original);
 		int brightness = -1;
 		for (std::size_t i = 0; i < authored.size(); ++i)
 			require(xl_prepared_texture_brightness(int(i), &brightness) && brightness == authored[i], "owned authored brightness table differs");
@@ -93,14 +74,15 @@ static int konflict_test(int argc, char **argv)
 		require(PHYSFS_removeFromSearchPath(shadow.string().c_str()), "cannot unmount foreign brightness control");
 		require(xl_level_supported("konflict.rl2", 0), "brightness shadow recovery failed");
 		std::cout << "Konflict: foreign brightness rejected before commit; owned lighting, geometry and RNG preserved\n";
-		const auto light = Dl_indices[0];
-		require(subtract_light(light.segnum, light.sidenum) == 1, "changing light did not switch off");
+		xl_light_index light{};
+		require(xl_light_index_get(0, &light), "Missing owned light source");
+		require(subtract_light(light.segment, light.side) == 1, "changing light did not switch off");
 		const auto expected_lights = face_lights();
 		const auto expected_energy = Players[Player_num].energy;
 		char save[] = "xl-konflict.sav", description[] = "Konflict feature persistence";
 		stop_time();
 		require(state_save_all_sub(save, description) != 0, "Konflict save failed");
-		add_light(light.segnum, light.sidenum);
+		add_light(light.segment, light.side);
 		Players[Player_num].energy = 1;
 		require(state_restore_all_sub(save, 0) != 0, "Konflict restore failed");
 		require(xl_preview_pilot_active() && !std::strcmp(Current_mission_filename, "konflict") && Current_level_num == 1,

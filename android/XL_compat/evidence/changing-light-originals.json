@@ -1,0 +1,48 @@
+{
+    "status": "inspection_only",
+    "playable": false,
+    "evidence_bundle_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "levels": [
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/dinter.hog::dinter.rl2",
+            "level": "dinter.rl2",
+            "sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "format": "23/40",
+            "light_indices": 411,
+            "delta_lights": 32625,
+            "decoded": true,
+            "playable": false,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "object_trigger_type",
+                "segment_damage",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger_type",
+                "wall_flags"
+            ]
+        },
+        {
+            "archive": "d2xxl_downloads/levelpack.7z::missions/single/sphere.hog::sp-03.rl2",
+            "level": "sp-03.rl2",
+            "sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "format": "23/40",
+            "light_indices": 234,
+            "delta_lights": 32769,
+            "decoded": true,
+            "playable": false,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object_trigger_type",
+                "trigger_type"
+            ]
+        }
+    ]
+}

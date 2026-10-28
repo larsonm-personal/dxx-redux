@@ -20,6 +20,8 @@ struct GameplayProbe {
 // Translate only supported layouts and decoded feature requirements
 // Lighting remains in source and must be integrated before faithful play is claimed
 GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments = false);
+// Private runtime bytes omit stock light tables; the returned source must own their activation
+GameplayProbe prepare_source_runtime_probe(const Bytes &source, bool water_segments = false);
 // Explicit 17/36 entry point for layout qualification fixtures
 // All unsupported semantic requirements, including equipment generators, still apply
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source);

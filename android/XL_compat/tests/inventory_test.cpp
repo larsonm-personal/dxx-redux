@@ -6,6 +6,7 @@
 #include "wide_wall_fixture.h"
 #include "trigger_capacity_fixture.h"
 #include "object_capacity_fixture.h"
+#include "changing_light_fixture.h"
 
 #include <functional>
 #include <fstream>
@@ -903,6 +904,38 @@ void version_23_contract()
 	rejects([&] { xl_compat::inspect_level(bad); });
 }
 
+void owned_light_contract()
+{
+	for (int version : { 15, 17, 23 }) {
+		const int maximum = version == 15 ? 255 : 8191;
+		for (const auto range : { std::array<int, 2>{ 0, 0 }, { 0, 127 }, { 0, 128 }, { 0, 255 }, { 32767, 2 }, { 32768, 255 }, { 65535, 1 }, { 65535, maximum } }) {
+			const int first = range[0], count = range[1];
+			std::vector<std::array<int, 4>> indices(501, { 0, 5, count, first });
+			std::vector<std::array<int, 7>> deltas(first + count, { 0, 4, 0, 1, 2, 3, 4 });
+			const auto bytes = xl_test::changing_light_tables(fixture(version), indices, deltas);
+			const auto inventory = xl_compat::inspect_level(bytes);
+			check(xl_compat::runtime_blockers(inventory).empty(), "Full-width XL light tables retained a stock capacity gate");
+			const auto probe = xl_compat::prepare_source_runtime_probe(bytes);
+			check(probe.source.light_indices == indices && probe.source.delta_lights == deltas, "Owned runtime changed full-width authored light records");
+			const auto read32 = [&](std::size_t at) {
+				std::uint32_t value = 0;
+				for (int b = 0; b < 4; ++b) value |= std::uint32_t(probe.stock_level.at(at + b)) << (b * 8);
+				return value;
+			};
+			const auto game = read32(12);
+			for (int section : { 7, 8 })
+				check(read32(game + 35 + section * 12) == UINT32_MAX && !read32(game + 39 + section * 12), "Owned runtime retained an active narrowed stock light shadow");
+			rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+			if (!deltas.empty()) {
+				auto truncated = bytes;
+				truncated.pop_back();
+				rejects([&] { xl_compat::prepare_source_runtime_probe(truncated); });
+			}
+		}
+	}
+	std::cout << "24 source-owned light table contracts passed across source layouts, 501 rows and full first/count widths\n";
+}
+
 void light_count_contract()
 {
 	for (const int count : { 0, 1, 127, 128, 255 }) {
@@ -957,10 +990,9 @@ void light_count_contract()
 				patch(crowded, game + 35 + 8 * 12, inventory.sections.at(8).offset + (copies - 1) * 6);
 				if (copies == 250) xl_compat::prepare_gameplay_probe(crowded);
 				else {
-					const auto message = xl_compat::blocker_message(xl_compat::runtime_blockers(xl_compat::inspect_level(crowded)));
-					check(message.find("more than 500 light indices") != std::string::npos, "expanded capacity rejection missing");
+					check(xl_compat::runtime_blockers(xl_compat::inspect_level(crowded)).empty(), "Owned XL light tables retained the stock split capacity gate");
 					rejects([&] { xl_compat::prepare_gameplay_probe(crowded); });
-					check(xl_compat::compatibility_json("lights.rl2", crowded).find("\"status\": \"blocked\"") != std::string::npos, "browser admitted expanded light overflow");
+					check(xl_compat::prepare_source_runtime_probe(crowded).source.light_indices.size() == 251, "Owned runtime lost full source light records");
 				}
 			}
 		}
@@ -1189,6 +1221,7 @@ int main(int argc, char **argv)
 		version_34_contract();
 		segment_flags_contract();
 		light_count_contract();
+		owned_light_contract();
 		const auto bytes = fixture();
 		const auto out = xl_compat::inspect_level(bytes);
 		const std::size_t mine = bytes[8];

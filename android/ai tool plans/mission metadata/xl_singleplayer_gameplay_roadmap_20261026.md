@@ -251,7 +251,15 @@ finish original-mission qualification
     Redux retains its existing alternate; original missions remain separately
     qualified.
 
-After the wall, cloak, trigger and object-capacity batches, continue the capacity and resource foundations, then the
+32. Owned changing-light tables: full source widths and ranges, authored UVL
+    updates, exact earned-brightness disk/rewind restoration and Redux isolation
+    pass native/source and all 50 Android controls. See
+    [changing-light evidence](../../XL_compat/evidence/changing-lights.md) for
+    source lookup/overflow/propagation corrections and retained renderer limits.
+    Dinter and Sphere sp-03 lose only their light-capacity blocker. Flicker
+    capacity/lifecycle and complete changing-source visual parity remain open.
+
+After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated
 as required acceptance rather than cosmetic deferral. Do not mark
