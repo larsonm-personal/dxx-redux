@@ -1,4 +1,5 @@
 #include "light_sources.h"
+#include "flicker.h"
 #include <stdexcept>
 #include <algorithm>
 #include <tuple>
@@ -167,6 +168,7 @@ std::vector<ClassicGeometryLight> compile_classic_geometry_lights(const TextureB
 				light.destructible = destructible_texture(material->created_texture);
 				light.triggered = triggered_light(segment, side);
 				light.volatile_wall = volatile_wall(segment, side);
+				light.flickering = xl_flicker_has_source(segment, side) != 0;
 				for (int i = 0; i < Num_flickering_lights; ++i)
 					if (Flickering_lights[i].segnum == segment && Flickering_lights[i].sidenum == side) light.flickering = true;
 			}

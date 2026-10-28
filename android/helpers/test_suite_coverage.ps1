@@ -252,6 +252,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_object_capacity_runtime'
             'test_xl_door_lifecycle_runtime'
             'test_xl_changing_light_runtime'
+            'test_xl_flicker_runtime'
             'test_xl_repair_runtime'
             'test_xl_format34_runtime'
             'test_xl_hxm_runtime'

@@ -1,0 +1,607 @@
+{
+    "status": "inspection_only",
+    "playable": false,
+    "survey_levels": 131,
+    "hash_matched": 131,
+    "decoded": 103,
+    "levels_with_flickers": 23,
+    "maximum_flickers": 74,
+    "levels": [
+        {
+            "archive": "missions/kruel/kkr-xl.hog",
+            "archive_sha256": "e3a81aa72008c4dcfa54545f62c03b20fde5943ee5a2c53b11f7a3ca6762e40e",
+            "level": "kk1.rl2",
+            "sha256": "d7f07a29bc2b7ac86fc67745bd89884dd46c8b19731be968ef18e37ba18f7c35",
+            "format": "17/36",
+            "flickers": 36,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["wall_keys"],
+            "playable": false
+        },
+        {
+            "archive": "missions/kruel/kkr-xl.hog",
+            "archive_sha256": "e3a81aa72008c4dcfa54545f62c03b20fde5943ee5a2c53b11f7a3ca6762e40e",
+            "level": "kk2.rl2",
+            "sha256": "eb0f6d32ad23a844315b1b59b1c60999fa3e923732097310cb30d00800489f75",
+            "format": "17/36",
+            "flickers": 70,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["wall_keys"],
+            "playable": false
+        },
+        {
+            "archive": "missions/kruel/kmtl-xl.hog",
+            "archive_sha256": "e39edcd6340c56f50d584d31c7ca799005461a362eebba19d1da50d216b34022",
+            "level": "kmtl-xl.rl2",
+            "sha256": "ce0e13db7d59b93b25c69136847d94670f4264afaabc591daaebfd01198f48d6",
+            "format": "17/36",
+            "flickers": 6,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["wall_keys"],
+            "playable": false
+        },
+        {
+            "archive": "missions/kruel/kak-xl.hog",
+            "archive_sha256": "94ea868d604dcab09e285a18af0afae42107a8d015dd2c2d7601b61e517c358a",
+            "level": "fearon.rl2",
+            "sha256": "4eaf444ccdb690516b531b229afe822ca8bb8de1aa3e30def30853077b07ee6d",
+            "format": "17/36",
+            "flickers": 20,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["wall_keys"],
+            "playable": false
+        },
+        {
+            "archive": "missions/kruel/kak-xl.hog",
+            "archive_sha256": "94ea868d604dcab09e285a18af0afae42107a8d015dd2c2d7601b61e517c358a",
+            "level": "deadmine.rl2",
+            "sha256": "bcc695d5cf4b32dd4e540edf6af8ce2013b907fff8e41809efdd752decb61faf",
+            "format": "17/36",
+            "flickers": 34,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["wall_keys"],
+            "playable": false
+        },
+        {
+            "archive": "missions/kruel/kak-xl.hog",
+            "archive_sha256": "94ea868d604dcab09e285a18af0afae42107a8d015dd2c2d7601b61e517c358a",
+            "level": "main_gen.rl2",
+            "sha256": "9dc00ee2bad99945cf224215f69761fbd0b8d4a2d99f313d9425ad0339fd8148",
+            "format": "17/36",
+            "flickers": 3,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["effect_lightning", "effect_object_types"],
+            "playable": false
+        },
+        {
+            "archive": "missions/diedel/biohzrd.hog",
+            "archive_sha256": "f0752f22cea85d295e19a4bed1665c95efb20b8abd843feae7178735498e9fc9",
+            "level": "biohzrd.rl2",
+            "sha256": "3c54bc1a6aceac7c76a18755227c0f3a3ccae56c113a21fc2a4aa09d0c238c61",
+            "format": "23/40",
+            "flickers": 24,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["segment_function_v21", "segment_owner_group"],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/dinter.hog",
+            "archive_sha256": "5ddc056fe00971851fa55a0e93a316a4a0bce3591c65a7eb1b81dc21d168f4d3",
+            "level": "dinter.rl2",
+            "sha256": "e931738277cca26bf71944acfb89f7511274206d9e0cb0cfc6358d33c2c71fc5",
+            "format": "23/40",
+            "flickers": 18,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "object_trigger_type",
+                "segment_damage",
+                "segment_function_v21",
+                "segment_properties",
+                "trigger_type",
+                "wall_flags"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-01.rl2",
+            "sha256": "5b4ac91a472acf5a2f2e2fc06eaefa447777eedd7af8b60234bcecc8429f55cd",
+            "format": "23/40",
+            "flickers": 10,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-02.rl2",
+            "sha256": "499524589c8019e5d3ab9265493f71c0e35fa0287f3f945fc02a877ff6a19ab3",
+            "format": "23/40",
+            "flickers": 10,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "trigger_type"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-03.rl2",
+            "sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "format": "23/40",
+            "flickers": 4,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object_trigger_type",
+                "trigger_type"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/sphere.hog",
+            "archive_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+            "level": "sp-04.rl2",
+            "sha256": "bb7c41c638e01443a553615c24e8dfcd1ec31cbb6cc6a36883489c3be755469d",
+            "format": "23/40",
+            "flickers": 10,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "effect_trigger_target",
+                "object_trigger_type",
+                "segment_function_v21",
+                "trigger_type"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/diedel/wfc20.hog",
+            "archive_sha256": "bf8ee7ad2f8bf67b1520a3578c5e9159cb731505b4b6033728ecc6027534eb49",
+            "level": "wfc20.rl2",
+            "sha256": "c408d09a90c00cbeb84986c8670f9f63088701c6b87d1bfe7112d0d7cb545500",
+            "format": "23/40",
+            "flickers": 24,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["segment_function_v21"],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "canyon.rl2",
+            "sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0",
+            "format": "23/40",
+            "flickers": 3,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_function_v21"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "canyon2.rl2",
+            "sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d",
+            "format": "23/40",
+            "flickers": 3,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_function_v21"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/diedel/tankboy.hog",
+            "archive_sha256": "85ce8e6aee4207c062c281a6544c170a0c13409b24e0755ea7c216db824f4bd4",
+            "level": "tankboy.rl2",
+            "sha256": "389105fe9e6d2bfc7dcc771654cb6235767c81f42a3b28bb7fa16454e4ded47e",
+            "format": "23/40",
+            "flickers": 2,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_properties"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "icecavrn.rl2",
+            "sha256": "089fed1632ece46ec52087547959b99c4e72e8ef51a8992795934c2edffa338c",
+            "format": "23/40",
+            "flickers": 4,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["effect_object_types", "effect_sounds", "trigger_type"],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "wfactory.rl2",
+            "sha256": "50ce3da30b6fe14bfb3e81bd5e853c43f0b9ed599a9a5fc82418ae4918cc7335",
+            "format": "23/40",
+            "flickers": 74,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_lightning",
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_owner_group"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "sewerats.rl2",
+            "sha256": "ed3bf938c7baa462e5bb59e2bde46f10f52d3e74c5c2eeb29d7caa2631327fae",
+            "format": "23/40",
+            "flickers": 2,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["effect_object_types", "effect_particles", "effect_sounds"],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "nautilus.rl2",
+            "sha256": "5ce1e28bb7a79bbb39d476f2a55fc14ddd446e5c32f9ac238633d64e00471b8e",
+            "format": "23/40",
+            "flickers": 38,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": ["additive_wall_rendering", "effect_object_types", "effect_particles", "effect_sounds"],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "warplab.rl2",
+            "sha256": "13dbff7975682b69ad90e0ef75cbe6f1a852482cf9cd81b5620deff0345692d7",
+            "format": "23/40",
+            "flickers": 24,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "additive_wall_rendering",
+                "effect_object_types",
+                "effect_sounds",
+                "object triggers",
+                "object_trigger_type",
+                "object_type",
+                "segment_function_v21"
+            ],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "weaptest.rl2",
+            "sha256": "fffc8a13f0928dbb71af6f9f30478a9ba40724b040831ec3ffebad6f4fc550a5",
+            "format": "23/40",
+            "flickers": 22,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [],
+            "playable": false
+        },
+        {
+            "archive": "missions/single/wshock20.hog",
+            "archive_sha256": "cd72d863b458ae5cdca616fb6de73a92328b32eb2b2f28bddf3f18fe435faff0",
+            "level": "volcano.rl2",
+            "sha256": "d7c34ef4cfe3b8ebe9f4fdc69adfd2d23861bd22571a791750de5338fca65a2b",
+            "format": "23/40",
+            "flickers": 9,
+            "zero_delay": 0,
+            "negative_delay": 0,
+            "runtime_blockers": [
+                "effect_object_types",
+                "effect_particles",
+                "effect_sounds",
+                "segment_function_v21",
+                "segment_properties"
+            ],
+            "playable": false
+        }
+    ],
+    "excluded": [
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "fbasin.rl2",
+            "sha256": "d5a9c8bcbbd7be9ca35076eb99f3caa51c792d65b4384a04e0f4fd85dd6c9e4f",
+            "format": "15/34",
+            "reason": "invalid packed light index 2 in 15/34: segment=63 side=0 count=2592 first=37 available=1284"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "ursula.rl2",
+            "sha256": "966f92a2f4944a5e246d5502165b98beb6d8c260ad365e2f238c56a98b0f76c1",
+            "format": "15/34",
+            "reason": "invalid packed light index 17 in 15/34: segment=338 side=4 count=2624 first=540 available=2269"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "esonapri.rl2",
+            "sha256": "3084f78db26c94bbd80748d91ee662619ff91fc6541072e2ceee7b39048f477a",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=52 side=0 count=192 first=0 available=109"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "serduta.rl2",
+            "sha256": "8f07b772de22d652196e40837dfd9814bb7cb1303cd910b87be49b96f5914194",
+            "format": "15/34",
+            "reason": "invalid packed light index 68 in 15/34: segment=607 side=2 count=2560 first=3334 available=4771"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "chacshir.rl2",
+            "sha256": "22a3e6afcca34999798df521883c52ecfb86fa58064819dd3e73fc9719dc2587",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=7 side=4 count=1472 first=0 available=1103"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "tefoleg.rl2",
+            "sha256": "3c6fd53d595d5c201a185a1e9adcef28c15ba1f211ff03fa190297671c39d5ac",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=290 side=4 count=3456 first=0 available=2997"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "cefispar.rl2",
+            "sha256": "71115d346906d67601639c1c38c8080fb55b7ae0bca77c0d220ef61cde322845",
+            "format": "15/34",
+            "reason": "invalid packed light index 26 in 15/34: segment=264 side=2 count=2560 first=468 available=2995"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "ganeshd.rl2",
+            "sha256": "e1bd326dc9dae23dba1e2e7a9edde1563d56ba02ea3131669e5bf78019d14e99",
+            "format": "15/34",
+            "reason": "invalid packed light index 2 in 15/34: segment=30 side=1 count=4384 first=139 available=3297"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "lakshmid.rl2",
+            "sha256": "72270d390f109d3a56bff6212bf4cb822728ffadf49551ef8efff7edbbe129f3",
+            "format": "15/34",
+            "reason": "invalid packed light index 18 in 15/34: segment=456 side=4 count=3072 first=932 available=3860"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "aurabyss.rl2",
+            "sha256": "5dcdfa263e99eb4460ffd8514bdcafa03a3d31cf2010397872e484603f13cf43",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=3 side=1 count=1344 first=0 available=836"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "lvoxonbt.rl2",
+            "sha256": "4d5ec57fdb6833b284ee1066050b3154a26fdcbbd6c714c4c97da9083be8e924",
+            "format": "15/34",
+            "reason": "invalid packed light index 20 in 15/34: segment=220 side=2 count=3584 first=1167 available=4706"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "laradhes.rl2",
+            "sha256": "fba369d80ebbee0762ca59fa697a82e0cf1705b9dac82a8221112c6d932c4d0f",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=25 side=1 count=3968 first=0 available=2705"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "thorium.rl2",
+            "sha256": "f964ad8e1b6217844af28f0aa8f59ac9f1de4f0e750a21501a97f9d11dbceaad",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=640 side=4 count=1632 first=0 available=423"
+        },
+        {
+            "archive": "missions/single/af-xl.hog",
+            "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+            "level": "sdg22.rl2",
+            "sha256": "df9ff3bfa2530f8eceb4234d1c4aa50b776a2c532e298cd87a694c8431b5abfb",
+            "format": "15/34",
+            "reason": "invalid packed light index 0 in 15/34: segment=0 side=1 count=3328 first=0 available=1803"
+        },
+        {
+            "archive": "missions/spotlight/crownx.hog",
+            "archive_sha256": "dd86720aef549671fa53965a8926369fd6d99faff88a77a373a5a8e7c3946a6f",
+            "level": "crownx.rl2",
+            "sha256": "133b35216f4e537a46abb8735bd86a992f300656b3d8ca5d7f3c52ee0b944eec",
+            "format": "11/31",
+            "reason": "unsupported level version 11"
+        },
+        {
+            "archive": "missions/darkflamewolf/ctheo-xl.hog",
+            "archive_sha256": "a1a2d4cef9c8df1d948d0b46d7d069b91f596cd9440a4efc168f93e5a3b65ee6",
+            "level": "catalyst.rl2",
+            "sha256": "33326faf9cd85f4039f4f9ed969c46f4060e828433e76e5df2f06d7a940f5182",
+            "format": "18/36",
+            "reason": "unsupported level version 18"
+        },
+        {
+            "archive": "missions/d1fsxl/d1fs-xl.hog",
+            "archive_sha256": "c54384784e0b7fa48885c1ee21588031fd3fec34677053b35a75a7a4576a39b9",
+            "level": "d1fs01xl.rl2",
+            "sha256": "5ab19fc955deda5ee163307e734c18c34bcb69ffb20a2a3bbb41db3d963b8435",
+            "format": "18/36",
+            "reason": "unsupported level version 18"
+        },
+        {
+            "archive": "missions/single/pmlev1.hog",
+            "archive_sha256": "1be1b5cefa6e9ff0657dfee778a3129f444df22b6b4ab84752bf872af2397f69",
+            "level": "pmlev1p.rl2",
+            "sha256": "dd43019eb3f90318d7196d4ff676927585ffb2a23949ce824979776503a5316c",
+            "format": "17/35",
+            "reason": "unsupported level/game version pair 17/35"
+        },
+        {
+            "archive": "missions/sirius/sclairxl.hog",
+            "archive_sha256": "548614ddbf1bcdaac2ea31ecd1c980d06ceb54fe4a3a7e3187dc064631f9a9c6",
+            "level": "sclairxl.rl2",
+            "sha256": "8021461d63b5d2276eb6e6464e8b2b1765bcef22d8631a1431da951fe0523bed",
+            "format": "19/40",
+            "reason": "unsupported level version 19"
+        },
+        {
+            "archive": "missions/single/teleport.hog",
+            "archive_sha256": "d5ab44b2a457b20ac357939d52e1cd278ee212d27ea105f424564bec199d333b",
+            "level": "teleport.rl2",
+            "sha256": "dcd1118f426301f2be65ec69394065dd67bf4f3fd6772913f34b43c6c47a8f28",
+            "format": "17/35",
+            "reason": "unsupported level/game version pair 17/35"
+        },
+        {
+            "archive": "missions/kruel/kak-xl.hog",
+            "archive_sha256": "94ea868d604dcab09e285a18af0afae42107a8d015dd2c2d7601b61e517c358a",
+            "level": "toro_s.rl2",
+            "sha256": "c3b52ca8434e8baea87bc5100e733720bb4c4ca258316df7b036076fe2dbac5c",
+            "format": "21/40",
+            "reason": "unsupported level version 21"
+        },
+        {
+            "archive": "missions/diedel/playgdxl.hog",
+            "archive_sha256": "b667b47e4bd340cd084b2eabf84e5787d8da8034e15504ecc26acb08deb4343c",
+            "level": "playgdxl.rl2",
+            "sha256": "72cfab9fddb4d144eb35458c6994c66aece5af1c0044487774ffd4b3da7ec68a",
+            "format": "23/40",
+            "reason": "invalid object segment 78"
+        },
+        {
+            "archive": "missions/diedel/speed.hog",
+            "archive_sha256": "b35c6ce6dccbf8819b578e7d65d041bef947635730ce6b5fad533db068a188d0",
+            "level": "speed.rl2",
+            "sha256": "214ece9a00ee6f08f2c929d5ebd813e330fec68fd41a30ca1b3dc8780a33bc3c",
+            "format": "23/40",
+            "reason": "invalid reactor trigger count"
+        },
+        {
+            "archive": "missions/sirius/antho1-3.hog",
+            "archive_sha256": "dd7dc745ffa67f97e8b12be8911ef02a19bedbd96a7800c3caed31b3ac03f9c8",
+            "level": "antho-d3.rl2",
+            "sha256": "a473016f838121e4b2c060daedb7677fdc1e37ff04a0178ffa999ee514273168",
+            "format": "23/40",
+            "reason": "invalid trigger target 6"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "subzero.rl2",
+            "sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e",
+            "format": "23/40",
+            "reason": "offset 830889: unsupported movement layout 255 at object 4"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "control2.rl2",
+            "sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef",
+            "format": "23/40",
+            "reason": "invalid reactor trigger count"
+        },
+        {
+            "archive": "missions/single/boilpnt.hog",
+            "archive_sha256": "228dc2c6f4b8fbd4ef108966c43ee127007295d4215ac233b8e4ca40abae700c",
+            "level": "control.rl2",
+            "sha256": "1bef7c4cb9ebf2ce9da42014a0fe73591828c695b1c689d24a57b01c8d7d946e",
+            "format": "23/40",
+            "reason": "invalid packed light index 0 in 23/40: segment=0 side=5 count=5728 first=28025 available=32769"
+        },
+        {
+            "archive": "missions/diedel/playgdd3.hog",
+            "archive_sha256": "b878ac872d5acaf492b79b58551cc8ab8ac1e2434def751d84a4bab19ebd0186",
+            "level": "playgdxl.rl2",
+            "sha256": "2665829dcc29c2af54df358da90ea853423af88f3b6b91a1c5e968f52694b9b0",
+            "format": "23/40",
+            "reason": "only standard DHF HOG inspection is implemented"
+        }
+    ],
+    "survey_evidence_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "scope": "Fresh production reader and admission inspection of unchanged survey members; no original mission gameplay qualification"
+}

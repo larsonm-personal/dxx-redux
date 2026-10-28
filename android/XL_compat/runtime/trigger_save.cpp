@@ -19,6 +19,7 @@
 #include "repair.h"
 #include "projectile.h"
 #include "changing_light.h"
+#include "flicker.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -116,7 +117,13 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 13;
+		block["schema"] = 14;
+		block["flickers"] = json::array();
+		for (int i = 0; i < xl_flicker_count(); ++i) {
+			xl_flicker_state state{};
+			require(xl_flicker_get(i, &state), "Cannot capture XL flicker state");
+			block["flickers"].push_back({ state.segment, state.side, state.delay, state.timer, state.mask });
+		}
 		block["lighting"] = json::array();
 		for (int segment = 0; segment < xl_light_segment_count(); ++segment) {
 			xl_light_segment_state state{};
@@ -191,9 +198,23 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 10u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 13 &&
+		require(saved.is_object() && saved.size() == 11u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 14 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		const auto &flickers = saved.at("flickers");
+		require(flickers.is_array() && flickers.size() == static_cast<std::size_t>(xl_flicker_count()), "Invalid XL flicker count");
+		std::vector<xl_flicker_state> flicker_states(flickers.size());
+		for (std::size_t i = 0; i < flickers.size(); ++i) {
+			const auto &row = flickers[i];
+			require(row.is_array() && row.size() == 5, "Invalid XL flicker row");
+			for (unsigned column = 0; column < 4; ++column)
+				require(row[column].is_number_integer() && (!row[column].is_number_unsigned() || row[column].get<std::uint64_t>() <= INT32_MAX) &&
+				            row[column].get<std::int64_t>() >= INT32_MIN && row[column].get<std::int64_t>() <= INT32_MAX,
+				        "Invalid XL flicker integer");
+			require(row[4].is_number_unsigned() && row[4].get<std::uint64_t>() <= UINT32_MAX, "Invalid XL flicker pattern");
+			flicker_states[i] = { row[0].get<int>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<std::uint32_t>() };
+		}
+		require(xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 0), "Invalid XL flicker phase or source identity");
 		const auto &lighting = saved.at("lighting");
 		require(lighting.is_array() && lighting.size() == static_cast<std::size_t>(xl_light_segment_count()), "Invalid XL changing-light segment count");
 		std::vector<xl_light_segment_state> light_states(lighting.size());
@@ -343,6 +364,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
 		xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 1);
 		xl_light_segment_restore(light_states.data(), static_cast<int>(light_states.size()), 1);
+		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
 		xl_repair_restore(repair.get<std::int64_t>(), 1);

@@ -40,7 +40,7 @@ int read_offset(const Bytes &bytes, std::size_t offset)
 }
 } // namespace
 
-static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int qualification_version, bool source_lights = false)
+static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int qualification_version, bool source_runtime = false)
 {
 	GameplayProbe result;
 	result.source = inspect_level(source);
@@ -53,7 +53,8 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		require(serialization_23_40, "layout qualification requires 23/40");
 	}
 	require(blockers.empty(), blocker_message(blockers));
-	if (!source_lights) {
+	if (!source_runtime) {
+		require(v.flicker_lights.size() <= 100, "classic probe flicker capacity requires the source-owned XL runtime");
 		std::size_t translated_indices = 0;
 		for (const auto &index : v.light_indices) {
 			translated_indices += index[2] ? (index[2] + 126) / 127 : 1;
@@ -70,6 +71,14 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 
 	auto &out = result.stock_level;
 	out.assign(source.begin(), source.begin() + v.mine_offset);
+	if (source_runtime) {
+		const auto begin = static_cast<std::size_t>(v.flicker_offset) + 4;
+		const auto end = begin + v.flicker_lights.size() * 16;
+		require(begin <= end && end <= out.size(), "invalid owned flicker header span");
+		out.erase(out.begin() + begin, out.begin() + end);
+		patch(out, v.flicker_offset, 0);
+		patch(out, 8, static_cast<int>(out.size()));
+	}
 	patch(out, 4, 8);
 	put(out, wide_walls ? DXX_XL_WIDE_WALL_MINE : 0, 1);
 	put(out, static_cast<int>(v.vertices.size()), 2);
@@ -184,7 +193,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			out.insert(out.end(), source.begin() + start + 19, source.begin() + start + 25);
 		}
 	}
-	if (source_lights) {
+	if (source_runtime) {
 		// Never apply a narrowed stock shadow as well as the owned XL table
 		for (int section : { 7, 8 }) {
 			patch(out, new_game_offset + 35 + section * 12, -1);

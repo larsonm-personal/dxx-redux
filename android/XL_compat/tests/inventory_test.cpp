@@ -7,6 +7,7 @@
 #include "trigger_capacity_fixture.h"
 #include "object_capacity_fixture.h"
 #include "changing_light_fixture.h"
+#include "flicker_fixture.h"
 
 #include <functional>
 #include <fstream>
@@ -936,6 +937,32 @@ void owned_light_contract()
 	std::cout << "24 source-owned light table contracts passed across source layouts, 501 rows and full first/count widths\n";
 }
 
+void owned_flicker_contract()
+{
+	for (int version : { 15, 17, 23 })
+		for (int count : { 0, 1, 100, 101, 257 }) {
+			std::vector<std::array<int, 5>> rows(count, { 0, 0, INT32_MIN, 123, 16384 });
+			const auto bytes = xl_test::flicker_table(fixture(version), rows);
+			const auto parsed = xl_compat::inspect_level(bytes);
+			check(parsed.flicker_lights == rows && xl_compat::runtime_blockers(parsed).empty(), "Owned flicker layout/capacity rejected");
+			const auto runtime = xl_compat::prepare_source_runtime_probe(bytes);
+			check(runtime.source.flicker_lights == rows, "Owned flicker source lost phase or identity");
+			const auto at = static_cast<std::size_t>(parsed.flicker_offset);
+			check(!runtime.stock_level[at] && !runtime.stock_level[at + 1] && !runtime.stock_level[at + 2] && !runtime.stock_level[at + 3], "Private runtime retained a stock flicker shadow");
+			if (count > 100) rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+			if (count) {
+				rows.back()[4] = -1;
+				const auto negative = xl_test::flicker_table(fixture(version), rows);
+				check(xl_compat::blocker_message(xl_compat::runtime_blockers(xl_compat::inspect_level(negative))).find("negative delay") != std::string::npos, "Negative flicker delay lacked useful rejection");
+				rejects([&] { xl_compat::prepare_source_runtime_probe(negative); });
+				rows.back()[4] = 0;
+				check(xl_compat::runtime_blockers(xl_compat::inspect_level(xl_test::flicker_table(fixture(version), rows))).empty(), "Source-disabled zero-delay flicker rejected");
+				rows.back()[1] = 6;
+				rejects([&] { xl_compat::inspect_level(xl_test::flicker_table(fixture(version), rows)); });
+			}
+		}
+}
+
 void light_count_contract()
 {
 	for (const int count : { 0, 1, 127, 128, 255 }) {
@@ -1222,6 +1249,7 @@ int main(int argc, char **argv)
 		segment_flags_contract();
 		light_count_contract();
 		owned_light_contract();
+		owned_flicker_contract();
 		const auto bytes = fixture();
 		const auto out = xl_compat::inspect_level(bytes);
 		const std::size_t mine = bytes[8];

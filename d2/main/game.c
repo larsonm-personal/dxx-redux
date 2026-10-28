@@ -31,6 +31,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "inferno.h"
 #include "game.h"
+#ifdef DXX_XL_RUNTIME
+#include "flicker.h"
+#endif
 #include "input_demo_hooks.h"
 #include "render_gameplay_view.h"
 #include "input_demo_hooks_shared.h"
@@ -2148,6 +2151,9 @@ int Num_flickering_lights=0;
 
 void flicker_lights()
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_flicker_frame()) return;
+#endif
 	int l;
 	flickering_light *f;
 
@@ -2200,6 +2206,9 @@ flickering_light *find_flicker(int segnum,int sidenum)
 //turn flickering off (because light has been turned off)
 void disable_flicker(int segnum,int sidenum)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_flicker_enable(segnum, sidenum, 0)) return;
+#endif
 	flickering_light *f;
 
 	if ((f=find_flicker(segnum,sidenum)) != NULL)
@@ -2209,6 +2218,9 @@ void disable_flicker(int segnum,int sidenum)
 //turn flickering off (because light has been turned on)
 void enable_flicker(int segnum,int sidenum)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_flicker_enable(segnum, sidenum, 1)) return;
+#endif
 	flickering_light *f;
 
 	if ((f=find_flicker(segnum,sidenum)) != NULL)

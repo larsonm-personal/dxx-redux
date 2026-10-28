@@ -1,6 +1,7 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
 #include "native_crash_diagnostic.h"
 #include "changing_light.h"
+#include "flicker.h"
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -1558,6 +1559,8 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "projectile_test.h"
 #include "object_capacity_test.h"
 #include "changing_light_test.h"
+extern "C" void flicker_lights(void);
+#include "flicker_test.h"
 #include "repair_test.h"
 #include "format34_test.h"
 #include "hxm_test.h"
@@ -1565,6 +1568,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-flicker-test")) return flicker_test(argc, argv);
 	if (find_arg_value(argc, argv, "-changing-light-test")) return changing_light_test(argc, argv);
 	if (find_arg_value(argc, argv, "-object-capacity-test")) return object_capacity_test(argc, argv);
 	if (find_arg_value(argc, argv, "-projectile-test")) return projectile_test(argc, argv);
