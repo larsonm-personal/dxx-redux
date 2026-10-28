@@ -1,8 +1,9 @@
 # Modern XL repair centers
 
 Modern 23/40 function 2 now repairs the local player's shields through a separate
-XL path. Redux retains its existing repair implementation. Legacy encodings,
-optional ship/producer settings, team ownership and multiplayer remain gated.
+XL path. Redux retains its existing repair implementation. The later [17/36 repair tranche](legacy-repair.md) extends this path to one
+legacy encoding. The 15/33 encoding, optional ship/producer settings, team
+ownership and multiplayer remain gated.
 Derived controls qualify this feature without qualifying original missions
 
 ## Source and profile

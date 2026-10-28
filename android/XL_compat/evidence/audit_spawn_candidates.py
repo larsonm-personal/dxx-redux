@@ -60,6 +60,7 @@ def main():
             "lava",
             "blocked",
             "repair",
+            "legacy-repair",
             "closed-walls",
             "close-doors",
         ),
@@ -93,11 +94,12 @@ def main():
         )
         if args.feature == "closed-walls":
             water = row.get("wall_types", {}).get("5", 0)
-        if args.feature == "repair":
-            water = row["segment_functions"].get("2", 0) if row["version"] >= 21 else 0
+        if args.feature in ("repair", "legacy-repair"):
+            profile = row["version"] < 21 if args.feature == "legacy-repair" else row["version"] >= 21
+            water = row["segment_functions"].get("2", 0) if profile else 0
         if not (
             water
-            if args.feature in ("water", "lava", "blocked", "repair", "closed-walls")
+            if args.feature in ("water", "lava", "blocked", "repair", "legacy-repair", "closed-walls")
             else equipment.get("count", 0)
             if args.feature == "equipment"
             else actions
@@ -183,7 +185,7 @@ def main():
             record["survey_wall_spawn_actions" if args.feature == "spawn-points" else "survey_close_door_actions"] = (
                 record.pop("survey_spawn_actions")
             )
-        elif args.feature in ("water", "lava", "blocked", "repair", "closed-walls"):
+        elif args.feature in ("water", "lava", "blocked", "repair", "legacy-repair", "closed-walls"):
             del record["survey_spawn_actions"]
             record["survey_closed_walls" if args.feature == "closed-walls" else f"survey_{args.feature}_segments"] = (
                 water

@@ -26,3 +26,34 @@ static void write_repair_fixture(const std::filesystem::path &root)
 	std::ofstream descriptor(root / "repair.mn2", std::ios::binary);
 	descriptor << "d2x-name = Derived repair centers\nnum_levels = 1\nneptunxl.rl2\n";
 }
+
+static void write_legacy_repair_fixture(const std::filesystem::path &root)
+{
+	std::ifstream input(root / "obsrv-xl.hog", std::ios::binary);
+	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
+	bool changed = false;
+	for (auto member : xl_compat::read_hog(bytes)) {
+		if (member.name == "obsrv-xl.rl2") {
+			const auto source = xl_compat::inspect_level(member.bytes);
+			require(source.level_version == 17 && source.game_version == 36, "Legacy repair requires 17/36");
+			const auto extras = source.game_offset - (source.vertices.size() + source.segments.size() * 6 + 910) * 13 - source.segments.size() * 8;
+			require(source.segments[0].children[1] == 6 && source.segments[6].children[3] == 0, "Legacy repair portal changed");
+			member.bytes.at(extras) = 2;
+			const auto result = xl_compat::inspect_level(member.bytes);
+			require(result.segments[0].function == 2 && result.segments[6].function == 0, "Legacy repair encoding lost");
+			const auto blockers = xl_compat::runtime_blockers(result);
+			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
+			changed = true;
+		}
+		char name[13]{};
+		require(member.name.size() < sizeof(name), "Legacy repair member name too long");
+		std::strcpy(name, member.name.c_str());
+		output.insert(output.end(), name, name + sizeof(name));
+		for (unsigned shift = 0; shift < 32; shift += 8) output.push_back(static_cast<unsigned char>(member.bytes.size() >> shift));
+		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
+	}
+	require(changed, "Legacy repair source level missing");
+	write_bytes((root / "oldrep.hog").string().c_str(), output);
+	std::ofstream descriptor(root / "oldrep.mn2", std::ios::binary);
+	descriptor << "d2x-name = Derived legacy repair\nnum_levels = 1\nobsrv-xl.rl2\n";
+}

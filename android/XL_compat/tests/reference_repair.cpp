@@ -15,7 +15,8 @@ fix FixMul(fix a, fix b)
 #define ENTER(a, b)
 #define RETVAL(x) return (x);
 #define RETURN    return;
-constexpr int SEGMENT_FUNC_REPAIRCENTER = 2, SOUND_REFUEL_STATION_GIVING_FUEL = 62, SOUNDCLASS_GENERIC = 0;
+#include "xl_reference_repair_types.h"
+constexpr int SOUND_REFUEL_STATION_GIVING_FUEL = 62, SOUNDCLASS_GENERIC = 0;
 constexpr fix PRODUCER_SOUND_DELAY = 65536 / 4;
 constexpr bool IsEntropyGame = false, IsMultiGame = false;
 constexpr int N_LOCALPLAYER = 0;
@@ -72,7 +73,8 @@ void MultiSendPlaySound(int, fix) {}
 fix repair_clock = 0;
 unsigned cues = 0;
 struct CSegment {
-	int m_function = 0, m_owner = -1;
+	int m_function = 0, m_owner = -1, m_props = 0, m_xDamage[2]{};
+	void Upgrade();
 	fix Repair(fix);
 	fix ShieldDamage(fix)
 	{
@@ -135,17 +137,29 @@ struct {
 #pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #endif
 #include "xl_reference_repair.h"
+#include "xl_reference_repair_upgrade.h"
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
 int main(int argc, char **argv)
 {
 	try {
-		if (argc != 3) throw std::runtime_error("Expected repair and actual-frame samples");
+		if (argc != 3 && argc != 4) throw std::runtime_error("Expected repair and actual-frame samples");
+		const bool legacy = argc == 4 && std::string(argv[3]) == "legacy";
+		if (argc == 4 && !legacy) throw std::runtime_error("Unknown repair profile");
+		auto setup = [&](int function) {
+			segment.m_function = function;
+			if (legacy) {
+				segment.m_props = 255;
+				segment.m_xDamage[0] = segment.m_xDamage[1] = 123;
+				segment.Upgrade();
+				if (segment.m_function != function || segment.m_props || segment.m_xDamage[0] || segment.m_xDamage[1]) throw std::runtime_error("Legacy repair upgrade differs");
+			}
+		};
 		std::ifstream in(argv[1]);
 		int function, frame, maximum, now, last, expected_amount, expected_clock, expected_cues, count = 0;
 		while (in >> function >> frame >> maximum >> now >> last >> expected_amount >> expected_clock >> expected_cues) {
-			segment.m_function = function;
+			setup(function);
 			gameData.timeData = { frame, now };
 			repair_clock = last;
 			cues = 0;
@@ -154,13 +168,13 @@ int main(int argc, char **argv)
 				throw std::runtime_error("Repair differs at sample " + std::to_string(count));
 			++count;
 		}
-		if (count != 5760) throw std::runtime_error("Incomplete repair source matrix");
+		if (count != (legacy ? 1440 : 5760)) throw std::runtime_error("Incomplete repair source matrix");
 		std::cout << count << " extracted-reference repair samples passed\n";
 		std::ifstream frames(argv[2]);
 		int health, before_energy, after_health, after_energy;
 		count = 0;
 		while (frames >> function >> frame >> health >> before_energy >> after_health >> after_energy) {
-			segment.m_function = function;
+			setup(function);
 			gameData.timeData = { frame, 0 };
 			repair_clock = 0;
 			gameData.multiplayer.players[0] = { health, before_energy };
@@ -170,7 +184,7 @@ int main(int argc, char **argv)
 				throw std::runtime_error("Actual repair frame differs from source caller at " + std::to_string(count));
 			++count;
 		}
-		if (count != 42) throw std::runtime_error("Incomplete actual-frame repair matrix");
+		if (count != (legacy ? 12 : 42)) throw std::runtime_error("Incomplete actual-frame repair matrix");
 		std::cout << count << " actual player frames matched extracted source caller\n";
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << '\n';

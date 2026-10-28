@@ -37,6 +37,7 @@ CORE_TESTS = (
         "xl_doorways",
         "xl_close_doors",
         "xl_repair_centers",
+        "xl_legacy_repair",
         "xl_object_trigger_decode_reference",
         "xl_generator_assignment_reference",
         "xl_generator_assignment_runtime",

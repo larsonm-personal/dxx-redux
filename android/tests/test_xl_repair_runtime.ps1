@@ -3,19 +3,27 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [switch]$Legacy17
 )
 $ErrorActionPreference = 'Stop'
+$fixture = if ($Legacy17) { 'oldrep' } else { 'repair' }
+$testScript = if ($Legacy17) { 'test_xl_legacy_repair_runtime.jsonc' } else { 'test_xl_repair_runtime.jsonc' }
+$expectedDescriptor = 'e66dadc31bb929f865299cb914740c23641ce77ae120bf64c04bccf881010a8a'
 $expectedHog = 'cd1ef589c362e9449004e58c740124404c27267ab84a90b17b9397ad1120b031'
+if ($Legacy17) {
+    $expectedHog = 'aa9dc28e1497d702325a6cdbfe967d50e70d3996d4ba8ff688241361a8d72de2'
+    $expectedDescriptor = 'acc8e6e01e0d26049ebcda29407be8fa76bfa78c312347df4cbe660a016aec96'
+}
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
-    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'e66dadc31bb929f865299cb914740c23641ce77ae120bf64c04bccf881010a8a') {
+    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $expectedDescriptor) {
     throw 'Requires the pinned derived fixture from xl_repair_centers'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
-$output = Join-Path $PSScriptRoot '../../temp/xl-repair-android'
+$output = Join-Path $PSScriptRoot "../../temp/xl-$fixture-android"
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-RepairAdb {
@@ -32,7 +40,7 @@ function Invoke-RepairPrivate {
 $backup = 'files/xl-repair-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
-    'files/d2x-redux/missions/repair.hog', 'files/d2x-redux/missions/repair.mn2')
+    "files/d2x-redux/missions/$fixture.hog", "files/d2x-redux/missions/$fixture.mn2")
 $ready = $false
 try {
     Invoke-RepairAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -45,9 +53,9 @@ try {
     $ready = $true
     Invoke-RepairAdb -Arguments @('push', (Resolve-Path -LiteralPath $Hog).Path, '/data/local/tmp/xl-repair.hog') | Out-Null
     Invoke-RepairAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-repair.mn2') | Out-Null
-    Invoke-RepairPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-repair.hog files/d2x-redux/missions/repair.hog && cp /data/local/tmp/xl-repair.mn2 files/d2x-redux/missions/repair.mn2' | Out-Null
+    Invoke-RepairPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-repair.hog files/d2x-redux/missions/$fixture.hog && cp /data/local/tmp/xl-repair.mn2 files/d2x-redux/missions/$fixture.mn2" | Out-Null
     Invoke-RepairAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_repair_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $testScript -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-RepairAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-RepairPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8

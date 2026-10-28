@@ -760,7 +760,7 @@ extern "C" int xl_blocked_segment(int segment)
 
 extern "C" int xl_repair_segment(int segment)
 {
-	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && source->segments[segment].function == 2;
+	return source && (source->level_version == 23 || (source->level_version == 17 && source->game_version == 36)) && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && source->segments[segment].function == 2;
 }
 
 extern "C" int xl_blocked_map_segment(int segment)

@@ -31,6 +31,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
+		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
 		if (level.level_version == 23 && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
 		if (level.level_version == 23 && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function" && issue.detail == "11") continue;

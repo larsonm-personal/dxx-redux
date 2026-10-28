@@ -647,6 +647,10 @@ void version_23_contract()
 		check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "Repair browser contract missing");
 		auto legacy = fixture(17);
 		patch(legacy, xl_compat::inspect_level(legacy).mine_offset + 277, 2, 1);
+		check(!xl_compat::prepare_gameplay_probe(legacy).stock_level.empty(), "17/36 repair translation rejected");
+		check(feature_row(xl_compat::compatibility_json("oldrepair.rl2", legacy), "repair_centers").find("\"status\": \"supported\"") != std::string::npos, "17/36 repair browser contract missing");
+		legacy = fixture(15);
+		patch(legacy, xl_compat::inspect_level(legacy).mine_offset + 277, 2, 1);
 		rejects([&] { xl_compat::prepare_gameplay_probe(legacy); });
 	}
 	for (const int function : { 7, 13 }) {
