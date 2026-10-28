@@ -25,7 +25,7 @@ finish original-mission qualification
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Teleports, speed boosts, spawn destinations               | Wall teleports and boost direction/constraints/release/orientation, boost-area collision and saved motion have native/source controls. All 49 Android boost and 56 authored-spawn controls pass, including real death/respawn, marker precedence and saved transforms; original mission interactions remain open                                                                       |
 | Trigger chains, timing/flags, object events               | Wall scheduling and nonplayer object leaf/immediate-chain activation, lifecycle and disk/rewind persistence verified. Action-specific byte flags have reference/native and Android mixer/persistence controls. Delayed descendants now retain event context/actor identity through disk/rewind; other object actions/owners remain open; boss destinations have separate checked state |
-| Segment properties, walls and generators                  | Modern water/no-damage and lava contact/motion, water with stock robots and mixed producers, and bounded robot-matcen assignment, production, contact and persistence verified. Blocked entry/exit behavior verified; repair/team/ownership, gameplay walls, legacy equipment layouts and expanded generator data remain open; modern equipment controls pass                          |
+| Segment properties, walls and generators                  | Modern water/no-damage and lava contact/motion, water with stock robots and mixed producers, and bounded robot-matcen assignment, production, contact and persistence verified. Blocked entry/exit and modern repair centers verified; team/ownership, gameplay walls, legacy equipment layouts and expanded generator data remain open; modern equipment controls pass                |
 | Layouts, capacities, custom gameplay data and transitions | Audited bounded 15/33, 17/36 and 23/40 readers exist. Other observed layouts/payloads, wider tables and dynamic spawn headroom, expanded HAM/HXM robot/weapon data and authored transitions remain open                                                                                                                                                                                |
 | Cross-feature regressions and original missions           | Existing Ahayweh Gate qualification and documented Neptune/Observatory evidence remain scoped. Combined movement/events/generators/combat/persistence controls and original missions exercising newly supported features remain open                                                                                                                                                   |
 
@@ -136,6 +136,12 @@ finish original-mission qualification
     movement, automap, generation and persistence checks pass within the
     [recorded scope](../../XL_compat/evidence/blocked-segments.md). Twenty-nine
     originals retain separate container, decoding and gameplay requirements
+
+19. Modern repair centers: 5,760 source repair samples, 42 actual player frames
+    matched to the extracted caller, physical boundaries and stock-rate controls
+    pass. All 70 Android healing/cap/audio/automap/persistence checks pass; see
+    [repair evidence](../../XL_compat/evidence/repair-centers.md). Twenty-eight
+    originals retain independent requirements and qualification
 
 Continue other owner/action variants in the unfinished event area. Use original counts to prioritize
 effect/audio behavior, with activation, gameplay cues and cleanup treated as

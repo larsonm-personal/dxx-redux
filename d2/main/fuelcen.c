@@ -1,3 +1,6 @@
+#ifdef DXX_XL_RUNTIME
+#include "repair.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -768,6 +771,10 @@ fix repaircen_give_shields(segment *segp, fix MaxAmountCanTake )
 
 	Assert( segp != NULL );
 	PlayerSegment = segp;
+#ifdef DXX_XL_RUNTIME
+    const fix xl_amount = xl_repair_amount(segp-Segments, MaxAmountCanTake);
+    if (xl_amount >= 0) return xl_amount;
+#endif
 	if ( (segp) && (seg2p->special==SEGMENT_IS_REPAIRCEN) ) {
 		fix amount;
 //             detect_escort_goal_accomplished(-4);    //      UGLY! Hack! -4 means went through fuelcen.

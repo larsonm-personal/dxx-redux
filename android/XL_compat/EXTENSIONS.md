@@ -129,6 +129,11 @@ see [blocked-segment evidence](evidence/blocked-segments.md). Other property bit
 signed damage and multiplayer remain rejected. See the
 [modern-property evidence](evidence/modern-properties.md) and
 [implementation plan](../ai%20tool%20plans/mission%20metadata/xl_modern_properties_20261025.md).
+Modern repair centers now use XL's default 11-unit shield rate, initial-shield
+cap, source automap cue and separately saved audio cadence. Native/source and
+70 Android controls pass; see [repair-center evidence](evidence/repair-centers.md).
+Development schema 10 replaces schema 9. Redux retains its existing 25-unit rate;
+legacy repair encodings and optional settings remain independently gated.
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented
 object-event variants remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and

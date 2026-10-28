@@ -16,6 +16,7 @@
 #include "speed_boost.h"
 #include "spawn_points.h"
 #include "fluids.h"
+#include "repair.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -113,8 +114,9 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 9;
+		block["schema"] = 10;
 		block["fluid_scrape_elapsed"] = xl_fluid_scrape_elapsed();
+		block["repair_elapsed"] = xl_repair_elapsed();
 		block["spawns"] = json::array();
 		for (int slot = 0; slot < xl_spawn_state_count(); ++slot) {
 			xl_spawn_point point;
@@ -167,11 +169,13 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 7u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 9 &&
+		require(saved.is_object() && saved.size() == 8u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 10 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		const auto &fluid = saved.at("fluid_scrape_elapsed");
 		require(fluid.is_number_integer() && (!fluid.is_number_unsigned() || fluid.get<std::uint64_t>() <= INT64_MAX) && xl_fluid_restore(fluid.get<std::int64_t>(), 0), "Invalid XL fluid scrape clock");
+		const auto &repair = saved.at("repair_elapsed");
+		require(repair.is_number_integer() && (!repair.is_number_unsigned() || repair.get<std::uint64_t>() <= INT64_MAX) && xl_repair_restore(repair.get<std::int64_t>(), 0), "Invalid XL repair cue clock");
 		std::vector<xl_spawn_point> spawns;
 		const auto &spawn_rows = saved.at("spawns");
 		require(spawn_rows.is_array() && (spawn_rows.empty() || spawn_rows.size() == XL_SPAWN_SLOTS), "Invalid XL spawn state count");
@@ -285,6 +289,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
+		xl_repair_restore(repair.get<std::int64_t>(), 1);
 		xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 1);
 		xl_wall_trigger_restore(states.data(), static_cast<int>(states.size()));
 		xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 1);

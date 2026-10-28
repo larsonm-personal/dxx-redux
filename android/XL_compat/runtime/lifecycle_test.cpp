@@ -1547,11 +1547,13 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "water_actors_test.h"
 #include "lava_test.h"
 #include "blocked_test.h"
+#include "repair_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
 	if (find_arg_value(argc, argv, "-blocked-test")) return blocked_test(argc, argv);
+	if (find_arg_value(argc, argv, "-repair-test")) return repair_test(argc, argv);
 	if (find_arg_value(argc, argv, "-lava-test")) return lava_test(argc, argv);
 	if (find_arg_value(argc, argv, "-water-actors-test")) return water_actors_test(argc, argv);
 	if (find_arg_value(argc, argv, "-speed-boost-test")) return speed_boost_test(argc, argv);

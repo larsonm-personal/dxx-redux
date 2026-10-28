@@ -4,6 +4,7 @@
 #include "spawn_points.h"
 #include "fluids.h"
 #include "blocked.h"
+#include "repair.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -518,6 +519,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_spawn_clear();
 	xl_fluid_clear();
 	xl_blocked_reset();
+	xl_repair_clear();
 	xl_object_trigger_clear();
 	xl_robot_generator_clear();
 	xl_boss_spawn_clear();
@@ -753,6 +755,11 @@ extern "C" int32_t xl_preview_motion_time(int segment, int32_t time)
 extern "C" int xl_blocked_segment(int segment)
 {
 	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && (source->segments[segment].properties & xl_compat::segment_blocked);
+}
+
+extern "C" int xl_repair_segment(int segment)
+{
+	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && source->segments[segment].function == 2;
 }
 
 extern "C" int xl_blocked_map_segment(int segment)
