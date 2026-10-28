@@ -1,5 +1,10 @@
 # Authored XL close-door actions
 
+The later [door lifecycle work](door-lifecycle.md) supersedes this tranche's
+89-entry spare-tail restriction and allocation adapter. The pinned XL stack
+has 90 entries with growth disabled, not dynamically expandable storage. The
+earlier results below remain evidence for their stated transition scope.
+
 XL authored close actions now have their own implementation. They can close an
 automatic door during its waiting period, reusing the active entry and applying
 the source's timer conversion. Redux retains its existing alternate, which
@@ -20,9 +25,10 @@ separately. No production transition helper is linked into the oracle
 
 3,072 exact comparisons cover eight states, missing/front/back/second-part active
 entries, six earned times, four animation lengths, obstruction and allocation
-exhaustion. The full-array adapter uses the engine's actual 90-entry storage with
-its required spare tail entry. Source allocations can fail; this does not claim
-XL's dynamically expandable capacity. MSVC and GCC -Wall -Werror pass. Only
+exhaustion. The original full-array adapter used the engine's 90-entry storage
+with Redux's spare tail entry, simulating failure at 89. It did not establish
+the actual XL stack boundary; the later lifecycle work corrects that adapter.
+MSVC and GCC -Wall -Werror pass. Only
 misleading indentation inside the unchanged upstream extract is suppressed;
 adapter warnings remain enabled
 

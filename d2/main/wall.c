@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "cloak.h"
+#include "doors.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -406,6 +407,9 @@ void wall_damage_from_player(segment *seg, int side, fix damage, int playernum)
 // Opens a door
 void wall_open_door(segment *seg, int side)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_door_open(seg-Segments, side)) return;
+#endif
 	wall *w;
 	active_door *d;
 	int Connectside, wall_num, cwall_num = -1;
@@ -804,6 +808,9 @@ int is_door_free(segment *seg,int side)
 // Closes a door
 void wall_close_door(segment *seg, int side)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_door_close(seg-Segments, side, 0)) return;
+#endif
 	wall *w;
 	active_door *d;
 	int Connectside, wall_num, cwall_num;
@@ -1405,6 +1412,9 @@ void wall_frame_process()
 {
 	int i;
 
+#ifdef DXX_XL_RUNTIME
+	if (!xl_door_frame_process())
+#endif
 	for (i=0;i<Num_open_doors;i++) {
 		active_door *d;
 		wall *w;

@@ -27,6 +27,7 @@
 #include "persistence_probe.h"
 #include "projectile_probe.h"
 #include "object_capacity_probe.h"
+#include "door_probe.h"
 #include "corona_probe.h"
 #endif
 
@@ -7392,6 +7393,7 @@ extern "C" void game_automate_tick(void)
 				static rewind_memory_buffer reference = {}, checkpoint = {};
 				static object_runtime_state captured_allocator{};
 				static int captured_object_capacity;
+				static std::vector<active_door> captured_doors;
 				static int ready, level, score, energy, ammo, disk;
 				static vms_vector position;
 				static int64_t captured_time, collision_time;
@@ -7410,6 +7412,7 @@ extern "C" void game_automate_tick(void)
 					captured_time = GameTime64;
 					object_get_runtime_state(&captured_allocator);
 					captured_object_capacity = object_capacity();
+					captured_doors.assign(ActiveDoors, ActiveDoors + Num_open_doors);
 					collision_time = collide_get_collision_delay_last_play_time();
 					/* Keep both saves at the same game and wall-clock epoch */
 					stop_time();
@@ -7484,6 +7487,10 @@ extern "C" void game_automate_tick(void)
 						}
 						object_runtime_state restored_allocator{};
 						object_get_runtime_state(&restored_allocator);
+						if (Num_open_doors != static_cast<int>(captured_doors.size()) || (!captured_doors.empty() && memcmp(ActiveDoors, captured_doors.data(), captured_doors.size() * sizeof(active_door)))) {
+							stop_script_fail("Checkpoint did not restore exact active doors before simulation");
+							break;
+						}
 						if (object_capacity() != captured_object_capacity || restored_allocator.num_objects != captured_allocator.num_objects || restored_allocator.highest_object_index != captured_allocator.highest_object_index || restored_allocator.signature_seed != captured_allocator.signature_seed || memcmp(restored_allocator.free_obj_list, captured_allocator.free_obj_list, captured_object_capacity * sizeof(short))) {
 							LOGE("Checkpoint allocator round=%d count=%d/%d highest=%d/%d signature=%d/%d", round, captured_allocator.num_objects, restored_allocator.num_objects, captured_allocator.highest_object_index, restored_allocator.highest_object_index, captured_allocator.signature_seed, restored_allocator.signature_seed);
 							stop_script_fail("Checkpoint did not restore exact object allocator before simulation");
@@ -7599,6 +7606,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled object pool %s passed", s.value.c_str());
 #else
 				stop_script_fail("Object capacity probe requires Android D2");
+#endif
+			} else if (s.field == "xl_door_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_door_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled door %s passed", s.value.c_str());
+#else
+				stop_script_fail("Door probe requires Android D2");
 #endif
 			} else if (s.field == "xl_pilot_persistence") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

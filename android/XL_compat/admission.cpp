@@ -58,6 +58,22 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	};
 	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
+	for (std::size_t i = 0; i < level.walls.size(); ++i) {
+		const auto &wall = level.walls[i];
+		if (wall.type != 2) continue;
+		if (wall.clip < 0) result.push_back({ "door animation", static_cast<int>(i), "door has no wall animation" });
+		if (wall.segment < 0 || static_cast<std::size_t>(wall.segment) >= level.segments.size() || wall.side < 0 || wall.side >= 6) continue;
+		const int child = level.segments[wall.segment].children[wall.side];
+		if (child < 0 || static_cast<std::size_t>(child) >= level.segments.size()) continue;
+		const auto &back = level.segments[child];
+		for (int side = 0; side < 6; ++side) {
+			if (back.children[side] != wall.segment) continue;
+			const int other = back.sides[side].wall;
+			if (other >= 0 && static_cast<std::size_t>(other) < level.walls.size() && level.walls[other].clip < 0)
+				result.push_back({ "door animation", static_cast<int>(i), "opposite wall " + std::to_string(other) + " has no animation for paired door closing" });
+			break;
+		}
+	}
 	limit(xl_object_capacity_for_count(level.objects.size()) > DXX_XL_MAX_OBJECTS, "object capacity", ("authored objects require " + std::to_string(xl_object_capacity_for_count(level.objects.size())) + " runtime slots; supported signed-index pool is 32768").c_str());
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > DXX_XL_MAX_TRIGGERS, "trigger capacity", "more than 254 triggers");
