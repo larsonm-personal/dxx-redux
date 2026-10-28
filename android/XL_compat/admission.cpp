@@ -94,9 +94,6 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	for (std::size_t i = 0; i < equipment_owners.size(); ++i)
 		if (equipment_owners[i] < 0) result.push_back({ "equipment assignment", static_cast<int>(i), "source record has no equipment segment with this producer index" });
 	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
-	const bool modern_water = level.level_version >= 21 && std::any_of(level.segments.begin(), level.segments.end(), [](const Segment &segment) { return (segment.properties & segment_water) != 0; });
-	const bool fluid_actors = !level.matcens.empty() || !level.equipment.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) { return object.type == 2 || (object.contains_count > 0 && object.contains_type == 2); });
-	limit(modern_water && fluid_actors, "water actors", "water with robots or robot generators is not qualified; robot-free singleplayer water is supported");
 	limit(level.light_indices.size() > 500 || level.delta_lights.size() > 32000, "lighting capacity", "more than 500 light indices or 32000 delta lights");
 	// Translation splits counts into signed-byte chunks, preserving zero-count records
 	std::size_t translated_indices = 0;

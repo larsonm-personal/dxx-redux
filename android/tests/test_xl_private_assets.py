@@ -290,7 +290,7 @@ class XlPrivateTests(unittest.TestCase):
             )
             passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
-            self.assertEqual(receipt(passed, 0)["required_passed"], 60)
+            self.assertEqual(receipt(passed, 0)["required_passed"], 61)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
             # CTest can exit zero when disabled tests are present
             disabled_required = ET.parse(path)

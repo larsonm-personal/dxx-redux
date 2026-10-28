@@ -239,6 +239,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_object_chain_delays_runtime'
             'test_xl_speed_boosts_runtime'
             'test_xl_spawn_points_runtime'
+            'test_xl_water_actors_runtime'
             'test_xl_equipment_runtime'
             'test_xl_classic_lighting_lifecycle'
             'test_xl_classic_sound_lifecycle'

@@ -675,8 +675,8 @@ void version_23_contract()
 		if (bits == 1 || bits == 9) {
 			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
 			for (int actor = 0; actor < 3; ++actor) {
-				auto unsupported_actor = decoded;
-				if (actor == 2) unsupported_actor.matcens.resize(1);
+				auto water_actor = decoded;
+				if (actor == 2) water_actor.matcens.resize(1);
 				else {
 					xl_compat::Object object{};
 					if (actor == 0) object.type = 2;
@@ -684,9 +684,10 @@ void version_23_contract()
 						object.contains_type = 2;
 						object.contains_count = 1;
 					}
-					unsupported_actor.objects.push_back(object);
+					water_actor.objects.push_back(object);
 				}
-				check(xl_compat::blocker_message(xl_compat::runtime_blockers(unsupported_actor)).find("water actors") != std::string::npos, "water robot/generator gate lost");
+				const auto blockers = xl_compat::runtime_blockers(water_actor);
+				check(actor == 2 ? xl_compat::blocker_message(blockers).find("generator assignment") != std::string::npos : blockers.empty(), "modern water actor admission lost its independent generator assignment gate");
 			}
 		}
 	}

@@ -189,9 +189,7 @@ bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer)
 	if (level.level_version < 21 && !option("-xl-water-physics") && !water_test_profile)
 		throw std::runtime_error("water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete");
 	if (multiplayer) throw std::runtime_error("water physics multiplayer synchronization is unqualified");
-	if (!level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) {
-		    return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
-	    }))
+	if (level.level_version < 21 && (!level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) { return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT); })))
 		throw std::runtime_error("water with robots: AI combat and robot generation in fluids remain unqualified");
 	return true;
 }
@@ -269,7 +267,10 @@ void validate_requirements(const xl_compat::Inventory &level, const char *filena
 	std::string hxm = filename;
 	const auto dot = hxm.find_last_of('.');
 	if (dot != std::string::npos) hxm.replace(dot, std::string::npos, ".hxm");
-	if (!water_pilot && (PHYSFSX_exists(hxm.c_str(), 1) || PHYSFSX_exists((std::string(MISSION_DIR) + hxm).c_str(), 1)))
+	const bool robot_requirements = !level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) {
+		return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
+	});
+	if ((!water_pilot || robot_requirements) && (PHYSFSX_exists(hxm.c_str(), 1) || PHYSFSX_exists((std::string(MISSION_DIR) + hxm).c_str(), 1)))
 		throw std::runtime_error("level-specific HXM definitions: XL override support is not verified");
 	xl_validate_level_graphics(level.palette);
 	// Weapons can be collected or restored even when not placed as weapon objects
