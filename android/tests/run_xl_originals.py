@@ -37,6 +37,7 @@ CORE_TESTS = (
         "xl_doorways",
         "xl_close_doors",
         "xl_changing_lights",
+        "xl_flickers",
         "xl_wide_walls",
         "xl_cloaks",
         "xl_trigger_capacity",

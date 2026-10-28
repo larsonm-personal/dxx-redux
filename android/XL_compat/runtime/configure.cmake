@@ -29,6 +29,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/doorway.cpp"
                 "${xl_runtime_dir}/doors.cpp"
                 "${xl_runtime_dir}/changing_light.cpp"
+                "${xl_runtime_dir}/flicker.cpp"
                 "${xl_runtime_dir}/cloak.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/speed_boost.cpp"
@@ -67,6 +68,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/object_capacity_probe.cpp"
                     "${xl_runtime_dir}/door_probe.cpp"
                     "${xl_runtime_dir}/changing_light_probe.cpp"
+                    "${xl_runtime_dir}/flicker_probe.cpp"
                     "${xl_runtime_dir}/corona_probe.cpp")
     endif()
 endforeach()

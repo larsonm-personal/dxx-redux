@@ -30,6 +30,8 @@
 #include "door_probe.h"
 #include "changing_light_probe.h"
 #include "changing_light.h"
+#include "flicker.h"
+#include "flicker_probe.h"
 #include "corona_probe.h"
 #endif
 
@@ -7398,6 +7400,7 @@ extern "C" void game_automate_tick(void)
 				static std::vector<active_door> captured_doors;
 #ifdef DXX_XL_RUNTIME
 				static std::vector<xl_light_segment_state> captured_lights;
+				static std::vector<xl_flicker_state> captured_flickers;
 #endif
 				static int ready, level, score, energy, ammo, disk;
 				static vms_vector position;
@@ -7419,6 +7422,9 @@ extern "C" void game_automate_tick(void)
 					captured_object_capacity = object_capacity();
 					captured_doors.assign(ActiveDoors, ActiveDoors + Num_open_doors);
 #ifdef DXX_XL_RUNTIME
+					captured_flickers.resize(xl_flicker_count());
+					for (std::size_t i = 0; i < captured_flickers.size(); ++i)
+						xl_flicker_get(static_cast<int>(i), &captured_flickers[i]);
 					captured_lights.resize(xl_light_segment_count());
 					for (std::size_t i = 0; i < captured_lights.size(); ++i)
 						xl_light_segment_get(static_cast<int>(i), &captured_lights[i]);
@@ -7445,7 +7451,7 @@ extern "C" void game_automate_tick(void)
 					if (!automation_capture_checkpoint_reference(&reference, "CHECKPOINT TEST", disk))
 						stop_script_fail("Checkpoint reference save failed");
 					start_time();
-				} else if (s.value == "roundtrip") {
+				} else if (s.value == "roundtrip" || s.value == "roundtrip_paused") {
 					const size_t trailer_bytes = disk ? sizeof(android_save_meta_disk) : 0;
 					if (!ready || reference.size + trailer_bytes != checkpoint.size || memcmp(reference.data, checkpoint.data, reference.size)) {
 						LOGE("checkpoint comparison: ready=%d reference=%zu checkpoint=%zu", ready, reference.size, checkpoint.size);
@@ -7496,6 +7502,15 @@ extern "C" void game_automate_tick(void)
 							break;
 						}
 #ifdef DXX_XL_RUNTIME
+						bool flickers_match = xl_flicker_count() == static_cast<int>(captured_flickers.size());
+						for (std::size_t i = 0; flickers_match && i < captured_flickers.size(); ++i) {
+							xl_flicker_state current{};
+							flickers_match = xl_flicker_get(static_cast<int>(i), &current) && !memcmp(&current, &captured_flickers[i], sizeof(current));
+						}
+						if (!flickers_match) {
+							stop_script_fail("Checkpoint did not restore exact XL flicker patterns and clocks before simulation");
+							break;
+						}
 						bool lights_match = xl_light_segment_count() == static_cast<int>(captured_lights.size());
 						for (std::size_t i = 0; lights_match && i < captured_lights.size(); ++i) {
 							xl_light_segment_state current{};
@@ -7527,6 +7542,8 @@ extern "C" void game_automate_tick(void)
 					rewind_memory_buffer_discard(&reference);
 					rewind_memory_buffer_discard(&checkpoint);
 					ready = 0;
+					if (s.value == "roundtrip_paused" && !android_open_overlay_pause_if_safe())
+						stop_script_fail("Cannot pause checkpoint restoration before simulation");
 				} else if (s.value == "drain") {
 					// Settle the detached worker without advancing paused combat
 					state_checkpoint_drain();
@@ -7627,6 +7644,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled object pool %s passed", s.value.c_str());
 #else
 				stop_script_fail("Object capacity probe requires Android D2");
+#endif
+			} else if (s.field == "xl_flicker_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_flicker_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled flicker %s passed", s.value.c_str());
+#else
+				stop_script_fail("Flicker probe requires Android D2");
 #endif
 			} else if (s.field == "xl_changing_light_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

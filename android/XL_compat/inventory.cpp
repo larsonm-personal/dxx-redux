@@ -263,6 +263,7 @@ Inventory inspect_level(const Bytes &bytes)
 	out.palette = extra.line(256);
 	out.countdown = extra.s32();
 	out.reactor_strength = extra.s32();
+	out.flicker_offset = static_cast<int>(extra.position());
 	const int flickers = extra.s32();
 	require(flickers >= 0 && flickers <= 100000, "invalid flicker count");
 	for (int i = 0; i < flickers; ++i) out.flicker_lights.push_back({ extra.s16(), extra.s16(), extra.s32(), extra.s32(), extra.s32() });

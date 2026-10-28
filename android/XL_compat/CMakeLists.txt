@@ -102,6 +102,7 @@ if(BUILD_TESTING)
         include(tests/reference_keyed_wall.cmake)
         include(tests/reference_close_door.cmake)
         include(tests/reference_changing_light.cmake)
+        include(tests/reference_flicker.cmake)
         include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_light_index.cmake)
@@ -303,6 +304,18 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/changing_lights ${xl_changing_light_args}
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/changing_light.cmake)
             set_tests_properties(xl_changing_lights PROPERTIES TIMEOUT 180)
+            set(xl_flicker_args)
+            if(TARGET xl_flicker_reference)
+                list(APPEND xl_flicker_args "-DREFERENCE=$<TARGET_FILE:xl_flicker_reference>")
+            endif()
+            add_test(
+                NAME xl_flickers
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/flickers ${xl_flicker_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/flicker.cmake)
+            set_tests_properties(xl_flickers PROPERTIES TIMEOUT 180)
             add_test(
                 NAME xl_wide_walls
                 COMMAND

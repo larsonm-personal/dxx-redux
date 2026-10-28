@@ -29,6 +29,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "changing_light.h"
+#include "flicker.h"
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -2218,6 +2219,12 @@ extern "C" char *game_introspect_get_state(void)
 		{ "activated_triggers", xl_preview_trigger_mask() },
 	};
 	// Android diagnostics read actual masks and the owned full-width source records
+	j["xl_pilot"]["flicker_count"] = xl_flicker_count();
+	j["xl_pilot"]["flickers"] = json::array();
+	for (int i = 0; i < xl_flicker_count(); ++i) {
+		xl_flicker_state state{};
+		if (xl_flicker_get(i, &state)) j["xl_pilot"]["flickers"].push_back({ { "segment", state.segment }, { "side", state.side }, { "delay", state.delay }, { "timer", state.timer }, { "mask", state.mask } });
+	}
 	j["xl_pilot"]["light_sources"] = json::object();
 	if (Game_wind && xl_runtime_active()) {
 		for (int i = 0; i < xl_light_index_count(); ++i) {

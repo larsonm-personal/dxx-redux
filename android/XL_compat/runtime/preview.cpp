@@ -8,6 +8,7 @@
 #include "repair.h"
 #include "doorway.h"
 #include "changing_light.h"
+#include "flicker.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -532,6 +533,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	xl_changing_light_clear();
+	xl_flicker_clear();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
 	activated_triggers.fill(false);
 	source.reset();
@@ -696,6 +698,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
 		xl_changing_light_bind(source.get());
+		xl_flicker_bind(source.get());
 		xl_object_trigger_load(*source);
 		xl_robot_generator_load();
 		xl_boss_spawn_load();
@@ -979,6 +982,9 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 		for (int value : index) field(value);
 	for (const auto &delta : source->delta_lights)
 		for (int value : delta) field(value);
+	field(static_cast<int>(source->flicker_lights.size()));
+	for (const auto &flicker : source->flicker_lights)
+		for (int value : flicker) field(value);
 	const bool boosts = std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &action) { return action.type == 15; }) ||
 	                    std::any_of(source->object_trigger_records.begin(), source->object_trigger_records.end(), [](const xl_compat::ObjectTrigger &record) { return record.action.type == 15; });
 	const bool spawns = std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &action) { return action.type == 28; }) ||

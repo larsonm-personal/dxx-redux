@@ -257,7 +257,15 @@ finish original-mission qualification
     [changing-light evidence](../../XL_compat/evidence/changing-lights.md) for
     source lookup/overflow/propagation corrections and retained renderer limits.
     Dinter and Sphere sp-03 lose only their light-capacity blocker. Flicker
-    capacity/lifecycle and complete changing-source visual parity remain open.
+    capacity/lifecycle is covered below; complete changing-source visual parity remains open.
+
+33. Owned flicker lifecycle: full source tables, fixed-width right rotation,
+    source visibility/emission and first-matching authored controls, exact phase
+    persistence and Redux isolation pass native/source and all 50 Android steps.
+    See [flicker evidence](../../XL_compat/evidence/flickers.md). The fresh survey
+    matches 131 original hashes, decodes 103 members and finds 23 flicker-bearing
+    levels; no original campaign is promoted. Alternate renderer/settings and
+    complete changing-source visual comparisons remain open.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

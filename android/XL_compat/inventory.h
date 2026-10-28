@@ -104,6 +104,7 @@ struct Object {
 struct Inventory {
 	int level_version = 0, game_version = 0;
 	int mine_offset = 0, game_offset = 0;
+	int flicker_offset = 0;
 	int object_triggers = 0;
 	std::vector<int> object_trigger_heads;
 	std::vector<ObjectTrigger> object_trigger_records;
