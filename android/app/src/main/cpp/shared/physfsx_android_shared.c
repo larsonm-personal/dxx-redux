@@ -10,6 +10,11 @@
 #include "physfsx_android_shared.h"
 #include "physfsx_android_setup.h"
 #include "android_mission_assets.h"
+#include "android_log.h"
+#include "debug_log_categories.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "../../../../../XL_compat/hog_archiver.h"
+#endif
 
 extern const PHYSFS_Archiver SAF_Archiver;
 
@@ -62,6 +67,16 @@ static int init_search_paths(char *argv0, const char *game_dir, const char *data
 		snprintf(error, error_size, "PhysicsFS initialization failed: %s", PHYSFS_getLastError());
 		return 0;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (!xl_register_hog_archiver()) {
+		snprintf(error, error_size, "Cannot register XL HOG reader: %s", PHYSFS_getLastError());
+		return 0;
+	}
+#endif
+	const PHYSFS_ArchiveInfo **formats = PHYSFS_supportedArchiveTypes();
+	for (; formats && *formats; ++formats)
+		if (!strcmp((*formats)->extension, "HOG"))
+			debug_log_force(DLOG_GAME, "HOG reader initialized: game=%s reader=%s", game_dir, (*formats)->description);
 	PHYSFS_permitSymbolicLinks(1);
 	if (!physfsx_android_setup_search_paths(game_dir, data_dir, &ops, &result)) {
 		snprintf(error, error_size, "Android content setup failed during %s for %s: %s",

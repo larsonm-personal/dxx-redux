@@ -1,0 +1,26 @@
+{
+    "status": "inspection_only",
+    "playable": false,
+    "survey_evidence_sha256": "5b8ae8e1359d5ecaa31736c16188ff4fde0a233d54d425eb93cea3959fc85edd",
+    "archives": [
+        {
+            "archive": "missions/diedel/playgdd3.hog",
+            "sha256": "b878ac872d5acaf492b79b58551cc8ab8ac1e2434def751d84a4bab19ebd0186",
+            "signature": "D2X",
+            "member_count": 5,
+            "survey_levels_hash_matched": 1,
+            "native_levels": [
+                {
+                    "level": "playgdxl.rl2",
+                    "decoded": true,
+                    "flickers": 0,
+                    "zero_delay": 0,
+                    "negative_delay": 0,
+                    "runtime_blockers": ["effect_object_types", "effect_particles", "effect_sounds", "object_triggers"],
+                    "survey_sha256": "2665829dcc29c2af54df358da90ea853423af88f3b6b91a1c5e968f52694b9b0"
+                }
+            ],
+            "playable": false
+        }
+    ]
+}

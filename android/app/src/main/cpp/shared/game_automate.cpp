@@ -32,6 +32,7 @@
 #include "changing_light.h"
 #include "flicker.h"
 #include "flicker_probe.h"
+#include "hog_probe.h"
 #include "corona_probe.h"
 #endif
 
@@ -7644,6 +7645,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled object pool %s passed", s.value.c_str());
 #else
 				stop_script_fail("Object capacity probe requires Android D2");
+#endif
+			} else if (s.field == "xl_hog_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_hog_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled archive %s passed", s.value.c_str());
+#else
+				stop_script_fail("HOG probe requires Android D2");
 #endif
 			} else if (s.field == "xl_flicker_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

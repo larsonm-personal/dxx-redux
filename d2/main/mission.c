@@ -1127,7 +1127,7 @@ static int preflight_mission_archive(char *descriptor_path, mission_descriptor_s
 		return 0;
 	}
 	if (!PHYSFS_mount(real_path, "__xl_mission_archive_probe", 1)) {
-		Warning("Cannot read mission archive: %s", descriptor_path);
+		Warning("Cannot read mission archive: %s (%s)", descriptor_path, PHYSFS_getLastError());
 		return 0;
 	}
 	if (!PHYSFS_unmount(real_path)) Error("Cannot release mission archive probe: %s", descriptor_path);

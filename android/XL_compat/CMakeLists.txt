@@ -34,6 +34,9 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(xl_hog_test tests/hog_test.cpp)
+    target_link_libraries(xl_hog_test PRIVATE xl_inventory)
+    add_test(NAME xl_hog_contract COMMAND xl_hog_test)
     add_executable(xl_projectile_history_test tests/projectile_history_test.cpp)
     target_compile_features(xl_projectile_history_test PRIVATE cxx_std_17)
     add_test(NAME xl_projectile_history_contract COMMAND xl_projectile_history_test)
@@ -103,6 +106,7 @@ if(BUILD_TESTING)
         include(tests/reference_close_door.cmake)
         include(tests/reference_changing_light.cmake)
         include(tests/reference_flicker.cmake)
+        include(tests/reference_hog.cmake)
         include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_light_index.cmake)
@@ -304,6 +308,13 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/changing_lights ${xl_changing_light_args}
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/changing_light.cmake)
             set_tests_properties(xl_changing_lights PROPERTIES TIMEOUT 180)
+            add_test(
+                NAME xl_extended_hog
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/extended_hog -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/hog.cmake)
+            set_tests_properties(xl_extended_hog PROPERTIES TIMEOUT 180)
             set(xl_flicker_args)
             if(TARGET xl_flicker_reference)
                 list(APPEND xl_flicker_args "-DREFERENCE=$<TARGET_FILE:xl_flicker_reference>")

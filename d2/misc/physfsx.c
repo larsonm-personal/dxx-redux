@@ -16,6 +16,7 @@
 #endif
 
 #include "physfsx.h"
+#include "../../android/XL_compat/hog_archiver.h"
 #include "args.h"
 #include "object.h"
 #include "newdemo.h"
@@ -45,6 +46,8 @@ void PHYSFSX_init(int argc, char *argv[])
 	return;
 #endif
 	PHYSFS_init(argv[0]);
+	if (!xl_register_hog_archiver())
+		Error("Cannot register XL HOG reader: %s", PHYSFS_getLastError());
 	PHYSFS_permitSymbolicLinks(1);
 	base_dir = strdup(PHYSFS_getBaseDir());
 	

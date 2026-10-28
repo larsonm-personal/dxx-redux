@@ -267,6 +267,13 @@ finish original-mission qualification
     levels; no original campaign is promoted. Alternate renderer/settings and
     complete changing-source visual comparisons remain open.
 
+34. Native extended HOG foundation: a shared streaming index supports selected
+    long names under DHF/D2X and preserves archive ownership through actual
+    lookup, startup and disk-through-stock restoration. See
+    [container evidence](../../XL_compat/evidence/extended-hog.md). Launcher
+    import/catalog/music integration remains unfinished; its gate stays in place.
+    Playground now decodes and retains independent gameplay blockers.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

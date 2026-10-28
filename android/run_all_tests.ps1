@@ -524,6 +524,7 @@ $testTimeouts = @{
     "test_xl_door_lifecycle_runtime" = 600
     "test_xl_changing_light_runtime" = 600
     "test_xl_flicker_runtime" = 600
+    "test_xl_hog_runtime" = 600
     "test_xl_repair_runtime" = 600
     "test_xl_format34_runtime" = 600
     "test_xl_hxm_runtime" = 600
