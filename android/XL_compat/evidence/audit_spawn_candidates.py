@@ -52,7 +52,7 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument(
         "--feature",
-        choices=("spawn-bot", "equipment", "spawn-points", "water", "lava", "blocked", "repair"),
+        choices=("spawn-bot", "equipment", "spawn-points", "water", "lava", "blocked", "repair", "closed-walls"),
         default="spawn-bot",
     )
     parser.add_argument("--reference", type=Path, help="Optional pinned CObject::Read comparison executable")
@@ -80,11 +80,13 @@ def main():
             if row["version"] >= 21
             else 0
         )
+        if args.feature == "closed-walls":
+            water = row.get("wall_types", {}).get("5", 0)
         if args.feature == "repair":
             water = row["segment_functions"].get("2", 0) if row["version"] >= 21 else 0
         if not (
             water
-            if args.feature in ("water", "lava", "blocked", "repair")
+            if args.feature in ("water", "lava", "blocked", "repair", "closed-walls")
             else equipment.get("count", 0)
             if args.feature == "equipment"
             else actions
@@ -168,13 +170,21 @@ def main():
             )
         elif args.feature == "spawn-points":
             record["survey_wall_spawn_actions"] = record.pop("survey_spawn_actions")
-        elif args.feature in ("water", "lava", "blocked", "repair"):
+        elif args.feature in ("water", "lava", "blocked", "repair", "closed-walls"):
             del record["survey_spawn_actions"]
-            record[f"survey_{args.feature}_segments"] = water
+            record["survey_closed_walls" if args.feature == "closed-walls" else f"survey_{args.feature}_segments"] = (
+                water
+            )
             record["survey_placed_robots"] = sum(obj["type"] == 2 for obj in row.get("object_records", []))
             record["survey_robot_centers"] = row["sections"]["robots"]["count"]
             record["survey_equipment_centers"] = equipment.get("count", 0)
         if decoded:
+            if args.feature == "closed-walls":
+                closed = [wall for wall in inventory["walls"] if wall["type"] == 5]
+                record["native_closed_wall_key_masks"] = {
+                    str(key): sum(wall["keys"] == key for wall in closed)
+                    for key in sorted({wall["keys"] for wall in closed})
+                }
             record["native_profile"] = f"{inventory['level_version']}/{inventory['game_version']}"
             record["inspector_findings"] = {
                 key: findings(inventory.get(key, [])) for key in ("unsupported", "unknown", "observations")

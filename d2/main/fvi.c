@@ -28,6 +28,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "speed_boost.h"
 #include "blocked.h"
+#include "keyed_wall.h"
 #endif
 #include "fvi.h"
 #include "segment.h"
@@ -955,6 +956,10 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
  								wid_flag |= WID_FLY_FLAG;
 						} else {
 							wid_flag = WALL_IS_DOORWAY(seg, side);
+#ifdef DXX_XL_RUNTIME
+                            const int closed = xl_closed_wall_doorway(thisobjnum, startseg, side);
+                            if (closed >= 0) wid_flag = closed;
+#endif
 						}
 
 						d1_in_d2_note_wall_boundary(thisobjnum, startseg, side, face,

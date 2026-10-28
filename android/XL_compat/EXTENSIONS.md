@@ -134,6 +134,13 @@ cap, source automap cue and separately saved audio cadence. Native/source and
 70 Android controls pass; see [repair-center evidence](evidence/repair-centers.md).
 Development schema 10 replaces schema 9. Redux retains its existing 25-unit rate;
 legacy repair encodings and optional settings remain independently gated.
+Closed walls now have an XL-owned actor-specific path: exactly matching blue or
+red keys allow the owning player through; gold and combined masks do not.
+Actorless visibility and nonplayers retain closed-wall behavior. Source/native
+and all 90 Android crossing and persistence checks pass; see
+[keyed-wall evidence](evidence/keyed-closed-walls.md). Blocked and boost constraints
+still apply. Redux retains its original doorway behavior; no original mission
+is newly qualified by these derived controls.
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented
 object-event variants remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and

@@ -83,6 +83,7 @@ std::vector<CountedFeature> counted_features()
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 {
+	features.push_back({ "keyed_closed_walls", "Keyed closed walls", "XL actor-specific blue/red key passage and ordinary closed-wall visibility implemented", "supported", "Players with the exactly matching blue or red key can pass these closed walls. Gold and combined key masks do not enable this rule; nonplayers and actorless queries retain closed-wall behavior.", "Destination blocking and boost restrictions still apply. This is separate from door opening; multiplayer and original-mission qualification remain gated", static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &wall) { return wall.type == 5 && (wall.keys == 2 || wall.keys == 4); })) });
 	features[19].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.function == 2; }));
 	if (v.level_version == 23) features[19].present_status = "supported";
 	features[16].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.group != -1; }));

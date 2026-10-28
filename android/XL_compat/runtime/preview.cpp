@@ -5,6 +5,7 @@
 #include "fluids.h"
 #include "blocked.h"
 #include "repair.h"
+#include "keyed_wall.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -1205,6 +1206,8 @@ extern "C" int xl_preview_wall_is_doorway(int segment_index, int side)
 	segment *seg = &Segments[segment_index];
 	const int stock = xl_stock_wall_is_doorway(seg, side);
 	if (!source || option("-xl-preview-stock-materials")) return stock;
+	const int closed = xl_closed_wall_doorway(-1, segment_index, side);
+	if (closed >= 0) return closed;
 	const int index = seg->sides[side].wall_num;
 	if (index < 0 || index >= Num_walls) return stock;
 	const wall &w = Walls[index];

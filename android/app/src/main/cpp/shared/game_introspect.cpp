@@ -39,6 +39,7 @@
 #include "fluids.h"
 #include "blocked.h"
 #include "repair.h"
+#include "keyed_wall.h"
 #include "resource_validation.h"
 #endif
 
@@ -3518,6 +3519,14 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		cues["forcefields"] = std::move(fields);
 		j["xl_pilot"]["trigger_audio"] = std::move(cues);
+		json closed_walls = json::object();
+		for (int index = 0; Game_wind && xl_level_extensions_active() && index < Num_walls; ++index) {
+			const auto &wall = Walls[index];
+			const int flags = xl_closed_wall_doorway(-1, wall.segnum, wall.sidenum);
+			if (flags < 0) continue;
+			closed_walls[std::to_string(index)] = { { "segment", wall.segnum }, { "side", wall.sidenum }, { "keys", wall.keys }, { "visibility_flags", flags }, { "player_flags", ConsoleObject ? xl_closed_wall_doorway(ConsoleObject - Objects, wall.segnum, wall.sidenum) : -1 } };
+		}
+		j["xl_pilot"]["closed_walls"] = std::move(closed_walls);
 #endif
 		j["mod_save"] = { { "status", mod_save_status() }, { "reason", mod_save_reason() }, { "adapted", mod_save_adapted_count() } };
 		j["mission_asset_owner"] = android_mission_assets_owner();
