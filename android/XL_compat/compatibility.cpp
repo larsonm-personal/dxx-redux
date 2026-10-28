@@ -33,7 +33,7 @@ const Category categories[] = {
 	{ "visual_assets", "Texture and model formats", "XL asset formats require individual verification", "Textures and models give the mine its appearance. XL asset formats and their referenced resources need verification beyond level parsing." },
 	{ "mission_flow", "Mission flow and scripted behavior", "XL objectives and campaign behavior unverified", "Exits, secret routes and objectives connect gameplay to mission progression. An arena with no exit has different completion criteria from a campaign level." },
 	{ "runtime", "Gameplay and presentation verification", "Static inspection is not gameplay qualification; runtime checks dependencies on every load", "Runtime qualification checks actual loading, play and presentation. A successful static inventory is not proof that a level works." },
-	{ "navigation", "Teleports, boosts and spawn destinations", "Singleplayer teleports and boosts implemented; spawn destinations and route-analysis edges remain unsupported", "Teleports and speed boosts can change position or motion outside ordinary connected passages. Route analysis must account for their authored destinations." },
+	{ "navigation", "Teleports, boosts and spawn destinations", "Singleplayer teleports, boosts and authored spawn destinations implemented; route-analysis edges remain unsupported", "Teleports and speed boosts change motion; authored spawn destinations change the location used after death. Route analysis must account for these destinations." },
 	{ "generators", "Equipment generators and extended spawning", "Bounded robot matcens, modern equipment makers and XL boss spawn actions implemented with owned lifecycle and disk/rewind state", "Robot generation uses authored contents, boss ownership and detected resource requirements. Expanded gameplay data and capacities remain separate gates; derived controls do not qualify a mission." },
 	{ "wall_materials", "Authored wall opacity and materials", "Classic cloaking and texture transparency exist; XL opacity, visibility and collision parity unverified", "Authored opacity changes how surfaces appear. Transparency alone does not prove that ship movement, weapon hits or AI visibility are correct." },
 	{ "effect_objects", "Particles, lightning and ambient sounds", "Bounded effect payloads decoded; activation, sound cues and runtime behavior unsupported", "Particles, lightning and ambient sound objects add effects to the mine. Payload inspection does not implement their activation, audio or gameplay interactions." },
@@ -77,12 +77,14 @@ std::vector<CountedFeature> counted_features()
 		{ "stateful_trigger_flags", "Permanent, alternate and autoplay wall actions", "Supported actions retain flag transitions and scheduling state across saves", "supported", "Permanent actions rearm, alternating actions switch to their opposite after execution, and autoplay actions start from frame processing. Unsupported actions remain blocked independently." },
 		{ "segment_groups", "Authored segment groups", "Singleplayer XL boss destination groups supported with neutral ownership", "supported", "Boss destination setup stays within its home segment's authored group even across otherwise passable connections. Group labels do not grant team ownership or qualify an original mission." },
 		{ "player_resource_actions", "Shield-damage and energy-drain wall actions", "Default singleplayer XL shield units, energy percentages, resource bounds and lethal continuation implemented", "supported", "Authored wall actions change local player resources directly, including through masters and timers. Negative values replenish; combat protections do not suppress these actions. Direct object actions, optional ship scaling/recharge and multiplayer remain unqualified." },
+		{ "spawn_points", "Wall spawn-point actions", "Singleplayer authored spawn transforms, death/respawn, named SPAWN markers and saved state implemented", "supported", "These actions configure destinations used after death without moving the player immediately. Linked destinations cycle across the XL spawn table. This count excludes object-attached actions.", "Controlled source, engine and Android tests cover this feature. Original missions, multiplayer and route analysis need separate qualification" },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 {
 	features[16].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.group != -1; }));
 	features[17].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return player_resource_action(action.type); }));
+	features[18].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return action.type == 28; }));
 	const int trigger_types[] = { 14, 15, 16, 31 };
 	for (std::size_t i = 0; i < 4; ++i)
 		features[i].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [&](const Trigger &t) { return t.type == trigger_types[i]; }));
@@ -98,6 +100,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 		});
 	};
 	features[1].present_status = chain_blocked(15) ? "blocked" : "supported";
+	features[18].present_status = chain_blocked(28) || std::any_of(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return action.type == 28 && action.targets.empty(); }) ? "blocked" : "supported";
 	features[1].support = "Singleplayer authored boosts include steering limits, release, orientation, area boundaries and saved actor state";
 	features[1].limitations = "Default D2 ship and boost strength. Source math and controlled engine/Android fixtures cover the feature; this does not qualify original missions, optional ship/physics settings, multiplayer or route analysis";
 	features[3].present_status = chain_blocked(31) ? "blocked" : "supported";
@@ -109,7 +112,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[14].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { const auto time = std::abs(std::int64_t(t.time)); return t.type != 25 && t.type != 29 && t.type != 30 && time >= 100 && time <= 900000; }));
 	features[15].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &t) { return (t.flags & (8 | 16 | 128)) != 0; }));
 	for (const auto &trigger : v.triggers) {
-		const bool unsupported = (trigger.type > 15 && !player_resource_action(trigger.type) && (trigger.type < 31 || trigger.type > 33)) || (trigger.flags & ~trigger_flags_mask) || (!player_resource_action(trigger.type) && std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; }));
+		const bool unsupported = (trigger.type > 15 && trigger.type != 28 && !player_resource_action(trigger.type) && (trigger.type < 31 || trigger.type > 33)) || (trigger.type == 28 && trigger.targets.empty()) || (trigger.flags & ~trigger_flags_mask) || (!player_resource_action(trigger.type) && std::any_of(trigger.targets.begin(), trigger.targets.end(), [](const auto &target) { return target[1] < 0; }));
 		const auto time = std::abs(std::int64_t(trigger.time));
 		if (unsupported && trigger.type != 25 && trigger.type != 29 && trigger.type != 30 && time >= 100 && time <= 900000) features[14].present_status = "blocked";
 		if (unsupported && (trigger.flags & (8 | 16 | 128))) features[15].present_status = "blocked";
@@ -139,7 +142,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	const auto object_blockers = runtime_blockers(v);
 	const bool blocked_objects = std::any_of(object_blockers.begin(), object_blockers.end(), [](const Issue &issue) { return issue.feature.find("object") == 0; });
 	features[11].present_status = blocked_objects ? "blocked" : "partial";
-	features[11].support = "Nonplayer leaf events, immediate/delayed masters and boss spawn actions have controlled activation and disk/rewind checks";
+	features[11].support = "Nonplayer leaf events, immediate/delayed masters, boss spawning and authored player spawn points have controlled activation and disk/rewind checks";
 	features[11].limitations = "Delayed descendants retain event context and original actor identity; geometry work survives owner removal, while motion requires the original live actor. Boss object teleports retain owned destinations. Other extended actions/flags and player owners remain gated. Derived controls do not qualify an original mission";
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;

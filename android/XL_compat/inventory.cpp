@@ -195,6 +195,7 @@ Trigger read_trigger(Reader &r, Inventory &out, int index, int segment_count, bo
 	const int count = r.u8();
 	r.skip(1);
 	require(count <= 10, "invalid trigger target count " + std::to_string(index));
+	require(t.type != 28 || count > 0, "spawn-point action requires a destination at trigger " + std::to_string(index));
 	t.value = r.s32();
 	t.time = r.s32();
 	std::array<int, 10> segments{}, sides{};
@@ -205,7 +206,7 @@ Trigger read_trigger(Reader &r, Inventory &out, int index, int segment_count, bo
 		// Object teleports use only the segment; their serialized side is inert
 		if (attached && t.type == 14) require(segments[j] >= 0 && segments[j] < segment_count, "invalid object action destination " + std::to_string(index));
 		else if (attached && t.type == 26 && j == 0) require(segments[j] < segment_count, "invalid spawn-bot selection destination " + std::to_string(index));
-		else if (t.type <= 15 || t.type == 31) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(index));
+		else if (t.type <= 15 || t.type == 28 || t.type == 31) require(segments[j] >= 0 && segments[j] < segment_count && sides[j] >= 0 && sides[j] < 6, "invalid trigger target " + std::to_string(index));
 		if (t.type == 32 || t.type == 33) {
 			if (sides[j] < 0) issue(out.unsupported, prefix + "effect_trigger_target", index, "enable/disable effect-object targets require effect runtime support");
 			else require(segments[j] >= 0 && segments[j] < segment_count && sides[j] < 6, "invalid trigger target " + std::to_string(index));

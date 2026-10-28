@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "spawn_points.h"
 #include "resource_validation.h"
 #endif
 #include "gameseq.h"
@@ -2648,6 +2649,9 @@ void InitPlayerPosition(int random_flag)
 	} else
 #endif
 		obj_relink(ConsoleObject-Objects,Player_init[NewPlayer].segnum);
+#ifdef DXX_XL_RUNTIME
+	xl_spawn_apply(NewPlayer, ConsoleObject-Objects);
+#endif
 	reset_player_object();
 	reset_cruise();
 }

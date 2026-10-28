@@ -35,6 +35,7 @@
 #include "boss_routes.h"
 #include "equipment.h"
 #include "speed_boost.h"
+#include "spawn_points.h"
 #include "resource_validation.h"
 #endif
 
@@ -2207,6 +2208,14 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		j["xl_pilot"]["boosts"] = std::move(boosts);
 		j["xl_pilot"]["boost_last_speed"] = xl_speed_boost_last_speed();
+		json spawns = json::array();
+		for (int slot = 0; slot < xl_spawn_state_count(); ++slot) {
+			xl_spawn_point point;
+			if (!xl_spawn_state_get(slot, &point)) continue;
+			spawns.push_back({ { "segment", point.segment }, { "side", point.side }, { "position", point.position }, { "orientation", point.orientation } });
+		}
+		j["xl_pilot"]["spawn_points"] = std::move(spawns);
+		j["xl_pilot"]["spawn_configured"] = xl_spawn_state_count() != 0;
 		j["xl_pilot"]["boost_player_locked"] = xl_speed_boost_player_locked() != 0;
 		j["xl_pilot"]["in_boost_area"] = ConsoleObject && xl_speed_boost_segment(ConsoleObject->segnum);
 		json objects = json::object();

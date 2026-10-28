@@ -192,6 +192,7 @@ struct CObject {
 auto &object = objects[0];
 struct Segment {
 	CFixVector normal, center;
+	int m_function = 0;
 	int child = -1;
 	int ChildId(int)
 	{
@@ -213,7 +214,7 @@ struct Segment {
 	{
 		return center;
 	}
-} segments[2];
+} segments[10];
 auto &segment = segments[0];
 CObject *OBJECT(int index)
 {
@@ -224,6 +225,9 @@ Segment *SEGMENT(int index)
 	return &segments[index];
 }
 struct {
+	struct {
+		int bD1Mission = 0;
+	} app;
 	struct {
 		CFixVector vTgtDir;
 		int nDirSteps = 0;
