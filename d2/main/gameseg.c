@@ -33,6 +33,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "bm.h"
 #include "fvi.h"
 #include "byteswap.h"
+#ifdef DXX_XL_RUNTIME
+#include "changing_light.h"
+#endif
 #include "mission.h"
 
 // How far a point can be from a plane, and still be "in" the plane
@@ -2072,6 +2075,9 @@ void change_segment_light(int segnum,int sidenum,int dir)
 //	dir =  0 -> you are dumb
 void change_light(int segnum, int sidenum, int dir)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_changing_light(segnum, sidenum, dir)) return;
+#endif
 	int	i, j, k;
 
 	for (i=0; i<Num_static_lights; i++) {

@@ -28,6 +28,7 @@
 #include "input_demo_codec.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "changing_light.h"
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -2216,11 +2217,13 @@ extern "C" char *game_introspect_get_state(void)
 		{ "unresolved_emitters", xl_preview_unresolved_emitters() },
 		{ "activated_triggers", xl_preview_trigger_mask() },
 	};
-	// Android diagnostics read actual light masks; chunked indices share one source key
+	// Android diagnostics read actual masks and the owned full-width source records
 	j["xl_pilot"]["light_sources"] = json::object();
 	if (Game_wind && xl_runtime_active()) {
-		for (int i = 0; i < Num_static_lights; ++i) {
-			const int segment = Dl_indices[i].segnum, side = Dl_indices[i].sidenum;
+		for (int i = 0; i < xl_light_index_count(); ++i) {
+			xl_light_index index{};
+			if (!xl_light_index_get(i, &index)) continue;
+			const int segment = index.segment, side = index.side;
 			if (segment < 0 || segment >= Num_segments || side < 0 || side >= 6) continue;
 			j["xl_pilot"]["light_sources"][std::to_string(segment) + "_" + std::to_string(side)] = (Light_subtracted[segment] & (1 << side)) != 0;
 		}

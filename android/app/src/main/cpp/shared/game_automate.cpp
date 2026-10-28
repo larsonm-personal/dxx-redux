@@ -28,6 +28,8 @@
 #include "projectile_probe.h"
 #include "object_capacity_probe.h"
 #include "door_probe.h"
+#include "changing_light_probe.h"
+#include "changing_light.h"
 #include "corona_probe.h"
 #endif
 
@@ -7394,6 +7396,9 @@ extern "C" void game_automate_tick(void)
 				static object_runtime_state captured_allocator{};
 				static int captured_object_capacity;
 				static std::vector<active_door> captured_doors;
+#ifdef DXX_XL_RUNTIME
+				static std::vector<xl_light_segment_state> captured_lights;
+#endif
 				static int ready, level, score, energy, ammo, disk;
 				static vms_vector position;
 				static int64_t captured_time, collision_time;
@@ -7413,6 +7418,11 @@ extern "C" void game_automate_tick(void)
 					object_get_runtime_state(&captured_allocator);
 					captured_object_capacity = object_capacity();
 					captured_doors.assign(ActiveDoors, ActiveDoors + Num_open_doors);
+#ifdef DXX_XL_RUNTIME
+					captured_lights.resize(xl_light_segment_count());
+					for (std::size_t i = 0; i < captured_lights.size(); ++i)
+						xl_light_segment_get(static_cast<int>(i), &captured_lights[i]);
+#endif
 					collision_time = collide_get_collision_delay_last_play_time();
 					/* Keep both saves at the same game and wall-clock epoch */
 					stop_time();
@@ -7485,6 +7495,17 @@ extern "C" void game_automate_tick(void)
 							stop_script_fail("Checkpoint load changed its input or failed to restore captured world state");
 							break;
 						}
+#ifdef DXX_XL_RUNTIME
+						bool lights_match = xl_light_segment_count() == static_cast<int>(captured_lights.size());
+						for (std::size_t i = 0; lights_match && i < captured_lights.size(); ++i) {
+							xl_light_segment_state current{};
+							lights_match = xl_light_segment_get(static_cast<int>(i), &current) && !memcmp(&current, &captured_lights[i], sizeof(current));
+						}
+						if (!lights_match) {
+							stop_script_fail("Checkpoint did not restore exact XL UVL and ambient lighting before simulation");
+							break;
+						}
+#endif
 						object_runtime_state restored_allocator{};
 						object_get_runtime_state(&restored_allocator);
 						if (Num_open_doors != static_cast<int>(captured_doors.size()) || (!captured_doors.empty() && memcmp(ActiveDoors, captured_doors.data(), captured_doors.size() * sizeof(active_door)))) {
@@ -7606,6 +7627,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled object pool %s passed", s.value.c_str());
 #else
 				stop_script_fail("Object capacity probe requires Android D2");
+#endif
+			} else if (s.field == "xl_changing_light_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_changing_light_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled changing lights %s passed", s.value.c_str());
+#else
+				stop_script_fail("Changing-light probe requires Android D2");
 #endif
 			} else if (s.field == "xl_door_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

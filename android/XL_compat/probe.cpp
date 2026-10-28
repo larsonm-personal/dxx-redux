@@ -40,7 +40,7 @@ int read_offset(const Bytes &bytes, std::size_t offset)
 }
 } // namespace
 
-static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int qualification_version)
+static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int qualification_version, bool source_lights = false)
 {
 	GameplayProbe result;
 	result.source = inspect_level(source);
@@ -53,6 +53,15 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		require(serialization_23_40, "layout qualification requires 23/40");
 	}
 	require(blockers.empty(), blocker_message(blockers));
+	if (!source_lights) {
+		std::size_t translated_indices = 0;
+		for (const auto &index : v.light_indices) {
+			translated_indices += index[2] ? (index[2] + 126) / 127 : 1;
+			require(index[3] <= 32767 && index[2] <= 32768 - index[3], "classic probe light indices require the source-owned XL runtime");
+		}
+		require(translated_indices <= 500 && v.delta_lights.size() <= 32000,
+		        "classic probe light capacities require the source-owned XL runtime");
+	}
 	// Object actions remain in the owned source inventory, outside stock trigger storage
 	// Wide walls use an owned private encoding; other records retain stock widths
 	require(v.walls.size() <= DXX_XL_MAX_WALLS && xl_object_capacity_for_count(v.objects.size()) <= DXX_XL_MAX_OBJECTS && v.segments.size() <= 9000,
@@ -175,7 +184,13 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			out.insert(out.end(), source.begin() + start + 19, source.begin() + start + 25);
 		}
 	}
-	if (equipment_header || std::any_of(v.light_indices.begin(), v.light_indices.end(), [](const auto &index) { return index[2] > 127; })) {
+	if (source_lights) {
+		// Never apply a narrowed stock shadow as well as the owned XL table
+		for (int section : { 7, 8 }) {
+			patch(out, new_game_offset + 35 + section * 12, -1);
+			patch(out, new_game_offset + 39 + section * 12, 0);
+		}
+	} else if (equipment_header || std::any_of(v.light_indices.begin(), v.light_indices.end(), [](const auto &index) { return index[2] > 127; })) {
 		// Stock traverses every matching source-face entry in order. Split unsigned XL
 		// counts without changing delta order or per-target clamping; retain raw source data
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()) - 500 * 6, "light table offset overflow");
@@ -204,6 +219,11 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments)
 {
 	return prepare_probe(source, water_segments, 0);
+}
+
+GameplayProbe prepare_source_runtime_probe(const Bytes &source, bool water_segments)
+{
+	return prepare_probe(source, water_segments, 0, true);
 }
 
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source)

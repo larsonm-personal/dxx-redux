@@ -51,24 +51,7 @@ static int format34_test(int argc, char **argv)
 			for (int side = 0; side < 6; ++side)
 				require(Segments[i].children[side] == source.segments[i].children[side], "15/34 child changed");
 		}
-		int native = 0;
-		for (const auto &row : source.light_indices) {
-			int remaining = row[2], target = row[3];
-			do {
-				const int chunk = std::min(remaining, 127);
-				require(native < Num_static_lights && Dl_indices[native].segnum == row[0] && Dl_indices[native].sidenum == row[1] && Dl_indices[native].count == chunk && Dl_indices[native].index == target, "15/34 native packed index differs");
-				++native;
-				remaining -= chunk;
-				target += chunk;
-			} while (remaining);
-		}
-		require(native == Num_static_lights, "15/34 native light count differs");
-		for (std::size_t i = 0; i < source.delta_lights.size(); ++i) {
-			const auto &row = source.delta_lights[i];
-			const auto &actual = Delta_lights[i];
-			require(actual.segnum == row[0] && actual.sidenum == row[1], "15/34 delta target differs");
-			for (int corner = 0; corner < 4; ++corner) require(actual.vert_light[corner] == row[corner + 3], "15/34 delta contribution differs");
-		}
+		require_owned_light_records(source);
 		changing_lights(source, "alarlof.rl2", 68);
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);

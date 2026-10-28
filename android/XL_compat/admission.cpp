@@ -113,12 +113,6 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	for (std::size_t i = 0; i < equipment_owners.size(); ++i)
 		if (equipment_owners[i] < 0) result.push_back({ "equipment assignment", static_cast<int>(i), "source record has no equipment segment with this producer index" });
 	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
-	limit(level.light_indices.size() > 500 || level.delta_lights.size() > 32000, "lighting capacity", "more than 500 light indices or 32000 delta lights");
-	// Translation splits counts into signed-byte chunks, preserving zero-count records
-	std::size_t translated_indices = 0;
-	for (const auto &index : level.light_indices)
-		translated_indices += index[2] ? (index[2] + 126) / 127 : 1;
-	limit(translated_indices > 500, "changing-light capacity", "lossless translation requires more than 500 light indices");
 	limit(level.flicker_lights.size() > 100, "flicker capacity", "more than 100 flickering lights");
 	limit(level.object_triggers < 0 || static_cast<std::size_t>(level.object_triggers) != level.object_trigger_records.size(), "object triggers", "declared records and inspected owners differ");
 	limit(level.object_trigger_records.size() > DXX_XL_MAX_TRIGGERS, "object trigger capacity", "more than 254 object-attached actions");

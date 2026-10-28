@@ -1,5 +1,6 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
 #include "native_crash_diagnostic.h"
+#include "changing_light.h"
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -107,6 +108,7 @@ void require(bool condition, const char *message)
 {
 	if (!condition) throw std::runtime_error(message);
 }
+#include "changing_light_test_records.h"
 // Traverse loaded object-data references, including dependencies created after startup
 // This does not prove audible playback or override precedence
 using xl_assets::ObjectDependencies;
@@ -1555,6 +1557,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "trigger_capacity_test.h"
 #include "projectile_test.h"
 #include "object_capacity_test.h"
+#include "changing_light_test.h"
 #include "repair_test.h"
 #include "format34_test.h"
 #include "hxm_test.h"
@@ -1562,6 +1565,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-changing-light-test")) return changing_light_test(argc, argv);
 	if (find_arg_value(argc, argv, "-object-capacity-test")) return object_capacity_test(argc, argv);
 	if (find_arg_value(argc, argv, "-projectile-test")) return projectile_test(argc, argv);
 	if (find_arg_value(argc, argv, "-format34-test")) return format34_test(argc, argv);
@@ -1611,7 +1615,7 @@ int main(int argc, char **argv)
 		std::ifstream stream(source_path, std::ios::binary);
 		require(bool(stream), "cannot read original source");
 		const xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>() };
-		const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+		const auto probe = xl_compat::prepare_source_runtime_probe(bytes);
 		std::ifstream fixture_stream(fixture_path, std::ios::binary);
 		const xl_compat::Bytes fixture_bytes{ std::istreambuf_iterator<char>(fixture_stream), std::istreambuf_iterator<char>() };
 		require(fixture_bytes == probe.stock_level, "private fixture must initially match source translation");
@@ -1646,19 +1650,7 @@ int main(int argc, char **argv)
 				const auto inventory = xl_compat::inspect_level(wide);
 				write_bytes(path.c_str(), wide);
 				require(xl_level_supported("widelight.rl2", 0) && load_level("widelight.rl2") == 0, "large light count rejected by normal admission");
-				int native = 0;
-				for (const auto &light : inventory.light_indices) {
-					int remaining = light[2], target = light[3];
-					do {
-						const int chunk = (std::min) (remaining, 127);
-						require(native < Num_static_lights, "native split light index missing");
-						const auto &actual = Dl_indices[native++];
-						require(actual.segnum == light[0] && actual.sidenum == light[1] && actual.count == chunk && actual.index == target, "native loader changed split light index");
-						target += chunk;
-						remaining -= chunk;
-					} while (remaining);
-				}
-				require(native == Num_static_lights, "extra native light indices");
+				require_owned_light_records(inventory);
 				changing_lights(inventory, "widelight.rl2");
 				std::cout << "XL split light count " << count << ": normal admission, native records and all source light-off/on UVLs verified\n";
 			}

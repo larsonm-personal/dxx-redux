@@ -7,6 +7,7 @@
 #include "blocked.h"
 #include "repair.h"
 #include "doorway.h"
+#include "changing_light.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -427,7 +428,7 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 			return 1;
 		}
 		const bool arena = water_profile(bytes, multiplayer != 0);
-		const auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
+		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		XlPreparedResources resources(filename, &probe.source);
 		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies());
 		return 1;
@@ -530,6 +531,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_equipment_clear();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
+	xl_changing_light_clear();
 	admitted_pilot = completed_pilot = admitted_water_arena = false;
 	activated_triggers.fill(false);
 	source.reset();
@@ -648,7 +650,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 #endif
 		}
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
-		auto probe = xl_compat::prepare_gameplay_probe(bytes, arena);
+		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source);
 		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies());
 		if (original) {
@@ -693,6 +695,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		xl_changing_light_bind(source.get());
 		xl_object_trigger_load(*source);
 		xl_robot_generator_load();
 		xl_boss_spawn_load();
@@ -959,6 +962,23 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
+	// Earned light snapshots must belong to the same geometry and authored contributions
+	field(static_cast<int>(source->vertices.size()));
+	field(static_cast<int>(source->segments.size()));
+	for (const auto &vertex : source->vertices)
+		for (int value : vertex) field(value);
+	for (const auto &segment : source->segments) {
+		field(segment.light);
+		for (int vertex : segment.vertices) field(vertex);
+		for (const auto &side : segment.sides)
+			for (int value : side.uvl) field(value);
+	}
+	field(static_cast<int>(source->light_indices.size()));
+	field(static_cast<int>(source->delta_lights.size()));
+	for (const auto &index : source->light_indices)
+		for (int value : index) field(value);
+	for (const auto &delta : source->delta_lights)
+		for (int value : delta) field(value);
 	const bool boosts = std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &action) { return action.type == 15; }) ||
 	                    std::any_of(source->object_trigger_records.begin(), source->object_trigger_records.end(), [](const xl_compat::ObjectTrigger &record) { return record.action.type == 15; });
 	const bool spawns = std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &action) { return action.type == 28; }) ||
