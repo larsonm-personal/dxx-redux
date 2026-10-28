@@ -229,6 +229,13 @@ finish original-mission qualification
     Stock/imported D1 retain 100; object-action bounds match the source's 254.
     The two original high-trigger members remain independently blocked
 
+29. Projectile ownership and impact lifetime: defined source history comparisons,
+    1920 native impact samples, physical piercing, checked disk/memory state and
+    all 53 Android steps pass. See
+    [projectile evidence](../../XL_compat/evidence/projectile-history.md) for the
+    intentional FIFO/full-save corrections. Wider object storage and remaining
+    combat/AI requirements remain unfinished
+
 After the wall, cloak and trigger-capacity batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

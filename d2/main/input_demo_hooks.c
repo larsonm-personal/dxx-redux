@@ -1,4 +1,8 @@
 #include "input_demo_cheats.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "projectile.h"
+#endif
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -3560,7 +3564,12 @@ void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_
 	const int player_objnum = playerobj ? (int)(playerobj - Objects) : -1;
 	const int player_hit_recorded =
 		weapon && player_objnum >= 0 && player_objnum < MAX_OBJECTS ?
+#ifdef DXX_XL_RUNTIME
+		(xl_level_extensions_active() ? xl_projectile_has_hit(weapon-Objects, player_objnum) :
+		weapon->ctype.laser_info.hitobj_list[player_objnum]) : -1;
+#else
 		weapon->ctype.laser_info.hitobj_list[player_objnum] : -1;
+#endif
 	char replay_probe[768];
 
 	if (!mode_name || !weapon || !playerobj)

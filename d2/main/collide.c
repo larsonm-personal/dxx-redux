@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "projectile.h"
 #include "fluids.h"
 #include "speed_boost.h"
 #include "robot_generator.h"
@@ -1371,6 +1372,12 @@ void collide_player_and_marker( object * marker, object * playerobj, vms_vector 
 //	If both objects are weapons, weaken the weapon.
 void maybe_kill_weapon(object *weapon, object *other_obj)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_projectile_impact(weapon-Objects, other_obj-Objects);
+		return;
+	}
+#endif
 	if (is_proximity_bomb_or_smart_mine_or_placed_mine(weapon->id)) {
 		weapon->flags |= OF_SHOULD_BE_DEAD;
 		return;
@@ -1425,7 +1432,11 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 		* Check if persistent weapon already hit this object. If yes, abort.
 		* If no, add this object to hitobj_list and do it's damage.
 		*/
-		if (weapon->mtype.phys_info.flags & PF_PERSISTENT)
+		if ((weapon->mtype.phys_info.flags & PF_PERSISTENT)
+#ifdef DXX_XL_RUNTIME
+			&& !xl_level_extensions_active()
+#endif
+		)
 		{
 			damage = weapon->shields*2; // to not alter Gameplay too much, multiply damage by 2.
 			if (!weapon->ctype.laser_info.hitobj_list[controlcen-Objects])
@@ -1851,6 +1862,11 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	 */
 	if (weapon->mtype.phys_info.flags & PF_PERSISTENT)
 	{
+		#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) {
+			if (xl_projectile_add_hit(weapon-Objects, robot-Objects) < 0) return;
+		} else
+		#endif
 		if (!weapon->ctype.laser_info.hitobj_list[robot-Objects])
 		{
 			weapon->ctype.laser_info.hitobj_list[robot-Objects] = 1;
@@ -2757,6 +2773,11 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 	 */
 	if (weapon->mtype.phys_info.flags & PF_PERSISTENT)
 	{
+		#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) {
+			if (xl_projectile_add_hit(weapon-Objects, playerobj-Objects) < 0) return;
+		} else
+		#endif
 		if (!weapon->ctype.laser_info.hitobj_list[playerobj-Objects])
 		{
 			weapon->ctype.laser_info.hitobj_list[playerobj-Objects] = 1;

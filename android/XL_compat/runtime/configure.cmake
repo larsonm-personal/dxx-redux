@@ -21,6 +21,7 @@ foreach(xl_target IN LISTS xl_targets)
     target_sources(
         ${xl_target}
         PRIVATE "${xl_runtime_dir}/preview.cpp"
+                "${xl_runtime_dir}/projectile.cpp"
                 "${xl_runtime_dir}/fluids.cpp"
                 "${xl_runtime_dir}/blocked.cpp"
                 "${xl_runtime_dir}/repair.cpp"
@@ -57,8 +58,10 @@ foreach(xl_target IN LISTS xl_targets)
     endif()
     target_compile_features(${xl_target} PRIVATE cxx_std_17)
     if(ANDROID)
-        target_sources(${xl_target} PRIVATE "${xl_runtime_dir}/persistence_probe.cpp"
-                                            "${xl_runtime_dir}/corona_probe.cpp")
+        target_sources(
+            ${xl_target}
+            PRIVATE "${xl_runtime_dir}/persistence_probe.cpp"
+                    "${xl_runtime_dir}/projectile_probe.cpp" "${xl_runtime_dir}/corona_probe.cpp")
     endif()
 endforeach()
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE DXX_XL_RUNTIME)

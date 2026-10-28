@@ -1553,6 +1553,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "wide_wall_test.h"
 #include "cloak_test.h"
 #include "trigger_capacity_test.h"
+#include "projectile_test.h"
 #include "repair_test.h"
 #include "format34_test.h"
 #include "hxm_test.h"
@@ -1560,6 +1561,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-projectile-test")) return projectile_test(argc, argv);
 	if (find_arg_value(argc, argv, "-format34-test")) return format34_test(argc, argv);
 	if (find_arg_value(argc, argv, "-hxm-test")) return hxm_test(argc, argv);
 	if (find_arg_value(argc, argv, "-blocked-test")) return blocked_test(argc, argv);

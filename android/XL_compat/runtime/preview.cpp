@@ -1,5 +1,6 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#include "projectile.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
 #include "fluids.h"
@@ -512,6 +513,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_projectile_clear();
 	xl_wall_trigger_reset();
 	xl_speed_boost_clear();
 	xl_spawn_clear();
