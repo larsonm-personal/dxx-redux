@@ -321,6 +321,7 @@ extern void active_door_read(active_door *ad, rewind_file *fp);
  * reads n active_door structs from a PHYSFS_file and swaps if specified
  */
 extern void active_door_read_n_swap(active_door *ad, int n, int swap, rewind_file *fp);
+extern void active_door_swap(active_door *ad, int swap);
 
 /*
  * reads n cloaking_wall structs from a PHYSFS_file and swaps if specified

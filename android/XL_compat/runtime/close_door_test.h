@@ -1,4 +1,5 @@
 #include "close_door_fixture.h"
+#include "door_lifecycle_test.h"
 extern "C" int is_door_free(segment *, int);
 static void close_door_matrix(std::ostream &out)
 {
@@ -22,8 +23,8 @@ static void close_door_matrix(std::ostream &out)
 								entry = {};
 								for (int i = 0; i < 2; ++i) entry.front_wallnum[i] = entry.back_wallnum[i] = -1;
 							}
-							Num_open_doors = full ? MAX_DOORS - 1 : mode ? 1
-							                                             : 0;
+							Num_open_doors = full ? MAX_DOORS : mode ? 1
+							                                         : 0;
 							if (mode) {
 								auto &entry = ActiveDoors[Num_open_doors - 1];
 								entry.time = elapsed;
@@ -143,7 +144,11 @@ static int close_door_test(int argc, char **argv)
 		StartNewGame(1);
 		std::ofstream samples(output / "close-door-samples.txt");
 		close_door_matrix(samples);
+		std::ofstream animation_samples(output / "door-animation-samples.txt");
+		door_animation_matrix(animation_samples);
 		close_door_lifecycle();
+		door_pair_variants();
+		door_concurrency(output);
 		std::cout << "XL close-door controls passed\n";
 		return 0;
 	} catch (const std::exception &e) {

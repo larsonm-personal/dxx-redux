@@ -19,7 +19,8 @@ if(NOT result EQUAL 0 OR witness LESS 0)
 endif()
 if(REFERENCE)
     execute_process(
-        COMMAND "${REFERENCE}" "${OUTPUT}/close-door-samples.txt" RESULT_VARIABLE reference_result
+        COMMAND "${REFERENCE}" "${OUTPUT}/close-door-samples.txt"
+                "${OUTPUT}/door-animation-samples.txt" RESULT_VARIABLE reference_result
         OUTPUT_VARIABLE reference_stdout ERROR_VARIABLE reference_stderr)
     file(WRITE "${OUTPUT}/reference.log" "${reference_stdout}${reference_stderr}")
     if(NOT reference_result EQUAL 0)

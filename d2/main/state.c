@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "trigger_state.h"
 #include "preview.h"
+#include "doors.h"
 #include "cloak.h"
 #endif
 #include "game.h"
@@ -3711,8 +3712,27 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 
 	//Restore door info
-	Num_open_doors = PHYSFSX_readSXE32(fp, swap);
-	active_door_read_n_swap(ActiveDoors, Num_open_doors, swap, fp);
+	{
+		active_door saved_doors[MAX_DOORS];
+		int count;
+		if (!state_runtime_read_s32(fp, swap, &count) || count < 0 || count > MAX_DOORS ||
+		    PHYSFS_read(fp, saved_doors, sizeof(active_door), count) != count) {
+			PHYSFS_close(fp);
+			restore_requires_menu = Game_wind != NULL;
+			return 0;
+		}
+		for (j = 0; j < count; ++j) active_door_swap(&saved_doors[j], swap);
+#ifdef DXX_XL_RUNTIME
+		if (!xl_door_state_valid(saved_doors, count)) {
+			PHYSFS_close(fp);
+			restore_requires_menu = Game_wind != NULL;
+			return 0;
+		}
+#endif
+		memset(ActiveDoors, 0, sizeof(ActiveDoors));
+		memcpy(ActiveDoors, saved_doors, count * sizeof(active_door));
+		Num_open_doors = count;
+	}
 
 	if (version >= 14) {		//Restore cloaking wall info
 		cloaking_wall saved_cloaks[MAX_CLOAKING_WALL_STORAGE];

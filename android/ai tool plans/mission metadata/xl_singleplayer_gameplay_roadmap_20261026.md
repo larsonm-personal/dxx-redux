@@ -243,7 +243,15 @@ finish original-mission qualification
     Dinter and Anthology lose only the object-count blocker. Wider object slot
     references, other capacities and broad performance remain unfinished.
 
-After the wall, cloak and trigger-capacity batches, continue the capacity and resource foundations, then the
+31. Separate XL active-door lifecycle: full 90-entry allocation, correct live
+    compaction and waiting timers, per-face animation and checked saved ownership
+    have source/native controls. Paired-face and reference defect corrections,
+    Android acceptance and remaining profiles are recorded in
+    [door lifecycle evidence](../../XL_compat/evidence/door-lifecycle.md).
+    Redux retains its existing alternate; original missions remain separately
+    qualified.
+
+After the wall, cloak, trigger and object-capacity batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated
 as required acceptance rather than cosmetic deferral. Do not mark

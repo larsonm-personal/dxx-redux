@@ -127,7 +127,8 @@ XL persistent projectiles now use separate hit histories and impact lifetime,
 with source/native collision and physical-travel controls plus 53 Android
 memory/disk/reuse steps. See [projectile evidence](evidence/projectile-history.md)
 for explicit overflow/save corrections and remaining combat requirements.
-Redux retains its existing behavior; object capacity has not been raised
+Redux retains its existing behavior; expanded XL object capacity has separate
+controls described above
 
 Normal OpenGL D2 builds admit levels by detected requirements and runtime asset checks,
 without a mission-name or hash exception. Stock and XL missions share one binary; software rendering still rejects XL.
@@ -187,8 +188,12 @@ including the corrected signed-field adapter from the keyed-wall tranche.
 Authored XL close-door actions now override an automatic door's waiting period
 using their own transition handler. Slot/timer reuse, two-sided obstruction and
 persistence controls are recorded in [close-door evidence](evidence/close-doors.md).
-Force does not bypass blocking actors. Redux retains its original waiting behavior;
-expanded active-door capacity and other wall behaviors remain separate work.
+Force does not bypass blocking actors. Separate XL opening/frame processing now
+uses all 90 source active-door entries, with own-face animation, correct waiting
+clocks/compaction and checked saved ownership. See
+[door lifecycle evidence](evidence/door-lifecycle.md) for paired-face corrections,
+full-table and physical controls. Redux retains its original alternate; optional
+settings and other wall behaviors remain separate work.
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented
 object-event variants remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and

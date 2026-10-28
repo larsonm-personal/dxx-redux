@@ -96,6 +96,7 @@ struct ObjectDependencies {
 		if (!wall_clips.insert(id).second) return;
 		const auto &w = WallAnims[id];
 		asset_require(w.num_frames > 0 && w.num_frames <= MAX_CLIP_FRAMES, "wall animation frame count invalid");
+		asset_require(w.play_time >= w.num_frames, "wall animation duration cannot represent every frame");
 		for (int i = 0; i < w.num_frames; ++i) texture(w.frames[i]);
 		sound(w.open_sound);
 		sound(w.close_sound);
