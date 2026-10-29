@@ -48,6 +48,7 @@ PUBLIC_TESTS = {
     "xl_trigger_flag_reference",
     "xl_wall_capacity_reference",
     "xl_wave_contract",
+    "xl_wave_channels_reference",
 }
 
 

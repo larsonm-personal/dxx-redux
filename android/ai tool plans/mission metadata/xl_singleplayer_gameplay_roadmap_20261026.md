@@ -332,6 +332,15 @@ finish original-mission qualification
     coverage is now 38/39 cases and the private selection is 94; no original
     Pumo level receives gameplay qualification from this increment.
 
+41. Channel-preserving WAV foundation: a shared bounded RIFF reader now feeds
+    both unchanged classic mono conversion and authored mono/stereo PCM.
+    Independent Windows/Linux comparisons cover all 25 Pumo WAVs and retain
+    original mono golden samples. See
+    [stereo evidence](../../XL_compat/evidence/stereo-pcm.md). Required selections
+    add one fast comparison, becoming 39/40 public and 95 private cases. Named
+    playback, loops, voice ownership and persistence remain separate requirements;
+    sound action 30 is still gated.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

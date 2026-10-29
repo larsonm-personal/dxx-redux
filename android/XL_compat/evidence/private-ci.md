@@ -7,7 +7,7 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-94 required CTests in independent directories, two at a time. Missing tests,
+95 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
@@ -21,8 +21,9 @@ selection.
 ## Public source coverage
 
 Every matching pull request builds the pinned XL source adapters on Windows and
-Linux, without private files or credentials. The public owner requires 38
-contracts on Windows and 39 on Linux, including 24 standalone source comparisons
+Linux, without private files or credentials. The public owner requires 39
+contracts on Windows and 40 on Linux, including 24 standalone XL source comparisons,
+an independent WAV-channel comparison
 and Linux's offscreen fog backend. Both platforms reject omissions, duplicates,
 skips and unexpected tests before granting a pass. Optional source executables
 must be present in the registered commands. Runtime comparisons that need actual
@@ -149,3 +150,8 @@ seconds for the test/inspection phase on a Windows-mounted filesystem. Windows
 passes all 38 public cases in 19.89 seconds. The earlier clean native-ext4 timings
 above remain distinct measurements. Message runtime and original Pumo evidence
 are recorded in [level-messages.md](level-messages.md).
+
+The [stereo PCM prerequisite](stereo-pcm.md) adds a roughly 0.7-second independent
+WAV test to both required selections. Its focused decoder, original mono and
+complete Pumo sample comparisons pass. This does not relabel the preceding
+94-case full run as a 95-case result or qualify named playback.

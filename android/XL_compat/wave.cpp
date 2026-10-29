@@ -24,9 +24,13 @@ int sample(const std::uint8_t *p, unsigned bits)
 	const int value = u16(p);
 	return value >= 32768 ? value - 65536 : value;
 }
-} // namespace
-
-WavePcm decode_wave(const std::uint8_t *data, std::size_t size)
+struct WaveView {
+	std::uint32_t rate;
+	std::uint16_t channels, bits;
+	const std::uint8_t *samples;
+	std::size_t frames;
+};
+WaveView read_wave(const std::uint8_t *data, std::size_t size)
 {
 	require(data && size >= 12 && size <= max_wave_bytes, "WAV size is outside the supported bound");
 	require(!std::memcmp(data, "RIFF", 4) && !std::memcmp(data + 8, "WAVE", 4), "Expected little-endian RIFF/WAVE");
@@ -58,25 +62,51 @@ WavePcm decode_wave(const std::uint8_t *data, std::size_t size)
 	}
 	require(format && samples && sample_bytes, "WAV requires format and nonempty data chunks");
 	require(u16(format) == 1, "Only PCM WAV effects are supported");
-	WavePcm result;
-	result.source_channels = u16(format + 2);
+	WaveView result{};
+	result.channels = u16(format + 2);
 	result.rate = u32(format + 4);
-	result.source_bits = u16(format + 14);
-	require(result.source_channels == 1 || result.source_channels == 2, "WAV must be mono or stereo");
-	require(result.source_bits == 8 || result.source_bits == 16, "WAV PCM must be 8 or 16 bit");
+	result.bits = u16(format + 14);
+	require(result.channels == 1 || result.channels == 2, "WAV must be mono or stereo");
+	require(result.bits == 8 || result.bits == 16, "WAV PCM must be 8 or 16 bit");
 	require(result.rate >= 8000 && result.rate <= 192000, "WAV sample rate is outside the supported range");
-	const unsigned stride = result.source_channels * result.source_bits / 8;
+	const unsigned stride = result.channels * result.bits / 8;
 	require(u16(format + 12) == stride && u32(format + 8) == result.rate * stride, "WAV PCM alignment or byte rate is inconsistent");
 	require(sample_bytes % stride == 0, "WAV data ends inside a sample frame");
-	const auto frames = sample_bytes / stride;
-	require(frames <= max_wave_bytes / sizeof(std::int16_t), "Decoded WAV exceeds the sample budget");
-	result.mono.resize(frames);
-	for (std::size_t i = 0; i < frames; ++i) {
-		const auto *p = samples + i * stride;
+	result.frames = sample_bytes / stride;
+	require(result.frames <= max_wave_bytes / sizeof(std::int16_t), "Decoded WAV exceeds the sample budget");
+	result.samples = samples;
+	return result;
+}
+} // namespace
+
+WavePcm decode_wave(const std::uint8_t *data, std::size_t size)
+{
+	const auto view = read_wave(data, size);
+	WavePcm result;
+	result.rate = view.rate;
+	result.source_channels = view.channels;
+	result.source_bits = view.bits;
+	result.mono.resize(view.frames);
+	const unsigned stride = view.channels * view.bits / 8;
+	for (std::size_t i = 0; i < view.frames; ++i) {
+		const auto *p = view.samples + i * stride;
 		int value = sample(p, result.source_bits);
 		if (result.source_channels == 2) value = (value + sample(p + result.source_bits / 8, result.source_bits)) / 2;
 		result.mono[i] = static_cast<std::int16_t>(value);
 	}
+	return result;
+}
+WaveChannels decode_wave_channels(const std::uint8_t *data, std::size_t size)
+{
+	const auto view = read_wave(data, size);
+	WaveChannels result;
+	result.rate = view.rate;
+	result.source_channels = view.channels;
+	result.source_bits = view.bits;
+	// At most two channels and 8 Mi frames: bounded to 32 MiB of decoded PCM
+	result.samples.resize(view.frames * view.channels);
+	for (std::size_t i = 0; i < result.samples.size(); ++i)
+		result.samples[i] = static_cast<std::int16_t>(sample(view.samples + i * view.bits / 8, view.bits));
 	return result;
 }
 std::vector<std::uint8_t> wave_unsigned8(const WavePcm &pcm, std::uint32_t rate)

@@ -58,7 +58,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 38)
+        self.assertEqual(len(public.PUBLIC_TESTS), 39)
         self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -155,7 +155,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 94)
+        self.assertEqual(len(runner.FAST_TESTS), 95)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -179,7 +179,7 @@ class XlPrivateTests(unittest.TestCase):
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
             receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 94)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 95)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
@@ -524,14 +524,14 @@ class XlPrivateTests(unittest.TestCase):
         row = {
             "id": assets.FAST_OWNER_ID,
             "xl_checks": {
-                "required_passed": 94,
+                "required_passed": 95,
                 "format_witnesses": 16,
                 "modern_source_levels": 3,
                 "private": "raw input must not escape",
             },
         }
         clean = retail.public_diagnostics(row)
-        self.assertEqual(clean["xl_checks"], {"required_passed": 94, "format_witnesses": 16, "modern_source_levels": 3})
+        self.assertEqual(clean["xl_checks"], {"required_passed": 95, "format_witnesses": 16, "modern_source_levels": 3})
         self.assertNotIn("raw input", json.dumps(clean))
         for invalid in (True, -1, 1001, "private text"):
             changed = copy.deepcopy(row)
