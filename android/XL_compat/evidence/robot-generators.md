@@ -11,32 +11,42 @@ singleplayer roadmap
 
 ## Assignment correction
 
-XL AssignProducer associates disk row i with the robotmaker segment whose
-authored producer index is i, ignoring the row's redundant segment/station fields.
-Redux's native mine loader renumbers robotmaker segments in geometry order.
-The old translation copied disk rows unchanged and therefore swapped robot
-contents when those orders differed. The new translation appends a table in
-native order with resolved segment/station links and retains the raw source rows
-in inspection evidence
+The 25/27 runtime audit found that the earlier source comparison omitted an
+initialization stage. LoadExtSegmentsCompiled calls CreateGenerator in geometry
+order before reading generator rows. CreateRobotMaker and CreateEquipmentMaker
+replace serialized producer indices with category-specific sequential indices.
+AssignProducer then associates row i with that initialized owner; neither the
+serialized producer index nor the row's redundant segment/station fields selects
+the owner. The previous authored-index claim and its 2/0/1 expected spawn sequence
+were incorrect. The expanded comparison reproduced the defect before correction
 
-Admission rejects missing, duplicated and out-of-range source assignments, and
-station counts outside the native signed-byte link range. Ambiguous assignments
-are rejected rather than reproducing the reference's silent first-match/discard
-handling. No mission name or hash participates in production admission
+Translation now resolves rows in geometry order and preserves raw fields in the
+inspection inventory. The source's combined station list includes fuel, repair,
+robot and equipment producers but excludes reactors. Fuel/repair functions with
+raw producer IDs >=500 are disabled during source initialization. Native Redux
+station links are reconstructed separately because its list includes reactors.
+Equipment startup targeting and boss resource selection use the same corrected
+assignment. Saves containing the old generator identity reject before publication
 
-The inventory regression first reproduced the previous swapped-contents result.
-It now passes 15/33, 17/36 and 23/40 controls with deliberately inconsistent row
-metadata, nonmonotonic segment indices, an interleaved fuel station and twelve
-malformed assignment controls. Hash-pinned extracted ReadObjectProducerInfo and
-AssignProducer agree with the translator for all six permutations in each of
-the three layouts (18 cases)
+Admission rejects a mismatch between initialized maker counts and disk rows, and
+station counts outside the native signed-byte link range. Stale or duplicated
+serialized producer IDs no longer reject otherwise valid assignments. No mission
+name or hash participates in production admission
 
-The production runtime control derives three robotmakers from unchanged Neptune
-geometry, assigns source rows in order 2/0/1, activates them through normal wall
-trigger dispatch and checks actual morphed robot IDs 2/0/1, capacity consumption,
-creator/segment links, pending disk saves and stock-to-source restore. The focused
-native selection passes 13/13, including the preceding object events, scheduling,
-teleports, modern properties/water and original Neptune/Observatory regressions
+The source comparison now compiles the actual CreateObjectProducer,
+CreateProducer, CreateRobotMaker, CreateEquipmentMaker and CreateGenerator
+functions before ReadObjectProducerInfo and AssignProducer. It checks all six raw
+index permutations in 15/33, 17/36 and 23/40 (18 cases), plus 24 mixed initialization
+cases with signed wide fields, interleaved reactors and both maker kinds. Pins
+also cover the geometry loader's call order and the source's limit definitions.
+These are isolated-function comparisons, not a complete reference-engine run
+
+The production runtime control retains deliberately stale source indices 2/0/1,
+activates makers through normal wall trigger dispatch and now checks actual
+morphed robot IDs 0/1/2, capacity consumption, creator/segment links, pending disk
+saves and stock-to-source restore. Equivalent 25/40 and 27/40 variants pass too.
+See [modern runtime evidence](runtime-layouts.md) for the current validation
+record and the expanded Android checks
 
 Temporary logs: temp/xl-generators-20261026 and
 temp/xl-stack-review/generator-{assignment,runtime}. The original Neptune HOG
@@ -89,11 +99,17 @@ validated against the loaded source before publishing extension event state.
 Seven malformed count/contents/link controls reject without publishing saved
 wall state. The stock save layout remains unchanged
 
-Android passes 53/53 steps, run ID 5852fd1b2af5450f8c6a1947b1edd1f7, elapsed
+The historical Android run passed 53/53 steps, run ID 5852fd1b2af5450f8c6a1947b1edd1f7, elapsed
 152589 ms. Two captures each undergo three real authoritative rewind restores,
 covering pending generation and spawned robots. Native combat, pending disk
 restore and stock-to-source restoration pass. Protected files have identical
-before/after hashes; emulator-5556 was not used
+before/after hashes; emulator-5556 was not used. Its row-selection expectations
+predate the initialization correction. The current script checks the corrected
+0/1/2 sequence; its rerun is recorded in [modern runtime evidence](runtime-layouts.md)
+
+The corrected runner passes 53/53 on the normal Android APK with the same fixture,
+actual 0/1/2 spawns and exact protected-file restoration. That current acceptance
+supersedes the historical row-selection expectations above.
 
 The test's artificial robot-suspension control is reapplied after restoration:
 it is cleared by loading, and delaying inspection otherwise lets production
@@ -125,9 +141,11 @@ Gate, Arena, Observatory, Konflict and GlassHouse. The
 [preserved requirements](robot-generator-candidates.json) retain source hashes,
 failed-decode fields, counts and assignment order without making admission claims.
 Ahayweh Gate contains 74 robot centers across 30 levels. Its d2leve-2.rl2 uses
-source order 2/0/1/3 and demonstrates that the remapping fix addresses real
-authored data. That 15/33 level still has four texture-ID-910 findings; fixing
-generator assignment does not waive those requirements or qualify the level.
+serialized producer IDs 2/0/1/3, which initialization replaces with 0/1/2/3.
+This confirms that ignoring stale serialized indices matters for original data.
+The candidate report now distinguishes raw indices from initialized row order.
+That 15/33 level still has four texture-ID-910 findings; fixing generator
+assignment does not waive those requirements or qualify the level.
 The other four inspected HOGs contain no robot centers
 
 Object spawn-bot actions require the owner's boss gate identity, cooldown/caps,

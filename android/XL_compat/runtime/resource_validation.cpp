@@ -402,9 +402,9 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		if (!*mission_resource_archive())
 			throw std::runtime_error("D2 XL lighting companions require an owned mission HOG: " + base);
 		state->lighting = xl_compat::load_mission_lighting_companions(level_filename);
-		// The pinned 23/40 loader reads CLR first, then replaces every texture color
+		// The pinned modern loader reads CLR first, then replaces every texture color
 		// from the embedded table. Ownership and decoding still apply to the companion
-		if (state->lighting.colors && !(level && level->level_version == 23 && level->game_version == 40 && level->texture_colors.size() == xl_compat::companion_texture_count))
+		if (state->lighting.colors && !(level && xl_compat::modern_runtime_layout(*level) && level->texture_colors.size() == xl_compat::companion_texture_count))
 			throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
 	}
 	const auto hxm_name = base + ".HXM";

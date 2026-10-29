@@ -70,6 +70,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/changing_light_probe.cpp"
                     "${xl_runtime_dir}/flicker_probe.cpp"
                     "${xl_runtime_dir}/hog_probe.cpp"
+                    "${xl_runtime_dir}/runtime_layout_probe.cpp"
                     "${xl_runtime_dir}/corona_probe.cpp")
     endif()
 endforeach()

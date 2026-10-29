@@ -186,6 +186,18 @@ if(BUILD_TESTING)
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     if(XL_NEPTUNE_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        set(xl_layout_oracle_args)
+        if(TARGET xl_layout_reference)
+            list(APPEND xl_layout_oracle_args "-DREFERENCE=$<TARGET_FILE:xl_layout_reference>")
+        endif()
+        add_test(
+            NAME xl_modern_runtime_layouts
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DFIXTURE=$<TARGET_FILE:xl_layout_test>
+                -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/modern-runtime-layouts
+                ${xl_layout_oracle_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/runtime_layouts.cmake)
+        set_tests_properties(xl_modern_runtime_layouts PROPERTIES TIMEOUT 120)
         add_test(
             NAME xl_neptune_native_layout
             COMMAND
@@ -518,6 +530,26 @@ if(BUILD_TESTING)
                     ${xl_equipment_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/equipment.cmake)
             set_tests_properties(xl_equipment_generators PROPERTIES TIMEOUT 90)
+            foreach(version IN ITEMS 25 27)
+                add_test(
+                    NAME xl_modern_equipment_${version}
+                    COMMAND
+                        ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                        -DDATA=${XL_RETAIL_DATA}
+                        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/equipment-${version}
+                        -DLAYOUT_VERSION=${version} ${xl_equipment_oracle_args} -P
+                        ${CMAKE_CURRENT_SOURCE_DIR}/tests/equipment.cmake)
+                add_test(
+                    NAME xl_modern_generators_${version}
+                    COMMAND
+                        ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                        -DDATA=${XL_RETAIL_DATA}
+                        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/generators-${version}
+                        -DLAYOUT_VERSION=${version} ${xl_generator_oracle_args} -P
+                        ${CMAKE_CURRENT_SOURCE_DIR}/tests/generator_runtime.cmake)
+                set_tests_properties(xl_modern_equipment_${version} xl_modern_generators_${version}
+                                     PROPERTIES TIMEOUT 90)
+            endforeach()
             add_test(
                 NAME xl_effect_inspection_gate
                 COMMAND

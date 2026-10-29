@@ -4,9 +4,13 @@ if(NOT original_hash STREQUAL "4016618d24238803135dabf2b33daee2a2c34a670c3f016d9
 endif()
 file(MAKE_DIRECTORY "${OUTPUT}/missions" "${OUTPUT}/preview-user")
 configure_file("${HOG}" "${OUTPUT}/missions/neptunxl.hog" COPYONLY)
+if(NOT LAYOUT_VERSION)
+    set(LAYOUT_VERSION 23)
+endif()
 execute_process(
-    COMMAND "${ENGINE}" -generator-assignment-test mapping -hogdir "${DATA}" -extra-dir "${OUTPUT}"
-            -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+    COMMAND
+        "${ENGINE}" -generator-assignment-test mapping -layout-version "${LAYOUT_VERSION}" -hogdir
+        "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
     RESULT_VARIABLE result
     OUTPUT_VARIABLE log
     ERROR_VARIABLE error

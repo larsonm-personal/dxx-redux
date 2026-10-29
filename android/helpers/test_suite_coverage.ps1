@@ -257,6 +257,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_hog_launcher'
             'test_xl_repair_runtime'
             'test_xl_format34_runtime'
+            'test_xl_runtime_layouts'
             'test_xl_hxm_runtime'
             'test_xl_equipment_runtime'
             'test_xl_classic_lighting_lifecycle'

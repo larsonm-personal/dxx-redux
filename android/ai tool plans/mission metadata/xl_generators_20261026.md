@@ -26,12 +26,13 @@ identity, gate cooldown/caps, intersection retries, lifetime, AI/morph state,
 sound and physics. It also suppresses normal boss spew when a spawn action is
 attached. Do not alias this action to classic matcen activation
 
-AssignProducer associates source row i with the first robotmaker segment whose
-authored producer index is i. Serialized row segment/producer fields are ignored.
-Redux's stock mine loader instead renumbers robotmaker segments in geometric
-order. Copying XL rows unchanged silently swaps contents for nonmonotonic source
-indices. Translate contents into native order while preserving source evidence;
-reject missing, duplicate or out-of-range assignments with useful diagnostics
+The original assignment analysis omitted source initialization. As corrected in
+the [25/27 runtime audit](xl_runtime_layouts_25_27_20261028.md), CreateGenerator
+first renumbers makers in geometry order. AssignProducer then binds rows to that
+initialized order, ignoring both stale serialized producer indices and redundant
+disk row links. Native station links still require reconstruction because the
+Redux and XL station lists differ. Preserve raw fields for inspection and reject
+maker/row count mismatches; duplicated raw IDs alone are not an error
 
 Empty robot lists use a third word derived from initially present nonboss robot
 IDs >=66. The handler's short-circuit does not refresh that word for nonempty
@@ -86,13 +87,15 @@ source layouts remain separate requirements. Keep the overall roadmap active
 
 ## Assignment checkpoint
 
-Source-to-native remapping and helpful malformed-assignment rejection are
+The historical source-to-native remapping and malformed-assignment rejection were
 implemented locally. The former swapped-content case fails before the change
 and passes afterward. Independent extracted reader/assignment comparisons pass
 18 cases across all three layouts. Production trigger activation, three actual
 morph spawns, pending disk restore and a stock transition pass. The focused
-native sweep passes 13/13. Subsequent controls below complete the bounded
-robot-matcen portion; item 6 remains the next dependent work area
+native sweep passed 13/13. These historical assignment results used the incomplete
+source oracle described above. The 25/27 tranche replaces their mapping claim and
+reruns native/Android behavior with initialized geometry order. The timing,
+contact and lifecycle controls below remain separate evidence
 
 ## Runtime and integration acceptance
 

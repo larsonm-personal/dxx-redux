@@ -266,7 +266,7 @@ void generator_assignment_contract(const char *directory = nullptr)
 		};
 		const auto records = read(read(12) + 35 + 6 * 12);
 		for (int native = 0; native < 3; ++native) {
-			const int source = std::array<int, 3>{ 2, 0, 1 }[native];
+			const int source = native;
 			for (int field = 0; field < 4; ++field)
 				check(read(records + native * 20 + field * 4) == std::uint32_t(parsed.matcens[source][field]), "XL source-to-native generator contents swapped");
 			check(read(records + native * 20 + 16, 2) == unsigned(native ? native + 1 : 0), "translated generator segment differs");
@@ -286,6 +286,10 @@ void generator_assignment_contract(const char *directory = nullptr)
 			if (malformed == 3) {
 				patch(invalid, offset, 4, 1);
 				patch(invalid, offset + 1, 1, 1);
+			}
+			if (malformed < 3) {
+				check(xl_compat::prepare_gameplay_probe(invalid).stock_level == translated, "Inert authored producer field changed initialized row selection");
+				continue;
 			}
 			const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(invalid));
 			check(xl_compat::blocker_message(blockers).find("generator assignment") != std::string::npos, "invalid generator assignment lacks useful rejection");
@@ -1429,7 +1433,7 @@ int main(int argc, char **argv)
 			rejects([&] { xl_compat::inspect_level(bad_equipment); });
 			bad_equipment = equipment;
 			patch(bad_equipment, properties + 1, 0, 1);
-			rejects([&] { xl_compat::prepare_gameplay_probe(bad_equipment); });
+			check(xl_compat::prepare_gameplay_probe(bad_equipment).source.equipment == admitted.source.equipment, "Duplicate stale producer field changed equipment rows");
 			for (unsigned id : { 7u, 8u, 24u, 46u, 48u, 49u }) {
 				bad_equipment = equipment;
 				patch(bad_equipment, table, id < 32 ? 1u << id : 0u);

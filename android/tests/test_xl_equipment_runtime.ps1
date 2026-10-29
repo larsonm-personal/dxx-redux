@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = 'ebf2d9080dde9740cf18dd9ee2da3a48ddde08c11cfdd3dc21214af8c9dd4e8b'
+$expectedHog = '124aba8bfcf9dda63fbc5d18e08d6aa8316c50cc05ac2f4527ec1c99d3e220d9'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne '6a4ca565352f3fe1bdce3b3249672c5ad2a2844816ac87173f21d8110960f6d0') {
     throw 'Requires the pinned derived fixture from xl_equipment_generators'

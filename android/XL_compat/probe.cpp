@@ -1,6 +1,7 @@
 #include "probe.h"
 #include "admission.h"
 #include "capacity.h"
+#include "producer_layout.h"
 
 #include <limits>
 #include <algorithm>
@@ -48,11 +49,13 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	auto blockers = runtime_blockers(v, water_segments);
 	const bool serialization_17_36 = v.level_version == 17 && v.game_version == 36;
 	const bool serialization_23_40 = v.level_version == 23 && v.game_version == 40;
+	const bool modern_layout = modern_runtime_layout(v);
 	if (qualification_version == 17) require(serialization_17_36, "layout qualification requires 17/36");
 	if (qualification_version == 23) {
 		require(serialization_23_40, "layout qualification requires 23/40");
 	}
 	require(blockers.empty(), blocker_message(blockers));
+	const auto producers = producer_layout(v);
 	if (!source_runtime) {
 		require(v.flicker_lights.size() <= 100, "classic probe flicker capacity requires the source-owned XL runtime");
 		std::size_t translated_indices = 0;
@@ -112,22 +115,29 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			for (const auto component : side.uvl) put(out, component, 2);
 		}
 	}
-	for (const auto &seg : v.segments) {
+	for (std::size_t segment = 0; segment < v.segments.size(); ++segment) {
+		const auto &seg = v.segments[segment];
+		const int function = producer_function(seg);
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (v.level_version < 21 && ((water_segments && seg.function == 7) || seg.function == 13 || seg.function == 11)) || (v.level_version == 23 && (seg.function == 11 || seg.function == 9)) ? 0 : seg.function, 1);
-		put(out, seg.producer, 1);
-		put(out, seg.value, 1);
+		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9)) ? 0 : function, 1);
+		// Wide authored fields stay in the owned source. Only robot assignment enters
+		// the native shadow, after geometry-order initialization and capacity checks
+		// Both loaders rebuild station values; other functions never consume them
+		put(out, function == 4 ? producers.robot_index[segment] : v.level_version >= 25 ? -1
+		                                                                                : seg.producer,
+		    1);
+		put(out, v.level_version >= 25 ? 0 : seg.value, 1);
 		put(out, seg.flags, 1);
 		put(out, seg.light, 4);
 	}
 	require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "level size overflow");
 	const int new_game_offset = static_cast<int>(out.size());
-	const bool equipment_header = serialization_17_36 || serialization_23_40;
-	const int removed_header = equipment_header ? 12 : 0;
+	const bool equipment_header = serialization_17_36 || modern_layout;
+	const int removed_header = (equipment_header ? 12 : 0) + (v.level_version >= 27 ? 16 : 0);
 	if (equipment_header) {
 		require(v.sections.size() == 10 && v.sections[9].name == "equipment" && v.sections[9].count == static_cast<int>(v.equipment.size()), "equipment section does not match decoded records");
 		out.insert(out.end(), source.begin() + v.game_offset, source.begin() + v.game_offset + 143);
-		out.insert(out.end(), source.begin() + v.game_offset + 155, source.end());
+		out.insert(out.end(), source.begin() + v.game_offset + 143 + removed_header, source.end());
 		patch(out, new_game_offset + 4, 143);
 	} else out.insert(out.end(), source.begin() + v.game_offset, source.end());
 	patch(out, 12, new_game_offset);
@@ -137,22 +147,23 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	const auto rebase = [&](std::size_t field) {
 		const int old = read_offset(source, v.game_offset + field);
 		if (old <= 0) return;
-		require(old >= v.game_offset + (equipment_header ? 155 : 0) && static_cast<std::size_t>(old) <= source.size(), "invalid game section offset");
+		require(old >= v.game_offset + (equipment_header ? 143 + removed_header : 0) && static_cast<std::size_t>(old) <= source.size(), "invalid game section offset");
 		patch(out, new_game_offset + field, old - v.game_offset + new_game_offset - removed_header);
 	};
 	rebase(27); // Legacy unused player block
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
 	if (!v.matcens.empty()) {
-		// XL binds row i to the segment with authored producer i; the native mine
-		// loader rebuilds generator/station indices in segment order instead
+		// XL initializes producers in geometry order, then reads row i for maker i
+		// Redux's native station list also includes reactors, requiring fresh links
 		patch(out, new_game_offset + 35 + 6 * 12, static_cast<int>(out.size()));
 		patch(out, new_game_offset + 43 + 6 * 12, 20);
 		int station = 0;
 		for (std::size_t segment = 0; segment < v.segments.size(); ++segment) {
 			const auto &source_segment = v.segments[segment];
-			if (source_segment.function < 1 || source_segment.function > 4) continue;
-			if (source_segment.function == 4) {
-				const auto &row = v.matcens.at(source_segment.producer);
+			const int function = producer_function(source_segment);
+			if (function < 1 || function > 4) continue;
+			if (function == 4) {
+				const auto &row = v.matcens.at(producers.robot_index[segment]);
 				for (int field = 0; field < 4; ++field) put(out, row[field], 4);
 				put(out, static_cast<int>(segment), 2);
 				put(out, station, 2);
@@ -173,7 +184,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
-	if (serialization_23_40) {
+	if (modern_layout) {
 		// Stock uses explicit section offsets. Retain the original game payload as
 		// inert evidence, then point at records with the audited stock widths
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "object table offset overflow");

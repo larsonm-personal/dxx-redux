@@ -19,11 +19,18 @@ metadata and music, including bounded streaming of Pumo Mines' large HOG.
 See [container evidence](evidence/extended-hog.md) and
 [launcher evidence](evidence/extended-hog-launcher.md). Container support does
 not qualify contained gameplay. All fourteen Pumo levels now decode as 27/40,
-with canonical geometry and source-reader comparisons; runtime admission remains
-blocked. The [modern-layout evidence](evidence/modern-layouts.md) records the
+with canonical geometry and source-reader comparisons; independent gameplay
+requirements still block them. The [modern-layout evidence](evidence/modern-layouts.md) records the
 complete requirement inventory, retained failures in other packages, and a
 correction to the older light-index source adapter. Explicit side geometry and
-fog now have browser rows. Reading these fields does not implement their runtime.
+fog now have browser rows. Canonical 25/40 and 27/40 runtime translation now has
+native geometry, gameplay, resource and persistence controls plus all 87 Android
+transition/save/rewind checks, documented in
+[runtime-layout evidence](evidence/runtime-layouts.md). Noncanonical geometry and
+version-27 authored fog volumes remain blocked. The expanded source comparison
+also corrects generator initialization: rows follow geometry order after source
+renumbering, not stale serialized producer IDs. Equipment startup and boss
+resource selection use that corrected order.
 
 The [maintained gameplay roadmap](../ai%20tool%20plans/mission%20metadata/xl_singleplayer_gameplay_roadmap_20261026.md)
 tracks these overlapping areas and their acceptance requirements. Immediate wall
@@ -76,7 +83,7 @@ legacy equipment layouts, expanded data/capacities and dynamic boss creation rem
 controls, intentional restore corrections and final Android acceptance. Original
 spawn-bot missions retain independent runtime and resource blockers.
 
-Modern 23/40 equipment makers now have separate XL production and checked
+Modern 23/40, 25/40 and 27/40 equipment makers now have separate XL production and checked
 disk/rewind state. Native/reference and 61-step Android controls cover authored
 activation, timing, allocation, pickups, replenishment and mixed robot/item
 production. Legacy layouts, unsupported item types and independent mission

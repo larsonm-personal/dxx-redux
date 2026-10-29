@@ -1,6 +1,7 @@
 // Storage adapters around the extracted readers. Redux supplies only the result
 // being checked, never the reference's decoded state or field boundaries
 #include "inventory.h"
+#include "lighting.h"
 #include "hog.h"
 #include "layout_fixture.h"
 #include <algorithm>
@@ -169,7 +170,7 @@ struct {
 } gameFileInfo, gameTopFileInfo;
 #include "xl_reference_layouts.h"
 
-std::size_t comparisons = 0, level_count = 0, segment_count = 0, side_count = 0;
+std::size_t comparisons = 0, brightness_count = 0, level_count = 0, segment_count = 0, side_count = 0;
 void equal(bool ok, const char *message)
 {
 	check(ok, message);
@@ -227,6 +228,11 @@ void compare(const xl_compat::Bytes &bytes)
 		const auto &redux = decoded.segments[i];
 		equal(reference.m_function == redux.function && reference.m_nObjProducer == redux.producer && reference.m_value == redux.value && reference.m_flags == redux.flags && reference.m_props == redux.properties, "Extras field width or signedness differs");
 		equal(reference.m_xDamage[0] == redux.damage[0] * 65536 && reference.m_xDamage[1] == redux.damage[1] * 65536 && reference.m_xAvgSegLight == redux.light, "Extras damage or light differs");
+	}
+	const auto brightness = xl_compat::vertex_brightness(decoded);
+	for (std::size_t i = 0; i < brightness.size(); ++i) {
+		check(brightness[i] == gameData.renderData.color.vertBright[i], "Per-vertex maximum light differs");
+		++brightness_count;
 	}
 	// Colors follow the readers under test; their widths independently establish
 	// that no added corner or wide extras field was skipped or consumed twice
@@ -287,15 +293,24 @@ int main(int argc, char **argv)
 	try {
 		if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
-		else
+		else {
 			for (const int version : { 23, 25, 27 })
 				for (int shape = 0; shape < (version == 23 ? 1 : 3); ++shape)
 					for (const int value : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
 						if (version == 23 && (value < -128 || value > 127)) continue;
 						compare(xl_test::layout_fixture(version, shape, value, value).bytes);
 					}
-		check(level_count > 0, "No levels compared");
-		std::cout << level_count << " levels, " << segment_count << " segments, " << side_count << " sides, " << comparisons << " comparisons; no runtime admission granted\n";
+			// Explicit degenerate faces still carry four serialized UVLs. Only
+			// active corners contribute to the source's vertex-brightness maxima
+			for (const int version : { 25, 27 })
+				for (int active = 0; active < 4; ++active) {
+					auto fixture = xl_test::layout_fixture(version);
+					for (int corner = active; corner < 4; ++corner) fixture.bytes.at(fixture.corners[0] + corner) = 255;
+					compare(fixture.bytes);
+				}
+		}
+		check(level_count > 0 && brightness_count > 0, "No levels or vertex brightness compared");
+		std::cout << level_count << " levels, " << segment_count << " segments, " << side_count << " sides, " << comparisons << " comparisons; " << brightness_count << " vertex brightness maxima; no runtime admission granted\n";
 		return 0;
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << '\n';

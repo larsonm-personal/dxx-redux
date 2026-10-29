@@ -6,7 +6,7 @@ extern "C" {
 void do_matcen(const trigger *action);
 }
 
-static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path &root)
+static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path &root, int version = 23)
 {
 	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
 	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
@@ -58,7 +58,7 @@ static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path 
 			level = xl_compat::inspect_level(member.bytes);
 			std::vector<int> targets;
 			for (std::size_t i = 0; i < level.segments.size() && targets.size() < 2; ++i)
-				if ((level.segments[i].function >= 1 && level.segments[i].function <= 4) || level.segments[i].function == 11) targets.push_back(static_cast<int>(i));
+				if (level.segments[i].function == 1 || level.segments[i].function == 2 || level.segments[i].function == 4 || level.segments[i].function == 11) targets.push_back(static_cast<int>(i));
 			for (int segment : { 20, 23 })
 				if (std::find(targets.begin(), targets.end(), segment) == targets.end()) targets.push_back(segment);
 			xl_compat::Bytes payload;
@@ -89,13 +89,14 @@ static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path 
 			patch(level.game_offset + 39 + 9 * 12, 2);
 			patch(level.game_offset + 43 + 9 * 12, 20);
 			for (int row = 0; row < 2; ++row) {
-				append(1u << (row ? POW_ENERGY : POW_VULCAN_AMMO), 4);
+				append(1u << (row ? POW_VULCAN_AMMO : POW_ENERGY), 4);
 				append(0, 4);
 				append(F1_0 * (row + 1), 4);
 				append(i2f(30), 4);
 				append(-1, 2);
 				append(32767, 2);
 			}
+			if (version != 23) member.bytes = xl_test::runtime_layout_fixture(member.bytes, version).bytes;
 			result = xl_compat::inspect_level(member.bytes);
 			const auto blockers = xl_compat::runtime_blockers(result);
 			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
@@ -137,8 +138,8 @@ static void equipment_reference_samples(const std::filesystem::path &output, con
 					second = 1u << (POW_EARTHSHAKER_MISSILE - 32);
 				}
 				if (scenario == 9) first = 0;
-				sample.equipment[1][0] = static_cast<std::int32_t>(first);
-				sample.equipment[1][1] = static_cast<std::int32_t>(second);
+				sample.equipment[0][0] = static_cast<std::int32_t>(first);
+				sample.equipment[0][1] = static_cast<std::int32_t>(second);
 				xl_equipment_load(sample);
 				Difficulty_level = difficulty;
 				Game_suspended = scenario == 12 ? SUSP_ROBOTS : scenario == 13 ? 4
@@ -281,9 +282,7 @@ static void equipment_initialization_controls(const std::filesystem::path &outpu
 	require(NumTextures > 1 && Num_effects > 0 && authored.walls.size() >= 2, "equipment initialization assets missing");
 	const auto texture = TmapInfo[1];
 	const auto effect = Effects[0];
-	std::vector<int> stations;
-	for (std::size_t i = 0; i < authored.segments.size(); ++i)
-		if ((authored.segments[i].function >= 1 && authored.segments[i].function <= 4) || authored.segments[i].function == 11) stations.push_back(static_cast<int>(i));
+	const auto stations = xl_compat::producer_layout(authored).stations;
 	int owner = -1;
 	for (std::size_t i = 0; i < authored.objects.size(); ++i)
 		if (authored.objects[i].type == OBJ_CNTRLCEN) owner = static_cast<int>(i);
@@ -319,7 +318,7 @@ static void equipment_initialization_controls(const std::filesystem::path &outpu
 		file << scenario << ' ' << stations.size() << " 2";
 		for (int segment : stations) file << ' ' << segment;
 		for (int row = 0; row < 2; ++row) {
-			const int segment = row ? 20 : 23;
+			const int segment = row ? 23 : 20;
 			file << ' ' << std::distance(stations.begin(), std::find(stations.begin(), stations.end(), segment));
 		}
 		file << ' ' << target << " 2";
@@ -331,7 +330,7 @@ static void equipment_initialization_controls(const std::filesystem::path &outpu
 		file << ' ' << sample.object_trigger_records.size() << ' ' << (scenario == 8 ? -1 : owner) << ' ' << int(Objects[owner].type);
 		for (int row = 0; row < 2; ++row) {
 			xl_equipment_state state;
-			require(xl_equipment_state_get(1 - row, &state), "initialization state missing");
+			require(xl_equipment_state_get(row, &state), "initialization state missing");
 			file << ' ' << state.enabled;
 		}
 		file << '\n';
@@ -411,12 +410,15 @@ static int equipment_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
-		const auto authored = write_equipment_fixture(root);
+		const auto layout_argument = find_arg_value(argc, argv, "-layout-version");
+		const int version = layout_argument ? std::atoi(layout_argument) : 23;
+		const auto authored = write_equipment_fixture(root, version);
 		require(load_base_mission("equip", error, sizeof(error)), error);
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		Difficulty_level = 2;
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
+		require(xl_source_level_version() == version, "Equipment test loaded the wrong source layout");
 		require(xl_level_extensions_active() && xl_equipment_count() == 2 && Num_robot_centers == 1, "equipment fixture did not load");
 		const auto state = [](int i) { xl_equipment_state state; require(xl_equipment_state_get(i, &state), "missing equipment state"); return state; };
 		const auto items = [](int segment) {

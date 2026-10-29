@@ -1,5 +1,6 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#include "../producer_layout.h"
 #include "projectile.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
@@ -304,8 +305,8 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			graph.robot(owner.id);
 			bool arbitrary = entry.action.targets.empty() || entry.action.targets[0][0] < 0;
 			if (!arbitrary) {
-				const auto &segment = level.segments.at(entry.action.targets[0][0]);
-				const auto &row = level.matcens.at(segment.producer);
+				const auto producers = xl_compat::producer_layout(level);
+				const auto &row = level.matcens.at(producers.robot_index.at(entry.action.targets[0][0]));
 				// Even with implicit candidates, a fresh empty producer selects arbitrarily
 				// until its normal handler has initialized the third selection word
 				arbitrary = !row[0] && !row[1];
@@ -723,7 +724,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 #ifdef DXX_XL_DESCRIPTOR_TEST
 void xl_test_bind_no_damage(const xl_compat::Inventory &level)
 {
-	if (Game_mode & GM_MULTI || !((level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)) ||
+	if (Game_mode & GM_MULTI || !((level.level_version == 17 && level.game_version == 36) || xl_compat::modern_runtime_layout(level)) ||
 	    level.vertices.size() != std::size_t(Num_vertices) || level.segments.size() != std::size_t(Num_segments))
 		throw std::runtime_error("no-damage qualification source profile/geometry mismatch");
 	for (int i = 0; i < Num_vertices; ++i)
@@ -793,7 +794,7 @@ extern "C" int xl_source_game_version(void)
 
 extern "C" int xl_repair_segment(int segment)
 {
-	return source && (source->level_version == 23 || (source->level_version == 17 && source->game_version == 36)) && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && source->segments[segment].function == 2;
+	return source && (xl_compat::modern_runtime_layout(*source) || (source->level_version == 17 && source->game_version == 36)) && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && xl_compat::producer_function(source->segments[segment]) == 2;
 }
 
 extern "C" int xl_blocked_map_segment(int segment)
@@ -965,6 +966,21 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
+	// Earlier generator saves used pre-initialization row selection. Reject those
+	// states rather than reinterpret their pending spawns with different definitions
+	if (!source->matcens.empty() || !source->equipment.empty()) field(0x584c5032);
+	if (source->level_version >= 25) {
+		// These layouts were never admitted with the older identity. Keep earlier
+		// save identities unchanged while binding new saves to the added layout data
+		field(static_cast<int>(source->fog_settings.size()));
+		for (const auto &fog : source->fog_settings)
+			for (int value : fog) field(value);
+		for (const auto &segment : source->segments) {
+			for (int value : { segment.function, segment.producer, segment.value, segment.flags, segment.properties, segment.damage[0], segment.damage[1] }) field(value);
+			for (const auto &side : segment.sides)
+				for (int corner : side.corners) field(corner);
+		}
+	}
 	// Earned light snapshots must belong to the same geometry and authored contributions
 	field(static_cast<int>(source->vertices.size()));
 	field(static_cast<int>(source->segments.size()));

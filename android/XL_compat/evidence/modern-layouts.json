@@ -96,15 +96,9 @@
                         },
                         {
                             "feature": "segment_function_v21",
-                            "count": 6,
-                            "distinct_details": 2,
-                            "example_details": ["10", "2"]
-                        },
-                        {
-                            "feature": "serialization",
                             "count": 1,
                             "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                            "example_details": ["10"]
                         },
                         {
                             "feature": "trigger_type",
@@ -375,6 +369,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -402,18 +404,6 @@
                             "example_details": ["17 decoded payloads; runtime behavior unimplemented"]
                         },
                         {
-                            "feature": "equipment assignment",
-                            "count": 14,
-                            "distinct_details": 1,
-                            "example_details": ["source record has no equipment segment with this producer index"]
-                        },
-                        {
-                            "feature": "equipment layout",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
-                        },
-                        {
                             "feature": "object triggers",
                             "count": 1,
                             "distinct_details": 1,
@@ -433,21 +423,15 @@
                         },
                         {
                             "feature": "segment_function_v21",
-                            "count": 71,
-                            "distinct_details": 2,
-                            "example_details": ["10", "11"]
+                            "count": 57,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
                         },
                         {
                             "feature": "segment_properties",
                             "count": 265,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         }
                     ],
                     "unknown": [
@@ -550,6 +534,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -577,18 +569,6 @@
                             "example_details": ["15 decoded payloads; runtime behavior unimplemented"]
                         },
                         {
-                            "feature": "equipment assignment",
-                            "count": 3,
-                            "distinct_details": 1,
-                            "example_details": ["source record has no equipment segment with this producer index"]
-                        },
-                        {
-                            "feature": "equipment layout",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
-                        },
-                        {
                             "feature": "object triggers",
                             "count": 1,
                             "distinct_details": 1,
@@ -608,21 +588,15 @@
                         },
                         {
                             "feature": "segment_function_v21",
-                            "count": 60,
-                            "distinct_details": 2,
-                            "example_details": ["10", "11"]
+                            "count": 57,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
                         },
                         {
                             "feature": "segment_properties",
                             "count": 261,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         }
                     ],
                     "unknown": [
@@ -744,6 +718,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -768,18 +750,6 @@
                             "example_details": ["22 decoded payloads; runtime behavior unimplemented"]
                         },
                         {
-                            "feature": "equipment assignment",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["source record has no equipment segment with this producer index"]
-                        },
-                        {
-                            "feature": "equipment layout",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
-                        },
-                        {
                             "feature": "object triggers",
                             "count": 1,
                             "distinct_details": 1,
@@ -799,21 +769,15 @@
                         },
                         {
                             "feature": "segment_function_v21",
-                            "count": 20,
-                            "distinct_details": 2,
-                            "example_details": ["10", "11"]
+                            "count": 19,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
                         },
                         {
                             "feature": "segment_properties",
                             "count": 420,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         }
                     ],
                     "unknown": [
@@ -932,6 +896,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -972,12 +944,6 @@
                             "count": 2,
                             "distinct_details": 1,
                             "example_details": ["16"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         }
                     ],
                     "unknown": [
@@ -1086,12 +1052,6 @@
                             "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
                         },
                         {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
-                        },
-                        {
                             "feature": "trigger_type",
                             "count": 1,
                             "distinct_details": 1,
@@ -1192,6 +1152,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1232,12 +1200,6 @@
                             "count": 15,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1342,6 +1304,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1382,12 +1352,6 @@
                             "count": 10,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1496,6 +1460,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1536,12 +1508,6 @@
                             "count": 11,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1651,6 +1617,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1691,12 +1665,6 @@
                             "count": 9,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1812,6 +1780,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1852,12 +1828,6 @@
                             "count": 10,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1972,6 +1942,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -2012,12 +1990,6 @@
                             "count": 12,
                             "distinct_details": 1,
                             "example_details": ["32"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -2118,6 +2090,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -2146,12 +2126,6 @@
                             "count": 7,
                             "distinct_details": 2,
                             "example_details": ["32", "60"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         }
                     ],
                     "unknown": [
@@ -2297,18 +2271,6 @@
                             "example_details": ["enable/disable effect-object targets require effect runtime support"]
                         },
                         {
-                            "feature": "equipment assignment",
-                            "count": 2,
-                            "distinct_details": 1,
-                            "example_details": ["source record has no equipment segment with this producer index"]
-                        },
-                        {
-                            "feature": "equipment layout",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
-                        },
-                        {
                             "feature": "object triggers",
                             "count": 1,
                             "distinct_details": 1,
@@ -2328,15 +2290,9 @@
                         },
                         {
                             "feature": "segment_function_v21",
-                            "count": 3,
-                            "distinct_details": 2,
-                            "example_details": ["10", "11"]
-                        },
-                        {
-                            "feature": "serialization",
                             "count": 1,
                             "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                            "example_details": ["10"]
                         },
                         {
                             "feature": "trigger_type",
@@ -2517,12 +2473,6 @@
                             "example_details": ["16"]
                         },
                         {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
-                        },
-                        {
                             "feature": "trigger_type",
                             "count": 33,
                             "distinct_details": 3,
@@ -2651,6 +2601,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -2681,18 +2639,6 @@
                             "example_details": ["enable/disable effect-object targets require effect runtime support"]
                         },
                         {
-                            "feature": "equipment assignment",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["source record has no equipment segment with this producer index"]
-                        },
-                        {
-                            "feature": "equipment layout",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
-                        },
-                        {
                             "feature": "object triggers",
                             "count": 5,
                             "distinct_details": 1,
@@ -2712,21 +2658,15 @@
                         },
                         {
                             "feature": "segment_function_v21",
-                            "count": 5,
-                            "distinct_details": 3,
-                            "example_details": ["10", "11", "2"]
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
                         },
                         {
                             "feature": "segment_properties",
                             "count": 155,
                             "distinct_details": 3,
                             "example_details": ["16", "32", "64"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -2850,6 +2790,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -2884,12 +2832,6 @@
                             "count": 28,
                             "distinct_details": 2,
                             "example_details": ["32", "36"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -3013,6 +2955,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -3065,12 +3015,6 @@
                             "count": 8,
                             "distinct_details": 2,
                             "example_details": ["32", "36"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",
@@ -3192,6 +3136,14 @@
                     ],
                     "runtime_blockers": [
                         {
+                            "feature": "authored fog",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
+                            ]
+                        },
+                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -3232,12 +3184,6 @@
                             "count": 31,
                             "distinct_details": 2,
                             "example_details": ["32", "36"]
-                        },
-                        {
-                            "feature": "serialization",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
                         },
                         {
                             "feature": "trigger_type",

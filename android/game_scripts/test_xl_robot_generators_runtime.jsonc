@@ -61,9 +61,9 @@
         "expect": {
             "xl_pilot.active": true,
             "xl_pilot.implicit_robot_flags": 0,
-            "xl_pilot.robot_generators.0.flags0": 4,
-            "xl_pilot.robot_generators.1.flags0": 1,
-            "xl_pilot.robot_generators.2.flags0": 2,
+            "xl_pilot.robot_generators.0.flags0": 1,
+            "xl_pilot.robot_generators.1.flags0": 2,
+            "xl_pilot.robot_generators.2.flags0": 4,
             "xl_pilot.robot_generators.0.enabled": false,
         },
     },
@@ -158,9 +158,9 @@
     {
         "action": "assert",
         "expect": {
-            "xl_pilot.robot_generators.0.robots[0].id": 2,
-            "xl_pilot.robot_generators.1.robots[0].id": 0,
-            "xl_pilot.robot_generators.2.robots[0].id": 1,
+            "xl_pilot.robot_generators.0.robots[0].id": 0,
+            "xl_pilot.robot_generators.1.robots[0].id": 1,
+            "xl_pilot.robot_generators.2.robots[0].id": 2,
             "xl_pilot.robot_generators.0.capacity": 262144,
             "xl_pilot.robot_generators.0.pending": false,
         },
