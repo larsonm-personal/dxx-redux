@@ -59,8 +59,7 @@ def manifest(path):
     if (
         data["missing"]
         or data["mismatched"]
-        or {(x["level_version"], x["game_version"]) for x in data["format_witnesses"]}
-        != PAIRS
+        or {(x["level_version"], x["game_version"]) for x in data["format_witnesses"]} != PAIRS
     ):
         raise ValueError("XL fixture manifest is incomplete")
     return data
@@ -121,10 +120,7 @@ def verify(stage):
             raise ValueError("XL staged member identity mismatch")
     for row in data["format_witnesses"]:
         content = hog_member(stage / row["archive_member"], row["hog_member"])
-        if (
-            len(content) != row["size"]
-            or hashlib.sha256(content).hexdigest() != row["sha256"]
-        ):
+        if len(content) != row["size"] or hashlib.sha256(content).hexdigest() != row["sha256"]:
             raise ValueError("XL format witness identity mismatch")
         if len(content) < 16 or struct.unpack_from("<I", content)[0] != 0x504C564C:
             raise ValueError("XL format witness header differs")
@@ -150,9 +146,7 @@ def stage_inputs(root, destination, seven_zip):
         raise ValueError("XL fixture destination already exists")
     destination.mkdir(parents=True)
     try:
-        shutil.copyfile(
-            root / "missions/d2xxl/manifest.json", destination / "manifest.json"
-        )
+        shutil.copyfile(root / "missions/d2xxl/manifest.json", destination / "manifest.json")
         checked(root / data["archive"]["path"], data["archive"])
         shutil.copyfile(root / data["archive"]["path"], destination / "levelpack.7z")
         for index, record in enumerate(data["archives"]):
@@ -160,11 +154,7 @@ def stage_inputs(root, destination, seven_zip):
             checked(source, record)
             temporary = destination / ("unpack-" + str(index))
             extract_archive(source, temporary)
-            actual = {
-                p.relative_to(temporary).as_posix()
-                for p in temporary.rglob("*")
-                if p.is_file()
-            }
+            actual = {p.relative_to(temporary).as_posix() for p in temporary.rglob("*") if p.is_file()}
             if actual != {r["path"] for r in record["members"]}:
                 raise ValueError("XL archive member set differs")
             adapter = record["path"].endswith("/adapters/boilpnt-test.zip")
@@ -178,21 +168,13 @@ def stage_inputs(root, destination, seven_zip):
                 else:
                     shutil.copyfile(temporary / path, target)
             shutil.rmtree(temporary)
-        record = next(
-            r
-            for r in data["original_mission_archives"]
-            if r["path"].endswith("/D2-XL.7z")
-        )
+        record = next(r for r in data["original_mission_archives"] if r["path"].endswith("/D2-XL.7z"))
         source = root / member_path(record["path"])
         checked(source, record)
         temporary = destination / "unpack-d2"
         extract_archive(source, temporary, seven_zip=seven_zip)
         for name, (_, digest) in D2_FILES.items():
-            matches = [
-                p
-                for p in temporary.rglob("*")
-                if p.is_file() and p.name.casefold() == name
-            ]
+            matches = [p for p in temporary.rglob("*") if p.is_file() and p.name.casefold() == name]
             if len(matches) != 1 or file_identity(matches[0])[1] != digest:
                 raise ValueError("XL original Counterstrike package differs")
             target = destination / "missions/single" / name
@@ -218,12 +200,7 @@ def require_original_gpu_trace(path):
     seen = set()
     for row in rows:
         context, visit = row.get("context"), row.get("visit")
-        if (
-            type(context) is not int
-            or type(visit) is not int
-            or context not in (0, 1)
-            or visit not in range(4)
-        ):
+        if type(context) is not int or type(visit) is not int or context not in (0, 1) or visit not in range(4):
             raise ValueError("Required original GPU witness identity differs")
         identity = (context, visit)
         if identity in seen:
@@ -231,16 +208,9 @@ def require_original_gpu_trace(path):
         seen.add(identity)
         owner = ("a", "b", "stock", "a")[visit]
         original = owner == "a"
-        if (
-            row.get("owner") != owner
-            or row.get("correct") is not True
-            or row.get("original") is not original
-        ):
+        if row.get("owner") != owner or row.get("correct") is not True or row.get("original") is not original:
             raise ValueError("Required original GPU witness did not execute correctly")
-        if original and (
-            row.get("red") != 228
-            or row.get("path") != "mods/pilot/textures/CEIL002.TGA"
-        ):
+        if original and (row.get("red") != 228 or row.get("path") != "mods/pilot/textures/CEIL002.TGA"):
             raise ValueError("Required original GPU source or pixel differs")
     if seen != {(context, visit) for context in (0, 1) for visit in range(4)}:
         raise ValueError("Required original GPU witness is missing")
