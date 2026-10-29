@@ -2590,6 +2590,14 @@
             "fixture": "retail-missions"
         },
         {
+            "id": "host-profile:retail-xl-fast",
+            "owner": "host-adapter",
+            "lane": "host",
+            "args": { "suite": "host-profile:retail-xl-fast" },
+            "estimated_seconds": 900,
+            "fixture": "retail-missions"
+        },
+        {
             "id": "master:test_xl_original_assets",
             "owner": "master",
             "lane": "android-single",

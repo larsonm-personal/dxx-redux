@@ -300,6 +300,15 @@ def public_diagnostics(value):
         experimental = value.get("experimental_acceptance", {})
         if isinstance(experimental, dict) and experimental.get("xl_level_two_keys") in ("passed", "failed"):
             clean["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
+    if value.get("id") in ("host-profile:retail-xl-originals", "host-profile:retail-xl-fast"):
+        counts = value.get("xl_checks", {})
+        if isinstance(counts, dict) and all(
+            type(counts.get(key)) is int and 0 <= counts[key] <= 1000
+            for key in ("required_passed", "format_witnesses", "modern_source_levels")
+        ):
+            clean["xl_checks"] = {
+                key: counts[key] for key in ("required_passed", "format_witnesses", "modern_source_levels")
+            }
     return clean
 
 

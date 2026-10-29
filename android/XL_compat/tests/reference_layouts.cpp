@@ -260,7 +260,7 @@ void compare(const xl_compat::Bytes &bytes)
 	equal(name == decoded.level_name, "Fog boundary consumed level name");
 	++level_count;
 }
-void original(const char *path)
+void original(const char *path, const char *requested = nullptr)
 {
 	std::ifstream input(path, std::ios::binary | std::ios::ate);
 	check(bool(input), "Cannot open original HOG");
@@ -274,9 +274,12 @@ void original(const char *path)
 		check(bool(input), "Original read failed");
 	};
 	const auto members = xl_compat::index_hog(static_cast<std::uint64_t>(size), read);
+	bool found = false;
 	for (const auto &member : members) {
 		const auto name = xl_compat::hog_key(member.name);
 		if (name.size() < 4 || name.substr(name.size() - 4) != ".rl2") continue;
+		if (requested && name != requested) continue;
+		found = true;
 		check(member.size <= 64 * 1024 * 1024, "Original level exceeds bounded reader limit");
 		xl_compat::Bytes bytes(static_cast<std::size_t>(member.size));
 		read(member.offset, bytes.data(), bytes.size());
@@ -287,11 +290,15 @@ void original(const char *path)
 		}
 		std::cout << member.name << ": source reader agrees\n";
 	}
+	check(found, "No requested original level found");
 }
 int main(int argc, char **argv)
 {
 	try {
-		if (argc > 1)
+		if (argc > 1 && std::string(argv[1]) == "--member") {
+			check(argc == 4, "Expected --member HOG level-name");
+			original(argv[2], argv[3]);
+		} else if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		else {
 			for (const int version : { 23, 25, 27 })

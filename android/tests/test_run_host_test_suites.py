@@ -805,7 +805,7 @@ class RetailProfileTests(unittest.TestCase):
         self.enterContext(patch.object(adapter.sys, "platform", "linux"))
         self.enterContext(patch.object(adapter.shutil, "which", return_value="tool"))
 
-    def run_profile(self, profile, *, owner_code=0, setup_code=0):
+    def run_profile(self, profile, *, owner_code=0, setup_code=0, xl_receipt=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             suite = adapter.load_suites()["host-profile:" + profile]
@@ -822,6 +822,10 @@ class RetailProfileTests(unittest.TestCase):
                     events.append(argv[0])
 
                 def wait(self, **kwargs):
+                    if "--work" in self.argv and xl_receipt is not None:
+                        path = Path(self.argv[self.argv.index("--work") + 1]) / "original-status.json"
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text(json.dumps(xl_receipt))
                     return setup_code if self.argv[0] == "cmake" else owner_code
 
             with (
@@ -1027,10 +1031,12 @@ class RetailProfileTests(unittest.TestCase):
         expansions = [suite for suite in suites.values() if suite.get("fixture") == "retail-missions"]
         self.assertEqual(
             {suite["profile"] for suite in expansions},
-            {"retail-vertigo-metadata", "retail-obsidian-liquid", "retail-xl-originals"},
+            {"retail-vertigo-metadata", "retail-obsidian-liquid", "retail-xl-originals", "retail-xl-fast"},
         )
         for suite in expansions:
-            self.assertEqual(suite["games"], [] if suite["profile"] == "retail-xl-originals" else ["d2"])
+            self.assertEqual(
+                suite["games"], [] if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} else ["d2"]
+            )
             self.assertFalse(suite["public_data"])
             self.assertFalse(suite["virtual_display"])
         registry = json.loads(adapter.REGISTRY.read_text(encoding="utf-8"))
@@ -1038,6 +1044,36 @@ class RetailProfileTests(unittest.TestCase):
             "android/tests/test_secret_area_liquid_obsidian.py",
             {entry["path"] for entry in registry["unsupported_entrypoints"]},
         )
+
+    def test_xl_owners_share_strict_membership_and_preserve_safe_counts(self):
+        from run_xl_originals import CORE_TESTS, FAST_TESTS
+
+        for fast in (False, True):
+            required = FAST_TESTS if fast else CORE_TESTS
+            profile = "retail-xl-fast" if fast else "retail-xl-originals"
+            summary = {
+                "required_passed": len(required),
+                "required_tests": sorted(required),
+                "experimental": {} if fast else {"xl_level_two_keys": "failed"},
+                "level_two_completion_qualified": False,
+                "format_witnesses": 16 if fast else 9,
+                "modern_source_levels": 3 if fast else 0,
+            }
+            code, receipt, calls, _ = self.run_profile(profile, xl_receipt=summary)
+            self.assertEqual(code, 0)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual("--fast" in calls[0], fast)
+            self.assertEqual(receipt["xl_checks"]["required_passed"], len(required))
+            self.assertEqual("experimental_acceptance" in receipt, not fast)
+            for invalid in (
+                None,
+                {**summary, "required_passed": 40},
+                {**summary, "required_tests": sorted(required)[1:]},
+            ):
+                with self.subTest(profile=profile, invalid=invalid is None):
+                    code, receipt, _calls, _ = self.run_profile(profile, xl_receipt=invalid)
+                    self.assertNotEqual(code, 0)
+                    self.assertEqual(receipt["status"], "FAIL")
 
     def test_vertigo_profile_uses_reused_worker_and_exact_staged_missions(self):
         code, receipt, calls, root = self.run_profile("retail-vertigo-metadata")

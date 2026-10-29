@@ -14,7 +14,15 @@ from nightly_corpus_stage import extract_archive, member_path
 
 ASSETS_COMMIT = "8c9988a96a7e306f8aac04c85e2610492917b7ac"
 MANIFEST_SHA256 = "cfa5a81f003958798cb37ee177f07b74c77812c4ab43d1986ccff37244347647"
-OWNER_IDS = {"host-profile:retail-xl-originals", "master:test_xl_original_assets"}
+ORIGINAL_OWNER_IDS = {"host-profile:retail-xl-originals", "master:test_xl_original_assets"}
+FAST_OWNER_ID = "host-profile:retail-xl-fast"
+OWNER_IDS = ORIGINAL_OWNER_IDS | {FAST_OWNER_ID}
+MODERN_FILES = {
+    "modern/boilpnt.hog": (
+        68710431,
+        "5cde12e3188fca12b655de3be424871f61bd464e9318b0da6bcdbc65b79551f3",
+    ),
+}
 D2_FILES = {
     "d2-xl.hog": (
         9871510,
@@ -109,7 +117,7 @@ def expected_files(data):
     return result
 
 
-def verify(stage):
+def verify(stage, modern=False):
     stage = Path(stage)
     reject_links(stage)
     data = manifest(stage / "manifest.json")
@@ -134,10 +142,14 @@ def verify(stage):
         ):
             raise ValueError("XL format witness version differs")
         checked(stage / "witnesses" / row["hog_member"], row)
+    if modern:
+        for name, identity in MODERN_FILES.items():
+            if file_identity(stage / name) != identity:
+                raise ValueError("XL modern original identity mismatch")
     return data
 
 
-def stage_inputs(root, destination, seven_zip):
+def stage_inputs(root, destination, seven_zip, modern=False):
     root, destination = Path(root), Path(destination)
     reject_links(root)
     reject_links(destination)
@@ -186,7 +198,21 @@ def stage_inputs(root, destination, seven_zip):
             (destination / "witnesses" / row["hog_member"]).write_bytes(
                 hog_member(destination / row["archive_member"], row["hog_member"])
             )
-        verify(destination)
+        if modern:
+            record = next(r for r in data["original_mission_archives"] if r["path"].endswith("/boilpnt.7z"))
+            source = root / member_path(record["path"])
+            checked(source, record)
+            temporary = destination / "unpack-modern"
+            extract_archive(source, temporary, seven_zip=seven_zip)
+            for name, identity in MODERN_FILES.items():
+                matches = [p for p in temporary.rglob("*") if p.is_file() and p.name.casefold() == Path(name).name]
+                if len(matches) != 1 or file_identity(matches[0]) != identity:
+                    raise ValueError("XL modern original archive differs")
+                target = destination / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(matches[0], target)
+            shutil.rmtree(temporary)
+        verify(destination, modern=modern)
     except BaseException:
         shutil.rmtree(destination)
         raise
@@ -223,16 +249,20 @@ def main():
     mode.add_argument("--stage", type=Path)
     mode.add_argument("--gpu-trace", type=Path)
     parser.add_argument("--seven-zip")
+    parser.add_argument("--modern", action="store_true", help="Require the pinned original Boiling Point HOG")
     args = parser.parse_args()
     if args.gpu_trace:
         require_original_gpu_trace(args.gpu_trace)
         print("Verified four original GPU witnesses across two GL contexts")
         return
     if args.root:
-        stage_inputs(args.root, args.stage, args.seven_zip)
+        stage_inputs(args.root, args.stage, args.seven_zip, modern=args.modern)
     else:
-        verify(args.stage)
-    print("Verified pinned XL original fixtures and nine format witnesses")
+        verify(args.stage, modern=args.modern)
+    print(
+        "Verified pinned XL original fixtures and nine format witnesses"
+        + (" plus the modern original HOG" if args.modern else "")
+    )
 
 
 if __name__ == "__main__":

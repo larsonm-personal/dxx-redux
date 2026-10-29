@@ -19,8 +19,9 @@ void write_new(const std::filesystem::path &path, const std::string &bytes)
 
 int main(int argc, char **argv)
 {
-	if (argc != 4 || std::string(argv[1]) != "--incomplete-presentation-probe") {
-		std::cerr << "Usage: xl_probe_fixture --incomplete-presentation-probe input.rl2 NEW-output-directory\n"
+	const bool source_runtime = argc > 1 && std::string(argv[1]) == "--source-runtime-probe";
+	if (argc != 4 || (!source_runtime && std::string(argv[1]) != "--incomplete-presentation-probe")) {
+		std::cerr << "Usage: xl_probe_fixture {--incomplete-presentation-probe|--source-runtime-probe} input.rl2 NEW-output-directory\n"
 		             "Developer fixture only; not a supported mission conversion\n";
 		return 2;
 	}
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
 		input.seekg(0);
 		const xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 		if (input.bad() || bytes.size() != static_cast<std::size_t>(size)) throw std::runtime_error("input read failed");
-		const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+		const auto probe = source_runtime ? xl_compat::prepare_source_runtime_probe(bytes) : xl_compat::prepare_gameplay_probe(bytes);
 		if (!std::filesystem::create_directory(directory)) throw std::runtime_error("cannot create new probe directory");
 		// Write the limitations first so any partially written fixture is identified
 		write_new(directory / "UNVERIFIED.txt", "Developer gameplay probe\nNOT verified playable or faithful\n"

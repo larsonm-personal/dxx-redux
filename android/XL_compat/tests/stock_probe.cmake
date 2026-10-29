@@ -6,12 +6,15 @@ endif()
 file(MAKE_DIRECTORY "${OUTPUT}")
 string(RANDOM LENGTH 12 ALPHABET 0123456789abcdef run_id)
 set(fixture "${OUTPUT}/${run_id}")
-execute_process(COMMAND "${PROBE}" --incomplete-presentation-probe "${LEVEL}" "${fixture}"
-                RESULT_VARIABLE result)
+set(probe_kind --incomplete-presentation-probe)
+if(SOURCE_RUNTIME)
+    set(probe_kind --source-runtime-probe)
+endif()
+execute_process(COMMAND "${PROBE}" "${probe_kind}" "${LEVEL}" "${fixture}" RESULT_VARIABLE result)
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Probe creation failed")
 endif()
-execute_process(COMMAND "${PROBE}" --incomplete-presentation-probe "${LEVEL}" "${fixture}"
+execute_process(COMMAND "${PROBE}" "${probe_kind}" "${LEVEL}" "${fixture}"
                 RESULT_VARIABLE overwrite)
 if(overwrite EQUAL 0)
     message(FATAL_ERROR "Probe overwrote existing output")

@@ -325,8 +325,14 @@ def retail_profile_arguments(suite, repo, build_root, work):
     """Bind reviewed retail owners to the verified stage, never fallback media."""
     profile = suite["profile"]
     stage = repo / "game_data/retail-ci"
-    if profile == "retail-xl-originals":
-        return ["--repo", str(repo), "--work", str(work / "xl-originals")]
+    if profile in {"retail-xl-originals", "retail-xl-fast"}:
+        return [
+            "--repo",
+            str(repo),
+            "--work",
+            str(work / "xl-originals"),
+            *(["--fast"] if profile == "retail-xl-fast" else []),
+        ]
 
     def binary(game, suffix):
         return str(build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix))
@@ -1055,18 +1061,15 @@ def run_suite(suite, repo, build_root, output, timeout):
             if suite.get("virtual_display"):
                 argv = ["xvfb-run", "-a"] + argv
             code = run(argv, virtual_display=suite.get("virtual_display", False))
-            if suite["profile"] == "retail-xl-originals" and code == 0:
+            if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} and code == 0:
+                from run_xl_originals import validate_summary
+
                 receipt = json.loads((work / "xl-originals/original-status.json").read_text())
-                experimental = receipt.get("experimental")
-                if (
-                    receipt.get("required_passed") != 40
-                    or receipt.get("level_two_completion_qualified") is not False
-                    or not isinstance(experimental, dict)
-                    or set(experimental) != {"xl_level_two_keys"}
-                    or experimental["xl_level_two_keys"] not in {"passed", "failed"}
-                ):
-                    raise ValueError("Invalid original XL acceptance receipt")
-                result["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
+                result["xl_checks"] = validate_summary(receipt, fast=suite["profile"] == "retail-xl-fast")
+                if receipt["experimental"]:
+                    result["experimental_acceptance"] = {
+                        "xl_level_two_keys": receipt["experimental"]["xl_level_two_keys"]
+                    }
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
             result["exclusions"] = [
                 {

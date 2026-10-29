@@ -1327,10 +1327,31 @@
             "executables": ["cmake", "ctest"],
             "python_modules": [],
             "estimated_seconds": 1800,
-            "coverage_scope": "40 required native XL regressions, separately reported experimental level-two campaign acceptance, and nine original format inspection/rejection witnesses",
+            "coverage_scope": "Required native XL regressions and campaign-route controls, separately reported experimental level-two acceptance, and nine original format inspection/rejection witnesses; exact test membership is checked by the owner and adapter",
             "constraints": [
                 "Trusted retail-ci only; exact XL asset revision and manifest required",
                 "No full mission or unsupported-format gameplay claim; raw outputs remain private"
+            ],
+            "profile_exclusions": []
+        },
+        {
+            "id": "host-profile:retail-xl-fast",
+            "kind": "retail-python",
+            "profile": "retail-xl-fast",
+            "path": "android/tests/run_xl_originals.py",
+            "games": [],
+            "target_suffix": "",
+            "fixture": "retail-missions",
+            "public_data": false,
+            "virtual_display": false,
+            "executables": ["cmake", "ctest"],
+            "python_modules": [],
+            "estimated_seconds": 900,
+            "coverage_scope": "Controlled native XL gameplay, saves and stock transitions; pinned source and GPU comparisons; nine legacy format witnesses and seven original modern outcomes, including three full 27/40 source-reader comparisons",
+            "constraints": [
+                "Trusted retail-ci only; exact XL asset revision and complete modern original HOG required",
+                "Independent test directories run two at a time; campaign searches remain in retail-xl-originals",
+                "No original campaign or physical-device qualification; raw outputs remain private"
             ],
             "profile_exclusions": []
         },
