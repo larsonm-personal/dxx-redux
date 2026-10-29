@@ -1,6 +1,5 @@
 package com.dxxredux.app
 
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -436,7 +435,7 @@ object MissionZipMusic {
                     val nestedPath = normalizePath(entry.name)
                     val extension = extensionOf(nestedPath)
                     var songListBytes: ByteArray? = null
-                    var nestedHogBytes: ByteArray? = null
+                    var nestedHog: MissionZipMusicSource? = null
                     var actualSize = 0L
                     when (extension) {
                         "sng" -> {
@@ -457,15 +456,42 @@ object MissionZipMusic {
                         }
 
                         "hog" -> {
-                            nestedHogBytes =
-                                zip.readBytesBounded(
-                                    ExtractionLimits.MAX_ENTRY_BYTES,
+                            val counted =
+                                object : java.io.FilterInputStream(zip) {
+                                    var bytes = 0L
+
+                                    override fun read(): Int {
+                                        val value = super.read()
+                                        if (value >= 0) account(1)
+                                        return value
+                                    }
+
+                                    override fun read(
+                                        buffer: ByteArray,
+                                        offset: Int,
+                                        length: Int,
+                                    ): Int {
+                                        val count = `in`.read(buffer, offset, length)
+                                        if (count > 0) account(count)
+                                        return count
+                                    }
+
+                                    private fun account(count: Int) {
+                                        bytes += count
+                                        entryBudget.accountActual(count, bytes, entry.compressedSize, nestedPath)
+                                    }
+
+                                    override fun close() = Unit
+                                }
+                            nestedHog =
+                                scanHog(
+                                    archiveEntryPath,
+                                    counted,
                                     nestedPath,
-                                    entryBudget,
-                                    entry.compressedSize,
-                                    expectedSizeBytes = entry.size,
+                                    sourceFilePath,
+                                    catalogBudget,
                                 )
-                            actualSize = nestedHogBytes.size.toLong()
+                            actualSize = counted.bytes
                         }
                     }
                     zip.closeEntry()
@@ -496,13 +522,7 @@ object MissionZipMusic {
                         }
 
                         "hog" -> {
-                            scanHog(
-                                archiveEntryPath = archiveEntryPath,
-                                input = ByteArrayInputStream(checkNotNull(nestedHogBytes)),
-                                nestedEntryPath = nestedPath,
-                                sourceFilePath = sourceFilePath,
-                                catalogBudget = catalogBudget,
-                            )?.tracks?.forEach(builder::addTrack)
+                            nestedHog?.tracks?.forEach(builder::addTrack)
                         }
                     }
                 } else {
@@ -529,47 +549,28 @@ object MissionZipMusic {
                 containerPath = containerPath,
                 catalogBudget = catalogBudget,
             )
-        if (input.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return null
-        val entryBudget = catalogBudget.expansionBudget
-        val metadataBudget = musicMetadataBudget()
-        while (true) {
-            val nameBytes = input.readNBytesCompat(13)
-            if (nameBytes.isEmpty() || nameBytes.size != 13) break
-            val lenBytes = input.readNBytesCompat(4)
-            if (lenBytes.size != 4) break
-            val entryName = hogEntryName(nameBytes)
-            val size = leInt(lenBytes).toLong() and 0xffff_ffffL
+        NativeHogArchive.visit(input, containerPath, catalogBudget.expansionBudget) { entry, payload ->
+            val entryName = entry.name
+            val size = entry.size
             catalogBudget.visit("$containerPath:$entryName")
-            entryBudget.registerEntry(size, size, entryName)
-            val ext = extensionOf(entryName)
             if (leafName(entryName).lowercase(Locale.US) in SONG_LIST_FILES) {
-                if (size > ExtractionLimits.MAX_DESCRIPTOR_BYTES) {
-                    throw IOException("$entryName exceeds ${ExtractionLimits.MAX_DESCRIPTOR_BYTES} bytes")
-                }
                 val bytes =
-                    input.readBytesBoundedExact(
-                        size,
+                    payload.readBytesBounded(
+                        ExtractionLimits.MAX_DESCRIPTOR_BYTES,
                         entryName,
-                        metadataBudget,
+                        expectedSizeBytes = size,
                     )
-                entryBudget.accountActual(bytes.size, size, size, entryName)
-                builder.addSongList(
-                    archiveEntryPath,
-                    parseSongListReferences(bytes.toString(Charsets.UTF_8)),
+                builder.addSongList(archiveEntryPath, parseSongListReferences(bytes.toString(Charsets.UTF_8)))
+            } else if (extensionOf(entryName) in PLAYABLE_EXTENSIONS) {
+                builder.addPlayable(
+                    archiveEntryPath = archiveEntryPath,
+                    nestedEntryPath = nestedEntryPath,
+                    hogEntryName = entryName,
+                    name = entryName,
+                    sourceRelativeName = entryName,
+                    sizeBytes = size,
+                    sourceFilePath = sourceFilePath,
                 )
-            } else {
-                if (ext in PLAYABLE_EXTENSIONS) {
-                    builder.addPlayable(
-                        archiveEntryPath = archiveEntryPath,
-                        nestedEntryPath = nestedEntryPath,
-                        hogEntryName = entryName,
-                        name = entryName,
-                        sourceRelativeName = entryName,
-                        sizeBytes = size,
-                        sourceFilePath = sourceFilePath,
-                    )
-                }
-                input.skipFullyBounded(size, entryBudget, entryName)
             }
         }
         return builder.build()
@@ -746,29 +747,6 @@ object MissionZipMusic {
             }.filter { it.isNotBlank() && !it.startsWith(";") && !it.startsWith("#") }
             .toList()
 
-    private fun InputStream.readNBytesCompat(count: Int): ByteArray {
-        val out = ByteArray(count)
-        var total = 0
-        while (total < count) {
-            val read = read(out, total, count - total)
-            if (read < 0) break
-            total += read
-        }
-        return if (total == count) out else out.copyOf(total)
-    }
-
-    private fun InputStream.readBytesBoundedExact(
-        count: Long,
-        label: String,
-        budget: ExtractionBudget,
-    ): ByteArray {
-        if (count > Int.MAX_VALUE) throw IOException("$label exceeds the in-memory read limit")
-        val bytes = readNBytesCompat(count.toInt())
-        if (bytes.size.toLong() != count) throw IOException("Unexpected end of $label")
-        budget.accountActual(bytes.size, bytes.size.toLong(), count, label)
-        return bytes
-    }
-
     private fun musicMetadataBudget() =
         ExtractionBudget(
             maxEntryBytes = ExtractionLimits.MAX_DESCRIPTOR_BYTES,
@@ -785,48 +763,6 @@ object MissionZipMusic {
                 length: Int,
             ) = Unit
         }
-
-    private fun InputStream.skipFullyCompat(count: Long) {
-        var remaining = count
-        while (remaining > 0) {
-            val skipped = skip(remaining)
-            if (skipped > 0) {
-                remaining -= skipped
-            } else if (read() >= 0) {
-                remaining--
-            } else {
-                return
-            }
-        }
-    }
-
-    private fun InputStream.skipFullyBounded(
-        count: Long,
-        budget: ExtractionBudget,
-        label: String,
-    ) {
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        var total = 0L
-        while (total < count) {
-            val read = read(buffer, 0, minOf(buffer.size.toLong(), count - total).toInt())
-            if (read < 0) throw IOException("Unexpected end of $label")
-            total += read
-            budget.accountActual(read, total, count, label)
-        }
-    }
-
-    private fun hogEntryName(bytes: ByteArray): String =
-        bytes
-            .takeWhile { it.toInt() != 0 }
-            .toByteArray()
-            .toString(Charsets.US_ASCII)
-            .trim()
-
-    private fun leInt(bytes: ByteArray): Int =
-        (bytes[0].toInt() and 0xff) or
-            ((bytes[1].toInt() and 0xff) shl 8) or
-            ((bytes[2].toInt() and 0xff) shl 16) or
-            ((bytes[3].toInt() and 0xff) shl 24)
 
     private fun extensionOf(path: String): String = path.substringAfterLast('.', "").lowercase(Locale.US)
 

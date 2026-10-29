@@ -331,17 +331,12 @@ class ModManagerMissionZipTest {
     }
 
     @Test
-    fun extendedD2xxlHogReportsSpecificImportFailure() {
+    fun malformedExtendedD2xxlHogDoesNotPublishAnImport() {
         val filesDir = File("build/test-mod-manager-extended-d2xxl-hog").absoluteFile
         filesDir.deleteRecursively()
         filesDir.mkdirs()
 
-        val error =
-            assertThrows(MissionZip.UnsupportedD2xxlHogException::class.java) {
-                ModManager(filesDir).importMissionZipFile(createExtendedD2xxlMission7z(), "Extended.7z")
-            }
-
-        assertEquals(MissionZip.UNSUPPORTED_D2XXL_HOG_MESSAGE, error.message)
+        assertEquals(null, ModManager(filesDir).importMissionZipFile(createExtendedD2xxlMission7z(), "Extended.7z"))
         assertTrue(ModManager(filesDir).listMods().isEmpty())
     }
 

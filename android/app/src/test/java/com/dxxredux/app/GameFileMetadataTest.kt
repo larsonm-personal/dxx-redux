@@ -47,7 +47,7 @@ class GameFileMetadataTest {
         assertNotNull(summary)
         summary!!
         assertEquals("HOG", summary.format)
-        assertEquals(listOf("Invalid HOG magic"), summary.problems)
+        assertEquals(listOf("Invalid HOG signature (expected DHF or D2X)"), summary.problems)
     }
 
     @Test

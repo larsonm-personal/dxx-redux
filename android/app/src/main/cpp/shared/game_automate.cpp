@@ -2749,7 +2749,7 @@ static int parse_script(const char *json_text)
 			else if (action == "delete_mod" || action == "install_staged_demo" ||
 			         action == "launch_base_robot_preview" || action == "launch_random_level_preview" ||
 			         action == "launch_random_robot_preview" || action == "mp_command" ||
-			         action == "scroll" || action == "test_preview_media_controls" ||
+			         action == "scroll" || action == "test_preview_media_controls" || action == "test_hog_launcher" ||
 			         action == "write_set_files") s.type = STEP_LAUNCHER_ONLY;
 			else if (action == "import_mission_zip") s.type = STEP_IMPORT_MISSION_ZIP;
 			else if (action == "analyze_level_metadata") s.type = STEP_ANALYZE_LEVEL_METADATA;

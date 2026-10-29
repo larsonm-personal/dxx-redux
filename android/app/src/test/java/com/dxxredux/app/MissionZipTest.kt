@@ -431,7 +431,7 @@ class MissionZipTest {
     }
 
     @Test
-    fun identifiesD2xxlExtendedHogWithoutMisclassifyingOtherInvalidHogs() {
+    fun rejectsTruncatedExtendedHogAndOtherInvalidHogs() {
         val extended =
             createArchiveZip(
                 listOf(
@@ -442,9 +442,8 @@ class MissionZipTest {
         val invalid = createArchiveZip(listOf("invalid.hog" to "BADinvalid".toByteArray(Charsets.US_ASCII)))
 
         assertNull(MissionZip.inspect(extended))
-        assertTrue(MissionZip.containsUnsupportedD2xxlHog(extended))
-        assertTrue(extended.inputStream().use { MissionZip.containsUnsupportedD2xxlHog(it) })
-        assertFalse(MissionZip.containsUnsupportedD2xxlHog(invalid))
+        assertNull(extended.inputStream().use { MissionZip.inspect(it) })
+        assertNull(MissionZip.inspect(invalid))
     }
 
     @Test

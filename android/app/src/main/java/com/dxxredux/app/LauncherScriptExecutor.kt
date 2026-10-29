@@ -264,6 +264,15 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "test_hog_launcher" -> {
+                    testHogLauncher(context, step)
+                    Log.i(
+                        TAG,
+                        "ASSERT_PASS: extended HOG import, catalogs, exact music bytes, preview playback and cleanup",
+                    )
+                    currentStep++
+                }
+
                 "test_preview_media_controls" -> {
                     try {
                         testPreviewMediaControls(context, step.getString("audio_path"))

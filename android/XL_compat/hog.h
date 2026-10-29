@@ -1,6 +1,7 @@
 #ifndef DXX_XL_HOG_H
 #define DXX_XL_HOG_H
-#include <array>
+#include "hog_format.h"
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <set>
@@ -23,7 +24,7 @@ inline std::string hog_key(std::string name)
 }
 inline bool hog_signature(const unsigned char *bytes)
 {
-	return bytes[0] == 'D' && ((bytes[1] == 'H' && bytes[2] == 'F') || (bytes[1] == '2' && bytes[2] == 'X'));
+	return dxx_hog_signature(bytes) != 0;
 }
 // The callback reads exactly count bytes at offset or throws; payloads are never copied
 inline std::vector<HogEntry> index_hog(std::uint64_t length, const std::function<void(std::uint64_t, unsigned char *, std::size_t)> &read)
@@ -42,29 +43,28 @@ inline std::vector<HogEntry> index_hog(std::uint64_t length, const std::function
 	require(hog_signature(signature), "Invalid HOG signature (expected DHF or D2X)");
 	std::vector<HogEntry> entries;
 	std::set<std::string> names;
+	struct Reader {
+		std::uint64_t &offset;
+		std::uint64_t length;
+		const std::function<void(std::uint64_t, unsigned char *, std::size_t)> &read;
+	} reader{ offset, length, read };
+	const auto next = [](void *context, unsigned char *out, std::size_t count) -> std::size_t {
+		auto &source = *static_cast<Reader *>(context);
+		count = static_cast<std::size_t>(std::min<std::uint64_t>(count, source.length - source.offset));
+		if (count) source.read(source.offset, out, count);
+		source.offset += count;
+		return count;
+	};
 	while (offset < length) {
-		std::array<unsigned char, 256> name{};
-		take(name.data(), 13);
-		unsigned char size_bytes[4];
-		take(size_bytes, sizeof(size_bytes));
-		const std::uint32_t raw = std::uint32_t(size_bytes[0]) | std::uint32_t(size_bytes[1]) << 8 |
-		                          std::uint32_t(size_bytes[2]) << 16 | std::uint32_t(size_bytes[3]) << 24;
-		const bool extended = (raw & 0x80000000u) != 0;
-		// INT_MIN cannot be negated by the source reader
-		require(raw != 0x80000000u, "Invalid HOG member size INT_MIN");
-		if (extended) take(name.data(), name.size());
-		const auto width = extended ? name.size() : std::size_t(13);
-		std::string selected;
-		for (std::size_t i = 0; i < width && name[i]; ++i) selected += static_cast<char>(name[i]);
-		require(!extended || selected.size() < width, "Unterminated extended HOG member name");
-		require(!selected.empty() && selected != "." && selected != ".." && selected.find_first_of("/\\:") == std::string::npos,
-		        "Invalid HOG member name");
-		for (const auto c : selected) require(static_cast<unsigned char>(c) >= 32 && c != 127, "Invalid HOG member name control byte");
+		dxx_hog_header entry{};
+		const char *error = nullptr;
+		const auto status = dxx_hog_read_header(next, &reader, &entry, &error);
+		require(status == 1, error ? error : "Truncated HOG header");
+		const std::string selected(entry.name);
 		require(names.insert(hog_key(selected)).second, "Ambiguous duplicate HOG member " + selected);
-		const std::uint64_t size = extended ? std::uint64_t(0x100000000ull) - raw : raw;
-		require(size <= length - offset, "Truncated HOG member " + selected);
-		entries.push_back({ selected, offset, size, extended });
-		offset += size;
+		require(entry.size <= length - offset, "Truncated HOG member " + selected);
+		entries.push_back({ selected, offset, entry.size, entry.extended != 0 });
+		offset += entry.size;
 	}
 	return entries;
 }

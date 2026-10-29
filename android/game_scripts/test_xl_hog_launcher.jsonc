@@ -1,0 +1,26 @@
+// Owned by the launcher runner, which supplies hashes of the derived music fixture
+[
+    { "_info": { "_standalone": false, "_owner": "test_xl_hog_launcher", "games": ["d2"] } },
+    { "action": "enter_launcher" },
+    { "action": "setup_command", "command": "pause_route_metadata_precompute", "post_delay_ms": 250 },
+    {
+        "action": "import_mission_zip",
+        "path": "xl-hog-launcher.zip",
+        "label": "xl-hog-launcher",
+        "display_name": "xl-hog-launcher.zip",
+    },
+    { "action": "test_hog_launcher" },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Derived XL xhogi", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    { "action": "skip_briefing", "timeout_ms": 30000 },
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000 },
+    { "action": "assert", "expect": { "xl_pilot.active": true, "current_level_num": 1 } },
+    { "action": "set_debug", "field": "xl_hog_probe", "value": "prepare" },
+    { "action": "enter_launcher" },
+    { "action": "delete_mod", "mod_file": "xl-hog-launcher.zip" },
+    { "action": "log", "message": "Extended HOG launcher import, previews, engine activation and cleanup passed" },
+]

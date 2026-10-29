@@ -120,7 +120,7 @@ class MissionZipMusicStageManager private constructor(
         val archive = track.sourceFilePath?.let(::File) ?: File(catalog.archivePath)
         if (!archive.isFile && !archive.isDirectory) return null
         return runCatching {
-            val budget = ExtractionBudget(maxEntryBytes = MAX_MIDI_BYTES, maxTotalBytes = MAX_MIDI_BYTES)
+            val budget = ExtractionBudget()
             if (track.sourceFilePath != null && archive.isFile) {
                 readFromSourceFile(archive, track, budget)
             } else if (archive.isDirectory) {
@@ -397,7 +397,7 @@ class MissionZipMusicStageManager private constructor(
                 if (!entry.isDirectory && normalizePath(entry.name).equals(nestedEntryPath, ignoreCase = true)) {
                     val result =
                         zip.readBytesBounded(
-                            ExtractionLimits.MAX_ENTRY_BYTES,
+                            MAX_MIDI_BYTES,
                             entry.name,
                             budget,
                             entry.compressedSize,
@@ -449,23 +449,13 @@ class MissionZipMusicStageManager private constructor(
         hogEntryName: String,
         budget: ExtractionBudget,
     ): ByteArray? {
-        if (hog.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return null
-        while (true) {
-            val nameBytes = hog.readNBytesCompat(13)
-            if (nameBytes.isEmpty() || nameBytes.size != 13) return null
-            val lenBytes = hog.readNBytesCompat(4)
-            if (lenBytes.size != 4) return null
-            val name = hogEntryName(nameBytes)
-            val size = leInt(lenBytes).toLong() and 0xffff_ffffL
-            budget.registerEntry(size, size, name)
-            if (name.equals(hogEntryName, ignoreCase = true)) {
-                if (size > ExtractionLimits.MAX_ENTRY_BYTES || size > Int.MAX_VALUE) return null
-                val bytes = hog.readNBytesCompat(size.toInt())
-                if (bytes.size.toLong() != size) return null
-                return bytes
+        var result: ByteArray? = null
+        NativeHogArchive.visit(hog, "music archive", budget) { entry, payload ->
+            if (NativeHogArchive.key(entry.name) == NativeHogArchive.key(hogEntryName)) {
+                result = payload.readBytesBounded(MAX_MIDI_BYTES, entry.name, expectedSizeBytes = entry.size)
             }
-            hog.skipFullyBounded(size, budget, name)
         }
+        return result
     }
 
     private fun extractFromDxaHog(
@@ -504,21 +494,14 @@ class MissionZipMusicStageManager private constructor(
         output: File,
         budget: ExtractionBudget,
     ): Boolean {
-        if (hog.readNBytesCompat(3).toString(Charsets.US_ASCII) != "DHF") return false
-        while (true) {
-            val nameBytes = hog.readNBytesCompat(13)
-            if (nameBytes.isEmpty() || nameBytes.size != 13) return false
-            val lenBytes = hog.readNBytesCompat(4)
-            if (lenBytes.size != 4) return false
-            val name = hogEntryName(nameBytes)
-            val size = leInt(lenBytes).toLong() and 0xffff_ffffL
-            budget.registerEntry(size, size, name)
-            if (name.equals(hogEntryName, ignoreCase = true)) {
-                FileOutputStream(output).use { out -> hog.copyLimitedTo(out, size, budget, name) }
-                return true
+        var found = false
+        NativeHogArchive.visit(hog, "music archive", budget) { entry, payload ->
+            if (NativeHogArchive.key(entry.name) == NativeHogArchive.key(hogEntryName)) {
+                FileOutputStream(output).use { out -> payload.copyTo(out) }
+                found = true
             }
-            hog.skipFullyBounded(size, budget, name)
         }
+        return found
     }
 
     private fun ReadableArchiveFile.openEntryStream(path: String): InputStream? {
@@ -604,52 +587,13 @@ class MissionZipMusicStageManager private constructor(
     ): ByteArray {
         budget.registerEntry(declaredSize, declaredSize, label)
         return input.readBytesBounded(
-            ExtractionLimits.MAX_ENTRY_BYTES,
+            MAX_MIDI_BYTES,
             label,
             budget,
             declaredSize,
             expectedSizeBytes = declaredSize,
         )
     }
-
-    private fun InputStream.readNBytesCompat(count: Int): ByteArray {
-        val out = ByteArray(count)
-        var total = 0
-        while (total < count) {
-            val read = read(out, total, count - total)
-            if (read < 0) break
-            total += read
-        }
-        return if (total == count) out else out.copyOf(total)
-    }
-
-    private fun InputStream.skipFullyBounded(
-        count: Long,
-        budget: ExtractionBudget,
-        label: String,
-    ) {
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        var total = 0L
-        while (total < count) {
-            val read = read(buffer, 0, minOf(buffer.size.toLong(), count - total).toInt())
-            if (read < 0) throw IOException("Unexpected end of $label")
-            total += read
-            budget.accountActual(read, total, count, label)
-        }
-    }
-
-    private fun hogEntryName(bytes: ByteArray): String =
-        bytes
-            .takeWhile { it.toInt() != 0 }
-            .toByteArray()
-            .toString(Charsets.US_ASCII)
-            .trim()
-
-    private fun leInt(bytes: ByteArray): Int =
-        (bytes[0].toInt() and 0xff) or
-            ((bytes[1].toInt() and 0xff) shl 8) or
-            ((bytes[2].toInt() and 0xff) shl 16) or
-            ((bytes[3].toInt() and 0xff) shl 24)
 
     private fun sha256(text: String): String =
         MessageDigest

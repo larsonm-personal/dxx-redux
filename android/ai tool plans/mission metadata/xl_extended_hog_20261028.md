@@ -46,8 +46,9 @@ resource formats retain independent detection and helpful rejection.
 Native index, filesystem integration, source comparisons and native lifecycle
 checks are implemented. All 77 configured XL tests and all 50 Android steps pass.
 Android registration needed the D2 identity define on the misc library; the final
-normal APK verifies it. Launcher integration remains the next dependency step and its gate
-is retained. See [container evidence](../../XL_compat/evidence/extended-hog.md).
+normal APK verifies it. The subsequent xl_more_39_hog_launcher increment connects
+launcher consumers and removes the blanket import gate; see
+[launcher evidence](../../XL_compat/evidence/extended-hog-launcher.md).
 
 ## Follow-up distribution findings
 

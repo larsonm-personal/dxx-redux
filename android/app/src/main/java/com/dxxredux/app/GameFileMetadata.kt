@@ -197,50 +197,16 @@ internal object GameFileMetadata {
         val entries = mutableListOf<EntrySummary>()
         val problems = mutableListOf<String>()
         val compatibility = mutableListOf<XlCompatibilityReport>()
-        var bytesRead = 0L
-        val magic = input.readExact(3)
-        bytesRead += magic.size
-        if (magic.size != 3 || magic.toString(Charsets.US_ASCII) != "DHF") {
-            return problemSummary(
-                "HOG",
-                "Mission or game archive",
-                "Unknown",
-                "Invalid HOG magic",
-            ).copy(
-                xlCompatibility = listOfNotNull(XlCompatibility.inspect(name, magic)),
-            )
-        }
-        while (sizeBytes <= 0 || bytesRead < sizeBytes) {
-            val nameBytes = input.readExact(13)
-            if (nameBytes.isEmpty()) break
-            if (nameBytes.size != 13) {
-                problems += "Truncated entry name"
-                break
-            }
-            val lenBytes = input.readExact(4)
-            if (lenBytes.size != 4) {
-                problems += "Truncated entry size"
-                break
-            }
-            bytesRead += 17
-            val entrySize = leInt(lenBytes, 0).toLong() and 0xffff_ffffL
-            val entryName = asciiName(nameBytes)
-            if (entrySize > MAX_ENTRY_BYTES || (sizeBytes > 0 && bytesRead + entrySize > sizeBytes)) {
-                problems += "Invalid size for $entryName"
-                break
-            }
-            entries += EntrySummary(entryName, entrySize, roleForEntry(entryName))
-            if (GameFileFormats.extensionOf(entryName) in setOf("rl2", "mn2", "lgt", "clr")) {
-                val bytes = input.readExact(entrySize.toInt())
-                if (bytes.size.toLong() != entrySize) {
-                    problems += "Truncated entry $entryName"
-                    break
+        try {
+            NativeHogArchive.visit(input, name, expectedSize = sizeBytes.takeIf { it > 0 } ?: -1) { entry, payload ->
+                entries += EntrySummary(entry.name, entry.size, roleForEntry(entry.name))
+                if (GameFileFormats.extensionOf(entry.name) in setOf("rl2", "mn2", "lgt", "clr")) {
+                    val bytes = payload.readBytesBounded(MAX_ENTRY_BYTES, entry.name, expectedSizeBytes = entry.size)
+                    XlCompatibility.inspect("$name/${entry.name}", bytes)?.let { compatibility += it }
                 }
-                XlCompatibility.inspect("$name/$entryName", bytes)?.let { compatibility += it }
-            } else {
-                input.skipFully(entrySize)
             }
-            bytesRead += entrySize
+        } catch (failure: java.io.IOException) {
+            problems += failure.message ?: "Invalid HOG archive"
         }
         val game = detectGame(name, entries)
         val rows =

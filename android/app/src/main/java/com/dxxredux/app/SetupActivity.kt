@@ -3884,24 +3884,7 @@ private fun SetupScreen(
                                     Log.w("DXX-Setup", "Mission ZIP probe failed for $name: ${e.message}")
                                     false
                                 }
-                            val unsupportedD2xxl =
-                                if (missionZip == true) {
-                                    false
-                                } else {
-                                    try {
-                                        context.contentResolver.openInputStream(uri)?.use { input ->
-                                            MissionZip.containsUnsupportedD2xxlHog(
-                                                input,
-                                                context.cacheDir,
-                                                probeLimit,
-                                            )
-                                        } == true
-                                    } catch (e: Exception) {
-                                        Log.w("DXX-Setup", "D2X-XL HOG probe failed for $name: ${e.message}")
-                                        false
-                                    }
-                                }
-                            if (missionZip == true || unsupportedD2xxl) {
+                            if (missionZip == true) {
                                 missionZipImportUris.add(name to uri)
                             } else {
                                 zipUris.add(name to uri)
