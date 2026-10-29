@@ -16,10 +16,69 @@ from unittest.mock import patch
 import nightly_retail as retail
 import nightly_tooling_sweep as sweep
 import run_xl_originals as runner
+import public_contracts as public
 import xl_private_assets as assets
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
+        self.assertEqual(len(public.PUBLIC_TESTS), 36)
+        self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            oracle = root / "oracle"
+            oracle.write_bytes(b"fixture executable")
+            report = root / "public.xml"
+            for gpu in (False, True):
+                required = public.PUBLIC_TESTS | ({"xl_fog_gpu"} if gpu else set())
+                listing = {
+                    "tests": [
+                        {
+                            "name": name,
+                            "command": ["cmake"]
+                            + [
+                                "-D" + argument + "=" + str(oracle)
+                                for argument in runner.SOURCE_ARGUMENTS.get(name, ())
+                            ],
+                        }
+                        for name in sorted(required)
+                    ]
+                }
+                public.validate_registration(listing, gpu=gpu)
+                for tests in (
+                    listing["tests"][1:],
+                    listing["tests"] + [{"name": "xl_preview_lifecycle"}],
+                    listing["tests"] + [listing["tests"][0]],
+                ):
+                    with self.assertRaises(ValueError):
+                        public.validate_registration({"tests": tests}, gpu=gpu)
+                missing = copy.deepcopy(listing)
+                for test in missing["tests"]:
+                    if test["name"] in runner.SOURCE_ARGUMENTS:
+                        test["command"] = ["cmake"]
+                with self.assertRaises(ValueError):
+                    public.validate_registration(missing, gpu=gpu)
+                suite = ET.Element("testsuite")
+                for name in sorted(required):
+                    ET.SubElement(suite, "testcase", name=name, status="run")
+                ET.ElementTree(suite).write(report)
+                self.assertEqual(public.require_result(report, 0, gpu=gpu), len(required))
+                with self.assertRaises(ValueError):
+                    public.require_result(report, 8, gpu=gpu)
+                for mode in ("missing", "duplicate", "disabled", "skipped", "failure", "error"):
+                    changed = copy.deepcopy(suite)
+                    if mode == "missing":
+                        changed.remove(changed[0])
+                    elif mode == "duplicate":
+                        changed.append(copy.deepcopy(changed[0]))
+                    elif mode == "disabled":
+                        changed[0].set("status", "disabled")
+                    else:
+                        ET.SubElement(changed[0], mode)
+                    ET.ElementTree(changed).write(report)
+                    with self.subTest(gpu=gpu, mode=mode), self.assertRaises(ValueError):
+                        public.require_result(report, 0, gpu=gpu)
+
     def test_fast_registration_requires_built_source_oracles(self):
         with tempfile.TemporaryDirectory() as temporary:
             oracle = Path(temporary) / "oracle"

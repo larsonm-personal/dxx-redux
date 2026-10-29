@@ -80,6 +80,14 @@ found a stale classic lifecycle fixture; explicit source-runtime generation
 preserves the strict byte comparison and passes both lifecycle and classic-loader
 controls. All sixteen original outcomes and three modern source comparisons pass.
 
+The public owner now builds every pinned source adapter and requires all 36
+Windows or 37 Linux asset-free contracts. Fresh local checkout/build/test passes
+take about one minute per platform. The shared source bootstrap and oracle
+checks prevent the public and private configurations from drifting. A clean
+native Linux filesystem run also found three uppercase rejection overlays that
+had selected the valid original instead; exact filenames and resolved-owner
+assertions correct the fixtures without changing gameplay admission.
+
 The supplied Windows private checkout has CRLF text. An isolated checkout at
 the same immutable revision with CI line endings verifies all fourteen retail
 files and the complete XL stage; the user's checkout remains unchanged. The

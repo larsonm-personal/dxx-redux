@@ -135,7 +135,9 @@ static void wide_wall_rejections(const std::filesystem::path &root)
 		else if (variant == 1) {
 			for (int byte = 0; byte < 4; ++byte) bytes.at(source.game_offset + 51 + byte) = byte ? 0 : 1;
 		} else bytes.resize(source.game_offset + 10);
-		write_bytes((shadow / "neptunxl.RL2").string().c_str(), bytes);
+		write_bytes((shadow / "neptunxl.rl2").string().c_str(), bytes);
+		const char *owner = PHYSFS_getRealDir("neptunxl.rl2");
+		require(owner && std::filesystem::weakly_canonical(owner) == std::filesystem::weakly_canonical(shadow), "Malformed wall control does not own the resolved level");
 		require(!xl_level_supported("neptunxl.rl2", 0), "Invalid wide-wall source was admitted");
 		if (!variant) require(std::strstr(xl_level_rejection(), "more than 2047 walls"), "Wide-wall capacity rejection lacks its limit");
 		if (variant == 1) require(std::strstr(xl_level_rejection(), "invalid wall reference"), "Bad wall identity rejection lacks its reason");

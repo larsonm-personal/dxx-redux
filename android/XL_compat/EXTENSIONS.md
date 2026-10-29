@@ -40,11 +40,11 @@ master chains and trigger enable/disable counters are now implemented, including
 versioned source initialization and saved live state. Native and Android
 controls pass; see [trigger-chain evidence](evidence/trigger-chains.md)
 
-The [private CI selection](evidence/private-ci.md) adds a required, controlled
-Linux lane for runtime behavior, source comparisons, original formats, saves
-and Redux recovery. Its fixed membership rejects missing or skipped tests and
-omitted source oracles. Original mission admission and human campaign
-playtesting remain separate requirements.
+The [XL CI coverage](evidence/private-ci.md) requires public source comparisons
+on Windows and Linux plus a controlled private Linux lane for runtime behavior,
+original formats, saves and Redux recovery. Fixed membership rejects missing or
+skipped tests and omitted source oracles. Original mission admission and human
+campaign playtesting remain separate requirements.
 
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain

@@ -1,4 +1,4 @@
-# Required private XL checks
+# Required XL CI checks
 
 The fast private selection reuses the existing trusted `retail-ci` workflow,
 read-only asset token and immutable checkout. Public pull-request jobs remain
@@ -17,6 +17,28 @@ source comparisons are optional in CMake. Each required reference executable
 must exist, including Observatory's no-damage gates and lava's separate motion
 oracle. A runtime pass with an omitted source comparison cannot satisfy this
 selection.
+
+## Public source coverage
+
+Every matching pull request builds the pinned XL source adapters on Windows and
+Linux, without private files or credentials. The public owner requires 36
+contracts on Windows and 37 on Linux, including 23 standalone source comparisons
+and Linux's offscreen fog backend. Both platforms reject omissions, duplicates,
+skips and unexpected tests before granting a pass. Optional source executables
+must be present in the registered commands. Runtime comparisons that need actual
+game assets remain in the private selection.
+
+The public and private owners share the same pinned checkout, consumed-file
+hashes and source parameters. Clean local public runs pass in 56.578 seconds on
+MSVC and 64.013 seconds on Linux GCC, including checkout and build. Their test
+phases take 17.438 and 5.988 seconds respectively. These are local measurements,
+not hosted-run durations.
+
+```text
+python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci --gpu
+```
+
+Omit `--gpu` on Windows. The GPU case currently requires Linux EGL/Mesa.
 
 ## Coverage
 
@@ -92,8 +114,15 @@ generation now matches the runtime's owned tables; the lifecycle and unchanged
 classic-loader control both pass. All sixteen original outcomes and three full
 modern source comparisons also pass.
 
+A subsequent clean ext4 run exposed three case-dependent rejection fixtures:
+an uppercase loose-file override did not shadow the lowercase original on
+Linux. Those controls now use the requested spelling and assert the resolved
+file's owner before testing rejection. The unchanged original had been selected;
+the loader had not accepted the malformed bytes. The clean final private run
+must verify all three corrections before publication.
+
 The public policy, receipt and admission controls pass on Linux, including the
-final seventeen private-owner tests. Both automation catalogs and scoped mixed
+final eighteen owner tests. Both automation catalogs and scoped mixed
 formatting pass. A clean final selection and native Linux filesystem timing are
 pending before publication. Hosted private execution requires the trusted
 merged workflow; public PR checks alone cannot establish that result.

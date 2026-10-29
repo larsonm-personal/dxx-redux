@@ -191,7 +191,9 @@ static void trigger_capacity_rejections(const std::filesystem::path &root)
 		if (!variant) bytes = xl_test::expand_triggers(original, 255);
 		else if (variant == 1) bytes.at(source.sections[1].offset + 20) = 254;
 		else bytes.resize(source.sections[3].offset + 254 * 52 - 1);
-		write_bytes((shadow / "neptunxl.RL2").string().c_str(), bytes);
+		write_bytes((shadow / "neptunxl.rl2").string().c_str(), bytes);
+		const char *owner = PHYSFS_getRealDir("neptunxl.rl2");
+		require(owner && std::filesystem::weakly_canonical(owner) == std::filesystem::weakly_canonical(shadow), "Malformed trigger control does not own the resolved level");
 		require(!xl_level_supported("neptunxl.rl2", 0), "Malformed trigger source admitted");
 		if (!variant) require(std::strstr(xl_level_rejection(), "more than 254 triggers"), "Trigger capacity error omits limit");
 		if (variant == 1) require(std::strstr(xl_level_rejection(), "invalid wall trigger"), "Trigger identity error omits reason");
