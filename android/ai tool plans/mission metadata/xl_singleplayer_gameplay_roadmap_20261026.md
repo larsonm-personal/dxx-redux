@@ -341,6 +341,14 @@ finish original-mission qualification
     playback, loops, voice ownership and persistence remain separate requirements;
     sound action 30 is still gated.
 
+42. Named-audio source contracts: actual sound requests, resource precedence,
+    repetition, completion flags and restore helpers now execute in required
+    fast CI. All 60 Pumo sound actions resolve to owned SND/WAV resources on
+    both hosts. See [source evidence](../../XL_compat/evidence/named-audio-source.md)
+    for the recording-adapter boundary and reference restore defects. Required
+    public/private membership becomes 40/41 and 96. This is a runtime prerequisite;
+    action 30, ambient objects and original mission qualification remain gated.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

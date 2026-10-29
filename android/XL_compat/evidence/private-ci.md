@@ -7,7 +7,7 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-95 required CTests in independent directories, two at a time. Missing tests,
+96 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
@@ -21,9 +21,9 @@ selection.
 ## Public source coverage
 
 Every matching pull request builds the pinned XL source adapters on Windows and
-Linux, without private files or credentials. The public owner requires 39
-contracts on Windows and 40 on Linux, including 24 standalone XL source comparisons,
-an independent WAV-channel comparison
+Linux, without private files or credentials. The public owner requires 40
+contracts on Windows and 41 on Linux, including 24 standalone XL source comparisons,
+a named-audio source-behavior contract, an independent WAV-channel comparison
 and Linux's offscreen fog backend. Both platforms reject omissions, duplicates,
 skips and unexpected tests before granting a pass. Optional source executables
 must be present in the registered commands. Runtime comparisons that need actual
@@ -155,3 +155,12 @@ The [stereo PCM prerequisite](stereo-pcm.md) adds a roughly 0.7-second independe
 WAV test to both required selections. Its focused decoder, original mono and
 complete Pumo sample comparisons pass. This does not relabel the preceding
 94-case full run as a 95-case result or qualify named playback.
+
+The subsequent [named-audio source contract](named-audio-source.md) brings the
+complete local Linux selection to 96 passing cases, sixteen original-format
+outcomes and three modern source comparisons. CTest takes 267.35 seconds and
+the test/inspection phase takes 270.05 seconds on the same Windows-mounted
+workspace. The incremental Windows public owner passes all 40 cases in
+16.531 seconds, including 9.33 seconds of CTest execution. These are actual new
+full-selection results; neither the source audio adapter nor the separate
+passing Android classic-audio control qualifies named playback.

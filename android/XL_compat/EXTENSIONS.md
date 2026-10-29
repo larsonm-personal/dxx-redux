@@ -60,6 +60,13 @@ channels through shared bounded validation, with independent comparisons of
 all 25 original Pumo WAVs and unchanged classic mono controls. It adds one
 required public/private test; named playback remains gated.
 
+The [named-audio source contracts](evidence/named-audio-source.md) execute the
+pinned sound action, resource lookup, repetition, frame and restore behavior.
+All 60 original Pumo sound actions resolve to owned SND/WAV resources on both
+hosts. This establishes inputs and reference behavior, not audible playback.
+The required selections now contain 40/41 public and 96 private contracts;
+the source's finite-sound restore issue is an explicit runtime obligation.
+
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain
 their 255-wall limit. Native boundary/rejection controls and 80 Android steps

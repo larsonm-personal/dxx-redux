@@ -104,6 +104,7 @@ FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
     "xl_companion_lighting_contract",
     "xl_wave_contract",
     "xl_wave_channels_reference",
+    "xl_named_audio_source",
     "xl_mission_labels",
     "xl_lighting_calculation",
     "xl_inventory_contract",
