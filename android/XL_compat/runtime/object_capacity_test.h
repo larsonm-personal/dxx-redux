@@ -212,7 +212,9 @@ static void object_capacity_admission(const std::filesystem::path &root)
 			const auto at = source.objects.back().source_offset + (source.game_version == 40 ? 7 : 6);
 			bad.at(at) = bad.at(at + 1) = 255;
 		}
-		write_bytes((shadow / "neptunxl.RL2").string().c_str(), bad);
+		write_bytes((shadow / "neptunxl.rl2").string().c_str(), bad);
+		const char *owner = PHYSFS_getRealDir("neptunxl.rl2");
+		require(owner && std::filesystem::weakly_canonical(owner) == std::filesystem::weakly_canonical(shadow), "Malformed object control does not own the resolved level");
 		require(!xl_level_supported("neptunxl.rl2", 0), "Invalid high object source admitted");
 		if (!variant) require(std::strstr(xl_level_rejection(), "supported signed-index pool is 32768"), "Object admission error lacks limit");
 		require(Highest_object_index == highest && num_objects == count && object_capacity() == 32768, "Read-only object admission changed live world");

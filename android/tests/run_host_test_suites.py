@@ -58,6 +58,7 @@ def write_json(path, data):
 def load_suites(repo=None):
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
     from nightly_regression_catalog import suites as corpus_suites
+
     suites = data["suites"] + (corpus_suites(repo) if repo is not None else corpus_suites())
     if data["schema"] != 1 or len({s["id"] for s in suites}) != len(suites):
         raise ValueError("invalid or duplicate host suite IDs")
@@ -95,11 +96,7 @@ def read_ctest_results(path):
     cases = []
     for case in ET.parse(path).getroot().iter("testcase"):
         output = "\n".join(case.itertext())
-        status = (
-            "FAIL"
-            if case.find("failure") is not None or case.find("error") is not None
-            else "PASS"
-        )
+        status = "FAIL" if case.find("failure") is not None or case.find("error") is not None else "PASS"
         reason = ""
         if case.find("skipped") is not None:
             status, reason = "SKIP", "CTest explicitly skipped this registration"
@@ -137,16 +134,12 @@ def unittest_worker(repo, relative, output):
                 }
             )
 
-    result = unittest.TextTestRunner(verbosity=2, resultclass=RecordingResult).run(
-        suite
-    )
+    result = unittest.TextTestRunner(verbosity=2, resultclass=RecordingResult).run(suite)
     skipped = [
-        {"id": test.id(), "status": "SKIP", "reason": reason}
-        for test, reason in result.skipped
+        {"id": test.id(), "status": "SKIP", "reason": reason} for test, reason in result.skipped
     ] + result.expected
     failures = [
-        {"id": test.id(), "status": "FAIL", "reason": detail}
-        for test, detail in result.failures + result.errors
+        {"id": test.id(), "status": "FAIL", "reason": detail} for test, detail in result.failures + result.errors
     ] + [
         {
             "id": test.id(),
@@ -332,13 +325,17 @@ def retail_profile_arguments(suite, repo, build_root, work):
     """Bind reviewed retail owners to the verified stage, never fallback media."""
     profile = suite["profile"]
     stage = repo / "game_data/retail-ci"
-    if profile == "retail-xl-originals":
-        return ["--repo", str(repo), "--work", str(work / "xl-originals")]
+    if profile in {"retail-xl-originals", "retail-xl-fast"}:
+        return [
+            "--repo",
+            str(repo),
+            "--work",
+            str(work / "xl-originals"),
+            *(["--fast"] if profile == "retail-xl-fast" else []),
+        ]
 
     def binary(game, suffix):
-        return str(
-            build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix)
-        )
+        return str(build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix))
 
     if profile in {"retail-secret-baseline", "retail-metadata-headers"}:
         secret = profile == "retail-secret-baseline"
@@ -388,9 +385,16 @@ def retail_profile_arguments(suite, repo, build_root, work):
             str(stage / "missions"),
         ]
     if profile == "retail-input-demos":
-        return ["--demos", str(stage / "demos"),
-                "--data", str(stage / "d2"), "--exe", binary("d2", "-headless"),
-                "--output", str(work / "private-input-demos")]
+        return [
+            "--demos",
+            str(stage / "demos"),
+            "--data",
+            str(stage / "d2"),
+            "--exe",
+            binary("d2", "-headless"),
+            "--output",
+            str(work / "private-input-demos"),
+        ]
     if profile == "retail-obsidian-liquid":
         return [
             "--exe",
@@ -435,11 +439,7 @@ def prepare_obsidian_mission(repo, work):
                 raise ValueError("Unsafe or duplicate Obsidian ZIP member")
             by_name[name.lower()] = member
         for name, (size, _digest) in OBSIDIAN_MEMBERS.items():
-            if (
-                name not in by_name
-                or by_name[name].filename != name
-                or by_name[name].file_size != size
-            ):
+            if name not in by_name or by_name[name].filename != name or by_name[name].file_size != size:
                 raise ValueError("Missing or wrong-sized Obsidian mission member")
         destination.mkdir()
         try:
@@ -475,13 +475,9 @@ def verify_retail_stage(repo, *, include_missions=False):
     spec.loader.exec_module(assets)
     expected = assets.baseline(control_repo)
     if assets.baseline(repo) != expected:
-        raise ValueError(
-            "Target retail identity pins differ from the reviewed control checkout"
-        )
+        raise ValueError("Target retail identity pins differ from the reviewed control checkout")
     manifest = (
-        assets.stage_inventory(
-            repo / "game_data/retail-ci", expected, include_missions=True
-        )
+        assets.stage_inventory(repo / "game_data/retail-ci", expected, include_missions=True)
         if include_missions
         else assets.inventory(repo / "game_data/retail-ci", expected)
     )
@@ -524,13 +520,13 @@ def run_suite(suite, repo, build_root, output, timeout):
     def finish(status, reason, code=None, *, retryable=None, blocker_kind=None):
         if suite.get("kind") == "retail-corpus":
             from nightly_regression_corpus import metadata_worker_diagnostics
+
             result["workers"] = metadata_worker_diagnostics(worker_directory)
         if retryable is None:
             retryable = status == "BLOCKED" and result["phase"] != "tests"
         result.update(
             retryable=retryable,
-            blocker_kind=blocker_kind
-            or ("transient-prerequisite" if retryable else None),
+            blocker_kind=blocker_kind or ("transient-prerequisite" if retryable else None),
             status=status,
             reason=reason,
             exit_code=code,
@@ -538,8 +534,12 @@ def run_suite(suite, repo, build_root, output, timeout):
             setup_seconds=round(setup_seconds, 3),
             elapsed_wall_seconds=round(time.monotonic() - started, 3),
             # Aggregate owner success does not establish internal leaf coverage
-            coverage_complete=(status == "PASS" and "counts" in result
-                               and not result["exclusions"] and not result.get("comparison_only")),
+            coverage_complete=(
+                status == "PASS"
+                and "counts" in result
+                and not result["exclusions"]
+                and not result.get("comparison_only")
+            ),
         )
         write_json(output, result)
         return 0 if status == "PASS" else 1 if status == "FAIL" else 2
@@ -552,10 +552,9 @@ def run_suite(suite, repo, build_root, output, timeout):
         if remaining <= 0:
             raise subprocess.TimeoutExpired(argv, timeout)
         from nightly_retail import COMMANDS
-        command_name = next((Path(str(a)).name for a in reversed(argv)
-                             if Path(str(a)).name in COMMANDS), "other")
-        command_record = {"command": command_name,
-                          "phase": result["phase"], "outcome": "running"}
+
+        command_name = next((Path(str(a)).name for a in reversed(argv) if Path(str(a)).name in COMMANDS), "other")
+        command_record = {"command": command_name, "phase": result["phase"], "outcome": "running"}
         result["commands"].append(command_record)
         # Persist before launch so collection can recover interrupted owners.
         write_json(output, result)
@@ -571,17 +570,16 @@ def run_suite(suite, repo, build_root, output, timeout):
                 stderr=errors,
                 env={
                     **os.environ,
-                    **({"DXX_METADATA_WORKER_DIAGNOSTICS_DIR": str(worker_directory)}
-                       if suite["kind"] == "retail-corpus" else {}),
+                    **(
+                        {"DXX_METADATA_WORKER_DIAGNOSTICS_DIR": str(worker_directory)}
+                        if suite["kind"] == "retail-corpus"
+                        else {}
+                    ),
                     "TMPDIR": str(temporary_root),
                     "TEMP": str(temporary_root),
                     "TMP": str(temporary_root),
                     **({"SDL_VIDEODRIVER": "x11"} if virtual_display else {}),
-                    **(
-                        {"SDL_AUDIODRIVER": "dummy", "SDL_VIDEODRIVER": "dummy"}
-                        if native
-                        else {}
-                    ),
+                    **({"SDL_AUDIODRIVER": "dummy", "SDL_VIDEODRIVER": "dummy"} if native else {}),
                 },
                 start_new_session=True,
             )
@@ -593,9 +591,13 @@ def run_suite(suite, repo, build_root, output, timeout):
                 command_record.update(outcome="completed", exit_code=code)
                 return code
             except BaseException as error:
-                command_record["outcome"] = ("timeout" if isinstance(error, subprocess.TimeoutExpired)
-                                             else "cancelled" if isinstance(error, (SuiteCancelled, KeyboardInterrupt))
-                                             else "exception")
+                command_record["outcome"] = (
+                    "timeout"
+                    if isinstance(error, subprocess.TimeoutExpired)
+                    else "cancelled"
+                    if isinstance(error, (SuiteCancelled, KeyboardInterrupt))
+                    else "exception"
+                )
                 # Compiler/test descendants must not survive a cancelled owner.
                 try:
                     os.killpg(process.pid, signal.SIGTERM)
@@ -616,9 +618,11 @@ def run_suite(suite, repo, build_root, output, timeout):
                 errors.flush()
                 if type(getattr(process, "returncode", None)) is int:
                     command_record["exit_code"] = process.returncode
-                command_record.update(duration_seconds=round(time.monotonic() - command_started, 3),
-                                      stdout_bytes=max(0, log.stat().st_size - stream_start),
-                                      stderr_bytes=stderr_path.stat().st_size)
+                command_record.update(
+                    duration_seconds=round(time.monotonic() - command_started, 3),
+                    stdout_bytes=max(0, log.stat().st_size - stream_start),
+                    stderr_bytes=stderr_path.stat().st_size,
+                )
                 # Keep the existing local combined log for diagnostic consumers.
                 # Only typed stream sizes cross the public retail boundary.
                 stream.write(stderr_path.read_text(encoding="utf-8", errors="replace"))
@@ -628,146 +632,313 @@ def run_suite(suite, repo, build_root, output, timeout):
                     setup_seconds += time.monotonic() - command_started
 
     missing = [tool for tool in suite.get("executables", []) if not shutil.which(tool)]
-    missing += [
-        module
-        for module in suite.get("python_modules", [])
-        if importlib.util.find_spec(module) is None
-    ]
+    missing += [module for module in suite.get("python_modules", []) if importlib.util.find_spec(module) is None]
     if missing:
         return finish("BLOCKED", "Missing prerequisites: " + ", ".join(missing))
     if sys.platform != "linux":
-        return finish(
-            "BLOCKED", "This initial host adapter is qualified for Linux only"
-        )
+        return finish("BLOCKED", "This initial host adapter is qualified for Linux only")
     try:
         if suite.get("kind") == "retail-corpus":
             from nightly_regression_catalog import CORPUS_COMMIT, vertigo_campaign, unavailable_level
             from nightly_corpus_stage import stage_route, StageUnavailable
-            from nightly_regression_corpus import compare_metadata, compare_route, freeze_oracles, require_unchanged_oracles
+            from nightly_regression_corpus import (
+                compare_metadata,
+                compare_route,
+                freeze_oracles,
+                require_unchanged_oracles,
+            )
+
             if os.environ.get("RETAIL_CHECKOUT_COMMIT") != CORPUS_COMMIT:
                 return finish("BLOCKED", "Reviewed corpus revision is not staged", retryable=True)
             baseline = target_file(repo, "game_data/mission_files/" + suite["baseline"])
-            archive = next((baseline.with_suffix(ext) for ext in (".zip", ".7z", ".rar")
-                            if baseline.with_suffix(ext).is_file()), None)
-            result["assets"].update(baseline=baseline.is_file(), archive=archive is not None,
-                                    route_oracle=baseline.with_suffix(".simulation.json").is_file())
+            archive = next(
+                (baseline.with_suffix(ext) for ext in (".zip", ".7z", ".rar") if baseline.with_suffix(ext).is_file()),
+                None,
+            )
+            result["assets"].update(
+                baseline=baseline.is_file(),
+                archive=archive is not None,
+                route_oracle=baseline.with_suffix(".simulation.json").is_file(),
+            )
             builtin = baseline.name in ("FirstStrike.json", "Counterstrike.json")
-            is_vertigo = suite["profile"] == "route" and suite["baseline"] == "CD - Descent II - The Vertigo Series (USA).json" and suite.get("target_index") == 0
+            is_vertigo = (
+                suite["profile"] == "route"
+                and suite["baseline"] == "CD - Descent II - The Vertigo Series (USA).json"
+                and suite.get("target_index") == 0
+            )
             if not builtin and archive is None and not is_vertigo:
-                return finish("BLOCKED", "Archive or CD-source fixture unavailable", retryable=False,
-                              blocker_kind="target-capability")
+                return finish(
+                    "BLOCKED",
+                    "Archive or CD-source fixture unavailable",
+                    retryable=False,
+                    blocker_kind="target-capability",
+                )
             if suite["profile"] == "route":
                 if not baseline.with_suffix(".simulation.json").is_file():
-                    return finish("BLOCKED", "Committed route oracle unavailable", retryable=False, blocker_kind="target-capability")
+                    return finish(
+                        "BLOCKED",
+                        "Committed route oracle unavailable",
+                        retryable=False,
+                        blocker_kind="target-capability",
+                    )
             metadata = json.loads(baseline.read_text(encoding="utf-8-sig"))
             missions = metadata if isinstance(metadata, list) else [metadata]
-            if suite["profile"] == "metadata" and any("/" in row.get("mission_path", "").replace("\\", "/") for row in missions):
-                return finish("BLOCKED", "Nested mission variant requires a variant-aware regression stage", retryable=False,
-                              blocker_kind="target-capability")
+            if suite["profile"] == "metadata" and any(
+                "/" in row.get("mission_path", "").replace("\\", "/") for row in missions
+            ):
+                return finish(
+                    "BLOCKED",
+                    "Nested mission variant requires a variant-aware regression stage",
+                    retryable=False,
+                    blocker_kind="target-capability",
+                )
             oracle_paths = (baseline, baseline.with_suffix(".simulation.json"))
             oracle_bytes = freeze_oracles(oracle_paths)
             expected_metadata = json.loads(oracle_bytes[baseline])
             expected_route = json.loads(oracle_bytes[oracle_paths[1]]) if oracle_bytes[oracle_paths[1]] else None
+
             def run_corpus(argv):
                 try:
                     return run(argv)
                 finally:
                     require_unchanged_oracles(oracle_bytes)
+
             verify_retail_stage(repo, include_missions=is_vertigo)
             result["assets"]["retail_stage_verified"] = True
             prepared_stage = None
             if suite["profile"] == "route" and not builtin:
                 selected = [m for m in missions if m.get("target_index", 0) == suite.get("target_index")]
                 if len(selected) != 1:
-                    return finish("BLOCKED", "Corpus selected mission identity is ambiguous", retryable=False, blocker_kind="target-capability")
+                    return finish(
+                        "BLOCKED",
+                        "Corpus selected mission identity is ambiguous",
+                        retryable=False,
+                        blocker_kind="target-capability",
+                    )
                 mission = selected[0]
-                levels = [v for v in mission.get("levels", []) if v.get("level_num") == suite.get("level_num") and v.get("level_file") == suite.get("level_file")]
+                levels = [
+                    v
+                    for v in mission.get("levels", [])
+                    if v.get("level_num") == suite.get("level_num") and v.get("level_file") == suite.get("level_file")
+                ]
                 if len(levels) != 1 or unavailable_level(levels[0]):
-                    return finish("BLOCKED", "Committed level is explicitly missing or unsupported", retryable=False, blocker_kind="target-capability")
+                    return finish(
+                        "BLOCKED",
+                        "Committed level is explicitly missing or unsupported",
+                        retryable=False,
+                        blocker_kind="target-capability",
+                    )
                 if is_vertigo and not vertigo_campaign(suite["baseline"], mission):
-                    return finish("BLOCKED", "Archive or CD-source fixture unavailable", retryable=False, blocker_kind="target-capability")
+                    return finish(
+                        "BLOCKED",
+                        "Archive or CD-source fixture unavailable",
+                        retryable=False,
+                        blocker_kind="target-capability",
+                    )
                 seven_zip = None
                 if archive and archive.suffix.casefold() in (".7z", ".rar"):
                     extractor_path = work / "extractor-path.txt"
                     bootstrap = work / "extractor.ps1"
-                    bootstrap.write_text("param($Helper, $Output)\n$ErrorActionPreference = 'Stop'\n$tool = & $Helper\n[IO.File]::WriteAllText($Output, [string]$tool)\n", encoding="utf-8")
-                    code = run(["pwsh", "-NoProfile", "-NonInteractive", "-File", str(bootstrap),
-                                str(repo / "android/get_deps/helpers/get_7zip.ps1"), str(extractor_path)], setup=True)
+                    bootstrap.write_text(
+                        "param($Helper, $Output)\n$ErrorActionPreference = 'Stop'\n$tool = & $Helper\n[IO.File]::WriteAllText($Output, [string]$tool)\n",
+                        encoding="utf-8",
+                    )
+                    code = run(
+                        [
+                            "pwsh",
+                            "-NoProfile",
+                            "-NonInteractive",
+                            "-File",
+                            str(bootstrap),
+                            str(repo / "android/get_deps/helpers/get_7zip.ps1"),
+                            str(extractor_path),
+                        ],
+                        setup=True,
+                    )
                     if code or not extractor_path.is_file():
-                        return finish("BLOCKED", "7-Zip prerequisite unavailable", code, retryable=True, blocker_kind="corpus-worker-configure")
+                        return finish(
+                            "BLOCKED",
+                            "7-Zip prerequisite unavailable",
+                            code,
+                            retryable=True,
+                            blocker_kind="corpus-worker-configure",
+                        )
                     seven_zip = extractor_path.read_text().strip()
                 try:
-                    prepared_stage = stage_route(archive, mission, work / "exact-mission", seven_zip=seven_zip,
-                        source_directory=repo / "game_data/retail-ci/missions" if is_vertigo else None)
+                    prepared_stage = stage_route(
+                        archive,
+                        mission,
+                        work / "exact-mission",
+                        seven_zip=seven_zip,
+                        source_directory=repo / "game_data/retail-ci/missions" if is_vertigo else None,
+                    )
                 except StageUnavailable as error:
                     return finish("BLOCKED", str(error), retryable=False, blocker_kind="target-capability")
             cli = repo / "android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli"
             if not cli.is_file():
-                code = run(["bash", str(repo / "android/gradlew"), "-p", str(repo / "android"),
-                            "-PhostJvmOnly=true", ":mission-metadata-cli:installDist", "--console=plain"], setup=True)
+                code = run(
+                    [
+                        "bash",
+                        str(repo / "android/gradlew"),
+                        "-p",
+                        str(repo / "android"),
+                        "-PhostJvmOnly=true",
+                        ":mission-metadata-cli:installDist",
+                        "--console=plain",
+                    ],
+                    setup=True,
+                )
                 if code:
-                    return finish("BLOCKED", "Metadata projection CLI setup failed", code,
-                                  retryable=True, blocker_kind="metadata-cli-setup")
+                    return finish(
+                        "BLOCKED",
+                        "Metadata projection CLI setup failed",
+                        code,
+                        retryable=True,
+                        blocker_kind="metadata-cli-setup",
+                    )
             for game in ("d1", "d2"):
                 build = build_root / ("engine-" + game)
                 code = run(native_configure_arguments(repo, build, game), setup=True)
                 if code:
-                    return finish("BLOCKED", "Corpus worker configuration failed", code,
-                                  retryable=True, blocker_kind="corpus-worker-configure")
+                    return finish(
+                        "BLOCKED",
+                        "Corpus worker configuration failed",
+                        code,
+                        retryable=True,
+                        blocker_kind="corpus-worker-configure",
+                    )
                 targets = ["dxx-redux-" + game + "-metadata-worker"]
                 if game == "d2":
                     targets.append("dxx-redux-d2-headless-route")
                 code = run(["cmake", "--build", str(build), "--parallel", "2", "--target", *targets], setup=True)
                 if code:
-                    return finish("BLOCKED", "Corpus worker build failed", code,
-                                  retryable=True, blocker_kind="corpus-worker-build")
+                    return finish(
+                        "BLOCKED",
+                        "Corpus worker build failed",
+                        code,
+                        retryable=True,
+                        blocker_kind="corpus-worker-build",
+                    )
+
             def binary(game, suffix):
                 return str(build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix))
+
             def document(path):
                 return json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None
+
             if suite["profile"] == "metadata":
                 destination = work / "metadata"
-                argv = ["pwsh", "-NoProfile", "-NonInteractive", "-File",
-                        str(repo / "android/helpers/regenerate_all_mission_metadata_host.ps1"),
-                        "-NoBuild", "-NoRegressionCopy", "-MaxParallel", "1",
-                        "-D1Executable", binary("d1", "-metadata-worker"),
-                        "-D2Executable", binary("d2", "-metadata-worker"),
-                        "-OutputRoot", str(destination)]
+                argv = [
+                    "pwsh",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-File",
+                    str(repo / "android/helpers/regenerate_all_mission_metadata_host.ps1"),
+                    "-NoBuild",
+                    "-NoRegressionCopy",
+                    "-MaxParallel",
+                    "1",
+                    "-D1Executable",
+                    binary("d1", "-metadata-worker"),
+                    "-D2Executable",
+                    binary("d2", "-metadata-worker"),
+                    "-OutputRoot",
+                    str(destination),
+                ]
                 if builtin:
-                    argv += ["-BuiltInOnly", "-CdSourceIds", "__none__",
-                             "-IncludeBuiltInFirstStrike" if baseline.name == "FirstStrike.json" else "-IncludeBuiltInCounterstrike"]
+                    argv += [
+                        "-BuiltInOnly",
+                        "-CdSourceIds",
+                        "__none__",
+                        "-IncludeBuiltInFirstStrike"
+                        if baseline.name == "FirstStrike.json"
+                        else "-IncludeBuiltInCounterstrike",
+                    ]
                 else:
                     argv += ["-ArchivePaths", str(archive), "-CdSourceIds", "__none__"]
                 code = run_corpus(argv)
-                result["assets"].update(metadata_summary=(destination / "summary.json").is_file(),
-                    metadata_output=(destination / "metadata" / (("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "") + baseline.name)).is_file())
+                result["assets"].update(
+                    metadata_summary=(destination / "summary.json").is_file(),
+                    metadata_output=(
+                        destination
+                        / "metadata"
+                        / (
+                            ("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "")
+                            + baseline.name
+                        )
+                    ).is_file(),
+                )
                 from nightly_regression_corpus import metadata_owner_failure
-                result["owner_failure"] = metadata_owner_failure(document(destination / "summary.json"), archive.name if archive else baseline.stem)
-                checked = compare_metadata(expected_metadata, document(destination / "metadata" / (("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "") + baseline.name)),
-                                           document(destination / "summary.json"), archive.name if archive else baseline.stem)
+
+                result["owner_failure"] = metadata_owner_failure(
+                    document(destination / "summary.json"), archive.name if archive else baseline.stem
+                )
+                checked = compare_metadata(
+                    expected_metadata,
+                    document(
+                        destination
+                        / "metadata"
+                        / (
+                            ("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "")
+                            + baseline.name
+                        )
+                    ),
+                    document(destination / "summary.json"),
+                    archive.name if archive else baseline.stem,
+                )
             else:
                 destination = work / "route"
                 sha = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
                 # Combine and hash-check split D1/D2 inputs using the runner's automatic stage
-                code = run_corpus(["pwsh", "-NoProfile", "-NonInteractive", "-File",
-                            str(repo / "android/helpers/regenerate_all_guidebot_simulations.ps1"),
-                            "-Mode", "Headless", "-NoBuild", "-ExactMissionJson", "-MissionJson", suite["baseline"],
-                            *(["-PreparedMissionStage", str(prepared_stage)] if prepared_stage else []),
-                            "-MissionTargetIndex", str(suite["target_index"]), "-Level", str(suite["level_num"]),
-                            "-LevelFileFilter", suite["level_file"],
-                            "-HeadlessExecutable", binary("d2", "-headless-route"),
-                            "-HogDir", str(repo / "game_data/retail-ci/d2"),
-                            "-MaxParallel", "1", "-SampleFraction", "0.000001",
-                            "-SampleSeed", str(max(1, int(sha[:7], 16))), "-OutputRoot", str(destination)])
+                code = run_corpus(
+                    [
+                        "pwsh",
+                        "-NoProfile",
+                        "-NonInteractive",
+                        "-File",
+                        str(repo / "android/helpers/regenerate_all_guidebot_simulations.ps1"),
+                        "-Mode",
+                        "Headless",
+                        "-NoBuild",
+                        "-ExactMissionJson",
+                        "-MissionJson",
+                        suite["baseline"],
+                        *(["-PreparedMissionStage", str(prepared_stage)] if prepared_stage else []),
+                        "-MissionTargetIndex",
+                        str(suite["target_index"]),
+                        "-Level",
+                        str(suite["level_num"]),
+                        "-LevelFileFilter",
+                        suite["level_file"],
+                        "-HeadlessExecutable",
+                        binary("d2", "-headless-route"),
+                        "-HogDir",
+                        str(repo / "game_data/retail-ci/d2"),
+                        "-MaxParallel",
+                        "1",
+                        "-SampleFraction",
+                        "0.000001",
+                        "-SampleSeed",
+                        str(max(1, int(sha[:7], 16))),
+                        "-OutputRoot",
+                        str(destination),
+                    ]
+                )
                 summary = document(destination / "summary.json")
                 result["assets"]["route_summary"] = summary is not None
                 if code:
                     from nightly_regression_corpus import route_runner_failure
+
                     result["owner_failure"] = route_runner_failure(
-                        work / ("command-%d.stderr.log" % len(result["commands"])), code)
-                checked = compare_route(expected_route,
-                                        document(destination / "results" / baseline.with_suffix(".simulation.json").name),
-                                        summary, suite["baseline"], suite["identity"])
+                        work / ("command-%d.stderr.log" % len(result["commands"])), code
+                    )
+                checked = compare_route(
+                    expected_route,
+                    document(destination / "results" / baseline.with_suffix(".simulation.json").name),
+                    summary,
+                    suite["baseline"],
+                    suite["identity"],
+                )
             if code != 0 and checked["status"] == "PASS":
                 checked = {"status": "FAIL", "reason": "Corpus process failed despite matching output"}
             if "private_error" in checked:
@@ -779,9 +950,13 @@ def run_suite(suite, repo, build_root, output, timeout):
             if suite["profile"] == "route" and checked.get("selected") and not result["comparison_only"]:
                 result["cases"] = [{"id": checked["selected"][0], "status": checked["status"]}]
                 result["counts"] = count_cases(result["cases"])
-            return finish(checked["status"], checked["reason"], code,
-                          retryable=checked.get("retryable", checked["status"] == "BLOCKED"),
-                          blocker_kind=checked.get("blocker_kind"))
+            return finish(
+                checked["status"],
+                checked["reason"],
+                code,
+                retryable=checked.get("retryable", checked["status"] == "BLOCKED"),
+                blocker_kind=checked.get("blocker_kind"),
+            )
 
         if suite["kind"] in {"public-powershell", "retail-powershell", "retail-python"}:
             retail = suite["kind"] in {"retail-powershell", "retail-python"}
@@ -804,6 +979,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                         verify_retail_stage(repo)
                     if suite.get("fixture") == "retail-demos":
                         from private_input_demos import validate
+
                         validate(repo / "game_data/retail-ci/demos")
                     if suite["profile"] == "retail-obsidian-liquid":
                         prepare_obsidian_mission(repo, work)
@@ -814,8 +990,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 if verification_error is not None:
                     return finish(
                         "BLOCKED",
-                        "Verified retail fixture preparation failed: "
-                        + verification_error,
+                        "Verified retail fixture preparation failed: " + verification_error,
                         retryable=True,
                         blocker_kind="retail-fixture",
                     )
@@ -831,9 +1006,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                     )
                 targets = [
                     name.format(game=game)
-                    for name in suite.get(
-                        "build_targets", ["dxx-redux-" + game + suite["target_suffix"]]
-                    )
+                    for name in suite.get("build_targets", ["dxx-redux-" + game + suite["target_suffix"]])
                 ]
                 code = run(
                     [
@@ -855,9 +1028,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                         retryable=True,
                     )
             if suite.get("public_data"):
-                setup = target_file(
-                    repo, "android/helpers/setup_shareware_test_data.ps1"
-                )
+                setup = target_file(repo, "android/helpers/setup_shareware_test_data.ps1")
                 code = run(
                     [
                         "pwsh",
@@ -885,25 +1056,20 @@ def run_suite(suite, repo, build_root, output, timeout):
                 if suite["kind"] == "retail-python"
                 else ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
             )
-            profile_arguments = (
-                retail_profile_arguments if retail else public_profile_arguments
-            )
+            profile_arguments = retail_profile_arguments if retail else public_profile_arguments
             argv += profile_arguments(suite, repo, build_root, work)
             if suite.get("virtual_display"):
                 argv = ["xvfb-run", "-a"] + argv
             code = run(argv, virtual_display=suite.get("virtual_display", False))
-            if suite["profile"] == "retail-xl-originals" and code == 0:
+            if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} and code == 0:
+                from run_xl_originals import validate_summary
+
                 receipt = json.loads((work / "xl-originals/original-status.json").read_text())
-                experimental = receipt.get("experimental")
-                if (
-                    receipt.get("required_passed") != 40
-                    or receipt.get("level_two_completion_qualified") is not False
-                    or not isinstance(experimental, dict)
-                    or set(experimental) != {"xl_level_two_keys"}
-                    or experimental["xl_level_two_keys"] not in {"passed", "failed"}
-                ):
-                    raise ValueError("Invalid original XL acceptance receipt")
-                result["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
+                result["xl_checks"] = validate_summary(receipt, fast=suite["profile"] == "retail-xl-fast")
+                if receipt["experimental"]:
+                    result["experimental_acceptance"] = {
+                        "xl_level_two_keys": receipt["experimental"]["xl_level_two_keys"]
+                    }
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
             result["exclusions"] = [
                 {
@@ -914,10 +1080,13 @@ def run_suite(suite, repo, build_root, output, timeout):
                 for item in suite.get("profile_exclusions", [])
             ]
             if code == 2:
-                result["exclusions"].append({
-                    "id": suite["id"], "status": "BLOCKED",
-                    "reason": "Aggregate profile owner reported unavailable prerequisites",
-                })
+                result["exclusions"].append(
+                    {
+                        "id": suite["id"],
+                        "status": "BLOCKED",
+                        "reason": "Aggregate profile owner reported unavailable prerequisites",
+                    }
+                )
             return finish(
                 status,
                 "Reviewed profile completed; other profiles remain explicit exclusions",
@@ -937,7 +1106,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             code = run([sys.executable, str(script)])
             return finish(
                 "PASS" if code == 0 else "FAIL",
-                "Aggregate assertion script completed; internal case count unknown", code
+                "Aggregate assertion script completed; internal case count unknown",
+                code,
             )
 
         if suite["kind"] == "python-unittest":
@@ -1039,15 +1209,9 @@ def run_suite(suite, repo, build_root, output, timeout):
             if not cmake_file.is_file():
                 return finish("BLOCKED", "Standalone extractor entry point is absent")
             if suite.get("extra_test") == "strict-fingerprint":
-                script = target_file(
-                    repo, "android/tests/test_fingerprint_match_strict.py"
-                )
-                albums = target_file(
-                    repo, "android/app/src/main/assets/known_albums.jsonc"
-                )
-                if not script.is_file() or "--matcher" not in script.read_text(
-                    encoding="utf-8"
-                ):
+                script = target_file(repo, "android/tests/test_fingerprint_match_strict.py")
+                albums = target_file(repo, "android/app/src/main/assets/known_albums.jsonc")
+                if not script.is_file() or "--matcher" not in script.read_text(encoding="utf-8"):
                     return finish(
                         "BLOCKED",
                         "Target strict-fingerprint script lacks portable --matcher support",
@@ -1055,13 +1219,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                         blocker_kind="target-capability",
                     )
                 if not albums.is_file():
-                    return finish(
-                        "BLOCKED", "Maintained known_albums.jsonc fixture is absent"
-                    )
+                    return finish("BLOCKED", "Maintained known_albums.jsonc fixture is absent")
             light = suite["profile"] == "light"
-            if light and "DXX_EXTRACT_DEPENDENCY_LIGHT" not in cmake_file.read_text(
-                encoding="utf-8"
-            ):
+            if light and "DXX_EXTRACT_DEPENDENCY_LIGHT" not in cmake_file.read_text(encoding="utf-8"):
                 return finish(
                     "BLOCKED",
                     "Target commit does not support the optional light profile",
@@ -1078,11 +1238,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                         code,
                         retryable=True,
                     )
-            build = (
-                build_root
-                / ("extractor-light" if light else "extractor-full")
-                / "build"
-            )
+            build = build_root / ("extractor-light" if light else "extractor-full") / "build"
             args = [
                 "cmake",
                 "-S",
@@ -1139,9 +1295,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             game = suite["id"].rsplit("-", 1)[1]
             source = target_file(repo, game)
             if not (source / "CMakeLists.txt").is_file():
-                return finish(
-                    "BLOCKED", "Native game source is absent from target checkout"
-                )
+                return finish("BLOCKED", "Native game source is absent from target checkout")
             # Same assertion-preserving options as run-linux-build.sh --test, with a
             # caller-owned build directory and separately captured leaf results.
             args = native_configure_arguments(repo, build, game)
@@ -1166,9 +1320,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 return finish("FAIL", "Native build failed; see log", code)
         junit = work / "ctest-results.xml"
         if junit.exists():
-            return finish(
-                "BLOCKED", "Use a fresh result directory; prior CTest result exists"
-            )
+            return finish("BLOCKED", "Use a fresh result directory; prior CTest result exists")
         code = run(
             [
                 "ctest",
@@ -1186,18 +1338,14 @@ def run_suite(suite, repo, build_root, output, timeout):
             native=suite["kind"] == "configured-ctest",
         )
         if not junit.exists():
-            return finish(
-                "FAIL", "CTest did not produce machine-readable results", code
-            )
+            return finish("FAIL", "CTest did not produce machine-readable results", code)
         cases = read_ctest_results(junit)
         status, exclusions = classify_cases(cases, light=light)
         if code:
             status = "FAIL"
         result["cases"], result["exclusions"] = cases, exclusions
         result["counts"] = count_cases(cases)
-        return finish(
-            status, "CTest completed; exclusions remain outside proven coverage", code
-        )
+        return finish(status, "CTest completed; exclusions remain outside proven coverage", code)
     except (SuiteCancelled, KeyboardInterrupt):
         return finish(
             "BLOCKED",
@@ -1210,9 +1358,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED" if not result["attempted_tests"] else "FAIL",
             "Suite exceeded its wall-clock timeout",
             retryable=not result["attempted_tests"],
-            blocker_kind="setup-timeout"
-            if not result["attempted_tests"]
-            else "test-timeout",
+            blocker_kind="setup-timeout" if not result["attempted_tests"] else "test-timeout",
         )
     except (OSError, ValueError, ET.ParseError) as error:
         result["exception_type"] = type(error).__name__
@@ -1224,9 +1370,7 @@ def run_suite(suite, repo, build_root, output, timeout):
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--unittest-worker":
-        return unittest_worker(
-            Path(sys.argv[2]).resolve(), sys.argv[3], Path(sys.argv[4])
-        )
+        return unittest_worker(Path(sys.argv[2]).resolve(), sys.argv[3], Path(sys.argv[4]))
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list-json", action="store_true")
     parser.add_argument("--suite")
@@ -1240,9 +1384,7 @@ def main():
         print(json.dumps({"schema": 1, "suites": list(suites.values())}, indent=2))
         return 0
     if args.suite not in suites or not all([args.repo, args.build_root, args.output]):
-        parser.error(
-            "select a known --suite and provide --repo, --build-root, and --output"
-        )
+        parser.error("select a known --suite and provide --repo, --build-root, and --output")
     repo = args.repo.resolve()
     if not repo.is_dir():
         parser.error("target checkout does not exist")

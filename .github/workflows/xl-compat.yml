@@ -35,14 +35,9 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgl1-mesa-dev libglew-dev
 
-      - name: Configure standalone XL checks
-        run: cmake -S android/XL_compat -B temp/xl-public-ci -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DXL_FOG_GPU_TESTS=${{ runner.os == 'Linux' && 'ON' || 'OFF' }}
-
-      - name: Build inventory and lighting contracts
-        run: cmake --build temp/xl-public-ci --config Debug --parallel 2
-
-      # Private mission bytes and reference-engine sources are deliberately absent
+      # Public reference sources are pinned by commit and consumed-file hashes
+      # Private game files and private credentials are absent
       # Linux also exercises the real fog backend in a surfaceless Mesa context
       # Passing these contracts does not qualify pilot gameplay or Android support
-      - name: Run asset-free contracts
-        run: ctest --test-dir temp/xl-public-ci -C Debug --output-on-failure --no-tests=error --timeout 60
+      - name: Build source adapters and require every public contract
+        run: python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci ${{ runner.os == 'Linux' && '--gpu' || '' }}

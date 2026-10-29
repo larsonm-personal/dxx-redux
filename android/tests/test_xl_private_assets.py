@@ -16,10 +16,284 @@ from unittest.mock import patch
 import nightly_retail as retail
 import nightly_tooling_sweep as sweep
 import run_xl_originals as runner
+import public_contracts as public
+import pilot_archive as pilot
 import xl_private_assets as assets
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_original_pilot_inventory_remains_complete_and_unqualified(self):
+        levels = [
+            {"name": f"fixture-{i}.rl2", "inventory": {"status": "inspection_only", "playable": False}}
+            for i in range(30)
+        ]
+        levels[0]["name"] = "d2leva-1.rl2"
+        levels[0]["inventory"].update({key: [0] * count for key, count in pilot.PILOT_COUNTS.items()})
+        report = {"playable": False, "levels": levels}
+        pilot.validate_inventory(report)
+        for key in pilot.PILOT_COUNTS:
+            changed = copy.deepcopy(report)
+            changed["levels"][0]["inventory"][key].pop()
+            with self.subTest(count=key), self.assertRaises(ValueError):
+                pilot.validate_inventory(changed)
+        for index in range(30):
+            for field, value in (("status", "rejected"), ("playable", True), ("playable", None)):
+                changed = copy.deepcopy(report)
+                changed["levels"][index]["inventory"][field] = value
+                with self.subTest(level=index, field=field, value=value), self.assertRaises(ValueError):
+                    pilot.validate_inventory(changed)
+        for mode in ("missing", "extra", "duplicate-pilot", "absent-pilot", "qualified"):
+            changed = copy.deepcopy(report)
+            if mode == "missing":
+                changed["levels"].pop()
+            elif mode == "extra":
+                changed["levels"].append(copy.deepcopy(levels[-1]))
+            elif mode == "duplicate-pilot":
+                changed["levels"][1] = copy.deepcopy(levels[0])
+            elif mode == "absent-pilot":
+                changed["levels"][0]["name"] = "other.rl2"
+            else:
+                changed["playable"] = True
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                pilot.validate_inventory(changed)
+
+    def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
+        self.assertEqual(len(public.PUBLIC_TESTS), 36)
+        self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            oracle = root / "oracle"
+            oracle.write_bytes(b"fixture executable")
+            report = root / "public.xml"
+            for gpu in (False, True):
+                required = public.PUBLIC_TESTS | ({"xl_fog_gpu"} if gpu else set())
+                listing = {
+                    "tests": [
+                        {
+                            "name": name,
+                            "command": ["cmake"]
+                            + [
+                                "-D" + argument + "=" + str(oracle)
+                                for argument in runner.SOURCE_ARGUMENTS.get(name, ())
+                            ],
+                        }
+                        for name in sorted(required)
+                    ]
+                }
+                public.validate_registration(listing, gpu=gpu)
+                for tests in (
+                    listing["tests"][1:],
+                    listing["tests"] + [{"name": "xl_preview_lifecycle"}],
+                    listing["tests"] + [listing["tests"][0]],
+                ):
+                    with self.assertRaises(ValueError):
+                        public.validate_registration({"tests": tests}, gpu=gpu)
+                missing = copy.deepcopy(listing)
+                for test in missing["tests"]:
+                    if test["name"] in runner.SOURCE_ARGUMENTS:
+                        test["command"] = ["cmake"]
+                with self.assertRaises(ValueError):
+                    public.validate_registration(missing, gpu=gpu)
+                suite = ET.Element("testsuite")
+                for name in sorted(required):
+                    ET.SubElement(suite, "testcase", name=name, status="run")
+                ET.ElementTree(suite).write(report)
+                self.assertEqual(public.require_result(report, 0, gpu=gpu), len(required))
+                with self.assertRaises(ValueError):
+                    public.require_result(report, 8, gpu=gpu)
+                for mode in ("missing", "duplicate", "disabled", "skipped", "failure", "error"):
+                    changed = copy.deepcopy(suite)
+                    if mode == "missing":
+                        changed.remove(changed[0])
+                    elif mode == "duplicate":
+                        changed.append(copy.deepcopy(changed[0]))
+                    elif mode == "disabled":
+                        changed[0].set("status", "disabled")
+                    else:
+                        ET.SubElement(changed[0], mode)
+                    ET.ElementTree(changed).write(report)
+                    with self.subTest(gpu=gpu, mode=mode), self.assertRaises(ValueError):
+                        public.require_result(report, 0, gpu=gpu)
+
+    def test_fast_registration_requires_built_source_oracles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            oracle = Path(temporary) / "oracle"
+            oracle.write_bytes(b"fixture executable")
+            listing = {
+                "tests": [
+                    {
+                        "name": name,
+                        "command": ["cmake"]
+                        + ["-D" + argument + "=" + str(oracle) for argument in runner.SOURCE_ARGUMENTS.get(name, ())],
+                    }
+                    for name in sorted(runner.FAST_TESTS)
+                ]
+            }
+            runner.validate_registration(listing, fast=True)
+            self.assertTrue(set(runner.SOURCE_ARGUMENTS) <= runner.FAST_TESTS)
+            for test in listing["tests"]:
+                for argument in runner.SOURCE_ARGUMENTS.get(test["name"], ()):
+                    original = test["command"][:]
+                    prefix = "-D" + argument + "="
+                    for mode in ("omitted", "empty", "absent", "duplicate"):
+                        test["command"] = [value for value in original if not value.startswith(prefix)]
+                        if mode != "omitted":
+                            test["command"].append(
+                                prefix
+                                + {"empty": "", "absent": str(oracle) + "-absent", "duplicate": str(oracle)}[mode]
+                            )
+                        if mode == "duplicate":
+                            test["command"].append(prefix + str(oracle))
+                        with (
+                            self.subTest(name=test["name"], argument=argument, mode=mode),
+                            self.assertRaises(ValueError),
+                        ):
+                            runner.validate_registration(listing, fast=True)
+                    test["command"] = original
+            for tests in (listing["tests"][1:], listing["tests"] + [listing["tests"][0]]):
+                with self.assertRaises(ValueError):
+                    runner.validate_registration({"tests": tests}, fast=True)
+
+    def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
+        self.assertEqual(len(runner.FAST_TESTS), 91)
+        self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
+        self.assertTrue(
+            {
+                "xl_modern_runtime_layouts",
+                "xl_preview_lifecycle",
+                "xl_stock_loader_probe",
+                "xl_fog_gpu",
+                "xl_boss_groups",
+                "xl_modern_generators_27",
+            }
+            <= runner.FAST_TESTS
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native.xml"
+            suite = ET.Element("testsuite")
+            for name in sorted(runner.FAST_TESTS):
+                ET.SubElement(suite, "testcase", name=name, status="run")
+            ET.ElementTree(suite).write(path)
+            receipt = runner.native_receipt(path, 0, fast=True)
+            receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 91)
+            for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
+                changed = copy.deepcopy(suite)
+                first = changed[0]
+                if mode == "omitted":
+                    changed.remove(first)
+                elif mode == "duplicate":
+                    changed.append(copy.deepcopy(first))
+                elif mode == "disabled":
+                    first.set("status", "disabled")
+                elif mode in ("skipped", "failed"):
+                    ET.SubElement(first, "skipped" if mode == "skipped" else "failure", message="Failed")
+                else:
+                    ET.SubElement(changed, "testcase", name="xl_level_two_keys", status="run")
+                ET.ElementTree(changed).write(path)
+                with self.subTest(mode=mode), self.assertRaises(ValueError):
+                    runner.native_receipt(path, 0, fast=True)
+            for key, value in (
+                ("required_passed", 40),
+                ("required_tests", sorted(runner.FAST_TESTS)[1:]),
+                ("experimental", {"xl_level_two_keys": "failed"}),
+                ("format_witnesses", 9),
+                ("modern_source_levels", 2),
+            ):
+                with self.subTest(field=key), self.assertRaises(ValueError):
+                    runner.validate_summary({**receipt, key: value}, fast=True)
+
+    def test_format34_preserves_the_original_packed_light_rejection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            witness = {"level_version": 15, "game_version": 34, "hog_member": "test.rl2"}
+            for mode in ("decoded", "rejected", "unsupported-format", "playable"):
+                inventory = {"status": "inspection_only", "level_version": 15, "game_version": 34}
+                if mode != "decoded":
+                    inventory = {
+                        "status": "rejected",
+                        "reason": "unsupported level/game version pair 15/34"
+                        if mode == "unsupported-format"
+                        else "invalid packed light index 2 in 15/34: segment=63 side=0 count=2592 first=37 available=1284",
+                    }
+
+                def inspect(command, **kwargs):
+                    Path(command[2]).write_text(
+                        json.dumps({"playable": mode == "playable", "levels": [{"inventory": inventory}]})
+                    )
+                    return subprocess.CompletedProcess(command, 0 if mode == "decoded" else 1)
+
+                with patch.object(runner.subprocess, "run", side_effect=inspect):
+                    if mode == "rejected":
+                        self.assertEqual(
+                            runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]}), 1
+                        )
+                    else:
+                        with self.assertRaises(ValueError):
+                            runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]})
+
+    def test_modern_original_outcomes_cannot_drop_rejections_or_source_comparisons(self):
+        decoded = {
+            "boilpnt.rl2": (23, 1241),
+            "canyon.rl2": (27, 2139),
+            "canyon2.rl2": (27, 2125),
+            "watrwrks.rl2": (27, 3188),
+        }
+        rows = [
+            {
+                "name": name,
+                "inventory": {
+                    "status": "inspection_only",
+                    "level_version": version,
+                    "game_version": 40,
+                    "segments": [None] * segments,
+                },
+            }
+            for name, (version, segments) in decoded.items()
+        ]
+        rows += [
+            {"name": name, "inventory": {"status": "rejected", "reason": reason}}
+            for name, reason in {
+                "control.rl2": "invalid packed light index 0",
+                "control2.rl2": "invalid reactor trigger count",
+                "subzero.rl2": "offset 923615: unsupported movement layout 255 at object 4",
+            }.items()
+        ]
+        for mode in ("valid", "missing-rejection", "duplicate", "changed-version", "empty-source", "wrong-rejection"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                work = Path(temporary)
+                current = copy.deepcopy(rows)
+                if mode == "missing-rejection":
+                    current.pop()
+                elif mode == "duplicate":
+                    current[-1] = current[-2]
+                elif mode == "changed-version":
+                    current[1]["inventory"]["level_version"] = 25
+                elif mode == "wrong-rejection":
+                    current[-1]["inventory"]["reason"] = "unsupported level version 27"
+                calls = []
+
+                def execute(command, **kwargs):
+                    calls.append(command)
+                    if len(command) == 3:
+                        Path(command[2]).write_text(json.dumps({"playable": False, "levels": current}))
+                        return subprocess.CompletedProcess(command, 1)
+                    segments = decoded[command[3]][1]
+                    output = (
+                        ""
+                        if mode == "empty-source"
+                        else f"1 levels, {segments} segments, {segments * 6} sides, 10000 comparisons; 5000 vertex brightness maxima"
+                    )
+                    return subprocess.CompletedProcess(command, 0, stdout=output)
+
+                with patch.object(runner.subprocess, "run", side_effect=execute):
+                    if mode == "valid":
+                        self.assertEqual(runner.modern_results(Path("inspect"), Path("reference"), work, work), (7, 3))
+                        self.assertEqual(len(calls), 4)
+                    else:
+                        with self.assertRaises(ValueError):
+                            runner.modern_results(Path("inspect"), Path("reference"), work, work)
+
     def test_original_gpu_trace_requires_unique_real_witnesses(self):
         rows = [
             {
@@ -55,7 +329,7 @@ class XlPrivateTests(unittest.TestCase):
                     assets.require_original_gpu_trace(path)
 
     def test_staging_zip_members_collisions_and_rollback(self):
-        for mode in ("valid", "missing", "bad-hash", "collision", "case-collision"):
+        for mode in ("valid", "missing", "bad-hash", "collision", "case-collision", "valid-modern", "bad-modern"):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary) / "source"
                 destination = Path(temporary) / "stage"
@@ -64,6 +338,8 @@ class XlPrivateTests(unittest.TestCase):
                 level = struct.pack("<IiiiHH", 0x504C564C, 15, 0, 16, 0x6705, 33)
                 hog = b"DHF" + struct.pack("<13si", b"level.rl2", len(level)) + level
                 files = {"d2-xl.hog": hog, "d2-xl.mn2": b"name=synthetic"}
+                modern = mode.endswith("modern")
+                modern_hog = b"D2X synthetic modern original"
 
                 def identity(content):
                     return {
@@ -87,6 +363,11 @@ class XlPrivateTests(unittest.TestCase):
                 }
                 (root / "pack.7z").write_bytes(b"pack")
                 (root / "missions/D2-XL.7z").write_bytes(b"original")
+                if modern:
+                    data["original_mission_archives"].append(
+                        {"path": "missions/boilpnt.7z", **identity(b"modern archive")}
+                    )
+                    (root / "missions/boilpnt.7z").write_bytes(b"modern archive")
                 for index in range(2 if mode in ("collision", "case-collision") else 1):
                     name = "bundle-" + str(index) + ".zip"
                     content = b"first" if index == 0 else b"conflicting"
@@ -107,6 +388,10 @@ class XlPrivateTests(unittest.TestCase):
                 original_extract = assets.extract_archive
 
                 def extract(source, target, seven_zip=None):
+                    if source.name == "boilpnt.7z":
+                        target.mkdir()
+                        (target / "boilpnt.hog").write_bytes(modern_hog if mode == "valid-modern" else b"changed")
+                        return
                     if source.name != "D2-XL.7z":
                         return original_extract(source, target, seven_zip=seven_zip)
                     target.mkdir()
@@ -117,18 +402,27 @@ class XlPrivateTests(unittest.TestCase):
                 with (
                     patch.object(assets, "manifest", return_value=data),
                     patch.object(assets, "D2_FILES", pins),
+                    patch.object(
+                        assets,
+                        "MODERN_FILES",
+                        {"modern/boilpnt.hog": (len(modern_hog), hashlib.sha256(modern_hog).hexdigest())},
+                    ),
                     patch.object(assets, "extract_archive", side_effect=extract),
                 ):
-                    if mode == "valid":
-                        assets.stage_inputs(root, destination, None)
+                    if mode in ("valid", "valid-modern"):
+                        assets.stage_inputs(root, destination, None, modern=modern)
                         self.assertEqual((destination / "witnesses/level.rl2").read_bytes(), level)
-                        assets.verify(destination)
+                        assets.verify(destination, modern=modern)
                         with self.assertRaises(ValueError):
                             assets.stage_inputs(root, destination, None)
                         self.assertTrue(destination.exists())
+                        if modern:
+                            (destination / "modern/boilpnt.hog").unlink()
+                            with self.assertRaises(OSError):
+                                assets.verify(destination, modern=True)
                     else:
                         with self.assertRaises(ValueError):
-                            assets.stage_inputs(root, destination, None)
+                            assets.stage_inputs(root, destination, None, modern=modern)
                         self.assertFalse(destination.exists())
                 self.assertEqual((root / "pack.7z").read_bytes(), b"pack")
 
@@ -222,6 +516,25 @@ class XlPrivateTests(unittest.TestCase):
             self.assertNotIn("must not escape", json.dumps(result))
             row["id"] = "unrelated"
             self.assertNotIn("experimental_acceptance", retail.public_receipt(dict(base, results=[row]))["results"][0])
+
+    def test_public_fast_receipt_exposes_only_fixed_counts(self):
+        row = {
+            "id": assets.FAST_OWNER_ID,
+            "xl_checks": {
+                "required_passed": 91,
+                "format_witnesses": 16,
+                "modern_source_levels": 3,
+                "private": "raw input must not escape",
+            },
+        }
+        clean = retail.public_diagnostics(row)
+        self.assertEqual(clean["xl_checks"], {"required_passed": 91, "format_witnesses": 16, "modern_source_levels": 3})
+        self.assertNotIn("raw input", json.dumps(clean))
+        for invalid in (True, -1, 1001, "private text"):
+            changed = copy.deepcopy(row)
+            changed["xl_checks"]["required_passed"] = invalid
+            self.assertNotIn("xl_checks", retail.public_diagnostics(changed))
+        self.assertNotIn("xl_checks", retail.public_diagnostics({**row, "id": "unrelated"}))
 
     def test_experimental_outcome_survives_collection_and_reconciliation(self):
         entry = dict(
@@ -401,13 +714,19 @@ class XlPrivateTests(unittest.TestCase):
         with patch.dict(os.environ, env, clear=True):
             plan, _ = sweep.plan_batch("a" * 40, catalog, policy, retail_assets=retail.configured_identity())
             chosen = sweep.select_xl_originals(plan, policy, catalog)
-            self.assertEqual({e["id"] for e in chosen["tests"]}, assets.OWNER_IDS)
+            self.assertEqual({e["id"] for e in chosen["tests"]}, assets.ORIGINAL_OWNER_IDS)
             self.assertEqual(set(chosen["lanes"]), {"host", "android-single"})
+            fast = sweep.select_xl_originals(plan, policy, {"tests": []}, fast=True)
+            self.assertEqual({e["id"] for e in fast["tests"]}, {assets.FAST_OWNER_ID})
+            self.assertEqual(fast["lanes"], ["host"])
+            self.assertLess(fast["estimated_seconds"], chosen["estimated_seconds"])
             with self.assertRaises(ValueError):
                 sweep.select_xl_originals(plan, policy, {"tests": []})
             with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request"}):
                 with self.assertRaises(ValueError):
                     sweep.select_xl_originals(plan, policy, catalog)
+                with self.assertRaises(ValueError):
+                    sweep.select_xl_originals(plan, policy, catalog, fast=True)
             with patch.dict(os.environ, {"RETAIL_ASSETS_COMMIT": "b" * 40}):
                 plan, _ = sweep.plan_batch(
                     "a" * 40,

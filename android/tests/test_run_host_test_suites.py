@@ -25,6 +25,7 @@ class HostAdapterTests(unittest.TestCase):
 
     def test_nested_corpus_metadata_stops_before_build_or_flattening(self):
         from nightly_regression_catalog import CORPUS_COMMIT
+
         for profile in ("metadata",):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
@@ -33,10 +34,17 @@ class HostAdapterTests(unittest.TestCase):
                 baseline.write_text(json.dumps([{"mission_path": "REBIRTH/mission.mn2"}]))
                 baseline.with_suffix(".zip").touch()
                 baseline.with_suffix(".simulation.json").write_text("[]")
-                suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": profile,
-                         "baseline": "variant.json", "coverage_scope": "synthetic"}
-                with patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}), patch.object(
-                        adapter.subprocess, "Popen") as launch:
+                suite = {
+                    "id": "corpus:fixture",
+                    "kind": "retail-corpus",
+                    "profile": profile,
+                    "baseline": "variant.json",
+                    "coverage_scope": "synthetic",
+                }
+                with (
+                    patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
+                    patch.object(adapter.subprocess, "Popen") as launch,
+                ):
                     code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                 receipt = json.loads((root / "receipt.json").read_text())
                 self.assertEqual(code, 2)
@@ -49,24 +57,42 @@ class HostAdapterTests(unittest.TestCase):
 
     def test_exact_nested_corpus_target_stages_only_its_payload_before_build(self):
         from nightly_regression_catalog import CORPUS_COMMIT
+
         for target in (1, 0):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
                 baseline = root / "game_data/mission_files/fixture.json"
                 baseline.parent.mkdir(parents=True)
-                rows = [{"target_index": i, "mission_filename": "m.mn2", "mission_path": str(i) + "/m.mn2",
-                         "levels": [{"level_num": 1, "level_file": "one.rl2"}]} for i in (0, 1)]
+                rows = [
+                    {
+                        "target_index": i,
+                        "mission_filename": "m.mn2",
+                        "mission_path": str(i) + "/m.mn2",
+                        "levels": [{"level_num": 1, "level_file": "one.rl2"}],
+                    }
+                    for i in (0, 1)
+                ]
                 baseline.write_text(json.dumps(rows))
                 baseline.with_suffix(".simulation.json").write_text("[]")
                 with zipfile.ZipFile(baseline.with_suffix(".zip"), "w") as archive:
                     for i in (1, 0):
                         archive.writestr(str(i) + "/m.mn2", "name=fixture")
                         archive.writestr(str(i) + "/m.hog", str(i))
-                suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": "route",
-                         "baseline": "fixture.json", "target_index": target, "level_num": 1,
-                         "level_file": "one.rl2", "coverage_scope": "synthetic"}
-                with (patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
-                      patch.object(adapter, "verify_retail_stage"), patch.object(adapter.subprocess, "Popen") as launch):
+                suite = {
+                    "id": "corpus:fixture",
+                    "kind": "retail-corpus",
+                    "profile": "route",
+                    "baseline": "fixture.json",
+                    "target_index": target,
+                    "level_num": 1,
+                    "level_file": "one.rl2",
+                    "coverage_scope": "synthetic",
+                }
+                with (
+                    patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
+                    patch.object(adapter, "verify_retail_stage"),
+                    patch.object(adapter.subprocess, "Popen") as launch,
+                ):
                     launch.return_value.wait.return_value = 9
                     self.assertEqual(adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30), 2)
                 self.assertEqual((root / "receipt.artifacts/exact-mission/missions/m.hog").read_text(), str(target))
@@ -76,32 +102,57 @@ class HostAdapterTests(unittest.TestCase):
 
     def test_corpus_setup_uses_host_jvm_and_reports_static_failure_stage(self):
         from nightly_regression_catalog import CORPUS_COMMIT
+
         for profile in ("metadata", "route"):
-            for failure_at, kind in ((0, "metadata-cli-setup"),
-                                     (1, "corpus-worker-configure"),
-                                     (2, "corpus-worker-build"),
-                                     (3, "corpus-worker-configure"),
-                                     (4, "corpus-worker-build")):
-                with (self.subTest(profile=profile, failure_at=failure_at),
-                      tempfile.TemporaryDirectory() as directory):
+            for failure_at, kind in (
+                (0, "metadata-cli-setup"),
+                (1, "corpus-worker-configure"),
+                (2, "corpus-worker-build"),
+                (3, "corpus-worker-configure"),
+                (4, "corpus-worker-build"),
+            ):
+                with self.subTest(profile=profile, failure_at=failure_at), tempfile.TemporaryDirectory() as directory:
                     root = Path(directory).resolve()
                     baseline = root / "game_data/mission_files/fixture.json"
                     baseline.parent.mkdir(parents=True)
-                    baseline.write_text(json.dumps([{"mission_path": "fixture.mn2", "levels": [{"level_num": 1, "level_file": "one.rl2"}]}]))
+                    baseline.write_text(
+                        json.dumps(
+                            [{"mission_path": "fixture.mn2", "levels": [{"level_num": 1, "level_file": "one.rl2"}]}]
+                        )
+                    )
                     baseline.with_suffix(".zip").touch()
                     baseline.with_suffix(".simulation.json").write_text("[]")
-                    suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": profile,
-                             "baseline": "fixture.json", "target_index": 0, "level_num": 1, "level_file": "one.rl2", "coverage_scope": "synthetic"}
-                    with (patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
-                          patch.object(adapter, "verify_retail_stage"),
-                          patch("nightly_corpus_stage.stage_route", return_value=root / "stage"),
-                          patch.object(adapter.subprocess, "Popen") as launch):
+                    suite = {
+                        "id": "corpus:fixture",
+                        "kind": "retail-corpus",
+                        "profile": profile,
+                        "baseline": "fixture.json",
+                        "target_index": 0,
+                        "level_num": 1,
+                        "level_file": "one.rl2",
+                        "coverage_scope": "synthetic",
+                    }
+                    with (
+                        patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
+                        patch.object(adapter, "verify_retail_stage"),
+                        patch("nightly_corpus_stage.stage_route", return_value=root / "stage"),
+                        patch.object(adapter.subprocess, "Popen") as launch,
+                    ):
                         launch.return_value.wait.side_effect = [0] * failure_at + [9]
                         code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                     receipt = json.loads((root / "receipt.json").read_text())
-                    self.assertEqual(launch.call_args_list[0].args[0], [
-                        "bash", str(root / "android/gradlew"), "-p", str(root / "android"),
-                        "-PhostJvmOnly=true", ":mission-metadata-cli:installDist", "--console=plain"])
+                    self.assertEqual(
+                        launch.call_args_list[0].args[0],
+                        [
+                            "bash",
+                            str(root / "android/gradlew"),
+                            "-p",
+                            str(root / "android"),
+                            "-PhostJvmOnly=true",
+                            ":mission-metadata-cli:installDist",
+                            "--console=plain",
+                        ],
+                    )
                     self.assertEqual(launch.call_count, failure_at + 1)
                     self.assertEqual(code, 2)
                     self.assertEqual(receipt["phase"], "setup")
@@ -279,9 +330,7 @@ class HostAdapterTests(unittest.TestCase):
                 patch.object(adapter.sys, "platform", "win32"),
                 patch.object(adapter.subprocess, "Popen") as launch,
             ):
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "receipt.json", 10
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 10)
             self.assertEqual(code, 2)
             launch.assert_not_called()
             receipt = json.loads((root / "receipt.json").read_text())
@@ -292,16 +341,12 @@ class HostAdapterTests(unittest.TestCase):
         self.assertNotIn("python:test_hmp_playback.py", adapter.load_suites())
 
     def test_failure_dominates_media_gap(self):
-        status, exclusions = adapter.classify_cases(
-            [{"status": "FAIL"}, {"status": "BLOCKED"}]
-        )
+        status, exclusions = adapter.classify_cases([{"status": "FAIL"}, {"status": "BLOCKED"}])
         self.assertEqual(status, "FAIL")
         self.assertEqual(len(exclusions), 1)
 
     def test_partial_media_gap_completes_owner_but_retains_exclusion(self):
-        status, exclusions = adapter.classify_cases(
-            [{"status": "PASS"}, {"status": "BLOCKED"}]
-        )
+        status, exclusions = adapter.classify_cases([{"status": "PASS"}, {"status": "BLOCKED"}])
         self.assertEqual(status, "PASS")
         self.assertEqual(len(exclusions), 1)
 
@@ -312,69 +357,80 @@ class HostAdapterTests(unittest.TestCase):
         self.assertEqual(adapter.classify_cases([{"status": "SKIP"}])[0], "BLOCKED")
 
     def test_only_blocked_leaves_are_blocked(self):
-        for cases in ([{"status": "BLOCKED"}],
-                      [{"status": "BLOCKED"}, {"status": "SKIP"}]):
+        for cases in ([{"status": "BLOCKED"}], [{"status": "BLOCKED"}, {"status": "SKIP"}]):
             with self.subTest(cases=cases):
                 self.assertEqual(adapter.classify_cases(cases)[0], "BLOCKED")
                 self.assertEqual(adapter.count_cases(cases)["passed"], 0)
 
     def test_partial_structured_counts_preserve_success_and_exclusions(self):
-        cases = ([{"status": "PASS"}] * 54
-                 + [{"status": "BLOCKED"}] * 2 + [{"status": "SKIP"}])
+        cases = [{"status": "PASS"}] * 54 + [{"status": "BLOCKED"}] * 2 + [{"status": "SKIP"}]
         self.assertEqual(adapter.classify_cases(cases)[0], "PASS")
-        self.assertEqual(adapter.count_cases(cases), {
-            "total": 57, "passed": 54, "failed": 0, "skipped": 1, "excluded": 3,
-        })
+        self.assertEqual(
+            adapter.count_cases(cases),
+            {
+                "total": 57,
+                "passed": 54,
+                "failed": 0,
+                "skipped": 1,
+                "excluded": 3,
+            },
+        )
 
     def test_unittest_receipts_require_successful_leaves(self):
         modules = [
             ("", "BLOCKED", 2, 0, 0, 0),
-            ("    @unittest.skip('fixture absent')\n"
-             "    def test_skip(self): pass\n", "BLOCKED", 2, 0, 1, 0),
-            ("    @unittest.expectedFailure\n"
-             "    def test_expected(self): self.fail('known')\n",
-             "BLOCKED", 2, 0, 1, 0),
+            ("    @unittest.skip('fixture absent')\n    def test_skip(self): pass\n", "BLOCKED", 2, 0, 1, 0),
+            ("    @unittest.expectedFailure\n    def test_expected(self): self.fail('known')\n", "BLOCKED", 2, 0, 1, 0),
             ("    def test_pass(self): pass\n", "PASS", 0, 1, 0, 0),
-            ("    def test_pass(self): pass\n"
-             "    @unittest.skip('fixture absent')\n"
-             "    def test_skip(self): pass\n", "PASS", 0, 1, 1, 0),
+            (
+                "    def test_pass(self): pass\n    @unittest.skip('fixture absent')\n    def test_skip(self): pass\n",
+                "PASS",
+                0,
+                1,
+                1,
+                0,
+            ),
             ("    def test_fail(self): self.fail('broken')\n", "FAIL", 1, 0, 0, 1),
         ]
         for body, status, expected_code, passed, skipped, failed in modules:
             with self.subTest(body=body), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
                 (root / "test_fixture.py").write_text(
-                    "import unittest\nclass Cases(unittest.TestCase):\n"
-                    + (body or "    pass\n")
+                    "import unittest\nclass Cases(unittest.TestCase):\n" + (body or "    pass\n")
                 )
                 suite = {
-                    "id": "fixture", "kind": "python-unittest",
-                    "path": "test_fixture.py", "coverage_scope": "fixture",
+                    "id": "fixture",
+                    "kind": "python-unittest",
+                    "path": "test_fixture.py",
+                    "coverage_scope": "fixture",
                 }
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "receipt.json", 30
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                 receipt = json.loads((root / "receipt.json").read_text())
                 self.assertEqual(code, expected_code)
                 self.assertEqual(receipt["status"], status)
-                self.assertEqual(receipt["counts"], {
-                    "total": passed + skipped + failed, "passed": passed,
-                    "failed": failed, "skipped": skipped, "excluded": skipped,
-                })
-                self.assertEqual(receipt["coverage_complete"],
-                                 status == "PASS" and not skipped)
+                self.assertEqual(
+                    receipt["counts"],
+                    {
+                        "total": passed + skipped + failed,
+                        "passed": passed,
+                        "failed": failed,
+                        "skipped": skipped,
+                        "excluded": skipped,
+                    },
+                )
+                self.assertEqual(receipt["coverage_complete"], status == "PASS" and not skipped)
 
     def test_script_owner_pass_does_not_claim_unknown_leaf_coverage(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             (root / "fixture.py").write_text("assert 1 + 1 == 2\n")
             suite = {
-                "id": "fixture", "kind": "python-script",
-                "path": "fixture.py", "coverage_scope": "fixture",
+                "id": "fixture",
+                "kind": "python-script",
+                "path": "fixture.py",
+                "coverage_scope": "fixture",
             }
-            code = adapter.run_suite(
-                suite, root, root / "build", root / "receipt.json", 30
-            )
+            code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
             receipt = json.loads((root / "receipt.json").read_text())
             self.assertEqual(code, 0)
             self.assertEqual(receipt["status"], "PASS")
@@ -410,8 +466,11 @@ class HostAdapterTests(unittest.TestCase):
                 patch.object(adapter.subprocess, "Popen", Process),
             ):
                 code = adapter.run_suite(
-                    adapter.load_suites()["audio:strict-fingerprint"], root,
-                    root / "build", root / "receipt.json", 30,
+                    adapter.load_suites()["audio:strict-fingerprint"],
+                    root,
+                    root / "build",
+                    root / "receipt.json",
+                    30,
                 )
             receipt = json.loads((root / "receipt.json").read_text())
             self.assertEqual(code, 0)
@@ -450,14 +509,10 @@ class HostAdapterTests(unittest.TestCase):
                 patch.object(adapter.shutil, "which", return_value=None),
                 patch.object(adapter.subprocess, "Popen") as popen,
             ):
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "result.json", 10
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "result.json", 10)
             self.assertEqual(code, 2)
             popen.assert_not_called()
-            self.assertFalse(
-                json.loads((root / "result.json").read_text())["coverage_complete"]
-            )
+            self.assertFalse(json.loads((root / "result.json").read_text())["coverage_complete"])
 
     def test_old_commit_light_profile_blocks_without_full_download(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -472,9 +527,7 @@ class HostAdapterTests(unittest.TestCase):
                 "coverage_scope": "light",
             }
             with patch.object(adapter.subprocess, "Popen") as popen:
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "result.json", 10
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "result.json", 10)
             self.assertEqual(code, 2)
             popen.assert_not_called()
             data = json.loads((root / "result.json").read_text())
@@ -484,9 +537,7 @@ class HostAdapterTests(unittest.TestCase):
     def test_verified_soundfont_helper_is_present_in_target_source(self):
         repo = Path(__file__).resolve().parents[2]
         helper = repo / "android/get_deps/helpers/get_soundfont.sh"
-        self.assertTrue(
-            helper.is_file(), "Full checkout must contain the existing SoundFont helper"
-        )
+        self.assertTrue(helper.is_file(), "Full checkout must contain the existing SoundFont helper")
         source = helper.read_text(encoding="utf-8")
         self.assertIn('verify_sha256 "$TMPFILE" "$SOUNDFONT_SHA256"', source)
         self.assertIn('DEST="$ASSETS_DIR/gm.sf2"', source)
@@ -528,9 +579,7 @@ class HostAdapterTests(unittest.TestCase):
                     "coverage_scope": profile,
                 }
                 with patch.object(adapter.subprocess, "Popen", Process):
-                    code = adapter.run_suite(
-                        suite, root, root / "build", root / "result.json", 10
-                    )
+                    code = adapter.run_suite(suite, root, root / "build", root / "result.json", 10)
                 result = json.loads((root / "result.json").read_text())
                 if profile == "full":
                     self.assertEqual(
@@ -578,18 +627,14 @@ class HostAdapterTests(unittest.TestCase):
                 "coverage_scope": "native",
             }
             with patch.object(adapter.subprocess, "Popen", Process):
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "result.json", 10
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "result.json", 10)
             self.assertEqual(code, 0)
             self.assertIn("-DCMAKE_BUILD_TYPE=Debug", calls[0][0])
             self.assertIn("-DBUILD_TESTING=ON", calls[0][0])
             self.assertIn("-DCMAKE_C_FLAGS_DEBUG=-O0 -g1", calls[0][0])
             self.assertEqual(calls[-1][0][calls[-1][0].index("--parallel") + 1], "1")
             self.assertEqual(calls[-1][1]["env"]["SDL_AUDIODRIVER"], "dummy")
-            self.assertEqual(
-                calls[-1][1]["env"]["TMPDIR"], str(root / "result.artifacts/tmp")
-            )
+            self.assertEqual(calls[-1][1]["env"]["TMPDIR"], str(root / "result.artifacts/tmp"))
             self.assertEqual(calls[-1][1]["env"]["TEMP"], calls[-1][1]["env"]["TMPDIR"])
             result = json.loads((root / "result.json").read_text())
             self.assertIn("setup_seconds", result)
@@ -622,9 +667,7 @@ class PublicProfileTests(unittest.TestCase):
                 patch.object(adapter.shutil, "which", return_value="tool"),
                 patch.object(adapter.subprocess, "Popen", Process),
             ):
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "receipt.json", 30
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
             receipt = json.loads((root / "receipt.json").read_text())
             return code, receipt, calls
 
@@ -677,9 +720,7 @@ class PublicProfileTests(unittest.TestCase):
 
     def test_unknown_profile_does_not_construct_an_arbitrary_command(self):
         with self.assertRaises(ValueError):
-            adapter.public_profile_arguments(
-                {"profile": "untrusted"}, Path("repo"), Path("build"), Path("work")
-            )
+            adapter.public_profile_arguments({"profile": "untrusted"}, Path("repo"), Path("build"), Path("work"))
 
     def test_public_save_and_pickup_bind_existing_fixture_binaries(self):
         for profile, flags in (
@@ -691,9 +732,7 @@ class PublicProfileTests(unittest.TestCase):
                 self.assertEqual(code, 0)
                 argv = calls[-1][0]
                 for flag in flags:
-                    self.assertEqual(
-                        Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat"
-                    )
+                    self.assertEqual(Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat")
                 self.assertIn("-Output", argv)
                 self.assertEqual(argv[:2], ["xvfb-run", "-a"])
                 if profile == "public-pickup":
@@ -708,9 +747,7 @@ class PublicProfileTests(unittest.TestCase):
         self.assertEqual(argv[0], "pwsh")
         for game in ("d1", "d2"):
             flag = "-" + game.upper() + "Exe"
-            self.assertEqual(
-                Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat"
-            )
+            self.assertEqual(Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat")
             flag = "-" + game.upper() + "DataDir"
             self.assertEqual(
                 Path(argv[argv.index(flag) + 1]).parts[-3:],
@@ -760,9 +797,7 @@ class PublicProfileTests(unittest.TestCase):
                 else:
                     self.assertIn("-D1BuildDir", argv)
                     self.assertIn("-D2BuildDir", argv)
-                    self.assertNotIn(
-                        "-Revision", argv
-                    )  # Existing owner binds exact clean HEAD itself.
+                    self.assertNotIn("-Revision", argv)  # Existing owner binds exact clean HEAD itself.
 
 
 class RetailProfileTests(unittest.TestCase):
@@ -770,7 +805,7 @@ class RetailProfileTests(unittest.TestCase):
         self.enterContext(patch.object(adapter.sys, "platform", "linux"))
         self.enterContext(patch.object(adapter.shutil, "which", return_value="tool"))
 
-    def run_profile(self, profile, *, owner_code=0, setup_code=0):
+    def run_profile(self, profile, *, owner_code=0, setup_code=0, xl_receipt=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             suite = adapter.load_suites()["host-profile:" + profile]
@@ -787,6 +822,10 @@ class RetailProfileTests(unittest.TestCase):
                     events.append(argv[0])
 
                 def wait(self, **kwargs):
+                    if "--work" in self.argv and xl_receipt is not None:
+                        path = Path(self.argv[self.argv.index("--work") + 1]) / "original-status.json"
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text(json.dumps(xl_receipt))
                     return setup_code if self.argv[0] == "cmake" else owner_code
 
             with (
@@ -798,9 +837,7 @@ class RetailProfileTests(unittest.TestCase):
                 patch.object(adapter, "prepare_obsidian_mission") as prepare,
                 patch.object(adapter.subprocess, "Popen", Process),
             ):
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "receipt.json", 30
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                 if suite.get("fixture") == "retail-missions":
                     verify.assert_called_once_with(root, include_missions=True)
                 else:
@@ -816,11 +853,7 @@ class RetailProfileTests(unittest.TestCase):
     def test_base_retail_registry_is_four_fixed_owners_and_portable_controls(self):
         suites = adapter.load_suites()
         self.assertEqual(
-            {
-                suite["profile"]
-                for suite in suites.values()
-                if suite.get("fixture") == "retail-base"
-            },
+            {suite["profile"] for suite in suites.values() if suite.get("fixture") == "retail-base"},
             {
                 "retail-secret-baseline",
                 "retail-counterstrike-route",
@@ -895,17 +928,13 @@ class RetailProfileTests(unittest.TestCase):
             ],
         )
         repo = Path(__file__).resolve().parents[2]
-        source = (
-            repo / "android/tests/test_counterstrike_level2_trigger21_route.ps1"
-        ).read_text(encoding="utf-8")
+        source = (repo / "android/tests/test_counterstrike_level2_trigger21_route.ps1").read_text(encoding="utf-8")
         self.assertIn("TimeoutSeconds = 300", source)
 
     def test_guidebot_uses_native_assertion_and_cannot_pass_exit_two(self):
         for owner_code, expected in ((0, "PASS"), (1, "FAIL"), (2, "BLOCKED")):
             with self.subTest(owner_code=owner_code):
-                code, receipt, calls, root = self.run_profile(
-                    "retail-guidebot-timeout", owner_code=owner_code
-                )
+                code, receipt, calls, root = self.run_profile("retail-guidebot-timeout", owner_code=owner_code)
                 self.assertEqual(code, owner_code)
                 self.assertEqual(calls[1][-1], "dxx-redux-d2-headless-route")
                 self.assertEqual(
@@ -926,18 +955,14 @@ class RetailProfileTests(unittest.TestCase):
                     self.assertEqual(len(receipt["exclusions"]), 1)
                     self.assertEqual(receipt["exclusions"][0]["status"], "BLOCKED")
         repo = Path(__file__).resolve().parents[2]
-        source = (
-            repo / "android/tests/test_guidebot_simulation_timeout_policy.ps1"
-        ).read_text(encoding="utf-8")
+        source = (repo / "android/tests/test_guidebot_simulation_timeout_policy.ps1").read_text(encoding="utf-8")
         self.assertIn("Assert-Equal 61 $engineResult.frames", source)
         self.assertIn("Assert-Equal 'timeout' $engineResult.status", source)
         self.assertIn("if ($LASTEXITCODE -ne 2)", source)
-        self.assertIn("exit 2", source[:source.index("Assert-Equal 61")])
+        self.assertIn("exit 2", source[: source.index("Assert-Equal 61")])
 
     def test_build_failure_is_retryable_without_assertion_credit(self):
-        code, receipt, calls, _root = self.run_profile(
-            "retail-secret-baseline", setup_code=9
-        )
+        code, receipt, calls, _root = self.run_profile("retail-secret-baseline", setup_code=9)
         self.assertEqual(code, 2)
         self.assertEqual(len(calls), 1)
         self.assertEqual(receipt["phase"], "setup")
@@ -948,9 +973,7 @@ class RetailProfileTests(unittest.TestCase):
 
     def test_missing_mismatched_and_changed_pin_stages_block_before_build(self):
         control = Path(__file__).resolve().parents[2]
-        baseline = (control / "android/helpers/standard_game_data.ps1").read_text(
-            encoding="utf-8"
-        )
+        baseline = (control / "android/helpers/standard_game_data.ps1").read_text(encoding="utf-8")
         for failure in ("missing", "mismatched", "changed-pins"):
             with (
                 self.subTest(failure=failure),
@@ -965,9 +988,7 @@ class RetailProfileTests(unittest.TestCase):
                 pins.parent.mkdir(parents=True)
                 pins.write_text(baseline, encoding="utf-8")
                 if failure == "changed-pins":
-                    pins.write_text(
-                        baseline.replace("f1abf516", "f2abf516"), encoding="utf-8"
-                    )
+                    pins.write_text(baseline.replace("f1abf516", "f2abf516"), encoding="utf-8")
                 if failure == "mismatched":
                     files = {
                         "d1": ("descent.hog", "descent.pig"),
@@ -989,9 +1010,7 @@ class RetailProfileTests(unittest.TestCase):
                         for name in names:
                             (stage / name).write_bytes(b"Synthetic mismatch only")
                 with patch.object(adapter.subprocess, "Popen") as launch:
-                    code = adapter.run_suite(
-                        suite, root, root / "build", root / "receipt.json", 10
-                    )
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 10)
                 self.assertEqual(code, 2)
                 launch.assert_not_called()
                 receipt = json.loads((root / "receipt.json").read_text())
@@ -1005,23 +1024,19 @@ class RetailProfileTests(unittest.TestCase):
 
     def test_unknown_retail_profile_cannot_supply_arguments(self):
         with self.assertRaises(ValueError):
-            adapter.retail_profile_arguments(
-                {"profile": "arbitrary"}, Path("repo"), Path("build"), Path("work")
-            )
+            adapter.retail_profile_arguments({"profile": "arbitrary"}, Path("repo"), Path("build"), Path("work"))
 
     def test_expansion_profiles_require_mission_stage(self):
         suites = adapter.load_suites()
-        expansions = [
-            suite
-            for suite in suites.values()
-            if suite.get("fixture") == "retail-missions"
-        ]
+        expansions = [suite for suite in suites.values() if suite.get("fixture") == "retail-missions"]
         self.assertEqual(
             {suite["profile"] for suite in expansions},
-            {"retail-vertigo-metadata", "retail-obsidian-liquid", "retail-xl-originals"},
+            {"retail-vertigo-metadata", "retail-obsidian-liquid", "retail-xl-originals", "retail-xl-fast"},
         )
         for suite in expansions:
-            self.assertEqual(suite["games"], [] if suite["profile"] == "retail-xl-originals" else ["d2"])
+            self.assertEqual(
+                suite["games"], [] if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} else ["d2"]
+            )
             self.assertFalse(suite["public_data"])
             self.assertFalse(suite["virtual_display"])
         registry = json.loads(adapter.REGISTRY.read_text(encoding="utf-8"))
@@ -1029,6 +1044,36 @@ class RetailProfileTests(unittest.TestCase):
             "android/tests/test_secret_area_liquid_obsidian.py",
             {entry["path"] for entry in registry["unsupported_entrypoints"]},
         )
+
+    def test_xl_owners_share_strict_membership_and_preserve_safe_counts(self):
+        from run_xl_originals import CORE_TESTS, FAST_TESTS
+
+        for fast in (False, True):
+            required = FAST_TESTS if fast else CORE_TESTS
+            profile = "retail-xl-fast" if fast else "retail-xl-originals"
+            summary = {
+                "required_passed": len(required),
+                "required_tests": sorted(required),
+                "experimental": {} if fast else {"xl_level_two_keys": "failed"},
+                "level_two_completion_qualified": False,
+                "format_witnesses": 16 if fast else 9,
+                "modern_source_levels": 3 if fast else 0,
+            }
+            code, receipt, calls, _ = self.run_profile(profile, xl_receipt=summary)
+            self.assertEqual(code, 0)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual("--fast" in calls[0], fast)
+            self.assertEqual(receipt["xl_checks"]["required_passed"], len(required))
+            self.assertEqual("experimental_acceptance" in receipt, not fast)
+            for invalid in (
+                None,
+                {**summary, "required_passed": 40},
+                {**summary, "required_tests": sorted(required)[1:]},
+            ):
+                with self.subTest(profile=profile, invalid=invalid is None):
+                    code, receipt, _calls, _ = self.run_profile(profile, xl_receipt=invalid)
+                    self.assertNotEqual(code, 0)
+                    self.assertEqual(receipt["status"], "FAIL")
 
     def test_vertigo_profile_uses_reused_worker_and_exact_staged_missions(self):
         code, receipt, calls, root = self.run_profile("retail-vertigo-metadata")
@@ -1053,20 +1098,20 @@ class RetailProfileTests(unittest.TestCase):
     def test_obsidian_profile_keeps_assertions_and_native_owner_timeout(self):
         for owner_code in (0, 1):
             with self.subTest(owner_code=owner_code):
-                code, receipt, calls, root = self.run_profile(
-                    "retail-obsidian-liquid", owner_code=owner_code
-                )
+                code, receipt, calls, root = self.run_profile("retail-obsidian-liquid", owner_code=owner_code)
                 self.assertEqual(code, owner_code)
                 self.assertEqual(len(calls), 3)
-                self.assertEqual(calls[1][-3:], [
-                    "dxx-redux-d2-headless-metadata", "dxx-redux-d2-metadata-worker",
-                    "dxx-redux-d2-headless-route",
-                ])
+                self.assertEqual(
+                    calls[1][-3:],
+                    [
+                        "dxx-redux-d2-headless-metadata",
+                        "dxx-redux-d2-metadata-worker",
+                        "dxx-redux-d2-headless-route",
+                    ],
+                )
                 # Isolated Python ignores PYTHONOPTIMIZE and user site hooks
                 self.assertEqual(calls[-1][:2], [sys.executable, "-I"])
-                self.assertEqual(
-                    Path(calls[-1][2]).name, "test_secret_area_liquid_obsidian.py"
-                )
+                self.assertEqual(Path(calls[-1][2]).name, "test_secret_area_liquid_obsidian.py")
                 self.assertEqual(
                     calls[-1][3:],
                     [
@@ -1111,18 +1156,18 @@ class RetailProfileTests(unittest.TestCase):
                 script.touch()
                 with (
                     patch.object(
-                        adapter, "verify_retail_stage",
+                        adapter,
+                        "verify_retail_stage",
                         side_effect=error if failing_step == "verify" else None,
                     ),
                     patch.object(
-                        adapter, "prepare_obsidian_mission",
+                        adapter,
+                        "prepare_obsidian_mission",
                         side_effect=error if failing_step == "extract" else None,
                     ),
                     patch.object(adapter.subprocess, "Popen") as launch,
                 ):
-                    code = adapter.run_suite(
-                        suite, root, root / "build", root / "receipt.json", 10
-                    )
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 10)
                 self.assertEqual(code, 2)
                 launch.assert_not_called()
                 receipt = json.loads((root / "receipt.json").read_text())
@@ -1135,7 +1180,7 @@ class RetailProfileTests(unittest.TestCase):
 
 class MissionLifecycleOwnerTests(unittest.TestCase):
     DESCRIPTOR = "name = Synthetic\nnum_levels = 2\none.rl2\ntwo.rl2\nnum_secrets = 1\nsecret.rl2,1\n"
-    WORKER = '''import json, sys
+    WORKER = """import json, sys
 mode = sys.argv[1]
 for index, line in enumerate(sys.stdin, 1):
     request = json.loads(line)
@@ -1162,14 +1207,13 @@ for index, line in enumerate(sys.stdin, 1):
     if mode == 'duplicate': print('DXXMETA\\t' + json.dumps(report), flush=True)
 if mode == 'trailing': print('DXXMETA\\t' + json.dumps(report), flush=True)
 if mode == 'nonzero': sys.exit(1)
-'''
+"""
 
     def test_descriptor_counts_and_secret_entries_are_complete(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "synthetic.mn2"
             path.write_text(self.DESCRIPTOR + "\x1a", encoding="ascii")
-            self.assertEqual(missions.mission_levels(path),
-                             [(1, "one.rl2"), (2, "two.rl2"), (-1, "secret.rl2")])
+            self.assertEqual(missions.mission_levels(path), [(1, "one.rl2"), (2, "two.rl2"), (-1, "secret.rl2")])
             malformed = (
                 self.DESCRIPTOR.replace("num_levels = 2", "num_levels = -1"),
                 self.DESCRIPTOR.replace("num_levels = 2", "num_levels = 101"),
@@ -1190,8 +1234,23 @@ if mode == 'nonzero': sys.exit(1)
 
     def test_one_worker_sequence_rejects_missing_foreign_duplicate_and_mismatched_results(self):
         popen = subprocess.Popen
-        modes = ("ok", "missing", "foreign", "mission", "level", "filename", "empty",
-                 "failed", "restart", "zero", "base-count", "duplicate", "trailing", "nonzero", "timeout")
+        modes = (
+            "ok",
+            "missing",
+            "foreign",
+            "mission",
+            "level",
+            "filename",
+            "empty",
+            "failed",
+            "restart",
+            "zero",
+            "base-count",
+            "duplicate",
+            "trailing",
+            "nonzero",
+            "timeout",
+        )
         for mode in modes:
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
@@ -1210,14 +1269,29 @@ if mode == 'nonzero': sys.exit(1)
                     if mode == "ok":
                         missions.check_loading(worker, root, (("d2x", root), ("obsidian", root)), root)
                         requests = [json.loads(line) for line in (root / "requests.jsonl").read_text().splitlines()]
-                        self.assertEqual([(request["mission_name"], request["level_num"]) for request in requests],
-                                         [("d2", 1), ("d2x", 1), ("d2x", 2), ("d2x", -1), ("d2", 1),
-                                          ("obsidian", 1), ("obsidian", 2), ("obsidian", -1), ("d2", 1)])
-                        self.assertEqual(["extra_data_dir" in request for request in requests],
-                                         [False, True, True, True, False, True, True, True, False])
+                        self.assertEqual(
+                            [(request["mission_name"], request["level_num"]) for request in requests],
+                            [
+                                ("d2", 1),
+                                ("d2x", 1),
+                                ("d2x", 2),
+                                ("d2x", -1),
+                                ("d2", 1),
+                                ("obsidian", 1),
+                                ("obsidian", 2),
+                                ("obsidian", -1),
+                                ("d2", 1),
+                            ],
+                        )
+                        self.assertEqual(
+                            ["extra_data_dir" in request for request in requests],
+                            [False, True, True, True, False, True, True, True, False],
+                        )
                     elif mode == "timeout":
-                        with (patch.object(missions.queue.Queue, "get", side_effect=missions.queue.Empty),
-                              self.assertRaises(TimeoutError)):
+                        with (
+                            patch.object(missions.queue.Queue, "get", side_effect=missions.queue.Empty),
+                            self.assertRaises(TimeoutError),
+                        ):
                             missions.check_loading(worker, root, (("d2x", root), ("obsidian", root)), root)
                     else:
                         with self.assertRaises(AssertionError):
@@ -1228,22 +1302,32 @@ if mode == 'nonzero': sys.exit(1)
     @staticmethod
     def route_report(mission, *, restored=False):
         report = {
-            "schema": "dxx-guidebot-route-confirmation-v1", "mission": mission,
-            "level": 1, "status": "confirmed", "frames": 12, "seed": 1,
-            "fixed_hz": 60, "difficulty": 2, "radius": {"player": 42, "effective": 42},
+            "schema": "dxx-guidebot-route-confirmation-v1",
+            "mission": mission,
+            "level": 1,
+            "status": "confirmed",
+            "frames": 12,
+            "seed": 1,
+            "fixed_hz": 60,
+            "difficulty": 2,
+            "radius": {"player": 42, "effective": 42},
             "objectives": [{"kind": "exit", "activation_kind": "enter_exit", "frame": 12}],
         }
         if restored:
-            report["start_state"] = {"kind": "saved_world", "segment": 3,
-                                     "key_flags": 6, "position_fixed": [1, 2, 3]}
+            report["start_state"] = {"kind": "saved_world", "segment": 3, "key_flags": 6, "position_fixed": [1, 2, 3]}
         else:
             report["route_confirmation"] = {"status": "confirmed"}
         return report
 
     def test_route_requires_current_json_success_identity_and_native_confirmation(self):
         failures = (
-            ("absent", None), ("status", "failed"), ("mission", "wrong"), ("level", 2),
-            ("frames", 0), ("objectives", []), ("route_confirmation", {"status": "failed"}),
+            ("absent", None),
+            ("status", "failed"),
+            ("mission", "wrong"),
+            ("level", 2),
+            ("frames", 0),
+            ("objectives", []),
+            ("route_confirmation", {"status": "failed"}),
             ("radius", {"player": 42, "effective": 1}),
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -1281,25 +1365,28 @@ if mode == 'nonzero': sys.exit(1)
         guard = "ROUTE-CONFIRM FAIL checkpoint restore or mission/level mismatch"
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "rejected.json"
-            missions.validate_route(subprocess.CompletedProcess([], 1, "", guard), output,
-                                    "d2x", rejected=True)
-            for code, log in ((0, guard), (2, guard), (-11, guard), (1, "mission load failed"),
-                              (1, guard + "\nROUTE-CONFIRM OK")):
+            missions.validate_route(subprocess.CompletedProcess([], 1, "", guard), output, "d2x", rejected=True)
+            for code, log in (
+                (0, guard),
+                (2, guard),
+                (-11, guard),
+                (1, "mission load failed"),
+                (1, guard + "\nROUTE-CONFIRM OK"),
+            ):
                 with self.subTest(code=code, log=log), self.assertRaises(AssertionError):
-                    missions.validate_route(subprocess.CompletedProcess([], code, "", log), output,
-                                            "d2x", rejected=True)
+                    missions.validate_route(
+                        subprocess.CompletedProcess([], code, "", log), output, "d2x", rejected=True
+                    )
             output.write_text(json.dumps(self.route_report("d2x")))
             with self.assertRaises(AssertionError):
-                missions.validate_route(subprocess.CompletedProcess([], 1, "", guard), output,
-                                        "d2x", rejected=True)
+                missions.validate_route(subprocess.CompletedProcess([], 1, "", guard), output, "d2x", rejected=True)
 
     def test_route_sequence_saves_restores_rejects_mismatches_and_preserves_checkpoint(self):
         for fault in (None, "missing-save", "changed-save"):
             with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 calls = []
-                installed = tuple((name, root / (name + "-input") / "missions")
-                                  for name in ("d2x", "obsidian"))
+                installed = tuple((name, root / (name + "-input") / "missions") for name in ("d2x", "obsidian"))
 
                 def run(argv, *, calls=calls, fault=fault, root=root, **kwargs):
                     calls.append(argv)
@@ -1307,12 +1394,15 @@ if mode == 'nonzero': sys.exit(1)
                     target = argv[argv.index("-mission") + 1]
                     output = Path(argv[argv.index("-route-confirm-json-out") + 1])
                     # Route discovery mounts the parent of the descriptor directory
-                    self.assertEqual(argv[argv.index("-extra-dir") + 1],
-                                     str((root / (output.parent.name + "-input")).resolve()))
+                    self.assertEqual(
+                        argv[argv.index("-extra-dir") + 1], str((root / (output.parent.name + "-input")).resolve())
+                    )
                     save = Path(argv[argv.index("-route-confirm-user-dir") + 1]) / "level1.sav"
                     phase = output.stem
                     if phase.startswith("wrong-"):
-                        return subprocess.CompletedProcess(argv, 1, "", "ROUTE-CONFIRM FAIL checkpoint restore or mission/level mismatch")
+                        return subprocess.CompletedProcess(
+                            argv, 1, "", "ROUTE-CONFIRM FAIL checkpoint restore or mission/level mismatch"
+                        )
                     if phase == "start" and fault != "missing-save":
                         save.write_bytes(b"synthetic checkpoint")
                     if phase == "restore" and fault == "changed-save":
@@ -1327,10 +1417,11 @@ if mode == 'nonzero': sys.exit(1)
                     else:
                         missions.check_routes(root / "native", root, installed, root)
                         self.assertEqual(len(calls), 8)
-                        self.assertEqual([argv[argv.index("-mission") + 1] for argv in calls],
-                                         ["d2x", "d2x", "d2x", "d2", "obsidian", "obsidian", "obsidian", "d2"])
-                        self.assertEqual([argv[argv.index("-level") + 1] for argv in calls],
-                                         ["1", "1", "2", "1"] * 2)
+                        self.assertEqual(
+                            [argv[argv.index("-mission") + 1] for argv in calls],
+                            ["d2x", "d2x", "d2x", "d2", "obsidian", "obsidian", "obsidian", "d2"],
+                        )
+                        self.assertEqual([argv[argv.index("-level") + 1] for argv in calls], ["1", "1", "2", "1"] * 2)
 
     def test_route_requires_native_mission_directory_layout_before_launch(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1343,10 +1434,13 @@ if mode == 'nonzero': sys.exit(1)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / "liquid.json"
-            base = ["--exe", "metadata", "--hogdir", str(root), "--mission-dir", str(root),
-                    "--output", str(output)]
-            for flags in (["--worker", "worker"], ["--route-exe", "route"],
-                          ["--vertigo-dir", str(root)], ["--worker", "worker", "--route-exe", "route"]):
+            base = ["--exe", "metadata", "--hogdir", str(root), "--mission-dir", str(root), "--output", str(output)]
+            for flags in (
+                ["--worker", "worker"],
+                ["--route-exe", "route"],
+                ["--vertigo-dir", str(root)],
+                ["--worker", "worker", "--route-exe", "route"],
+            ):
                 with self.subTest(flags=flags), patch("sys.stderr"), patch.object(missions.subprocess, "run") as run:
                     with self.assertRaises(SystemExit) as error:
                         missions.main(base + flags)
@@ -1357,10 +1451,13 @@ if mode == 'nonzero': sys.exit(1)
                 output.write_text("{}")
                 return subprocess.CompletedProcess(argv, 0, "", "")
 
-            with (patch.object(missions.subprocess, "run", side_effect=liquid_run) as run,
-                  patch.object(missions, "validate") as validate,
-                  patch.object(missions, "check_loading") as loading,
-                  patch.object(missions, "check_routes") as routes, patch("builtins.print")):
+            with (
+                patch.object(missions.subprocess, "run", side_effect=liquid_run) as run,
+                patch.object(missions, "validate") as validate,
+                patch.object(missions, "check_loading") as loading,
+                patch.object(missions, "check_routes") as routes,
+                patch("builtins.print"),
+            ):
                 missions.main(base)
             run.assert_called_once()
             validate.assert_called_once_with({})
@@ -1377,6 +1474,7 @@ if mode == 'nonzero': sys.exit(1)
         self.assertLessEqual(entry["estimated_seconds"], 2700)
         self.assertIn("Vertigo/Obsidian loading and checkpoint regressions", suite["coverage_scope"])
 
+
 class ObsidianExtractionTests(unittest.TestCase):
     def setUp(self):
         self.temp = self.enterContext(tempfile.TemporaryDirectory())
@@ -1389,10 +1487,7 @@ class ObsidianExtractionTests(unittest.TestCase):
             "obsidian.hog": b"Synthetic mission HOG, not licensed content",
             "obsidian.mn2": b"Synthetic mission descriptor, not licensed content",
         }
-        self.pins = {
-            name: (len(data), hashlib.sha256(data).hexdigest())
-            for name, data in self.contents.items()
-        }
+        self.pins = {name: (len(data), hashlib.sha256(data).hexdigest()) for name, data in self.contents.items()}
 
     def write_archive(self, entries=None):
         with warnings.catch_warnings(), zipfile.ZipFile(self.archive, "w") as archive:
@@ -1420,16 +1515,11 @@ class ObsidianExtractionTests(unittest.TestCase):
         )
 
     def test_only_two_members_are_installed_under_native_missions_directory(self):
-        self.write_archive([
-            *self.contents.items(), ("obsidian.bat", b"never execute or copy")
-        ])
+        self.write_archive([*self.contents.items(), ("obsidian.bat", b"never execute or copy")])
         self.prepare()
         stage = self.work / "obsidian-stage"
         self.assertEqual(
-            sorted(
-                path.relative_to(stage).as_posix()
-                for path in stage.rglob("*") if path.is_file()
-            ),
+            sorted(path.relative_to(stage).as_posix() for path in stage.rglob("*") if path.is_file()),
             ["missions/obsidian.hog", "missions/obsidian.mn2"],
         )
         for name, data in self.contents.items():
@@ -1439,8 +1529,13 @@ class ObsidianExtractionTests(unittest.TestCase):
 
     def test_duplicate_case_alias_and_unsafe_paths_are_rejected(self):
         for name in (
-            "../outside", "/outside", "folder/file", "folder\\file", "C:outside",
-            "obsidian.hog", "OBSIDIAN.HOG",
+            "../outside",
+            "/outside",
+            "folder/file",
+            "folder\\file",
+            "C:outside",
+            "obsidian.hog",
+            "OBSIDIAN.HOG",
         ):
             with self.subTest(name=name):
                 self.write_archive([*self.contents.items(), (name, b"unsafe")])
@@ -1473,16 +1568,16 @@ class ObsidianExtractionTests(unittest.TestCase):
     def test_symlink_zip_member_and_excessive_member_count_are_rejected(self):
         link = zipfile.ZipInfo("obsidian.hog")
         link.create_system = 3
-        link.external_attr = (0o120777 << 16)
-        self.write_archive([
-            (link, self.contents["obsidian.hog"]),
-            ("obsidian.mn2", self.contents["obsidian.mn2"]),
-        ])
+        link.external_attr = 0o120777 << 16
+        self.write_archive(
+            [
+                (link, self.contents["obsidian.hog"]),
+                ("obsidian.mn2", self.contents["obsidian.mn2"]),
+            ]
+        )
         with self.assertRaises(ValueError):
             self.prepare()
-        self.write_archive([
-            *self.contents.items(), *((f"extra{i}", b"") for i in range(31))
-        ])
+        self.write_archive([*self.contents.items(), *((f"extra{i}", b"") for i in range(31))])
         with self.assertRaises(ValueError):
             self.prepare()
         self.assertFalse((self.work / "obsidian-stage").exists())
@@ -1493,10 +1588,15 @@ class StandaloneCMakeTests(unittest.TestCase):
         for leaves, expected_code, passed, excluded, skipped in [
             ("", 2, 0, 0, 0),
             ('<testcase name="skip"><skipped/></testcase>', 2, 0, 1, 1),
-            ('<testcase name="blocked"><system-out>SKIP: sample media not present'
-             '</system-out></testcase>', 2, 0, 1, 0),
-            ('<testcase name="pass"/><testcase name="blocked"><system-out>'
-             'SKIP: sample media not present</system-out></testcase>', 0, 1, 1, 0),
+            ('<testcase name="blocked"><system-out>SKIP: sample media not present</system-out></testcase>', 2, 0, 1, 0),
+            (
+                '<testcase name="pass"/><testcase name="blocked"><system-out>'
+                "SKIP: sample media not present</system-out></testcase>",
+                0,
+                1,
+                1,
+                0,
+            ),
         ]:
             with self.subTest(leaves=leaves), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
@@ -1520,17 +1620,21 @@ class StandaloneCMakeTests(unittest.TestCase):
                     patch.object(adapter.shutil, "which", return_value="tool"),
                     patch.object(adapter.subprocess, "Popen", Process),
                 ):
-                    code = adapter.run_suite(
-                        suite, root, root / "build", root / "receipt.json", 30
-                    )
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                 receipt = json.loads((root / "receipt.json").read_text())
                 self.assertEqual(code, expected_code)
                 self.assertEqual(receipt["status"], "PASS" if passed else "BLOCKED")
                 self.assertFalse(receipt["coverage_complete"])
-                self.assertEqual(receipt["counts"], {
-                    "total": passed + excluded, "passed": passed, "failed": 0,
-                    "skipped": skipped, "excluded": excluded,
-                })
+                self.assertEqual(
+                    receipt["counts"],
+                    {
+                        "total": passed + excluded,
+                        "passed": passed,
+                        "failed": 0,
+                        "skipped": skipped,
+                        "excluded": excluded,
+                    },
+                )
 
     def test_existing_ctest_projects_build_exact_targets_and_keep_leaf_receipts(self):
         for name, target, public_soundfont in (
@@ -1561,9 +1665,7 @@ class StandaloneCMakeTests(unittest.TestCase):
                     patch.object(adapter.shutil, "which", return_value="tool"),
                     patch.object(adapter.subprocess, "Popen", Process),
                 ):
-                    code = adapter.run_suite(
-                        suite, root, root / "build", root / "receipt.json", 30
-                    )
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                 self.assertEqual(code, 0)
                 self.assertEqual(calls[0][0] == "bash", public_soundfont)
                 if public_soundfont:
@@ -1595,9 +1697,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             suite = unittest.defaultTestLoader.loadTestsFromTestCase(Cases)
-            with patch.object(
-                unittest.defaultTestLoader, "discover", return_value=suite
-            ):
+            with patch.object(unittest.defaultTestLoader, "discover", return_value=suite):
                 code = adapter.unittest_worker(root, "fixture.py", root / "cases.json")
             data = json.loads((root / "cases.json").read_text())
             self.assertEqual(code, 1)
@@ -1644,9 +1744,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 patch.object(adapter.subprocess, "Popen", Process),
                 patch.object(adapter.os, "killpg", create=True) as kill,
             ):
-                code = adapter.run_suite(
-                    suite, root, root / "build", root / "out.json", 1
-                )
+                code = adapter.run_suite(suite, root, root / "build", root / "out.json", 1)
             self.assertEqual(code, 1)
             self.assertEqual(
                 [call.args[1] for call in kill.call_args_list],
@@ -1689,9 +1787,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                     patch.object(adapter.subprocess, "Popen", Process),
                     patch.object(adapter.os, "killpg", create=True),
                 ):
-                    code = adapter.run_suite(
-                        suite, root, root / "build", root / "out.json", 1
-                    )
+                    code = adapter.run_suite(suite, root, root / "build", root / "out.json", 1)
                 data = json.loads((root / "out.json").read_text())
                 self.assertEqual(code, 2)
                 self.assertEqual(data["status"], "BLOCKED")
@@ -1699,11 +1795,14 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 self.assertFalse(data["attempted_tests"])
                 self.assertFalse(data["coverage_complete"])
                 self.assertEqual(data["cases"], [])
-                command = data['commands'][-1]
-                self.assertEqual(command['outcome'], 'timeout' if isinstance(interruption, subprocess.TimeoutExpired) else 'cancelled')
-                self.assertIn('duration_seconds', command)
-                self.assertIn('stdout_bytes', command)
-                self.assertIn('stderr_bytes', command)
+                command = data["commands"][-1]
+                self.assertEqual(
+                    command["outcome"],
+                    "timeout" if isinstance(interruption, subprocess.TimeoutExpired) else "cancelled",
+                )
+                self.assertIn("duration_seconds", command)
+                self.assertIn("stdout_bytes", command)
+                self.assertIn("stderr_bytes", command)
 
 
 class FingerprintPortableCliTests(unittest.TestCase):

@@ -21,10 +21,13 @@ Reuse them. Private archives or raw engine output must not become public artifac
 Public PR checks retain no dependency on private credentials.
 
 Current coverage has drifted: the original-format runner still expects 15/34 to
-be rejected; its catalog description says 40 native tests while the required set
+be rejected as an unsupported format, rather than checking the pinned witness's
+invalid packed-light range; its catalog description says 40 native tests while the required set
 has grown to 85. Newer runtime tests exist but some important feature/stock
 controls are absent from that required set. Requiring source comparisons without
 checking the exact selected tests can leave newly added oracles unexecuted.
+The host adapter also still requires a 40-test receipt, so increasing the owner
+alone cannot pass its existing acceptance check.
 
 ## Implementation order
 
@@ -54,3 +57,50 @@ checking the exact selected tests can leave newly added oracles unexecuted.
 Report the actual selection, time, stock controls and remaining omissions.
 A green private lane proves its specific contracts and original inventories;
 it does not qualify an original campaign or substitute for human playtesting.
+
+## Implementation checkpoint
+
+Fog is published as PR #188, commit 597bdf6958906d4f6a435051e4ab6513335f1f29.
+Its public XL checks pass. Branch xl_more_43_private_ci adds the trusted
+`xl-fast` campaign and a 91-test required selection. It omits the 30 repeated
+campaign/route controls and the allowed experimental failure; source and
+runtime controls replace that time with broader coverage. Test directories
+are isolated for two-way CTest execution. The adapter and owner now share exact
+receipt membership. Modern original staging, explicit seven-level outcomes
+and three actual source-reader comparisons use the existing Boiling Point HOG.
+All 35 selected scripts with optional source comparisons must register their
+built reference executable. Observatory's missing no-damage source parameter
+was found and corrected during that registration audit.
+Actual original inspection also confirms that the 15/34 witness remains rejected
+for its invalid packed-light range. Format support alone does not admit that
+file; the lane checks its exact diagnostic separately from valid format controls.
+The fresh Linux build also exposed the boss adapter's incorrect by-value center
+accessor. It now matches the pinned source header. The initial 90/91 CTest pass
+found a stale classic lifecycle fixture; explicit source-runtime generation
+preserves the strict byte comparison and passes both lifecycle and classic-loader
+controls. All sixteen original outcomes and three modern source comparisons pass.
+
+The public owner now builds every pinned source adapter and requires all 36
+Windows or 37 Linux asset-free contracts. Fresh local checkout/build/test passes
+take about one minute per platform. The shared source bootstrap and oracle
+checks prevent the public and private configurations from drifting. A clean
+native Linux filesystem run also found three uppercase rejection overlays that
+had selected the valid original instead; exact filenames and resolved-owner
+assertions correct the fixtures without changing gameplay admission.
+
+The supplied Windows private checkout has CRLF text. An isolated checkout at
+the same immutable revision with CI line endings verifies all fourteen retail
+files and the complete XL stage; the user's checkout remains unchanged. The
+old full levelpack's Anthology is 23/40, so the separate 25/40 original remains
+a useful proposed addition. See [private CI evidence](../../XL_compat/evidence/private-ci.md)
+for scope, assets and measured timing.
+
+The clean native ext4 run passes all 91 required CTests, sixteen original-file
+outcomes and three full modern source comparisons in 478.196 seconds including
+both engine builds. Its CTest phase takes 190.43 seconds. All three corrected
+rejection fixtures now execute against their malformed input. The combined
+Linux policy/adapter suite passes 190 tests. A subsequent focused optimization
+replaces repeated CMake JSON parsing in the original pilot control: all original
+assertions and stable-regeneration checks pass in 1.89 seconds, down from 66.93.
+The added negative inventory control brings the XL owner suite to nineteen tests.
+Keep these timings distinct rather than inventing a new full-run duration.

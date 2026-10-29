@@ -308,8 +308,19 @@ finish original-mission qualification
     Source comparisons, public desktop GPU controls and all 208 Android
     pixel/MSAA/disk/rewind/context/stock checks pass. See
     [fog evidence](../../XL_compat/evidence/fog.md) for reference quirks and scope.
-    No original Pumo level is newly qualified. Extend fast private-asset CI next,
-    then continue effect/audio ownership and dependent event actions.
+    No original Pumo level is newly qualified. Required regression coverage is
+    recorded below; continue effect/audio ownership and dependent event actions.
+
+39. Required XL CI: public Windows/Linux checks now build the pinned source
+    adapters and require all 36/37 contracts. The trusted private lane requires
+    91 native/source/GPU controls, sixteen original-file outcomes and three
+    complete modern source comparisons. A clean local run passes in under eight
+    minutes; a focused archive-check optimization subsequently removes repeated
+    JSON parsing without reducing its assertions. See
+    [CI evidence](../../XL_compat/evidence/private-ci.md) for precise timings,
+    stock controls, proposed original assets and the hosted trust boundary.
+    Missing tests, skipped cases and omitted source oracles cannot grant a pass.
+    These checks preserve feature evidence without qualifying an original campaign.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

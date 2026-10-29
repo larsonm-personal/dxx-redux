@@ -1,3 +1,4 @@
+set(SOURCE_RUNTIME ON)
 include("${CMAKE_CURRENT_LIST_DIR}/stock_probe.cmake")
 configure_file("${fixture}/xlprobe.rl2" "${fixture}/stockprobe.rl2" COPYONLY)
 configure_file("${LEVEL}" "${fixture}/d2leva-1.rl2" COPYONLY)

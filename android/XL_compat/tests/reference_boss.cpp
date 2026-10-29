@@ -145,7 +145,7 @@ struct CSegment {
 	int m_nVertices = 8, m_objects = 0;
 	std::array<std::uint16_t, 8> m_vertices{ { 0, 1, 2, 3, 4, 5, 6, 7 } };
 	CFixVector m_vCenter;
-	CFixVector Center() const
+	CFixVector &Center()
 	{
 		return m_vCenter;
 	}

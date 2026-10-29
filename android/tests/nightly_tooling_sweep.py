@@ -16,7 +16,7 @@ import subprocess
 import sys
 import time
 import nightly_retail as retail
-from xl_private_assets import OWNER_IDS, available
+from xl_private_assets import FAST_OWNER_ID, ORIGINAL_OWNER_IDS, OWNER_IDS, available
 import nightly_regression_catalog as corpus
 
 VALIDATION_IDS = {
@@ -330,14 +330,17 @@ def select_public_campaign(plan, policy, catalog, campaign):
     return plan
 
 
-def select_xl_originals(plan, policy, catalog):
+def select_xl_originals(plan, policy, catalog, fast=False):
     if not retail.trusted_context() or not available(plan.get("retail_assets")):
         raise ValueError("Original XL campaign requires trusted cmake and the pinned private revision")
     entries = policy_entries(policy)
-    if not OWNER_IDS <= entries.keys() or "test_xl_original_assets" not in {r["name"] for r in catalog["tests"]}:
+    owners = {FAST_OWNER_ID} if fast else ORIGINAL_OWNER_IDS
+    if not owners <= entries.keys() or (
+        not fast and "test_xl_original_assets" not in {r["name"] for r in catalog["tests"]}
+    ):
         raise ValueError("Required original XL owners are missing")
     result = dict(plan)
-    result["tests"] = [entries[key] for key in sorted(OWNER_IDS)]
+    result["tests"] = [entries[key] for key in sorted(owners)]
     result["lanes"] = [lane for lane in LANES if any(e["lane"] == lane for e in result["tests"])]
     result["estimated_seconds"] = sum(e["estimated_seconds"] for e in result["tests"])
     result["batch_id"] = digest({key: result[key] for key in ("target_sha", "catalog_hash", "tests", "retail_assets")})
@@ -1077,6 +1080,7 @@ def main():
             "xl-browser",
             "xl-textures",
             "xl-originals",
+            "xl-fast",
             "lan-smoke",
             "online-preview",
             "online-preview-d2",
@@ -1162,8 +1166,8 @@ def main():
             if args.validation:
                 raise ValueError("Choose validation or campaign, not both")
             plan = (
-                select_xl_originals(plan, read(args.policy), read(args.catalog))
-                if args.campaign == "xl-originals"
+                select_xl_originals(plan, read(args.policy), read(args.catalog), fast=args.campaign == "xl-fast")
+                if args.campaign in ("xl-originals", "xl-fast")
                 else select_public_campaign(plan, read(args.policy), read(args.catalog), args.campaign)
             )
             state = fresh_state(plan["target_sha"], plan["catalog_hash"])
@@ -1219,7 +1223,8 @@ def main():
         }
         summary["experimental_acceptance"] = {
             key: row["experimental_acceptance"]
-            for key, row in state["records"].items() if row.get("experimental_acceptance")
+            for key, row in state["records"].items()
+            if row.get("experimental_acceptance")
         }
         summary["pending_owners"] = len(pending)
         summary["outcome"] = (
