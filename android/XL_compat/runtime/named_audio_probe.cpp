@@ -27,6 +27,7 @@ extern "C" {
 #include "android_audio_capture.h"
 void obj_delete_all_that_should_be_dead(void);
 }
+#include "audio_pressure_test.h"
 
 namespace
 {
@@ -44,6 +45,8 @@ std::array<std::int16_t, 524288> captured_music{};
 std::size_t captured_samples = 0;
 unsigned capture_rate = 0;
 bool invalid = false;
+bool pressure_earned = false;
+unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
 	if (!condition) throw std::runtime_error(message);
@@ -149,6 +152,20 @@ void verify()
 	const auto current = snapshot();
 	if (earned.is_null() || current != earned || xl_source_level_version() != version || Players[Player_num].energy != energy || xl_compat::named_audio_diagnostics().at("paused") != true)
 		throw std::runtime_error("Android audio restoration differs: " + json::diff(earned, current).dump() + "; version=" + std::to_string(xl_source_level_version()) + "; energy=" + std::to_string(Players[Player_num].energy) + "; paused=" + xl_compat::named_audio_diagnostics().at("paused").dump());
+	if (pressure_earned) {
+		xl_audio_pressure::continuation(pressure_origin);
+		require(xl_compat::restore_named_audio(earned, true) && snapshot() == earned, "Android pressure continuation did not recover exact saved voices and cursor");
+		++pressure_checks;
+	}
+}
+
+void compare_pressure_output(const json &state)
+{
+	xl_audio_pressure::output(state, captured.data(), captured_music.data(), captured_samples, capture_rate, 20);
+	for (std::size_t i = 0; i < captured_samples; ++i)
+		if (captured_music[i]) ++music_samples;
+	checked_samples += captured_samples;
+	++output_checks;
 }
 
 void scope_output(int action)
@@ -214,6 +231,7 @@ void scope_control(const char *operation)
 		require(diagnostic.at("files") == json::array({ "shared.wav", "mods/xscope/sounds/" + folder + "scoped.wav", "mods/xscope/sounds/mission.wav", "tiny.wav" }), "Android selected an incorrect sound scope or priority");
 		for (int action : { 0, 1, 2 }) scope_output(action);
 	} else if (!std::strcmp(operation, "prepare")) {
+		pressure_earned = false;
 		scope_output(1);
 		earned = snapshot();
 		energy = Players[Player_num].energy;
@@ -250,7 +268,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
@@ -334,19 +352,29 @@ const char *xl_named_audio_probe(const char *operation)
 					require(snapshot().at("voices").empty(), "Android finite sound did not complete naturally");
 					xl_named_audio_pause(1);
 					SDL_PauseAudio(0);
-				} else if (!std::strcmp(operation, "prepare")) {
+				} else if (!std::strcmp(operation, "prepare") || !std::strcmp(operation, "pressure")) {
+					pressure_earned = !std::strcmp(operation, "pressure");
 					reset_events();
 					capture_begin();
-					Triggers[0].flags = 0;
-					require(check_trigger_sub(0, Player_num, 1) == 0, "Cannot earn Android named audio state");
+					if (pressure_earned) pressure_origin = xl_audio_pressure::prepare();
+					else {
+						Triggers[0].flags = 0;
+						require(check_trigger_sub(0, Player_num, 1) == 0, "Cannot earn Android named audio state");
+					}
+					const auto starting = snapshot();
 					xl_named_audio_pause(0);
 					capture_run(4096);
-					compare_output(0, 2, false);
+					if (pressure_earned) compare_pressure_output(starting);
+					else compare_output(0, 2, false);
 					xl_named_audio_pause(1);
 					earned = snapshot();
 					energy = Players[Player_num].energy;
 					version = xl_source_level_version();
-					require(earned.at("voices").size() == 1 && earned.at("voices")[0][3] > 0 && earned.at("voices")[0][5] == 2, "Android save control lacks earned playback");
+					if (pressure_earned)
+						require(earned.at("voices").size() == xl_compat::audio_voice_limit && earned.at("cursor") != 0 &&
+						            std::all_of(earned.at("voices").begin(), earned.at("voices").end(), [](const auto &voice) { return voice[3] > 0; }),
+						        "Android pressure save lacks full live playback and a nonzero allocation position");
+					else require(earned.at("voices").size() == 1 && earned.at("voices")[0][3] > 0 && earned.at("voices")[0][5] == 2, "Android save control lacks earned playback");
 					SDL_PauseAudio(0);
 					verify();
 					for (const char *name : { "nosnd.rl2", "badsnd.rl2", "badid.rl2", "badwave.rl2" }) {
@@ -366,7 +394,8 @@ const char *xl_named_audio_probe(const char *operation)
 					capture_begin();
 					xl_named_audio_pause(0);
 					capture_run(4096);
-					compare_output(earned.at("voices")[0][3].get<unsigned>(), 2, false);
+					if (pressure_earned) compare_pressure_output(earned);
+					else compare_output(earned.at("voices")[0][3].get<unsigned>(), 2, false);
 					xl_named_audio_pause(1);
 					require(xl_compat::restore_named_audio(earned, true), "Cannot restore controlled output phase");
 					SDL_PauseAudio(0);

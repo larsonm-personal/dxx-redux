@@ -95,7 +95,7 @@
     {
         "action": "set_debug",
         "field": "xl_named_audio_probe",
-        "value": "prepare",
+        "value": "pressure",
         "post_delay_ms": 0,
     },
     {
@@ -453,6 +453,9 @@
         "action": "wait_for",
         "expect": {
             "xl_named_audio.output_probe.output_checks": 33,
+            "xl_named_audio.output_probe.pressure_checks": {
+                "gt": 4,
+            },
             "xl_named_audio.output_probe.checked_samples": {
                 "gt": 300000,
             },

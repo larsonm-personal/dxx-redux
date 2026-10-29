@@ -401,6 +401,14 @@ finish original-mission qualification
     replacement output, spatial consumers, priorities and persistence remain
     subsequent work; no campaign is qualified by resource decoding.
 
+49. Owned named-channel allocation: source circular selection, class threshold,
+    persistence and recorded volume now determine replacement in the 128-voice
+    pool. Saves retain the next allocation position and captured priorities.
+    See [channel evidence](../../XL_compat/evidence/audio-channels.md) for full-pool
+    output/continuation controls and the explicit global-slider output policy.
+    Ordinary replacements and ambient owners remain separate consumers; this
+    does not qualify their shared exhaustion behavior or the Pumo campaign.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

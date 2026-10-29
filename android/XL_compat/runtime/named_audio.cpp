@@ -69,6 +69,7 @@ AudioVoices mixer;
 bool backend_ready = false;
 bool resume_pending = false;
 unsigned output_rate = 44100;
+int priority_volume = 32768;
 std::string failure;
 std::uint64_t callbacks = 0, output_frames = 0, failed_starts = 0;
 
@@ -273,6 +274,7 @@ extern "C" void xl_named_audio_set_volume(int volume)
 #endif
 	AudioLock lock;
 	mixer.volume = int(gain);
+	priority_volume = (std::clamp) (volume, 0, 32768);
 }
 
 extern "C" void xl_named_audio_pause(int paused)
@@ -322,11 +324,13 @@ extern "C" int xl_named_audio_action(trigger *action, int owner)
 	if (action->time >= 0 && GameTime64 - event.started <= event.cooldown) return 0;
 	const auto &authored = found->second;
 	AudioLock lock;
-	const int slot = backend_ready ? mixer.start(authored.sample, authored.repetitions, owner) : -1;
+	const int slot = backend_ready ? mixer.start(authored.sample, authored.repetitions, owner,
+	                                             audio_priority(0, 65536, priority_volume, -1, authored.repetitions < 0))
+	                               : -1;
 	if (slot < 0) {
 		if (!GameArg.SndNoSound) {
 			++failed_starts;
-			failure = backend_ready ? "XL named-audio voice capacity exhausted" : "XL named-audio output is unavailable";
+			failure = backend_ready ? "XL named-audio voice allocation failed" : "XL named-audio output is unavailable";
 		}
 		event.started = GameTime64;
 		return 1;
@@ -371,12 +375,14 @@ nlohmann::json named_audio_snapshot()
 {
 	std::array<AudioVoice, audio_voice_limit> voices;
 	std::uint64_t next;
+	unsigned cursor;
 	{
 		AudioLock lock;
 		voices = mixer.voices;
 		next = mixer.next_serial;
+		cursor = mixer.cursor;
 	}
-	nlohmann::json state = { { "source", bank ? bank->identity : "" }, { "rate", output_rate }, { "next", next }, { "events", nlohmann::json::array() }, { "voices", nlohmann::json::array() } };
+	nlohmann::json state = { { "source", bank ? bank->identity : "" }, { "rate", output_rate }, { "next", next }, { "cursor", cursor }, { "events", nlohmann::json::array() }, { "voices", nlohmann::json::array() } };
 	if (bank)
 		for (const auto &[key, action] : bank->actions) {
 			(void) action;
@@ -386,7 +392,7 @@ nlohmann::json named_audio_snapshot()
 		}
 	for (unsigned slot = 0; slot < voices.size(); ++slot) {
 		const auto &voice = voices[slot];
-		if (voice.remaining) state["voices"].push_back({ slot, voice.serial, voice.sample, voice.position, voice.owner, voice.remaining });
+		if (voice.remaining) state["voices"].push_back({ slot, voice.serial, voice.sample, voice.position, voice.owner, voice.remaining, voice.priority.volume });
 	}
 	return state;
 }
@@ -394,13 +400,14 @@ nlohmann::json named_audio_snapshot()
 bool restore_named_audio(const nlohmann::json &state, bool apply)
 {
 	try {
-		if (!state.is_object() || state.size() != 5 || !state.at("source").is_string() ||
+		if (!state.is_object() || state.size() != 6 || !state.at("source").is_string() ||
 		    state.at("source").get<std::string>() != (bank ? bank->identity : "") ||
 		    !state.at("events").is_array() || state.at("events").size() != (bank ? bank->actions.size() : 0) ||
 		    !state.at("voices").is_array() || state.at("voices").size() > audio_voice_limit)
 			throw std::runtime_error("Named-audio save has different resources or layout");
 		const auto rate = unsigned(integer(state.at("rate"), 8000, 192000));
 		const auto next = std::uint64_t(integer(state.at("next"), 1, INT64_MAX));
+		const auto cursor = unsigned(integer(state.at("cursor"), 0, audio_voice_limit - 1));
 		std::array<AudioEvent, event_limit> restored_events;
 		std::set<unsigned> owners, slots;
 		std::set<std::uint64_t> serials, event_serials;
@@ -428,7 +435,7 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 		}
 		std::array<AudioVoice, audio_voice_limit> voices{};
 		for (const auto &row : state.at("voices")) {
-			if (!row.is_array() || row.size() != 6 || !bank) throw std::runtime_error("Invalid named-audio voice row");
+			if (!row.is_array() || row.size() != 7 || !bank) throw std::runtime_error("Invalid named-audio voice row");
 			const auto slot = unsigned(integer(row[0], 0, audio_voice_limit - 1));
 			if (!slots.insert(slot).second) throw std::runtime_error("Duplicate named-audio voice slot");
 			auto &voice = voices[slot];
@@ -438,6 +445,7 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			voice.remaining = int(integer(row[5], -1, INT32_MAX));
 			if (!serials.insert(voice.serial).second || !bank->actions.count(voice.owner)) throw std::runtime_error("Invalid named-audio voice identity");
 			const auto &action = bank->actions.at(voice.owner);
+			voice.priority = audio_priority(0, 65536, int(integer(row[6], 0, 32768)), -1, action.repetitions < 0);
 			const auto &event = restored_events[unsigned(voice.owner)];
 			if (action.sample != voice.sample || !event.activated || event.serial < voice.serial ||
 			    (action.repetitions > 0 ? (voice.remaining < 1 || voice.remaining > action.repetitions) : voice.remaining != -1))
@@ -453,6 +461,7 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			mixer.paused = true;
 			mixer.voices = voices;
 			mixer.next_serial = next;
+			mixer.cursor = cursor;
 			events = restored_events;
 			failure.clear();
 		}
@@ -474,6 +483,7 @@ nlohmann::json named_audio_diagnostics()
 		calls = callbacks;
 	}
 	nlohmann::json result = { { "backend_ready", backend_ready }, { "rate", output_rate }, { "resources", bank ? bank->sources.size() : 0 }, { "actions", bank ? bank->actions.size() : 0 }, { "files", bank ? bank->names : std::vector<std::string>{} }, { "paused", copy.paused }, { "resume_pending", resume_pending }, { "volume", copy.volume }, { "starts", copy.starts }, { "completions", copy.completions }, { "stops", copy.stops }, { "failed_starts", failed_starts }, { "output_callbacks", calls }, { "output_frames", delivered }, { "error", failure }, { "voices", nlohmann::json::array() } };
+	result["cursor"] = copy.cursor;
 	for (const auto &voice : copy.voices)
 		if (voice.remaining) result["voices"].push_back({ { "serial", voice.serial }, { "owner", voice.owner }, { "sample", voice.sample }, { "position", voice.position }, { "remaining", voice.remaining } });
 	return result;

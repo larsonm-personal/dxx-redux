@@ -32,16 +32,44 @@ AudioSample prepare_audio_sample(const WaveChannels &source, unsigned rate)
 	return result;
 }
 
+AudioPriority audio_priority(int sound_class, int requested_volume, int effective_volume, int sound_object, bool looping)
+{
+	const bool persistent = sound_object >= 0 || looping || requested_volume > 65536;
+	return { !sound_class && persistent ? -1 : sound_class, effective_volume, persistent };
+}
+
 int AudioVoices::start(unsigned sample, int repetitions, int owner)
 {
-	if (owner < 0 || !next_serial || next_serial >= std::uint64_t(INT64_MAX)) return -1;
-	for (unsigned slot = 0; slot < voices.size(); ++slot) {
-		if (voices[slot].remaining) continue;
-		voices[slot] = { next_serial++, sample, 0, owner, repetitions <= 0 ? -1 : repetitions };
-		++starts;
-		return int(slot);
+	// Named voices have equal requested volume; zero repeats loop without priority
+	return start(sample, repetitions, owner, audio_priority(0, 65536, 32768, -1, repetitions < 0));
+}
+
+int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriority priority)
+{
+	if (owner < 0 || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0) return -1;
+	const auto class_count = std::count_if(voices.begin(), voices.end(), [&](const auto &voice) {
+		return voice.remaining && voice.priority.sound_class == priority.sound_class;
+	});
+	const bool use_class = class_count >= int(voices.size() / 2);
+	int selected = -1, minimum[2]{ -1, -1 };
+	for (unsigned step = 0; step < voices.size(); ++step) {
+		const unsigned slot = (cursor + step) % unsigned(voices.size());
+		const auto &voice = voices[slot];
+		if (!voice.remaining) {
+			selected = int(slot);
+			break;
+		}
+		if (use_class && voice.priority.sound_class != priority.sound_class) continue;
+		auto &candidate = minimum[voice.priority.persistent ? 1 : 0];
+		if (candidate < 0 || voices[unsigned(candidate)].priority.volume > voice.priority.volume) candidate = int(slot);
 	}
-	return -1;
+	if (selected < 0) selected = minimum[0] >= 0 ? minimum[0] : minimum[1];
+	if (selected < 0) return -1;
+	stop(selected);
+	voices[unsigned(selected)] = { next_serial++, sample, 0, owner, repetitions <= 0 ? -1 : repetitions, priority };
+	cursor = (unsigned(selected) + 1) % unsigned(voices.size());
+	++starts;
+	return selected;
 }
 
 void AudioVoices::stop(int slot)

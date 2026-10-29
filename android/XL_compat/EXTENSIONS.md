@@ -76,6 +76,13 @@ transitions. Ambient sound objects and shared-channel
 priority under mixed exhaustion remain unqualified. The browser retains a
 resource-dependent partial row; this does not qualify the Pumo campaign.
 
+The owned named-voice pool now uses XL's circular allocation cursor, half-pool
+class restriction, persistence priority and recorded-volume tie rules. Saves
+retain the cursor and captured priority as well as voice playheads. See
+[channel evidence](evidence/audio-channels.md) for source comparisons, full-pool
+controls and the explicit global-slider output difference. Ordinary and ambient
+consumers still require a unified XL pool and their own lifecycle/spatial checks.
+
 Owned mission, normal-level and secret-level sound folders now preserve XL
 resource priority and use the incoming signed mission ordinal, including repeated
 level filenames. Native and all 65 Android publication/output/persistence checks
