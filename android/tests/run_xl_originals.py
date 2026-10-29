@@ -42,6 +42,7 @@ CORE_TESTS = (
         "xl_changing_lights",
         "xl_flickers",
         "xl_level_messages",
+        "xl_texture_actions",
         "xl_named_audio_runtime",
         "xl_level_text_reference",
         "xl_extended_hog",

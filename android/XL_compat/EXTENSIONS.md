@@ -46,6 +46,14 @@ original formats, saves and Redux recovery. Fixed membership rejects missing or
 skipped tests and omitted source oracles. Original mission admission and human
 campaign playtesting remain separate requirements.
 
+Owned wall/object texture-change actions now preserve XL's packed texture
+values, retained overlay orientation and addressed-side behavior. Admission
+checks future material dependencies; normal rendering and collision consumers
+handle cleared rotated overlays correctly. See [texture-action evidence](evidence/texture-actions.md)
+for source semantics, actual contact/rendering and delayed persistence controls.
+Pumo loses fifteen action rejections in three levels; all fourteen levels retain
+independent blockers and remain unqualified.
+
 Owned level MSG text and wall/object message actions now have source/native
 controls and all 80 Android display, modal, disk/rewind and stock-transition
 checks. Timed text, modal pause, resource identity and saved phase use a separate

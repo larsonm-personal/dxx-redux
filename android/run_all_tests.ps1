@@ -530,6 +530,7 @@ $testTimeouts = @{
     "test_xl_format34_runtime" = 600
     "test_xl_runtime_layouts" = 600
     "test_xl_level_messages" = 600
+    "test_xl_texture_actions" = 600
     "test_xl_named_audio" = 600
     "test_xl_audio_scopes" = 600
     "test_xl_fog_runtime" = 600

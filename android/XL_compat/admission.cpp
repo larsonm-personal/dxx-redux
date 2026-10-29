@@ -2,6 +2,7 @@
 #include "capacity.h"
 #include "producer_layout.h"
 #include "fog.h"
+#include "texture_change.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -40,6 +41,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (issue.feature == "segment_function" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "15") continue;
+		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "19") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "28") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "29") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "30") continue;
@@ -82,6 +84,14 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(xl_object_capacity_for_count(level.objects.size()) > DXX_XL_MAX_OBJECTS, "object capacity", ("authored objects require " + std::to_string(xl_object_capacity_for_count(level.objects.size())) + " runtime slots; supported signed-index pool is 32768").c_str());
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > DXX_XL_MAX_TRIGGERS, "trigger capacity", "more than 254 triggers");
+	const auto texture_action = [&](const Trigger &action, int index, const char *kind) {
+		if (action.type != 19 || action.targets.empty()) return;
+		const auto change = texture_change(action.value);
+		if (change.base >= 910 || change.overlay >= 910)
+			result.push_back({ kind, index, "texture change references an unsupported base/overlay ID " + std::to_string(change.base) + "/" + std::to_string(change.overlay) });
+	};
+	for (std::size_t i = 0; i < level.triggers.size(); ++i) texture_action(level.triggers[i], int(i), "trigger texture");
+	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object trigger texture");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
 	limit(!level.equipment.empty() && !modern_runtime_layout(level), "equipment layout", "equipment makers require an audited modern 23/40, 25/40 or 27/40 profile");

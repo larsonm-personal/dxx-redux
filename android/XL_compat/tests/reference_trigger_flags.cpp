@@ -158,9 +158,11 @@ static void reset()
 	audio_calls.clear();
 	stuck_calls.clear();
 }
+void texture_action_source_controls();
 int main()
 {
 	try {
+		texture_action_source_controls();
 		static_assert(xl_compat::trigger_flags_mask == (TF_NO_MESSAGE | TF_ONE_SHOT | TF_DISABLED | TF_PERMANENT | TF_ALTERNATE | TF_SET_ORIENT | TF_SILENT | TF_AUTOPLAY));
 		int cases = 0;
 		for (int flags = 0; flags < 256; ++flags) {

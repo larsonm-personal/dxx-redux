@@ -299,6 +299,10 @@ void flash_frame()
 //	tmap1, tmap2 are texture map ids.  tmap2 is the pasty one.
 void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2, uvl *uvlp, int wid_flags)
 {
+	// XL retains orientation when a texture-change action clears the overlay
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(tmap2 & 0x3fff)) tmap2 = 0;
+#endif
 	grs_bitmap  *bm;
 #ifdef OGL
 	grs_bitmap  *bm2 = NULL;

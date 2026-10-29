@@ -437,6 +437,9 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 	damage = (hitspeed / WALL_DAMAGE_SCALE) * (ForceFieldHit*8 + 1);
 
 	tmap_num2 = Segments[hitseg].sides[hitwall].tmap_num2;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) tmap_num2 &= 0x3fff;
+#endif
 
 	//don't do wall damage and sound if hit lava or water
 	if ((TmapInfo[tmap_num].flags & (TMI_WATER|TMI_VOLATILE)) || (tmap_num2 && (TmapInfo[tmap_num2&0x3fff].flags & (TMI_WATER|TMI_VOLATILE))))
@@ -631,6 +634,10 @@ void scrape_player_on_wall(object *obj, short hitseg, short hitside, vms_vector 
 int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, int force_blowup_flag)
 {
 	int tm,tmf,ec,db;
+
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(seg->sides[side].tmap_num2 & 0x3fff)) return 0;
+#endif
 
 	db=0;
 
@@ -888,9 +895,13 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		smega_rock_stuff();
 
 	wall_type = wall_hit_process( seg, hitwall, weapon->shields, playernum, weapon );
+	int overlay = seg->sides[hitwall].tmap_num2;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) overlay &= 0x3fff;
+#endif
 
 	// Wall is volatile if either tmap 1 or 2 is volatile
-	if ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_VOLATILE) || (seg->sides[hitwall].tmap_num2 && (TmapInfo[seg->sides[hitwall].tmap_num2&0x3fff].flags & TMI_VOLATILE))) {
+	if ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_VOLATILE) || (overlay && (TmapInfo[overlay&0x3fff].flags & TMI_VOLATILE))) {
 		weapon_info *wi = &Weapon_info[weapon->id];
 		int vclip;
 
@@ -919,7 +930,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		weapon->flags |= OF_SHOULD_BE_DEAD;		//make flares die in lava
 
 	}
-	else if ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_WATER) || (seg->sides[hitwall].tmap_num2 && (TmapInfo[seg->sides[hitwall].tmap_num2&0x3fff].flags & TMI_WATER))) {
+	else if ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_WATER) || (overlay && (TmapInfo[overlay&0x3fff].flags & TMI_WATER))) {
 		weapon_info *wi = &Weapon_info[weapon->id];
 
 		//we've hit water

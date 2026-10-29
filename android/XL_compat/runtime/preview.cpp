@@ -25,6 +25,7 @@
 #include "../probe.h"
 #include "../lighting.h"
 #include "../admission.h"
+#include "../texture_change.h"
 #include "texture_brightness.h"
 #include <cstring>
 #include <fstream>
@@ -402,6 +403,18 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		xl_assets::asset_require(wall.type != WALL_DOOR || wall.clip >= 0, "door has no wall animation");
 		graph.wall_clip(wall.clip);
 	}
+	const auto texture_action = [&](const xl_compat::Trigger &action, int index, const char *kind) {
+		if (action.type != 19 || action.targets.empty()) return;
+		try {
+			const auto change = xl_compat::texture_change(action.value);
+			graph.texture(change.base);
+			if (change.overlay > 0) graph.texture(change.overlay);
+		} catch (const std::exception &error) {
+			throw std::runtime_error(std::string(kind) + " " + std::to_string(index) + ": " + error.what());
+		}
+	};
+	for (std::size_t i = 0; i < level.triggers.size(); ++i) texture_action(level.triggers[i], int(i), "texture action");
+	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
 } // namespace
 
@@ -1350,7 +1363,7 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 		if (face.has_child || face.has_wall) {
 			const auto &s = Segments[segment_number].sides[side];
 			const auto fluid = [](int texture) { return texture >= 0 && texture < NumTextures && (TmapInfo[texture].damage || (TmapInfo[texture].flags & TMI_WATER)); };
-			face.fluid_texture = fluid(s.tmap_num) || (s.tmap_num2 && fluid(s.tmap_num2 & 0x3fff));
+			face.fluid_texture = fluid(s.tmap_num) || ((s.tmap_num2 & 0x3fff) && fluid(s.tmap_num2 & 0x3fff));
 		}
 		face_water_material = xl_compat::water_face_colored(face);
 	}

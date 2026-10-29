@@ -409,6 +409,15 @@ finish original-mission qualification
     Ordinary replacements and ambient owners remain separate consumers; this
     does not qualify their shared exhaustion behavior or the Pumo campaign.
 
+50. Owned texture-change actions: packed values, orientation retention,
+    addressed-side behavior and future resource dependencies now have executable
+    source and native consumers. Actual rendering, collision and earned delayed
+    continuation through disk/rewind have controlled integration coverage. See
+    [texture evidence](../../XL_compat/evidence/texture-actions.md). Exactly fifteen
+    Pumo action rejections in three levels are removed; all fourteen original
+    levels remain blocked. Required private membership becomes 104; public
+    membership stays 43/46.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

@@ -83,6 +83,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/hog_probe.cpp"
                     "${xl_runtime_dir}/runtime_layout_probe.cpp"
                     "${xl_runtime_dir}/level_message_probe.cpp"
+                    "${xl_runtime_dir}/texture_action_probe.cpp"
                     "${xl_runtime_dir}/named_audio_probe.cpp"
                     "${xl_runtime_dir}/fog_probe.cpp"
                     "${xl_runtime_dir}/pog_probe.cpp"
