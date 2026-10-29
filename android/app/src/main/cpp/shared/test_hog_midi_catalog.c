@@ -118,7 +118,7 @@ static int create_mixed_hog(const char *path, unsigned int tracks)
 	if (!write_entry(file, "readme.txt", payload, sizeof(payload)))
 		goto done;
 	for (index = 0; index < tracks; index++) {
-		char name[14];
+		char name[32];
 		snprintf(name, sizeof(name), "t%04u.%s", index,
 		         index % 2u ? "MID" : "hMp");
 		if (!write_entry(file, name, payload, sizeof(payload)))
@@ -177,10 +177,53 @@ done:
 	return result;
 }
 
+static int extended_catalog_tests(void)
+{
+	static const char path[] = "test_hog_midi_extended.hog";
+	static const unsigned char payload[] = { 7, 8, 9 };
+	const char *signatures[] = { "DHF", "D2X" };
+	unsigned int variant;
+	for (variant = 0; variant < 2; ++variant) {
+		unsigned char header[17] = { 0 }, long_name[256] = { 0 };
+		unsigned char *data = NULL;
+		int length = 0;
+		struct hog_midi_catalog catalog;
+		FILE *file = fopen(path, "wb");
+		if (!file) return 1;
+		memset(long_name, 'L', 251);
+		memcpy(long_name + 251, ".MID", 4);
+		memcpy(header, "alias.mid", 9);
+		header[13] = 253;
+		header[14] = header[15] = header[16] = 255;
+		if (fwrite(signatures[variant], 1, 3, file) != 3 ||
+		    !write_entry(file, "ordinary.hmp", payload, sizeof(payload)) ||
+		    fwrite(header, 1, sizeof(header), file) != sizeof(header) ||
+		    fwrite(long_name, 1, sizeof(long_name), file) != sizeof(long_name) ||
+		    fwrite(payload, 1, sizeof(payload), file) != sizeof(payload) || fclose(file)) return 1;
+		if (hog_midi_catalog_load(path, &catalog) != HOG_MIDI_CATALOG_OK) return 1;
+		if (catalog.count != 2 || strcmp(catalog.entries[1].name, (const char *) long_name) ||
+		    !hog_midi_catalog_read(path, &catalog, 1, &data, &length) || length != 3 || memcmp(data, payload, 3)) {
+			free(data);
+			hog_midi_catalog_free(&catalog);
+			return 1;
+		}
+		free(data);
+		hog_midi_catalog_free(&catalog);
+		// A later duplicate must invalidate even an earlier playable entry
+		file = fopen(path, "ab");
+		if (!file || !write_entry(file, "ORDINARY.HMP", payload, sizeof(payload)) || fclose(file)) return 1;
+		if (hog_midi_catalog_load(path, &catalog) != HOG_MIDI_CATALOG_MALFORMED || catalog.entries || catalog.count) return 1;
+	}
+	remove(path);
+	puts("Extended HOG catalog passed: both signatures, mixed records, 255-byte selected names, exact payloads, duplicate rollback");
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc == 2 && !strcmp(argv[1], "--read-lifetime")) return read_lifetime_tests();
 	if (argc != 1) return 2;
+	if (extended_catalog_tests()) return fail("Extended HOG catalog test failed");
 	static const char mixed_path[] = "test_hog_midi_catalog_mixed.hog";
 	static const char malformed_path[] = "test_hog_midi_catalog_malformed.hog";
 	static const char over_limit_path[] = "test_hog_midi_catalog_limit.hog";

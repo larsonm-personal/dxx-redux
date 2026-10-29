@@ -24,20 +24,9 @@ internal object MissionAssetCatalog {
         input: InputStream,
         label: String,
     ): Set<String>? {
-        if (input.readExact(3)?.toString(Charsets.US_ASCII) != "DHF") return null
-        val budget = ExtractionBudget()
         val entries = linkedSetOf<String>()
-        while (true) {
-            val nameBytes = input.readUpTo(13)
-            if (nameBytes.isEmpty()) return entries
-            if (nameBytes.size != 13) return null
-            val sizeBytes = input.readExact(4) ?: return null
-            val size = littleEndianUnsignedInt(sizeBytes)
-            val name = archiveLeafName(nameBytes) ?: return null
-            budget.registerEntry(size, size, "$label:$name")
-            input.drainExact(size, budget, "$label:$name") ?: return null
-            entries += name.lowercase(Locale.US)
-        }
+        NativeHogArchive.visit(input, label) { entry, _ -> entries += NativeHogArchive.key(entry.name) }
+        return entries
     }
 
     private fun readZip(
@@ -69,24 +58,6 @@ internal object MissionAssetCatalog {
         return entries
     }
 
-    private fun InputStream.drainExact(
-        count: Long,
-        budget: ExtractionBudget,
-        label: String,
-    ): Unit? {
-        val buffer = ByteArray(64 * 1024)
-        var remaining = count
-        var readTotal = 0L
-        while (remaining > 0) {
-            val read = read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
-            if (read <= 0) return null
-            readTotal += read
-            budget.accountActual(read, readTotal, count, label)
-            remaining -= read
-        }
-        return Unit
-    }
-
     private fun InputStream.drainUnknownSize(
         budget: ExtractionBudget,
         compressedSize: Long,
@@ -100,31 +71,6 @@ internal object MissionAssetCatalog {
             readTotal += read
             budget.accountActual(read, readTotal, compressedSize, label)
         }
-    }
-
-    private fun InputStream.readExact(count: Int): ByteArray? = readUpTo(count).takeIf { it.size == count }
-
-    private fun InputStream.readUpTo(count: Int): ByteArray {
-        val bytes = ByteArray(count)
-        var readTotal = 0
-        while (readTotal < count) {
-            val read = read(bytes, readTotal, count - readTotal)
-            if (read <= 0) break
-            readTotal += read
-        }
-        return if (readTotal == count) bytes else bytes.copyOf(readTotal)
-    }
-
-    private fun littleEndianUnsignedInt(bytes: ByteArray): Long =
-        (bytes[0].toLong() and 0xff) or
-            ((bytes[1].toLong() and 0xff) shl 8) or
-            ((bytes[2].toLong() and 0xff) shl 16) or
-            ((bytes[3].toLong() and 0xff) shl 24)
-
-    private fun archiveLeafName(bytes: ByteArray): String? {
-        val end = bytes.indexOf(0).takeIf { it >= 0 } ?: bytes.size
-        val name = bytes.copyOfRange(0, end).toString(Charsets.US_ASCII).trim()
-        return name.takeIf { it.isNotEmpty() && '/' !in it && '\\' !in it }
     }
 
     private class NonClosingInputStream(

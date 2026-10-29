@@ -514,6 +514,7 @@ target_link_libraries(dxx-redux-d1 PRIVATE android log OpenSLES)
 if(OPENGL)
     target_link_libraries(dxx-redux-d1 PRIVATE EGL GLESv3)
 endif()
+add_subdirectory(hog_reader)
 set(DXX_ANDROID_GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c

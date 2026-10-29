@@ -16,11 +16,10 @@ names. The INT_MIN rejection avoids source signed-negation overflow. Names are
 flat archive members, as in the currently admitted resource namespace; nested
 resource paths and broader filename encodings remain separate work.
 
-This is a native container milestone, not end-to-end Android import support.
-The launcher's import, asset catalog, metadata and music readers still need
-integration. Its existing extended-HOG import gate remains. Compatibility text
-now distinguishes native support from that unfinished launcher path. Contained
-levels and resources retain independent admission checks.
+This record covers the native container milestone. The subsequent
+[launcher integration](extended-hog-launcher.md) shares the format reader across
+import, asset catalogs, metadata and music and removes the blanket import gate.
+Contained levels and resources retain independent admission checks.
 
 ## Source and native evidence
 
@@ -97,8 +96,8 @@ Pumo Mines' HOG is 196505200 bytes, so launcher integration must retain streamin
 and avoid a whole-archive byte-array bridge. None of these audits qualifies
 original gameplay.
 
-Next, connect the launcher readers to the native format definitions and verify
-real package import, metadata, music staging and resource cleanup before removing
-the import gate. Long level/mission identifiers, nested resource namespaces,
+The [launcher follow-up](extended-hog-launcher.md) now covers package import,
+metadata, music staging and resource cleanup through the shared native format.
+Long level/mission identifiers, nested resource namespaces,
 remaining resource formats and contained gameplay requirements are distinct
 unfinished work. No autonomous navigation was used.

@@ -112,13 +112,7 @@ static SLAndroidSimpleBufferQueueItf s_player_bq = NULL;
 static short s_play_bufs[NUM_BUFFERS][BUF_FRAMES * 2];
 static int s_next_buf = 0;
 
-/* ── HOG file reader ─────────────────────────────────────────────────
- *
- * HOG format: 3-byte magic "DHF", then repeated entries of
- *   13-byte filename (null-padded), 4-byte LE length, data bytes.
- *
- * Keep in sync with d2/utilities/hogextract.c format assumptions.
- */
+// Shared native HOG index selects classic and extended member names
 
 int hog_read_entry(const char *hog_path, const char *entry_name,
                    unsigned char **out_data, int *out_len)

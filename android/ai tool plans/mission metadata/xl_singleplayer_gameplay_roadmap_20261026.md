@@ -271,8 +271,16 @@ finish original-mission qualification
     long names under DHF/D2X and preserves archive ownership through actual
     lookup, startup and disk-through-stock restoration. See
     [container evidence](../../XL_compat/evidence/extended-hog.md). Launcher
-    import/catalog/music integration remains unfinished; its gate stays in place.
+    import/catalog/music integration is covered by the next increment below.
     Playground now decodes and retains independent gameplay blockers.
+
+35. Extended HOG launcher integration: import, metadata, asset/music catalogs and
+    preview staging use the shared native format reader. The unchanged Pumo
+    distribution has host import and byte-preservation evidence; the normal APK
+    exercises a derived extended archive through both preview renderers and game
+    activation. See [launcher evidence](../../XL_compat/evidence/extended-hog-launcher.md).
+    Pumo's fourteen version-27 levels remain uninspected and unqualified. Audit
+    their layouts next, then select gameplay dependencies from the full inventory.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

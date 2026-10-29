@@ -14,9 +14,11 @@ renderer/settings profiles and original campaign qualification remain open.
 
 Native D2 archive mounting and inspection now share a streaming DHF/D2X reader,
 including per-member long names and exact resource ownership through save/load.
-The Android launcher import/catalog/music path remains unfinished and its gate
-stays in place. See [container evidence](evidence/extended-hog.md); native
-container support does not qualify contained gameplay or an original campaign.
+The Android launcher now uses that native format reader for import, catalogs,
+metadata and music, including bounded streaming of Pumo Mines' large HOG.
+See [container evidence](evidence/extended-hog.md) and
+[launcher evidence](evidence/extended-hog-launcher.md). Container support does
+not qualify contained gameplay: all fourteen Pumo levels still reject version 27.
 
 The [maintained gameplay roadmap](../ai%20tool%20plans/mission%20metadata/xl_singleplayer_gameplay_roadmap_20261026.md)
 tracks these overlapping areas and their acceptance requirements. Immediate wall

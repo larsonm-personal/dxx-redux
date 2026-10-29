@@ -8,6 +8,7 @@
 #include "object_capacity_fixture.h"
 #include "changing_light_fixture.h"
 #include "flicker_fixture.h"
+#include "hog_fixture.h"
 
 #include <functional>
 #include <fstream>
@@ -1295,6 +1296,18 @@ int main(int argc, char **argv)
 			check(row.find("\"status\": \"unknown\"") != std::string::npos, "unverified survey category gained support or false absence");
 		}
 		check(xl_compat::compatibility_json("base.hog", { 'D', '2', 'X' }).find("\"detected\": true") != std::string::npos, "extended HOG not detected");
+		Bytes extended_hog{ 'D', '2', 'X' };
+		xl_test::hog_member(extended_hog, "A long member name.rl2", { 1, 2, 3 }, true);
+		const auto container = xl_compat::compatibility_json("mission.hog", extended_hog);
+		check(container.find("\"blocks_analysis\": false") != std::string::npos && container.find("\"playable\": false") != std::string::npos &&
+		          feature_row(container, "container").find("\"status\": \"supported\"") != std::string::npos &&
+		          feature_row(container, "serialization").find("\"status\": \"unknown\"") != std::string::npos,
+		      "container inspection must allow analysis without promoting uninspected payloads");
+		extended_hog.pop_back();
+		const auto malformed_container = xl_compat::compatibility_json("mission.hog", extended_hog);
+		check(malformed_container.find("\"blocks_analysis\": true") != std::string::npos &&
+		          feature_row(malformed_container, "container").find("\"status\": \"blocked\"") != std::string::npos,
+		      "container signature must not conceal malformed payload bounds");
 		check(xl_compat::compatibility_json("D2X-XL stock.rl2", {}).find("\"detected\": false") != std::string::npos, "filename used as format evidence");
 		const std::string descriptor = " d2x-name = mission\n";
 		check(xl_compat::compatibility_json("mission.mn2", Bytes(descriptor.begin(), descriptor.end())).find("\"detected\": true") != std::string::npos, "XL descriptor not detected");

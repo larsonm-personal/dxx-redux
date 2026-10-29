@@ -597,9 +597,6 @@ class ModManager(
             Log.e(TAG, "Not enough space to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
             throw e
-        } catch (e: MissionZip.UnsupportedD2xxlHogException) {
-            Log.w(TAG, "Unsupported D2X-XL HOG in mission zip $displayName")
-            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
@@ -643,7 +640,7 @@ class ModManager(
         onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
         val scan = MissionZip.inspect(source)
         if (scan == null) {
-            if (MissionZip.containsUnsupportedD2xxlHog(source)) throw MissionZip.UnsupportedD2xxlHogException()
+            if (ArchiveFiles.isNonZipDistribution(source)) return null
             return importNestedPreferredMissionZip(source, onProgress)
         }
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
@@ -1725,57 +1722,12 @@ class ModManager(
             .any { launcherExtensionOf(it) in MISSION_SOUNDTRACK_EXTENSIONS }
 
     private fun hogHasSoundtrack(input: InputStream): Boolean {
-        val magic = input.readNBytesCompat(3)
-        if (magic.toString(Charsets.US_ASCII) != "DHF") return false
-        while (true) {
-            val nameBytes = input.readNBytesCompat(13)
-            if (nameBytes.isEmpty() || nameBytes.size != 13) return false
-            val lenBytes = input.readNBytesCompat(4)
-            if (lenBytes.size != 4) return false
-            val name = hogEntryName(nameBytes)
-            val size = leInt(lenBytes).toLong() and 0xffff_ffffL
-            if (launcherExtensionOf(name) in MISSION_SOUNDTRACK_EXTENSIONS) return true
-            input.skipFullyCompat(size)
+        var found = false
+        NativeHogArchive.visit(input, "soundtrack archive") { entry, _ ->
+            if (launcherExtensionOf(entry.name) in MISSION_SOUNDTRACK_EXTENSIONS) found = true
         }
+        return found
     }
-
-    private fun InputStream.readNBytesCompat(count: Int): ByteArray {
-        val out = ByteArray(count)
-        var total = 0
-        while (total < count) {
-            val read = read(out, total, count - total)
-            if (read < 0) break
-            total += read
-        }
-        return if (total == count) out else out.copyOf(total)
-    }
-
-    private fun InputStream.skipFullyCompat(count: Long) {
-        var remaining = count
-        while (remaining > 0) {
-            val skipped = skip(remaining)
-            if (skipped > 0) {
-                remaining -= skipped
-            } else if (read() >= 0) {
-                remaining--
-            } else {
-                return
-            }
-        }
-    }
-
-    private fun hogEntryName(nameBytes: ByteArray): String =
-        nameBytes
-            .takeWhile { it.toInt() != 0 }
-            .toByteArray()
-            .toString(Charsets.US_ASCII)
-            .trim()
-
-    private fun leInt(bytes: ByteArray): Int =
-        (bytes[0].toInt() and 0xff) or
-            ((bytes[1].toInt() and 0xff) shl 8) or
-            ((bytes[2].toInt() and 0xff) shl 16) or
-            ((bytes[3].toInt() and 0xff) shl 24)
 
     private fun launcherLeafNameOf(path: String): String = path.replace('\\', '/').substringAfterLast('/')
 
