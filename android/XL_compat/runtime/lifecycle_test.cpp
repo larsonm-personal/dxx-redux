@@ -43,6 +43,8 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #include "checkpoint_export.h"
 #include "../probe.h"
 #include "../lighting.h"
+#include "../tests/runtime_layout_fixture.h"
+#include "../producer_layout.h"
 #include <iterator>
 #include <iostream>
 #include <algorithm>
@@ -1564,11 +1566,13 @@ extern "C" void flicker_lights(void);
 #include "hog_test.h"
 #include "repair_test.h"
 #include "format34_test.h"
+#include "runtime_layout_test.h"
 #include "hxm_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-runtime-layouts-test")) return runtime_layout_test(argc, argv);
 	if (find_arg_value(argc, argv, "-hog-test")) return hog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-flicker-test")) return flicker_test(argc, argv);
 	if (find_arg_value(argc, argv, "-changing-light-test")) return changing_light_test(argc, argv);

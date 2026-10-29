@@ -368,7 +368,7 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 	std::cout << "XL generator behavior controls passed: selection/RNG, distance, timing, population, occupancy damage, allocation retry, difficulty and user modes\n";
 }
 
-static void write_generator_fixture(const std::filesystem::path &root)
+static void write_generator_fixture(const std::filesystem::path &root, int version = 23)
 {
 	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
 	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
@@ -409,6 +409,7 @@ static void write_generator_fixture(const std::filesystem::path &root)
 				append(-1, 2);
 				append(32767, 2);
 			}
+			if (version != 23) member.bytes = xl_test::runtime_layout_fixture(member.bytes, version).bytes;
 			const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(member.bytes));
 			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
 		}
@@ -431,16 +432,19 @@ static int generator_assignment_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
-		write_generator_fixture(root);
+		const auto layout_argument = find_arg_value(argc, argv, "-layout-version");
+		const int version = layout_argument ? std::atoi(layout_argument) : 23;
+		write_generator_fixture(root, version);
 		require(load_base_mission("genmap", error, sizeof(error)), error);
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
+		require(xl_source_level_version() == version, "Generator test loaded the wrong source layout");
 		require(xl_level_extensions_active() && Num_robot_centers == 3, "generator fixture did not load");
 		const auto verify = [] {
 			for (int native = 0; native < 3; ++native) {
 				const int segment = std::array<int, 3>{ 20, 22, 23 }[native];
-				const int expected = std::array<int, 3>{ 2, 0, 1 }[native];
+				const int expected = native;
 				require(Segment2s[segment].matcen_num == native && RobotCenters[native].segnum == segment && RobotCenters[native].robot_flags[0] == (1 << expected), "production generator contents or segment links swapped");
 				const int station = matcen_get_station_num(native);
 				require(station >= 0 && Station[station].segnum == segment, "production generator station link broken");
@@ -475,7 +479,7 @@ static int generator_assignment_test(int argc, char **argv)
 						require(spawned < 0, "multiple robots from one pending generator");
 						spawned = i;
 					}
-				if (spawned < 0 || Objects[spawned].id != std::array<int, 3>{ 2, 0, 1 }[native] || Objects[spawned].segnum != center.segnum)
+				if (spawned < 0 || Objects[spawned].id != native || Objects[spawned].segnum != center.segnum)
 					throw std::runtime_error("actual spawned robot differs: native=" + std::to_string(native) + " station=" + std::to_string(station) + " object=" + std::to_string(spawned) + " id=" + std::to_string(spawned < 0 ? -1 : Objects[spawned].id) + " segment=" + std::to_string(spawned < 0 ? -1 : Objects[spawned].segnum) + " expected_segment=" + std::to_string(center.segnum));
 			}
 		};

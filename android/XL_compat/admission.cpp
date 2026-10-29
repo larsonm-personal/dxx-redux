@@ -1,5 +1,6 @@
 #include "admission.h"
 #include "capacity.h"
+#include "producer_layout.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -33,8 +34,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
 		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
-		if (level.level_version == 23 && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
-		if (level.level_version == 23 && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
+		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
+		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "15") continue;
@@ -56,7 +57,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
-	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40");
+	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || modern_runtime_layout(level)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36, 23/40, 25/40 or 27/40");
+	limit(level.level_version >= 27 && std::any_of(level.segments.begin(), level.segments.end(), [](const Segment &segment) { return (segment.properties & (1 | 2 | 32 | 64)) != 0; }), "authored fog", "version-27 fog colors and distances require runtime application before admitting affected volumes");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	for (std::size_t i = 0; i < level.walls.size(); ++i) {
 		const auto &wall = level.walls[i];
@@ -79,39 +81,20 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(level.triggers.size() > DXX_XL_MAX_TRIGGERS, "trigger capacity", "more than 254 triggers");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
-	limit(!level.equipment.empty() && level.level_version != 23, "equipment layout", "equipment makers require the audited modern 23/40 profile");
+	limit(!level.equipment.empty() && !modern_runtime_layout(level), "equipment layout", "equipment makers require an audited modern 23/40, 25/40 or 27/40 profile");
 	for (std::size_t row = 0; row < level.equipment.size(); ++row)
 		for (unsigned id = 0; id < 50; ++id)
 			if ((std::uint32_t(level.equipment[row][id / 32]) & (std::uint32_t(1) << (id % 32))) &&
 			    (id == 7 || id == 8 || id == 9 || id == 24 || id == 26 || id == 27 || id >= 46))
 				result.push_back({ "equipment item", static_cast<int>(row), "powerup " + std::to_string(id) + " requires unsupported multiplayer, addon or release pickup behavior" });
-	std::vector<int> equipment_owners(level.equipment.size(), -1);
-	// XL AssignProducer uses the authored segment producer index, ignoring the
-	// redundant links in each disk row. Stock renumbers segments during mine load
-	std::vector<int> generator_owners(level.matcens.size(), -1);
+	const auto producers = producer_layout(level);
+	limit(producers.robots.size() != level.matcens.size(), "generator assignment", "robotmaker segments and disk rows differ after source initialization");
+	limit(producers.equipment.size() != level.equipment.size(), "equipment assignment", "equipment segments and disk rows differ after source initialization");
 	int stations = 0;
 	for (std::size_t i = 0; i < level.segments.size(); ++i) {
-		const auto &segment = level.segments[i];
-		if (segment.function >= 1 && segment.function <= 4) ++stations;
-		if (level.level_version == 23 && segment.function == 11) {
-			++stations;
-			if (segment.producer < 0 || static_cast<std::size_t>(segment.producer) >= equipment_owners.size())
-				result.push_back({ "equipment assignment", static_cast<int>(i), "equipment segment has no source record for its producer index" });
-			else if (equipment_owners[segment.producer] >= 0)
-				result.push_back({ "equipment assignment", static_cast<int>(i), "producer index is shared by multiple equipment segments" });
-			else equipment_owners[segment.producer] = static_cast<int>(i);
-		}
-		if (segment.function != 4) continue;
-		if (segment.producer < 0 || static_cast<std::size_t>(segment.producer) >= generator_owners.size())
-			result.push_back({ "generator assignment", static_cast<int>(i), "robotmaker segment has no source record for its producer index" });
-		else if (generator_owners[segment.producer] >= 0)
-			result.push_back({ "generator assignment", static_cast<int>(i), "producer index is shared by multiple robotmaker segments" });
-		else generator_owners[segment.producer] = static_cast<int>(i);
+		const int function = producer_function(level.segments[i]);
+		if ((function >= 1 && function <= 4) || (modern_runtime_layout(level) && function == 11)) ++stations;
 	}
-	for (std::size_t i = 0; i < generator_owners.size(); ++i)
-		if (generator_owners[i] < 0) result.push_back({ "generator assignment", static_cast<int>(i), "source record has no robotmaker segment with this producer index" });
-	for (std::size_t i = 0; i < equipment_owners.size(); ++i)
-		if (equipment_owners[i] < 0) result.push_back({ "equipment assignment", static_cast<int>(i), "source record has no equipment segment with this producer index" });
 	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
 	for (std::size_t i = 0; i < level.flicker_lights.size(); ++i)
 		if (level.flicker_lights[i][4] < 0) result.push_back({ "flicker delay", static_cast<int>(i), "negative delay cannot advance the authored flicker clock" });

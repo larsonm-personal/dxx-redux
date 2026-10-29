@@ -2,7 +2,9 @@
 
 The bounded reader now inspects 25/40 and 27/40 files. The standalone inspector
 streams its HOG input and reads one bounded level payload at a time; it can
-inspect the unchanged 196505200-byte Pumo HOG. Runtime admission remains gated.
+inspect the unchanged 196505200-byte Pumo HOG. Subsequent
+[canonical runtime controls](runtime-layouts.md) qualify bounded translation;
+independent feature gates still reject every Pumo level.
 These results establish the serialized requirements, not playable missions.
 
 ## Source and format changes
@@ -81,18 +83,22 @@ behavior was changed by correcting the oracle.
 ## Remaining Pumo dependencies
 
 The new inventory removes noncanonical geometry from Pumo's known requirements.
-It does not remove the runtime layout gate or any independent feature gate.
+The subsequent runtime tranche removes the canonical layout gate while retaining
+independent feature gates.
 Every level requires sound/effect objects; thirteen have particles and three
 have lightning. Twelve contain unsupported property combinations. The campaign
 also uses skyboxes/outdoor regions, effect targets, message/sound/countdown and
 other extended actions, wall variants, equipment and additional object types.
-Some reported equipment restrictions still come from the old 23/40-only profile.
+The refreshed inventory no longer reports the old 23/40-only equipment profile
+or incorrect authored-index assignment restrictions. Eleven levels require
+version-27 authored fog application.
 Custom HXM, POG, WAV, MSG, SND and INI resources need actual ownership, decoding,
 application and transition tests; their presence is not implementation evidence.
 
-Next, qualify canonical 25/27 runtime translation and persistence, then implement
-the authored visibility/effect/event/resource dependencies in that order where
-they interact. Original campaigns remain human playtesting work. No autonomous
+Canonical 25/27 runtime translation and persistence now have
+[separate controls](runtime-layouts.md). Next implement the authored
+visibility/effect/event/resource dependencies in that order where they interact.
+Original campaigns remain human playtesting work. No autonomous
 3D navigation or mission-name exceptions are involved.
 
 ## Validation scope

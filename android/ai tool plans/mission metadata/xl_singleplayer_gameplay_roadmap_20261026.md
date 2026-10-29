@@ -288,8 +288,18 @@ finish original-mission qualification
     inventory retains three level failures and one ambiguous archive. The
     [layout evidence](../../XL_compat/evidence/modern-layouts.md) also corrects
     an older light-index source adapter and documents the deliberate unsigned
-    encoded-count interpretation. Runtime layout activation/persistence, authored
-    fog, effect/audio ownership, event actions and resources remain next.
+    encoded-count interpretation. Runtime layout activation/persistence is covered
+    below; authored fog, effect/audio ownership, event actions and resources remain.
+
+37. Canonical 25/27 runtime: normal loading preserves compiled geometry, textures,
+    objects, events and owned lighting. Native gameplay/disk controls and all 87
+    Android transition/checkpoint/save/stock checks pass. The expanded producer
+    comparison corrects an earlier initialization omission: geometry-order makers
+    replace stale serialized indices before row assignment. Equipment startup,
+    boss selection and saved identities use the corrected mapping. See
+    [runtime-layout evidence](../../XL_compat/evidence/runtime-layouts.md).
+    Noncanonical geometry and authored fog volumes remain gated. Pumo's original
+    levels retain effect/audio, environment, event, wall and resource requirements.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

@@ -21,7 +21,7 @@ struct Category {
 };
 const Category categories[] = {
 	{ "container", "Archive and descriptor dialect", "Shared DHF/D2X readers support native mounting and Android import, catalogs and music; gameplay requires supported features and owned resources", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
-	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 15/34, 17/36 and 23/40 layouts after feature checks; 25/40 and 27/40 are inspected but not admitted", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
+	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 15/34, 17/36, 23/40, 25/40 and 27/40 layouts after geometry, feature and resource checks", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; XL 2047 walls, stock 255; XL source-sized object pools up to 32768 slots, stock 1000; XL 254 triggers, stock 100; other widening unfinished", "XL wall, trigger and object identities, allocation, authored actions and persistence have bounded runtime controls. Other tables and concurrent animation limits remain independent requirements; a readable file can still exceed engine limits." },
 	{ "segments", "Segment physics, properties and ownership", "XL boss destination groups supported with neutral ownership; environment and team ownership require separate checks", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. Group identity constrains boss destinations independently of walls." },
 	{ "walls", "Wall types and flags", "Separate XL doorway behavior for types 0..7; extended types and wide flags remain gated", "Wall types and flags control doors, barriers and other surfaces. Admitted XL doorway decisions preserve actor keys, signed cloak values and closing-door visibility. Activation, animation and original-mission qualification require their separate evidence." },
@@ -44,10 +44,10 @@ const Category categories[] = {
 	{ "scoped_sounds", "Mission WAV effects and sound banks", "Opt-in imported-D1 WAV path implemented; playback unqualified; scoped banks unsupported", "Sound effects are distinct from music. A mission sound bank can suppress external WAV lookup. Names, scope, sample conversion, playback and cleanup must be verified for the selected game." },
 	{ "scoped_music", "Mission playlists and ordinal music", "SNG and nested music paths exist; XL playlist and secret-level precedence unqualified", "Music selection can depend on HOG options, mission playlists and signed level ordinals. Finding or preserving an audio file does not prove that the intended track plays or stops on transition." },
 	{ "scoped_models", "Mission models and model skins", "ASE infrastructure exists; scoped aliases and skins unqualified; OOF unsupported", "Model format, model-number mapping and skin ownership are separate requirements. A skin must resolve in the owning model scope rather than borrowing a same-named file from another mission." },
-	{ "companion_lighting", "LGT and CLR lighting companions", "Owned level-named LGT overrides feed D2 emitters; 23/40 embedded texture colors replace CLR; other D2 CLR profiles, malformed or foreign companions remain rejected", "Level-named LGT and CLR files describe texture brightness and colors. They are not HAM definitions or proof of embedded level lighting; their values, precedence and renderer use must be checked separately." },
+	{ "companion_lighting", "LGT and CLR lighting companions", "Owned level-named LGT overrides feed D2 emitters; 23/40, 25/40 and 27/40 embedded texture colors replace CLR; other D2 CLR profiles, malformed or foreign companions remain rejected", "Level-named LGT and CLR files describe texture brightness and colors. They are not HAM definitions or proof of embedded level lighting; their values, precedence and renderer use must be checked separately." },
 	{ "package_options", "Mission configuration and presentation options", "Packaged INI, wallpapers and extended briefing options unqualified", "Recognizing packaged configuration does not authorize executing it. Each supported option needs bounded parsing, explicit semantics, resource dependencies and restoration on mission changes." },
 	{ "distribution_archive", "Distribution archive extraction", "ZIP, 7z and RAR readers exist; codec and original-package extraction require verification", "The downloaded archive is separate from the mission HOG. Recognizing a 7z catalog does not prove its compression methods can be decoded. Extraction must preserve owned paths and pass byte, integrity and collision checks before mission resources can be evaluated." },
-	{ "geometry", "Explicit side geometry", "Version-25/27 corner slots and deleted vertices are inspected; new geometry is not admitted", "Newer levels store their side corners explicitly and can contain triangular or degenerate sides. These require correct rendering, collision and portal behavior, not just a reader that skips the extra bytes." },
+	{ "geometry", "Explicit side geometry", "Version-25/27 canonical four-corner sides use the native geometry; reordered, shortened sides and deleted vertices remain gated", "Newer levels store their side corners explicitly and can contain triangular or degenerate sides. These require correct rendering, collision and portal behavior, not just a reader that skips the extra bytes." },
 	{ "fog", "Fog volumes and settings", "Version-27 RGB and distance records are preserved for inspection; authored fog rendering remains unqualified", "Water, lava, light fog and dense fog select separate settings. Fog affects visibility and can matter to gameplay. Reading its colors and distances does not establish correct rendering." },
 };
 struct Evidence {
@@ -74,21 +74,21 @@ std::vector<CountedFeature> counted_features()
 		{ "opacity_walls", "Wall opacity records", "Experimental pilot; nonzero serialized values are not proof of material parity", "partial", "These walls contain nonzero serialized opacity values. Their presence is not proof of a particular transparency, collision or visibility behavior." },
 		{ "chromatic_vertices", "Colored vertices", "Implemented in OpenGL builds; rendered-scene and campaign parity require qualification", "partial", "These vertices contain authored color channels that are not all equal. The count describes stored lighting data, not proof of correctly rendered colors." },
 		{ "attached_trigger_count", "Object-attached triggers", "XL object events unsupported", "blocked", "Object-attached triggers hold actions linked to objects. A declared count is not trusted until the corresponding records and references are validated." },
-		{ "equipment_count", "Equipment generators", "Bounded modern 23/40 item generation, authored toggles and disk/rewind state implemented", "partial", "Equipment makers use authored powerup contents, independent timing and ordinary pickups. Legacy layouts, addon/multiplayer items, expanded data and original-mission qualification remain separate requirements." },
+		{ "equipment_count", "Equipment generators", "Bounded modern 23/40, 25/40 and 27/40 item generation, authored toggles and disk/rewind state implemented", "partial", "Equipment makers use authored powerup contents, independent timing and ordinary pickups. Legacy layouts, addon/multiplayer items, expanded data and original-mission qualification remain separate requirements." },
 		{ "trigger_switches", "Wall trigger enable/disable actions", "Immediate wall targets implemented; effect-object targets unsupported", "supported", "Enable and disable actions change linked wall triggers, including the raw reference count on master triggers. This count excludes object-attached actions." },
 		{ "delayed_wall_actions", "Delayed wall actions", "Positive and randomized delays implemented on supported wall actions", "supported", "Delayed wall actions retain the first activating actor and selected delay. Disabling suspends pending work; permanent actions can rearm after execution." },
 		{ "stateful_trigger_flags", "Permanent, alternate and autoplay wall actions", "Supported actions retain flag transitions and scheduling state across saves", "supported", "Permanent actions rearm, alternating actions switch to their opposite after execution, and autoplay actions start from frame processing. Unsupported actions remain blocked independently." },
 		{ "segment_groups", "Authored segment groups", "Singleplayer XL boss destination groups supported with neutral ownership", "supported", "Boss destination setup stays within its home segment's authored group even across otherwise passable connections. Group labels do not grant team ownership or qualify an original mission." },
 		{ "player_resource_actions", "Shield-damage and energy-drain wall actions", "Default singleplayer XL shield units, energy percentages, resource bounds and lethal continuation implemented", "supported", "Authored wall actions change local player resources directly, including through masters and timers. Negative values replenish; combat protections do not suppress these actions. Direct object actions, optional ship scaling/recharge and multiplayer remain unqualified." },
 		{ "spawn_points", "Wall spawn-point actions", "Singleplayer authored spawn transforms, death/respawn, named SPAWN markers and saved state implemented", "supported", "These actions configure destinations used after death without moving the player immediately. Linked destinations cycle across the XL spawn table. This count excludes object-attached actions.", "Controlled source, engine and Android tests cover this feature. Original missions, multiplayer and route analysis need separate qualification" },
-		{ "repair_centers", "Shield repair centers", "17/36 and 23/40 singleplayer repair rate, cap, cue timing and source restoration implemented", "blocked", "Repair centers replenish the local player's shields up to the initial shield level. The default XL rate is 11 units per second; Redux retains its separate rate.", "Audited 17/36 and 23/40 default-ship profiles. 15/33 and 15/34 repair, optional ship/producer settings, multiplayer and original-mission qualification remain separate requirements" },
+		{ "repair_centers", "Shield repair centers", "17/36 and modern 23/40, 25/40 and 27/40 singleplayer repair rate, cap, cue timing and source restoration implemented", "blocked", "Repair centers replenish the local player's shields up to the initial shield level. The default XL rate is 11 units per second; Redux retains its separate rate.", "Audited 17/36 and modern default-ship profiles. 15/33 and 15/34 repair, optional ship/producer settings, multiplayer and original-mission qualification remain separate requirements" },
 	};
 }
 void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 {
 	features.push_back({ "keyed_closed_walls", "Keyed closed walls", "XL actor-specific blue/red key passage and ordinary closed-wall visibility implemented", "supported", "Players with the exactly matching blue or red key can pass these closed walls. Gold and combined key masks do not enable this rule; nonplayers and actorless queries retain closed-wall behavior.", "Destination blocking and boost restrictions still apply. This is separate from door opening; multiplayer and original-mission qualification remain gated", static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &wall) { return wall.type == 5 && (wall.keys == 2 || wall.keys == 4); })) });
 	features[19].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.function == 2; }));
-	if (v.level_version == 23 || (v.level_version == 17 && v.game_version == 36)) features[19].present_status = "supported";
+	if (modern_runtime_layout(v) || (v.level_version == 17 && v.game_version == 36)) features[19].present_status = "supported";
 	features[16].count = static_cast<int>(std::count_if(v.segments.begin(), v.segments.end(), [](const Segment &segment) { return segment.group != -1; }));
 	features[17].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return player_resource_action(action.type); }));
 	features[18].count = static_cast<int>(std::count_if(v.triggers.begin(), v.triggers.end(), [](const Trigger &action) { return action.type == 28; }));
@@ -140,10 +140,10 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 		features[6].limitations = "Weapons and actorless visibility/path queries retain ordinary wall behavior; blocked actors can leave. Original mission qualification and multiplayer remain separate requirements";
 		features[5].present_status = "supported";
 		features[5].support = "Modern singleplayer lava motion, volume/contact damage, turbulence, scrape impulses and persistent timing implemented";
-		features[5].limitations = "23/40 profile with default fluid physics. Water/lava combinations retain water motion and lava damage. Source non-volumetric rendering does not tint lava-only boundaries. Custom actors, independent unsupported requirements, optional volumetric fog and multiplayer remain unqualified; derived controls do not certify original missions";
+		features[5].limitations = "Modern default fluid physics. Water/lava combinations retain water motion and lava damage. Source non-volumetric rendering does not tint lava-only boundaries. Version-27 authored fog, custom actors, independent unsupported requirements, optional volumetric fog and multiplayer remain unqualified; derived controls do not certify original missions";
 		features[4].present_status = "supported";
 		features[4].support = "Modern singleplayer water motion, stock robot combat, robot/item generation, material boundaries and source restoration implemented";
-		features[4].limitations = "23/40 profile with default fluid physics and non-volumetric colored boundaries. Custom robot definitions, multiplayer and optional volumetric fog remain unqualified. Derived fixture checks do not qualify an original mission or campaign";
+		features[4].limitations = "Modern default fluid physics and non-volumetric colored boundaries. Version-27 authored fog, custom robot definitions, multiplayer and optional volumetric fog remain unqualified. Derived fixture checks do not qualify an original mission or campaign";
 	}
 	features[8].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.type == 8; }));
 	features[9].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; }));
@@ -157,7 +157,7 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[11].limitations = "Delayed descendants retain event context and original actor identity; geometry work survives owner removal, while motion requires the original live actor. Boss object teleports retain owned destinations. Other extended actions/flags and player owners remain gated. Derived controls do not qualify an original mission";
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;
-	features[12].present_status = v.level_version == 23 ? "partial" : "blocked";
+	features[12].present_status = modern_runtime_layout(v) ? "partial" : "blocked";
 	for (const auto &section : v.sections)
 		if (section.name == "equipment") features[12].count = section.count;
 }
@@ -204,7 +204,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				summary = blockers.empty() ? "Detected features supported by OpenGL builds; assets checked on load, campaign unverified" : blocker_message(blockers);
 				rows[1].status = blockers.empty() ? "eligible" : "blocked";
 				rows[1].detail = "Admission uses detected requirements, not mission identity";
-				if (v.level_version >= 25) rows[1].detail += "; decoded explicit corners, signed 16-bit producer/value fields and applicable fog records; runtime layout remains unqualified";
+				if (v.level_version >= 25) rows[1].detail += "; canonical explicit corners and signed 16-bit producer/value fields retain source ownership; independent geometry, fog and gameplay requirements still apply";
 				rows[1].need += ", game data " + std::to_string(v.game_version);
 				rows[2].need = std::to_string(v.vertices.size()) + " vertices, " + std::to_string(v.segments.size()) + " segments, " + std::to_string(v.walls.size()) + " walls, " + std::to_string(v.objects.size()) + " objects, " + std::to_string(v.triggers.size()) + " triggers";
 				rows[3].need = "Segment functions and owner/group records present";
@@ -223,7 +223,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[28] = { std::to_string(fog_volumes) + " fog-bearing volumes; " + std::to_string(v.fog_settings.size()) + " authored fog settings",
 					         fog_volumes ? "partial" : "not_required",
 					         v.fog_settings.empty() ? "No serialized fog table in this layout; default source settings are separate from authored data" : "Four RGB byte triples and distance bytes in units of 20 retained; authored fog rendering is not implemented" };
-				if (fog_volumes && v.level_version >= 25) rows[28].status = "blocked";
+				if (fog_volumes && v.level_version >= 27) rows[28].status = "blocked";
 				rows[4].need = std::to_string(v.walls.size()) + " walls";
 				rows[5].need = std::to_string(v.triggers.size()) + " geometry triggers";
 				rows[6] = v.object_triggers ? Evidence{ "Decoded " + std::to_string(v.object_triggers) + " object triggers and owner references", features[11].present_status, features[11].limitations } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
@@ -247,6 +247,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				for (const auto &issue : blockers) {
 					std::size_t row = 13;
 					if (issue.feature == "serialization") row = 1;
+					else if (issue.feature == "authored fog") row = 28;
 					else if (issue.feature == "side_geometry" || issue.feature == "segment_geometry") row = 27;
 					else if (issue.feature.find("effect_") == 0) row = 17;
 					else if (issue.feature.find("segment") != std::string::npos) row = 3;

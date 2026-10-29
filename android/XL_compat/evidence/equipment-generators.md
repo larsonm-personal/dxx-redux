@@ -1,15 +1,19 @@
 # Modern equipment generators
 
-Bounded modern 23/40 equipment makers now use a separate XL runtime. Stock Redux
+Bounded modern 23/40, 25/40 and 27/40 equipment makers use a separate XL runtime. Stock Redux
 retains its existing fuel/robot producer path. This is feature evidence from
 controlled fixtures; no new original mission is qualified.
 
 ## Implemented behavior and bounds
 
-- Modern function 11 binds row i through the segment's authored producer index.
-  Redundant disk segment/station links remain visible and do not select the owner
+- Modern function 11 binds row i to the i-th equipment segment in geometry order.
+  Source initialization replaces serialized producer indices before row assignment;
+  raw indices and redundant disk links remain visible but do not select the owner.
+  This corrects the earlier authored-index claim; see the
+  [expanded initialization comparison](robot-generators.md#assignment-correction)
 - Initial enablement follows the combined producer list and the reference's
-  destructible-wall/object-target discovery, including its index and ID quirks
+  destructible-wall/object-target discovery, including its index and ID quirks.
+  The combined source list excludes reactors; native station links remain separate
 - Authored activation toggles enablement without resetting elapsed/pending state.
   Production waits three seconds times difficulty plus one, then half the morph
   clip. Occupancy resets the first delay; failed effect allocation retries it;
@@ -26,8 +30,8 @@ controlled fixtures; no new original mission is qualified.
   assignments bind the extension to its source. Validation precedes publication
 
 This profile retains existing capacities, ownership/environment, expanded data,
-unsupported payload and multiplayer gates. Equipment with modern water remains
-unqualified. Legacy equipment encodings and XL slow-motion/bullet-time pickups
+unsupported payload and multiplayer gates. Equipment with modern water has
+[separate combined controls](water-actors.md). Legacy equipment encodings and XL slow-motion/bullet-time pickups
 remain unsupported. The equipment checks do not establish full reference pickup,
 AI, rendering or campaign parity.
 
@@ -71,19 +75,28 @@ rows, relocates existing pickups and supplies authored wall/object controls.
 These changes do not qualify original Neptune.
 
 Derived HOG SHA256:
-ebf2d9080dde9740cf18dd9ee2da3a48ddde08c11cfdd3dc21214af8c9dd4e8b
+124aba8bfcf9dda63fbc5d18e08d6aa8316c50cc05ac2f4527ec1c99d3e220d9
 
 Descriptor SHA256:
 6a4ca565352f3fe1bdce3b3249672c5ad2a2844816ac87173f21d8110960f6d0
 
-Android acceptance passes 61/61 steps, including three capture/roundtrip cycles,
+The original 23/40 acceptance passed 61/61 steps, including three capture/roundtrip cycles,
 pending-phase disk restoration through stock, real energy pickup/replenishment
 and simultaneous robot/item production. Each roundtrip waits for actual worker
 completion before comparing the detached save byte-for-byte with its synchronous
 capture. Protected device files have identical before/after hashes. Only
 emulator-5554 was used.
 
-Run ID: ca1fd5f3787343319bf5b238247535de, elapsed 143894 ms.
+That historical run used the previous fixture
+ebf2d9080dde9740cf18dd9ee2da3a48ddde08c11cfdd3dc21214af8c9dd4e8b.
+The corrected fixture places energy then ammo rows in geometry order and retains
+stale serialized producer indices to exercise initialization. Current rerun evidence
+is recorded with [modern runtime layouts](runtime-layouts.md).
+
+The corrected fixture passes all 61 steps on the current normal APK, including
+actual energy/ammo pickups, nine rewind restores and exact protected-file recovery.
+
+Historical run ID: ca1fd5f3787343319bf5b238247535de, elapsed 143894 ms.
 APK SHA256:
 5f8dd9e90d1a661e1610e51ffe6c1e235be379f670219155d2b9f71854a66599
 

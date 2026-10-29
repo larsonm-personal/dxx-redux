@@ -1,10 +1,19 @@
 file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp" loader_hash)
 file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/producers.cpp" producer_hash)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadgeometry.cpp" geometry_hash)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/descent.h" limits_hash)
 if(NOT loader_hash STREQUAL "01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c"
-   OR NOT producer_hash STREQUAL "c79263fcd98f686d99dfcc8f5e12aade60f70f75cc25544795fbab71c93318b6")
+   OR NOT producer_hash STREQUAL "c79263fcd98f686d99dfcc8f5e12aade60f70f75cc25544795fbab71c93318b6"
+   OR NOT geometry_hash STREQUAL "dd9335a95f69cb91a244ba6352ea381d4531fcddb1a12cf06c619d9ab6cf857f"
+   OR NOT limits_hash STREQUAL "f8c34f569c51541dc4d1e69ae3ac04972401b4c6cad99ac450bbc57a245f83e4")
     message(FATAL_ERROR "Generator reference differs from audited revision")
 endif()
 set(extracted "// Extracted XL source assignment and disk reader\n")
+foreach(function IN ITEMS CreateObjectProducer CreateProducer CreateRobotMaker CreateEquipmentMaker
+                          CreateGenerator)
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/producers.cpp"
+                          "bool CSegment::${function} (")
+endforeach()
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
                       "static int32_t AssignProducer (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/producers.cpp"
@@ -71,6 +80,9 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp"
                       "int32_t CObject::CollidePlayerAndObjProducer (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp"
                       "int32_t CObject::CollideRobotAndObjProducer (")
+# Remove a meaningless scalar return qualifier so the pinned math helper compiles with -Werror
+string(REPLACE "inline const fix CFixVector::Normalize" "inline fix CFixVector::Normalize"
+               extracted "${extracted}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_generators.h" CONTENT "${extracted}")
 add_executable(xl_generator_reference tests/reference_generators.cpp)
 target_link_libraries(xl_generator_reference PRIVATE xl_inventory)

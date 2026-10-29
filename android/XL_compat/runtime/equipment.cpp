@@ -1,4 +1,5 @@
 #include "equipment.h"
+#include "../producer_layout.h"
 #include "../inventory.h"
 #include "preview.h"
 #include <array>
@@ -79,17 +80,14 @@ void xl_equipment_load(const xl_compat::Inventory &level)
 	station_links.clear();
 	if (level.equipment.empty()) return;
 	for (int i = 0; i < Num_fuelcenters; ++i) station_links.push_back({ Station[i].Type, Station[i].segnum });
-	std::vector<int> stations;
-	for (std::size_t i = 0; i < level.segments.size(); ++i)
-		if ((level.segments[i].function >= 1 && level.segments[i].function <= 4) || level.segments[i].function == 11)
-			stations.push_back(static_cast<int>(i));
-	for (std::size_t i = 0; i < level.segments.size(); ++i) {
-		const auto &segment = level.segments[i];
-		if (segment.function != 11) continue;
-		const auto &row = level.equipment.at(segment.producer);
+	const auto producers = xl_compat::producer_layout(level);
+	for (std::size_t i = 0; i < producers.equipment.size(); ++i) {
+		const int segment_index = producers.equipment[i];
+		const auto &segment = level.segments[segment_index];
+		const auto &row = level.equipment.at(i);
 		// SetEquipmentMakerStates indexes the combined list by equipment row
-		const int enabled = !has_target(level, stations.at(segment.producer));
-		makers.push_back({ { -1, static_cast<int>(i), enabled, 0 }, { std::uint32_t(row[0]), std::uint32_t(row[1]) }, segment.owner });
+		const int enabled = !has_target(level, producers.stations.at(i));
+		makers.push_back({ { -1, segment_index, enabled, 0 }, { std::uint32_t(row[0]), std::uint32_t(row[1]) }, segment.owner });
 	}
 }
 extern "C" void xl_equipment_clear(void)

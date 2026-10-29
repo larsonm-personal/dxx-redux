@@ -651,19 +651,18 @@ void DynamicVertexLight::add(std::int32_t contribution, const Rgb *source_color,
 
 std::vector<float> vertex_brightness(const Inventory &level)
 {
-	if (!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || (level.level_version == 23 && level.game_version == 40)))
-		throw std::runtime_error("XL brightness requires audited 15/33, 15/34, 17/36 or 23/40 geometry");
-	// Pinned XL segment.cpp sideVertIndex; only the audited four-corner layout
-	constexpr unsigned corners[6][4] = {
-		{ 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 }
-	};
+	if (!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || modern_runtime_layout(level)))
+		throw std::runtime_error("XL brightness requires audited 15/33, 15/34, 17/36, 23/40, 25/40 or 27/40 geometry");
 	std::vector<float> brightness(level.vertices.size(), 0);
 	for (const auto &segment : level.segments) {
 		for (unsigned side = 0; side < 6; ++side) {
 			// Open portals have no serialized UVLs and do not contribute
 			if (segment.children[side] != -1 && segment.sides[side].wall == -1) continue;
 			for (unsigned corner = 0; corner < 4; ++corner) {
-				const int vertex = segment.vertices[corners[side][corner]];
+				const int slot = level.level_version >= 25 ? segment.sides[side].corners[corner] : classic_side_corners[side][corner];
+				if (slot == 255) continue;
+				if (slot < 0 || slot >= 8) throw std::runtime_error("Invalid XL brightness corner");
+				const int vertex = segment.vertices[slot];
 				const int light = segment.sides[side].uvl[corner * 3 + 2];
 				if (vertex < 0 || std::size_t(vertex) >= brightness.size() || light < 0 || light > 65535)
 					throw std::runtime_error("Invalid XL brightness geometry");

@@ -73,3 +73,19 @@ The [layout tranche](xl_layouts_25_27_20261028.md) also corrects an older unsign
 ReadByte source adapter for light indices. The production decoder intentionally
 retains unsigned encoded counts; the reference's signed-count anomaly is now
 measured and documented instead of hidden by the adapter.
+
+## Canonical runtime increment
+
+The [runtime tranche](xl_runtime_layouts_25_27_20261028.md) extends bounded normal
+loading to canonical 25/40 and 27/40 geometry, with independent feature gates.
+Native controls and the normal APK's 87-step transition/save/rewind test pass.
+It also found and corrected a generator source-comparison omission: source
+initialization renumbers makers before row assignment. The earlier authored-ID
+mapping and its parity claims are superseded in the maintained evidence.
+
+The refreshed original inventory retains every Pumo blocker except the canonical
+layout and incorrect equipment-assignment restrictions. All fourteen levels need
+sound/effects, eleven authored fog and twelve unsupported property combinations.
+Next build authored visibility/environment behavior before effect/audio resource
+consumers and their extended actions. PRs #185 and #186 are fully green; this
+increment is being finalized on xl_more_41_runtime_layouts.

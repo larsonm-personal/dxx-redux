@@ -1,4 +1,5 @@
 #include "layout_fixture.h"
+#include "runtime_layout_fixture.h"
 #include "../admission.h"
 #include "../compatibility.h"
 #include "../probe.h"
@@ -51,11 +52,13 @@ void contract()
 				const auto json = xl_compat::inventory_json(parsed);
 				check((json.find("\"fog_settings\"") != std::string::npos) == (version == 27), "Fog JSON presence differs from source layout");
 				check((json.find("\"corners\"") != std::string::npos) == (version >= 25), "Explicit corner JSON presence differs from source layout");
-				if (version >= 25) check(issue(xl_compat::runtime_blockers(parsed), "serialization"), "New decoder bypassed runtime qualification");
+				check(!issue(xl_compat::runtime_blockers(parsed), "serialization"), "Audited modern layout rejected by version alone");
+				check(!xl_compat::runtime_blockers(parsed).empty(), "Fog/damage/shape requirements bypassed by layout support");
+				if (version == 27) check(issue(xl_compat::runtime_blockers(parsed), "authored fog"), "Authored fog runtime requirement disappeared");
 				const auto report = xl_compat::compatibility_json("layout.rl2", fixture.bytes);
 				check(report.find("Level version " + std::to_string(version) + ", game data 40") != std::string::npos && report.find("detailed inspection rejected") == std::string::npos, "Browser lost decoded format evidence");
 				check(report.find("Explicit side geometry") != std::string::npos && report.find("Fog volumes and settings") != std::string::npos && report.find("1 fog-bearing volumes") != std::string::npos, "Browser omitted geometry or fog requirements");
-				if (version >= 25) check(report.find("runtime layout remains unqualified") != std::string::npos, "Browser implied new layout runtime support");
+				if (version >= 25) check(report.find("independent geometry, fog and gameplay requirements still apply") != std::string::npos, "Browser omitted independent runtime requirements");
 				++cases;
 			}
 		}
@@ -156,11 +159,97 @@ void write_fixture(const std::filesystem::path &directory)
 	raw.close();
 	std::filesystem::resize_file(directory / "oversized.rl2", padding);
 }
+
+void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory)
+{
+	std::ifstream input(path, std::ios::binary);
+	check(bool(input), "Cannot open runtime layout source");
+	const xl_compat::Bytes archive{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+	const auto members = xl_compat::read_hog(archive);
+	const auto found = std::find_if(members.begin(), members.end(), [](const auto &member) { return member.name == "neptunxl.rl2"; });
+	check(found != members.end(), "Missing audited geometry source");
+	auto base = found->bytes;
+	const auto source = xl_compat::inspect_level(base);
+	check(source.level_version == 23 && source.game_version == 40 && source.segments.size() == 93 && source.objects.size() == 49, "Unexpected runtime layout source");
+	const auto extras = source.game_offset - (source.vertices.size() + source.segments.size() * 7 + 910) * 13;
+	bool repair = false, protected_room = false;
+	for (std::size_t i = 0; i < source.segments.size(); ++i) {
+		if (!repair && source.segments[i].function == 1) {
+			base.at(extras + i * 13) = 2;
+			repair = true;
+		} else if (!protected_room && !source.segments[i].function && !source.segments[i].properties) {
+			base.at(extras + i * 13 + 4) = xl_compat::segment_no_damage;
+			protected_room = true;
+		}
+	}
+	check(repair && protected_room, "Source lacks repair/property control rooms");
+	xl_compat::Bytes output{ 'D', 'H', 'F' }, reader{ 'D', 'H', 'F' };
+	std::filesystem::create_directories(directory);
+	std::ofstream descriptor(directory / "rtlayout.mn2", std::ios::binary);
+	descriptor << "d2x-name = Derived XL layouts\nnum_levels = 4\nrt23.rl2\nrt25.rl2\nrt27.rl2\nfg27.rl2\n";
+	for (int version : { 23, 25, 27 }) {
+		auto fixture = version == 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
+		if (version >= 25) {
+			for (std::size_t i = 0; i < fixture.extras.size(); ++i) {
+				// Inert serialized fields must not alias a native station or robot maker
+				const int function = fixture.bytes.at(fixture.extras[i]);
+				xl_test::layout_patch(fixture.bytes, fixture.extras[i] + 1, function == 1 || function == 2 ? 499 : i % 2 ? 32767
+				                                                                                                         : 32768,
+				                      2);
+				xl_test::layout_patch(fixture.bytes, fixture.extras[i] + 3, i % 2 ? 32768 : 32767, 2);
+			}
+		}
+		const auto decoded = xl_compat::inspect_level(fixture.bytes);
+		check(xl_compat::runtime_blockers(decoded).empty(), "Derived canonical runtime fixture remains blocked");
+		const auto name = "rt" + std::to_string(version);
+		xl_test::hog_member(output, name + ".rl2", fixture.bytes, false);
+		xl_test::hog_member(reader, name + ".rl2", fixture.bytes, false);
+		for (const auto &member : members) {
+			if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
+			const auto extension = member.name.substr(8);
+			if (extension == ".rl2" || extension == ".mn2" || extension == ".lgt" || extension == ".clr") continue;
+			xl_test::hog_member(output, name + extension, member.bytes, false);
+			if (version == 27) xl_test::hog_member(output, "fg27" + extension, member.bytes, false);
+		}
+		xl_compat::Bytes lgt, clr;
+		for (int texture = 0; texture < 910; ++texture) {
+			xl_test::layout_put(lgt, texture == 302 ? (version - 22) * 16384 : 0, 4);
+			xl_test::layout_put(clr, 1, 1);
+			for (int channel : { 0, 0, 2147483647 }) xl_test::layout_put(clr, channel, 4);
+		}
+		xl_test::hog_member(output, name + ".lgt", lgt, false);
+		xl_test::hog_member(output, name + ".clr", clr, false);
+		if (version == 27) {
+			auto changed = fixture.bytes;
+			changed.at(fixture.fog) ^= 255;
+			xl_test::hog_member(output, "fg27.rl2", changed, false);
+			xl_test::hog_member(reader, "fg27.rl2", changed, false);
+			xl_test::hog_member(output, "fg27.lgt", lgt, false);
+			xl_test::hog_member(output, "fg27.clr", clr, false);
+			changed = fixture.bytes;
+			changed.at(fixture.extras[0] + 6) |= xl_compat::segment_water;
+			xl_test::hog_member(output, "badfog.rl2", changed, false);
+			changed = fixture.bytes;
+			const auto corners = fixture.corners[0][0];
+			std::rotate(changed.begin() + corners, changed.begin() + corners + 1, changed.begin() + corners + 4);
+			xl_test::hog_member(output, "badside.rl2", changed, false);
+			changed.at(corners) = 8;
+			xl_test::hog_member(output, "badcorn.rl2", changed, false);
+		}
+	}
+	std::ofstream hog(directory / "rtlayout.hog", std::ios::binary);
+	hog.write(reinterpret_cast<const char *>(output.data()), static_cast<std::streamsize>(output.size()));
+	std::ofstream oracle(directory / "runtime-reader.hog", std::ios::binary);
+	oracle.write(reinterpret_cast<const char *>(reader.data()), static_cast<std::streamsize>(reader.size()));
+	check(bool(hog) && bool(descriptor) && bool(oracle), "Cannot write derived runtime layout package");
+	std::cout << "Derived 23/25/27 canonical runtime package written; geometry unchanged, repair/property/light controls labeled\n";
+}
 } // namespace
 int main(int argc, char **argv)
 {
 	try {
-		if (argc == 3 && std::string(argv[1]) == "--write") write_fixture(argv[2]);
+		if (argc == 4 && std::string(argv[1]) == "--runtime") write_runtime_fixture(argv[2], argv[3]);
+		else if (argc == 3 && std::string(argv[1]) == "--write") write_fixture(argv[2]);
 		else if (argc == 3 && std::string(argv[1]) == "--age") std::filesystem::last_write_time(argv[2], std::filesystem::file_time_type::clock::now() - std::chrono::hours(24));
 		else {
 			check(argc == 1, "Unexpected modern layout arguments");
