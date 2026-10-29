@@ -1227,6 +1227,10 @@ int load_game_data(PHYSFS_file *LoadFile)
 			trigger_read(&Triggers[i], load_rewind_file);
 	}
 	for (i = 0; i < Num_triggers; ++i) {
+#ifdef DXX_XL_RUNTIME
+		/* Message and named-sound links are inert, not geometry references */
+		if (xl_loading_inert_trigger(Triggers[i].type)) continue;
+#endif
 		const int serialized_count = Triggers[i].num_links;
 		const level_link_repair_report repair = level_repair_legacy_links(
 			serialized_count, MAX_WALLS_PER_LINK, Triggers[i].seg, Triggers[i].side,

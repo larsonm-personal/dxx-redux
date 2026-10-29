@@ -116,7 +116,7 @@ static int level_message_test(int argc, char **argv)
 			check_trigger_sub(9, Player_num, 1);
 			message_expect(10, 100, "Repeat message");
 			const auto identity = std::string(xl_message_identity());
-			for (const auto &bad : std::array<std::array<const char *, 2>, 4>{ { { "nomsg.rl2", "Missing XL message table" }, { "badmsg.rl2", "Duplicate XL level text ID" }, { "badid.rl2", "is missing from" }, { "badsnd.rl2", "trigger_type" } } }) {
+			for (const auto &bad : std::array<std::array<const char *, 2>, 4>{ { { "nomsg.rl2", "Missing XL message table" }, { "badmsg.rl2", "Duplicate XL level text ID" }, { "badid.rl2", "is missing from" }, { "badsnd.rl2", "Missing XL named-audio resource" } } }) {
 				require(!xl_level_supported(bad[0], 0) && std::strstr(xl_level_rejection(), bad[1]) && load_level(bad[0]) != 0, "Message dependency rejection missing or unhelpful");
 				message_expect(10, 100, "Repeat message");
 				require(identity == xl_message_identity(), "Rejected level replaced active message resources");

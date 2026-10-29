@@ -21,6 +21,8 @@
 #include "changing_light.h"
 #include "flicker.h"
 #include "level_messages.h"
+#include "named_audio.h"
+#include "named_audio_state.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -118,7 +120,8 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 15;
+		block["schema"] = 16;
+		block["audio"] = xl_compat::named_audio_snapshot();
 		xl_message_state message{};
 		xl_message_state_get(&message);
 		block["message"] = { xl_message_identity(), message.id, message.duration, message.elapsed_ms };
@@ -202,9 +205,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 12u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 15 &&
+		require(saved.is_object() && saved.size() == 13u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 16 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
 		const auto &message = saved.at("message");
 		require(message.is_array() && message.size() == 4 && message[0].is_string() && message[0].get<std::string>() == xl_message_identity(), "Invalid XL message resource identity");
 		for (unsigned i = 1; i < 4; ++i)
@@ -376,6 +380,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_light_segment_restore(light_states.data(), static_cast<int>(light_states.size()), 1);
 		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);
 		xl_message_restore(&message_state, 1);
+		xl_compat::restore_named_audio(saved.at("audio"), true);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
 		xl_repair_restore(repair.get<std::int64_t>(), 1);

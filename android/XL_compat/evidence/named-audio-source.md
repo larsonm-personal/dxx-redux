@@ -1,8 +1,10 @@
 # Named-audio source contracts and original resource closure
 
-Action 30 remains gated. These tests establish the behavior and resource inputs
-for its eventual runtime; they do not play sound, restore a live voice, or
-qualify an original mission.
+Action 30 remained gated in this source-only increment. These tests establish
+the behavior and resource inputs; they do not play sound, restore a live voice,
+or qualify an original mission. The subsequent
+[owned playback implementation](named-audio-runtime.md) has separate output and
+persistence evidence, with its remaining support boundaries recorded there.
 
 ## Executed source
 

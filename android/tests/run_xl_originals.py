@@ -42,6 +42,7 @@ CORE_TESTS = (
         "xl_changing_lights",
         "xl_flickers",
         "xl_level_messages",
+        "xl_named_audio_runtime",
         "xl_level_text_reference",
         "xl_extended_hog",
         "xl_wide_walls",
@@ -95,6 +96,8 @@ CAMPAIGN_TESTS = {name for name in CORE_TESTS if name.startswith("xl_normal_")} 
     "xl_route_checkpoint_probe",
 }
 FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
+    "xl_audio_voice_contract",
+    "xl_audio_mixer_reference",
     "xl_modern_layout_contract",
     "xl_inspect_stream_contract",
     "xl_hog_contract",
@@ -457,6 +460,7 @@ def main():
             "-DBUILD_TESTING=ON",
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
             "-DXL_FOG_GPU_TESTS=" + ("ON" if args.fast else "OFF"),
+            "-DXL_AUDIO_MIXER_TESTS=" + ("ON" if args.fast else "OFF"),
             *["-D" + key + "=" + str(value) for key, value in parameters.items()],
         ]
     )

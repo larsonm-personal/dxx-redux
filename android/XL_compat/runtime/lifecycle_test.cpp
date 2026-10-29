@@ -14,6 +14,11 @@
 #include <cstring>
 // Parse JSON types before engine headers select byte packing on MSVC
 #include <nlohmann/json.hpp>
+#include "named_audio.h"
+#include "named_audio_state.h"
+#ifdef USE_SDLMIXER
+#include <SDL_mixer.h>
+#endif
 extern "C" {
 #include "physfsx.h"
 }
@@ -1569,11 +1574,14 @@ extern "C" void flicker_lights(void);
 #include "format34_test.h"
 #include "runtime_layout_test.h"
 #include "level_message_test.h"
+#include "named_audio_test.h"
 #include "hxm_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-named-audio-original")) return named_audio_original(argc, argv);
+	if (find_arg_value(argc, argv, "-named-audio-test")) return named_audio_test(argc, argv);
 	if (find_arg_value(argc, argv, "-pog-test")) return pog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-level-message-test")) return level_message_test(argc, argv);
 	if (find_arg_value(argc, argv, "-runtime-layouts-test")) return runtime_layout_test(argc, argv);

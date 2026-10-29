@@ -34,6 +34,8 @@
 #include "changing_light.h"
 #include "flicker.h"
 #include "level_messages.h"
+#include "named_audio_state.h"
+#include "named_audio_probe.h"
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -2236,6 +2238,8 @@ extern "C" char *game_introspect_get_state(void)
 		xl_message_state state{};
 		xl_message_state_get(&state);
 		j["xl_message"] = { { "id", state.id }, { "duration", state.duration }, { "elapsed_ms", state.elapsed_ms }, { "text", xl_message_text() }, { "alpha", xl_message_alpha() }, { "resource", xl_message_identity() }, { "draws", xl_message_draws() }, { "modals", xl_message_modal_shows() } };
+		j["xl_named_audio"] = xl_compat::named_audio_diagnostics();
+		j["xl_named_audio"]["output_probe"] = xl_named_audio_probe_diagnostics();
 		j["xl_message"]["drawn_id"] = xl_message_drawn_id();
 		j["xl_message"]["drawn_alpha"] = xl_message_drawn_alpha();
 	}

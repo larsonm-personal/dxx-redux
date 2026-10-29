@@ -13,6 +13,7 @@
 #include "changing_light.h"
 #include "flicker.h"
 #include "level_messages.h"
+#include "named_audio.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -527,6 +528,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_named_audio_clear();
 	xl_message_clear();
 	xl_fog_bind(nullptr);
 	xl_projectile_clear();
@@ -883,6 +885,12 @@ extern "C" const char *xl_preview_level_path(const char *filename)
 extern "C" int xl_loading_extended_triggers(void)
 {
 	return loading_extended_triggers;
+}
+
+extern "C" int xl_loading_inert_trigger(int type)
+{
+	// Every translated XL level has an active object-capacity scope while loading
+	return loading_object_capacity && (type == 29 || type == 30);
 }
 
 extern "C" int object_capacity(void)

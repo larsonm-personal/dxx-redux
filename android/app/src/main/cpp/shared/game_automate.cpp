@@ -35,6 +35,7 @@
 #include "hog_probe.h"
 #include "runtime_layout_probe.h"
 #include "level_message_probe.h"
+#include "named_audio_probe.h"
 #include "fog_probe.h"
 #include "pog_probe.h"
 #include "corona_probe.h"
@@ -7663,6 +7664,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled fog %s passed", s.value.c_str());
 #else
 				stop_script_fail("Fog probe requires Android D2");
+#endif
+			} else if (s.field == "xl_named_audio_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_named_audio_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled named audio %s passed", s.value.c_str());
+#else
+				stop_script_fail("Named audio probe requires Android D2");
 #endif
 			} else if (s.field == "xl_level_message_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
