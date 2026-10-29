@@ -43,6 +43,7 @@ class XlPreparedResources
 	xl_assets::ObjectDependencies &dependencies();
 	void install_hxm();
 	void install_pog();
+	void install_messages();
 	bool texture_brightness(int texture, int &brightness) const;
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 	int custom_model_radius(int model, int fallback) const;

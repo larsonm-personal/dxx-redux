@@ -1,0 +1,548 @@
+// Owned messages, actual modal/display, disk/rewind and stock isolation
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_level_messages",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived XL messages",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.source_level_version": 23,
+            "xl_message.id": 12,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 2,
+        "distance": 8,
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "wall",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 1,
+            "xl_message.duration": 100,
+            "xl_message.text": "Wall message\nSecond line",
+            "xl_message.drawn_id": 1,
+            "xl_message.drawn_alpha": {
+                "gte": 0.99,
+            },
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "replace",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 2,
+            "xl_message.drawn_id": 2,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "short",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 3,
+            "xl_message.drawn_id": 3,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 0,
+            "xl_message.drawn_id": 0,
+            "xl_message.text": "",
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "modal",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu_subtitle": "Modal message - close to continue",
+            "xl_message.modals": 1,
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "OK",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "time_paused": false,
+            "xl_message.id": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "object",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 11,
+            "xl_message.duration": 100,
+            "xl_message.drawn_id": 11,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "prepare",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+            "xl_message.id": 0,
+            "xl_message.resource": "",
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "stock",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "time_paused": true,
+            "xl_pilot.source_level_version": 23,
+            "xl_message.id": 10,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.source_level_version": 27,
+            "xl_message.id": 12,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "wall",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 1,
+            "xl_message.drawn_id": 1,
+            "xl_message.drawn_alpha": {
+                "gte": 0.99,
+            },
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "prepare",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_level_message_probe",
+        "value": "wall",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_message.id": 1,
+            "xl_message.drawn_id": 1,
+            "xl_message.drawn_alpha": {
+                "gte": 0.99,
+            },
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+]

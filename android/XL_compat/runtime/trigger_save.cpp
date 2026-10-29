@@ -20,6 +20,7 @@
 #include "projectile.h"
 #include "changing_light.h"
 #include "flicker.h"
+#include "level_messages.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -117,7 +118,10 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 14;
+		block["schema"] = 15;
+		xl_message_state message{};
+		xl_message_state_get(&message);
+		block["message"] = { xl_message_identity(), message.id, message.duration, message.elapsed_ms };
 		block["flickers"] = json::array();
 		for (int i = 0; i < xl_flicker_count(); ++i) {
 			xl_flicker_state state{};
@@ -198,9 +202,15 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 11u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 14 &&
+		require(saved.is_object() && saved.size() == 12u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 15 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		const auto &message = saved.at("message");
+		require(message.is_array() && message.size() == 4 && message[0].is_string() && message[0].get<std::string>() == xl_message_identity(), "Invalid XL message resource identity");
+		for (unsigned i = 1; i < 4; ++i)
+			require(message[i].is_number_integer() && (!message[i].is_number_unsigned() || message[i].get<std::uint64_t>() <= INT64_MAX) && message[i].get<std::int64_t>() >= 0 && (i == 3 || message[i].get<std::int64_t>() <= INT32_MAX), "Invalid XL message state integer");
+		const xl_message_state message_state{ message[3].get<std::int64_t>(), message[1].get<int>(), message[2].get<int>() };
+		require(xl_message_restore(&message_state, 0), "Invalid XL message state or authored duration");
 		const auto &flickers = saved.at("flickers");
 		require(flickers.is_array() && flickers.size() == static_cast<std::size_t>(xl_flicker_count()), "Invalid XL flicker count");
 		std::vector<xl_flicker_state> flicker_states(flickers.size());
@@ -365,6 +375,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 1);
 		xl_light_segment_restore(light_states.data(), static_cast<int>(light_states.size()), 1);
 		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);
+		xl_message_restore(&message_state, 1);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
 		xl_repair_restore(repair.get<std::int64_t>(), 1);

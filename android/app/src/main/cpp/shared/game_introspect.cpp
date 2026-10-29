@@ -32,6 +32,7 @@
 #include "fog_probe.h"
 #include "changing_light.h"
 #include "flicker.h"
+#include "level_messages.h"
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -2229,6 +2230,13 @@ extern "C" char *game_introspect_get_state(void)
 		j["xl_fog"] = { { "active", xl_fog_active() != 0 }, { "preparations", fog.preparations }, { "volume_passes", fog.volume_passes }, { "composite_passes", fog.composite_passes }, { "boundaries", fog.boundaries }, { "context_rebuilds", fog.context_rebuilds }, { "failures", fog.failures }, { "width", fog.width }, { "height", fog.height }, { "depth_bits", fog.depth_bits }, { "types", fog.last_types }, { "depth_copy_bits", fog.depth_copy_bits }, { "depth_copy_value", fog.depth_copy_value }, { "gpu_probe", json::parse(xl_fog_probe_result()) }, { "scene_probe", { { "completed", scene.completed != 0 }, { "passed", scene.passed != 0 }, { "pixels", scene.pixels }, { "covered", scene.covered }, { "changed", scene.changed }, { "types", scene.types }, { "samples", scene.samples }, { "depth_bits", scene.depth_bits }, { "max_error", scene.max_error }, { "error", ogl_xl_fog_scene_error() }, { "center_depth", scene.center_depth }, { "center_caps", scene.center_caps }, { "max_length", scene.max_length }, { "center_before", scene.center_before }, { "center_after", scene.center_after }, { "center_expected", scene.center_expected } } } };
 	}
 	j["xl_pilot"]["flicker_count"] = xl_flicker_count();
+	{
+		xl_message_state state{};
+		xl_message_state_get(&state);
+		j["xl_message"] = { { "id", state.id }, { "duration", state.duration }, { "elapsed_ms", state.elapsed_ms }, { "text", xl_message_text() }, { "alpha", xl_message_alpha() }, { "resource", xl_message_identity() }, { "draws", xl_message_draws() }, { "modals", xl_message_modal_shows() } };
+		j["xl_message"]["drawn_id"] = xl_message_drawn_id();
+		j["xl_message"]["drawn_alpha"] = xl_message_drawn_alpha();
+	}
 	j["xl_pilot"]["flickers"] = json::array();
 	for (int i = 0; i < xl_flicker_count(); ++i) {
 		xl_flicker_state state{};

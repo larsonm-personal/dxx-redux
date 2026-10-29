@@ -1,4 +1,5 @@
 #include "resource_validation.h"
+#include "level_messages.h"
 #include "../model_geometry.h"
 #include <cstring>
 #include <algorithm>
@@ -351,6 +352,7 @@ struct XlPreparedResources::State {
 	bool installed = false;
 	HxmChanges changes;
 	xl_compat::MissionLightingCompanions lighting;
+	std::shared_ptr<const xl_compat::MessageResources> messages;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 
@@ -395,6 +397,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	if (mission_base->models.size() != std::size_t(N_polygon_models))
 		throw std::runtime_error("model definition registry changed since mission initialization");
 	state = std::make_unique<State>(*mission_base);
+	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
@@ -430,6 +433,11 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 void XlPreparedResources::install_pog()
 {
 	if (!xl_pog_install(state->pog.get())) throw std::runtime_error("cannot allocate prepared POG bitmap storage");
+}
+
+void XlPreparedResources::install_messages()
+{
+	xl_compat::install_messages(state->messages);
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
@@ -496,6 +504,7 @@ void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPre
 {
 	prepared_level = level_filename;
 	prepared_resources = std::move(resources);
+	prepared_resources->install_messages();
 }
 
 extern "C" void xl_discard_prepared_resources(void)
