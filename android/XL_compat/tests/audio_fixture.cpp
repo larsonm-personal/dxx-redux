@@ -97,6 +97,52 @@ Bytes actions(const Bytes &original)
 	return bytes;
 }
 
+Bytes constant_wave(int left, int right)
+{
+	auto bytes = wave(44100, 2, 22050);
+	for (unsigned frame = 0; frame < 22050; ++frame) {
+		xl_test::layout_patch(bytes, 44 + frame * 4, std::uint16_t(left), 2);
+		xl_test::layout_patch(bytes, 46 + frame * 4, std::uint16_t(right), 2);
+	}
+	return bytes;
+}
+
+void scopes(const Bytes &level, const std::vector<xl_compat::Member> &members, const std::filesystem::path &directory)
+{
+	Bytes archive{ 'D', 'H', 'F' };
+	for (const std::string name : { "scope23", "scope27" }) {
+		xl_test::hog_member(archive, name + ".rl2", name == "scope27" ? xl_test::runtime_layout_fixture(level, 27).bytes : level, false);
+		xl_test::hog_member(archive, name + ".snd", text("1:shared.wav\n2:scoped.wav\n3:mission.wav\n4:tiny.wav"), false);
+		for (const auto &member : members) {
+			if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
+			const auto extension = member.name.substr(8);
+			if (extension == ".rl2" || extension == ".mn2" || extension == ".snd") continue;
+			xl_test::hog_member(archive, name + extension, member.bytes, false);
+		}
+	}
+	xl_test::hog_member(archive, "shared.wav", constant_wave(1000, -2000), false);
+	xl_test::hog_member(archive, "tiny.wav", wave(44100, 2, 1), false);
+	write(directory / "xscope.hog", archive);
+	write(directory / "xscope.mn2", text("d2x-name = Derived XL sound scopes\nnum_levels = 3\nscope23.rl2\nscope23.rl2\nscope27.rl2\nnum_secrets = 1\nscope23.rl2,1\n"));
+	const auto root = directory.parent_path() / "mods" / "xscope" / "sounds";
+	std::filesystem::create_directories(root);
+	write(root / "scoped.wav", constant_wave(8000, -4000));
+	write(root / "mission.wav", constant_wave(1500, -1500));
+	write(root / "shared.wav", text("Malformed lower-priority mission file must not shadow the HOG"));
+	for (const std::string folder : { "level00", "level01", "level02", "slevel01" }) {
+		std::filesystem::create_directories(root / folder);
+		const int left = folder == "level01" ? 2500 : folder == "level02" ? -3000
+		                                          : folder == "slevel01"  ? 11000
+		                                                                  : 12345;
+		const int right = folder == "level01" ? -7500 : folder == "level02" ? 9000
+		                                            : folder == "slevel01"  ? -5000
+		                                                                    : -12345;
+		write(root / folder / "scoped.wav", constant_wave(left, right));
+		write(root / folder / "shared.wav", text("Malformed lower-priority level file must not shadow the HOG"));
+	}
+	std::cout << "Derived XL sound scopes: HOG, normal/secret ordinals, duplicate filenames and mission fallback\n";
+}
+
 void fixture(const char *original, const std::filesystem::path &directory)
 {
 	std::ifstream input(original, std::ios::binary);
@@ -140,6 +186,7 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 2\naudio23.rl2\naudio27.rl2\n"));
 	write(directory / "xschange.hog", changed);
 	write(directory / "xschange.mn2", text("d2x-name = Changed XL sounds\nnum_levels = 1\naudio23.rl2\n"));
+	scopes(level, members, directory);
 	std::cout << "Derived XL sound packages: synthetic stereo/mono PCM, wall/object actions, 23/27 layouts and rejection controls\n";
 }
 } // namespace

@@ -1,7 +1,8 @@
-// Source contracts for the still-gated named-audio runtime, not a playback test
+// Pinned named-audio source contracts; actual output has separate runtime tests
 #include "hog.h"
 #include "inventory.h"
 #include "level_text.h"
+#include "named_sound.h"
 #include "wave.h"
 #include <algorithm>
 #include <array>
@@ -160,6 +161,7 @@ struct {
 	} game;
 	struct {
 		const char *szSounds[2]{ "mission", "level" };
+		char szLevel[32]{};
 	} mods;
 	struct {
 		const char *szCache = "cache";
@@ -202,6 +204,7 @@ Mix_Chunk *Mix_LoadWAV_RW(Mix_Chunk *input, int close)
 	++loads;
 	return load_failure ? nullptr : input;
 }
+void Mix_FreeChunk(Mix_Chunk *) {}
 Mix_Chunk *LoadAddonSound(const char *, uint8_t *);
 class CAudioChannel
 {
@@ -364,6 +367,58 @@ void source_resources()
 	std::cout << "Named audio source: " << cases << " resource precedence/cache controls\n";
 }
 
+void source_scopes()
+{
+	using namespace reference;
+	unsigned cases = 0;
+	for (int ordinal : { -9999, -12, -1, 1, 2, 99, 100, 9999 }) {
+		for (const char *authored : { "voice.wav", "35", "035:unused", "waterfall", "0", "steam" }) {
+			const auto paths = xl_compat::named_sound_paths("custom", authored, ordinal);
+			const std::string root = "mods/custom/sounds/";
+			const std::string level = root + LevelFolder(ordinal);
+			for (int mask = 0; mask < 8; ++mask) {
+				reset();
+				gameFolders.mods.szSounds[0] = root.c_str();
+				gameFolders.mods.szSounds[1] = level.c_str();
+				const auto name = xl_compat::named_sound_filename(authored);
+				if (mask & 1) files[{ "hog", name }] = { 100 };
+				if (mask & 2) files[{ level, name }] = { 200 };
+				if (mask & 4) files[{ root, name }] = { 300 };
+				const auto *selected_chunk = LoadAddonSound(authored, nullptr);
+				std::string candidate;
+				for (std::size_t i = 0; i < paths.size(); ++i) {
+					const ResourceKey key = i == 0 ? ResourceKey{ "hog", paths[i] } : ResourceKey{ i == 1 ? level : root, paths[i].substr((i == 1 ? level : root).size()) };
+					if (files.count(key)) {
+						candidate = paths[i];
+						break;
+					}
+				}
+				require(bool(selected_chunk) == !candidate.empty(), "Named sound folder availability differs from XL");
+				if (selected_chunk) {
+					const auto source_path = selected.first == "hog" ? selected.second : selected.first + selected.second;
+					require(candidate == source_path, "Named sound folder precedence or ordinal differs from XL");
+				}
+				// The source unload releases alias caches before the next level's lookup
+				FreeAddonSounds();
+				for (const auto &addon : addonSounds) require(!addon.pChunk, "Source unload retained an addon from the prior level");
+				++cases;
+			}
+		}
+	}
+	gameFolders.mods.szSounds[0] = "mission";
+	gameFolders.mods.szSounds[1] = "level";
+	for (const auto &invalid : { std::string{}, std::string(".."), std::string("other/mission"), std::string("a\\b"), std::string("a:b"), std::string("a\n") }) {
+		bool rejected = false;
+		try {
+			(void) xl_compat::named_sound_paths(invalid, "sound.wav", 1);
+		} catch (const std::exception &) {
+			rejected = true;
+		}
+		require(rejected, "Named audio accepted an unsafe mission path component");
+	}
+	std::cout << "Named audio scopes: " << cases << " source lookup/ordinal/cache comparisons and six invalid identities\n";
+}
+
 void source_lifecycle()
 {
 	using namespace reference;
@@ -512,6 +567,7 @@ int main(int argc, char **argv)
 	try {
 		source_actions();
 		source_resources();
+		source_scopes();
 		source_lifecycle();
 		if (argc == 5) original(argv[1], std::stoi(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]));
 		else require(argc == 1, "Expected no arguments or original HOG and exact level/action/WAV counts");

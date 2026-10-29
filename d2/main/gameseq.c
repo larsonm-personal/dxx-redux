@@ -991,7 +991,11 @@ void LoadLevel(int level_num,int page_in_textures)
 		load_ret = load_level("__missing_startup_test_level__");
 	else
 #endif
+#ifdef DXX_XL_RUNTIME
+	load_ret = xl_preview_load_level_at(level_name, level_num);
+#else
 	load_ret = load_level(level_name);		//actually load the data from disk!
+#endif
 
 	if (load_ret) {
 #ifdef DXX_XL_RUNTIME
@@ -1656,7 +1660,7 @@ void EnterSecretLevel(void)
 		Next_level_num = Last_secret_level;
 
 #ifdef DXX_XL_RUNTIME
-	if (Next_level_num < 0 && !xl_level_supported(Secret_level_names[-Next_level_num - 1], 0)) {
+	if (Next_level_num < 0 && !xl_level_supported_at(Secret_level_names[-Next_level_num - 1], 0, Next_level_num)) {
 		nm_messagebox("Cannot enter XL secret level", 1, TXT_OK, "%s", xl_level_rejection());
 		if (Game_wind) window_set_visible(Game_wind, 1);
 		reset_time();
@@ -1871,7 +1875,7 @@ void AdvanceLevel(int secret_flag)
 		Next_level_num = Current_level_num + 1;
 
 #ifdef DXX_XL_RUNTIME
-		if (!xl_level_supported(Level_names[Next_level_num - 1], Game_mode & GM_MULTI)) {
+		if (!xl_level_supported_at(Level_names[Next_level_num - 1], Game_mode & GM_MULTI, Next_level_num)) {
 			nm_messagebox("Cannot continue to XL level", 1, TXT_OK, "%s", xl_level_rejection());
 			if (Game_wind) window_close(Game_wind);
 			return;

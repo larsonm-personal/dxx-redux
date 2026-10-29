@@ -1,5 +1,6 @@
 #include "named_audio.h"
 #include "named_audio_state.h"
+#include "audio_resource.h"
 #include "preview.h"
 #include "doorway.h"
 #include "../audio_voice.h"
@@ -86,7 +87,7 @@ struct AudioLock {
 std::string owned_bytes(std::string name, std::size_t limit)
 {
 	if (PHYSFSEXT_locateCorrectCase(name.data()) != 0)
-		throw std::runtime_error("Missing XL named-audio resource in the mission HOG: " + name + "; external sound directories are not implemented");
+		throw std::runtime_error("Missing XL named-audio resource in the mission HOG: " + name);
 	if (!mission_owns_resource_archive(PHYSFS_getRealDir(name.c_str())))
 		throw std::runtime_error("XL named-audio resource is shadowed outside the selected mission HOG: " + name);
 	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(name.c_str()), PHYSFS_close);
@@ -138,7 +139,7 @@ void mix_output(int, void *stream, int length, void *)
 
 namespace xl_compat
 {
-std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level, const Inventory &inventory)
+std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal)
 {
 	auto resources = std::make_shared<NamedAudioResources>();
 	const auto add = [&](const Trigger &action, int key) {
@@ -177,20 +178,21 @@ std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level
 			action.sample = previous->second;
 			continue;
 		}
-		const auto wav = owned_bytes(filename, max_wave_bytes);
+		const auto resource = load_audio_resource(row->text, level, ordinal);
+		const auto &wav = resource.bytes;
 		WaveChannels pcm;
 		try {
 			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(wav.data()), wav.size());
 		} catch (const std::exception &error) {
-			throw std::runtime_error("Invalid XL named sound " + filename + ": " + error.what());
+			throw std::runtime_error("Invalid XL named sound " + resource.path + ": " + error.what());
 		}
 		bytes += pcm.samples.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("Named-audio bank exceeds 128 MiB of source storage");
 		action.sample = unsigned(resources->sources.size());
 		by_name.emplace(filename, action.sample);
 		resources->sources.push_back(std::move(pcm));
-		resources->names.push_back(filename);
-		identity += ":" + filename + ":" + picosha2::hash256_hex_string(wav);
+		resources->names.push_back(resource.path);
+		identity += ":" + resource.path + ":" + picosha2::hash256_hex_string(wav);
 	}
 	resources->identity = picosha2::hash256_hex_string(identity);
 	// Complete output conversion and duration validation before publishing a bank

@@ -7,7 +7,8 @@ foreach(
           "include/piggy.h|4ecf8941d1c81166051e74c38de877f45557d163ad0c4f92d9bcdeee21033a34"
           "main/textdata.cpp|d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c"
           "audio/audio.cpp|2add6d6d234d2d382ae895c8e49397ce2071510c5d8a2010b50461c144e2cea0"
-          "gameio/loadsounds.cpp|997970aafdfbea0b8cba5c248ce9f8cfd559f0d94f329d2b3b7e4ea2c39b28e2")
+          "gameio/loadsounds.cpp|997970aafdfbea0b8cba5c248ce9f8cfd559f0d94f329d2b3b7e4ea2c39b28e2"
+          "main/gamefolders.cpp|1368f6dd0b6d3ec70149dff82930c46382ddd3ef9d4d2cb6f84390691370e666")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -53,6 +54,9 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadsounds.cpp"
                       "int32_t FindAddonSound (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadsounds.cpp"
                       "Mix_Chunk *LoadAddonSound (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadsounds.cpp"
+                      "void FreeAddonSounds (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamefolders.cpp" "char* LevelFolder (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/audio/audio.cpp"
                       "fix CAudioChannel::Duration (")
 foreach(

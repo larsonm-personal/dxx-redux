@@ -123,16 +123,20 @@ static int named_audio_original(int argc, char **argv)
 		require(load_base_mission(find_arg_value(argc, argv, "-named-audio-original"), error, sizeof(error)), error);
 		const auto expected = [&](const char *name) { const char *value = find_arg_value(argc, argv, name); require(value && std::atoi(value) > 0, "Original audio audit requires exact positive coverage counts"); return std::atoi(value); };
 		const int expected_levels = expected("-audio-levels"), expected_actions = expected("-audio-actions"), expected_waves = expected("-audio-waves");
+		const int expected_ambient = find_arg_value(argc, argv, "-audio-ambient") ? expected("-audio-ambient") : 0;
+		const int expected_ambient_waves = expected_ambient ? expected("-audio-ambient-waves") : 0;
 		for (int rate : { 44100, 48000 }) {
 			xl_named_audio_backend_close();
 			Mix_CloseAudio();
 			require(Mix_OpenAudio(rate, AUDIO_S16SYS, 2, 1024) == 0, "Cannot open original resource output profile");
 			SDL_PauseAudio(1);
 			require(xl_named_audio_backend_open(rate, AUDIO_S16SYS, 2), "Cannot initialize original resource output profile");
-			int levels = 0, actions = 0;
+			int levels = 0, actions = 0, ambient = 0;
 			std::set<std::string> names;
+			nlohmann::json ambient_files = nlohmann::json::object();
 			for (int index = 0; index < Last_level - Last_secret_level; ++index) {
 				const char *name = index < Last_level ? Level_names[index] : Secret_level_names[index - Last_level];
+				const int ordinal = index < Last_level ? index + 1 : -(index - Last_level + 1);
 				std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(name), PHYSFS_close);
 				const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
 				require(length > 0 && length < 128 * 1024 * 1024, "Original level exceeds the resource audit bound");
@@ -140,15 +144,45 @@ static int named_audio_original(int argc, char **argv)
 				require(PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) == length, "Cannot read original audio level");
 				const auto source = xl_compat::inspect_level(bytes);
 				const auto count = std::count_if(source.triggers.begin(), source.triggers.end(), [](const auto &action) { return action.type == 30; }) + std::count_if(source.object_trigger_records.begin(), source.object_trigger_records.end(), [](const auto &record) { return record.action.type == 30; });
-				xl_compat::install_named_audio(xl_compat::prepare_named_audio(name, source));
+				xl_compat::install_named_audio(xl_compat::prepare_named_audio(name, source, ordinal));
 				const auto prepared = xl_compat::named_audio_diagnostics();
 				require(prepared.at("actions") == count && prepared.at("voices").empty() && prepared.at("rate") == rate, "Original production audio preparation lost authored actions or started playback");
 				for (const auto &filename : prepared.at("files")) names.insert(filename.get<std::string>());
 				actions += int(count);
+				if (expected_ambient) {
+					for (const auto &object : source.objects) {
+						if (object.type != 20 || object.id != 2 || object.render != 13) continue;
+						require(object.render_data.size() == 42, "Original ambient resource has an unexpected payload");
+						std::string sound;
+						for (unsigned i = 0; i < 39 && object.render_data[i]; ++i) {
+							const int byte = object.render_data[i];
+							require(byte >= 32 && byte < 127, "Original ambient filename is not ASCII");
+							sound += char(byte >= 'A' && byte <= 'Z' ? byte + 'a' - 'A' : byte);
+						}
+						const auto resource = xl_compat::load_audio_resource(sound + ".wav", name, ordinal);
+						const auto pcm = xl_compat::decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource.bytes.data()), resource.bytes.size());
+						xl_compat::Bytes samples;
+						samples.reserve(pcm.samples.size() * 2);
+						for (const auto value : pcm.samples) {
+							samples.push_back(static_cast<std::uint8_t>(value));
+							samples.push_back(static_cast<std::uint8_t>(std::uint16_t(value) >> 8));
+						}
+						ambient_files[resource.path] = { { "sha256", picosha2::hash256_hex_string(resource.bytes) }, { "pcm_sha256", picosha2::hash256_hex_string(samples) }, { "rate", pcm.rate }, { "channels", pcm.source_channels }, { "frames", pcm.samples.size() / pcm.source_channels } };
+						++ambient;
+					}
+				}
 				++levels;
 			}
 			require(levels == expected_levels && actions == expected_actions && names.size() == unsigned(expected_waves), "Original production audio coverage differs");
 			std::cout << "Original production audio preparation: " << rate << " Hz, " << levels << " levels, " << actions << " actions, " << names.size() << " owned WAVs\n";
+			if (expected_ambient) {
+				require(ambient == expected_ambient && ambient_files.size() == unsigned(expected_ambient_waves), "Original ambient resource coverage differs");
+				const auto receipt = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / ("ambient-resources-" + std::to_string(rate) + ".json");
+				std::ofstream output(receipt, std::ios::binary);
+				output << ambient_files.dump(2) << '\n';
+				require(bool(output), "Cannot record original ambient resource receipt");
+				std::cout << "Original ambient resources: " << ambient << " objects, " << ambient_files.size() << " owned scoped WAVs; spatial runtime remains gated\n";
+			}
 		}
 		xl_named_audio_clear();
 		std::cout << "Original audio resources prepared; level admission, audible original events and campaign remain unqualified\n";

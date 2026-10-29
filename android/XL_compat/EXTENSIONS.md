@@ -72,9 +72,18 @@ pause and exact saved playheads. Resource preparation rejects missing, malformed
 or foreign SND/WAV files before installation. Restored voices wait for an
 unpaused gameplay frame. See [named-audio runtime evidence](evidence/named-audio-runtime.md)
 for actual SDL/Android sample comparisons, volume controls, disk/rewind and stock
-transitions. External sound folders, ambient sound objects and shared-channel
+transitions. Ambient sound objects and shared-channel
 priority under mixed exhaustion remain unqualified. The browser retains a
 resource-dependent partial row; this does not qualify the Pumo campaign.
+
+Owned mission, normal-level and secret-level sound folders now preserve XL
+resource priority and use the incoming signed mission ordinal, including repeated
+level filenames. Native and all 65 Android publication/output/persistence checks
+pass. The original Pumo resource audit resolves its 644 ambient objects to 41
+owned external WAVs, with independent PCM comparisons. See
+[sound-folder evidence](evidence/audio-scopes.md). This supplies resources for
+the future ambient runtime; spatial playback, global addons and the remaining
+external replacement consumers are still unqualified.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

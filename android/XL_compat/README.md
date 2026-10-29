@@ -685,4 +685,7 @@ cooldowns, autoplay, pause, volume and level/Redux cleanup have independent
 controls. See [named-audio evidence and commands](evidence/named-audio-runtime.md).
 The public Linux owner requires `--gpu --audio`; Windows requires the portable
 contracts, with actual native output covered by the private runtime owner.
-External sound folders and ambient sound objects are separate requirements.
+The [sound-folder increment](evidence/audio-scopes.md) adds owned mission,
+normal-level and secret-level resources, with actual Android output and saved
+scope controls. Global addons and ambient sound objects remain separate
+requirements.

@@ -1,0 +1,92 @@
+#include "audio_resource.h"
+#include "../named_sound.h"
+#include "../wave.h"
+#include <SDL.h>
+#include <memory>
+#include <stdexcept>
+#ifdef __ANDROID__
+#include "android_mission_assets.h"
+#endif
+extern "C" {
+#include "inferno.h"
+#include "physfsx.h"
+#include "mission.h"
+}
+
+namespace xl_compat
+{
+namespace
+{
+int incoming_ordinal(const char *level, int ordinal)
+{
+	if (!Current_mission || !level || !*level) throw std::runtime_error("XL sound folders require an active mission and level");
+	if (ordinal) {
+		if (ordinal > Last_level || ordinal < Last_secret_level ||
+		    SDL_strcasecmp(level, ordinal < 0 ? Secret_level_names[-ordinal - 1] : Level_names[ordinal - 1]))
+			throw std::runtime_error("XL sound folder ordinal does not match the incoming mission level");
+		return ordinal;
+	}
+	int found = 0;
+	for (int candidate = Last_secret_level; candidate <= Last_level; ++candidate) {
+		if (!candidate) continue;
+		const char *name = candidate < 0 ? Secret_level_names[-candidate - 1] : Level_names[candidate - 1];
+		if (SDL_strcasecmp(level, name)) continue;
+		if (found) throw std::runtime_error("XL sound folders require an explicit incoming level number for a repeated level filename");
+		found = candidate;
+	}
+	if (!found) throw std::runtime_error("XL sound folders require a level listed in the selected mission descriptor");
+	return found;
+}
+
+bool owned_path(std::string &path, bool archive)
+{
+	if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return false;
+	const char *origin = PHYSFS_getRealDir(path.c_str());
+	bool owned = archive ? mission_owns_resource_archive(origin) != 0 : mission_owns_resource_directory(origin) != 0;
+#ifdef __ANDROID__
+	if (!archive && *android_mission_assets_key()) {
+		char resolved[PATH_MAX];
+		owned = android_mission_assets_find_owned_file(path.c_str(), resolved, sizeof(resolved)) != 0;
+		if (owned) path = resolved;
+	}
+#endif
+	if (!owned) throw std::runtime_error(std::string("XL named-audio resource is shadowed outside the selected mission ") + (archive ? "HOG: " : "sound folders: ") + path);
+	PHYSFS_Stat info;
+	if (!PHYSFS_stat(path.c_str(), &info) || info.filetype != PHYSFS_FILETYPE_REGULAR)
+		throw std::runtime_error("XL sound resource is not a regular file: " + path);
+	return true;
+}
+
+AudioResource read_audio(std::string path)
+{
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(path.c_str()), PHYSFS_close);
+	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
+	if (length < 0 || std::uint64_t(length) > max_wave_bytes)
+		throw std::runtime_error("Invalid bounded XL sound resource: " + path);
+	std::string bytes(std::size_t(length), '\0');
+	if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length)
+		throw std::runtime_error("Truncated XL sound resource: " + path);
+	return { std::move(path), std::move(bytes) };
+}
+} // namespace
+
+AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal)
+{
+	auto filename = named_sound_filename(authored);
+	// Archive resources do not depend on an ordinal, including diagnostic loads
+	if (owned_path(filename, true)) return read_audio(std::move(filename));
+	std::string mission = mission_resource_archive();
+	const auto slash = mission.find_last_of("/\\");
+	if (slash != std::string::npos) mission.erase(0, slash + 1);
+	const auto dot = mission.find_last_of('.');
+	if (dot == std::string::npos || SDL_strcasecmp(mission.c_str() + dot, ".hog"))
+		throw std::runtime_error("XL sound folders require an owned mission HOG identity");
+	mission.resize(dot);
+	const auto paths = named_sound_paths(mission, authored, incoming_ordinal(level, ordinal));
+	for (std::size_t i = 1; i < paths.size(); ++i) {
+		auto path = paths[i];
+		if (owned_path(path, false)) return read_audio(std::move(path));
+	}
+	throw std::runtime_error("Missing XL sound " + filename + "; checked the mission HOG, " + paths[1] + " and " + paths.back() + "; global addon sounds require a qualified owned installation");
+}
+} // namespace xl_compat
