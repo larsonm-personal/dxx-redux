@@ -37,6 +37,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "u_mem.h"
 #ifdef DXX_XL_RUNTIME
 #include "resource_validation.h"
+#include "pog_resources.h"
 #endif
 #include "iff.h"
 #include "dxxerror.h"
@@ -248,6 +249,9 @@ typedef struct DiskSoundHeader {
 } __pack__ DiskSoundHeader;
 
 void free_bitmap_replacements();
+#ifdef DXX_XL_RUNTIME
+static void xl_pog_bank_will_change(void);
+#endif
 void free_d1_tmap_nums();
 
 /*
@@ -562,6 +566,9 @@ void piggy_init_pigfile(char *filename)
 	int data_size;
 #endif
 
+#ifdef DXX_XL_RUNTIME
+	xl_pog_bank_will_change();
+#endif
 #ifdef __ANDROID__
 	android_mod_bitmaps_reset();
 #endif
@@ -707,6 +714,9 @@ void piggy_new_pigfile(char *pigname)
 	    && !Bitmap_replacement_data) // no need to reload: no bitmaps were altered
 		return;
 
+#ifdef DXX_XL_RUNTIME
+	xl_pog_bank_will_change();
+#endif
 #ifdef __ANDROID__
 	android_mod_bitmaps_reset();
 #endif
@@ -2004,8 +2014,15 @@ int piggy_is_substitutable_bitmap( char * name, char * subst_name )
  *  2) From descent.pig (for loading d1 levels)
  */
 
+#ifdef DXX_XL_RUNTIME
+static void xl_pog_clear_installed(void);
+#endif
+
 void free_bitmap_replacements()
 {
+#ifdef DXX_XL_RUNTIME
+	xl_pog_clear_installed();
+#endif
 	d1_in_d2_reset_bitmap_replacements();
 	if (Bitmap_replacement_data) {
 		d_free(Bitmap_replacement_data);
@@ -2063,6 +2080,20 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 	file = PHYSFSX_openReadBuffered(name);
 	if (!file)
 		return !PHYSFSX_exists(name, 1);
+#ifdef DXX_XL_RUNTIME
+	if (xl_resource_texture_scope_enabled()) {
+		char error[256];
+		struct xl_pog_resources *resources = xl_pog_prepare(file, Num_bitmap_files, error, sizeof(error));
+		PHYSFS_close(file);
+		if (!resources) return 0;
+		for (i = 0; i < xl_pog_count(resources); ++i) {
+			const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
+			flags[entry->index] = entry->flags;
+		}
+		xl_pog_free(resources);
+		return 1;
+	}
+#endif
 	length = PHYSFS_fileLength(file);
 	if (length < 12 || PHYSFSX_readInt(file) != MAKE_SIG('G','O','P','D') || PHYSFSX_readInt(file) != 1)
 		goto invalid_flags;

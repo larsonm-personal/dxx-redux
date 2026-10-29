@@ -49,6 +49,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../probe.cpp"
                 "${xl_runtime_dir}/../lighting.cpp"
                 "${xl_runtime_dir}/../level_text.cpp"
+                "${xl_runtime_dir}/../pog.cpp"
                 "${xl_runtime_dir}/../scoped_sound.cpp"
                 "${xl_runtime_dir}/../wave.cpp"
                 "${xl_runtime_dir}/../companion_lighting.cpp"
@@ -58,6 +59,8 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/visibility.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
+                "${xl_runtime_dir}/pog_resources.cpp"
+                "${xl_runtime_dir}/texture_pixels.cpp"
                 "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")
     if(NOT (DXX_XL_DEVELOPER_TESTS AND xl_target STREQUAL "dxx-redux-d2-headless-metadata"))
         target_sources(${xl_target} PRIVATE "${xl_runtime_dir}/start.cpp")
@@ -76,6 +79,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/runtime_layout_probe.cpp"
                     "${xl_runtime_dir}/level_message_probe.cpp"
                     "${xl_runtime_dir}/fog_probe.cpp"
+                    "${xl_runtime_dir}/pog_probe.cpp"
                     "${xl_runtime_dir}/corona_probe.cpp")
     endif()
 endforeach()
@@ -87,7 +91,7 @@ target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_di
 target_sources(
     ${DXX_TARGET_PREFIX}arch_ogl
     PRIVATE "${xl_runtime_dir}/corona_renderer.c" "${xl_runtime_dir}/water_renderer.c"
-            "${xl_runtime_dir}/fog_renderer.cpp")
+            "${xl_runtime_dir}/fog_renderer.cpp" "${xl_runtime_dir}/pog_renderer.cpp")
 target_compile_features(${DXX_TARGET_PREFIX}arch_ogl PRIVATE cxx_std_17)
 if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
     # Export earned private checkpoints with Android's real source-definition trailer

@@ -74,13 +74,17 @@ semantics. See [wall-key evidence](evidence/wall-key-bytes.md), including all 90
 Android controls. Pumo loses 73 key-value rejections across nine levels, while
 every level retains independent blockers. Wider wall flags remain gated.
 
-The package audit also found that true-color POG headers pass indexed bounds
-validation even though their RGBA/frame semantics are unimplemented. Pumo has
-26 such replacements in five POGs; original Robotech Arena has nineteen. The
-runtime can misinterpret these resources, so prior mechanics tests must not be
-used as texture evidence. See [the reproduced defect and next requirements](evidence/truecolor-pog-admission.md).
-HXM and INI application also require package-level qualification beyond the
-level inventory. This audit adds no new gameplay or resource admission.
+Owned single-frame RGBA POG replacements now preserve source dimensions, pixels,
+alpha/key behavior and averages through native installation, GPU upload, collision
+and destructible-texture consumers. All 26 original Pumo replacements and Arena's
+nineteen match the pinned pixel reader and desktop merge shaders. All 58 Android
+GPU-readback, disk/rewind, context-loss and stock-transition steps pass. See
+[POG runtime evidence](evidence/truecolor-pog-runtime.md) for exact coverage and
+remaining animation, cockpit and renderer/settings limits. The
+[earlier defect](evidence/truecolor-pog-admission.md) remains a historical audit;
+its old mechanics checks were not texture evidence. HXM and INI application still
+require complete package qualification, and every Pumo level retains independent
+gameplay blockers. POG support alone does not admit or qualify the campaign.
 
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain

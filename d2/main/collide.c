@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "texture_pixels.h"
 #include "projectile.h"
 #include "fluids.h"
 #include "speed_boost.h"
@@ -688,7 +689,15 @@ int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, i
 					bm = rle_expand_texture(bm);
 			}
 
-			if (force_blowup_flag || (bm->bm_data[y*bm->bm_w+x] != TRANSPARENCY_COLOR)) {		//not trans, thus on effect
+			if (force_blowup_flag ||
+#ifdef DXX_XL_RUNTIME
+			    (xl_level_extensions_active() ? !xl_texture_pixel_transparency(tm, tmf >> 14, u, v) :
+#endif
+			    (bm->bm_data[y*bm->bm_w+x] != TRANSPARENCY_COLOR)
+#ifdef DXX_XL_RUNTIME
+			    )
+#endif
+			) {		//not trans, thus on effect
 				int vc,sound_num;
 				fix dest_size;
 

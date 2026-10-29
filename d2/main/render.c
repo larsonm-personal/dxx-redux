@@ -366,7 +366,8 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #endif
 
 #ifdef OGL
-	int use_alt_texmerge = GameArg.DbgAltTexMerge;
+	int use_alt_texmerge = GameArg.DbgAltTexMerge || GameBitmaps[Textures[tmap1].index].bm_type == BM_RGBA ||
+		(tmap2 && GameBitmaps[Textures[tmap2 & 0x3fff].index].bm_type == BM_RGBA);
 	if (use_alt_texmerge){
 		PIGGY_PAGE_IN(Textures[tmap1]);
 		bm = &GameBitmaps[Textures[tmap1].index];

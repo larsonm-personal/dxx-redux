@@ -666,3 +666,13 @@ a controlled authored-light face with actual corona draws.
 It does not navigate the level or establish uninterrupted playthrough or visual
 equivalence with the reference engine. D2 CLR overrides and multiplayer remain
 rejected. See the [tranche record](../ai%20tool%20plans/mission%20metadata/xl_konflict_tranche_20261025.md).
+
+# True-color POG acceptance
+
+The single-frame RGBA implementation has independent source conversion and
+desktop shader comparisons, original-resource installation, gameplay pixel
+consumers and normal Android lifecycle controls. See
+[the evidence and reusable commands](evidence/truecolor-pog-runtime.md) for
+exact scope, frame/cockpit rejection and original Pumo coverage. This does not
+qualify the Pumo campaign. The historical fixture results above retain their
+original scope.

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(dxx_xl_compat LANGUAGES CXX)
+project(dxx_xl_compat LANGUAGES C CXX)
 
 if(ANDROID)
     add_subdirectory(android)
@@ -14,6 +14,8 @@ add_library(
     mission_label.cpp
     admission.cpp
     level_text.cpp
+    pog.cpp
+    ../app/src/main/cpp/shared/bounded_rle.c
     wave.cpp
     companion_lighting.cpp
     scoped_sound.cpp)
@@ -34,8 +36,11 @@ else()
 endif()
 
 include(CTest)
-option(XL_FOG_GPU_TESTS "Build the public offscreen desktop fog renderer controls" OFF)
+option(XL_FOG_GPU_TESTS "Build the public offscreen desktop fog and POG renderer controls" OFF)
 if(BUILD_TESTING)
+    add_executable(xl_pog_test tests/pog_test.cpp)
+    target_link_libraries(xl_pog_test PRIVATE xl_inventory)
+    add_test(NAME xl_pog_contract COMMAND xl_pog_test)
     add_executable(xl_level_text_test tests/level_text_test.cpp)
     add_executable(xl_message_fixture tests/message_fixture.cpp)
     target_link_libraries(xl_message_fixture PRIVATE xl_inventory)
@@ -53,6 +58,31 @@ if(BUILD_TESTING)
         target_link_libraries(xl_fog_gpu_test PRIVATE OpenGL::OpenGL OpenGL::EGL GLEW::GLEW)
         add_test(NAME xl_fog_gpu COMMAND xl_fog_gpu_test)
         set_tests_properties(xl_fog_gpu PROPERTIES TIMEOUT 60)
+        find_path(XL_GPU_SDL_INCLUDE SDL.h PATH_SUFFIXES SDL REQUIRED)
+        find_path(XL_GPU_PHYSFS_INCLUDE physfs.h REQUIRED)
+        add_executable(
+            xl_pog_gpu_test
+            tests/pog_gpu_egl.cpp runtime/pog_renderer.cpp ../../d2/arch/ogl/ogl.c
+            ../../d2/arch/ogl/oglprog.c ../app/src/main/cpp/shared/ogl_shader_runtime.c)
+        target_include_directories(
+            xl_pog_gpu_test
+            PRIVATE ../../d2/include
+                    ../../d2/main
+                    ../../d2/arch/include
+                    ../../d2/arch/ogl
+                    runtime
+                    ../app/src/main/cpp/shared
+                    ${XL_GPU_SDL_INCLUDE}
+                    ${XL_GPU_PHYSFS_INCLUDE})
+        target_compile_definitions(xl_pog_gpu_test PRIVATE OGL OGL_MERGE DXX_XL_RUNTIME NDEBUG
+                                                           HAVE_LIBPNG)
+        # Link the production renderer's used functions without unrelated game systems
+        target_compile_options(xl_pog_gpu_test PRIVATE -ffunction-sections -fdata-sections)
+        target_link_options(xl_pog_gpu_test PRIVATE -Wl,--gc-sections)
+        target_link_libraries(xl_pog_gpu_test PRIVATE xl_inventory OpenGL::OpenGL OpenGL::GLU
+                                                      OpenGL::EGL GLEW::GLEW)
+        add_test(NAME xl_pog_gpu COMMAND xl_pog_gpu_test)
+        set_tests_properties(xl_pog_gpu PROPERTIES TIMEOUT 60)
     endif()
     add_executable(xl_fog_fixture tests/fog_fixture.cpp)
     target_link_libraries(xl_fog_fixture PRIVATE xl_inventory)
@@ -148,6 +178,7 @@ if(BUILD_TESTING)
         include(tests/reference_layouts.cmake)
         include(tests/reference_fog.cmake)
         include(tests/reference_level_text.cmake)
+        include(tests/reference_pog.cmake)
         include(tests/reference_named_audio.cmake)
         include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
@@ -717,6 +748,21 @@ if(BUILD_TESTING)
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/water-arena -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/water_arena.cmake)
         set_tests_properties(xl_water_arena PROPERTIES TIMEOUT 120)
+        if(TARGET xl_pog_reference)
+            set(pog_gpu_args)
+            if(TARGET xl_pog_gpu_test)
+                list(APPEND pog_gpu_args "-DGPU=$<TARGET_FILE:xl_pog_gpu_test>")
+            endif()
+            add_test(
+                NAME xl_pog_native
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_ARENA_HOG} -DDESCRIPTOR=${XL_ARENA_DESCRIPTOR}
+                    -DPUMO=${XL_PUMO_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DREFERENCE=$<TARGET_FILE:xl_pog_reference>
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pog-runtime ${pog_gpu_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/pog_runtime.cmake)
+            set_tests_properties(xl_pog_native PROPERTIES TIMEOUT 150)
+        endif()
     endif()
     if(XL_PREVIEW_LIFECYCLE AND XL_PILOT_LEVEL AND XL_STOCK_METADATA AND XL_RETAIL_DATA)
         add_test(

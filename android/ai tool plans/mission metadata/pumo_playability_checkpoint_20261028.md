@@ -51,11 +51,15 @@ or classification issues; only source/runtime evidence may remove their gates.
 Do not infer that a visual-looking effect is harmless to gameplay.
 
 Package resources add requirements outside that level-only table. Five POGs
-contain 26 true-color replacements whose RGBA/frame-strip semantics are not
-implemented and can currently be misinterpreted as indexed textures. Twelve
+contain 26 true-color replacements. The October 29 implementation now verifies
+their single-frame pixels, dimensions, installation and desktop shader output;
+Arena supplies normal Android disk/rewind/context/stock-transition controls.
+See [current POG evidence](../../XL_compat/evidence/truecolor-pog-runtime.md) for
+remaining restrictions. This closes the reproduced indexed-pixel interpretation
+gap for these original resources, without admitting Pumo's levels. Twelve
 HXMs and fifteen mission/level INIs also need complete application and transition
 qualification.
-See [resource admission evidence](../../XL_compat/evidence/truecolor-pog-admission.md).
+See the [earlier resource audit](../../XL_compat/evidence/truecolor-pog-admission.md).
 INI presence alone is not counted as a missing feature: audit the authored
 settings against source defaults and their actual consumers.
 

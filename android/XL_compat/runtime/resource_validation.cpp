@@ -12,6 +12,7 @@
 #include "picosha2.h"
 #include "asset_dependencies.h"
 #include "pog_resources.h"
+#include "pog_renderer.h"
 #include "companion_resources.h"
 #include "../inventory.h"
 #include "preview.h"
@@ -26,6 +27,7 @@ extern "C" {
 #include "dxxerror.h"
 #include "mission.h"
 #include "palette.h"
+#include "gauges.h"
 extern int Robot_replacements_loaded;
 }
 
@@ -222,25 +224,6 @@ void validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definition
 	}
 }
 
-void validate_pog(PHYSFS_file *file, const std::string &name)
-{
-	const auto length = PHYSFS_fileLength(file);
-	if (length < 12 || length > 64 * 1024 * 1024)
-		throw std::runtime_error("POG size is invalid: " + name);
-	std::vector<unsigned char> bytes(static_cast<std::size_t>(length));
-	if (PHYSFS_read(file, bytes.data(), 1, static_cast<PHYSFS_uint32>(bytes.size())) != length)
-		throw std::runtime_error("POG read failed: " + name);
-	// The shared bounded reader also understands D1 formats; D2 only installs DPOG v1
-	const unsigned char header[] = { 'D', 'P', 'O', 'G', 1, 0, 0, 0 };
-	d1_custom_validation_limits limits{};
-	limits.max_bitmaps = Num_bitmap_files;
-	limits.max_sounds = MAX_SOUND_FILES;
-	limits.rle_flag = BM_FLAG_RLE;
-	limits.rle_big_flag = BM_FLAG_RLE_BIG;
-	if (std::memcmp(bytes.data(), header, sizeof(header)) ||
-	    !d1_custom_validate_pigpog(bytes.data(), bytes.size(), &limits, nullptr, nullptr, nullptr))
-		throw std::runtime_error("POG bitmap indices, dimensions or encoded pixels are invalid: " + name);
-}
 } // namespace
 
 extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file)
@@ -424,9 +407,21 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	}
 	const auto pog_name = base + ".POG";
 	if (auto file = companion(pog_name)) {
-		validate_pog(file.get(), pog_name);
-		state->pog.reset(xl_pog_prepare(file.get()));
-		if (!state->pog) throw std::runtime_error("cannot prepare POG bitmap storage: " + pog_name);
+		char error[256]{};
+		state->pog.reset(xl_pog_prepare(file.get(), Num_bitmap_files, error, sizeof(error)));
+		if (!state->pog) throw std::runtime_error(pog_name + ": " + error);
+		for (int i = 0; i < xl_pog_count(state->pog.get()); ++i) {
+			const auto *entry = xl_pog_entry(state->pog.get(), i);
+			if (!entry->rgba) continue;
+			bool cockpit = false;
+			for (const auto &bitmap : cockpit_bitmap) cockpit = cockpit || bitmap.index == entry->index;
+			for (int gauge = 0; gauge < MAX_GAUGE_BMS; ++gauge)
+				cockpit = cockpit || Gauges[gauge].index == entry->index || Gauges_hires[gauge].index == entry->index;
+			if (cockpit) throw std::runtime_error(pog_name + ": RGBA bitmap " + std::to_string(entry->index) +
+				                                  " replaces a cockpit/HUD image; true-color cockpit layout is not implemented");
+			if (const char *reason = ogl_xl_rgba_prepare(int(entry->width), int(entry->height)))
+				throw std::runtime_error(pog_name + ": " + reason);
+		}
 	}
 }
 

@@ -854,6 +854,12 @@ void compute_average_rgb(grs_bitmap *bm, fix *rgb)
 	int count = 0;
 	fix t_rgb[3] = { 0, 0, 0 };
 
+	if (bm->bm_type == BM_RGBA) {
+		rgb[0] = bm->avg_color_rgb[0];
+		rgb[1] = bm->avg_color_rgb[1];
+		rgb[2] = bm->avg_color_rgb[2];
+		return;
+	}
 	rgb[0] = rgb[1] = rgb[2] = 0;
 
 	if (!bm->bm_data)

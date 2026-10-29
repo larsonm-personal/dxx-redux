@@ -26,6 +26,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "dxxerror.h"
 #include "inferno.h"
 #ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "texture_pixels.h"
+#endif
+#ifdef DXX_XL_RUNTIME
 #include "speed_boost.h"
 #include "blocked.h"
 #include "doorway.h"
@@ -1249,6 +1253,10 @@ int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum)
 //	Assert(WALL_IS_DOORWAY(seg,sidenum) == WID_TRANSPARENT_WALL);
 
 	find_hitpoint_uv(&u,&v,NULL,pnt,seg,sidenum,facenum);	//	Don't compute light value.
+
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) return xl_side_pixel_transparency(side->tmap_num, side->tmap_num2, u, v);
+#endif
 
 	if (side->tmap_num2 != 0)	{
 		bm = texmerge_get_cached_bitmap( side->tmap_num, side->tmap_num2 );

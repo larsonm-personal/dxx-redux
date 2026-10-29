@@ -73,6 +73,7 @@ typedef struct _ogl_texture {
 	int is_png;
 	int has_mipmaps;
 	int flags;
+	int xl_rgba; /* Owned true-color pixels use XL compositing and native dimensions */
 #ifdef ANDROID
 	GLenum min_filter, mag_filter;
 	int authored_mip_count, mip_base_level;

@@ -191,6 +191,12 @@ void gr_ubitmap( int x, int y, grs_bitmap *bm )
 	source = bm->bm_type;
 	dest = TYPE;
 
+#ifdef OGL
+	if (source == BM_RGBA && dest == BM_OGL) {
+		ogl_ubitmapm_cs(x,y,-1,-1,bm,-1,F1_0);
+		return;
+	}
+#endif
 	if (source==BM_LINEAR) {
 		switch( dest )
 		{
@@ -221,6 +227,12 @@ void gr_ubitmapm( int x, int y, grs_bitmap *bm )
 	source = bm->bm_type;
 	dest = TYPE;
 
+#ifdef OGL
+	if (source == BM_RGBA && dest == BM_OGL) {
+		ogl_ubitmapm_cs(x,y,-1,-1,bm,-1,F1_0);
+		return;
+	}
+#endif
 	if (source==BM_LINEAR) {
 		switch( dest )
 		{
@@ -353,7 +365,7 @@ void gr_bm_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * sr
 	}
 
 #ifdef OGL
-	if ( (src->bm_type == BM_LINEAR) && (dest->bm_type == BM_OGL ))
+	if ( (src->bm_type == BM_LINEAR || src->bm_type == BM_RGBA) && (dest->bm_type == BM_OGL ))
 	{
 		ogl_ubitblt(w, h, dx, dy, sx, sy, src, dest);
 		return;
@@ -446,7 +458,7 @@ void gr_bm_ubitbltm(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * s
 	ubyte c;
 
 #ifdef OGL
-	if ( (src->bm_type == BM_LINEAR) && (dest->bm_type == BM_OGL ))
+	if ( (src->bm_type == BM_LINEAR || src->bm_type == BM_RGBA) && (dest->bm_type == BM_OGL ))
 	{
 		ogl_ubitblt(w, h, dx, dy, sx, sy, src, dest);
 		return;

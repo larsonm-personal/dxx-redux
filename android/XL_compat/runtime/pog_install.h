@@ -1,86 +1,80 @@
-/* Included by D2 piggy.c to reuse its native bitmap header reader and ownership */
+/* Included by D2 piggy.c to install prepared pixels into its native registry */
 #include "pog_resources.h"
 
-struct xl_pog_resources {
-	int count;
-	ushort *indices;
-	DiskBitmapHeader *headers;
-	ubyte *source_data;
-	ubyte *install_data;
-	size_t data_size;
-};
+static struct {
+	int present, offset, flags;
+	grs_bitmap bitmap;
+} xl_pog_previous[MAX_BITMAP_FILES];
 
-void xl_pog_free(struct xl_pog_resources *resources)
+static void xl_pog_bank_will_change(void)
 {
-	if (!resources) return;
-	d_free(resources->indices);
-	d_free(resources->headers);
-	d_free(resources->source_data);
-	d_free(resources->install_data);
-	d_free(resources);
+	int i;
+	/* Restore and retire the old owner before the new PIG overwrites its slots */
+	for (i = 0; i < MAX_BITMAP_FILES; ++i) {
+		if (!xl_pog_previous[i].present) continue;
+		free_bitmap_replacements();
+		return;
+	}
 }
 
-struct xl_pog_resources *xl_pog_prepare(PHYSFS_file *file)
+static void xl_pog_clear_installed(void)
 {
-	struct xl_pog_resources *resources;
-	PHYSFS_sint64 data_size;
-	int i, count;
-	if (!PHYSFS_seek(file, 8)) return NULL;
-	count = PHYSFSX_readInt(file);
-	data_size = PHYSFS_fileLength(file) - 12 - (PHYSFS_sint64) count * (2 + sizeof(DiskBitmapHeader));
-	if (count < 0 || count > MAX_BITMAP_FILES || data_size < 0 || data_size > 64 * 1024 * 1024) return NULL;
-	resources = d_malloc(sizeof(*resources));
-	if (!resources) return NULL;
-	memset(resources, 0, sizeof(*resources));
-	resources->count = count;
-	resources->data_size = (size_t) data_size;
-	resources->indices = d_malloc((count ? count : 1) * sizeof(*resources->indices));
-	resources->headers = d_malloc((count ? count : 1) * sizeof(*resources->headers));
-	resources->source_data = d_malloc(data_size ? (size_t) data_size : 1);
-	resources->install_data = d_malloc(data_size ? (size_t) data_size : 1);
-	if (!resources->indices || !resources->headers || !resources->source_data || !resources->install_data) goto failed;
-	for (i = 0; i < count; ++i) {
-		resources->indices[i] = PHYSFSX_readShort(file);
-		if (resources->indices[i] >= Num_bitmap_files) goto failed;
+	int i;
+	for (i = 0; i < MAX_BITMAP_FILES; ++i) {
+		if (!xl_pog_previous[i].present) continue;
+		ogl_freebmtexture(&GameBitmaps[i]);
+		GameBitmaps[i] = xl_pog_previous[i].bitmap;
+		GameBitmapOffset[i] = xl_pog_previous[i].offset;
+		GameBitmapFlags[i] = xl_pog_previous[i].flags;
+		/* The paging arena may have been reused while a POG owned this slot */
+		if (GameBitmapOffset[i]) {
+			GameBitmaps[i].bm_data = Piggy_bitmap_cache_data;
+			GameBitmaps[i].bm_flags = BM_FLAG_PAGED_OUT;
+		}
+		xl_pog_previous[i].present = 0;
 	}
-	for (i = 0; i < count; ++i) {
-		DiskBitmapHeader_read(&resources->headers[i], file);
-		if (resources->headers[i].offset < 0 || (size_t) resources->headers[i].offset >= resources->data_size) goto failed;
-	}
-	if (PHYSFS_readBytes(file, resources->source_data, data_size) != data_size) goto failed;
-	memcpy(resources->install_data, resources->source_data, resources->data_size);
-	return resources;
-failed:
-	xl_pog_free(resources);
-	return NULL;
 }
 
 int xl_pog_install(struct xl_pog_resources *resources)
 {
 	int i;
-	if (resources && !resources->install_data) {
-		/* Repeated reloads prepare another owned buffer before freeing live pixels */
-		resources->install_data = d_malloc(resources->data_size ? resources->data_size : 1);
-		if (!resources->install_data) return 0;
-		memcpy(resources->install_data, resources->source_data, resources->data_size);
+	size_t size = 0;
+	const unsigned char *source = xl_pog_pixels(resources, &size);
+	unsigned char *installed = NULL;
+	if (resources) {
+		installed = d_malloc(size ? size : 1);
+		if (!installed) return 0;
+		if (size) memcpy(installed, source, size);
 	}
+	/* Preparation and allocation finish before any old resource is retired */
 	free_bitmap_replacements();
 	if (!resources) return 1;
-	Bitmap_replacement_data = resources->install_data;
-	resources->install_data = NULL;
+	Bitmap_replacement_data = installed;
 #ifdef __ANDROID__
-	Bitmap_replacement_data_size = resources->data_size;
+	Bitmap_replacement_data_size = size;
 #endif
-	for (i = 0; i < resources->count; ++i) {
-		const DiskBitmapHeader *header = &resources->headers[i];
-		grs_bitmap *bitmap = &GameBitmaps[resources->indices[i]];
-		const int width = header->width + ((short) (header->wh_extra & 0x0f) << 8);
-		gr_set_bitmap_data(bitmap, NULL);
-		gr_init_bitmap(bitmap, 0, 0, 0, width, header->height + ((short) (header->wh_extra & 0xf0) << 4), width, NULL);
-		bitmap->avg_color = header->avg_color;
-		gr_set_bitmap_flags(bitmap, header->flags & BM_FLAGS_TO_COPY);
-		gr_set_bitmap_data(bitmap, Bitmap_replacement_data + header->offset);
-		GameBitmapOffset[resources->indices[i]] = 0;
+	for (i = 0; i < xl_pog_count(resources); ++i) {
+		const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
+		grs_bitmap *bitmap = &GameBitmaps[entry->index];
+		if (!xl_pog_previous[entry->index].present) {
+			xl_pog_previous[entry->index].present = 1;
+			xl_pog_previous[entry->index].offset = GameBitmapOffset[entry->index];
+			xl_pog_previous[entry->index].flags = GameBitmapFlags[entry->index];
+			xl_pog_previous[entry->index].bitmap = *bitmap;
+			xl_pog_previous[entry->index].bitmap.gltexture = NULL;
+			xl_pog_previous[entry->index].bitmap.gltexture_mask = NULL;
+		}
+		ogl_freebmtexture(bitmap);
+		gr_init_bitmap(bitmap, entry->rgba ? BM_RGBA : BM_LINEAR, 0, 0,
+		               entry->width, entry->height, entry->width * (entry->rgba ? 4 : 1), installed + entry->offset);
+		bitmap->avg_color = entry->rgba ? gr_find_closest_color(entry->average_rgb[0] / 4, entry->average_rgb[1] / 4, entry->average_rgb[2] / 4)
+		                                : entry->average_index;
+		if (entry->rgba) {
+			int c;
+			for (c = 0; c < 3; ++c) bitmap->avg_color_rgb[c] = (fix) ((unsigned) entry->average_rgb[c] * F1_0 / 255);
+		}
+		gr_set_bitmap_flags(bitmap, entry->flags);
+		GameBitmapOffset[entry->index] = 0;
 	}
 	last_palette_loaded_pig[0] = 0;
 	texmerge_flush();
@@ -89,24 +83,20 @@ int xl_pog_install(struct xl_pog_resources *resources)
 
 int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int index, unsigned *bytes, unsigned *fnv1a)
 {
-	int i, j;
+	int i;
 	if (!resources || !bytes || !fnv1a || !Bitmap_replacement_data || index < 0 || index >= Num_bitmap_files) return 0;
-	for (i = 0; i < resources->count; ++i) {
-		size_t begin, end, k;
+	/* The last directory entry owns duplicate indices, as in LoadReplacementBitmaps */
+	for (i = xl_pog_count(resources) - 1; i >= 0; --i) {
+		const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
+		const grs_bitmap *bitmap = &GameBitmaps[index];
+		size_t k;
 		unsigned hash = 2166136261u;
-		const DiskBitmapHeader *header;
-		const grs_bitmap *bitmap;
-		if (resources->indices[i] != index) continue;
-		header = &resources->headers[i];
-		begin = (size_t) header->offset;
-		end = resources->data_size;
-		for (j = 0; j < resources->count; ++j)
-			if ((size_t) resources->headers[j].offset > begin && (size_t) resources->headers[j].offset < end)
-				end = (size_t) resources->headers[j].offset;
-		bitmap = &GameBitmaps[index];
-		if (begin >= end || bitmap->bm_data != Bitmap_replacement_data + begin || GameBitmapOffset[index] != 0) return 0;
-		for (k = 0; k < end - begin; ++k) hash = (hash ^ bitmap->bm_data[k]) * 16777619u;
-		*bytes = (unsigned) (end - begin);
+		if (entry->index != (unsigned) index) continue;
+		if (bitmap->bm_data != Bitmap_replacement_data + entry->offset || GameBitmapOffset[index] != 0 ||
+		    bitmap->bm_type != (entry->rgba ? BM_RGBA : BM_LINEAR) || bitmap->bm_w != (int) entry->width || bitmap->bm_h != (int) entry->height)
+			return 0;
+		for (k = 0; k < entry->size; ++k) hash = (hash ^ bitmap->bm_data[k]) * 16777619u;
+		*bytes = (unsigned) entry->size;
 		*fnv1a = hash;
 		return 1;
 	}

@@ -1,5 +1,10 @@
 # True-color POG audit and unfinished support
 
+Historical checkpoint, before the single-frame runtime implementation. The
+[current evidence](truecolor-pog-runtime.md) resolves original Pumo/Arena RGBA
+application and records the remaining restrictions. The reproduction and failed
+guard experiment below describe the earlier implementation, not current support.
+
 A Pumo resource audit found a real admission gap. The shared bitmap validator
 checks indexed pixel bounds, but accepts the XL true-color flag. The XL POG
 installer then initializes an indexed bitmap and drops that flag. Bounds
