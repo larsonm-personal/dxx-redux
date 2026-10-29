@@ -97,6 +97,13 @@ if(BUILD_TESTING)
     add_executable(xl_wave_test tests/wave_test.cpp)
     target_link_libraries(xl_wave_test PRIVATE xl_inventory)
     add_test(NAME xl_wave_contract COMMAND xl_wave_test)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(
+        NAME xl_wave_channels_reference
+        COMMAND
+            ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wave_channels_reference.py
+            --native $<TARGET_FILE:xl_wave_test> --work
+            ${CMAKE_CURRENT_BINARY_DIR}/wave-channels-reference)
     set(XL_DRAGON_SOUNDS "" CACHE PATH "Private original Dragon Pit sound directory")
     if(XL_DRAGON_SOUNDS)
         add_test(

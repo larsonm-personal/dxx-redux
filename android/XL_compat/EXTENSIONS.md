@@ -54,7 +54,11 @@ checks. See [message evidence](evidence/level-messages.md), including the
 same-frame save correction and all 21 original Pumo message dependencies.
 SND parsing alone does not implement sound playback; Pumo's independent gameplay
 requirements remain. Public Windows and private Linux coverage now require
-38 and 94 tests respectively.
+38 and 94 tests respectively at that increment. The subsequent
+[stereo PCM foundation](evidence/stereo-pcm.md) preserves both authored WAV
+channels through shared bounded validation, with independent comparisons of
+all 25 original Pumo WAVs and unchanged classic mono controls. It adds one
+required public/private test; named playback remains gated.
 
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain

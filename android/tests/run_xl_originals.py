@@ -103,6 +103,7 @@ FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
     "xl_scoped_texture_contract",
     "xl_companion_lighting_contract",
     "xl_wave_contract",
+    "xl_wave_channels_reference",
     "xl_mission_labels",
     "xl_lighting_calculation",
     "xl_inventory_contract",
