@@ -32,6 +32,7 @@ PUBLIC_TESTS = {
     "xl_lighting_reference_arithmetic",
     "xl_magnitude_reference",
     "xl_mission_labels",
+    "xl_named_audio_source",
     "xl_modern_layout_contract",
     "xl_modern_layout_reference",
     "xl_nearest_lights_reference",
