@@ -857,11 +857,12 @@ if(BUILD_TESTING)
         endif()
     endif()
     if(XL_PILOT_HOG)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
         add_test(
             NAME xl_pilot_archive
             COMMAND
-                ${CMAKE_COMMAND} -DINSPECT=$<TARGET_FILE:xl_inspect> -DHOG=${XL_PILOT_HOG}
-                -DREPORT=${CMAKE_CURRENT_BINARY_DIR}/pilot-inventory.json -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pilot_archive.cmake)
+                ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pilot_archive.py --inspect
+                $<TARGET_FILE:xl_inspect> --hog ${XL_PILOT_HOG} --report
+                ${CMAKE_CURRENT_BINARY_DIR}/pilot-inventory.json)
     endif()
 endif()

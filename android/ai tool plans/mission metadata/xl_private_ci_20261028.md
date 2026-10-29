@@ -93,4 +93,14 @@ the same immutable revision with CI line endings verifies all fourteen retail
 files and the complete XL stage; the user's checkout remains unchanged. The
 old full levelpack's Anthology is 23/40, so the separate 25/40 original remains
 a useful proposed addition. See [private CI evidence](../../XL_compat/evidence/private-ci.md)
-for scope, assets and pending timing.
+for scope, assets and measured timing.
+
+The clean native ext4 run passes all 91 required CTests, sixteen original-file
+outcomes and three full modern source comparisons in 478.196 seconds including
+both engine builds. Its CTest phase takes 190.43 seconds. All three corrected
+rejection fixtures now execute against their malformed input. The combined
+Linux policy/adapter suite passes 190 tests. A subsequent focused optimization
+replaces repeated CMake JSON parsing in the original pilot control: all original
+assertions and stable-regeneration checks pass in 1.89 seconds, down from 66.93.
+The added negative inventory control brings the XL owner suite to nineteen tests.
+Keep these timings distinct rather than inventing a new full-run duration.

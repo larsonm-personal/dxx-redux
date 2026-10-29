@@ -87,7 +87,10 @@ The subsequent authored-fog increment removes its property blockers after actual
 GPU, normal-frame, save and lifecycle verification. Eleven Pumo levels require
 that capability-checked renderer. All fourteen still need sound/effects, and
 three retain unsupported segment properties. No original Pumo level is qualified.
-Next strengthen private CI, then build effect/audio resource consumers and their
-extended actions. PRs #185, #186 and #187 are fully green.
+The private CI increment now passes its full required selection, original-file
+outcomes and source comparisons locally, with broader public source contracts
+on Windows and Linux. See [CI evidence](../../XL_compat/evidence/private-ci.md).
+Continue with effect/audio resource consumers and their extended actions.
+PRs #185, #186, #187 and #188 are fully green.
 The runtime increment is published as 23830d44e0931596375b0ae001aa69d4bb8c9370
 on xl_more_41_runtime_layouts. The authored-fog tranche is on xl_more_42_fog.

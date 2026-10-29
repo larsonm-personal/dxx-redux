@@ -17,10 +17,46 @@ import nightly_retail as retail
 import nightly_tooling_sweep as sweep
 import run_xl_originals as runner
 import public_contracts as public
+import pilot_archive as pilot
 import xl_private_assets as assets
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_original_pilot_inventory_remains_complete_and_unqualified(self):
+        levels = [
+            {"name": f"fixture-{i}.rl2", "inventory": {"status": "inspection_only", "playable": False}}
+            for i in range(30)
+        ]
+        levels[0]["name"] = "d2leva-1.rl2"
+        levels[0]["inventory"].update({key: [0] * count for key, count in pilot.PILOT_COUNTS.items()})
+        report = {"playable": False, "levels": levels}
+        pilot.validate_inventory(report)
+        for key in pilot.PILOT_COUNTS:
+            changed = copy.deepcopy(report)
+            changed["levels"][0]["inventory"][key].pop()
+            with self.subTest(count=key), self.assertRaises(ValueError):
+                pilot.validate_inventory(changed)
+        for index in range(30):
+            for field, value in (("status", "rejected"), ("playable", True), ("playable", None)):
+                changed = copy.deepcopy(report)
+                changed["levels"][index]["inventory"][field] = value
+                with self.subTest(level=index, field=field, value=value), self.assertRaises(ValueError):
+                    pilot.validate_inventory(changed)
+        for mode in ("missing", "extra", "duplicate-pilot", "absent-pilot", "qualified"):
+            changed = copy.deepcopy(report)
+            if mode == "missing":
+                changed["levels"].pop()
+            elif mode == "extra":
+                changed["levels"].append(copy.deepcopy(levels[-1]))
+            elif mode == "duplicate-pilot":
+                changed["levels"][1] = copy.deepcopy(levels[0])
+            elif mode == "absent-pilot":
+                changed["levels"][0]["name"] = "other.rl2"
+            else:
+                changed["playable"] = True
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                pilot.validate_inventory(changed)
+
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
         self.assertEqual(len(public.PUBLIC_TESTS), 36)
         self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)

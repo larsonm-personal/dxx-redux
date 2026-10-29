@@ -118,11 +118,26 @@ A subsequent clean ext4 run exposed three case-dependent rejection fixtures:
 an uppercase loose-file override did not shadow the lowercase original on
 Linux. Those controls now use the requested spelling and assert the resolved
 file's owner before testing rejection. The unchanged original had been selected;
-the loader had not accepted the malformed bytes. The clean final private run
-must verify all three corrections before publication.
+the loader had not accepted the malformed bytes. The clean final run verifies
+all three corrections and passes every required check.
 
-The public policy, receipt and admission controls pass on Linux, including the
-final eighteen owner tests. Both automation catalogs and scoped mixed
-formatting pass. A clean final selection and native Linux filesystem timing are
-pending before publication. Hosted private execution requires the trusted
+A fresh Linux checkout of 13c42fefc5a43ae5d76caa0b11065172c5477f08 passes all
+91 CTests, sixteen original-file outcomes and three modern source comparisons.
+The complete build and owner take 478.196 seconds on native ext4 storage with
+two build/test workers; CTest takes 190.43 seconds. Input staging and checkout
+precede that measurement. The receipt has no experimental exception and retains
+`level_two_completion_qualified: false`.
+
+That run identified 66.93 seconds spent in the original pilot archive control,
+mostly reparsing a large JSON report in CMake. Its final Python owner parses once
+and passes the same complete original control in 1.89 seconds, including two
+actual inspections, all thirty level statuses, eleven exact pilot counts, input
+hashes and unchanged report content/timestamp. The timestamp check now retains
+nanosecond precision. This focused measurement follows the clean full run; a
+new full-run duration is not inferred by subtracting the difference.
+
+The combined Linux policy, adapter and trust-boundary suite passes all 190
+then-current tests. The updated original-inventory controls add one test;
+the final nineteen XL owner tests pass separately. Both automation catalogs
+and scoped mixed formatting pass. Hosted private execution requires the trusted
 merged workflow; public PR checks alone cannot establish that result.
