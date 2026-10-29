@@ -1,4 +1,5 @@
 #include "inventory.h"
+#include "hog.h"
 
 #include <algorithm>
 #include <cctype>
@@ -27,7 +28,7 @@ int main(int argc, char **argv)
 		const xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 		if (input.bad() || bytes.size() != static_cast<std::size_t>(size)) throw std::runtime_error("input read failed");
 		std::vector<xl_compat::Member> members;
-		if (bytes.size() >= 3 && bytes[0] == 'D' && bytes[1] == 'H' && bytes[2] == 'F') members = xl_compat::read_hog(bytes);
+		if (bytes.size() >= 3 && xl_compat::hog_signature(bytes.data())) members = xl_compat::read_hog(bytes);
 		else members.push_back({ "input.rl2", bytes });
 		std::ostringstream report;
 		report << "{\n  \"schema\": 1,\n  \"status\": \"inspection_only\",\n  \"playable\": false,\n  \"members\": [";

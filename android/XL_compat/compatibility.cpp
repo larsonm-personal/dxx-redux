@@ -19,7 +19,7 @@ struct Category {
 	const char *explanation;
 };
 const Category categories[] = {
-	{ "container", "Archive and descriptor dialect", "Standard DHF and d2x-name descriptors; gameplay requires supported extended-level features and owned resources; extended HOG unsupported", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
+	{ "container", "Archive and descriptor dialect", "Native DHF/D2X readers and d2x-name descriptors; Android extended-HOG import remains unfinished; gameplay requires supported features and owned resources", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
 	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 15/34, 17/36 and 23/40 layouts after feature checks", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; XL 2047 walls, stock 255; XL source-sized object pools up to 32768 slots, stock 1000; XL 254 triggers, stock 100; other widening unfinished", "XL wall, trigger and object identities, allocation, authored actions and persistence have bounded runtime controls. Other tables and concurrent animation limits remain independent requirements; a readable file can still exceed engine limits." },
 	{ "segments", "Segment physics, properties and ownership", "XL boss destination groups supported with neutral ownership; environment and team ownership require separate checks", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. Group identity constrains boss destinations independently of walls." },
@@ -173,8 +173,8 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 	if (prefix(bytes, "D2X")) {
 		detected = true;
 		status = "blocked";
-		summary = "Cannot load: extended HOG archive";
-		rows[0] = { "Extended HOG", "blocked", "Detected D2X archive signature" };
+		summary = "Extended HOG: native reader implemented; launcher import not yet enabled";
+		rows[0] = { "Extended HOG", "blocked", "Detected D2X signature; native container support does not qualify launcher import or contained gameplay" };
 	} else if (bytes.size() >= 8 && prefix(bytes, "LVL") && bytes[3] == 'P') {
 		const std::uint32_t version = std::uint32_t(bytes[4]) | (std::uint32_t(bytes[5]) << 8) |
 		                              (std::uint32_t(bytes[6]) << 16) | (std::uint32_t(bytes[7]) << 24);

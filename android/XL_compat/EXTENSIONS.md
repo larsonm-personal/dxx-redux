@@ -12,6 +12,12 @@ original behavior. See [flicker evidence](evidence/flickers.md) for zero-delay,
 visibility, emission, malformed-state and original-survey coverage. Alternate
 renderer/settings profiles and original campaign qualification remain open.
 
+Native D2 archive mounting and inspection now share a streaming DHF/D2X reader,
+including per-member long names and exact resource ownership through save/load.
+The Android launcher import/catalog/music path remains unfinished and its gate
+stays in place. See [container evidence](evidence/extended-hog.md); native
+container support does not qualify contained gameplay or an original campaign.
+
 The [maintained gameplay roadmap](../ai%20tool%20plans/mission%20metadata/xl_singleplayer_gameplay_roadmap_20261026.md)
 tracks these overlapping areas and their acceptance requirements. Immediate wall
 master chains and trigger enable/disable counters are now implemented, including

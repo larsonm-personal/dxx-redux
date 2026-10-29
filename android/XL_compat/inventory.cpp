@@ -1,4 +1,5 @@
 #include "inventory.h"
+#include "hog.h"
 #include "trigger_flags.h"
 
 #include <algorithm>
@@ -800,29 +801,12 @@ std::string inventory_json(const Inventory &v)
 
 std::vector<Member> read_hog(const Bytes &bytes)
 {
-	Reader r(bytes, 0, bytes.size());
-	require(r.u8() == 'D' && r.u8() == 'H' && r.u8() == 'F', "only standard DHF HOG inspection is implemented");
+	const auto entries = index_hog(bytes.size(), [&bytes](std::uint64_t offset, unsigned char *out, std::size_t count) {
+		std::copy_n(bytes.data() + static_cast<std::size_t>(offset), count, out);
+	});
 	std::vector<Member> members;
-	std::set<std::string> names;
-	while (r.position() < bytes.size()) {
-		std::string name;
-		bool terminated = false;
-		for (int i = 0; i < 13; ++i) {
-			const int c = r.u8();
-			if (!c) terminated = true;
-			if (!terminated) name += static_cast<char>(c);
-		}
-		require(!name.empty() && name.find_first_of("/\\:") == std::string::npos, "invalid HOG member name");
-		auto key = name;
-		for (auto &c : key)
-			if (c >= 'A' && c <= 'Z') c = static_cast<char>(c + ('a' - 'A'));
-		require(names.insert(key).second, "ambiguous duplicate HOG member " + name);
-		const int size = r.s32();
-		require(size >= 0, "negative HOG member size");
-		const auto start = r.position();
-		r.skip(static_cast<std::size_t>(size));
-		members.push_back({ name, Bytes(bytes.begin() + start, bytes.begin() + r.position()) });
-	}
+	for (const auto &entry : entries)
+		members.push_back({ entry.name, Bytes(bytes.begin() + static_cast<std::size_t>(entry.offset), bytes.begin() + static_cast<std::size_t>(entry.offset + entry.size)) });
 	return members;
 }
 } // namespace xl_compat
