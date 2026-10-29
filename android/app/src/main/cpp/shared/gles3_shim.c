@@ -708,6 +708,13 @@ void gles3_shim_alpha_func(GLenum func, GLfloat ref)
 	state_dirty = 1;
 }
 
+GLfloat gles3_shim_set_alpha_reference(GLfloat reference)
+{
+	const GLfloat previous = alpha_ref;
+	alpha_ref = reference;
+	return previous;
+}
+
 void gles3_shim_shade_model(GLenum mode)
 {
 	(void) mode; /* always smooth in our shader */

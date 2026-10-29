@@ -531,6 +531,7 @@ $testTimeouts = @{
     "test_xl_runtime_layouts" = 600
     "test_xl_level_messages" = 600
     "test_xl_fog_runtime" = 600
+    "test_xl_pog_runtime" = 600
     "test_xl_hxm_runtime" = 600
     "test_xl_equipment_runtime" = 480
     "test_xl_pilot_import" = 300

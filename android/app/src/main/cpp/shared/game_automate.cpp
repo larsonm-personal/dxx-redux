@@ -36,6 +36,7 @@
 #include "runtime_layout_probe.h"
 #include "level_message_probe.h"
 #include "fog_probe.h"
+#include "pog_probe.h"
 #include "corona_probe.h"
 #endif
 
@@ -7648,6 +7649,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled object pool %s passed", s.value.c_str());
 #else
 				stop_script_fail("Object capacity probe requires Android D2");
+#endif
+			} else if (s.field == "xl_pog_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_pog_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled POG %s passed", s.value.c_str());
+#else
+				stop_script_fail("POG probe requires Android D2");
 #endif
 			} else if (s.field == "xl_fog_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

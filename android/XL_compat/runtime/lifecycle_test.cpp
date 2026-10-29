@@ -1523,6 +1523,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 } // namespace
 
 #include "arena_test.h"
+#include "pog_test.h"
 #include "campaign_test.h"
 #include "asset_mount_test.h"
 #include "static_texture_test.h"
@@ -1573,6 +1574,7 @@ extern "C" void flicker_lights(void);
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-pog-test")) return pog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-level-message-test")) return level_message_test(argc, argv);
 	if (find_arg_value(argc, argv, "-runtime-layouts-test")) return runtime_layout_test(argc, argv);
 	if (find_arg_value(argc, argv, "-hog-test")) return hog_test(argc, argv);

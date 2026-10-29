@@ -10,8 +10,11 @@ GLint ogl_tex2_debug_mode = -1;
 
 #ifdef ANDROID
 #define OGL_TEX2_FLOAT_PRECISION "precision highp float;"
+#define OGL_TEX2_ALPHA_DISCARD "\n  if (f.a < (uxlrgba != 0 ? 0.005 : 0.02)) discard;"
 #else
 #define OGL_TEX2_FLOAT_PRECISION ""
+/* XL uses the frame's fixed-function alpha test, including framebuffer precision */
+#define OGL_TEX2_ALPHA_DISCARD "\n  if (uxlrgba == 0 && f.a < 0.02) discard;"
 #endif
 
 GLfloat ogl_mat_ortho[16] = {
@@ -82,6 +85,7 @@ static GLuint ogl_mk_prog(const char *prog_name, const char *vert_src, const cha
 static GLint ogl_tex2m_binary = -1;
 static GLint ogl_tex2_base_binary = -1, ogl_tex2m_base_binary = -1;
 static GLint ogl_tex2_soft = -1, ogl_tex2m_soft = -1;
+static GLint ogl_tex2_xl_rgba = -1, ogl_tex2m_xl_rgba = -1;
 
 void ogl_init_prog() {
 	ogl_prog_tex2 = ogl_mk_prog("tex2", "attribute vec3 apos;"
@@ -103,6 +107,7 @@ void ogl_init_prog() {
 		"\n uniform sampler2D utex;"
 		"\n uniform int ubotbinary;"
 		"\n uniform int usoft;"
+		"\n uniform int uxlrgba;"
 		"\n uniform sampler2D utex2;"
 		"\n uniform int utex2_debug;"
 		"\n uniform float utex2alpha_cutoff;"
@@ -122,14 +127,18 @@ void ogl_init_prog() {
 		"\n   ovla = ovl.a >= utex2alpha_cutoff ? 1.0 : 0.0;"
 		"\n  if (utex2_debug == 3) {"
 		"\n   vec4 f = vcolor * vec4(ovl.rgb, ovla);"
-		"\n   if (f.a < 0.02) discard;"
+		OGL_TEX2_ALPHA_DISCARD
 		"\n   gl_FragColor = f;"
 		"\n   return;"
 		"\n  }"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovla), bot.a + ovla - bot.a * ovla);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  if (usoft != 0) c = vec4(bot.rgb * (1.0 - ovl.a) + ovl.rgb, 1.0);"
+		"\n  if (uxlrgba != 0) {"
+		"\n   vec3 top = usoft != 0 && ovl.a > 0.0 ? ovl.rgb / ovl.a : ovl.rgb;"
+		"\n   c = vec4(mix(bot.rgb, top, ovl.a), min(1.0, bot.a + ovl.a));"
+		"\n  }"
 		"\n  vec4 f = vcolor * c;"
-		"\n  if (f.a < 0.02) discard;"
+		OGL_TEX2_ALPHA_DISCARD
 		"\n  gl_FragColor = f;"
 		"\n }");
 
@@ -152,6 +161,7 @@ void ogl_init_prog() {
 		"\n uniform sampler2D utex;"
 		"\n uniform int ubotbinary;"
 		"\n uniform int usoft;"
+		"\n uniform int uxlrgba;"
 		"\n uniform sampler2D utex2;"
 		"\n uniform sampler2D utex2m;"
 		"\n uniform int ubinary;"
@@ -161,15 +171,22 @@ void ogl_init_prog() {
 		"\n  if (ubinary != 0 && usoft == 0) ovl.a = step(0.5, ovl.a);"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovl.a), bot.a + ovl.a - bot.a * ovl.a);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  if (usoft != 0) c = vec4(bot.rgb * (1.0 - ovl.a) + ovl.rgb, 1.0);"
+		"\n  if (uxlrgba != 0) {"
+		"\n   vec3 top = usoft != 0 && ovl.a > 0.0 ? ovl.rgb / ovl.a : ovl.rgb;"
+		"\n   c = vec4(mix(bot.rgb, top, ovl.a), min(1.0, bot.a + ovl.a));"
+		"\n  }"
 		"\n  vec4 mask = texture2D(utex2m, vtexcoord2);"
 		"\n  if (ubinary != 0) mask.a = step(0.5, mask.a);"
 		"\n  vec4 f = vcolor * vec4(c.rgb, c.a * mask.a);"
-		"\n  if (f.a < 0.02) discard;"
+		"\n  if (uxlrgba != 0) f = vcolor * c * mask.a;"
+		OGL_TEX2_ALPHA_DISCARD
 		"\n  gl_FragColor = f;"
 		"\n }");
 
 	ogl_tex2_soft = glGetUniformLocation(ogl_prog_tex2, "usoft");
 	ogl_tex2m_soft = glGetUniformLocation(ogl_prog_tex2m, "usoft");
+	ogl_tex2_xl_rgba = glGetUniformLocation(ogl_prog_tex2, "uxlrgba");
+	ogl_tex2m_xl_rgba = glGetUniformLocation(ogl_prog_tex2m, "uxlrgba");
 	ogl_tex2_mat = glGetUniformLocation(ogl_prog_tex2, "umat");
 	ogl_tex2m_mat = glGetUniformLocation(ogl_prog_tex2m, "umat");
 	ogl_tex2m_binary = glGetUniformLocation(ogl_prog_tex2m, "ubinary");
@@ -194,6 +211,11 @@ void ogl_init_prog() {
 
 void ogl_prog_set_tex2_soft(int enabled, int masked) {
 	const GLint location = masked ? ogl_tex2m_soft : ogl_tex2_soft;
+	if (location >= 0) glUniform1i(location, enabled);
+}
+
+void ogl_prog_set_tex2_xl_rgba(int enabled, int masked) {
+	const GLint location = masked ? ogl_tex2m_xl_rgba : ogl_tex2_xl_rgba;
 	if (location >= 0) glUniform1i(location, enabled);
 }
 

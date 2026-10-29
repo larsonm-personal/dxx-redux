@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "texture_pixels.h"
 #include "cloak.h"
 #include "doors.h"
 #endif
@@ -118,6 +119,9 @@ void kill_stuck_objects(int wallnum);
 int check_transparency( segment * seg, int side )
 {
 	grs_bitmap *bm;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) return xl_side_texture_transparency(seg - Segments, side);
+#endif
 
 	if ((seg->sides[side].tmap_num2 & 0x3FFF) == 0) {
 		bm = &GameBitmaps[Textures[seg->sides[side].tmap_num].index];

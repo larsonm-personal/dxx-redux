@@ -6,6 +6,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "fog.h"
+#include "pog_renderer.h"
 #endif
 /*
  *
@@ -397,6 +398,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	ogl_init_texture_stats(t);
 	t->is_png = 0;
 	t->flags = flags;
+	t->xl_rgba = 0;
 #ifdef ANDROID
 	t->min_filter = t->mag_filter = 0;
 	t->has_mipmaps = 0;
@@ -651,6 +653,18 @@ void ogl_bindbmtex(grs_bitmap *bm){
 		GameCfg.MenuTexFilt, GameCfg.HudTexFilt, g_ogl_render_context);
 #endif
 	bm->gltexture->numrend++;
+}
+
+static void ogl_draw_bitmap_arrays(GLenum mode, int first, int count, const grs_bitmap *base, const grs_bitmap *overlay)
+{
+#ifdef DXX_XL_RUNTIME
+	struct xl_rgba_alpha_state alpha;
+	ogl_xl_rgba_alpha_begin((base && base->bm_type == BM_RGBA) || (overlay && overlay->bm_type == BM_RGBA), &alpha);
+#endif
+	glDrawArrays(mode, first, count);
+#ifdef DXX_XL_RUNTIME
+	ogl_xl_rgba_alpha_end(&alpha);
+#endif
 }
 
 #ifdef ANDROID
@@ -1360,7 +1374,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	const int previous_binary = gles3_shim_set_binary_texture(tmap_drawer_ptr == draw_tmap && bm->gltexture && bm->gltexture->scoped_static);
 #endif
 	if (!skip_merged_wall_cover_draw)
-		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
+		ogl_draw_bitmap_arrays(GL_TRIANGLE_FAN, 0, nv, tmap_drawer_ptr == draw_tmap ? bm : NULL, NULL);
 #ifdef ANDROID
 	gles3_shim_set_binary_texture(previous_binary);
 #endif
@@ -1495,7 +1509,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	OGL_ACTIVETEXTURE(GL_TEXTURE0);
 	#if defined(ANDROID)
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT) &&
-	    !bmbot->gltexture->scoped_static && !bmovl->gltexture->scoped_static) {
+	    !bmbot->gltexture->scoped_static && !bmovl->gltexture->scoped_static &&
+	    !bmbot->gltexture->xl_rgba && !bmovl->gltexture->xl_rgba) {
 		if (merged_wall_force_two_pass) {
 			android_merged_wall_log_tmap2_route("force_two_pass",
 				bmbot, bmovl, label_nv, orient);
@@ -1582,7 +1597,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoordovl_array);
 	if (!skip_merged_wall_cover_draw)
-		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
+		ogl_draw_bitmap_arrays(GL_TRIANGLE_FAN, 0, nv, bmbot, bmovl);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1599,7 +1614,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #endif
 #else
 	GLuint prog = super ? ogl_prog_tex2m : ogl_prog_tex2;
-	GLfloat tex2_alpha_cutoff = 0.5f;
+	const int xl_rgba = bmbot->gltexture->xl_rgba || bmovl->gltexture->xl_rgba;
+	GLfloat tex2_alpha_cutoff = xl_rgba ? 0.0f : 0.5f;
 	#ifdef ANDROID
 	int log_tmap2_geometry = !super && android_merged_wall_is_logging_target_bitmap(bmovl);
 	int tex2_debug_mode = (!super && android_merged_wall_is_logging_target_bitmap(bmovl)) ? g_merged_wall_debug_mode : MERGED_WALL_DEBUG_NONE;
@@ -1619,6 +1635,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #else
 	glUseProgram(prog);
 #endif
+	ogl_prog_set_tex2_xl_rgba(xl_rgba, super);
 	if (!super) {
 		/* Alpha cutoff 0.5: overlay textures are palette-indexed with binary
 		 * alpha (fully opaque or fully transparent). Hires KTX2 mipmaps use
@@ -1690,7 +1707,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #endif
 
 	if (!skip_merged_wall_cover_draw)
-		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
+		ogl_draw_bitmap_arrays(GL_TRIANGLE_FAN, 0, nv, bmbot, bmovl);
 
 #if defined(ANDROID)
 	ogl_prog_set_tex2_base_binary(0, super);
@@ -2085,7 +2102,7 @@ bool g3_draw_bitmap_full(vms_vector *pos,fix width,fix height,grs_bitmap *bm,
 #ifdef ANDROID
 	const int previous_blend = android_ogl_begin_sprite_blend(bm->gltexture);
 #endif
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // Replaced GL_QUADS
+	ogl_draw_bitmap_arrays(GL_TRIANGLE_FAN, 0, 4, bm, NULL); // Replaced GL_QUADS
 #ifdef ANDROID
 	android_ogl_end_sprite_blend(previous_blend);
 #endif
@@ -2131,7 +2148,7 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 
 	ogl_init_texture(&tex, sw, sh, OGL_FLAG_ALPHA);
 	tex.prio = 0.0;
-	tex.lw=src->bm_rowsize;
+	tex.lw=src->bm_rowsize / (src->bm_type == BM_RGBA ? 4 : 1);
 
 	u1=v1=0;
 	
@@ -2146,10 +2163,10 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	
 	ogl_pal=gr_current_pal;
 #ifdef ANDROID
-	ogl_loadtexture_into(src->bm_data, sx, sy, &tex, src->bm_flags, 0,
+	ogl_loadtexture_into(src->bm_data, sx, sy, &tex, src->bm_flags, src->bm_type == BM_RGBA ? 4 : 0,
 		linear_unscaled ? 0 : texfilt, NULL, reuse ? reuse->handle : 0);
 #else
-	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, 0, texfilt,
+	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, src->bm_type == BM_RGBA ? 4 : 0, texfilt,
 		NULL);
 #endif
 	ogl_pal=gr_palette;
@@ -2184,7 +2201,7 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	glVertexPointer(2, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);  
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);//replaced GL_QUADS
+	ogl_draw_bitmap_arrays(GL_TRIANGLE_FAN, 0, 4, src, NULL);//replaced GL_QUADS
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -2689,6 +2706,7 @@ void ogl_filltexbuf(unsigned char *data, GLubyte *texp, int truewidth, int width
 		Error("Texture is too big: %ix%i (limit %i)", width, height, ogl_max_texture_size);
 
 	if (data_format) { // true color bitmap?
+		data += (dyo * truewidth + dxo) * data_format;
 		if (width == truewidth && width == twidth) {
 			memcpy(texp, data, data_format * width * height);
 		} else {
@@ -2948,8 +2966,8 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 static int ogl_loadtexture_into(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname, GLuint reuse_handle)
 {
 	GLubyte	*bufP = texbuf;
-	tex->tw = pow2ize (tex->w);
-	tex->th = pow2ize (tex->h);//calculate smallest texture size that can accomodate us (must be multiples of 2)
+	tex->tw = tex->xl_rgba ? tex->w : pow2ize (tex->w);
+	tex->th = tex->xl_rgba ? tex->h : pow2ize (tex->h);//calculate smallest texture size that can accomodate us (must be multiples of 2)
 
 	/* Skip textures that exceed GL_MAX_TEXTURE_SIZE to avoid GL errors
 	 * or hangs (e.g. animated sprite strips can be very tall) */
@@ -3058,7 +3076,7 @@ static int ogl_loadtexture_into(unsigned char *data, int dxo, int dyo, ogl_textu
 	}
 
 #ifndef OGLES // see comment above
-	if (texfilt)
+	if (texfilt && !tex->xl_rgba)
 	{
 		gluBuild2DMipmaps (
 				GL_TEXTURE_2D, tex->internalformat, 
@@ -3074,6 +3092,12 @@ static int ogl_loadtexture_into(unsigned char *data, int dxo, int dyo, ogl_textu
 			tex->tw, tex->th, 0, tex->format, // RGBA textures.
 			GL_UNSIGNED_BYTE, // imageData is a GLubyte pointer.
 			bufP);
+#if !defined(OGLES)
+		if (texfilt && tex->xl_rgba) {
+			glGenerateMipmap(GL_TEXTURE_2D);
+			tex->has_mipmaps = 1;
+		}
+#endif
 #ifdef ANDROID
 		if (texfilt && !(tex->flags & OGL_FLAG_NOCOLOR)) {
 			glGenerateMipmap(GL_TEXTURE_2D);
@@ -3230,6 +3254,13 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 #endif
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
+#ifdef DXX_XL_RUNTIME
+	if (bm->bm_type == BM_RGBA) {
+		const char *error = ogl_xl_rgba_load(bm, load_texfilt, bitmapname);
+		if (error) Error("XL true-color texture: %s", error);
+		return;
+	}
+#endif
 #ifdef OGL_MERGE
 	/* During cache pass, bm_flags is BM_FLAG_PAGED_OUT; the real
 	 * transparency flags live in the pig file's GameBitmapFlags[] */
@@ -3778,7 +3809,7 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 	glVertexPointer(2, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);  
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);//replaced GL_QUADS
+	ogl_draw_bitmap_arrays(GL_TRIANGLE_FAN, 0, 4, bm, NULL);//replaced GL_QUADS
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);

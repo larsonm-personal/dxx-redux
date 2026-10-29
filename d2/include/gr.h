@@ -62,6 +62,7 @@ typedef struct _grs_point {
 #define BM_SVGA     2
 #define BM_RGB15    3   //5 bits each r,g,b stored at 16 bits
 #define BM_SVGA15   4
+#define BM_RGBA     6   // Owned RGBA pixels, four bytes per pixel
 #ifdef OGL
 #define BM_OGL      5
 #endif /* def OGL */

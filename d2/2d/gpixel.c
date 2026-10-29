@@ -14,6 +14,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "u_mem.h"
 #include "gr.h"
 #include "grdef.h"
+#include "../../android/app/src/main/cpp/shared/xl_rgba_pixels.h"
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -22,6 +23,13 @@ unsigned char gr_ugpixel( grs_bitmap * bitmap, int x, int y )
 {
 	switch (bitmap->bm_type)
 	{
+		case BM_RGBA: {
+			const unsigned char *pixel = bitmap->bm_data + bitmap->bm_rowsize * y + x * 4;
+			const int transparency = dxx_xl_rgba_transparency(pixel);
+			if (transparency) return transparency < 0 ? 254 : TRANSPARENCY_COLOR;
+			/* Legacy indexed consumers quantize explicitly; GL and physics use RGBA */
+			return gr_find_closest_color(pixel[0] / 4, pixel[1] / 4, pixel[2] / 4);
+		}
 		case BM_LINEAR:
 			return bitmap->bm_data[ bitmap->bm_rowsize*y + x ];
 		

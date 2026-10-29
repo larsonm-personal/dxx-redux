@@ -47,7 +47,9 @@ SOURCE_ARGUMENTS = {
     )
 }
 SOURCE_ARGUMENTS.update(
-    xl_lava_volumes=("REFERENCE", "MOTION_REFERENCE"), xl_observatory_descriptor=("REFERENCE_GATES",)
+    xl_lava_volumes=("REFERENCE", "MOTION_REFERENCE"),
+    xl_observatory_descriptor=("REFERENCE_GATES",),
+    xl_pog_native=("REFERENCE", "GPU"),
 )
 
 

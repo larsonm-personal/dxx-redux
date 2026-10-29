@@ -30,6 +30,7 @@
 #include "preview.h"
 #include "fog.h"
 #include "fog_probe.h"
+#include "pog_probe.h"
 #include "changing_light.h"
 #include "flicker.h"
 #include "level_messages.h"
@@ -2224,6 +2225,7 @@ extern "C" char *game_introspect_get_state(void)
 	// Android diagnostics read actual masks and the owned full-width source records
 	{
 		xl_fog_diagnostics fog{};
+		j["xl_pog"] = json::parse(xl_pog_probe_result());
 		ogl_xl_fog_diagnostics(&fog);
 		xl_fog_scene_result scene{};
 		ogl_xl_fog_scene_result(&scene);

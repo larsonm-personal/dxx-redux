@@ -7,12 +7,12 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-96 required CTests in independent directories, two at a time. Missing tests,
+100 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
 
-The fast selection also checks the registered commands for 35 tests whose
+The fast selection also checks the registered commands for 36 tests whose
 source comparisons are optional in CMake. Each required reference executable
 must exist, including Observatory's no-damage gates and lava's separate motion
 oracle. A runtime pass with an omitted source comparison cannot satisfy this
@@ -21,10 +21,11 @@ selection.
 ## Public source coverage
 
 Every matching pull request builds the pinned XL source adapters on Windows and
-Linux, without private files or credentials. The public owner requires 40
-contracts on Windows and 41 on Linux, including 24 standalone XL source comparisons,
+Linux, without private files or credentials. The public owner requires 42
+contracts on Windows and 44 on Linux, including the standalone XL source comparisons,
 a named-audio source-behavior contract, an independent WAV-channel comparison
-and Linux's offscreen fog backend. Both platforms reject omissions, duplicates,
+the POG reader/source contract and Linux's offscreen fog and POG backends.
+Both platforms reject omissions, duplicates,
 skips and unexpected tests before granting a pass. Optional source executables
 must be present in the registered commands. Runtime comparisons that need actual
 game assets remain in the private selection.
@@ -39,7 +40,7 @@ not hosted-run durations.
 python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci --gpu
 ```
 
-Omit `--gpu` on Windows. The GPU case currently requires Linux EGL/Mesa.
+Omit `--gpu` on Windows. The GPU cases currently require Linux EGL/Mesa.
 
 ## Coverage
 
@@ -164,3 +165,12 @@ workspace. The incremental Windows public owner passes all 40 cases in
 16.531 seconds, including 9.33 seconds of CTest execution. These are actual new
 full-selection results; neither the source audio adapter nor the separate
 passing Android classic-audio control qualifies named playback.
+
+After the stack merged, the trusted hosted `xl-fast` run
+[40824895601](https://github.com/larsonm-personal/dxx-redux/actions/runs/40824895601)
+passed on cmake 1a3d9f92814ff003fd62557c97dba4a0006f58ef. The owner step ran
+for 385.5 seconds (05:44:18 through 05:50:43 UTC, October 29), including its
+builds and original inspections. The private asset checkout is now pinned to
+8c9988a96a7e306f8aac04c85e2610492917b7ac, which includes the manifest's required
+modern originals. This is the measured hosted baseline before the POG addition
+and further CI trimming, not a timing inferred from local results.

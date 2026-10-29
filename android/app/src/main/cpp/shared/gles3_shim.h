@@ -68,6 +68,7 @@ void gles3_shim_color4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a);
 void gles3_shim_alpha_func(GLenum func, GLfloat ref);
 /* Threshold source coverage before fade/color modulation; returns previous state */
 int gles3_shim_set_binary_texture(int enabled);
+GLfloat gles3_shim_set_alpha_reference(GLfloat reference);
 /* Explicit premultiplied material passes: 0 normal, 1 opaque, 2 partial. */
 int gles3_shim_set_soft_surface_pass(int pass);
 int gles3_shim_external_active(void);

@@ -1,0 +1,58 @@
+foreach(
+    pair IN
+    ITEMS "gameio/tga.cpp|9f1c15043e89acd2481eee1b0b9466e0c522c84ab1ae94a7195e1a22d99e687d"
+          "gameio/loadtextures.cpp|bf1ae25e058d6ca745e5833ea0e2c0e425c5716571f6dc5f109a49d67c5452b6"
+          "physics/visibility.cpp|9c85c23b1fec459abdc8115e26d031ed9223516d0b9f64f4474f3bddd03deab8"
+          "main/texmerge.cpp|85acc8790e5c6ba84fb1802411408e2bd0ff592b2bf3e1fb3bffb89472ab87bc"
+          "render/renderframe.cpp|56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf"
+          "include/bitmap.h|9044979682a8e219fa0526cc092150e562d04d2d772b23ce1e63d164d58c7024")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "POG reference changed: ${path}")
+    endif()
+endforeach()
+set(extracted "// Actual pinned true-color conversion and pixel transparency\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "void CTGA::ConvertToRGB (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "void CTGA::SetProperties (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "int32_t CTGA::ReadData (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/visibility.cpp"
+                      "int32_t PixelTranspType (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pog.h" CONTENT "${extracted}")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadtextures.cpp" loader)
+string(FIND "${loader}" "bm.AddFlags (bmh [i].flags & (BM_FLAGS_TO_COPY | BM_FLAG_TGA));" begin)
+if(begin LESS 0)
+    message(FATAL_ERROR "Missing original POG dimension setup")
+endif()
+string(SUBSTRING "${loader}" ${begin} -1 tail)
+string(FIND "${tail}" "bm.SetBPP (bHaveTGA ? 4 : 1);" end)
+string(LENGTH "bm.SetBPP (bHaveTGA ? 4 : 1);" suffix)
+math(EXPR length "${end} + ${suffix}")
+string(SUBSTRING "${tail}" 0 ${length} dimensions)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pog_dimensions.h"
+     CONTENT "${dimensions}\n")
+add_executable(xl_pog_reference tests/reference_pog.cpp)
+target_link_libraries(xl_pog_reference PRIVATE xl_inventory)
+target_include_directories(xl_pog_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME xl_pog_reference COMMAND xl_pog_reference)
+if(TARGET xl_pog_gpu_test)
+    file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/texmerge.cpp" merge)
+    string(FIND "${merge}" "const char *texMergeFS [6] = {" begin)
+    string(FIND "${merge}" "const char *texMergeFSData =" end)
+    if(begin LESS 0 OR end LESS begin)
+        message(FATAL_ERROR "Missing actual XL texture-merge shader arrays")
+    endif()
+    math(EXPR length "${end} - ${begin}")
+    string(SUBSTRING "${merge}" ${begin} ${length} source_shaders)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pog_shaders.h"
+         CONTENT "${source_shaders}")
+    file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/render/renderframe.cpp" frame)
+    string(FIND "${frame}" "glAlphaFunc (GL_GEQUAL, (float) 0.005);" alpha)
+    if(alpha LESS 0)
+        message(FATAL_ERROR "Source frame alpha threshold changed")
+    endif()
+    target_include_directories(xl_pog_gpu_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_definitions(xl_pog_gpu_test PRIVATE XL_POG_SHADER_REFERENCE)
+endif()

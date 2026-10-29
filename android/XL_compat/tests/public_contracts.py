@@ -38,6 +38,8 @@ PUBLIC_TESTS = {
     "xl_nearest_lights_reference",
     "xl_object_trigger_decode_reference",
     "xl_player_resource_reference",
+    "xl_pog_contract",
+    "xl_pog_reference",
     "xl_projectile_history_contract",
     "xl_projectile_reference",
     "xl_projection_reference",
@@ -51,10 +53,11 @@ PUBLIC_TESTS = {
     "xl_wave_contract",
     "xl_wave_channels_reference",
 }
+GPU_TESTS = {"xl_fog_gpu", "xl_pog_gpu"}
 
 
 def validate_registration(listing, gpu=False):
-    required = PUBLIC_TESTS | ({"xl_fog_gpu"} if gpu else set())
+    required = PUBLIC_TESTS | (GPU_TESTS if gpu else set())
     tests = listing["tests"]
     if len(tests) != len(required) or {test["name"] for test in tests} != required:
         raise ValueError("Public XL CTests differ from the required asset-free selection")
@@ -62,7 +65,7 @@ def validate_registration(listing, gpu=False):
 
 
 def require_result(path, returncode, gpu=False):
-    required = PUBLIC_TESTS | ({"xl_fog_gpu"} if gpu else set())
+    required = PUBLIC_TESTS | (GPU_TESTS if gpu else set())
     cases = ET.parse(path).getroot().findall(".//testcase")
     if (
         returncode != 0
@@ -134,7 +137,7 @@ def main():
     passed = require_result(report, result.returncode, gpu=args.gpu)
     receipt = {
         "required_passed": passed,
-        "required_tests": sorted(PUBLIC_TESTS | ({"xl_fog_gpu"} if args.gpu else set())),
+        "required_tests": sorted(PUBLIC_TESTS | (GPU_TESTS if args.gpu else set())),
         "test_seconds": round(time.monotonic() - tests_started, 3),
         "total_seconds": round(time.monotonic() - started, 3),
     }
