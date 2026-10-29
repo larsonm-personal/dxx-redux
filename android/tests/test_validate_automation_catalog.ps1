@@ -22,6 +22,7 @@ $ps1ByName = @{}
 $ps1SupportOwners = @{}
 $infoByPath = @{}
 $ownerClosureByName = @{}
+$dependencyFilesByPath = @{}
 $failures = [System.Collections.Generic.List[string]]::new()
 
 # Discovery alone does not execute the native fault checker/corpus tests in CI
@@ -125,11 +126,16 @@ function Get-PowerShellDependencyClosureText {
         if (-not $visited.Add($file.FullName)) { continue }
         $fileText = $powerShellTextByPath[$file.FullName]
         $text.Add($fileText)
-        foreach ($candidate in $allPowerShellFiles) {
-            if (-not $visited.Contains($candidate.FullName) -and
-                $fileText -match [regex]::Escape($candidate.Name)) {
-                $pending.Enqueue($candidate)
-            }
+        # File text is captured once; its direct dependencies are shared by owners
+        if (-not $dependencyFilesByPath.ContainsKey($file.FullName)) {
+            $dependencyFilesByPath[$file.FullName] = @(
+                foreach ($candidate in $allPowerShellFiles) {
+                    if ($fileText -match [regex]::Escape($candidate.Name)) { $candidate }
+                }
+            )
+        }
+        foreach ($candidate in $dependencyFilesByPath[$file.FullName]) {
+            if (-not $visited.Contains($candidate.FullName)) { $pending.Enqueue($candidate) }
         }
     }
 

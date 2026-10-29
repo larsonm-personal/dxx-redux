@@ -61,3 +61,19 @@ separate CI increment and keep all assertions. Comparing all 86 owners already
 proves exact closure-text equality; dependency traversal falls from 186.982 to
 7.768 seconds across 567 files. Validate the complete catalog after applying it.
 Named-audio runtime remains the next gameplay dependency after this increment.
+
+## Catalog optimization
+
+The separate catalog change caches each file's direct dependencies for the
+duration of validation. It preserves the existing breadth-first traversal,
+candidate order, case-insensitive literal-name matching and per-owner visited
+set. Exact old/new output matches for all 86 owners across 567 files; the cache
+contains 263 visited files. Traversal takes 186.982 seconds before and 7.768
+seconds after. The complete updated Windows catalog passes in 24.125 seconds,
+versus 197 seconds measured before this change. These are local measurements,
+not promised hosted CI timings.
+
+All 99 standalone JSON tests, 479 support scripts and 309 standalone PowerShell
+tests remain represented. The master catalog also passes with the same 422
+top-level entries and 479 support scripts. No test selection, assertion,
+timeout, failure policy or private-asset boundary is changed.
