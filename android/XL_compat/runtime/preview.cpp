@@ -5,6 +5,8 @@
 #include "speed_boost.h"
 #include "spawn_points.h"
 #include "fluids.h"
+#include "fog.h"
+#include "../fog.h"
 #include "blocked.h"
 #include "repair.h"
 #include "doorway.h"
@@ -279,6 +281,10 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			throw std::runtime_error("mission declares custom textures, but no level POG was found; install the complete mission package (custom PIG replacements remain unqualified)");
 	}
 	xl_validate_level_graphics(level.palette);
+	if (xl_compat::volumetric_fog_required(level)) {
+		(void) xl_compat::fog_colors(level);
+		if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
+	}
 	if (NumTextures <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
 		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
 	// Weapons can be collected or restored even when not placed as weapon objects
@@ -520,6 +526,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_fog_bind(nullptr);
 	xl_projectile_clear();
 	xl_wall_trigger_reset();
 	xl_speed_boost_clear();
@@ -698,6 +705,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		xl_fog_bind(source.get());
 		xl_changing_light_bind(source.get());
 		xl_flicker_bind(source.get());
 		xl_object_trigger_load(*source);
@@ -1308,7 +1316,7 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 	face_water_material = false;
 	if (!source || option("-xl-preview-stock-materials") || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return;
 	const int index = Segments[segment_number].sides[side].wall_num;
-	if (source->level_version >= 21) {
+	if (source->level_version >= 21 && !xl_fog_active()) {
 		xl_compat::WaterFace face;
 		const auto &original = source->segments[segment_number];
 		const int child = Segments[segment_number].children[side];

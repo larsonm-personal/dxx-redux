@@ -1,6 +1,7 @@
 #include "admission.h"
 #include "capacity.h"
 #include "producer_layout.h"
+#include "fog.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -58,7 +59,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
 	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || modern_runtime_layout(level)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36, 23/40, 25/40 or 27/40");
-	limit(level.level_version >= 27 && std::any_of(level.segments.begin(), level.segments.end(), [](const Segment &segment) { return (segment.properties & (1 | 2 | 32 | 64)) != 0; }), "authored fog", "version-27 fog colors and distances require runtime application before admitting affected volumes");
+	limit(level.level_version >= 27 && volumetric_fog_required(level) && level.fog_settings.size() != 4, "authored fog", "requires four complete authored color/distance records and a capable OpenGL renderer");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	for (std::size_t i = 0; i < level.walls.size(); ++i) {
 		const auto &wall = level.walls[i];

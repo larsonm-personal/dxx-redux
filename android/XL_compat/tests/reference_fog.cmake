@@ -1,0 +1,72 @@
+foreach(
+    pair IN
+    ITEMS
+        "render/fastrender.cpp|51f893295a5f8e254315037e413fa6299debb9b88a2f8224d22d23ac75dd3d4d"
+        "effects/postprocessing.cpp|c2291476f102dcbed9038aaf42ce4c16e12af243c4fa58dc73fa679174e956b2"
+        "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667"
+        "gameio/loadobjects.cpp|01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Fog reference changed: ${path}")
+    endif()
+endforeach()
+set(extracted "// Actual pinned fog setup and face selection\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
+                      "void CFogData::Init (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
+                      "void CFogData::Read (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/fastrender.cpp"
+                      "static int16_t RenderFogFaces (")
+# The unused source buffer selector has no behavior and fails strict warning builds
+string(REGEX REPLACE "int32_t[ \t]+nFogBuffer[^;]+;" "" extracted "${extracted}")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/segment.h" segment_source)
+string(REGEX MATCH "inline int32_t FogType \\(void\\) \\{[^}]+\\}" fog_type "${segment_source}")
+if(NOT fog_type)
+    message(FATAL_ERROR "Missing pinned fog type priority")
+endif()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_fog_type.h" CONTENT "${fog_type}\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/postprocessing.cpp" shader_source)
+string(FIND "${shader_source}" "#elif FOG_SHADER_TYPE == 1" begin)
+string(SUBSTRING "${shader_source}" ${begin} -1 tail)
+string(FIND "${tail}" "#else" end)
+string(SUBSTRING "${tail}" 0 ${end} shader_block)
+string(REPLACE ";" "@SEMICOLON@" shader_block "${shader_block}")
+string(REGEX MATCHALL "\"[^\"]*\"" literals "${shader_block}")
+set(shader "")
+foreach(literal IN LISTS literals)
+    string(LENGTH "${literal}" literal_size)
+    math(EXPR literal_size "${literal_size} - 2")
+    string(SUBSTRING "${literal}" 1 ${literal_size} literal)
+    string(REPLACE "\\r\\n" "\n" literal "${literal}")
+    string(APPEND shader "${literal}")
+endforeach()
+string(REPLACE "@SEMICOLON@" ";" shader "${shader}")
+string(FIND "${shader}" "#define ZNEAR" begin)
+string(FIND "${shader}" "void main" end)
+math(EXPR length "${end} - ${begin}")
+string(SUBSTRING "${shader}" ${begin} ${length} shader_math)
+string(REPLACE "fogColor.rgb" "fogColor.rgb()" shader_math "${shader_math}")
+string(APPEND extracted "\n${shader_math}\n")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_fog.h" CONTENT "${extracted}")
+# Compile the actual production shader arithmetic, with only GLSL vector syntax adapted
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+                                       "${CMAKE_CURRENT_SOURCE_DIR}/fog_shader.h")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/fog_shader.h" production_source)
+string(FIND "${production_source}" "R\"glsl(" begin)
+math(EXPR begin "${begin} + 7")
+string(SUBSTRING "${production_source}" ${begin} -1 tail)
+string(FIND "${tail}" ")glsl\"" end)
+string(SUBSTRING "${tail}" 0 ${end} production_math)
+string(REPLACE "uniform vec2 scenePlanes;" "vec2 scenePlanes;" production_math "${production_math}")
+foreach(name IN ITEMS color a b)
+    string(REPLACE "${name}.rgb" "${name}.rgb()" production_math "${production_math}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_production_fog_math.h"
+     CONTENT "${production_math}")
+add_executable(xl_fog_reference tests/reference_fog.cpp)
+target_link_libraries(xl_fog_reference PRIVATE xl_inventory)
+target_include_directories(xl_fog_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME xl_fog_reference COMMAND xl_fog_reference)

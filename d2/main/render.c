@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "fog.h"
 #ifdef __ANDROID__
 #include "corona_probe.h"
 #endif
@@ -2455,6 +2456,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Second Pass: Objects
+#ifdef DXX_XL_RUNTIME
+	ogl_xl_fog_volumes(Render_list, N_render_segs);
+#endif
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 	if (Viewer == ConsoleObject) {
 		const int32_t eye[3] = { Viewer_eye.x, Viewer_eye.y, Viewer_eye.z };
@@ -2593,6 +2597,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 		xl_corona_scene_probe(eye, Viewer->segnum);
 #endif
 		xl_preview_render_emitters(Render_list, N_render_segs, eye, Viewer->segnum);
+		ogl_xl_fog_composite();
 	}
 #endif
 	// -- commented out by mk on 09/14/94...did i do a good thing??  object_render_targets();

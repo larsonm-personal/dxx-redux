@@ -68,3 +68,7 @@ directly because the helper excludes an ancestor directory named temp in this
 isolated worktree. Final catalog reruns pass; original-inventory regeneration
 preserves bytes and modification time. The root cmake checkout remains clean at
 e2cc8219a2bc2ffe36bce54986b67bde2eda0bf8.
+
+Published as 23830d44e0931596375b0ae001aa69d4bb8c9370 in PR #187, based on
+xl_more_40_layouts. All seven workflows passed on 2026-10-28. The PR remains
+open and unmerged; the next fog increment is isolated on xl_more_42_fog.

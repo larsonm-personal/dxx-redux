@@ -85,7 +85,7 @@ void prepare()
 	identity = xl_level_trigger_identity();
 	energy = Players[Player_num].energy;
 	verify();
-	for (const char *bad : { "badside.rl2", "badcorn.rl2", "badfog.rl2" }) {
+	for (const char *bad : { "badside.rl2", "badcorn.rl2", "badprop.rl2" }) {
 		require(!xl_level_supported(bad, 0), "Android modern geometry/fog gate bypassed");
 		verify();
 	}

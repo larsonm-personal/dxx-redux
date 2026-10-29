@@ -86,12 +86,14 @@ The new inventory removes noncanonical geometry from Pumo's known requirements.
 The subsequent runtime tranche removes the canonical layout gate while retaining
 independent feature gates.
 Every level requires sound/effect objects; thirteen have particles and three
-have lightning. Twelve contain unsupported property combinations. The campaign
+have lightning. Three retain unsupported property combinations after the
+subsequent [fog increment](fog.md). The campaign
 also uses skyboxes/outdoor regions, effect targets, message/sound/countdown and
 other extended actions, wall variants, equipment and additional object types.
 The refreshed inventory no longer reports the old 23/40-only equipment profile
 or incorrect authored-index assignment restrictions. Eleven levels require
-version-27 authored fog application.
+version-27 authored fog application, now subject to the separate renderer's
+capability and profile checks.
 Custom HXM, POG, WAV, MSG, SND and INI resources need actual ownership, decoding,
 application and transition tests; their presence is not implementation evidence.
 

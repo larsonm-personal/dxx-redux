@@ -49,7 +49,9 @@ enum SegmentProperty {
 	segment_lava = 2,
 	segment_blocked = 4,
 	segment_no_damage = 8,
-	segment_outdoors = 16
+	segment_outdoors = 16,
+	segment_light_fog = 32,
+	segment_dense_fog = 64
 };
 
 // XL v21 separates properties from function; legacy combined IDs must not leak

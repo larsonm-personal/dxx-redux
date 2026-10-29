@@ -143,9 +143,19 @@ def main():
         "scope": "Original layout and detected requirement inventory; source comparisons are documented separately; no runtime or campaign qualification",
         "archives": archives,
     }
-    content = json.dumps(result, indent=4) + "\n"
     existing = json.loads(args.output.read_text(encoding="utf-8")) if args.output.exists() else None
     if existing != result:
+        formatter = Path(__file__).resolve().parents[2] / "tools/code-quality/format-text.mjs"
+        content = subprocess.run(
+            ["node", str(formatter), "--stdin-json"],
+            input=json.dumps(result, indent=4),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        ).stdout
+        if json.loads(content) != result:
+            raise ValueError("Report formatting changed the inventory")
         args.output.write_text(content, encoding="utf-8", newline="\n")
     levels = [level for archive in archives for level in archive["levels"]]
     print(

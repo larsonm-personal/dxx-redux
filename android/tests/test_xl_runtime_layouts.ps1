@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = 'b17342693ffe4c3cd84485d32c682498b600254e13132d49a412e66c76631309'
+$expectedHog = '38caedf8321ad8de4eb3fd452dd9efc6210cf19620b75884a90de4ff283afed8'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'b75b29439f4380affafecebcB9e7800837623750811c992d95f79014ca8fb49e') {
     throw 'Requires the pinned derived fixture from xl_modern_runtime_layouts'

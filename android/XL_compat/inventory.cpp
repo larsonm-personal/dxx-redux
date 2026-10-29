@@ -349,7 +349,7 @@ Inventory inspect_level(const Bytes &bytes)
 		if (out.level_version >= 21) {
 			seg.properties = mine.u8();
 			seg.damage = { mine.s16(), mine.s16() };
-			if (seg.properties & ~(segment_water | segment_lava | segment_blocked | segment_no_damage)) issue(out.unsupported, "segment_properties", i, std::to_string(seg.properties));
+			if (seg.properties & ~(segment_water | segment_lava | segment_blocked | segment_no_damage | segment_light_fog | segment_dense_fog)) issue(out.unsupported, "segment_properties", i, std::to_string(seg.properties));
 			if (seg.damage[0] || seg.damage[1]) issue(out.unsupported, "segment_damage", i, std::to_string(seg.damage[0]) + "/" + std::to_string(seg.damage[1]));
 		}
 		seg.light = mine.s32();

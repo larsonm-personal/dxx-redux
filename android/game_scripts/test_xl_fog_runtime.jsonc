@@ -1,0 +1,1521 @@
+// Controlled normal-frame pixels, GPU cases, persistence, MSAA and context recreation
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_fog_runtime",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "write_config",
+        "file": "graphics_safety.json",
+        "content": "{\"accepted\": {\"TexFilt\": 0, \"AnisoLevel\": 0, \"MsaaLevel\": 0, \"MenuTexFilt\": 0, \"HudTexFilt\": 0, \"ResolutionX\": 640, \"ResolutionY\": 480, \"AspectX\": 3, \"AspectY\": 4, \"ColorDepth\": 0}, \"attempt\": null, \"pending\": {}}",
+    },
+    {
+        "action": "write_config",
+        "file": "descent.cfg",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nMenuTexFilt=0\nHudTexFilt=0\nResolutionX=640\nResolutionY=480\nAspectX=3\nAspectY=4\nColorDepth=0\n",
+    },
+    {
+        "action": "write_config",
+        "file": "d2x-redux/descent.cfg",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nMenuTexFilt=0\nHudTexFilt=0\nResolutionX=640\nResolutionY=480\nAspectX=3\nAspectY=4\nColorDepth=0\n",
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived XL fog",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 1,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 2,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": 0,
+            "xl_fog.scene_probe.changed": 0,
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "gpu",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.gpu_probe.passed": true,
+            "xl_fog.gpu_probe.cases": {
+                "gte": 60,
+            },
+            "xl_fog.gpu_probe.state_restored": true,
+            "xl_fog.failures": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "msaa_level:2",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "controller_input",
+        "timeout_ms": 10000,
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": true,
+        },
+        "controller_keys": ["DLEFT", "A"],
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.accepted.MsaaLevel": 2,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.current.MsaaLevel": 2,
+            "game_window_is_front": true,
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+            "xl_fog.scene_probe.samples": 2,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "msaa_level:4",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "controller_input",
+        "timeout_ms": 10000,
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": true,
+        },
+        "controller_keys": ["DLEFT", "A"],
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.accepted.MsaaLevel": 4,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.current.MsaaLevel": 4,
+            "game_window_is_front": true,
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+            "xl_fog.scene_probe.samples": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "msaa_level:0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.current.MsaaLevel": 0,
+            "game_window_is_front": true,
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+            "xl_fog.scene_probe.samples": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 2,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 3,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 4,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 5,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "msaa_level:2",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "controller_input",
+        "timeout_ms": 10000,
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": true,
+        },
+        "controller_keys": ["DLEFT", "A"],
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.accepted.MsaaLevel": 2,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.current.MsaaLevel": 2,
+            "game_window_is_front": true,
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+            "xl_fog.scene_probe.samples": 2,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "context_capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_context_loss_once",
+        "value": "1",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "log",
+        "message": "SCRIPT_BACKGROUND: xl-fog-context duration_s=3",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "egl_recreate_count": {
+                "gte": 1,
+            },
+            "android_lifecycle.observed_visibility": "foreground",
+            "android_lifecycle.suspend_state": "running",
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 90000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.subtitle": "Game Menu",
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+            "xl_fog.scene_probe.samples": 2,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "context_verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "msaa_level:0",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.current.MsaaLevel": 0,
+            "game_window_is_front": true,
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": {
+                "gte": 1,
+            },
+            "xl_fog.failures": 0,
+            "xl_fog.scene_probe.samples": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 6,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": 0,
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "gpu",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.gpu_probe.passed": true,
+            "xl_fog.gpu_probe.cases": {
+                "gte": 60,
+            },
+            "xl_fog.gpu_probe.state_restored": true,
+            "xl_fog.failures": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": 0,
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "next",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 7,
+            "xl_pilot.source_level_version": 27,
+            "xl_fog.active": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "face_view",
+        "segment": 10,
+        "side": 5,
+        "distance": 8,
+        "post_delay_ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "stock_begin",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "stock",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+            "xl_fog.active": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "stock_begin",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "stock",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "verify_saved",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "scene",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_fog.scene_probe.completed": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_fog.scene_probe.passed": true,
+            "xl_fog.scene_probe.pixels": 25,
+            "xl_fog.scene_probe.covered": {
+                "gte": 1,
+            },
+            "xl_fog.scene_probe.changed": 0,
+            "xl_fog.failures": 0,
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+            "xl_fog.active": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "stock_begin",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_fog_probe",
+        "value": "stock",
+        "post_delay_ms": 0,
+    },
+]
