@@ -434,13 +434,33 @@ internal class XlCompatibilityViewChecks(
     }
 
     /** Production native inspection and dialog witness; no mission import or gameplay admission */
-    fun runEffectFixture(fixturePath: String) {
+    fun runEffectFixture(
+        fixturePath: String,
+        expectedVersion: Int,
+    ) {
         val context = instrumentation.targetContext
         val report = checkNotNull(XlCompatibility.inspect("effect.rl2", File(fixturePath).readBytes()))
         check(report.status == "blocked" && report.blocksAnalysis)
         val format = report.rows.single { it.id == "serialization" }
-        check(format.requirement.contains("23") && format.requirement.contains("40"))
+        check(format.requirement.contains("Level version $expectedVersion, game data 40"))
         check(!format.evidence.contains("detailed inspection rejected"))
+        if (expectedVersion >= 25) {
+            check(format.status == "blocked" && format.evidence.contains("decoded explicit corners"))
+            val geometry = report.rows.single { it.id == "geometry" }
+            check(geometry.status == "not_required" && geometry.requirement.contains("0 nonstandard sides"))
+            val fog = report.rows.single { it.id == "fog" }
+            check(
+                fog.requirement.contains(
+                    if (expectedVersion ==
+                        27
+                    ) {
+                        "4 authored fog settings"
+                    } else {
+                        "0 authored fog settings"
+                    },
+                ),
+            )
+        }
         val effect = report.rows.single { it.id == "effect_objects" }
         check(effect.status == "blocked" && effect.requirement.contains("1 sound payloads"))
         check(effect.evidence.contains("effect_sounds") && effect.support.contains("unsupported"))

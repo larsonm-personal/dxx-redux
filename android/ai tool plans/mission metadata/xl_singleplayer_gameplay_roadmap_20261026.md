@@ -279,8 +279,17 @@ finish original-mission qualification
     distribution has host import and byte-preservation evidence; the normal APK
     exercises a derived extended archive through both preview renderers and game
     activation. See [launcher evidence](../../XL_compat/evidence/extended-hog-launcher.md).
-    Pumo's fourteen version-27 levels remain uninspected and unqualified. Audit
-    their layouts next, then select gameplay dependencies from the full inventory.
+    Pumo's fourteen version-27 levels were still uninspected at this step; the
+    next increment establishes their requirements without granting gameplay.
+
+36. Modern 25/27 inspection: signed wide extras, explicit side corners/deleted
+    slots and fog records are decoded, with actual source-reader comparisons.
+    All fourteen Pumo levels decode and have canonical geometry. The broader
+    inventory retains three level failures and one ambiguous archive. The
+    [layout evidence](../../XL_compat/evidence/modern-layouts.md) also corrects
+    an older light-index source adapter and documents the deliberate unsigned
+    encoded-count interpretation. Runtime layout activation/persistence, authored
+    fog, effect/audio ownership, event actions and resources remain next.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

@@ -22,11 +22,16 @@ struct Issue {
 	std::string detail;
 };
 
+// Pinned XL sideVertIndex, also the classic Redux side order
+inline constexpr std::array<std::array<int, 4>, 6> classic_side_corners{ { { 7, 6, 2, 3 }, { 0, 4, 7, 3 }, { 0, 1, 5, 4 }, { 2, 6, 5, 1 }, { 4, 5, 6, 7 }, { 3, 2, 1, 0 } } };
+
 struct Side {
 	int wall = -1;
 	int texture = -1;
 	int overlay = -1;
 	std::array<int, 12> uvl{};
+	// Serialized local vertex slots for v25+, with trailing 255 for absent corners
+	std::array<int, 4> corners{};
 };
 
 struct Segment {
@@ -119,6 +124,8 @@ struct Inventory {
 	std::vector<std::array<int, 6>> equipment;
 	std::vector<std::array<int, 4>> light_indices;
 	std::vector<std::array<int, 7>> delta_lights;
+	// v27 stores four RGB byte triples and a distance byte in units of 20
+	std::vector<std::array<int, 4>> fog_settings;
 	std::vector<std::array<int, 3>> vertices;
 	std::vector<Segment> segments;
 	std::vector<Color> vertex_colors, side_colors, texture_colors;

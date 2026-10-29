@@ -1,0 +1,3301 @@
+{
+    "schema": 1,
+    "scope": "Original layout and detected requirement inventory; source comparisons are documented separately; no runtime or campaign qualification",
+    "archives": [
+        {
+            "path": "anthology/missions/sirius/antholgy.hog",
+            "sha256": "e323be6bf39fb731a07d1b36d5dff435a8ed3b31dfd5e8ef63b7f26ec8a22a62",
+            "bytes": 16449097,
+            "status": "inspected",
+            "member_count": 6,
+            "levels": [
+                {
+                    "name": "antholgy.rl2",
+                    "sha256": "bf37473e89feac022ec223c9e53f866c8e0db7ec81b3e9d902f6c640d022e20c",
+                    "bytes": 2135196,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 25,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 16833,
+                        "segments": 5501,
+                        "objects": 1279,
+                        "walls": 1130,
+                        "triggers": 103,
+                        "object_trigger_records": 8,
+                        "matcens": 20,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 226,
+                        "delta_lights": 20731
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 33006
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 19],
+                        "value_range": [-1, 62]
+                    },
+                    "segment_functions": {
+                        "0": 5437,
+                        "1": 38,
+                        "10": 1,
+                        "2": 5,
+                        "4": 20
+                    },
+                    "segment_properties": {
+                        "0": 5451,
+                        "2": 49,
+                        "4": 1
+                    },
+                    "wall_trigger_types": {
+                        "0": 15,
+                        "10": 3,
+                        "14": 6,
+                        "15": 15,
+                        "2": 28,
+                        "28": 2,
+                        "29": 2,
+                        "3": 2,
+                        "31": 1,
+                        "7": 4,
+                        "8": 1,
+                        "9": 24
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 771,
+                        "20": 28,
+                        "3": 19,
+                        "4": 1,
+                        "5": 5,
+                        "7": 452
+                    },
+                    "render_types": {
+                        "1": 780,
+                        "11": 28,
+                        "4": 19,
+                        "5": 452
+                    },
+                    "fog_settings": [],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["28 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["28 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 6,
+                            "distinct_details": 2,
+                            "example_details": ["10", "2"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["29"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                }
+            ],
+            "resource_extensions": {
+                ".clr": 1,
+                ".hxm": 1,
+                ".lgt": 1,
+                ".msg": 1,
+                ".pog": 1,
+                ".rl2": 1
+            }
+        },
+        {
+            "path": "BelialSystemXL/missions/single/belialsxl.hog",
+            "sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "bytes": 5240470,
+            "status": "container_rejected",
+            "reason": "Ambiguous duplicate HOG member 02volta",
+            "levels": []
+        },
+        {
+            "path": "boilpnt/missions/single/boilpnt.hog",
+            "sha256": "5cde12e3188fca12b655de3be424871f61bd464e9318b0da6bcdbc65b79551f3",
+            "bytes": 68710431,
+            "status": "inspected",
+            "member_count": 46,
+            "levels": [
+                {
+                    "name": "boilpnt.rl2",
+                    "sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507",
+                    "bytes": 326544,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 23,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 2952,
+                        "segments": 1241,
+                        "objects": 45,
+                        "walls": 140,
+                        "triggers": 23,
+                        "object_trigger_records": 4,
+                        "matcens": 2,
+                        "equipment": 7,
+                        "flicker_lights": 0,
+                        "light_indices": 2,
+                        "delta_lights": 165
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 7446
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 6],
+                        "value_range": [-1, 8]
+                    },
+                    "segment_functions": {
+                        "0": 1186,
+                        "10": 46,
+                        "11": 7,
+                        "4": 2
+                    },
+                    "segment_properties": {
+                        "0": 1066,
+                        "2": 31,
+                        "4": 144
+                    },
+                    "wall_trigger_types": {
+                        "10": 6,
+                        "2": 6,
+                        "22": 1,
+                        "28": 1,
+                        "3": 3,
+                        "9": 6
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 23,
+                        "20": 16,
+                        "4": 1,
+                        "7": 2
+                    },
+                    "render_types": {
+                        "1": 27,
+                        "11": 3,
+                        "13": 13,
+                        "5": 2
+                    },
+                    "fog_settings": [],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["3 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["13 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "equipment item",
+                            "count": 20,
+                            "distinct_details": 10,
+                            "example_details": [
+                                "powerup 24 requires unsupported multiplayer, addon or release pickup behavior",
+                                "powerup 26 requires unsupported multiplayer, addon or release pickup behavior",
+                                "powerup 27 requires unsupported multiplayer, addon or release pickup behavior"
+                            ]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["21"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 46,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["22"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "canyon.rl2",
+                    "sha256": "0802bb85508c528fd2f9e2bbce8e6222404477dc9f4f53e97c3a1537c41ef692",
+                    "bytes": 662176,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 5285,
+                        "segments": 2139,
+                        "objects": 73,
+                        "walls": 353,
+                        "triggers": 66,
+                        "object_trigger_records": 2,
+                        "matcens": 10,
+                        "equipment": 14,
+                        "flicker_lights": 3,
+                        "light_indices": 28,
+                        "delta_lights": 4605
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 12834
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 13],
+                        "value_range": [-1, 38]
+                    },
+                    "segment_functions": {
+                        "0": 2042,
+                        "1": 15,
+                        "10": 57,
+                        "11": 14,
+                        "3": 1,
+                        "4": 10
+                    },
+                    "segment_properties": {
+                        "0": 1229,
+                        "1": 165,
+                        "2": 6,
+                        "32": 265,
+                        "4": 474
+                    },
+                    "wall_trigger_types": {
+                        "10": 4,
+                        "14": 2,
+                        "15": 10,
+                        "2": 45,
+                        "3": 2,
+                        "7": 1,
+                        "8": 1,
+                        "9": 1
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 1,
+                        "19": 1,
+                        "2": 30,
+                        "20": 23,
+                        "4": 1,
+                        "7": 13,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 36,
+                        "11": 5,
+                        "12": 1,
+                        "13": 17,
+                        "5": 14
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 9],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 14],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 2,
+                            "distinct_details": 2,
+                            "example_details": [
+                                "1 objects of type 19; runtime behavior unimplemented",
+                                "23 objects of type 20; runtime behavior unimplemented"
+                            ]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["5 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["17 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "equipment assignment",
+                            "count": 14,
+                            "distinct_details": 1,
+                            "example_details": ["source record has no equipment segment with this producer index"]
+                        },
+                        {
+                            "feature": "equipment layout",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 71,
+                            "distinct_details": 2,
+                            "example_details": ["10", "11"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 265,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "canyon2.rl2",
+                    "sha256": "a75a929f96eb3dc0070eab90cb01cc92011266ac7c6c7d65d45758782e595a11",
+                    "bytes": 654541,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 5243,
+                        "segments": 2125,
+                        "objects": 59,
+                        "walls": 331,
+                        "triggers": 59,
+                        "object_trigger_records": 1,
+                        "matcens": 7,
+                        "equipment": 3,
+                        "flicker_lights": 3,
+                        "light_indices": 28,
+                        "delta_lights": 4610
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 12750
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 6],
+                        "value_range": [-1, 24]
+                    },
+                    "segment_functions": {
+                        "0": 2042,
+                        "1": 15,
+                        "10": 57,
+                        "11": 3,
+                        "3": 1,
+                        "4": 7
+                    },
+                    "segment_properties": {
+                        "0": 1470,
+                        "1": 166,
+                        "2": 6,
+                        "32": 261,
+                        "4": 222
+                    },
+                    "wall_trigger_types": {
+                        "14": 2,
+                        "15": 10,
+                        "2": 45,
+                        "3": 1,
+                        "7": 1
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 1,
+                        "19": 1,
+                        "2": 28,
+                        "20": 21,
+                        "4": 1,
+                        "7": 3,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 34,
+                        "11": 5,
+                        "12": 1,
+                        "13": 15,
+                        "5": 4
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 9],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 14],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 2,
+                            "distinct_details": 2,
+                            "example_details": [
+                                "1 objects of type 19; runtime behavior unimplemented",
+                                "21 objects of type 20; runtime behavior unimplemented"
+                            ]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["5 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["15 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "equipment assignment",
+                            "count": 3,
+                            "distinct_details": 1,
+                            "example_details": ["source record has no equipment segment with this producer index"]
+                        },
+                        {
+                            "feature": "equipment layout",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 60,
+                            "distinct_details": 2,
+                            "example_details": ["10", "11"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 261,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "control.rl2",
+                    "sha256": "0d2d135ed7062bd1c9572cf3f5e3f8c9935dcdbd32f50176d16a41acc186c727",
+                    "bytes": 1163876,
+                    "runtime_qualified": false,
+                    "status": "rejected",
+                    "reason": "invalid packed light index 0 in 27/40: segment=0 side=5 count=5728 first=28025 available=32769"
+                },
+                {
+                    "name": "control2.rl2",
+                    "sha256": "28a21f68d71a7c76e2ed63da036e07f3d7e8522c9437ea49f01ad5b38ee2693c",
+                    "bytes": 1190588,
+                    "runtime_qualified": false,
+                    "status": "rejected",
+                    "reason": "invalid reactor trigger count"
+                },
+                {
+                    "name": "subzero.rl2",
+                    "sha256": "77d0f94d30c903371cb0ba4e03015bc1692fcff09186c5e12afeba4784603041",
+                    "bytes": 1067752,
+                    "runtime_qualified": false,
+                    "status": "rejected",
+                    "reason": "offset 923615: unsupported movement layout 255 at object 4"
+                },
+                {
+                    "name": "watrwrks.rl2",
+                    "sha256": "13ed67aa5396d325e08214d13f6965ee4beede458ebf6d29958e81af2b291784",
+                    "bytes": 874020,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 6460,
+                        "segments": 3188,
+                        "objects": 90,
+                        "walls": 843,
+                        "triggers": 38,
+                        "object_trigger_records": 3,
+                        "matcens": 0,
+                        "equipment": 1,
+                        "flicker_lights": 0,
+                        "light_indices": 28,
+                        "delta_lights": 2661
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 19128
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 0],
+                        "value_range": [-1, 26]
+                    },
+                    "segment_functions": {
+                        "0": 3142,
+                        "1": 26,
+                        "10": 19,
+                        "11": 1
+                    },
+                    "segment_properties": {
+                        "0": 2376,
+                        "1": 141,
+                        "32": 420,
+                        "4": 251
+                    },
+                    "wall_trigger_types": {
+                        "0": 1,
+                        "14": 1,
+                        "15": 33,
+                        "3": 1,
+                        "7": 2
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 1,
+                        "2": 27,
+                        "20": 32,
+                        "4": 1,
+                        "7": 26
+                    },
+                    "render_types": {
+                        "1": 32,
+                        "11": 7,
+                        "12": 3,
+                        "13": 22,
+                        "5": 26
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 9],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 12],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["3 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["32 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["7 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["22 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "equipment assignment",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["source record has no equipment segment with this producer index"]
+                        },
+                        {
+                            "feature": "equipment layout",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 2,
+                            "distinct_details": 2,
+                            "example_details": ["16", "19"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 20,
+                            "distinct_details": 2,
+                            "example_details": ["10", "11"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 420,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                }
+            ],
+            "resource_extensions": {
+                ".clr": 7,
+                ".hxm": 7,
+                ".lgt": 7,
+                ".pcx": 11,
+                ".pog": 6,
+                ".rl2": 7,
+                ".txb": 1
+            }
+        },
+        {
+            "path": "lor-xl/missions/single/lor-xl.hog",
+            "sha256": "7ab8d0412cd26154f020435caa134f8a3bb99944c9e230185f01afaa0c22ff54",
+            "bytes": 10788832,
+            "status": "inspected",
+            "member_count": 5,
+            "levels": [
+                {
+                    "name": "lor-xl.rl2",
+                    "sha256": "36798354c6561613bc0e57bef4d0a539ca57b78b391e102f4059b6813d0fbae6",
+                    "bytes": 1407598,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 10568,
+                        "segments": 4930,
+                        "objects": 142,
+                        "walls": 239,
+                        "triggers": 44,
+                        "object_trigger_records": 4,
+                        "matcens": 0,
+                        "equipment": 0,
+                        "flicker_lights": 2,
+                        "light_indices": 142,
+                        "delta_lights": 16917
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 29580
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, -1],
+                        "value_range": [-1, 9]
+                    },
+                    "segment_functions": {
+                        "0": 4919,
+                        "1": 10,
+                        "3": 1
+                    },
+                    "segment_properties": {
+                        "0": 4411,
+                        "2": 8,
+                        "4": 509,
+                        "8": 2
+                    },
+                    "wall_trigger_types": {
+                        "0": 1,
+                        "1": 1,
+                        "15": 35,
+                        "28": 1,
+                        "3": 1,
+                        "9": 5
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 2,
+                        "2": 44,
+                        "20": 51,
+                        "3": 2,
+                        "4": 8,
+                        "7": 31,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 58,
+                        "11": 11,
+                        "12": 6,
+                        "13": 34,
+                        "4": 2,
+                        "5": 31
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 11],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["6 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["51 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["11 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["34 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                }
+            ],
+            "resource_extensions": {
+                ".clr": 1,
+                ".hxm": 1,
+                ".lgt": 1,
+                ".pog": 1,
+                ".rl2": 1
+            }
+        },
+        {
+            "path": "pmines_v11/missions/single/pmines.hog",
+            "sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+            "bytes": 196505200,
+            "status": "inspected",
+            "member_count": 205,
+            "levels": [
+                {
+                    "name": "mvend.rl2",
+                    "sha256": "bf264e39ca754b524dd5bc090ee01223b6e3d2baa0bf7fcaa61e7d1dc5568dc2",
+                    "bytes": 21306,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 72,
+                        "segments": 19,
+                        "objects": 2,
+                        "walls": 5,
+                        "triggers": 1,
+                        "object_trigger_records": 0,
+                        "matcens": 0,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 0,
+                        "delta_lights": 0
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 114
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, -1],
+                        "value_range": [-1, -1]
+                    },
+                    "segment_functions": {
+                        "0": 19
+                    },
+                    "segment_properties": {
+                        "0": 19
+                    },
+                    "wall_trigger_types": {
+                        "29": 1
+                    },
+                    "object_types": {
+                        "20": 1,
+                        "4": 1
+                    },
+                    "render_types": {
+                        "1": 1,
+                        "13": 1
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 11],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["29"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "mvlev1.rl2",
+                    "sha256": "247a6a81c9883d08c4ddc3b48cfb5ffeb5ca7b08239c8ee1e9832cd92cca0384",
+                    "bytes": 175790,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 1318,
+                        "segments": 419,
+                        "objects": 75,
+                        "walls": 57,
+                        "triggers": 22,
+                        "object_trigger_records": 2,
+                        "matcens": 0,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 31,
+                        "delta_lights": 2318
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 2514
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, -1],
+                        "value_range": [-1, 11]
+                    },
+                    "segment_functions": {
+                        "0": 387,
+                        "1": 12,
+                        "3": 1,
+                        "9": 19
+                    },
+                    "segment_properties": {
+                        "0": 404,
+                        "32": 15
+                    },
+                    "wall_trigger_types": {
+                        "15": 17,
+                        "25": 1,
+                        "3": 1,
+                        "31": 1,
+                        "32": 2
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 21,
+                        "20": 26,
+                        "3": 2,
+                        "4": 1,
+                        "7": 21,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 26,
+                        "11": 12,
+                        "13": 14,
+                        "4": 2,
+                        "5": 21
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [84, 58, 48, 5],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["26 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["12 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["14 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 17,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 3,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 15,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["25"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "mvlev2.rl2",
+                    "sha256": "6221a5602da2a6b3544bb3cfe548cf9d38d9567d6f0feb8f476d484af4721c2f",
+                    "bytes": 354157,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 2759,
+                        "segments": 834,
+                        "objects": 159,
+                        "walls": 137,
+                        "triggers": 33,
+                        "object_trigger_records": 2,
+                        "matcens": 0,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 78,
+                        "delta_lights": 5579
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 5004
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, -1],
+                        "value_range": [-1, 15]
+                    },
+                    "segment_functions": {
+                        "0": 798,
+                        "1": 16,
+                        "3": 1,
+                        "9": 19
+                    },
+                    "segment_properties": {
+                        "0": 824,
+                        "32": 10
+                    },
+                    "wall_trigger_types": {
+                        "0": 5,
+                        "15": 17,
+                        "25": 1,
+                        "28": 6,
+                        "3": 1,
+                        "31": 1,
+                        "32": 2
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 59,
+                        "20": 31,
+                        "3": 4,
+                        "4": 1,
+                        "7": 60,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 64,
+                        "11": 11,
+                        "13": 20,
+                        "4": 4,
+                        "5": 60
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [92, 35, 40, 6],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["31 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["11 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["20 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 14,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 4,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 10,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["25"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "mvlev3.rl2",
+                    "sha256": "cfa351a333d2cdf68f4b0869f3704b149e1676594b201f6e49bb5470801b7021",
+                    "bytes": 510570,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 3974,
+                        "segments": 1258,
+                        "objects": 249,
+                        "walls": 263,
+                        "triggers": 48,
+                        "object_trigger_records": 4,
+                        "matcens": 3,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 100,
+                        "delta_lights": 6784
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 7548
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 2],
+                        "value_range": [-1, 18]
+                    },
+                    "segment_functions": {
+                        "0": 1219,
+                        "1": 16,
+                        "3": 1,
+                        "4": 3,
+                        "9": 19
+                    },
+                    "segment_properties": {
+                        "0": 1247,
+                        "32": 11
+                    },
+                    "wall_trigger_types": {
+                        "0": 2,
+                        "15": 17,
+                        "2": 8,
+                        "25": 1,
+                        "28": 12,
+                        "29": 1,
+                        "3": 2,
+                        "30": 1,
+                        "31": 2,
+                        "32": 2
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 117,
+                        "20": 37,
+                        "3": 6,
+                        "4": 1,
+                        "7": 84,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 122,
+                        "11": 11,
+                        "13": 26,
+                        "4": 6,
+                        "5": 84
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [85, 85, 85, 6],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["37 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["11 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["26 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 15,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 11,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 3,
+                            "distinct_details": 3,
+                            "example_details": ["25", "29", "30"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "mvlev4.rl2",
+                    "sha256": "4795bce01eb5edb68d88d6a81b71c08a6788935f99065ae7439acfa999cb8ff4",
+                    "bytes": 373963,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 2895,
+                        "segments": 897,
+                        "objects": 177,
+                        "walls": 152,
+                        "triggers": 52,
+                        "object_trigger_records": 2,
+                        "matcens": 6,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 72,
+                        "delta_lights": 5337
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 5382
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 5],
+                        "value_range": [-1, 8]
+                    },
+                    "segment_functions": {
+                        "0": 869,
+                        "1": 3,
+                        "3": 1,
+                        "4": 6,
+                        "9": 18
+                    },
+                    "segment_properties": {
+                        "0": 888,
+                        "32": 9
+                    },
+                    "wall_trigger_types": {
+                        "0": 2,
+                        "15": 16,
+                        "2": 8,
+                        "25": 1,
+                        "28": 7,
+                        "3": 1,
+                        "31": 2,
+                        "32": 2,
+                        "33": 1,
+                        "7": 2,
+                        "9": 10
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 78,
+                        "20": 30,
+                        "3": 3,
+                        "4": 1,
+                        "7": 61,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 83,
+                        "11": 10,
+                        "13": 20,
+                        "4": 3,
+                        "5": 61
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [116, 58, 20, 9],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["10 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["20 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 15,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 4,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 9,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["25"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 3,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "mvlev5.rl2",
+                    "sha256": "0c1e39a8025aaa5a6e1c8caf4847f66934826bf5dcefa2d4ec6afe85aa84f904",
+                    "bytes": 282372,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 2260,
+                        "segments": 762,
+                        "objects": 157,
+                        "walls": 83,
+                        "triggers": 26,
+                        "object_trigger_records": 4,
+                        "matcens": 1,
+                        "equipment": 0,
+                        "flicker_lights": 3,
+                        "light_indices": 23,
+                        "delta_lights": 1635
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 4572
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 0],
+                        "value_range": [-1, 0]
+                    },
+                    "segment_functions": {
+                        "0": 744,
+                        "3": 1,
+                        "4": 1,
+                        "9": 16
+                    },
+                    "segment_properties": {
+                        "0": 737,
+                        "32": 10,
+                        "4": 15
+                    },
+                    "wall_trigger_types": {
+                        "0": 1,
+                        "15": 14,
+                        "2": 1,
+                        "25": 1,
+                        "3": 1,
+                        "31": 2,
+                        "32": 2,
+                        "33": 1,
+                        "34": 1,
+                        "7": 1,
+                        "9": 1
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 55,
+                        "20": 29,
+                        "3": 7,
+                        "4": 1,
+                        "7": 61,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 60,
+                        "11": 8,
+                        "13": 21,
+                        "4": 7,
+                        "5": 61
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [175, 128, 16, 4],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["29 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["8 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["21 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 12,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 10,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 2,
+                            "distinct_details": 2,
+                            "example_details": ["25", "34"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 4,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "mvlev6.rl2",
+                    "sha256": "fc704ef31958dfff33691c96e772af71f97c621a50e1ddc65feda6a66f00db44",
+                    "bytes": 411967,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 3201,
+                        "segments": 1039,
+                        "objects": 239,
+                        "walls": 128,
+                        "triggers": 41,
+                        "object_trigger_records": 2,
+                        "matcens": 2,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 69,
+                        "delta_lights": 4374
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 6234
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 1],
+                        "value_range": [-1, 30]
+                    },
+                    "segment_functions": {
+                        "0": 989,
+                        "1": 29,
+                        "3": 1,
+                        "4": 2,
+                        "9": 18
+                    },
+                    "segment_properties": {
+                        "0": 1027,
+                        "32": 12
+                    },
+                    "wall_trigger_types": {
+                        "0": 1,
+                        "15": 16,
+                        "2": 3,
+                        "25": 1,
+                        "28": 8,
+                        "3": 1,
+                        "31": 2,
+                        "32": 2,
+                        "33": 1,
+                        "7": 2,
+                        "9": 4
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 113,
+                        "20": 28,
+                        "4": 1,
+                        "5": 12,
+                        "7": 81,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 130,
+                        "11": 10,
+                        "13": 18,
+                        "5": 81
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [109, 73, 74, 6],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["28 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["10 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["18 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 15,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 4,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 12,
+                            "distinct_details": 1,
+                            "example_details": ["32"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["25"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 7,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "pm-hub.rl2",
+                    "sha256": "3fd2d68b7104560764ea0cfeb122d5be9004fb039768e5b4eefca4efd531c621",
+                    "bytes": 158214,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 1100,
+                        "segments": 439,
+                        "objects": 19,
+                        "walls": 55,
+                        "triggers": 9,
+                        "object_trigger_records": 0,
+                        "matcens": 0,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 29,
+                        "delta_lights": 2494
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 2634
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, -1],
+                        "value_range": [-1, -1]
+                    },
+                    "segment_functions": {
+                        "0": 135,
+                        "10": 295,
+                        "9": 9
+                    },
+                    "segment_properties": {
+                        "0": 420,
+                        "32": 6,
+                        "4": 12,
+                        "60": 1
+                    },
+                    "wall_trigger_types": {
+                        "10": 3,
+                        "15": 3,
+                        "3": 3
+                    },
+                    "object_types": {
+                        "20": 18,
+                        "4": 1
+                    },
+                    "render_types": {
+                        "1": 1,
+                        "11": 1,
+                        "13": 17
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [106, 106, 106, 8],
+                        [106, 106, 106, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["18 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["17 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 295,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 7,
+                            "distinct_details": 2,
+                            "example_details": ["32", "60"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "pmlev1.rl2",
+                    "sha256": "8ddfb183c63e012d85b9010fd3d2f7f7998e19040e9ed7790c88ea7152883cdb",
+                    "bytes": 597893,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 4613,
+                        "segments": 1900,
+                        "objects": 144,
+                        "walls": 206,
+                        "triggers": 52,
+                        "object_trigger_records": 3,
+                        "matcens": 5,
+                        "equipment": 2,
+                        "flicker_lights": 5,
+                        "light_indices": 60,
+                        "delta_lights": 5248
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 11400
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 4],
+                        "value_range": [-1, 44]
+                    },
+                    "segment_functions": {
+                        "0": 1840,
+                        "1": 38,
+                        "10": 1,
+                        "11": 2,
+                        "3": 1,
+                        "4": 5,
+                        "9": 13
+                    },
+                    "segment_properties": {
+                        "0": 1745,
+                        "4": 155
+                    },
+                    "wall_trigger_types": {
+                        "0": 3,
+                        "12": 2,
+                        "15": 12,
+                        "19": 1,
+                        "2": 3,
+                        "28": 8,
+                        "29": 2,
+                        "3": 1,
+                        "30": 2,
+                        "31": 4,
+                        "33": 2,
+                        "7": 6,
+                        "8": 1,
+                        "9": 5
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 1,
+                        "2": 53,
+                        "20": 41,
+                        "4": 1,
+                        "5": 10,
+                        "7": 34,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 69,
+                        "11": 2,
+                        "12": 1,
+                        "13": 38,
+                        "5": 34
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 11],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "additive_wall_rendering",
+                            "count": 10,
+                            "distinct_details": 2,
+                            "example_details": ["20", "28"]
+                        },
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["41 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["2 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["38 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 3,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "equipment assignment",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["source record has no equipment segment with this producer index"]
+                        },
+                        {
+                            "feature": "equipment layout",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 3,
+                            "distinct_details": 3,
+                            "example_details": ["16", "29", "30"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 3,
+                            "distinct_details": 2,
+                            "example_details": ["10", "11"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 5,
+                            "distinct_details": 3,
+                            "example_details": ["19", "29", "30"]
+                        },
+                        {
+                            "feature": "wall_flags",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["65432"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 14,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "pmlev2.rl2",
+                    "sha256": "ca500497745ebf21b0e424c5d2fc6a66acd13cb5c1ad8a0cfdbc8a06a4a712af",
+                    "bytes": 730039,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 5740,
+                        "segments": 2246,
+                        "objects": 258,
+                        "walls": 221,
+                        "triggers": 74,
+                        "object_trigger_records": 7,
+                        "matcens": 4,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 92,
+                        "delta_lights": 5682
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 13476
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 3],
+                        "value_range": [-1, 33]
+                    },
+                    "segment_functions": {
+                        "0": 2206,
+                        "1": 30,
+                        "10": 1,
+                        "4": 4,
+                        "9": 5
+                    },
+                    "segment_properties": {
+                        "0": 2214,
+                        "16": 5,
+                        "4": 27
+                    },
+                    "wall_trigger_types": {
+                        "0": 2,
+                        "10": 1,
+                        "15": 4,
+                        "19": 7,
+                        "28": 11,
+                        "29": 6,
+                        "3": 1,
+                        "30": 20,
+                        "31": 10,
+                        "32": 1,
+                        "33": 1,
+                        "7": 4,
+                        "8": 3,
+                        "9": 3
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 3,
+                        "2": 133,
+                        "20": 49,
+                        "3": 3,
+                        "4": 1,
+                        "5": 7,
+                        "7": 59
+                    },
+                    "render_types": {
+                        "1": 147,
+                        "11": 6,
+                        "13": 43,
+                        "4": 3,
+                        "5": 59
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 11],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["49 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["6 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["43 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 3,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 5,
+                            "distinct_details": 3,
+                            "example_details": ["16", "29", "30"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 3,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 5,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 33,
+                            "distinct_details": 3,
+                            "example_details": ["19", "29", "30"]
+                        },
+                        {
+                            "feature": "wall_flags",
+                            "count": 8,
+                            "distinct_details": 2,
+                            "example_details": ["65424", "65432"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "pmlev3.rl2",
+                    "sha256": "9b1854979641d8ef4196d104f830990d893d027a7afcf2b5eb7588c6f350eeb7",
+                    "bytes": 1446599,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 10881,
+                        "segments": 4339,
+                        "objects": 533,
+                        "walls": 478,
+                        "triggers": 101,
+                        "object_trigger_records": 7,
+                        "matcens": 5,
+                        "equipment": 1,
+                        "flicker_lights": 34,
+                        "light_indices": 208,
+                        "delta_lights": 18758
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 26034
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 4],
+                        "value_range": [-1, 19]
+                    },
+                    "segment_functions": {
+                        "0": 4317,
+                        "1": 11,
+                        "10": 1,
+                        "11": 1,
+                        "2": 3,
+                        "3": 1,
+                        "4": 5
+                    },
+                    "segment_properties": {
+                        "0": 4153,
+                        "1": 26,
+                        "16": 12,
+                        "32": 127,
+                        "4": 5,
+                        "64": 16
+                    },
+                    "wall_trigger_types": {
+                        "0": 4,
+                        "12": 2,
+                        "14": 5,
+                        "15": 4,
+                        "19": 7,
+                        "2": 7,
+                        "29": 8,
+                        "3": 1,
+                        "30": 22,
+                        "31": 16,
+                        "33": 6,
+                        "7": 7,
+                        "9": 12
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "16": 5,
+                        "2": 210,
+                        "20": 233,
+                        "4": 1,
+                        "5": 2,
+                        "7": 78,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 222,
+                        "11": 21,
+                        "12": 5,
+                        "13": 207,
+                        "5": 78
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [80, 84, 103, 10],
+                        [64, 21, 28, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["5 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["233 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["21 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["207 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 4,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "equipment assignment",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["source record has no equipment segment with this producer index"]
+                        },
+                        {
+                            "feature": "equipment layout",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["equipment makers require the audited modern 23/40 profile"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 5,
+                            "distinct_details": 1,
+                            "example_details": ["owner type has no qualified singleplayer event lifecycle"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 7,
+                            "distinct_details": 3,
+                            "example_details": ["16", "29", "30"]
+                        },
+                        {
+                            "feature": "object_type",
+                            "count": 5,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 5,
+                            "distinct_details": 3,
+                            "example_details": ["10", "11", "2"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 155,
+                            "distinct_details": 3,
+                            "example_details": ["16", "32", "64"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 37,
+                            "distinct_details": 3,
+                            "example_details": ["19", "29", "30"]
+                        },
+                        {
+                            "feature": "wall_flags",
+                            "count": 21,
+                            "distinct_details": 2,
+                            "example_details": ["65424", "65432"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 18,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "tulev1.rl2",
+                    "sha256": "f122df70673811306d763704f81b8fb1f38372db165c5ecbc8760e5eff8a6fe7",
+                    "bytes": 632709,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 4724,
+                        "segments": 1579,
+                        "objects": 383,
+                        "walls": 258,
+                        "triggers": 80,
+                        "object_trigger_records": 3,
+                        "matcens": 14,
+                        "equipment": 0,
+                        "flicker_lights": 0,
+                        "light_indices": 122,
+                        "delta_lights": 8472
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 9474
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 13],
+                        "value_range": [-1, 17]
+                    },
+                    "segment_functions": {
+                        "0": 1514,
+                        "1": 4,
+                        "4": 14,
+                        "9": 47
+                    },
+                    "segment_properties": {
+                        "0": 1539,
+                        "32": 10,
+                        "36": 18,
+                        "4": 12
+                    },
+                    "wall_trigger_types": {
+                        "10": 1,
+                        "15": 15,
+                        "2": 15,
+                        "25": 1,
+                        "28": 17,
+                        "3": 1,
+                        "30": 2,
+                        "31": 7,
+                        "32": 2,
+                        "33": 4,
+                        "36": 2,
+                        "9": 13
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 167,
+                        "20": 57,
+                        "3": 14,
+                        "4": 1,
+                        "5": 8,
+                        "7": 133
+                    },
+                    "render_types": {
+                        "1": 179,
+                        "11": 13,
+                        "13": 44,
+                        "4": 14,
+                        "5": 133
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [146, 73, 24, 10],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["57 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["13 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["44 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 18,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 28,
+                            "distinct_details": 2,
+                            "example_details": ["32", "36"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 5,
+                            "distinct_details": 3,
+                            "example_details": ["25", "30", "36"]
+                        },
+                        {
+                            "feature": "wall_flags",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["65432"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 12,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "tulev2.rl2",
+                    "sha256": "46365bd53a8370aeebe5b34b7d4a48d536a0846b81b5d4751ecb809ae9fbe4ee",
+                    "bytes": 670114,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 4742,
+                        "segments": 1668,
+                        "objects": 441,
+                        "walls": 274,
+                        "triggers": 42,
+                        "object_trigger_records": 3,
+                        "matcens": 5,
+                        "equipment": 0,
+                        "flicker_lights": 38,
+                        "light_indices": 141,
+                        "delta_lights": 11376
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 10008
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 4],
+                        "value_range": [-1, 14]
+                    },
+                    "segment_functions": {
+                        "0": 1631,
+                        "1": 10,
+                        "10": 1,
+                        "3": 1,
+                        "4": 5,
+                        "9": 20
+                    },
+                    "segment_properties": {
+                        "0": 1655,
+                        "32": 4,
+                        "36": 4,
+                        "4": 5
+                    },
+                    "wall_trigger_types": {
+                        "15": 8,
+                        "2": 12,
+                        "25": 1,
+                        "28": 4,
+                        "3": 1,
+                        "31": 4,
+                        "32": 1,
+                        "33": 3,
+                        "9": 8
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 138,
+                        "20": 157,
+                        "3": 10,
+                        "4": 1,
+                        "5": 9,
+                        "7": 122,
+                        "9": 1
+                    },
+                    "render_types": {
+                        "1": 152,
+                        "11": 21,
+                        "13": 136,
+                        "4": 10,
+                        "5": 122
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [178, 178, 178, 9],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["157 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["21 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["136 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 14,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object triggers",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["wall action target lacks a wall"]
+                        },
+                        {
+                            "feature": "object_effect_trigger_target",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_function_v21",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["10"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 8,
+                            "distinct_details": 2,
+                            "example_details": ["32", "36"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["25"]
+                        },
+                        {
+                            "feature": "wall_flags",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["65424"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 7,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                },
+                {
+                    "name": "tulev4.rl2",
+                    "sha256": "1de9795078fdf036276fbc43e9ecb889eadc095d10e05591fceffae12b4fbca8",
+                    "bytes": 679992,
+                    "runtime_qualified": false,
+                    "status": "decoded",
+                    "level_version": 27,
+                    "game_version": 40,
+                    "counts": {
+                        "vertices": 4974,
+                        "segments": 1732,
+                        "objects": 346,
+                        "walls": 318,
+                        "triggers": 55,
+                        "object_trigger_records": 1,
+                        "matcens": 2,
+                        "equipment": 0,
+                        "flicker_lights": 13,
+                        "light_indices": 131,
+                        "delta_lights": 10997
+                    },
+                    "geometry": {
+                        "nonstandard_sides": 0,
+                        "active_corner_counts": {
+                            "4": 10392
+                        },
+                        "deleted_vertex_segments": 0,
+                        "producer_range": [-1, 1],
+                        "value_range": [-1, 13]
+                    },
+                    "segment_functions": {
+                        "0": 1662,
+                        "1": 12,
+                        "4": 2,
+                        "9": 56
+                    },
+                    "segment_properties": {
+                        "0": 1681,
+                        "32": 11,
+                        "36": 20,
+                        "4": 20
+                    },
+                    "wall_trigger_types": {
+                        "14": 5,
+                        "15": 26,
+                        "2": 1,
+                        "25": 1,
+                        "28": 8,
+                        "3": 1,
+                        "31": 2,
+                        "32": 2,
+                        "33": 1,
+                        "7": 1,
+                        "9": 7
+                    },
+                    "object_types": {
+                        "14": 3,
+                        "2": 140,
+                        "20": 58,
+                        "4": 1,
+                        "5": 6,
+                        "7": 138
+                    },
+                    "render_types": {
+                        "1": 150,
+                        "11": 18,
+                        "12": 1,
+                        "13": 39,
+                        "5": 138
+                    },
+                    "fog_settings": [
+                        [51, 102, 153, 11],
+                        [204, 102, 0, 2],
+                        [61, 135, 135, 5],
+                        [178, 178, 178, 4]
+                    ],
+                    "runtime_blockers": [
+                        {
+                            "feature": "effect_lightning",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["1 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_object_types",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["58 objects of type 20; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_particles",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["18 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_sounds",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["39 decoded payloads; runtime behavior unimplemented"]
+                        },
+                        {
+                            "feature": "effect_trigger_target",
+                            "count": 19,
+                            "distinct_details": 1,
+                            "example_details": ["enable/disable effect-object targets require effect runtime support"]
+                        },
+                        {
+                            "feature": "object_trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["30"]
+                        },
+                        {
+                            "feature": "segment_properties",
+                            "count": 31,
+                            "distinct_details": 2,
+                            "example_details": ["32", "36"]
+                        },
+                        {
+                            "feature": "serialization",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["requires audited level/game-data version 15/33, 15/34, 17/36 or 23/40"]
+                        },
+                        {
+                            "feature": "trigger_type",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["25"]
+                        },
+                        {
+                            "feature": "wall_flags",
+                            "count": 2,
+                            "distinct_details": 1,
+                            "example_details": ["65432"]
+                        },
+                        {
+                            "feature": "wall_keys",
+                            "count": 6,
+                            "distinct_details": 1,
+                            "example_details": ["255"]
+                        }
+                    ],
+                    "unknown": [
+                        {
+                            "feature": "assets",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["mission asset resolution and reference runtime not verified"]
+                        },
+                        {
+                            "feature": "object_dependencies",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": [
+                                "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison"
+                            ]
+                        },
+                        {
+                            "feature": "runtime_semantics",
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["decoded records require reference comparison and runtime validation"]
+                        }
+                    ]
+                }
+            ],
+            "resource_extensions": {
+                ".bmp": 1,
+                ".clr": 14,
+                ".hxm": 12,
+                ".ini": 15,
+                ".lgt": 14,
+                ".msg": 5,
+                ".pcx": 86,
+                ".pog": 5,
+                ".rl2": 14,
+                ".snd": 12,
+                ".txb": 2,
+                ".wav": 25
+            }
+        }
+    ]
+}
