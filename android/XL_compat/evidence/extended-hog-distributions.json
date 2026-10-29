@@ -1,0 +1,278 @@
+{
+    "status": "inspection_only",
+    "playable": false,
+    "purpose": "Additional distribution audit for launcher/resource integration planning; separate from the pinned levelpack survey",
+    "archives": [
+        {
+            "path": "anthology/missions/sirius/antholgy.hog",
+            "sha256": "e323be6bf39fb731a07d1b36d5dff435a8ed3b31dfd5e8ef63b7f26ec8a22a62",
+            "bytes": 16449097,
+            "native": [
+                {
+                    "level": "antholgy.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 25"
+                }
+            ],
+            "playable": false,
+            "distribution": "anthology.7z",
+            "distribution_sha256": "380552e767767147dcbd52f361657acf2a08071e5894c6cd9aa511e6232e0f3f",
+            "members": {
+                "path": "anthology/missions/sirius/antholgy.hog",
+                "signature": "D2X",
+                "members": 6,
+                "long_members": 5,
+                "longest_name": 12,
+                "duplicate_names": {}
+            }
+        },
+        {
+            "path": "BelialSystemXL/missions/single/belialsxl.hog",
+            "sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "bytes": 5240470,
+            "native": {
+                "container_error": "Ambiguous duplicate HOG member 02volta"
+            },
+            "playable": false,
+            "distribution": "BelialSystemXL.7z",
+            "distribution_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "members": {
+                "path": "BelialSystemXL/missions/single/belialsxl.hog",
+                "signature": "D2X",
+                "members": 47,
+                "long_members": 38,
+                "longest_name": 12,
+                "duplicate_names": {
+                    "02volta": [
+                        {
+                            "name": "02volta",
+                            "size": 3420,
+                            "offset": 20,
+                            "extended": false,
+                            "sha256": "970089ee801c60c7b0687342d25fc45824819c7c2d5e03022210d2e6826e1391"
+                        },
+                        {
+                            "name": "02volta",
+                            "size": 3420,
+                            "offset": 3457,
+                            "extended": false,
+                            "sha256": "970089ee801c60c7b0687342d25fc45824819c7c2d5e03022210d2e6826e1391"
+                        }
+                    ],
+                    "belials.txb": [
+                        {
+                            "name": "belials.txb",
+                            "size": 6671,
+                            "offset": 76230,
+                            "extended": false,
+                            "sha256": "8cbc5dd27a35b315fd669b1f886898486843bad34d4efb589942d9578817aff4"
+                        },
+                        {
+                            "name": "belials.txb",
+                            "size": 6671,
+                            "offset": 82918,
+                            "extended": false,
+                            "sha256": "8cbc5dd27a35b315fd669b1f886898486843bad34d4efb589942d9578817aff4"
+                        },
+                        {
+                            "name": "belials.txb",
+                            "size": 7192,
+                            "offset": 89606,
+                            "extended": false,
+                            "sha256": "1a5560370b830f20201bd9f37efa6011013ff790d3d78367cf423437f169a039"
+                        },
+                        {
+                            "name": "belials.txb",
+                            "size": 7190,
+                            "offset": 96815,
+                            "extended": false,
+                            "sha256": "91b111eddd58fd944ac21ba53bdd7672591d8cc8e31a9d75bf3175e9b52ba840"
+                        },
+                        {
+                            "name": "belials.txb",
+                            "size": 7190,
+                            "offset": 104022,
+                            "extended": false,
+                            "sha256": "91b111eddd58fd944ac21ba53bdd7672591d8cc8e31a9d75bf3175e9b52ba840"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "path": "boilpnt/missions/single/boilpnt.hog",
+            "sha256": "5cde12e3188fca12b655de3be424871f61bd464e9318b0da6bcdbc65b79551f3",
+            "bytes": 68710431,
+            "native": [
+                {
+                    "level": "boilpnt.rl2",
+                    "decoded": true,
+                    "flickers": 0,
+                    "zero_delay": 0,
+                    "negative_delay": 0,
+                    "runtime_blockers": [
+                        "effect_object_types",
+                        "effect_particles",
+                        "effect_sounds",
+                        "equipment item",
+                        "object_trigger_type",
+                        "segment_function_v21",
+                        "trigger_type"
+                    ]
+                },
+                {
+                    "level": "control.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "canyon.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "subzero.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "canyon2.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "control2.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "watrwrks.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                }
+            ],
+            "playable": false,
+            "distribution": "boilpnt.7z",
+            "distribution_sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2",
+            "members": {
+                "path": "boilpnt/missions/single/boilpnt.hog",
+                "signature": "D2X",
+                "members": 46,
+                "long_members": 30,
+                "longest_name": 12,
+                "duplicate_names": {}
+            }
+        },
+        {
+            "path": "lor-xl/missions/single/lor-xl.hog",
+            "sha256": "7ab8d0412cd26154f020435caa134f8a3bb99944c9e230185f01afaa0c22ff54",
+            "bytes": 10788832,
+            "native": [
+                {
+                    "level": "lor-xl.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                }
+            ],
+            "playable": false,
+            "distribution": "levels/lor-xl.7z",
+            "distribution_sha256": "7c80710e8a317905dee1d027df1079b9a5d7fd63b3a0cbe99cac57a3090994c8",
+            "members": {
+                "path": "lor-xl/missions/single/lor-xl.hog",
+                "signature": "D2X",
+                "members": 5,
+                "long_members": 5,
+                "longest_name": 10,
+                "duplicate_names": {}
+            }
+        },
+        {
+            "path": "pmines_v11/missions/single/pmines.hog",
+            "sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+            "bytes": 196505200,
+            "native": [
+                {
+                    "level": "mvlev1.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "pm-hub.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "mvlev2.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "mvlev3.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "mvlev4.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "mvlev6.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "tulev1.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "tulev2.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "tulev4.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "mvend.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "mvlev5.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "pmlev1.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "pmlev2.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                },
+                {
+                    "level": "pmlev3.rl2",
+                    "decoded": false,
+                    "reason": "unsupported level version 27"
+                }
+            ],
+            "playable": false,
+            "distribution": "pmines_v11.7z",
+            "distribution_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+            "members": {
+                "path": "pmines_v11/missions/single/pmines.hog",
+                "signature": "D2X",
+                "members": 205,
+                "long_members": 65,
+                "longest_name": 12,
+                "duplicate_names": {}
+            }
+        }
+    ]
+}

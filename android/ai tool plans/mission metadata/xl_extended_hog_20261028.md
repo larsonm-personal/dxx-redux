@@ -48,3 +48,28 @@ checks are implemented. All 77 configured XL tests and all 50 Android steps pass
 Android registration needed the D2 identity define on the misc library; the final
 normal APK verifies it. Launcher integration remains the next dependency step and its gate
 is retained. See [container evidence](../../XL_compat/evidence/extended-hog.md).
+
+## Follow-up distribution findings
+
+The separate original-distribution audit in
+[extended-hog-distributions.json](../../XL_compat/evidence/extended-hog-distributions.json)
+changes the next acceptance fixtures. Use the 196505200-byte Pumo Mines HOG to
+verify streaming catalog/import/music behavior, retaining its version-27 gameplay
+rejection. Anthology adds a version-25 reader requirement; Boiling Point, Lost
+Relics and Pumo Mines add 21 version-27 levels. These formats need source-reader
+and boundary controls after the container/launcher foundation.
+
+Belial has conflicting duplicate briefing names. Audit pinned CHogFile::QuickSort
+and BinSearch to determine the selected payload before replacing the current
+explicit ambiguity rejection. Identical duplicates alone are insufficient: its
+five belials.txb entries contain three different payloads.
+
+Launcher consumers to connect: MissionAssetCatalog.readHog,
+GameFileMetadata.summarizeHog, MissionZipMusic's HOG catalog,
+MissionZipMusicStageManager.readFromHog/extractFromHog,
+ModManager.hogHasSoundtrack and native hog_midi_catalog. MissionZip and
+SetupActivity's blanket diagnostics should change only after those consumers and
+actual package import are verified. Keep format interpretation native, expose a
+stream/header or file-descriptor interface, and preserve extraction budgets,
+member ownership, case rules and cleanup. Do not duplicate the binary format in
+another Kotlin reader.

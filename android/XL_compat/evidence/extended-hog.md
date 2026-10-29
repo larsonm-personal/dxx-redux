@@ -81,8 +81,21 @@ e0988562302190f3922f0edf5a154ebaaca3ffeef38365057bb8039f93017f33.
 container in the pinned 131-level survey: Playground's playgdd3.hog. Its archive
 and surveyed level hashes match. All five members are indexed and playgdxl.rl2
 now decodes; effects and object events retain runtime blockers. No gameplay or
-campaign qualification is granted. Other separately distributed extended
-archives have not been covered by this survey result.
+campaign qualification is granted. A separate [distribution audit](extended-hog-distributions.json) adds five
+original downloads without conflating them with that pinned levelpack survey.
+Distribution and extracted-HOG hashes are recorded and HOG hashes remain
+unchanged after native inspection.
+
+Anthology contains a version-25 level. Boiling Point, Lost Relics and Pumo Mines
+contain 21 version-27 levels between them; those readers remain unsupported.
+One other Boiling Point level decodes and retains gameplay blockers. Belial's
+container has duplicate selected names: two identical 02volta members and five
+belials.txb members containing three different payloads. The current index
+rejects that ambiguity. Full fidelity requires auditing the reference's sort
+and lookup selection, not silently keeping an arbitrary first or last member.
+Pumo Mines' HOG is 196505200 bytes, so launcher integration must retain streaming
+and avoid a whole-archive byte-array bridge. None of these audits qualifies
+original gameplay.
 
 Next, connect the launcher readers to the native format definitions and verify
 real package import, metadata, music staging and resource cleanup before removing
