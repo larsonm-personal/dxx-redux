@@ -13,6 +13,12 @@ Reference revision: 2576a98b5de310e3ac7c9777df2677d1627b8bae.
 sized tables, unsigned 16-bit first indices and, in packed layouts, 13-bit
 counts. A range can start at 65535 and extend to 73726 records.
 
+The later [modern-layout audit](modern-layouts.md) corrected an unsigned-byte
+adapter in the separate light-index decoding oracle. The pinned reader has a
+signed-byte count anomaly; production intentionally retains the unsigned encoded
+count. That correction changes the claimed decoding parity, not this runtime's
+owned table sizes or the separate UVL arithmetic/fallback comparisons below.
+
 The owned runtime keeps the validated source inventory and a stable sorted
 lookup of its source faces. It applies every matching row and contribution in
 order, with per-corner lower clamping. Private runtime translation gives the

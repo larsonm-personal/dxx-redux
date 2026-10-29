@@ -9,18 +9,23 @@ execute_process(COMMAND "${FIXTURE}" --effect-fixtures "${OUTPUT}/fixtures" RESU
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Effect inspection fixtures failed: ${log}${error}")
 endif()
-execute_process(
-    COMMAND "${ENGINE}" -effect-inspection-test "${OUTPUT}/fixtures/e23r13p0.rl2" -hogdir "${DATA}"
-            -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
-    RESULT_VARIABLE result
-    OUTPUT_VARIABLE log
-    ERROR_VARIABLE error
-    TIMEOUT 80)
-file(WRITE "${OUTPUT}/controls.log" "${log}${error}")
-string(FIND "${log}" "XL effect inspection gate passed" witness)
-if(NOT result EQUAL 0 OR witness LESS 0)
-    message(FATAL_ERROR "Effect inspection gate failed (${result}): ${log}${error}")
-endif()
+foreach(version IN ITEMS 23 25 27)
+    execute_process(
+        COMMAND
+            "${ENGINE}" -effect-inspection-test "${OUTPUT}/fixtures/e${version}r13p0.rl2" -hogdir
+            "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 80)
+    file(WRITE "${OUTPUT}/controls-${version}.log" "${log}${error}")
+    string(FIND "${log}" "XL effect inspection gate passed" witness)
+    if(NOT result EQUAL 0 OR witness LESS 0)
+        message(
+            FATAL_ERROR
+                "Version ${version} effect inspection gate failed (${result}): ${log}${error}")
+    endif()
+endforeach()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL original_hash)
     message(FATAL_ERROR "Original Neptune changed during effect rejection control")

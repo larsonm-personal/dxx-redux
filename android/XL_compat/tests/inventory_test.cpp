@@ -68,16 +68,18 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 		for (int i = 0; i < 8; ++i) put(b, i, 2);
 		put(b, 0, 1);
 		for (int side = 0; side < 6; ++side) {
+			if (version >= 25)
+				for (const int corner : xl_compat::classic_side_corners[side]) put(b, corner, 1);
 			put(b, side + 1, 2);
 			for (int i = 0; i < 12; ++i) put(b, i, 2);
 		}
 	}
 	for (int segment = 0; segment < segment_count; ++segment) {
 		put(b, segment_function, 1);
-		put(b, 255, 1);
-		put(b, 255, 1);
+		put(b, version >= 25 ? 65535 : 255, version >= 25 ? 2 : 1);
+		put(b, version >= 25 ? 65535 : 255, version >= 25 ? 2 : 1);
 		put(b, segment_flags, 1);
-		if (version == 23) b.resize(b.size() + 5);
+		if (version >= 23) b.resize(b.size() + 5);
 		put(b, 65536, 4);
 	}
 	for (int i = 0; i < 8 + segment_count * 6; ++i) {
@@ -102,7 +104,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, version == 15 ? 33 : version == 23 ? 40
+	put(b, version == 15 ? 33 : version >= 23 ? 40
 	                                          : 36,
 	    2);
 	b.resize(b.size() + 31);
@@ -111,6 +113,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 		put(b, 0, 4);
 		put(b, 0, 4);
 	}
+	if (version >= 27) b.resize(b.size() + 16);
 	put(b, 0, 1);
 	put(b, 0, 2);
 	patch(b, game + 71, static_cast<std::uint32_t>(b.size()));

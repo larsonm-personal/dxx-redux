@@ -18,7 +18,12 @@ The Android launcher now uses that native format reader for import, catalogs,
 metadata and music, including bounded streaming of Pumo Mines' large HOG.
 See [container evidence](evidence/extended-hog.md) and
 [launcher evidence](evidence/extended-hog-launcher.md). Container support does
-not qualify contained gameplay: all fourteen Pumo levels still reject version 27.
+not qualify contained gameplay. All fourteen Pumo levels now decode as 27/40,
+with canonical geometry and source-reader comparisons; runtime admission remains
+blocked. The [modern-layout evidence](evidence/modern-layouts.md) records the
+complete requirement inventory, retained failures in other packages, and a
+correction to the older light-index source adapter. Explicit side geometry and
+fog now have browser rows. Reading these fields does not implement their runtime.
 
 The [maintained gameplay roadmap](../ai%20tool%20plans/mission%20metadata/xl_singleplayer_gameplay_roadmap_20261026.md)
 tracks these overlapping areas and their acceptance requirements. Immediate wall

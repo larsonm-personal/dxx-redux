@@ -3,7 +3,9 @@ foreach(
     ITEMS "lighting/light.cpp|ca95b9183729c7f3665ef0706206afce093b53b0d97aa6ba11379dd5fdf5f36f"
           "gameio/loadobjects.cpp|01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c"
           "objects/objectio.cpp|528f64e09469b5a452e9c6cf0ae8e9d5dd3eaffeaf5478378669f0783deaf68f"
-          "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667")
+          "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667"
+          "include/cfile.h|34d3db395260649003a848015d3ac4dbac516779012f34c4315b530626016191"
+          "io/cfile.cpp|2f3703136b1d29efe375ede3660b026c112a59c9df1c7dc5cca03589afef475d")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -15,6 +17,8 @@ endforeach()
 set(extracted "")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/lighting/light.cpp"
                       "void CLightDeltaIndex::Read (")
+# Preserve the source's signed-byte result without undefined negative left shift
+string(REPLACE "(j << 5)" "(j * 32)" extracted "${extracted}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_light_index.h"
      CONTENT "${extracted}")
 add_executable(xl_light_index_reference tests/reference_light_index.cpp)

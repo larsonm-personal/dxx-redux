@@ -121,3 +121,10 @@ Next implement gameplay-bearing behavior in bounded slices, retaining these
 gates until activation, cues/interactions, persistence and cleanup are verified.
 The new counts prioritize that work; they do not convert parser progress into a
 playability claim.
+
+The [25/27 follow-up](modern-layouts.md) extends public effect controls from
+75 to 125 profiles and adds complete original Pumo object-reader coverage.
+Its CFile adapter now uses the pinned signed ReadByte declaration and actual
+unsigned object identity storage; raw byte-array and multibyte reads remain
+unsigned. Rejected original members are printed explicitly instead of silently
+skipped. Runtime effects remain gated.

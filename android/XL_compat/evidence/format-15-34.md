@@ -23,7 +23,11 @@ Pinned source SHA-256:
 - include/segment.h: 4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667
 
 The independent storage adapter compiles the actual CLightDeltaIndex::Read body.
-131,072 raw bit patterns exercise the source's old and packed representations;
+Its original unsigned ReadByte adapter was incorrect and is now fixed. The
+[modern-layout audit](modern-layouts.md) documents the signed-byte reference bug
+and the port's intentional use of unsigned encoded counts. The corrected
+131,072-pattern comparison records 65,536 differences; it does not assert bit
+parity between that source bug and the production decoder. Separately,
 136 production cases cover both encodings, counts through 8,191, valid/invalid
 sides, with separate truncated and overrun cases. All 256 reserved flag bytes
 are retained for 15/34; unaudited 15/33 flag cases stay blocked. Positive and
@@ -33,8 +37,10 @@ malformed object-trigger owner/link controls also include the 15/34 layout.
 
 The unchanged Apocalyptic Factor XL HOG SHA-256 is
 f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db.
-The extracted reader evaluates all 676 original light indices: fourteen levels
-contain invalid packed ranges. Their bytes resemble older side/count encoding,
+The unsigned encoded ranges are evaluated for all 676 original light indices:
+fourteen levels contain invalid packed ranges. The corrected signed-source
+comparison additionally records 28 count differences and 332 source overruns.
+Their bytes resemble older side/count encoding,
 but the pinned reference selects packed decoding for their declared version.
 The port rejects these ranges with the segment, side, count, first index and
 available delta count. It does not silently reinterpret malformed originals.

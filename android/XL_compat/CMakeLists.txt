@@ -34,6 +34,15 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(xl_layout_test tests/layout_test.cpp)
+    target_link_libraries(xl_layout_test PRIVATE xl_inventory)
+    add_test(NAME xl_modern_layout_contract COMMAND xl_layout_test)
+    add_test(
+        NAME xl_inspect_stream_contract
+        COMMAND
+            ${CMAKE_COMMAND} -DFIXTURE=$<TARGET_FILE:xl_layout_test>
+            -DINSPECT=$<TARGET_FILE:xl_inspect> -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/inspect-stream
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/inspect_stream.cmake)
     add_executable(xl_hog_test tests/hog_test.cpp)
     target_link_libraries(xl_hog_test PRIVATE xl_inventory)
     add_test(NAME xl_hog_contract COMMAND xl_hog_test)
@@ -107,6 +116,7 @@ if(BUILD_TESTING)
         include(tests/reference_changing_light.cmake)
         include(tests/reference_flicker.cmake)
         include(tests/reference_hog.cmake)
+        include(tests/reference_layouts.cmake)
         include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_light_index.cmake)

@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [string]$DragonPackageArchive, [string]$EffectFixture)
+param([string]$Serial, [string]$DragonPackageArchive, [string]$EffectFixture,
+    [ValidateSet(23, 25, 27)][int]$EffectVersion = 23)
 $ErrorActionPreference = 'Stop'
 if ($DragonPackageArchive -and $EffectFixture) { throw 'Choose one optional XL browser fixture' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
@@ -14,7 +15,7 @@ try {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     $instrumentArgs = @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'xl_compatibility')
     if ($DragonPackageArchive) { $instrumentArgs += @('-e', 'dragon_package_archive', $DragonPackageArchive) }
-    if ($EffectFixture) { $instrumentArgs += @('-e', 'effect_fixture', $EffectFixture) }
+    if ($EffectFixture) { $instrumentArgs += @('-e', 'effect_fixture', $EffectFixture, '-e', 'effect_version', "$EffectVersion") }
     $instrumentArgs += "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation"
     $result = Adb -Seconds 240 -AdbArgs $instrumentArgs
     Write-Output $result

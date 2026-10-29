@@ -9,8 +9,10 @@ workflows passed before this run. Keep reviewable dependency branches and PRs;
 do not merge them or change the clean root cmake checkout.
 
 Pumo Mines is a useful acceptance fixture, not a filename exception. Its
-196505200-byte HOG now indexes, but all fourteen levels reject version 27.
-Loading the container does not demonstrate gameplay support.
+196505200-byte HOG now indexes. The new 25/27 inspection tranche decodes all
+fourteen levels and compares their geometry, extras, fog and object readers to
+the pinned source. Runtime admission and independent feature requirements remain
+blocked. Loading the container or decoding its levels does not demonstrate gameplay.
 
 ## Dependency order
 
@@ -61,6 +63,13 @@ increment; no original mission is newly qualified.
 
 The user's timing question was answered with a provisional 3-6 further long
 runs (36-72 hours) to serious Pumo campaign playtesting. This is an engineering
-estimate, not measured completion: a complete fourteen-level requirement
-inventory is still unavailable, and newer geometry may be substantial work.
-Re-estimate from that inventory rather than extrapolating completed PR counts.
+estimate, not measured completion. The subsequent complete inventory removes
+noncanonical geometry from Pumo's known requirements: all its side mappings are
+canonical. Fog/environment properties, sound/effect objects, event actions and
+resource application remain substantial work. Re-estimate from those interacting
+requirements rather than extrapolating completed PR counts.
+
+The [layout tranche](xl_layouts_25_27_20261028.md) also corrects an older unsigned
+ReadByte source adapter for light indices. The production decoder intentionally
+retains unsigned encoded counts; the reference's signed-count anomaly is now
+measured and documented instead of hidden by the adapter.

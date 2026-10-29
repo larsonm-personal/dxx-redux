@@ -60,6 +60,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var xlCompatibilityOnly = false
     private var xlDragonPackageArchive: String? = null
     private var xlEffectFixture: String? = null
+    private var xlEffectVersion = 23
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
@@ -69,6 +70,7 @@ class RecoveryInstrumentation : Instrumentation() {
         xlCompatibilityOnly = arguments?.getString("suite") == "xl_compatibility"
         xlDragonPackageArchive = arguments?.getString("dragon_package_archive")
         xlEffectFixture = arguments?.getString("effect_fixture")
+        xlEffectVersion = arguments?.getString("effect_version")?.toInt() ?: 23
         installationWorkOnly = arguments?.getString("suite") == "installation_work"
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
         verifyPublishedDocuments = arguments?.getString("published") == "true"
@@ -92,7 +94,7 @@ class RecoveryInstrumentation : Instrumentation() {
             if (xlCompatibilityOnly) {
                 val checks = XlCompatibilityViewChecks(this)
                 when {
-                    xlEffectFixture != null -> checks.runEffectFixture(checkNotNull(xlEffectFixture))
+                    xlEffectFixture != null -> checks.runEffectFixture(checkNotNull(xlEffectFixture), xlEffectVersion)
                     xlDragonPackageArchive != null -> checks.runDragonPackage(checkNotNull(xlDragonPackageArchive))
                     else -> checks.run()
                 }

@@ -226,7 +226,7 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader header(bytes, 0, bytes.size());
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
-	require(out.level_version == 15 || out.level_version == 17 || out.level_version == 23, "unsupported level version " + std::to_string(out.level_version));
+	require(out.level_version == 15 || out.level_version == 17 || out.level_version == 23 || out.level_version == 25 || out.level_version == 27, "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -234,7 +234,7 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader game(bytes, out.game_offset, bytes.size());
 	require(game.u16() == 0x6705, "invalid game data signature");
 	out.game_version = game.u16();
-	require((out.level_version == 15 && (out.game_version == 33 || out.game_version == 34)) || (out.level_version == 17 && out.game_version == 36) || (out.level_version == 23 && out.game_version == 40),
+	require((out.level_version == 15 && (out.game_version == 33 || out.game_version == 34)) || (out.level_version == 17 && out.game_version == 36) || ((out.level_version == 23 || out.level_version == 25 || out.level_version == 27) && out.game_version == 40),
 	        "unsupported level/game version pair " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version));
 	game.skip(31);
 	const char *section_names[] = { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights", "equipment" };
@@ -247,6 +247,8 @@ Inventory inspect_level(const Bytes &bytes)
 		require(!s.count || (s.offset >= out.game_offset && static_cast<std::size_t>(s.offset) < bytes.size()), s.name + ": missing data");
 		out.sections.push_back(s);
 	}
+	if (out.level_version >= 27)
+		for (int i = 0; i < 4; ++i) out.fog_settings.push_back({ game.u8(), game.u8(), game.u8(), game.u8() });
 	out.level_name = game.line(256);
 	const int model_count = game.u16();
 	if (model_count == 0x614d || model_count == 0x5547 || model_count == 0x5053) {
@@ -293,8 +295,10 @@ Inventory inspect_level(const Bytes &bytes)
 		}
 		for (auto &v : seg.vertices) {
 			v = mine.u16();
-			require(v < vertex_count, "invalid vertex at segment " + std::to_string(i));
+			require(v < vertex_count || (out.level_version >= 25 && v >= 0xfff8), "invalid vertex at segment " + std::to_string(i));
 		}
+		if (std::any_of(seg.vertices.begin(), seg.vertices.end(), [](int vertex) { return vertex >= 0xfff8; }))
+			issue(out.unsupported, "segment_geometry", i, "deleted vertex slots require XL non-hexahedral geometry");
 		const int wall_flags = mine.u8();
 		require((wall_flags & 0xc0) == 0, "unknown wall mask at segment " + std::to_string(i));
 		for (int side = 0; side < 6; ++side) {
@@ -307,6 +311,20 @@ Inventory inspect_level(const Bytes &bytes)
 		}
 		for (int side = 0; side < 6; ++side) {
 			auto &s = seg.sides[side];
+			s.corners = classic_side_corners[side];
+			if (out.level_version >= 25) {
+				bool absent = false;
+				for (auto &corner : s.corners) {
+					corner = mine.u8();
+					if (corner == 255) absent = true;
+					else {
+						require(!absent && corner < 8, "invalid side corner at segment " + std::to_string(i) + " side " + std::to_string(side));
+						require(seg.vertices[corner] < vertex_count, "side references deleted vertex at segment " + std::to_string(i) + " side " + std::to_string(side));
+					}
+				}
+				if (s.corners != classic_side_corners[side])
+					issue(out.unsupported, "side_geometry", i * 6 + side, "explicit corner mapping requires XL geometry semantics");
+			}
 			if (seg.children[side] != -1 && s.wall == -1) continue;
 			const int texture = mine.u16();
 			s.texture = texture & 0x7fff;
@@ -325,17 +343,17 @@ Inventory inspect_level(const Bytes &bytes)
 	for (int i = 0; i < segment_count; ++i) {
 		auto &seg = out.segments[i];
 		seg.function = mine.u8();
-		seg.producer = mine.s8();
-		seg.value = mine.s8();
+		seg.producer = out.level_version >= 24 ? mine.s16() : mine.s8();
+		seg.value = out.level_version >= 24 ? mine.s16() : mine.s8();
 		seg.flags = mine.u8();
-		if (out.level_version == 23) {
+		if (out.level_version >= 21) {
 			seg.properties = mine.u8();
 			seg.damage = { mine.s16(), mine.s16() };
 			if (seg.properties & ~(segment_water | segment_lava | segment_blocked | segment_no_damage)) issue(out.unsupported, "segment_properties", i, std::to_string(seg.properties));
 			if (seg.damage[0] || seg.damage[1]) issue(out.unsupported, "segment_damage", i, std::to_string(seg.damage[0]) + "/" + std::to_string(seg.damage[1]));
 		}
 		seg.light = mine.s32();
-		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, out.level_version == 23 ? "segment_function_v21" : "segment_function", i, std::to_string(seg.function));
+		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, out.level_version >= 21 ? "segment_function_v21" : "segment_function", i, std::to_string(seg.function));
 		if (seg.flags & ~3) {
 			// Pinned source consumes only ambient bits 0/1 in these audited profiles
 			if ((out.level_version == 17 && out.game_version == 36) || (out.level_version == 15 && out.game_version == 34))
@@ -576,7 +594,8 @@ Inventory inspect_level(const Bytes &bytes)
 		for (int i = 0; i < indices.count; ++i) {
 			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
 			if (out.game_version >= 34) {
-				// XL packs side into 3 bits and count into the remaining 13 bits
+				// Encoded side/count use 3/13 unsigned bits. The pinned reader's
+				// signed-byte promotion anomaly is recorded in format-15-34.md
 				values[2] = (values[2] << 5) | (values[1] >> 3);
 				values[1] &= 7;
 			}
@@ -659,7 +678,7 @@ std::string inventory_json(const Inventory &v)
 		const auto &x = v.segments[i];
 		s << "\n    {\"owner\": " << x.owner << ", \"group\": " << x.group << ", \"function\": " << x.function << ", \"producer\": " << x.producer
 		  << ", \"value\": " << x.value << ", \"flags\": " << x.flags << ", \"light\": " << x.light;
-		if (v.level_version == 23) {
+		if (v.level_version >= 21) {
 			s << ", \"properties\": " << x.properties << ", \"damage\": ";
 			array_json(s, x.damage);
 		}
@@ -671,7 +690,12 @@ std::string inventory_json(const Inventory &v)
 		for (std::size_t j = 0; j < x.sides.size(); ++j) {
 			if (j) s << ", ";
 			const auto &side = x.sides[j];
-			s << "{\"wall\": " << side.wall << ", \"texture\": " << side.texture << ", \"overlay\": " << side.overlay << ", \"uvl\": ";
+			s << "{\"wall\": " << side.wall << ", \"texture\": " << side.texture << ", \"overlay\": " << side.overlay;
+			if (v.level_version >= 25) {
+				s << ", \"corners\": ";
+				array_json(s, side.corners);
+			}
+			s << ", \"uvl\": ";
 			array_json(s, side.uvl);
 			s << '}';
 		}
@@ -778,6 +802,7 @@ std::string inventory_json(const Inventory &v)
 	}
 	s << ']';
 	rows_json(s, "flicker_lights", v.flicker_lights);
+	if (!v.fog_settings.empty()) rows_json(s, "fog_settings", v.fog_settings);
 	rows_json(s, "reactor_targets", v.reactor_targets);
 	rows_json(s, "matcens", v.matcens);
 	if (!v.equipment.empty()) rows_json(s, "equipment", v.equipment);

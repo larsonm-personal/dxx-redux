@@ -1,5 +1,6 @@
 // Storage and engine adapters for the unchanged pinned CObject::Read body
 #include "inventory.h"
+#include "hog.h"
 #include <array>
 #include <cstdint>
 #include <cstring>
@@ -72,21 +73,26 @@ class CFile
 	{
 		if (start > limit || limit > bytes.size()) throw std::runtime_error("Invalid reference object extent");
 	}
-	int ReadByte()
+	int ReadUByte()
 	{
 		if (cursor >= end) throw std::runtime_error("Truncated reference object");
 		return bytes[cursor++];
 	}
+	int ReadByte()
+	{
+		const int value = ReadUByte();
+		return value < 128 ? value : value - 256;
+	}
 	std::int16_t ReadShort()
 	{
-		const int low = ReadByte(), high = ReadByte();
+		const int low = ReadUByte(), high = ReadUByte();
 		const int value = low | (high << 8);
 		return static_cast<std::int16_t>(value < 32768 ? value : value - 65536);
 	}
 	std::int32_t ReadInt()
 	{
 		std::uint32_t value = 0;
-		for (int i = 0; i < 4; ++i) value |= std::uint32_t(ReadByte()) << (i * 8);
+		for (int i = 0; i < 4; ++i) value |= std::uint32_t(ReadUByte()) << (i * 8);
 		const auto result = static_cast<std::int32_t>(value <= INT32_MAX ? std::int64_t(value) : std::int64_t(value) - INT64_C(4294967296));
 		integers.push_back(result);
 		return result;
@@ -115,7 +121,7 @@ class CFile
 	{
 		filename.clear();
 		for (int i = 0; i < size * count; ++i) {
-			const int byte = ReadByte();
+			const int byte = ReadUByte();
 			filename.push_back(byte);
 			destination[i] = static_cast<char>(byte);
 		}
@@ -187,14 +193,15 @@ char *reference_strlwr(char *text)
 }
 struct CObject {
 	struct {
-		int nType = 0, nId = 0, controlType = 0, movementType = 0, renderType = 0, nFlags = 0, nSegment = 0, nAttachedObj = 0;
+		std::uint8_t nType = 0, nId = 0, controlType = 0, movementType = 0, renderType = 0, nFlags = 0;
+		int nSegment = 0, nAttachedObj = 0;
 		struct {
 			Vector vPos{};
 			Matrix mOrient{};
 		} position;
 		Vector vLastPos{};
 		struct {
-			int nType = 0, nId = 0, nCount = 0;
+			std::int8_t nType = 0, nId = 0, nCount = 0;
 		} contains;
 	} info;
 	bool m_bMultiplayer = false;
@@ -337,19 +344,31 @@ int main(int argc, char **argv)
 				compare_level(read(entry.path()), objects, effects);
 				++levels;
 			}
-			if (levels != 75) throw std::runtime_error("Missing effect reference profiles");
+			if (levels != 125) throw std::runtime_error("Missing effect reference profiles");
 		} else {
-			for (const auto &member : xl_compat::read_hog(read(argv[1]))) {
-				auto name = member.name;
-				for (char &c : name)
-					if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+			std::ifstream input(argv[1], std::ios::binary | std::ios::ate);
+			if (!input || input.tellg() < 3) throw std::runtime_error("Cannot read original effect HOG");
+			const auto length = std::uint64_t(input.tellg());
+			const auto read_at = [&](std::uint64_t offset, unsigned char *out, std::size_t count) {
+				if (offset > length || count > length - offset) throw std::runtime_error("Original effect read outside HOG");
+				input.clear();
+				input.seekg(static_cast<std::streamoff>(offset));
+				input.read(reinterpret_cast<char *>(out), static_cast<std::streamsize>(count));
+				if (!input) throw std::runtime_error("Truncated original effect HOG");
+			};
+			for (const auto &member : xl_compat::index_hog(length, read_at)) {
+				const auto name = xl_compat::hog_key(member.name);
 				if (name.size() < 4 || name.substr(name.size() - 4) != ".rl2") continue;
+				if (member.size > 64 * 1024 * 1024) throw std::runtime_error("Original effect level exceeds reader bound");
+				xl_compat::Bytes bytes(static_cast<std::size_t>(member.size));
+				read_at(member.offset, bytes.data(), bytes.size());
 				try {
-					xl_compat::inspect_level(member.bytes);
-				} catch (const std::runtime_error &) {
+					xl_compat::inspect_level(bytes);
+				} catch (const std::runtime_error &e) {
+					std::cout << member.name << ": not compared: " << e.what() << '\n';
 					continue;
 				}
-				compare_level(member.bytes, objects, effects);
+				compare_level(bytes, objects, effects);
 				++levels;
 			}
 			if (!levels) throw std::runtime_error("No completely decoded original levels for comparison");

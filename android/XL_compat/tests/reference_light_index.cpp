@@ -1,4 +1,5 @@
 #include "inventory.h"
+#include "hog.h"
 #include <array>
 #include <cstdint>
 #include <fstream>
@@ -8,14 +9,19 @@
 struct CFile {
 	const xl_compat::Bytes &bytes;
 	std::size_t position = 0;
-	std::uint8_t ReadByte()
+	std::uint8_t ReadUByte()
 	{
 		return bytes.at(position++);
 	}
+	std::int8_t ReadByte()
+	{
+		const int value = ReadUByte();
+		return static_cast<std::int8_t>(value < 128 ? value : value - 256);
+	}
 	std::int16_t ReadShort()
 	{
-		const auto low = ReadByte();
-		return static_cast<std::int16_t>(low | (ReadByte() << 8));
+		const auto low = ReadUByte();
+		return static_cast<std::int16_t>(low | (ReadUByte() << 8));
 	}
 };
 struct CLightDeltaIndex {
@@ -46,7 +52,7 @@ static std::uint32_t dword(const xl_compat::Bytes &b, std::size_t p)
 int main(int argc, char **argv)
 {
 	try {
-		unsigned samples = 0;
+		unsigned samples = 0, byte_differences = 0;
 		for (bool packed : { false, true }) {
 			gameStates.render.bD2XLights = packed;
 			for (unsigned bits = 0; bits < 65536; ++bits) {
@@ -54,21 +60,38 @@ int main(int argc, char **argv)
 				CFile file{ raw };
 				CLightDeltaIndex index{};
 				index.Read(file);
-				require(index.nSegment == 0 && index.nSide == (bits & 7) && index.count == (packed ? bits >> 3 : bits >> 8) && index.index == 65535 && file.position == 6, "Source light-index bit/storage matrix differs");
+				const auto encoded = packed ? bits >> 3 : bits >> 8;
+				const auto signed_result = packed ? ((bits >> 3) + ((bits & 128) ? 32 : 0)) & 8191 : ((bits >> 8) + ((bits & 32768) ? 7936 : 0));
+				require(index.nSegment == 0 && index.nSide == (bits & 7) && index.count == signed_result && index.index == 65535 && file.position == 6, "Actual signed-byte source matrix differs");
+				if (index.count != encoded) ++byte_differences;
 				++samples;
 			}
 		}
-		std::cout << samples << " extracted-source packed/legacy light-index bit patterns passed\n";
+		require(byte_differences == 65536, "Signed-byte divergence matrix changed");
+		std::cout << samples << " source patterns checked; " << byte_differences << " differ from unsigned encoded counts because of the reference signed-byte reader\n";
 		if (argc == 1) return 0;
-		require(argc == 2, "Expected original HOG");
-		std::ifstream input(argv[1], std::ios::binary);
-		xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
-		unsigned valid = 0, rejected = 0, indices = 0;
-		for (const auto &member : xl_compat::read_hog(bytes)) {
-			if (member.name.size() < 4 || member.name.substr(member.name.size() - 4) != ".rl2") continue;
-			const auto &b = member.bytes;
+		const bool modern = argc == 3 && std::string(argv[1]) == "--modern";
+		require(argc == 2 || modern, "Expected original HOG or --modern HOG");
+		std::ifstream input(argv[modern ? 2 : 1], std::ios::binary | std::ios::ate);
+		require(bool(input), "Cannot read original HOG");
+		const auto size = input.tellg();
+		require(size >= 3, "Empty original HOG");
+		const auto read = [&](std::uint64_t offset, unsigned char *out, std::size_t count) {
+			require(offset <= std::uint64_t(size) && count <= std::uint64_t(size) - offset, "Original HOG read outside input");
+			input.clear();
+			input.seekg(static_cast<std::streamoff>(offset));
+			input.read(reinterpret_cast<char *>(out), static_cast<std::streamsize>(count));
+			require(bool(input), "Original HOG read failed");
+		};
+		unsigned valid = 0, rejected = 0, indices = 0, original_differences = 0, signed_overruns = 0;
+		for (const auto &member : xl_compat::index_hog(std::uint64_t(size), read)) {
+			const auto name = xl_compat::hog_key(member.name);
+			if (name.size() < 4 || name.substr(name.size() - 4) != ".rl2") continue;
+			require(member.size <= 64 * 1024 * 1024, "Original level exceeds reader bound");
+			xl_compat::Bytes b(static_cast<std::size_t>(member.size));
+			read(member.offset, b.data(), b.size());
 			const auto game = dword(b, 12);
-			require(dword(b, 4) == 15 && word(b, game + 2) == 34, "Unexpected original format");
+			require(modern ? (dword(b, 4) == 25 || dword(b, 4) == 27) && word(b, game + 2) == 40 : dword(b, 4) == 15 && word(b, game + 2) == 34, "Unexpected original format");
 			const auto offset = dword(b, game + 35 + 7 * 12), count = dword(b, game + 39 + 7 * 12), deltas = dword(b, game + 39 + 8 * 12);
 			gameStates.render.bD2XLights = true;
 			CFile file{ b, offset };
@@ -77,14 +100,17 @@ int main(int argc, char **argv)
 			for (unsigned n = 0; n < count; ++n) {
 				CLightDeltaIndex index{};
 				index.Read(file);
-				rows.push_back({ index.nSegment, index.nSide, index.count, index.index });
-				ranges_valid &= index.nSide < 6 && index.index <= deltas && index.count <= deltas - index.index;
+				const auto encoded_count = word(b, offset + n * 6 + 2) >> 3;
+				rows.push_back({ index.nSegment, index.nSide, int(encoded_count), index.index });
+				if (index.count != encoded_count) ++original_differences;
+				if (index.index > deltas || index.count > deltas - index.index) ++signed_overruns;
+				ranges_valid &= index.nSide < 6 && index.index <= deltas && encoded_count <= deltas - index.index;
 				++indices;
 			}
 			if (ranges_valid) {
 				const auto decoded = xl_compat::inspect_level(b);
-				require(decoded.light_indices == rows, "Production light indices differ from extracted source");
-				require(member.name == "alarlof.rl2", "Unexpected valid original needs evidence update");
+				require(decoded.light_indices == rows, "Production indices differ from unsigned encoded records");
+				if (!modern) require(member.name == "alarlof.rl2", "Unexpected valid original needs evidence update");
 				++valid;
 			} else {
 				bool refused = false;
@@ -95,10 +121,12 @@ int main(int argc, char **argv)
 				}
 				require(refused, "Invalid source light range was admitted or rejected for another cause");
 				++rejected;
+				std::cout << member.name << ": invalid authored light range remains rejected\n";
 			}
 		}
-		require(valid == 1 && rejected == 14, "Incomplete original 15/34 audit");
-		std::cout << indices << " original light indices checked with extracted source: one valid level, fourteen rejected; no runtime qualification\n";
+		if (!modern) require(valid == 1 && rejected == 14, "Incomplete original 15/34 audit");
+		else require(valid + rejected > 0, "No modern original levels inspected");
+		std::cout << indices << " original indices: " << valid << " valid levels, " << rejected << " rejected, " << original_differences << " source signed-count differences, " << signed_overruns << " source ranges overrun; no runtime qualification\n";
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << '\n';
 		return 1;

@@ -21,7 +21,7 @@ struct Category {
 };
 const Category categories[] = {
 	{ "container", "Archive and descriptor dialect", "Shared DHF/D2X readers support native mounting and Android import, catalogs and music; gameplay requires supported features and owned resources", "Archives package mission files; descriptors name the mission and list its levels. Recognizing the package is separate from loading its contents." },
-	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 15/34, 17/36 and 23/40 layouts after feature checks", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
+	{ "serialization", "Level and game-data versions", "OpenGL builds translate bounded 15/33, 15/34, 17/36 and 23/40 layouts after feature checks; 25/40 and 27/40 are inspected but not admitted", "XL versions change the binary layout of level and game records. A reader must understand each layout before interpreting its contents." },
 	{ "capacity", "Table capacities and reference widths", "9000 segments/36000 vertices; XL 2047 walls, stock 255; XL source-sized object pools up to 32768 slots, stock 1000; XL 254 triggers, stock 100; other widening unfinished", "XL wall, trigger and object identities, allocation, authored actions and persistence have bounded runtime controls. Other tables and concurrent animation limits remain independent requirements; a readable file can still exceed engine limits." },
 	{ "segments", "Segment physics, properties and ownership", "XL boss destination groups supported with neutral ownership; environment and team ownership require separate checks", "Segment properties describe whole volumes, including fluid physics, protected areas and ownership. Group identity constrains boss destinations independently of walls." },
 	{ "walls", "Wall types and flags", "Separate XL doorway behavior for types 0..7; extended types and wide flags remain gated", "Wall types and flags control doors, barriers and other surfaces. Admitted XL doorway decisions preserve actor keys, signed cloak values and closing-door visibility. Activation, animation and original-mission qualification require their separate evidence." },
@@ -47,6 +47,8 @@ const Category categories[] = {
 	{ "companion_lighting", "LGT and CLR lighting companions", "Owned level-named LGT overrides feed D2 emitters; 23/40 embedded texture colors replace CLR; other D2 CLR profiles, malformed or foreign companions remain rejected", "Level-named LGT and CLR files describe texture brightness and colors. They are not HAM definitions or proof of embedded level lighting; their values, precedence and renderer use must be checked separately." },
 	{ "package_options", "Mission configuration and presentation options", "Packaged INI, wallpapers and extended briefing options unqualified", "Recognizing packaged configuration does not authorize executing it. Each supported option needs bounded parsing, explicit semantics, resource dependencies and restoration on mission changes." },
 	{ "distribution_archive", "Distribution archive extraction", "ZIP, 7z and RAR readers exist; codec and original-package extraction require verification", "The downloaded archive is separate from the mission HOG. Recognizing a 7z catalog does not prove its compression methods can be decoded. Extraction must preserve owned paths and pass byte, integrity and collision checks before mission resources can be evaluated." },
+	{ "geometry", "Explicit side geometry", "Version-25/27 corner slots and deleted vertices are inspected; new geometry is not admitted", "Newer levels store their side corners explicitly and can contain triangular or degenerate sides. These require correct rendering, collision and portal behavior, not just a reader that skips the extra bytes." },
+	{ "fog", "Fog volumes and settings", "Version-27 RGB and distance records are preserved for inspection; authored fog rendering remains unqualified", "Water, lava, light fog and dense fog select separate settings. Fog affects visibility and can matter to gameplay. Reading its colors and distances does not establish correct rendering." },
 };
 struct Evidence {
 	std::string need = "Unknown - not inspected", status = "unknown", detail;
@@ -202,9 +204,26 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				summary = blockers.empty() ? "Detected features supported by OpenGL builds; assets checked on load, campaign unverified" : blocker_message(blockers);
 				rows[1].status = blockers.empty() ? "eligible" : "blocked";
 				rows[1].detail = "Admission uses detected requirements, not mission identity";
+				if (v.level_version >= 25) rows[1].detail += "; decoded explicit corners, signed 16-bit producer/value fields and applicable fog records; runtime layout remains unqualified";
 				rows[1].need += ", game data " + std::to_string(v.game_version);
 				rows[2].need = std::to_string(v.vertices.size()) + " vertices, " + std::to_string(v.segments.size()) + " segments, " + std::to_string(v.walls.size()) + " walls, " + std::to_string(v.objects.size()) + " objects, " + std::to_string(v.triggers.size()) + " triggers";
 				rows[3].need = "Segment functions and owner/group records present";
+				int nonstandard_sides = 0, triangular_sides = 0, deleted_segments = 0, fog_volumes = 0;
+				for (const auto &segment : v.segments) {
+					if (std::any_of(segment.vertices.begin(), segment.vertices.end(), [](int n) { return n >= 0xfff8; })) ++deleted_segments;
+					for (int side = 0; side < 6; ++side) {
+						if (segment.sides[side].corners != classic_side_corners[side]) ++nonstandard_sides;
+						if (std::count(segment.sides[side].corners.begin(), segment.sides[side].corners.end(), 255) == 1) ++triangular_sides;
+					}
+					if (segment_property_bits(v.level_version, segment) & (1 | 2 | 32 | 64)) ++fog_volumes;
+				}
+				rows[27] = { std::to_string(nonstandard_sides) + " nonstandard sides, " + std::to_string(triangular_sides) + " triangular sides, " + std::to_string(deleted_segments) + " segments with deleted vertices",
+					         nonstandard_sides || deleted_segments ? "blocked" : "not_required",
+					         v.level_version >= 25 ? "Explicit mappings inspected; canonical mappings alone do not grant runtime admission" : "Classic implicit four-corner mappings" };
+				rows[28] = { std::to_string(fog_volumes) + " fog-bearing volumes; " + std::to_string(v.fog_settings.size()) + " authored fog settings",
+					         fog_volumes ? "partial" : "not_required",
+					         v.fog_settings.empty() ? "No serialized fog table in this layout; default source settings are separate from authored data" : "Four RGB byte triples and distance bytes in units of 20 retained; authored fog rendering is not implemented" };
+				if (fog_volumes && v.level_version >= 25) rows[28].status = "blocked";
 				rows[4].need = std::to_string(v.walls.size()) + " walls";
 				rows[5].need = std::to_string(v.triggers.size()) + " geometry triggers";
 				rows[6] = v.object_triggers ? Evidence{ "Decoded " + std::to_string(v.object_triggers) + " object triggers and owner references", features[11].present_status, features[11].limitations } : Evidence{ "Absent", "not_required", "No object triggers in this level" };
@@ -227,7 +246,9 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 				rows[9] = { std::to_string(colored) + " chromatic vertex colors; side and texture color tables present", "eligible", has_registered_colors(v) ? "Registered baked colors retained; this report does not verify the rendered scene" : "No registered baked colors: method-0 ambient reconstruction required and implemented; this report does not verify the rendered scene" };
 				for (const auto &issue : blockers) {
 					std::size_t row = 13;
-					if (issue.feature.find("effect_") == 0) row = 17;
+					if (issue.feature == "serialization") row = 1;
+					else if (issue.feature == "side_geometry" || issue.feature == "segment_geometry") row = 27;
+					else if (issue.feature.find("effect_") == 0) row = 17;
 					else if (issue.feature.find("segment") != std::string::npos) row = 3;
 					else if (issue.feature.find("wall") != std::string::npos) row = 4;
 					else if (issue.feature.find("trigger") != std::string::npos) row = 5;
