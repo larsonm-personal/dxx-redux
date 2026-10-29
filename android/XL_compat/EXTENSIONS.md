@@ -74,6 +74,14 @@ semantics. See [wall-key evidence](evidence/wall-key-bytes.md), including all 90
 Android controls. Pumo loses 73 key-value rejections across nine levels, while
 every level retains independent blockers. Wider wall flags remain gated.
 
+The package audit also found that true-color POG headers pass indexed bounds
+validation even though their RGBA/frame semantics are unimplemented. Pumo has
+26 such replacements in five POGs; original Robotech Arena has nineteen. The
+runtime can misinterpret these resources, so prior mechanics tests must not be
+used as texture evidence. See [the reproduced defect and next requirements](evidence/truecolor-pog-admission.md).
+HXM and INI application also require package-level qualification beyond the
+level inventory. This audit adds no new gameplay or resource admission.
+
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain
 their 255-wall limit. Native boundary/rejection controls and 80 Android steps

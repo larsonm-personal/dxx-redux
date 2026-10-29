@@ -358,6 +358,15 @@ finish original-mission qualification
     results unchanged. Wider wall flags and every level's independent gameplay
     blockers remain; required public/private membership stays 40/41 and 96.
 
+44. Package-resource audit: valid true-color POGs currently pass indexed bounds
+    validation and are misinterpreted by the installer. Pumo has 26 replacements
+    in five POGs; original Robotech Arena has nineteen. The native reproduction
+    and trial-guard limitation are recorded in
+    [the resource audit](../../XL_compat/evidence/truecolor-pog-admission.md).
+    This is an identified gap, not completed support. Implement owned RGBA/frame
+    application and verify actual pixels/transparency before qualifying these
+    originals. HXM and INI application remain package-level audit obligations.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

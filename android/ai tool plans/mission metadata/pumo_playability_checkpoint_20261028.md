@@ -1,9 +1,9 @@
 # Pumo playability planning checkpoint
 
-As of the completed message runtime, stereo decoder, named-audio source
-contracts and full wall-key audit, the planning estimate is three to six further twelve-hour runs
-(36-72 development hours), with four runs as the working midpoint, before a
-serious human campaign playthrough. This is a judgment about implementation and
+Following the completed message runtime, stereo decoder, named-audio source
+contracts, wall-key checks and final package audit, budget four to seven further
+twelve-hour runs (48-84 development hours), with five runs as the working
+midpoint, before a serious human campaign playthrough. This is a judgment about implementation and
 integration work, not a measured completion percentage or a release promise.
 Human end-to-end acceptance and fixes it uncovers remain necessary before
 calling the campaign verified. Do not replace that with automated navigation.
@@ -50,23 +50,38 @@ named sounds and nine cameras. Some apparent requirements may be representation
 or classification issues; only source/runtime evidence may remove their gates.
 Do not infer that a visual-looking effect is harmless to gameplay.
 
+Package resources add requirements outside that level-only table. Five POGs
+contain 26 true-color replacements whose RGBA/frame-strip semantics are not
+implemented and can currently be misinterpreted as indexed textures. Twelve
+HXMs and fifteen mission/level INIs also need complete application and transition
+qualification.
+See [resource admission evidence](../../XL_compat/evidence/truecolor-pog-admission.md).
+INI presence alone is not counted as a missing feature: audit the authored
+settings against source defaults and their actual consumers.
+
 ## Order
 
-1. Finish owned named-sound playback and persistence, then use that voice and
+1. Complete owned true-color POG pixels/frames and their application, alongside
+   the remaining HXM/configuration audit. Actual rendering and transparency
+   behavior must accompany decoding and persistence.
+2. Finish owned named-sound playback and persistence, then use that voice and
    resource foundation for ambient sound objects. Verify real mixed output,
    repetitions, pause, restoration and cleanup before enabling either consumer.
-2. Complete effect-object lifecycle and its enable/disable targets. Preserve
+3. Complete effect-object lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
-3. Complete the remaining event actions and world semantics: countdowns,
+4. Complete the remaining event actions and world semantics: countdowns,
    texture changes, camera behavior, mine shaking, disarm, remaining wall variants,
    skybox boundaries and remaining segment properties. Reuse the earlier event,
    asset and persistence foundations; audit each against actual XL behavior.
-4. Exercise combinations using controlled engine events and ordinary saves,
+5. Exercise combinations using controlled engine events and ordinary saves,
    refresh the original requirement inventory, and start human campaign
    playtesting when the real package passes admission. Resolve failures in the
    runtime instead of using mission-name exceptions or weakened validation.
 
-These groups overlap and do not map one-to-one to runs. Audio ownership and
-cross-feature save behavior are the largest current uncertainties. Keep Redux
-as its existing alternate where XL semantics differ. The full-support goal
+This revises the earlier provisional three-to-six-run estimate after reproducing
+the POG gap in the actual runtime and finding the same unverified format in an
+existing mechanics fixture. The groups overlap and do not map one-to-one to
+runs. Resource application, audio ownership and cross-feature save behavior
+are the largest current uncertainties. Keep Redux as its existing alternate
+where XL semantics differ. The full-support goal
 remains broader than making Pumo the first playable modern campaign.
