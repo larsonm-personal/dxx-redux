@@ -25,6 +25,24 @@ if(REFERENCE)
     if(NOT reference_result EQUAL 0)
         message(FATAL_ERROR "Keyed-wall reference mismatch: ${reference_stdout}${reference_stderr}")
     endif()
+    execute_process(
+        COMMAND "${REFERENCE}" "${OUTPUT}/key-hit-samples.txt" keys-hit
+        RESULT_VARIABLE reference_result OUTPUT_VARIABLE reference_stdout
+        ERROR_VARIABLE reference_stderr)
+    file(APPEND "${OUTPUT}/reference.log" "${reference_stdout}${reference_stderr}")
+    if(NOT reference_result EQUAL 0)
+        message(
+            FATAL_ERROR "Wall-key hit reference mismatch: ${reference_stdout}${reference_stderr}")
+    endif()
+    execute_process(
+        COMMAND "${REFERENCE}" "${OUTPUT}/key-robot-samples.txt" keys-robot
+        RESULT_VARIABLE reference_result OUTPUT_VARIABLE reference_stdout
+        ERROR_VARIABLE reference_stderr)
+    file(APPEND "${OUTPUT}/reference.log" "${reference_stdout}${reference_stderr}")
+    if(NOT reference_result EQUAL 0)
+        message(
+            FATAL_ERROR "Wall-key robot reference mismatch: ${reference_stdout}${reference_stderr}")
+    endif()
 endif()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL original_hash)

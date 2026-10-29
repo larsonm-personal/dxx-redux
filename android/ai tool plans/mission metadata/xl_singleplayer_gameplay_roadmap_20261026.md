@@ -349,6 +349,15 @@ finish original-mission qualification
     public/private membership becomes 40/41 and 96. This is a runtime prerequisite;
     action 30, ambient objects and original mission qualification remain gated.
 
+43. Full wall-key bytes: format, translation and extracted-source comparisons
+    cover all 256 values without masking or normalization. Actual player hits,
+    brain door decisions, physical crossings, disk through stock and all 90
+    Android controls retain the different consumer semantics. See
+    [wall-key evidence](../../XL_compat/evidence/wall-key-bytes.md). Pumo loses
+    exactly 73 key-value rejections across nine levels, with all other inventory
+    results unchanged. Wider wall flags and every level's independent gameplay
+    blockers remain; required public/private membership stays 40/41 and 96.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

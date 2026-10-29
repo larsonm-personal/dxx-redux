@@ -378,7 +378,8 @@ Inventory inspect_level(const Bytes &bytes)
 			if (w.type > 7) issue(out.unsupported, "wall_type", i, std::to_string(w.type));
 			if (w.flags & 4) issue(out.unsupported, "additive_wall_rendering", i, std::to_string(w.flags));
 			if (w.state > 6) issue(out.unsupported, "wall_state", i, std::to_string(w.state));
-			if (w.keys & ~15) issue(out.unsupported, "wall_keys", i, std::to_string(w.keys));
+			// XL keeps an unsigned byte; exact color checks and robot masks differ
+			if (w.keys & ~15) issue(out.observations, "nonstandard_wall_keys", i, std::to_string(w.keys));
 			out.walls.push_back(w);
 		}
 	}

@@ -19,6 +19,8 @@ static void write_keyed_wall_fixture(const std::filesystem::path &root)
 				                                               : 8;
 				member.bytes.at(wall + 24) = 9;
 			}
+			// Preserve nonstandard key bytes through ordinary load and disk/rewind
+			for (int i : { 6, 7 }) member.bytes.at(source.sections[1].offset + i * 25 + 22) = 255;
 			const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(member.bytes));
 			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
 		}

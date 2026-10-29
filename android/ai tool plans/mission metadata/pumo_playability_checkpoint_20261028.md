@@ -1,7 +1,7 @@
 # Pumo playability planning checkpoint
 
-As of the completed message runtime, stereo decoder and named-audio source
-contracts, the planning estimate is three to six further twelve-hour runs
+As of the completed message runtime, stereo decoder, named-audio source
+contracts and full wall-key audit, the planning estimate is three to six further twelve-hour runs
 (36-72 development hours), with four runs as the working midpoint, before a
 serious human campaign playthrough. This is a judgment about implementation and
 integration work, not a measured completion percentage or a release promise.
@@ -20,6 +20,9 @@ calling the campaign verified. Do not replace that with automated navigation.
 - Required CI now includes 40/41 public and 96 private controls. A complete
   local private run passes. That evidence protects foundations without
   qualifying the original campaign.
+- All wall-key byte values retain the distinct source player/robot semantics.
+  Source/native and 90 Android controls remove 73 key-value rejections across
+  nine levels without changing their other requirements.
 
 ## Current original requirements
 
@@ -34,7 +37,6 @@ are levels containing a requirement, not separate work items or progress units.
 | Particle objects                                         |     13 |
 | Unsupported wall-action kinds / effect targets           |     12 |
 | Unsupported object-action kinds                          |     12 |
-| Wall key values                                          |      9 |
 | Object-action effect targets                             |      7 |
 | Wall flags                                               |      6 |
 | Segment function 10                                      |      5 |
@@ -56,7 +58,7 @@ Do not infer that a visual-looking effect is harmless to gameplay.
 2. Complete effect-object lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
 3. Complete the remaining event actions and world semantics: countdowns,
-   texture changes, camera behavior, mine shaking, disarm, wall/key variants,
+   texture changes, camera behavior, mine shaking, disarm, remaining wall variants,
    skybox boundaries and remaining segment properties. Reuse the earlier event,
    asset and persistence foundations; audit each against actual XL behavior.
 4. Exercise combinations using controlled engine events and ordinary saves,

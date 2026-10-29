@@ -50,3 +50,49 @@ ownership, looping, real output, cleanup and persistence need their complete
 runtime increment before admission. The reference's Duration() adds half a
 second before returning fixed-point duration, and time zero produces infinite
 looping through its SDL loop count; these are obligations to test explicitly.
+
+## Completed source contracts
+
+PR #192 completes the source audit in step 2. The 126 required controls execute
+the pinned sound action, resource selection, frame maintenance and restoration
+helpers. All 60 Pumo actions resolve through twelve owned SND tables to 22 of
+the 25 embedded WAVs on both hosts. Reuse
+[named-audio-source.md](../../XL_compat/evidence/named-audio-source.md) and its
+executable oracle; playback, live voices and their persistence remain unfinished.
+
+The reference can report a successful request without starting a channel, and
+its restore cooldown can lose a finite sound. Preserve the intended playback
+and saved phase explicitly rather than using either outcome as acceptance.
+
+## Next runtime increment
+
+Build an XL voice owner independent of the Redux sample bank. Prepare bounded,
+owned PCM and stable resource identities before activating a new level or save.
+The first integration must produce real stereo output and retain an explicit
+playback cursor; merely assigning a WAV to a spare classic sound ID is not
+sufficient for simultaneous voices, looping or restoration.
+
+The local SDL integration has concrete boundaries to handle:
+
+- Redux owns a 64-entry channel array. Its global completion callback indexes
+  that array without a bounds check and is installed again on each stock start.
+  Additional XL channels need explicit dispatch and bounds protection without
+  enlarging Redux's allocator or allowing either owner to release the other.
+- digi_mixer_is_channel_playing currently returns zero unconditionally. Use
+  verified voice state and actual mixer completion for XL. Do not infer either
+  playback or completion from that stub.
+- Movie playback already installs Mix_SetPostMix. An XL mixer integration must
+  coexist with movies, music, the Android output capture and stock effects.
+  Do not silently replace a global callback owned by another subsystem.
+- Audio callbacks and game saves run on different threads. Define a coherent
+  snapshot and atomic restore, preserving resource identity, source position,
+  repetition count, pause and resampling phase. Keep allocation and filesystem
+  access out of the audio callback. Cover intentional muting separately from a
+  failed playback start or unavailable backend.
+
+Prove stereo separation, finite/infinite repetitions, completion, simultaneous
+voices, replacement and stop behavior in actual captured mixer output. Then
+exercise wall/object activation, partial-playback disk/rewind, device lifecycle
+and stock recovery on the normal Android binary. Keep action 30 gated until
+that complete path passes. Ambient sound objects can then use the same owned
+voice lifecycle with their separate placement, attenuation and activation rules.
