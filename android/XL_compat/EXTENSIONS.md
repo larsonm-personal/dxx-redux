@@ -46,6 +46,16 @@ original formats, saves and Redux recovery. Fixed membership rejects missing or
 skipped tests and omitted source oracles. Original mission admission and human
 campaign playtesting remain separate requirements.
 
+Owned level MSG text and wall/object message actions now have source/native
+controls and all 80 Android display, modal, disk/rewind and stock-transition
+checks. Timed text, modal pause, resource identity and saved phase use a separate
+XL runtime. The browser counts these actions while retaining load-time text
+checks. See [message evidence](evidence/level-messages.md), including the
+same-frame save correction and all 21 original Pumo message dependencies.
+SND parsing alone does not implement sound playback; Pumo's independent gameplay
+requirements remain. Public Windows and private Linux coverage now require
+38 and 94 tests respectively.
+
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain
 their 255-wall limit. Native boundary/rejection controls and 80 Android steps

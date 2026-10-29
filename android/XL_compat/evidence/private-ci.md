@@ -7,7 +7,7 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-91 required CTests in independent directories, two at a time. Missing tests,
+94 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
@@ -21,8 +21,8 @@ selection.
 ## Public source coverage
 
 Every matching pull request builds the pinned XL source adapters on Windows and
-Linux, without private files or credentials. The public owner requires 36
-contracts on Windows and 37 on Linux, including 23 standalone source comparisons
+Linux, without private files or credentials. The public owner requires 38
+contracts on Windows and 39 on Linux, including 24 standalone source comparisons
 and Linux's offscreen fog backend. Both platforms reject omissions, duplicates,
 skips and unexpected tests before granting a pass. Optional source executables
 must be present in the registered commands. Runtime comparisons that need actual
@@ -42,15 +42,15 @@ Omit `--gpu` on Windows. The GPU case currently requires Linux EGL/Mesa.
 
 ## Coverage
 
-| Area                   | Required evidence                                                                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Format and admission   | Canonical 25/27 runtime, older admitted layouts, malformed inputs, bounded HOG streaming, unsupported requirements and recovery    |
-| Events and world state | Wall/object triggers, delays, flags, teleports, speed boosts, spawn points, resources, wall/door variants and lights               |
-| Actors and generators  | Robot/equipment assignment, 25/27 startup, boss ownership/groups/transport, liquids, repair and capacity controls                  |
-| Persistence and Redux  | Real disk/checkpoint ownership, mission changes, stock recovery and a normal executable without developer probes                   |
-| Source comparisons     | Required extracted reference readers, arithmetic, geometry, resource precedence and gameplay functions; no optional missing oracle |
-| Rendering              | Production offscreen fog backend, depth formats, MSAA, GL state and inactive stock behavior; physical Android remains separate     |
-| Original bytes         | Nine older witnesses plus all seven outcomes in the original modern Boiling Point HOG; three full 27/40 source-reader comparisons  |
+| Area                   | Required evidence                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Format and admission   | Canonical 25/27 runtime, older admitted layouts, malformed inputs, bounded HOG streaming, unsupported requirements and recovery      |
+| Events and world state | Wall/object triggers, delays, flags, teleports, speed boosts, spawn points, resources, wall/door variants, lights and owned messages |
+| Actors and generators  | Robot/equipment assignment, 25/27 startup, boss ownership/groups/transport, liquids, repair and capacity controls                    |
+| Persistence and Redux  | Real disk/checkpoint ownership, mission changes, stock recovery and a normal executable without developer probes                     |
+| Source comparisons     | Required extracted reference readers, arithmetic, geometry, resource precedence and gameplay functions; no optional missing oracle   |
+| Rendering              | Production offscreen fog backend, depth formats, MSAA, GL state and inactive stock behavior; physical Android remains separate       |
+| Original bytes         | Nine older witnesses plus all seven outcomes in the original modern Boiling Point HOG; three full 27/40 source-reader comparisons    |
 
 The nine older witnesses retain positive inspection for 15/33, 17/36 and 23/40.
 The 15/34 witness `fbasin.rl2` retains its specific invalid packed-light rejection;
@@ -141,3 +141,11 @@ then-current tests. The updated original-inventory controls add one test;
 the final nineteen XL owner tests pass separately. Both automation catalogs
 and scoped mixed formatting pass. Hosted private execution requires the trusted
 merged workflow; public PR checks alone cannot establish that result.
+
+The subsequent owned-message increment adds its decoder, source oracle and
+native lifecycle test. Its complete local owner passes all 94 required tests,
+sixteen original-format outcomes and three modern source comparisons in 317.377
+seconds for the test/inspection phase on a Windows-mounted filesystem. Windows
+passes all 38 public cases in 19.89 seconds. The earlier clean native-ext4 timings
+above remain distinct measurements. Message runtime and original Pumo evidence
+are recorded in [level-messages.md](level-messages.md).

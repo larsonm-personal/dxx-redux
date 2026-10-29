@@ -58,7 +58,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 36)
+        self.assertEqual(len(public.PUBLIC_TESTS), 38)
         self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -155,7 +155,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 91)
+        self.assertEqual(len(runner.FAST_TESTS), 94)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -165,6 +165,9 @@ class XlPrivateTests(unittest.TestCase):
                 "xl_fog_gpu",
                 "xl_boss_groups",
                 "xl_modern_generators_27",
+                "xl_level_messages",
+                "xl_level_text_contract",
+                "xl_level_text_reference",
             }
             <= runner.FAST_TESTS
         )
@@ -176,7 +179,7 @@ class XlPrivateTests(unittest.TestCase):
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
             receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 91)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 94)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
@@ -521,14 +524,14 @@ class XlPrivateTests(unittest.TestCase):
         row = {
             "id": assets.FAST_OWNER_ID,
             "xl_checks": {
-                "required_passed": 91,
+                "required_passed": 94,
                 "format_witnesses": 16,
                 "modern_source_levels": 3,
                 "private": "raw input must not escape",
             },
         }
         clean = retail.public_diagnostics(row)
-        self.assertEqual(clean["xl_checks"], {"required_passed": 91, "format_witnesses": 16, "modern_source_levels": 3})
+        self.assertEqual(clean["xl_checks"], {"required_passed": 94, "format_witnesses": 16, "modern_source_levels": 3})
         self.assertNotIn("raw input", json.dumps(clean))
         for invalid in (True, -1, 1001, "private text"):
             changed = copy.deepcopy(row)
@@ -603,7 +606,7 @@ class XlPrivateTests(unittest.TestCase):
             )
             passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
-            self.assertEqual(receipt(passed, 0)["required_passed"], 85)
+            self.assertEqual(receipt(passed, 0)["required_passed"], 87)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
             # CTest can exit zero when disabled tests are present
             disabled_required = ET.parse(path)

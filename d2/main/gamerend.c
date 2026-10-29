@@ -58,6 +58,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"
 #include "replay_debug_overlay.h"
+#ifdef DXX_XL_RUNTIME
+#include "level_messages.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -574,6 +577,9 @@ void game_draw_hud_stuff()
 		Game_mode = Newdemo_game_mode;
 
 	draw_hud();
+#ifdef DXX_XL_RUNTIME
+	xl_message_draw();
+#endif
 #ifdef __ANDROID__
 	guidebot_info_draw();
 #endif

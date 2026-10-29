@@ -322,6 +322,16 @@ finish original-mission qualification
     Missing tests, skipped cases and omitted source oracles cannot grant a pass.
     These checks preserve feature evidence without qualifying an original campaign.
 
+40. Owned level messages: shared MSG/SND text decoding, actual wall/object message
+    actions, visible timed text and modal pause pass source/native and all 80
+    Android controls. Resource ownership, exact same-frame saves, disk/rewind,
+    rejection recovery and Redux transitions are covered. All 21 Pumo message
+    actions resolve to source-matched owned MSG rows across fourteen original
+    levels. See [message evidence](../../XL_compat/evidence/level-messages.md).
+    Sound playback and effect objects retain separate gates. Required public
+    coverage is now 38/39 cases and the private selection is 94; no original
+    Pumo level receives gameplay qualification from this increment.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

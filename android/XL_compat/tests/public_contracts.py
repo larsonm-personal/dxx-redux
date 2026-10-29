@@ -25,6 +25,8 @@ PUBLIC_TESTS = {
     "xl_hxm_geometry_reference",
     "xl_inspect_stream_contract",
     "xl_inventory_contract",
+    "xl_level_text_contract",
+    "xl_level_text_reference",
     "xl_light_index_reference",
     "xl_lighting_calculation",
     "xl_lighting_reference_arithmetic",

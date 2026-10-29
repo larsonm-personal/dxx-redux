@@ -12,6 +12,7 @@
 #include "doorway.h"
 #include "changing_light.h"
 #include "flicker.h"
+#include "level_messages.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -526,6 +527,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_message_clear();
 	xl_fog_bind(nullptr);
 	xl_projectile_clear();
 	xl_wall_trigger_reset();

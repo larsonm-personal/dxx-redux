@@ -1,6 +1,7 @@
 #include "preview.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
+#include "level_messages.h"
 #include <array>
 #include <cstdint>
 #include <cstdlib>
@@ -46,6 +47,7 @@ int stock_bypass = -1;
 constexpr int supported_flags = xl_compat::trigger_flags_mask;
 bool delayed(const trigger &action)
 {
+	if (action.type == 29) return false;
 	const auto magnitude = std::abs(std::int64_t(action.time));
 	return magnitude >= 100 && magnitude <= 900000;
 }
@@ -135,7 +137,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	auto &action = Triggers[index];
 	const bool chain = action.type >= 31 && action.type <= 33;
 	const bool resource = xl_compat::player_resource_action(action.type);
-	if (!chain && action.type > 14 && action.type != 15 && action.type != 28 && !resource) return 1;
+	if (!chain && action.type > 14 && action.type != 15 && action.type != 28 && action.type != 29 && !resource) return 1;
 	if ((Game_mode & GM_MULTI) || (action.flags & TF_DISABLED) || index >= MAX_TRIGGERS || object_index < 0 || object_index >= MAX_OBJECTS) return 1;
 	const bool live = object_index <= Highest_object_index && (Objects[object_index].type == OBJ_PLAYER || xl_wall_teleport_actor(object_index)) && (signature < 0 || Objects[object_index].signature == signature);
 	// Attached events outlive their owner; geometry work does not require an actor
@@ -148,7 +150,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		if (object_index != Players[Player_num].objnum) return 1;
 	} else if (!attached && action.type != 31 && action.type != 14 && action.type != 15) return 1;
 	if ((action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 1;
-	for (int i = 0; !resource && i < action.num_links; ++i)
+	for (int i = 0; !resource && action.type != 29 && i < action.num_links; ++i)
 		if (action.seg[i] < 0 || action.seg[i] > Highest_segment_index || action.side[i] < 0 || action.side[i] >= 6) return 1;
 	TriggerDepth scope;
 	const auto entry_exit = exit_generation;
@@ -178,7 +180,9 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		activated[index] = false;
 		return 1;
 	}
-	if (action.type == 28) {
+	if (action.type == 29) {
+		xl_message_action(&action);
+	} else if (action.type == 28) {
 		xl_spawn_action(&action);
 	} else if (action.type == 15) {
 		if (live) xl_speed_boost_action(&action, index, object_index, shot);
@@ -269,6 +273,7 @@ extern "C" int xl_object_master_supported(const trigger *action)
 extern "C" void xl_wall_trigger_frame(void)
 {
 	if (!xl_level_extensions_active()) return;
+	xl_message_frame();
 	for (int index = 0; index < Num_triggers && index < MAX_TRIGGERS; ++index) {
 		auto &action = Triggers[index];
 		if (action.flags & TF_DISABLED) continue;
@@ -316,8 +321,8 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		const auto &state = states[i];
 		const auto &action = Triggers[i];
 		const bool resource = xl_compat::player_resource_action(action.type);
-		if ((action.type > 14 && action.type != 15 && action.type != 28 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
-		for (int target = 0; !resource && target < action.num_links; ++target)
+		if ((action.type > 14 && action.type != 15 && action.type != 28 && action.type != 29 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
+		for (int target = 0; !resource && action.type != 29 && target < action.num_links; ++target)
 			if (action.seg[target] < 0 || action.seg[target] > Highest_segment_index || action.side[target] < 0 || action.side[target] >= 6) return 0;
 		if (state.destination < 0 || state.destination > Highest_segment_index) return 0;
 		if (state.destination) {

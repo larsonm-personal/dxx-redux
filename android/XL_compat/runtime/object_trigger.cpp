@@ -2,6 +2,7 @@
 #include "preview.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
+#include "level_messages.h"
 #include "boss_spawn.h"
 #include "../trigger_flags.h"
 #include <algorithm>
@@ -76,7 +77,8 @@ void operate(ObjectAction &entry)
 	auto &action = entry.action;
 	if (!bound(entry) || (action.flags & TF_DISABLED)) return;
 	entry.operated = true;
-	if (action.type == 28) xl_spawn_action(&action);
+	if (action.type == 29) xl_message_action(&action);
+	else if (action.type == 28) xl_spawn_action(&action);
 	else if (action.type == 15) xl_speed_boost_action(&action, -1, entry.owner, 0);
 	else if (action.type == 14) xl_object_teleport_action(&action, entry.owner, &entry.destination);
 	else if (action.type == 26) xl_boss_spawn_action(entry.owner, action.num_links ? action.seg[0] : -1);
@@ -144,7 +146,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 	xl_object_trigger_clear();
 	for (const auto &record : level.object_trigger_records) {
 		const auto &source = record.action;
-		if ((source.type > 14 && source.type != 15 && source.type != 26 && source.type != 28 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
+		if ((source.type > 14 && source.type != 15 && source.type != 26 && source.type != 28 && source.type != 29 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
 			throw std::runtime_error("object trigger action or flags are not implemented");
 		ObjectAction entry;
 		entry.authored_owner = entry.owner = record.object;
@@ -156,7 +158,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 		entry.action.type = source.type;
 		entry.action.flags = source.flags;
 		entry.action.value = source.type == 31 ? 0 : source.value;
-		entry.action.time = -1;
+		entry.action.time = source.type == 29 ? source.time : -1;
 		entry.action.num_links = static_cast<short>(source.targets.size());
 		for (std::size_t link = 0; link < source.targets.size(); ++link) {
 			entry.action.seg[link] = source.targets[link][0];

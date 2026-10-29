@@ -1567,11 +1567,13 @@ extern "C" void flicker_lights(void);
 #include "repair_test.h"
 #include "format34_test.h"
 #include "runtime_layout_test.h"
+#include "level_message_test.h"
 #include "hxm_test.h"
 
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
+	if (find_arg_value(argc, argv, "-level-message-test")) return level_message_test(argc, argv);
 	if (find_arg_value(argc, argv, "-runtime-layouts-test")) return runtime_layout_test(argc, argv);
 	if (find_arg_value(argc, argv, "-hog-test")) return hog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-flicker-test")) return flicker_test(argc, argv);

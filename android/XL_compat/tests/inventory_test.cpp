@@ -330,6 +330,17 @@ void teleport_inventory_contract()
 		patch(boost, offset + 1, 8, 1);
 		const auto supported_timing = xl_compat::compatibility_json("boost.rl2", boost);
 		check(feature_row(supported_timing, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos && feature_row(supported_timing, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos, "scheduler browser rows reject implemented boost requirements");
+		auto message = boost;
+		patch(message, offset, 29, 1);
+		patch(message, offset + 4, 65536);
+		patch(message, offset + 32, 0xffff, 2);
+		const auto message_report = xl_compat::compatibility_json("message.rl2", message);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(message)).empty(), "Message action or inert target rejected before resource checks");
+		check(feature_row(message_report, "level_messages").find("\"count\": 1") != std::string::npos && feature_row(message_report, "level_messages").find("\"status\": \"partial\"") != std::string::npos, "Message row hides the action or claims unchecked resource support");
+		check(feature_row(message_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(message_report, "delayed_wall_actions").find("\"status\": \"not_required\"") != std::string::npos, "Message duration was mistaken for an unsupported scheduler delay");
+		patch(message, offset, 30, 1);
+		patch(message, offset + 32, 0, 2);
+		check(!xl_compat::runtime_blockers(xl_compat::inspect_level(message)).empty() && feature_row(xl_compat::compatibility_json("sound.rl2", message), "stateful_trigger_flags").find("\"status\": \"blocked\"") != std::string::npos, "Message support admitted the sound action");
 		auto spawns = boost;
 		patch(spawns, offset, 28, 1);
 		check(xl_compat::runtime_blockers(xl_compat::inspect_level(spawns)).empty(), "authored spawn action rejected");
@@ -468,7 +479,13 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 			patch(invalid, field, field == trigger + 17 ? 1 : 6, 2);
 			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
 		}
-		for (const int type : { 16, 26, 29 }) {
+		auto message = eligible;
+		patch(message, trigger + 4, 29, 1);
+		const auto prepared_message = xl_compat::prepare_gameplay_probe(message);
+		const auto &message_action = prepared_message.source.object_trigger_records[0].action;
+		check(message_action.type == 29 && message_action.time == admitted.source.object_trigger_records[0].action.time && message_action.value == admitted.source.object_trigger_records[0].action.value, "Message layout discarded authored ID or display duration");
+		check(feature_row(xl_compat::compatibility_json("message.rl2", message), "level_messages").find("\"count\": 1") != std::string::npos, "Message browser omitted the object action");
+		for (const int type : { 16, 26, 30 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);
 			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });

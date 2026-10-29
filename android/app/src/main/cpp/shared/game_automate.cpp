@@ -34,6 +34,7 @@
 #include "flicker_probe.h"
 #include "hog_probe.h"
 #include "runtime_layout_probe.h"
+#include "level_message_probe.h"
 #include "fog_probe.h"
 #include "corona_probe.h"
 #endif
@@ -7654,6 +7655,19 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled fog %s passed", s.value.c_str());
 #else
 				stop_script_fail("Fog probe requires Android D2");
+#endif
+			} else if (s.field == "xl_level_message_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (s.value == "modal") {
+					// The modal event loop must be able to run its dismissal step
+					advance_step();
+					if (const char *failure = xl_level_message_probe("modal")) stop_script_fail(failure);
+					break;
+				}
+				if (const char *failure = xl_level_message_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled message %s passed", s.value.c_str());
+#else
+				stop_script_fail("Message probe requires Android D2");
 #endif
 			} else if (s.field == "xl_runtime_layout_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

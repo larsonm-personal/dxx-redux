@@ -41,6 +41,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "15") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "28") continue;
+		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "29") continue;
 		if (issue.feature == "object_triggers") continue;
 		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "26" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (issue.feature == "trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;

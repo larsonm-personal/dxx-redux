@@ -31,6 +31,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/doors.cpp"
                 "${xl_runtime_dir}/changing_light.cpp"
                 "${xl_runtime_dir}/flicker.cpp"
+                "${xl_runtime_dir}/level_messages.cpp"
                 "${xl_runtime_dir}/cloak.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/speed_boost.cpp"
@@ -47,6 +48,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../admission.cpp"
                 "${xl_runtime_dir}/../probe.cpp"
                 "${xl_runtime_dir}/../lighting.cpp"
+                "${xl_runtime_dir}/../level_text.cpp"
                 "${xl_runtime_dir}/../scoped_sound.cpp"
                 "${xl_runtime_dir}/../wave.cpp"
                 "${xl_runtime_dir}/../companion_lighting.cpp"
@@ -72,6 +74,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/flicker_probe.cpp"
                     "${xl_runtime_dir}/hog_probe.cpp"
                     "${xl_runtime_dir}/runtime_layout_probe.cpp"
+                    "${xl_runtime_dir}/level_message_probe.cpp"
                     "${xl_runtime_dir}/fog_probe.cpp"
                     "${xl_runtime_dir}/corona_probe.cpp")
     endif()

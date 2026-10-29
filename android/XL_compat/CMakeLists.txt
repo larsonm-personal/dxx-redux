@@ -13,6 +13,7 @@ add_library(
     lighting.cpp
     mission_label.cpp
     admission.cpp
+    level_text.cpp
     wave.cpp
     companion_lighting.cpp
     scoped_sound.cpp)
@@ -35,6 +36,11 @@ endif()
 include(CTest)
 option(XL_FOG_GPU_TESTS "Build the public offscreen desktop fog renderer controls" OFF)
 if(BUILD_TESTING)
+    add_executable(xl_level_text_test tests/level_text_test.cpp)
+    add_executable(xl_message_fixture tests/message_fixture.cpp)
+    target_link_libraries(xl_message_fixture PRIVATE xl_inventory)
+    target_link_libraries(xl_level_text_test PRIVATE xl_inventory)
+    add_test(NAME xl_level_text_contract COMMAND xl_level_text_test)
     if(XL_FOG_GPU_TESTS)
         find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
         find_package(GLEW REQUIRED)
@@ -134,6 +140,7 @@ if(BUILD_TESTING)
         include(tests/reference_hog.cmake)
         include(tests/reference_layouts.cmake)
         include(tests/reference_fog.cmake)
+        include(tests/reference_level_text.cmake)
         include(tests/reference_cloak.cmake)
         include(tests/reference_repair.cmake)
         include(tests/reference_light_index.cmake)
@@ -203,6 +210,14 @@ if(BUILD_TESTING)
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     if(XL_NEPTUNE_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_level_messages
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG}
+                -DFIXTURE=$<TARGET_FILE:xl_message_fixture> -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/level-messages -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/level_messages.cmake)
+        set_tests_properties(xl_level_messages PROPERTIES TIMEOUT 110)
         set(xl_layout_oracle_args)
         if(TARGET xl_layout_reference)
             list(APPEND xl_layout_oracle_args "-DREFERENCE=$<TARGET_FILE:xl_layout_reference>")
