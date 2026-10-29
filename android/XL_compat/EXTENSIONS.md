@@ -26,8 +26,10 @@ correction to the older light-index source adapter. Explicit side geometry and
 fog now have browser rows. Canonical 25/40 and 27/40 runtime translation now has
 native geometry, gameplay, resource and persistence controls plus all 87 Android
 transition/save/rewind checks, documented in
-[runtime-layout evidence](evidence/runtime-layouts.md). Noncanonical geometry and
-version-27 authored fog volumes remain blocked. The expanded source comparison
+[runtime-layout evidence](evidence/runtime-layouts.md). Noncanonical geometry
+remains blocked. Authored fog now has a separate implementation and measured
+GPU capability admission; see [fog evidence](evidence/fog.md) for source math,
+actual rendering, reference quirks and remaining qualification. The expanded source comparison
 also corrects generator initialization: rows follow geometry order after source
 renumbering, not stale serialized producer IDs. Equipment startup and boss
 resource selection use that corrected order.

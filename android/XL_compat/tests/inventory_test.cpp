@@ -863,6 +863,10 @@ void version_23_contract()
 		auto bad = bytes;
 		patch(bad, segment + 4, property, 1);
 		check(xl_compat::inspect_level(bad).segments.at(0).properties == property, "property bit lost");
+		if (property == 32 || property == 64) {
+			check(!xl_compat::prepare_gameplay_probe(bad).stock_level.empty(), "Modern fog geometry was not translated");
+			continue;
+		}
 		if (property == 1 || property == 2 || property == 4 || property == 8) {
 			const auto row = feature_row(xl_compat::compatibility_json("modern-property.rl2", bad), property == 1 ? "water_segments" : property == 2 ? "lava_segments"
 			                                                                                                                       : property == 4   ? "blocked_segments"
@@ -884,8 +888,8 @@ void version_23_contract()
 		auto combined = bytes;
 		patch(combined, segment + 4, bits, 1);
 		const auto decoded = xl_compat::inspect_level(combined);
-		check(xl_compat::runtime_blockers(decoded).empty() == !(bits & ~15), "normal modern admission accepted unsupported property combination");
-		check(xl_compat::runtime_blockers(decoded, true).empty() == !(bits & ~15), "experimental water profile accepted unrelated property bits");
+		check(xl_compat::runtime_blockers(decoded).empty() == !(bits & ~(15 | 32 | 64)), "normal modern admission accepted unsupported property combination");
+		check(xl_compat::runtime_blockers(decoded, true).empty() == !(bits & ~(15 | 32 | 64)), "experimental water profile accepted unrelated property bits");
 		if (bits == 1 || bits == 9) {
 			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
 			for (int actor = 0; actor < 3; ++actor) {

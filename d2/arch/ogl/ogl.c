@@ -5,6 +5,7 @@
 #endif
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "fog.h"
 #endif
 /*
  *
@@ -462,6 +463,13 @@ void ogl_init_texture_list_internal(void){
 }
 
 void ogl_smash_texture_list_internal(void){
+#ifdef DXX_XL_RUNTIME
+#ifdef ANDROID
+	ogl_xl_fog_destroy(android_egl_discarding_lost_context_resources());
+#else
+	ogl_xl_fog_destroy(0);
+#endif
+#endif
 #if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 	xl_wall_animation_clear();
 #endif
@@ -2246,6 +2254,10 @@ int ogl_use_classic_depth(void)
 }
 
 void ogl_start_frame(void){
+	double z_near = 0.1;
+#ifdef DXX_XL_RUNTIME
+	if (xl_fog_active()) z_near = 1.0;
+#endif
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID
 	int msaa_color_clear = 0;
@@ -2341,7 +2353,7 @@ void ogl_start_frame(void){
 	{
 		/* Build perspective matrix on CPU to avoid GLES 1 matrix stack calls
 		 * that generate GL_INVALID_OPERATION on Android (GLES 1/2 mixing) */
-		double n = 0.1, f = 5000.0;
+		double n = z_near, f = 5000.0;
 		double ymax = n * tan(90.0 * M_PI / 360.0);
 		double xmax = ymax; /* aspect = 1 */
 		GLfloat mat[16];
@@ -2362,9 +2374,9 @@ void ogl_start_frame(void){
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();//clear matrix
 #ifdef OGLES
-	perspective(90.0,1.0,0.1,5000.0);   
+	perspective(90.0,1.0,z_near,5000.0);
 #else
-	gluPerspective(90.0,1.0,0.1,5000.0);
+	gluPerspective(90.0,1.0,z_near,5000.0);
 #endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();//clear matrix

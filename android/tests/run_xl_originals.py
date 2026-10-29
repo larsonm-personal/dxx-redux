@@ -49,6 +49,7 @@ CORE_TESTS = (
         "xl_legacy_repair",
         "xl_format34_native",
         "xl_light_index_reference",
+        "xl_fog_reference",
         "xl_object_trigger_decode_reference",
         "xl_generator_assignment_reference",
         "xl_generator_assignment_runtime",

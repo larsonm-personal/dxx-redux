@@ -4,6 +4,7 @@
 #include "player_resources.h"
 #include "companion_lighting.h"
 #include "hog.h"
+#include "fog.h"
 #include "../app/src/main/cpp/shared/mission_descriptor_safe.h"
 #include <algorithm>
 #include <cctype>
@@ -48,7 +49,7 @@ const Category categories[] = {
 	{ "package_options", "Mission configuration and presentation options", "Packaged INI, wallpapers and extended briefing options unqualified", "Recognizing packaged configuration does not authorize executing it. Each supported option needs bounded parsing, explicit semantics, resource dependencies and restoration on mission changes." },
 	{ "distribution_archive", "Distribution archive extraction", "ZIP, 7z and RAR readers exist; codec and original-package extraction require verification", "The downloaded archive is separate from the mission HOG. Recognizing a 7z catalog does not prove its compression methods can be decoded. Extraction must preserve owned paths and pass byte, integrity and collision checks before mission resources can be evaluated." },
 	{ "geometry", "Explicit side geometry", "Version-25/27 canonical four-corner sides use the native geometry; reordered, shortened sides and deleted vertices remain gated", "Newer levels store their side corners explicitly and can contain triangular or degenerate sides. These require correct rendering, collision and portal behavior, not just a reader that skips the extra bytes." },
-	{ "fog", "Fog volumes and settings", "Version-27 RGB and distance records are preserved for inspection; authored fog rendering remains unqualified", "Water, lava, light fog and dense fog select separate settings. Fog affects visibility and can matter to gameplay. Reading its colors and distances does not establish correct rendering." },
+	{ "fog", "Fog volumes and settings", "Source-derived water/lava/light/dense volume rendering with owned colors and distances; scene-depth and float-blend capabilities checked on load", "Fog affects gameplay visibility. Controlled GPU pixels, persistence and lifecycle checks cover the implemented profile; successful inspection does not qualify an original campaign or graphics driver." },
 };
 struct Evidence {
 	std::string need = "Unknown - not inspected", status = "unknown", detail;
@@ -140,10 +141,10 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 		features[6].limitations = "Weapons and actorless visibility/path queries retain ordinary wall behavior; blocked actors can leave. Original mission qualification and multiplayer remain separate requirements";
 		features[5].present_status = "supported";
 		features[5].support = "Modern singleplayer lava motion, volume/contact damage, turbulence, scrape impulses and persistent timing implemented";
-		features[5].limitations = "Modern default fluid physics. Water/lava combinations retain water motion and lava damage. Source non-volumetric rendering does not tint lava-only boundaries. Version-27 authored fog, custom actors, independent unsupported requirements, optional volumetric fog and multiplayer remain unqualified; derived controls do not certify original missions";
+		features[5].limitations = "Modern default fluid physics. Water/lava combinations retain water motion and lava damage. Pre-27 non-volumetric rendering does not tint lava-only boundaries. Version-27 fog has separate GPU requirements; custom actors, independent unsupported requirements and multiplayer remain unqualified. Derived controls do not certify original missions";
 		features[4].present_status = "supported";
 		features[4].support = "Modern singleplayer water motion, stock robot combat, robot/item generation, material boundaries and source restoration implemented";
-		features[4].limitations = "Modern default fluid physics and non-volumetric colored boundaries. Version-27 authored fog, custom robot definitions, multiplayer and optional volumetric fog remain unqualified. Derived fixture checks do not qualify an original mission or campaign";
+		features[4].limitations = "Modern default fluid physics and pre-27 non-volumetric colored boundaries. Version-27 fog has separate GPU requirements; custom robot definitions, multiplayer and optional pre-27 fluid fog remain unqualified. Derived fixture checks do not qualify an original mission or campaign";
 	}
 	features[8].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.type == 8; }));
 	features[9].count = static_cast<int>(std::count_if(v.walls.begin(), v.walls.end(), [](const Wall &w) { return w.cloak != 0; }));
@@ -222,8 +223,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 					         v.level_version >= 25 ? "Explicit mappings inspected; canonical mappings alone do not grant runtime admission" : "Classic implicit four-corner mappings" };
 				rows[28] = { std::to_string(fog_volumes) + " fog-bearing volumes; " + std::to_string(v.fog_settings.size()) + " authored fog settings",
 					         fog_volumes ? "partial" : "not_required",
-					         v.fog_settings.empty() ? "No serialized fog table in this layout; default source settings are separate from authored data" : "Four RGB byte triples and distance bytes in units of 20 retained; authored fog rendering is not implemented" };
-				if (fog_volumes && v.level_version >= 27) rows[28].status = "blocked";
+					         volumetric_fog_required(v) ? "Source-derived volume boundaries, scene-depth occlusion and paired composition implemented; requires working RGBA32F min/max blending and scene-depth transfer, verified on load. Colors/distances and ownership survive save/restore; original campaign unverified" : "No required volumetric profile; older water/lava retain their non-volumetric boundary behavior" };
 				rows[4].need = std::to_string(v.walls.size()) + " walls";
 				rows[5].need = std::to_string(v.triggers.size()) + " geometry triggers";
 				rows[6] = v.object_triggers ? Evidence{ "Decoded " + std::to_string(v.object_triggers) + " object triggers and owner references", features[11].present_status, features[11].limitations } : Evidence{ "Absent", "not_required", "No object triggers in this level" };

@@ -54,7 +54,11 @@ void contract()
 				check((json.find("\"corners\"") != std::string::npos) == (version >= 25), "Explicit corner JSON presence differs from source layout");
 				check(!issue(xl_compat::runtime_blockers(parsed), "serialization"), "Audited modern layout rejected by version alone");
 				check(!xl_compat::runtime_blockers(parsed).empty(), "Fog/damage/shape requirements bypassed by layout support");
-				if (version == 27) check(issue(xl_compat::runtime_blockers(parsed), "authored fog"), "Authored fog runtime requirement disappeared");
+				if (version == 27) {
+					auto missing = parsed;
+					missing.fog_settings.clear();
+					check(issue(xl_compat::runtime_blockers(missing), "authored fog"), "Missing authored fog table bypassed admission");
+				}
 				const auto report = xl_compat::compatibility_json("layout.rl2", fixture.bytes);
 				check(report.find("Level version " + std::to_string(version) + ", game data 40") != std::string::npos && report.find("detailed inspection rejected") == std::string::npos, "Browser lost decoded format evidence");
 				check(report.find("Explicit side geometry") != std::string::npos && report.find("Fog volumes and settings") != std::string::npos && report.find("1 fog-bearing volumes") != std::string::npos, "Browser omitted geometry or fog requirements");
@@ -227,8 +231,8 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 			xl_test::hog_member(output, "fg27.lgt", lgt, false);
 			xl_test::hog_member(output, "fg27.clr", clr, false);
 			changed = fixture.bytes;
-			changed.at(fixture.extras[0] + 6) |= xl_compat::segment_water;
-			xl_test::hog_member(output, "badfog.rl2", changed, false);
+			changed.at(fixture.extras[0] + 6) |= 128;
+			xl_test::hog_member(output, "badprop.rl2", changed, false);
 			changed = fixture.bytes;
 			const auto corners = fixture.corners[0][0];
 			std::rotate(changed.begin() + corners, changed.begin() + corners + 1, changed.begin() + corners + 4);

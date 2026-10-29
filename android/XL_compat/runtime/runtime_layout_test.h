@@ -133,7 +133,7 @@ static int runtime_layout_test(int argc, char **argv)
 			const auto identity = xl_level_trigger_identity();
 			require(identity && identity != previous_identity, "Modern layout not bound to save identity");
 			previous_identity = identity;
-			for (const char *bad : { "badside.rl2", "badcorn.rl2", "badfog.rl2" }) {
+			for (const char *bad : { "badside.rl2", "badcorn.rl2", "badprop.rl2" }) {
 				const auto position = ConsoleObject->pos;
 				require(!xl_level_supported(bad, 0) && load_level(bad) != 0, "Malformed or unsupported modern geometry/fog admitted");
 				require(xl_level_trigger_identity() == identity && same_light_snapshot(earned, light_snapshot()) && !std::memcmp(&position, &ConsoleObject->pos, sizeof(position)) && Players[Player_num].shields == shields, "Rejected modern load altered active earned state");

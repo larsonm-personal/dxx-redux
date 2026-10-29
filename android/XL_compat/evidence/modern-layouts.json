@@ -369,14 +369,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -426,12 +418,6 @@
                             "count": 57,
                             "distinct_details": 1,
                             "example_details": ["10"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 265,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         }
                     ],
                     "unknown": [
@@ -534,14 +520,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -591,12 +569,6 @@
                             "count": 57,
                             "distinct_details": 1,
                             "example_details": ["10"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 261,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         }
                     ],
                     "unknown": [
@@ -718,14 +690,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -772,12 +736,6 @@
                             "count": 19,
                             "distinct_details": 1,
                             "example_details": ["10"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 420,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         }
                     ],
                     "unknown": [
@@ -895,14 +853,6 @@
                         [178, 178, 178, 4]
                     ],
                     "runtime_blockers": [
-                        {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
                         {
                             "feature": "effect_lightning",
                             "count": 1,
@@ -1152,14 +1102,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1194,12 +1136,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 15,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1304,14 +1240,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1346,12 +1274,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 10,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1460,14 +1382,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1502,12 +1416,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 11,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1617,14 +1525,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1659,12 +1559,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 9,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1780,14 +1674,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1822,12 +1708,6 @@
                             "count": 2,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 10,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         },
                         {
                             "feature": "trigger_type",
@@ -1942,14 +1822,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -1984,12 +1856,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 12,
-                            "distinct_details": 1,
-                            "example_details": ["32"]
                         },
                         {
                             "feature": "trigger_type",
@@ -2090,14 +1956,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -2123,9 +1981,9 @@
                         },
                         {
                             "feature": "segment_properties",
-                            "count": 7,
-                            "distinct_details": 2,
-                            "example_details": ["32", "60"]
+                            "count": 1,
+                            "distinct_details": 1,
+                            "example_details": ["60"]
                         }
                     ],
                     "unknown": [
@@ -2601,14 +2459,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -2664,9 +2514,9 @@
                         },
                         {
                             "feature": "segment_properties",
-                            "count": 155,
-                            "distinct_details": 3,
-                            "example_details": ["16", "32", "64"]
+                            "count": 12,
+                            "distinct_details": 1,
+                            "example_details": ["16"]
                         },
                         {
                             "feature": "trigger_type",
@@ -2790,14 +2640,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -2826,12 +2668,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 28,
-                            "distinct_details": 2,
-                            "example_details": ["32", "36"]
                         },
                         {
                             "feature": "trigger_type",
@@ -2955,14 +2791,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_object_types",
                             "count": 1,
                             "distinct_details": 1,
@@ -3009,12 +2837,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["10"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 8,
-                            "distinct_details": 2,
-                            "example_details": ["32", "36"]
                         },
                         {
                             "feature": "trigger_type",
@@ -3136,14 +2958,6 @@
                     ],
                     "runtime_blockers": [
                         {
-                            "feature": "authored fog",
-                            "count": 1,
-                            "distinct_details": 1,
-                            "example_details": [
-                                "version-27 fog colors and distances require runtime application before admitting affected volumes"
-                            ]
-                        },
-                        {
                             "feature": "effect_lightning",
                             "count": 1,
                             "distinct_details": 1,
@@ -3178,12 +2992,6 @@
                             "count": 1,
                             "distinct_details": 1,
                             "example_details": ["30"]
-                        },
-                        {
-                            "feature": "segment_properties",
-                            "count": 31,
-                            "distinct_details": 2,
-                            "example_details": ["32", "36"]
                         },
                         {
                             "feature": "trigger_type",

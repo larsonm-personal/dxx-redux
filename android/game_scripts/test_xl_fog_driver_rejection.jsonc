@@ -1,0 +1,35 @@
+// A driver that cannot transfer scene depth must reject fog and still run stock
+[
+    { "_info": { "_standalone": false, "_owner": "test_xl_fog_runtime", "games": ["d2"] } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Derived XL fog", "timeout_ms": 15000 },
+    { "action": "select", "text": "Ok", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": {
+            "menu.title": "Cannot run XL level",
+            "menu.subtitle": { "contains": "scene-depth transfer" },
+            "in_game": false,
+            "xl_pilot.runtime_active": false,
+            "xl_fog.active": false,
+        },
+    },
+    { "action": "key", "key": "enter", "post_delay_ms": 300 },
+    { "action": "key", "key": "escape", "post_delay_ms": 300 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "Counterstrike!", "timeout_ms": 15000 },
+    { "action": "select", "text": "Ok", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    { "action": "skip_briefing", "timeout_ms": 20000 },
+    {
+        "action": "wait_for",
+        "expect": { "in_game": true, "xl_fog.active": false, "xl_pilot.runtime_active": false },
+        "timeout_ms": 20000,
+    },
+    { "action": "set_debug", "field": "xl_fog_probe", "value": "stock" },
+]

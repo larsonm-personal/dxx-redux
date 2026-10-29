@@ -28,6 +28,8 @@
 #include "input_demo_codec.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "fog.h"
+#include "fog_probe.h"
 #include "changing_light.h"
 #include "flicker.h"
 #include "trigger_state.h"
@@ -2219,6 +2221,13 @@ extern "C" char *game_introspect_get_state(void)
 		{ "activated_triggers", xl_preview_trigger_mask() },
 	};
 	// Android diagnostics read actual masks and the owned full-width source records
+	{
+		xl_fog_diagnostics fog{};
+		ogl_xl_fog_diagnostics(&fog);
+		xl_fog_scene_result scene{};
+		ogl_xl_fog_scene_result(&scene);
+		j["xl_fog"] = { { "active", xl_fog_active() != 0 }, { "preparations", fog.preparations }, { "volume_passes", fog.volume_passes }, { "composite_passes", fog.composite_passes }, { "boundaries", fog.boundaries }, { "context_rebuilds", fog.context_rebuilds }, { "failures", fog.failures }, { "width", fog.width }, { "height", fog.height }, { "depth_bits", fog.depth_bits }, { "types", fog.last_types }, { "depth_copy_bits", fog.depth_copy_bits }, { "depth_copy_value", fog.depth_copy_value }, { "gpu_probe", json::parse(xl_fog_probe_result()) }, { "scene_probe", { { "completed", scene.completed != 0 }, { "passed", scene.passed != 0 }, { "pixels", scene.pixels }, { "covered", scene.covered }, { "changed", scene.changed }, { "types", scene.types }, { "samples", scene.samples }, { "depth_bits", scene.depth_bits }, { "max_error", scene.max_error }, { "error", ogl_xl_fog_scene_error() }, { "center_depth", scene.center_depth }, { "center_caps", scene.center_caps }, { "max_length", scene.max_length }, { "center_before", scene.center_before }, { "center_after", scene.center_after }, { "center_expected", scene.center_expected } } } };
+	}
 	j["xl_pilot"]["flicker_count"] = xl_flicker_count();
 	j["xl_pilot"]["flickers"] = json::array();
 	for (int i = 0; i < xl_flicker_count(); ++i) {

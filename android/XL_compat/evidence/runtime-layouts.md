@@ -4,7 +4,8 @@ The normal singleplayer binary can translate canonical 25/40 and 27/40 levels
 after the same independent feature/resource checks used for 23/40. This qualifies
 the bounded layout path, not an original mission or campaign. Noncanonical side
 geometry and deleted vertex slots remain rejected. Version-27 volumes selecting
-authored fog also remain rejected until those colors/distances reach rendering.
+authored fog now require the subsequent [fog implementation](fog.md) and its
+measured GPU capability checks, independently of layout support.
 
 ## Translation and ownership
 

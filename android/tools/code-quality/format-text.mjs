@@ -21,11 +21,12 @@ async function formatSource(source, file, parser) {
         endOfLine: "lf",
     });
 }
-if (manifestPath === "--stdin-jsonc") {
+if (manifestPath === "--stdin-jsonc" || manifestPath === "--stdin-json") {
     let source = "";
     process.stdin.setEncoding("utf8");
     for await (const chunk of process.stdin) source += chunk;
-    process.stdout.write(await formatSource(source, "regression.jsonc", "jsonc"));
+    const parser = manifestPath === "--stdin-json" ? "json" : "jsonc";
+    process.stdout.write(await formatSource(source, `regression.${parser}`, parser));
     process.exit(0);
 }
 const files = JSON.parse(await fs.readFile(manifestPath, "utf8"));

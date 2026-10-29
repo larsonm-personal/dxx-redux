@@ -298,8 +298,18 @@ finish original-mission qualification
     replace stale serialized indices before row assignment. Equipment startup,
     boss selection and saved identities use the corrected mapping. See
     [runtime-layout evidence](../../XL_compat/evidence/runtime-layouts.md).
-    Noncanonical geometry and authored fog volumes remain gated. Pumo's original
+    Noncanonical geometry remains gated; authored fog has its subsequent increment
+    below. Pumo's original
     levels retain effect/audio, environment, event, wall and resource requirements.
+
+38. Authored fog: owned water/lava/light/dense settings reach source-derived volume
+    boundaries, depth occlusion and paired composition. Admission exercises actual
+    float blending and depth transfer, with explicit rejection on incapable drivers.
+    Source comparisons, public desktop GPU controls and all 208 Android
+    pixel/MSAA/disk/rewind/context/stock checks pass. See
+    [fog evidence](../../XL_compat/evidence/fog.md) for reference quirks and scope.
+    No original Pumo level is newly qualified. Extend fast private-asset CI next,
+    then continue effect/audio ownership and dependent event actions.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
