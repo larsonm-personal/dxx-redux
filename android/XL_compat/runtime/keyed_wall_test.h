@@ -17,11 +17,14 @@ static void keyed_wall_matrix(const std::filesystem::path &output)
 	require(index >= 0, "Keyed-wall matrix allocation failed");
 	unsigned count = 0;
 	for (int type : std::array<int, 9>{ -1, OBJ_PLAYER, OBJ_ROBOT, OBJ_POWERUP, OBJ_WEAPON, OBJ_DEBRIS, OBJ_HOSTAGE, OBJ_CNTRLCEN, OBJ_CLUTTER })
-		for (int keys = 0; keys < 16; ++keys)
+		for (int keys = 0; keys < 256; ++keys)
 			for (int owned = 0; owned < 16; owned += 2)
 				for (int cloak : { 0, 1, 9, 30, 31, 255 })
 					for (int transparent : { 0, 1 })
 						for (int flags : { 0, WALL_DOOR_OPENED, WALL_DOOR_LOCKED, WALL_ILLUSION_OFF }) {
+							// Other raw bytes share the exact-key decision; keep the broad
+							// existing rendering matrix without repeating it 240 times
+							if (keys >= 16 && (cloak || transparent || flags)) continue;
 							if (type >= 0) Objects[index].type = static_cast<object_type_t>(type);
 							Objects[index].id = 0;
 							Players[0].flags = owned;
@@ -41,6 +44,59 @@ static void keyed_wall_matrix(const std::filesystem::path &output)
 	Players[0].flags = saved_keys;
 	require(xl_wall_doorway(ConsoleObject - Objects, -1, 0) == -1 && xl_wall_doorway(ConsoleObject - Objects, 24, 6) == -1 && xl_wall_doorway(Highest_object_index + 1, 24, 5) == WID_TRANSPARENT_WALL, "Keyed-wall invalid index handling failed");
 	std::cout << count << " keyed-wall passability samples written\n";
+}
+static void keyed_wall_hit_matrix(const std::filesystem::path &output)
+{
+	std::ofstream samples(output / "key-hit-samples.txt");
+	const auto saved = Walls[0];
+	const auto owned = Players[Player_num].flags;
+	const auto velocity = ConsoleObject->mtype.phys_info.velocity;
+	ConsoleObject->mtype.phys_info.velocity = {};
+	unsigned count = 0;
+	for (int key = 0; key < 256; ++key)
+		for (int flags = 0; flags < 16; flags += 2)
+			for (int profile = 0; profile < 3; ++profile) {
+				Walls[0].keys = key;
+				Walls[0].type = profile ? WALL_DOOR : WALL_NORMAL;
+				Walls[0].flags = profile == 1 ? WALL_DOOR_LOCKED : 0;
+				Walls[0].state = profile == 2 ? WALL_DOOR_OPENING : WALL_DOOR_CLOSED;
+				Players[Player_num].flags = flags;
+				const int result = wall_hit_process(&Segments[saved.segnum], saved.sidenum, 0, Player_num, ConsoleObject);
+				samples << key << ' ' << flags << ' ' << profile << ' ' << result << '\n';
+				++count;
+			}
+	Walls[0] = saved;
+	Players[Player_num].flags = owned;
+	ConsoleObject->mtype.phys_info.velocity = velocity;
+	require(bool(samples) && count == 6144, "Incomplete raw wall-key hit matrix");
+	std::cout << count << " actual wall-key hit samples written\n";
+}
+static void keyed_wall_robot_matrix(const std::filesystem::path &output)
+{
+	std::ofstream samples(output / "key-robot-samples.txt");
+	const auto saved = Walls[0];
+	const auto owned = Players[Player_num].flags;
+	vms_vector center;
+	compute_segment_center(&center, &Segments[saved.segnum]);
+	const int robot = obj_create(OBJ_ROBOT, ROBOT_BRAIN, saved.segnum, &center, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
+	require(robot >= 0 && !Robot_info[ROBOT_BRAIN].companion, "Raw-key robot fixture lacks an ordinary brain");
+	Walls[0].type = WALL_DOOR;
+	Walls[0].state = WALL_DOOR_CLOSED;
+	unsigned count = 0;
+	for (int key = 0; key < 256; ++key)
+		for (int flags : { 0, 1, 2, 4, 8, 14, 16, 32, 64, 128, 256, 65536 })
+			for (int locked : { 0, 1 }) {
+				Walls[0].keys = key;
+				Walls[0].flags = locked ? WALL_DOOR_LOCKED : 0;
+				Players[Player_num].flags = flags;
+				samples << key << ' ' << flags << ' ' << locked << ' ' << ai_door_is_openable(&Objects[robot], &Segments[saved.segnum], saved.sidenum) << '\n';
+				++count;
+			}
+	obj_delete(robot);
+	Walls[0] = saved;
+	Players[Player_num].flags = owned;
+	require(bool(samples) && count == 6144, "Incomplete raw wall-key robot matrix");
+	std::cout << count << " actual raw-key robot door samples written\n";
 }
 static void keyed_wall_crossings()
 {
@@ -141,6 +197,7 @@ static void keyed_wall_lifecycle()
 	require(WALL_IS_DOORWAY(&Segments[wall.segnum], wall.sidenum) == WID_TRANSILLUSORY_WALL, "Redux doorway semantics changed");
 	Walls[0] = wall;
 	require(state_restore_all_sub(save, 0) && (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) && xl_wall_doorway(ConsoleObject - Objects, 24, 5) == WID_ILLUSORY_WALL && WALL_IS_DOORWAY(&Segments[24], 5) == WID_TRANSPARENT_WALL, "Disk restore lost keys or mixed actor/visibility state");
+	require(Walls[6].keys == 255 && Walls[7].keys == 255, "Disk-through-stock restore changed raw wall-key bytes");
 	start_time();
 	// Owning a key does not bypass the source boost-area exit constraint
 	obj_relink(ConsoleObject - Objects, 24);
@@ -183,8 +240,18 @@ static int keyed_wall_test(int argc, char **argv)
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
+		require(Num_walls > 7 && Walls[6].keys == 255 && Walls[7].keys == 255, "Ordinary loading changed raw wall-key bytes");
 		keyed_wall_matrix(output);
+		keyed_wall_hit_matrix(output);
+		keyed_wall_robot_matrix(output);
 		keyed_wall_crossings();
+		for (int key : { 16, 128, 255 }) {
+			const auto first = Walls[0].keys, second = Walls[1].keys;
+			Walls[0].keys = Walls[1].keys = key;
+			keyed_wall_crossings();
+			Walls[0].keys = first;
+			Walls[1].keys = second;
+		}
 		keyed_wall_lifecycle();
 		std::cout << "XL keyed-wall controls passed\n";
 		return 0;

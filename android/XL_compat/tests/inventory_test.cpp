@@ -144,9 +144,9 @@ void object_capacity_contract()
 	std::cout << "Three-layout XL object boundaries, truncation and useful rejection passed\n";
 }
 
-void wide_wall_contract()
+Bytes single_wall_fixture(int version)
 {
-	auto original = fixture();
+	auto original = fixture(version);
 	const auto empty = xl_compat::inspect_level(original);
 	const auto mask = empty.mine_offset + 5 + 8 * 12 + 2 + 1 + 16;
 	original.at(mask) = 1;
@@ -154,14 +154,51 @@ void wide_wall_contract()
 	const auto game = empty.game_offset + 2;
 	patch(original, 12, game);
 	const auto row = empty.sections[3].offset + 2;
-	patch(original, game + 71, row + 24);
+	const bool modern = empty.game_version >= 37;
+	const int stride = modern ? 25 : 24;
+	patch(original, game + 71, row + stride);
 	patch(original, game + 47, row);
 	patch(original, game + 51, 1);
-	patch(original, game + 55, 24);
-	original.insert(original.begin() + row, 24, 0);
+	patch(original, game + 55, stride);
+	original.insert(original.begin() + row, stride, 0);
 	patch(original, row + 12, unsigned(-1));
-	for (int field : { 19, 20, 22 }) original.at(row + field) = 255;
-	original.at(row + 21) = 1;
+	for (int field : { 19, 20, 22 }) original.at(row + field + int(modern)) = 255;
+	original.at(row + 21 + int(modern)) = 1;
+	return original;
+}
+void wall_key_contract()
+{
+	unsigned count = 0;
+	for (int version : { 15, 17, 23, 25, 27 }) {
+		auto bytes = single_wall_fixture(version);
+		const auto base = xl_compat::inspect_level(bytes);
+		const auto key = base.sections[1].offset + (base.game_version >= 37 ? 22 : 21);
+		for (unsigned raw = 0; raw < 256; ++raw) {
+			bytes.at(key) = static_cast<std::uint8_t>(raw);
+			const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+			check(probe.source.walls[0].keys == int(raw), "Authored wall-key byte narrowed or normalized");
+			const auto &native = probe.stock_level;
+			const auto read = [&](std::size_t at) {
+				unsigned value = 0;
+				for (unsigned i = 0; i < 4; ++i) value |= unsigned(native.at(at + i)) << (8 * i);
+				return value;
+			};
+			check(native.at(read(read(12) + 47) + 21) == raw, "Native translation changed raw wall keys");
+			++count;
+		}
+		if (base.game_version >= 37) {
+			patch(bytes, base.sections[1].offset + 17, 256, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+		}
+	}
+	check(count == 1280, "Incomplete wall-key format matrix");
+	std::cout << count << " five-layout raw wall-key translations passed; wide flags remain gated\n";
+}
+void wide_wall_contract()
+{
+	auto original = single_wall_fixture(15);
+	const auto empty = xl_compat::inspect_level(fixture());
+	const auto mask = empty.mine_offset + 5 + 8 * 12 + 2 + 1 + 16;
 	for (unsigned count : { 1u, 254u, 255u, 256u, 257u, 2047u }) {
 		const auto source = xl_test::remap_walls(original, count);
 		const auto probe = xl_compat::prepare_gameplay_probe(source);
@@ -1248,6 +1285,7 @@ int main(int argc, char **argv)
 		generator_assignment_contract();
 		object_capacity_contract();
 		wide_wall_contract();
+		wall_key_contract();
 		trigger_capacity_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
 			object_trigger_inventory_contract(argv[2]);

@@ -67,6 +67,13 @@ hosts. This establishes inputs and reference behavior, not audible playback.
 The required selections now contain 40/41 public and 96 private contracts;
 the source's finite-sound restore issue is an explicit runtime obligation.
 
+All authored wall-key bytes now pass source/native comparisons and retain their
+exact values through loading and saves. Nonstandard values are observations;
+player hits, closed-wall passage and robot door tests keep their distinct
+semantics. See [wall-key evidence](evidence/wall-key-bytes.md), including all 90
+Android controls. Pumo loses 73 key-value rejections across nine levels, while
+every level retains independent blockers. Wider wall flags remain gated.
+
 XL wall tables now retain up to 2047 identities through validated native loading,
 doors, cloaking, save/restore and cloak demo events. Stock and D1 import retain
 their 255-wall limit. Native boundary/rejection controls and 80 Android steps

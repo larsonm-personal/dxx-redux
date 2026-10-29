@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = '53a6d817b280cbb81a10f16cccfd024f368627756ab03634699dc97cad14f14f'
+$expectedHog = '3408935bb892773d6b0bc7d295db923919e001d916eff5aef7e0ec1bbeddd8fe'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'e3c111d43ae21e63ae7d3e23e33bbbbe78b4976fb44e89831c50775c23db3577') {
     throw 'Requires the pinned derived fixture from xl_keyed_closed_walls'
