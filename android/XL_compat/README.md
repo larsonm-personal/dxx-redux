@@ -689,3 +689,8 @@ The [sound-folder increment](evidence/audio-scopes.md) adds owned mission,
 normal-level and secret-level resources, with actual Android output and saved
 scope controls. Global addons and ambient sound objects remain separate
 requirements.
+
+Ordinary sound replacements have different selection rules from named actions.
+The [classic bank controls](evidence/classic-audio-bank.md) cover owned resources,
+bank suppression, stereo decoding and explicit rejection while the replacement
+playback consumer remains unimplemented.

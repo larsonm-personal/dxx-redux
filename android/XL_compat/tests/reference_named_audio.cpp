@@ -562,6 +562,9 @@ void original(const char *path, int expected_levels, int expected_actions, int e
 }
 } // namespace
 
+void classic_audio_source_controls();
+void classic_audio_original(const char *bank, const char *folder, int levels);
+
 int main(int argc, char **argv)
 {
 	try {
@@ -569,7 +572,9 @@ int main(int argc, char **argv)
 		source_resources();
 		source_scopes();
 		source_lifecycle();
-		if (argc == 5) original(argv[1], std::stoi(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]));
+		classic_audio_source_controls();
+		if (argc == 5 && std::string(argv[1]) == "--classic-original") classic_audio_original(argv[2], argv[3], std::stoi(argv[4]));
+		else if (argc == 5) original(argv[1], std::stoi(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]));
 		else require(argc == 1, "Expected no arguments or original HOG and exact level/action/WAV counts");
 		return 0;
 	} catch (const std::exception &error) {

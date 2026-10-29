@@ -82,7 +82,16 @@ string(
     "\nint MixerLoops(int bLooping, int nLoopStart, int nLoopEnd) { return ${loop_expression}; }\n")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_named_audio.h"
      CONTENT "${extracted}")
-add_executable(xl_named_audio_source tests/reference_named_audio.cpp)
+set(extracted "// Pinned classic sound selection; storage adapters remain independent\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamefolders.cpp" "char* LevelFolder (")
+foreach(signature IN ITEMS "int32_t LoadHiresSound (" "int32_t SetupSounds (" "void LoadSounds ("
+                           "bool VerifyHiresSound (" "int32_t LoadD2Sounds (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadsounds.cpp" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_classic_audio.h"
+     CONTENT "${extracted}")
+add_executable(xl_named_audio_source tests/reference_named_audio.cpp
+                                     tests/reference_classic_audio.cpp)
 target_link_libraries(xl_named_audio_source PRIVATE xl_inventory)
 target_include_directories(xl_named_audio_source PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_named_audio_source COMMAND xl_named_audio_source)

@@ -80,6 +80,9 @@ int piggy_find_sound( char * name );
 fix piggy_sound_duration(int sample);
 const char *piggy_sound_duration_bank(void);
 const char *piggy_sound_duration_name(int sample);
+#ifdef DXX_XL_RUNTIME
+const char *piggy_sound_name(int sample);
+#endif
 void piggy_sound_duration_override(int sample, int length, int rate);
 
 extern int Pigfile_initialized;

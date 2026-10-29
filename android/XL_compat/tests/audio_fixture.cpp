@@ -143,6 +143,28 @@ void scopes(const Bytes &level, const std::vector<xl_compat::Member> &members, c
 	std::cout << "Derived XL sound scopes: HOG, normal/secret ordinals, duplicate filenames and mission fallback\n";
 }
 
+void classic_packages(const Bytes &level, const std::vector<xl_compat::Member> &members, const std::filesystem::path &directory)
+{
+	Bytes archive{ 'D', 'H', 'F' };
+	xl_test::hog_member(archive, "bank23.rl2", level, false);
+	for (const auto &member : members) {
+		if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
+		const auto extension = member.name.substr(8);
+		if (extension != ".rl2" && extension != ".mn2") xl_test::hog_member(archive, "bank23" + extension, member.bytes, false);
+	}
+	for (const std::string name : { "xwav", "xwbad", "xsbank" }) {
+		const std::string title = name == "xwav" ? "Derived XL WAV" : name == "xwbad" ? "Derived XL bad WAV"
+		                                                                              : "Derived XL bank";
+		write(directory / (name + ".hog"), archive);
+		write(directory / (name + ".mn2"), text("d2x-name = " + title + "\nnum_levels = 1\nbank23.rl2\n"));
+		const auto root = directory.parent_path() / "mods" / name;
+		std::filesystem::create_directories(root / "sounds");
+		if (name == "xsbank") write(root / (name + ".s22"), text("Unsupported selected bank"));
+		else write(root / "sounds" / "laser01.wav", name == "xwav" ? constant_wave(3500, -6000) : text("Malformed selected WAV"));
+	}
+	std::cout << "Derived classic audio: owned WAV, malformed preferred WAV and selected custom-bank controls\n";
+}
+
 void fixture(const char *original, const std::filesystem::path &directory)
 {
 	std::ifstream input(original, std::ios::binary);
@@ -187,6 +209,7 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	write(directory / "xschange.hog", changed);
 	write(directory / "xschange.mn2", text("d2x-name = Changed XL sounds\nnum_levels = 1\naudio23.rl2\n"));
 	scopes(level, members, directory);
+	classic_packages(found->bytes, members, directory);
 	std::cout << "Derived XL sound packages: synthetic stereo/mono PCM, wall/object actions, 23/27 layouts and rejection controls\n";
 }
 } // namespace

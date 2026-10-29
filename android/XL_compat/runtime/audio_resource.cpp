@@ -1,5 +1,6 @@
 #include "audio_resource.h"
 #include "../named_sound.h"
+#include "../scoped_sound.h"
 #include "../wave.h"
 #include <SDL.h>
 #include <memory>
@@ -68,13 +69,9 @@ AudioResource read_audio(std::string path)
 		throw std::runtime_error("Truncated XL sound resource: " + path);
 	return { std::move(path), std::move(bytes) };
 }
-} // namespace
 
-AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal)
+std::string mission_sound_identity()
 {
-	auto filename = named_sound_filename(authored);
-	// Archive resources do not depend on an ordinal, including diagnostic loads
-	if (owned_path(filename, true)) return read_audio(std::move(filename));
 	std::string mission = mission_resource_archive();
 	const auto slash = mission.find_last_of("/\\");
 	if (slash != std::string::npos) mission.erase(0, slash + 1);
@@ -82,11 +79,67 @@ AudioResource load_audio_resource(const std::string &authored, const char *level
 	if (dot == std::string::npos || SDL_strcasecmp(mission.c_str() + dot, ".hog"))
 		throw std::runtime_error("XL sound folders require an owned mission HOG identity");
 	mission.resize(dot);
+	return mission;
+}
+} // namespace
+
+AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal)
+{
+	auto filename = named_sound_filename(authored);
+	// Archive resources do not depend on an ordinal, including diagnostic loads
+	if (owned_path(filename, true)) return read_audio(std::move(filename));
+	const auto mission = mission_sound_identity();
 	const auto paths = named_sound_paths(mission, authored, incoming_ordinal(level, ordinal));
 	for (std::size_t i = 1; i < paths.size(); ++i) {
 		auto path = paths[i];
 		if (owned_path(path, false)) return read_audio(std::move(path));
 	}
 	throw std::runtime_error("Missing XL sound " + filename + "; checked the mission HOG, " + paths[1] + " and " + paths.back() + "; global addon sounds require a qualified owned installation");
+}
+
+std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, int ordinal, int bank_rate)
+{
+	if (!*mission_resource_archive()) return std::nullopt;
+	const auto mission = mission_sound_identity();
+	// A diagnostic translation with no mod folder needs no descriptor ordinal
+	std::string root = "mods/" + mission;
+	if (PHYSFSEXT_locateCorrectCase(root.data()) != 0) return std::nullopt;
+	const int incoming = incoming_ordinal(level, ordinal);
+	const std::string bank = "mods/" + mission + "/" + mission + (bank_rate >= 22050 ? ".s22" : ".s11");
+	auto corrected_bank = bank;
+	if (owned_path(corrected_bank, false))
+		throw std::runtime_error("XL mission sound bank suppresses external WAV replacements and requires scoped-bank decoding: " + corrected_bank);
+	return ClassicAudioScope{ mission, bank, incoming, bank_rate, {} };
+}
+
+std::optional<AudioResource> load_classic_audio_resource(const std::string &sample, ClassicAudioScope &scope)
+{
+	const auto selected = resolve_scoped_sound(scope.mission, sample, scope.ordinal, scope.rate,
+	                                           [&](const std::string &candidate) {
+		                                           // LoadD2Sounds selects its bank once before walking sample names
+		                                           if (candidate == scope.bank) return std::string{};
+		                                           const auto slash = candidate.find_last_of('/');
+		                                           const auto directory = candidate.substr(0, slash);
+		                                           auto [entry, inserted] = scope.directories.try_emplace(directory);
+		                                           if (inserted) {
+			                                           auto corrected = directory;
+			                                           if (PHYSFSEXT_locateCorrectCase(corrected.data()) == 0) {
+				                                           std::unique_ptr<char *, decltype(&PHYSFS_freeList)> names(PHYSFS_enumerateFiles(corrected.c_str()), PHYSFS_freeList);
+				                                           if (!names) throw std::runtime_error("Cannot enumerate XL sound folder: " + corrected);
+				                                           for (char **name = names.get(); *name; ++name) {
+					                                           std::string lower = *name;
+					                                           SDL_strlwr(lower.data());
+					                                           entry->second.insert(std::move(lower));
+				                                           }
+			                                           }
+		                                           }
+		                                           auto filename = candidate.substr(slash + 1);
+		                                           SDL_strlwr(filename.data());
+		                                           if (!entry->second.count(filename)) return std::string{};
+		                                           auto path = candidate;
+		                                           return owned_path(path, false) ? path : std::string{};
+	                                           });
+	if (selected.path.empty()) return std::nullopt;
+	return read_audio(selected.path);
 }
 } // namespace xl_compat

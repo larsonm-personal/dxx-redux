@@ -393,6 +393,14 @@ finish original-mission qualification
     Ambient spatialization, global addon installations and the remaining external
     sound replacement consumers remain separate; Pumo is still unqualified.
 
+48. Ordinary D2 sound resources: pinned bank/WAV selection and an owned stereo
+    preparation path now identify 1,988 original Pumo selections using 196 WAVs.
+    Production rejects unapplied replacement WAVs and unsupported custom banks
+    with the selected path; it does not silently fall back to stock playback.
+    See [bank evidence](../../XL_compat/evidence/classic-audio-bank.md). Actual
+    replacement output, spatial consumers, priorities and persistence remain
+    subsequent work; no campaign is qualified by resource decoding.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

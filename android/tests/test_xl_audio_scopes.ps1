@@ -12,7 +12,7 @@ Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-audio-scopes-android'
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
-& python "$PSScriptRoot/../XL_compat/tests/create_audio_scope_package.py" $FixtureDirectory "$output/xl-audio-scopes.zip"
+& python "$PSScriptRoot/../XL_compat/tests/create_audio_scope_package.py" $FixtureDirectory "$output/xl-audio-scopes.zip" --classic
 if ($LASTEXITCODE -ne 0) { throw 'Cannot create the pinned scoped-audio package' }
 function Invoke-AudioScopesAdb {
     param([string[]]$Arguments)
@@ -41,18 +41,22 @@ try {
     $ready = $true
     Invoke-AudioScopesAdb -Arguments @('push', "$output/xl-audio-scopes.zip", '/data/local/tmp/xl-audio-scopes.zip') | Out-Null
     Invoke-AudioScopesPrivate 'mkdir -p files/imported/sets/default/.content/mods && cp /data/local/tmp/xl-audio-scopes.zip files/imported/sets/default/.content/mods/xl-audio-scopes.zip' | Out-Null
-    Invoke-AudioScopesAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_audio_scopes.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
-    $testExit = $LASTEXITCODE
-    Invoke-AudioScopesAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
-    Invoke-AudioScopesPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
-    Invoke-AudioScopesPrivate 'if test -f files/automation_log.jsonl; then cat files/automation_log.jsonl; fi' | Set-Content "$output/steps.jsonl" -Encoding utf8
-    Invoke-AudioScopesPrivate 'if test -f files/introspect.json; then cat files/introspect.json; fi' | Set-Content "$output/state.json" -Encoding utf8
-    Invoke-AudioScopesPrivate 'if test -f files/d2x-redux/.mission_assets.json; then cat files/d2x-redux/.mission_assets.json; fi' | Set-Content "$output/mission-assets.json" -Encoding utf8
-    if ($testExit -ne 0) { throw "AudioScopes runtime failed ($testExit); see $output" }
-    $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
-    if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete AudioScopes runtime result' }
-    Write-Host "PASS: Published scoped audio Android PCM, normal/secret levels, disk/rewind and stock transition ($($result.total_steps) steps)"
+    foreach ($scriptName in @('test_xl_audio_scopes.jsonc', 'test_xl_classic_audio_rejection.jsonc')) {
+        $receipt = Join-Path $output ([IO.Path]::GetFileNameWithoutExtension($scriptName))
+        New-Item -ItemType Directory -Force -Path $receipt | Out-Null
+        Invoke-AudioScopesAdb -Arguments @('logcat', '-c') | Out-Null
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+        $testExit = $LASTEXITCODE
+        Invoke-AudioScopesAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$receipt/logcat.txt" -Encoding utf8
+        Invoke-AudioScopesPrivate 'cat files/automation_result.json' | Set-Content "$receipt/result.json" -Encoding utf8
+        Invoke-AudioScopesPrivate 'if test -f files/automation_log.jsonl; then cat files/automation_log.jsonl; fi' | Set-Content "$receipt/steps.jsonl" -Encoding utf8
+        Invoke-AudioScopesPrivate 'if test -f files/introspect.json; then cat files/introspect.json; fi' | Set-Content "$receipt/state.json" -Encoding utf8
+        Invoke-AudioScopesPrivate 'if test -f files/d2x-redux/.mission_assets.json; then cat files/d2x-redux/.mission_assets.json; fi' | Set-Content "$receipt/mission-assets.json" -Encoding utf8
+        if ($testExit -ne 0) { throw "AudioScopes runtime failed ($testExit); see $receipt" }
+        $result = Get-Content "$receipt/result.json" -Raw | ConvertFrom-Json
+        if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw "Incomplete AudioScopes result: $scriptName" }
+        Write-Host "PASS: $scriptName ($($result.total_steps) steps)"
+    }
 } finally {
     try {
         Invoke-AudioScopesAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

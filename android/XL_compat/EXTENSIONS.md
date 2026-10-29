@@ -85,6 +85,15 @@ owned external WAVs, with independent PCM comparisons. See
 the future ambient runtime; spatial playback, global addons and the remaining
 external replacement consumers are still unqualified.
 
+Ordinary D2 sound replacements now have separate source and production resource
+checks. The selected output-rate mission bank suppresses external WAV lookup;
+otherwise incoming normal/secret files precede mission files. All 1,988 Pumo
+level/sample selections resolve to 196 WAVs with independent source and PCM
+comparisons. The loader explicitly rejects unapplied classic replacements and
+unsupported custom banks rather than silently using stock sounds. See
+[classic sound-bank evidence](evidence/classic-audio-bank.md). This is resource
+preparation and honest admission, not classic playback qualification.
+
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;
 player hits, closed-wall passage and robot door tests keep their distinct
