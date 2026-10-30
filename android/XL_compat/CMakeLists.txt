@@ -16,6 +16,7 @@ add_library(
     level_text.cpp
     audio_voice.cpp
     audio_owners.cpp
+    audio_logical.cpp
     classic_sample.cpp
     audio_spatial.cpp
     named_sound.cpp

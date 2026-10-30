@@ -57,7 +57,7 @@ foreach(
     signature IN
     ITEMS "int32_t CAudio::PlaySound (" "CSoundObject *CAudio::FindObjectSound ("
           "CSoundObject *CAudio::FindSegmentSound (" "int32_t CAudio::CreateObjectSound ("
-          "int32_t CAudio::CreateSegmentSound (")
+          "int32_t CAudio::CreateSegmentSound (" "int16_t CAudio::XlatSound (")
     extract_audio_owner("${signature}")
 endforeach()
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/sounds.h" sounds)

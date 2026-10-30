@@ -171,6 +171,7 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 		}
 	} object_guard{ source };
 	xl_audio_creation_control::run(root, source, initial);
+	xl_gameplay_audio_control::run(source, initial);
 	const auto create = [&](int forever = 1, int custom = 0) {
 		return xl_audio_link_object(0, 3, source, forever, F1_0, 64 * F1_0, -1, -1, 0, custom);
 	};
