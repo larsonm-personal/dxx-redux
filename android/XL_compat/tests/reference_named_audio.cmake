@@ -107,9 +107,29 @@ string(
 )
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_channels.h"
      CONTENT "${extracted}")
+set(extracted "// Actual pinned channel volume/pan consumers\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/maths.h" math_header)
+foreach(name IN ITEMS X2F XRound FixMulDiv)
+    string(REGEX MATCH "#[ \t]*define[ \t]+${name}[^\n]+" definition "${math_header}")
+    if(NOT definition)
+        message(FATAL_ERROR "Missing source channel math: ${name}")
+    endif()
+    string(APPEND extracted "${definition}\n")
+endforeach()
+string(REGEX MATCH "inline float FRound[^\n]+" rounded "${math_header}")
+if(NOT rounded)
+    message(FATAL_ERROR "Missing source channel rounding")
+endif()
+string(APPEND extracted "${rounded}\n")
+foreach(signature IN ITEMS "void Mix_VolPan (" "void CAudioChannel::SetVolume ("
+                           "void CAudioChannel::SetPan (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/audio/audio.cpp" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_controls.h"
+     CONTENT "${extracted}")
 add_executable(
     xl_named_audio_source tests/reference_named_audio.cpp tests/reference_classic_audio.cpp
-                          tests/reference_audio_channels.cpp)
+                          tests/reference_audio_channels.cpp tests/reference_audio_controls.cpp)
 target_link_libraries(xl_named_audio_source PRIVATE xl_inventory)
 target_include_directories(xl_named_audio_source PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_named_audio_source COMMAND xl_named_audio_source)

@@ -85,6 +85,16 @@ int main()
 		output.fill(0);
 		voices.mix(reinterpret_cast<unsigned char *>(output.data()), 4, bank);
 		require(muted_slot >= 0 && std::all_of(output.begin(), output.end(), [](auto value) { return value == 0; }) && !voices.voices[unsigned(muted_slot)].remaining, "Muted playback must advance without output");
+		voices.clear();
+		const auto untouched = voices.cursor;
+		require(voices.start(0, 1, 3, {}, { 129, { 0, 254 } }) == -1 && voices.cursor == untouched, "Invalid channel gain consumed a slot");
+		require(!voices.set_pan(-1, 0) && !voices.set_volume(int(audio_voice_limit), 65536, 32768), "Invalid channel control was accepted");
+		const int controlled = voices.start(0, 2, 3);
+		const auto original = voices.voices[unsigned(controlled)];
+		require(!voices.set_volume(controlled, -1, 32768) && !voices.set_volume(controlled, 65536, 65537) && !voices.set_volume(controlled, INT32_MAX, 65536), "Undefined source volume range was accepted");
+		require(voices.voices[unsigned(controlled)].serial == original.serial && voices.voices[unsigned(controlled)].priority.volume == original.priority.volume && voices.voices[unsigned(controlled)].output.volume == original.output.volume, "Rejected volume control changed the live voice");
+		rejects([] { audio_start_output(INT32_MAX, 32767); });
+		rejects([] { audio_start_output(-1, 32767); });
 
 		require(named_sound_filename("08:anything") == "lightning.wav", "Numeric addon aliases differ");
 		require(named_sound_filename("dripping-water-2") == "dripping-water-2.wav", "Addon prefix lookup differs");

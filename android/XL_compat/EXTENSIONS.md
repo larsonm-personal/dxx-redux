@@ -107,6 +107,13 @@ retain the cursor and captured priority as well as voice playheads. See
 controls and the explicit global-slider output difference. Ordinary and ambient
 consumers still require a unified XL pool and their own lifecycle/spatial checks.
 
+The mixer now also has source-verified per-channel gain and pan controls,
+including different startup/update quantization and priority-volume updates.
+Actual SDL output comparisons cover independently panned simultaneous voices.
+See [channel-control evidence](evidence/audio-controls.md). These primitives
+prepare shared ordinary/ambient playback; those consumers and their saved
+nondefault channel state remain gated and unfinished.
+
 Owned mission, normal-level and secret-level sound folders now preserve XL
 resource priority and use the incoming signed mission ordinal, including repeated
 level filenames. Native and all 65 Android publication/output/persistence checks
