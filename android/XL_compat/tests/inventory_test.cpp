@@ -367,6 +367,19 @@ void teleport_inventory_contract()
 		patch(boost, offset + 1, 8, 1);
 		const auto supported_timing = xl_compat::compatibility_json("boost.rl2", boost);
 		check(feature_row(supported_timing, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos && feature_row(supported_timing, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos, "scheduler browser rows reject implemented boost requirements");
+		auto countdown = boost;
+		patch(countdown, offset, 25, 1);
+		patch(countdown, offset + 32, 0xffff, 2);
+		const auto countdown_report = xl_compat::compatibility_json("countdown.rl2", countdown);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(countdown)).empty(), "Countdown seconds or inert target rejected");
+		check(feature_row(countdown_report, "countdown_actions").find("\"count\": 1") != std::string::npos && feature_row(countdown_report, "countdown_actions").find("\"status\": \"partial\"") != std::string::npos, "Countdown browser lost its action or unchecked sound resources");
+		check(feature_row(countdown_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(countdown_report, "delayed_wall_actions").find("\"status\": \"not_required\"") != std::string::npos, "Countdown seconds entered the browser's delayed scheduling requirements");
+		patch(countdown, offset + 8, 32768);
+		check(feature_row(xl_compat::compatibility_json("overflow.rl2", countdown), "countdown_actions").find("\"status\": \"blocked\"") != std::string::npos && !xl_compat::runtime_blockers(xl_compat::inspect_level(countdown)).empty(), "Overflow countdown browser disagrees with admission");
+		auto texture = boost;
+		patch(texture, offset, 19, 1);
+		const auto texture_report = xl_compat::compatibility_json("texture.rl2", texture);
+		check(feature_row(texture_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(texture_report, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos, "Browser still rejects implemented texture scheduling or flags");
 		auto message = boost;
 		patch(message, offset, 29, 1);
 		patch(message, offset + 4, 65536);
@@ -529,6 +542,8 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		const auto &sound_action = prepared_sound.source.object_trigger_records[0].action;
 		check(sound_action.type == 30 && sound_action.time == message_action.time && sound_action.value == message_action.value, "Sound layout discarded authored ID or repetitions");
 		check(feature_row(xl_compat::compatibility_json("sound.rl2", message), "named_sounds").find("\"count\": 1") != std::string::npos, "Sound browser omitted the object action");
+		patch(message, trigger + 4, 25, 1);
+		check(xl_compat::prepare_gameplay_probe(message).source.object_trigger_records[0].action.type == 25 && feature_row(xl_compat::compatibility_json("countdown.rl2", message), "countdown_actions").find("\"count\": 1") != std::string::npos, "Countdown browser omitted the object action");
 		for (const int type : { 16, 26, 35 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);

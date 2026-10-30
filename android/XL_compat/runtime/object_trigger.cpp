@@ -4,6 +4,7 @@
 #include "spawn_points.h"
 #include "level_messages.h"
 #include "named_audio.h"
+#include "reactor_countdown.h"
 #include "../capacity.h"
 #include "boss_spawn.h"
 #include "../trigger_flags.h"
@@ -79,10 +80,12 @@ void operate(ObjectAction &entry)
 {
 	auto &action = entry.action;
 	if (!bound(entry) || (action.flags & TF_DISABLED)) return;
+	if (action.type == 25 && !xl_countdown_valid(&action)) return;
 	entry.operated = true;
 	if (action.type == 29) xl_message_action(&action);
 	else if (action.type == 30) xl_named_audio_action(&action, entry.audio_key);
 	else if (action.type == 19) xl_trigger_texture_action(&action);
+	else if (action.type == 25) xl_countdown_action(&action);
 	else if (action.type == 28) xl_spawn_action(&action);
 	else if (action.type == 15) xl_speed_boost_action(&action, -1, entry.owner, 0);
 	else if (action.type == 14) xl_object_teleport_action(&action, entry.owner, &entry.destination);
@@ -151,7 +154,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 	xl_object_trigger_clear();
 	for (const auto &record : level.object_trigger_records) {
 		const auto &source = record.action;
-		if ((source.type > 14 && source.type != 15 && source.type != 19 && source.type != 26 && source.type != 28 && source.type != 29 && source.type != 30 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
+		if ((source.type > 14 && source.type != 15 && source.type != 19 && source.type != 25 && source.type != 26 && source.type != 28 && source.type != 29 && source.type != 30 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
 			throw std::runtime_error("object trigger action or flags are not implemented");
 		ObjectAction entry;
 		entry.audio_key = DXX_XL_MAX_TRIGGERS + int(actions.size());
@@ -164,7 +167,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 		entry.action.type = source.type;
 		entry.action.flags = source.flags;
 		entry.action.value = source.type == 31 ? 0 : source.value;
-		entry.action.time = source.type == 29 || source.type == 30 ? source.time : -1;
+		entry.action.time = source.type == 25 || source.type == 29 || source.type == 30 ? source.time : -1;
 		entry.action.num_links = static_cast<short>(source.targets.size());
 		for (std::size_t link = 0; link < source.targets.size(); ++link) {
 			entry.action.seg[link] = source.targets[link][0];

@@ -67,6 +67,7 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_texture_actions.h"
      CONTENT "${extracted}")
 target_sources(xl_trigger_flags_reference PRIVATE tests/reference_texture_actions.cpp)
+include(tests/reference_countdown.cmake)
 target_include_directories(xl_trigger_flags_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_features(xl_trigger_flags_reference PRIVATE cxx_std_17)
 add_test(NAME xl_trigger_flag_reference COMMAND xl_trigger_flags_reference)

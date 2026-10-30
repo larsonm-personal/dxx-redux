@@ -46,6 +46,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "reactor_countdown.h"
+#endif
 #include "d1_in_d2/d1_in_d2_semantics.h"
 #ifdef __ANDROID__
 #include "escort.h"
@@ -186,7 +190,11 @@ void do_controlcen_dead_frame(void)
 				create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0, 1);
 	}
 
-	if (Control_center_destroyed && !Endlevel_sequence)
+	if ((Control_center_destroyed
+#ifdef DXX_XL_RUNTIME
+	     || xl_level_extensions_active()
+#endif
+	    ) && !Endlevel_sequence)
 		do_countdown_frame();
 }
 
@@ -196,6 +204,12 @@ void do_countdown_frame()
 {
 	fix	old_time;
 	int	fc, div_scale;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_countdown_frame();
+		return;
+	}
+#endif
 
 	if (!Control_center_destroyed)	return;
 	if (Reactor_countdown_paused)	return;

@@ -418,6 +418,15 @@ finish original-mission qualification
     levels remain blocked. Required private membership becomes 104; public
     membership stays 43/46.
 
+51. Owned countdown actions: wall/object seconds, source frame accumulation,
+    warnings, rotation and terminal death now use an XL consumer. Persistence
+    retains displayed seconds, earned reactor extension and partial cadence.
+    See [countdown evidence](../../XL_compat/evidence/countdowns.md) for the
+    explicit simulation-clock boundary and controlled output/restore checks.
+    Exactly nine Pumo action rejections disappear with every other requirement
+    unchanged. Required private membership becomes 105; public membership
+    remains 43/46. All fourteen original levels still have independent blockers.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

@@ -1228,7 +1228,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 	for (i = 0; i < Num_triggers; ++i) {
 #ifdef DXX_XL_RUNTIME
-		/* Message and named-sound links are inert, not geometry references */
+		/* Countdown, message and named-sound links are inert */
 		if (xl_loading_inert_trigger(Triggers[i].type)) continue;
 #endif
 		const int serialized_count = Triggers[i].num_links;
@@ -1404,6 +1404,9 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 		for (t=0; t<Num_triggers; t++) {
 			int	l;
+#ifdef DXX_XL_RUNTIME
+			if (xl_loading_inert_trigger(Triggers[t].type)) continue;
+#endif
 			const int native_links = d1_in_d2_bind_trigger_links(t);
 			if (!native_links)
 				return -1;

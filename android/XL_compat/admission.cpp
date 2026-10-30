@@ -3,6 +3,7 @@
 #include "producer_layout.h"
 #include "fog.h"
 #include "texture_change.h"
+#include "countdown.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -42,6 +43,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "15") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "19") continue;
+		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "25") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "28") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "29") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "30") continue;
@@ -84,6 +86,13 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(xl_object_capacity_for_count(level.objects.size()) > DXX_XL_MAX_OBJECTS, "object capacity", ("authored objects require " + std::to_string(xl_object_capacity_for_count(level.objects.size())) + " runtime slots; supported signed-index pool is 32768").c_str());
 	limit(level.segments.size() > 9000 || level.vertices.size() > 36000, "geometry capacity", "more than 9000 segments or 36000 vertices");
 	limit(level.triggers.size() > DXX_XL_MAX_TRIGGERS, "trigger capacity", "more than 254 triggers");
+	limit(countdown_total(0, level.countdown, 0) < 0, "reactor countdown", "difficulty-adjusted duration must fit 0..32767 whole seconds");
+	const auto countdown_action = [&](const Trigger &action, int index, const char *kind) {
+		if (action.type == 25 && countdown_total(action.time, level.countdown, 0) < 0)
+			result.push_back({ kind, index, "countdown duration must fit 0..32767 whole seconds; action time is seconds, not delay milliseconds" });
+	};
+	for (std::size_t i = 0; i < level.triggers.size(); ++i) countdown_action(level.triggers[i], int(i), "trigger countdown");
+	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) countdown_action(level.object_trigger_records[i].action, int(i), "object trigger countdown");
 	const auto texture_action = [&](const Trigger &action, int index, const char *kind) {
 		if (action.type != 19 || action.targets.empty()) return;
 		const auto change = texture_change(action.value);
