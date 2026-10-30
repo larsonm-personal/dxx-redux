@@ -98,7 +98,7 @@ void bad_states(const std::filesystem::path &root)
 		if (variant == 26) audio["cursor"] = 0.5;
 		if (variant == 27) audio.erase("cursor");
 		if (variant == 28) voice[6] = -1;
-		if (variant == 29) voice[6] = 32769;
+		if (variant == 29) voice[6] = INT32_MAX;
 		if (variant == 30) voice[6] = 8192.5;
 		if (variant == 31) voice.erase(6);
 		if (variant == 32) voice.push_back(0);
@@ -208,6 +208,9 @@ static int named_audio_original(int argc, char **argv)
 #endif
 }
 
+#ifdef USE_SDLMIXER
+#include "shared_audio_test.h"
+#endif
 static int named_audio_test(int argc, char **argv)
 {
 #ifdef USE_SDLMIXER
@@ -231,7 +234,8 @@ static int named_audio_test(int argc, char **argv)
 			require(!game_is_time_paused(), "Fresh headless audio fixture must begin with an unpaused game clock");
 			for (int volume : { 0, 255, 256, 4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768 }) {
 				digi_set_digi_volume(volume);
-				require(xl_compat::named_audio_diagnostics().at("volume") == Mix_Volume(0, -1), "Named audio gain differs from the native SFX slider");
+				const auto diagnostics = xl_compat::named_audio_diagnostics();
+				require(diagnostics.at("effects_volume") == volume && diagnostics.at("output_volume") == 128, "Named audio channel gain or platform headroom differs");
 			}
 			digi_set_digi_volume(32768);
 			Game_suspended = SUSP_ROBOTS;
@@ -414,6 +418,7 @@ static int named_audio_test(int argc, char **argv)
 				const auto expected = std::int16_t(float(raw) * (127.0f / 255.0f));
 				if (captured[i] != expected) throw std::runtime_error("Restored audio output differs at sample " + std::to_string(i) + ": " + std::to_string(captured[i]) + " != " + std::to_string(expected) + "; " + xl_compat::named_audio_diagnostics().dump());
 			}
+			xl_shared_audio_control::run(root, initial);
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 sounds: wall/master/object/autoplay, actual stereo output, repetitions, pause, atomic ownership and disk-through-stock passed\n";
 		}
 		Mix_SetPostMix(nullptr, nullptr);

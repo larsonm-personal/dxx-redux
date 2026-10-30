@@ -1,5 +1,7 @@
 #include "classic_audio.h"
 #include "audio_resource.h"
+#include "../classic_sample.h"
+#include <map>
 #include "picosha2.h"
 #include <stdexcept>
 #ifdef USE_SDLMIXER
@@ -48,6 +50,54 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 		result.samples.push_back({ sample, name, resource->path, hash, std::move(pcm) });
 	}
 	if (!result.samples.empty()) result.identity = picosha2::hash256_hex_string(identity);
+	return result;
+}
+ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements)
+{
+	std::map<int, const ClassicAudioSample *> selected;
+	for (const auto &sample : replacements.samples) {
+		const char *name = piggy_sound_name(sample.sample);
+		if (!name || sample.name != name || !selected.emplace(sample.sample, &sample).second)
+			throw std::runtime_error("XL classic replacement does not identify a unique native sample");
+	}
+	// Preflight and save restore repeatedly inspect the same stock bank. Verify
+	// the source identity each time, but retain one bounded canonical conversion
+	static ClassicAudioResources stock_cache;
+	ClassicAudioResources result;
+	std::string identity = "xl-classic-s16-44100-v1";
+	std::size_t storage = 0;
+	for (int index = 0; const char *name = piggy_sound_name(index); ++index) {
+		ClassicAudioSample sample;
+		const auto replacement = selected.find(index);
+		if (replacement != selected.end()) sample = *replacement->second;
+		else {
+			const auto &native = GameSounds[index];
+			if (native.bits != 8 || !native.data || native.data == reinterpret_cast<const unsigned char *>(-1) || native.length <= 0)
+				throw std::runtime_error("XL classic playback requires loaded 8-bit native sample " + std::to_string(index) + " (" + name + ")");
+			if ((native.freq != 11025 && native.freq != 22050) ||
+			    unsigned(native.length) > (8u * 1024u * 1024u) / (44100u / unsigned(native.freq)))
+				throw std::runtime_error("XL classic sample has an invalid rate or exceeds the frame bound: " + std::to_string(index));
+			const std::string bytes(reinterpret_cast<const char *>(native.data), std::size_t(native.length));
+			sample = { index, name, std::string("native:") + name, picosha2::hash256_hex_string(bytes), { 44100, 2, 16, {} } };
+			storage += std::size_t(native.length) * (44100u / unsigned(native.freq)) * 2 * sizeof(std::int16_t);
+			// Include the original bank rate: equal bytes can represent different durations
+			identity += ":" + std::to_string(native.freq);
+		}
+		storage += sample.pcm.samples.size() * sizeof(std::int16_t);
+		if (storage > 128 * 1024 * 1024)
+			throw std::runtime_error("XL complete classic bank exceeds 128 MiB of source storage");
+		identity += ":" + std::to_string(index) + ":" + sample.name + ":" + sample.path + ":" + sample.source_hash;
+		result.samples.push_back(std::move(sample));
+	}
+	if (result.samples.empty()) throw std::runtime_error("XL classic playback requires a populated native sample registry");
+	result.identity = picosha2::hash256_hex_string(identity);
+	if (selected.empty() && result.identity == stock_cache.identity) return stock_cache;
+	for (auto &sample : result.samples) {
+		if (selected.count(sample.sample)) continue;
+		const auto &native = GameSounds[sample.sample];
+		sample.pcm.samples = prepare_classic_sample(native.data, std::size_t(native.length), unsigned(native.freq), 44100).stereo;
+	}
+	if (selected.empty()) stock_cache = result;
 	return result;
 }
 } // namespace xl_compat

@@ -338,7 +338,7 @@ struct XlPreparedResources::State {
 	HxmChanges changes;
 	xl_compat::MissionLightingCompanions lighting;
 	std::shared_ptr<const xl_compat::MessageResources> messages;
-	std::shared_ptr<const xl_compat::NamedAudioResources> audio;
+	std::shared_ptr<const xl_compat::AudioResources> audio;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 

@@ -14,6 +14,7 @@ AudioSample prepare_audio_sample(const WaveChannels &source, unsigned rate)
 	if (source_frames > 8 * 1024 * 1024) throw std::runtime_error("Named-audio input exceeds the frame bound");
 	const auto frames = (std::max) (std::uint64_t(1), (std::uint64_t(source_frames) * rate + source.rate / 2) / source.rate);
 	if (frames > 8 * 1024 * 1024) throw std::runtime_error("Named-audio conversion exceeds the frame bound");
+	if (source.rate == rate && source.source_channels == 2) return { rate, source.samples };
 	AudioSample result;
 	result.rate = rate;
 	result.stereo.resize(std::size_t(frames) * 2);

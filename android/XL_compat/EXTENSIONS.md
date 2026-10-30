@@ -140,6 +140,18 @@ unsupported custom banks rather than silently using stock sounds. See
 [classic sound-bank evidence](evidence/classic-audio-bank.md). This is resource
 preparation and honest admission, not classic playback qualification.
 
+The complete 183-sample stock bank and XL spatial audio calculation are now
+implemented as preparation for ordinary playback. Stock PCM, routing, ear-angle
+math and decay/pan have pinned-source comparisons; 2,232 outputs using loaded
+mine geometry match on Windows and Linux. See [spatial audio evidence](evidence/spatial-audio.md).
+The installed bank now shares 128 channels between stock samples and named WAVs.
+Controlled Windows, Linux and Android output verifies mixed playback, class-aware
+replacement, gain/pan, pause and saved unlinked channels. Source-content checks
+guard reuse of converted stock PCM. See the shared-playback section of that
+evidence for limits and platform results. Ordinary/ambient gameplay dispatch,
+moving owners, wall changes and linked-owner saves remain unfinished, so classic
+replacements remain gated.
+
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;
 player hits, closed-wall passage and robot door tests keep their distinct

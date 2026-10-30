@@ -15,9 +15,12 @@
 // Parse JSON types before engine headers select byte packing on MSVC
 #include <nlohmann/json.hpp>
 #include "named_audio.h"
+#include "shared_audio.h"
+#include "shared_audio_pcm_test.h"
 #include "named_audio_state.h"
 #include "audio_resource.h"
 #include "classic_audio.h"
+#include "audio_geometry.h"
 #include "../wave.h"
 #include "picosha2.h"
 #ifdef USE_SDLMIXER

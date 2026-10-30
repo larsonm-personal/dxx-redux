@@ -43,6 +43,8 @@ jobs:
             xvfb xauth libgl1-mesa-dri
 
       - name: Check the Linux build and test runner
+        # These helpers cover both games and receive identical inputs in each matrix job
+        if: matrix.game == 'd2'
         timeout-minutes: 1
         run: |
           python3 android/tests/test_input_demo_assets.py

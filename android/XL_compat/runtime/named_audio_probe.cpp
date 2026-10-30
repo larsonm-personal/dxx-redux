@@ -2,6 +2,8 @@
 #include "named_audio_probe.h"
 #include "named_audio.h"
 #include "named_audio_state.h"
+#include "shared_audio.h"
+#include "shared_audio_pcm_test.h"
 #include "preview.h"
 #include "object_trigger.h"
 #include "android_mission_assets.h"
@@ -46,6 +48,8 @@ std::size_t captured_samples = 0;
 unsigned capture_rate = 0;
 bool invalid = false;
 bool pressure_earned = false;
+bool shared_earned = false;
+unsigned shared_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -168,6 +172,68 @@ void compare_pressure_output(const json &state)
 	++output_checks;
 }
 
+void compare_shared_output(const json &state)
+{
+	xl_shared_audio_pcm::output(state, captured.data(), captured_music.data(), captured_samples, 20);
+	for (std::size_t i = 0; i < captured_samples; ++i)
+		if (captured_music[i]) ++music_samples;
+	checked_samples += captured_samples;
+	++output_checks;
+	++shared_checks;
+}
+
+void prepare_shared()
+{
+	reset_events();
+	capture_begin();
+	require(xl_compat::named_audio_diagnostics().at("classic_samples") == 183 && xl_compat::named_audio_diagnostics().at("resources") == 187, "Android shared bank omitted stock or named samples");
+	const int ordinary = xl_audio_start_sample(0, 3, F1_0 / 2, 0, 1, -1, -1);
+	require(ordinary >= 0 && xl_audio_channel_playing(ordinary), "Android ordinary sample did not enter the shared pool");
+	++GameTime64;
+	require(xl_named_audio_action(&Triggers[0], 0), "Android named sample did not join the shared pool");
+	auto starting = snapshot();
+	require(starting.at("voices").size() == 2, "Android mixed bank did not use one channel registry");
+	xl_named_audio_pause(0);
+	capture_run(4096);
+	compare_shared_output(starting);
+	capture_begin();
+	require(xl_audio_set_channel_volume(ordinary, 2 * F1_0) && xl_audio_set_channel_pan(ordinary, 65536), "Android shared live controls failed");
+	starting = snapshot();
+	digi_set_digi_volume(0);
+	capture_run(4096);
+	compare_shared_output(starting);
+	xl_audio_stop_channel(ordinary);
+	require(!xl_audio_channel_playing(ordinary) && snapshot().at("voices").size() == 1, "Android stopping an ordinary sample changed named playback");
+	reset_events();
+	capture_begin();
+	const auto origin = snapshot().at("cursor").get<unsigned>();
+	for (unsigned i = 0; i < 128; ++i) {
+		if (i < 64) require(xl_audio_start_sample(int(i % 2), 3, i == 17 ? 8192 : F1_0, int(i * 1024), 1, -1, -1) >= 0, "Android ordinary pool fill failed");
+		else {
+			++GameTime64;
+			require(xl_named_audio_action(&Triggers[1], 1), "Android named pool fill failed");
+		}
+	}
+	require(snapshot().at("voices").size() == 128, "Android mixed pool did not retain all 128 voices");
+	require(xl_audio_start_sample(1, 3, F1_0, 16384, 1, -1, -1) == int((origin + 17) % 128), "Android shared replacement selected the wrong class or volume");
+	++GameTime64;
+	require(xl_named_audio_action(&Triggers[1], 1), "Android shared named replacement failed");
+	starting = snapshot();
+	require(starting.at("voices")[(origin + 64) % 128][1] == starting.at("next").get<std::uint64_t>() - 1, "Android shared named replacement selected the wrong class");
+	xl_named_audio_pause(0);
+	capture_run(4096);
+	compare_shared_output(starting);
+	xl_named_audio_pause(1);
+	earned = snapshot();
+	require(std::all_of(earned.at("voices").begin(), earned.at("voices").end(), [](const auto &row) { return row[3] > 0; }), "Android mixed persistence did not earn nonzero playheads");
+	energy = Players[Player_num].energy;
+	version = xl_source_level_version();
+	pressure_earned = false;
+	shared_earned = true;
+	SDL_PauseAudio(0);
+	verify();
+}
+
 void scope_output(int action)
 {
 	reset_events();
@@ -268,7 +334,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
@@ -330,8 +396,9 @@ const char *xl_named_audio_probe(const char *operation)
 					for (unsigned level = 0; level < gains.size(); ++level) {
 						capture_begin();
 						digi_set_digi_volume(int(level) * 4096);
-						require(xl_compat::named_audio_diagnostics().at("volume") == gains[level], "Android named audio gain differs from the SFX slider");
 						require(xl_named_audio_action(&Triggers[0], 0), "Cannot start the Android volume control");
+						const auto diagnostics = xl_compat::named_audio_diagnostics();
+						require(diagnostics.at("effects_volume") == int(level) * 4096 && diagnostics.at("output_volume") == 20 && snapshot().at("voices")[0][10] == int(level) * 16, "Android named audio channel gain or platform headroom differs");
 						xl_named_audio_pause(0);
 						capture_run(4096);
 						compare_output(0, 2, false, false, gains[level]);
@@ -353,6 +420,7 @@ const char *xl_named_audio_probe(const char *operation)
 					xl_named_audio_pause(1);
 					SDL_PauseAudio(0);
 				} else if (!std::strcmp(operation, "prepare") || !std::strcmp(operation, "pressure")) {
+					shared_earned = false;
 					pressure_earned = !std::strcmp(operation, "pressure");
 					reset_events();
 					capture_begin();
@@ -381,7 +449,8 @@ const char *xl_named_audio_probe(const char *operation)
 						require(!xl_level_supported(name, 0), "Android admitted an invalid sound resource");
 						verify();
 					}
-				} else if (!std::strcmp(operation, "verify")) verify();
+				} else if (!std::strcmp(operation, "shared")) prepare_shared();
+				else if (!std::strcmp(operation, "verify")) verify();
 				else if (!std::strcmp(operation, "pause_output")) {
 					verify();
 					capture_begin();
@@ -394,7 +463,8 @@ const char *xl_named_audio_probe(const char *operation)
 					capture_begin();
 					xl_named_audio_pause(0);
 					capture_run(4096);
-					if (pressure_earned) compare_pressure_output(earned);
+					if (shared_earned) compare_shared_output(earned);
+					else if (pressure_earned) compare_pressure_output(earned);
 					else compare_output(earned.at("voices")[0][3].get<unsigned>(), 2, false);
 					xl_named_audio_pause(1);
 					require(xl_compat::restore_named_audio(earned, true), "Cannot restore controlled output phase");

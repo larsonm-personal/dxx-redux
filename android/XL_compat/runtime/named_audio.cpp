@@ -1,5 +1,8 @@
 #include "named_audio.h"
 #include "named_audio_state.h"
+#include "classic_audio.h"
+#include "shared_audio.h"
+#include "../audio_owners.h"
 #include "audio_resource.h"
 #include "preview.h"
 #include "doorway.h"
@@ -38,7 +41,7 @@ extern "C" {
 
 namespace xl_compat
 {
-struct NamedAudioResources {
+struct AudioResources {
 	struct Action {
 		int id, repetitions;
 		unsigned sample;
@@ -46,6 +49,8 @@ struct NamedAudioResources {
 	std::string identity;
 	std::vector<WaveChannels> sources;
 	std::vector<std::string> names;
+	std::vector<unsigned> classic;
+	std::vector<std::string> classic_names;
 	std::map<int, Action> actions;
 	unsigned prepared_rate = 0;
 	std::shared_ptr<const std::vector<AudioSample>> prepared_samples;
@@ -62,10 +67,11 @@ struct AudioEvent {
 	unsigned rate = 0;
 	bool playing = false, activated = false;
 };
-std::shared_ptr<const NamedAudioResources> bank;
+std::shared_ptr<const AudioResources> bank;
 std::shared_ptr<const std::vector<AudioSample>> converted;
 std::array<AudioEvent, event_limit> events;
 AudioVoices mixer;
+AudioOwners owners;
 bool backend_ready = false;
 bool resume_pending = false;
 unsigned output_rate = 44100;
@@ -109,7 +115,7 @@ std::int64_t duration(const AudioSample &sample)
 	return std::int32_t(seconds * 65536.0f);
 }
 
-std::vector<AudioSample> convert_bank(const NamedAudioResources &resources, unsigned rate)
+std::vector<AudioSample> convert_bank(const AudioResources &resources, unsigned rate)
 {
 	std::vector<AudioSample> result;
 	std::size_t bytes = 0;
@@ -140,14 +146,14 @@ void mix_output(int, void *stream, int length, void *)
 
 namespace xl_compat
 {
-std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal)
+static std::shared_ptr<AudioResources> prepare_named_only(const char *level, const Inventory &inventory, int ordinal)
 {
-	auto resources = std::make_shared<NamedAudioResources>();
+	auto resources = std::make_shared<AudioResources>();
 	const auto add = [&](const Trigger &action, int key) {
 		if (action.type != 30) return;
 		if (key < 0 || unsigned(key) >= event_limit || action.value / 65536 <= 0)
 			throw std::runtime_error("XL named sound requires a positive SND ID and a bounded action owner");
-		resources->actions.emplace(key, NamedAudioResources::Action{ action.value / 65536, action.time, 0 });
+		resources->actions.emplace(key, AudioResources::Action{ action.value / 65536, action.time, 0 });
 	};
 	for (unsigned i = 0; i < inventory.triggers.size(); ++i) add(inventory.triggers[i], int(i));
 	for (unsigned i = 0; i < inventory.object_trigger_records.size(); ++i) add(inventory.object_trigger_records[i].action, DXX_XL_MAX_TRIGGERS + int(i));
@@ -196,20 +202,43 @@ std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level
 		identity += ":" + resource.path + ":" + picosha2::hash256_hex_string(wav);
 	}
 	resources->identity = picosha2::hash256_hex_string(identity);
-	// Complete output conversion and duration validation before publishing a bank
-	resources->prepared_rate = output_rate;
-	resources->prepared_samples = std::make_shared<const std::vector<AudioSample>>(convert_bank(*resources, output_rate));
 	return resources;
 }
 
-void install_named_audio(std::shared_ptr<const NamedAudioResources> resources)
+std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal)
+{
+	auto resources = prepare_named_only(level, inventory, ordinal);
+	if (!resources) resources = std::make_shared<AudioResources>();
+	auto classic = prepare_classic_playback({});
+	std::size_t bytes = 0;
+	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
+	for (auto &sample : classic.samples) {
+		if (sample.sample != int(resources->classic.size())) throw std::runtime_error("XL shared bank has an incomplete classic registry");
+		bytes += sample.pcm.samples.size() * sizeof(std::int16_t);
+		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("XL shared bank exceeds 128 MiB of source storage");
+		resources->classic.push_back(unsigned(resources->sources.size()));
+		resources->classic_names.push_back(sample.name);
+		resources->sources.push_back(std::move(sample.pcm));
+	}
+	resources->identity = picosha2::hash256_hex_string("xl-shared-audio-v1:" + resources->identity + ":" + classic.identity);
+	resources->prepared_rate = output_rate;
+	// Reuse only immutable PCM. Authored actions and resource validation above
+	// remain fresh even when a different level selects the same sound content
+	resources->prepared_samples = bank && bank->identity == resources->identity && bank->prepared_rate == output_rate
+	                                  ? bank->prepared_samples
+	                                  : std::make_shared<const std::vector<AudioSample>>(convert_bank(*resources, output_rate));
+	return resources;
+}
+
+void install_named_audio(std::shared_ptr<const AudioResources> resources)
 {
 	// Preparation and installation run on the game thread without reopening audio
 	if (resources && resources->prepared_rate != output_rate) throw std::runtime_error("XL named-audio output changed during level preparation");
 	auto samples = resources ? resources->prepared_samples : nullptr;
-	std::shared_ptr<const NamedAudioResources> previous;
+	std::shared_ptr<const AudioResources> previous;
 	{
 		AudioLock lock;
+		owners.clear(mixer);
 		mixer.clear();
 		events.fill({});
 		previous = std::move(bank);
@@ -268,7 +297,8 @@ extern "C" void xl_named_audio_backend_close(void)
 extern "C" void xl_named_audio_set_volume(int volume)
 {
 	// Match the existing SFX slider's integer level and Android headroom
-	float gain = float((std::clamp) (volume, 0, 32768) / 256);
+	// Source effects gain belongs to each channel; only platform headroom is global
+	float gain = 128.0f;
 #ifdef __ANDROID__
 	gain *= AUDIO_EFFECTS_VOLUME_SCALE * AUDIO_GAMEPLAY_HEADROOM_SCALE;
 #endif
@@ -300,6 +330,7 @@ extern "C" void xl_named_audio_frame(void)
 extern "C" void xl_named_audio_stop(void)
 {
 	AudioLock lock;
+	owners.clear(mixer);
 	mixer.clear();
 }
 extern "C" void xl_named_audio_clear(void)
@@ -309,6 +340,48 @@ extern "C" void xl_named_audio_clear(void)
 extern "C" const char *xl_named_audio_error(void)
 {
 	return failure.c_str();
+}
+
+extern "C" int xl_audio_start_sample(int sample, int sound_class, int volume, int pan, int looping, int loop_start, int loop_end)
+{
+	try {
+		if (!xl_level_extensions_active() || !backend_ready || !bank || sample < 0 || unsigned(sample) >= bank->classic.size() || sound_class < 0 || sound_class > 6 || volume < 0 || pan < 0 || pan > 65536) return -1;
+		const auto repetitions = looping ? -1 : std::int64_t(loop_end) - loop_start + 1;
+		const auto effective = std::int64_t(volume) * priority_volume / 65536;
+		if (repetitions < INT32_MIN || repetitions > INT32_MAX || effective > INT32_MAX / 2) return -1;
+		AudioLock lock;
+		owners.reconcile(mixer);
+		return owners.start_voice(bank->classic[unsigned(sample)], int(repetitions), -1,
+		                          audio_priority(sound_class, volume, int(effective), -1, looping != 0), audio_start_output(int(effective), pan), AudioOwnerKind::unlinked, mixer);
+	} catch (const std::exception &error) {
+		failure = error.what();
+		return -1;
+	}
+}
+extern "C" int xl_audio_channel_playing(int slot)
+{
+	if (!xl_level_extensions_active()) return 0;
+	AudioLock lock;
+	return slot >= 0 && unsigned(slot) < mixer.voices.size() && mixer.voices[unsigned(slot)].remaining != 0;
+}
+extern "C" void xl_audio_stop_channel(int slot)
+{
+	if (!xl_level_extensions_active()) return;
+	AudioLock lock;
+	mixer.stop(slot);
+	owners.reconcile(mixer);
+}
+extern "C" int xl_audio_set_channel_volume(int slot, int volume)
+{
+	if (!xl_level_extensions_active()) return 0;
+	AudioLock lock;
+	return mixer.set_volume(slot, volume, priority_volume);
+}
+extern "C" int xl_audio_set_channel_pan(int slot, int pan)
+{
+	if (!xl_level_extensions_active() || pan < 0 || pan > 65536) return 0;
+	AudioLock lock;
+	return mixer.set_pan(slot, pan);
 }
 
 extern "C" int xl_named_audio_action(trigger *action, int owner)
@@ -324,8 +397,8 @@ extern "C" int xl_named_audio_action(trigger *action, int owner)
 	if (action->time >= 0 && GameTime64 - event.started <= event.cooldown) return 0;
 	const auto &authored = found->second;
 	AudioLock lock;
-	const int slot = backend_ready ? mixer.start(authored.sample, authored.repetitions, owner,
-	                                             audio_priority(0, 65536, priority_volume, -1, authored.repetitions < 0))
+	const int slot = backend_ready ? owners.start_voice(authored.sample, authored.repetitions, owner,
+	                                                    audio_priority(0, 65536, priority_volume, -1, authored.repetitions < 0), audio_start_output(priority_volume, 32767), AudioOwnerKind::action, mixer)
 	                               : -1;
 	if (slot < 0) {
 		if (!GameArg.SndNoSound) {
@@ -392,7 +465,7 @@ nlohmann::json named_audio_snapshot()
 		}
 	for (unsigned slot = 0; slot < voices.size(); ++slot) {
 		const auto &voice = voices[slot];
-		if (voice.remaining) state["voices"].push_back({ slot, voice.serial, voice.sample, voice.position, voice.owner, voice.remaining, voice.priority.volume });
+		if (voice.remaining) state["voices"].push_back({ slot, voice.serial, voice.sample, voice.position, voice.owner, voice.remaining, voice.priority.volume, int(voice.kind), voice.priority.sound_class, voice.priority.persistent, voice.output.volume, voice.output.pan[0], voice.output.pan[1] });
 	}
 	return state;
 }
@@ -409,12 +482,12 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 		const auto next = std::uint64_t(integer(state.at("next"), 1, INT64_MAX));
 		const auto cursor = unsigned(integer(state.at("cursor"), 0, audio_voice_limit - 1));
 		std::array<AudioEvent, event_limit> restored_events;
-		std::set<unsigned> owners, slots;
+		std::set<unsigned> action_owners, slots;
 		std::set<std::uint64_t> serials, event_serials;
 		for (const auto &row : state.at("events")) {
 			if (!row.is_array() || row.size() != 6 || !row[5].is_boolean()) throw std::runtime_error("Invalid named-audio event row");
 			const auto owner = unsigned(integer(row[0], 0, event_limit - 1));
-			if (!bank || !bank->actions.count(int(owner)) || !owners.insert(owner).second) throw std::runtime_error("Unknown or duplicate named-audio action owner");
+			if (!bank || !bank->actions.count(int(owner)) || !action_owners.insert(owner).second) throw std::runtime_error("Unknown or duplicate named-audio action owner");
 			const auto &authored = bank->actions.at(int(owner));
 			auto &event = restored_events[owner];
 			const auto elapsed = integer(row[1], -1, SAVE_EPOCH_MAX);
@@ -435,21 +508,34 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 		}
 		std::array<AudioVoice, audio_voice_limit> voices{};
 		for (const auto &row : state.at("voices")) {
-			if (!row.is_array() || row.size() != 7 || !bank) throw std::runtime_error("Invalid named-audio voice row");
+			if (!row.is_array() || row.size() != 13 || !bank || !row[9].is_boolean()) throw std::runtime_error("Invalid named-audio voice row");
 			const auto slot = unsigned(integer(row[0], 0, audio_voice_limit - 1));
 			if (!slots.insert(slot).second) throw std::runtime_error("Duplicate named-audio voice slot");
 			auto &voice = voices[slot];
 			voice.serial = std::uint64_t(integer(row[1], 1, std::int64_t(next - 1)));
 			voice.sample = unsigned(integer(row[2], 0, std::int64_t(bank->sources.size() - 1)));
-			voice.owner = int(integer(row[4], 0, event_limit - 1));
+			voice.owner = int(integer(row[4], -1, event_limit - 1));
 			voice.remaining = int(integer(row[5], -1, INT32_MAX));
-			if (!serials.insert(voice.serial).second || !bank->actions.count(voice.owner)) throw std::runtime_error("Invalid named-audio voice identity");
-			const auto &action = bank->actions.at(voice.owner);
-			voice.priority = audio_priority(0, 65536, int(integer(row[6], 0, 32768)), -1, action.repetitions < 0);
-			const auto &event = restored_events[unsigned(voice.owner)];
-			if (action.sample != voice.sample || !event.activated || event.serial < voice.serial ||
-			    (action.repetitions > 0 ? (voice.remaining < 1 || voice.remaining > action.repetitions) : voice.remaining != -1))
-				throw std::runtime_error("Named-audio voice differs from its authored action");
+			voice.kind = static_cast<AudioOwnerKind>(integer(row[7], 0, 2));
+			voice.priority = { int(integer(row[8], -1, 6)), int(integer(row[6], 0, INT32_MAX / 2)), row[9].get<bool>() };
+			voice.output = { int(integer(row[10], 0, 128)), { std::uint8_t(integer(row[11], 0, 255)), std::uint8_t(integer(row[12], 0, 255)) } };
+			if (!voice.remaining || !serials.insert(voice.serial).second || voice.output.volume != audio_start_output(voice.priority.volume, 32767).volume ||
+			    (unsigned(voice.output.pan[0]) + voice.output.pan[1] != 254 && voice.output.pan != std::array<std::uint8_t, 2>{ 255, 255 }))
+				throw std::runtime_error("Invalid shared-audio channel state");
+			if (voice.kind == AudioOwnerKind::action) {
+				if (!bank->actions.count(voice.owner)) throw std::runtime_error("Invalid named-audio voice identity");
+				const auto &action = bank->actions.at(voice.owner);
+				const auto expected = audio_priority(0, 65536, voice.priority.volume, -1, action.repetitions < 0);
+				const auto &event = restored_events[unsigned(voice.owner)];
+				if (voice.priority.sound_class != expected.sound_class || voice.priority.persistent != expected.persistent ||
+				    action.sample != voice.sample || !event.activated || event.serial < voice.serial ||
+				    (action.repetitions > 0 ? (voice.remaining < 1 || voice.remaining > action.repetitions) : voice.remaining != -1))
+					throw std::runtime_error("Named-audio voice differs from its authored action");
+			} else if (voice.kind == AudioOwnerKind::unlinked) {
+				if (voice.owner != -1 || std::find(bank->classic.begin(), bank->classic.end(), voice.sample) == bank->classic.end() ||
+				    (voice.priority.sound_class == 0 && voice.priority.persistent) || (voice.priority.sound_class == -1 && !voice.priority.persistent))
+					throw std::runtime_error("Unlinked audio voice has an invalid sample, owner or class");
+			} else throw std::runtime_error("Linked audio persistence is not installed");
 			const auto frame_count = frames_at_rate(bank->sources.at(voice.sample), rate);
 			const auto position = std::uint64_t(integer(row[3], 0, std::int64_t(frame_count - 1)));
 			voice.position = unsigned((std::min) (position * output_rate / rate, std::uint64_t(converted->at(voice.sample).frames() - 1)));
@@ -459,6 +545,7 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			// Do not consume restored samples while the loader is still running
 			resume_pending = resume_pending || !mixer.paused;
 			mixer.paused = true;
+			owners.clear(mixer);
 			mixer.voices = voices;
 			mixer.next_serial = next;
 			mixer.cursor = cursor;
@@ -482,7 +569,7 @@ nlohmann::json named_audio_diagnostics()
 		delivered = output_frames;
 		calls = callbacks;
 	}
-	nlohmann::json result = { { "backend_ready", backend_ready }, { "rate", output_rate }, { "resources", bank ? bank->sources.size() : 0 }, { "actions", bank ? bank->actions.size() : 0 }, { "files", bank ? bank->names : std::vector<std::string>{} }, { "paused", copy.paused }, { "resume_pending", resume_pending }, { "volume", copy.volume }, { "starts", copy.starts }, { "completions", copy.completions }, { "stops", copy.stops }, { "failed_starts", failed_starts }, { "output_callbacks", calls }, { "output_frames", delivered }, { "error", failure }, { "voices", nlohmann::json::array() } };
+	nlohmann::json result = { { "backend_ready", backend_ready }, { "rate", output_rate }, { "resources", bank ? bank->sources.size() : 0 }, { "actions", bank ? bank->actions.size() : 0 }, { "files", bank ? bank->names : std::vector<std::string>{} }, { "paused", copy.paused }, { "resume_pending", resume_pending }, { "effects_volume", priority_volume }, { "output_volume", copy.volume }, { "classic_samples", bank ? bank->classic.size() : 0 }, { "starts", copy.starts }, { "completions", copy.completions }, { "stops", copy.stops }, { "failed_starts", failed_starts }, { "output_callbacks", calls }, { "output_frames", delivered }, { "error", failure }, { "voices", nlohmann::json::array() } };
 	result["cursor"] = copy.cursor;
 	for (const auto &voice : copy.voices)
 		if (voice.remaining) result["voices"].push_back({ { "serial", voice.serial }, { "owner", voice.owner }, { "sample", voice.sample }, { "position", voice.position }, { "remaining", voice.remaining } });
