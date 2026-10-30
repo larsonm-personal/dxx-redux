@@ -1,5 +1,5 @@
 #include "texture_pixels.h"
-#include "../../app/src/main/cpp/shared/xl_rgba_pixels.h"
+#include "../xl_rgba_pixels.h"
 extern "C" {
 #include "inferno.h"
 #include "gr.h"

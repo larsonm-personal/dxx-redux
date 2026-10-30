@@ -1,6 +1,6 @@
 #include "../pog.h"
 #include "../hog.h"
-#include "../../app/src/main/cpp/shared/xl_rgba_pixels.h"
+#include "../xl_rgba_pixels.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
