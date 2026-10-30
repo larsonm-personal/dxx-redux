@@ -1,4 +1,5 @@
 #include "doors.h"
+#include "linked_audio.h"
 #include "preview.h"
 #include <algorithm>
 #include <array>
@@ -93,6 +94,7 @@ void erase(int index)
 {
 	for (int i = index + 1; i < Num_open_doors; ++i) ActiveDoors[i - 1] = ActiveDoors[i];
 	ActiveDoors[--Num_open_doors] = {};
+	xl_audio_update_routes();
 }
 void advance(active_door &door)
 {
@@ -147,12 +149,14 @@ int transition(int segment_index, int side, bool opening, bool force)
 		if (Num_open_doors == MAX_DOORS) return 1;
 		door = &ActiveDoors[Num_open_doors++];
 		*door = {};
+		xl_audio_update_routes();
 	}
 	door->n_parts = 1;
 	door->front_wallnum[0] = index;
 	door->back_wallnum[0] = back;
 	door->front_wallnum[1] = door->back_wallnum[1] = -1;
 	w.state = opening ? WALL_DOOR_OPENING : WALL_DOOR_CLOSING;
+	if (opening) xl_audio_update_routes();
 	if (back >= 0) Walls[back].state = w.state;
 	if (opening && back >= 0 && w.linked_wall == back) {
 		door->n_parts = 2;

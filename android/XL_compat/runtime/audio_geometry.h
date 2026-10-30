@@ -12,6 +12,10 @@ class ClassicAudioSpatial
 {
   public:
 	ClassicAudioSpatial();
+	void invalidate_routes()
+	{
+		route_listener = -1;
+	}
 	AudioSpatialOutput output(int listener_segment, int sound_segment, const FixedLightPoint &listener, const FixedLightPoint &sound, const FixedLightPoint &right, const FixedLightPoint &up, int volume, int range, int decay, bool reverse = false, int hires = 1);
 
   private:

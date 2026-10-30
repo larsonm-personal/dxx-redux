@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #ifdef DXX_XL_RUNTIME
 #include "gameplay_audio.h"
+#include "linked_audio.h"
 #endif
 #include <stdio.h>
 #include <string.h>
@@ -1619,6 +1620,9 @@ void explode_wall(int segnum,int sidenum)
 	expl_wall_list[i].segnum	= segnum;
 	expl_wall_list[i].sidenum	= sidenum;
 	expl_wall_list[i].time		= 0;
+#ifdef DXX_XL_RUNTIME
+	xl_audio_update_routes();
+#endif
 
 	//play one long sound for whole door wall explosion
 	compute_center_point_on_side(&pos,&Segments[segnum],sidenum);
@@ -1737,8 +1741,12 @@ void do_exploding_wall_frame()
 
 			}
 
-			if (expl_wall_list[i].time >= EXPL_WALL_TIME)
+			if (expl_wall_list[i].time >= EXPL_WALL_TIME) {
 				expl_wall_list[i].segnum = -1;	//flag this slot as free
+#ifdef DXX_XL_RUNTIME
+				xl_audio_update_routes();
+#endif
+			}
 
 		}
 	}

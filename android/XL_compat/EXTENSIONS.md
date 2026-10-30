@@ -170,7 +170,11 @@ Ambient surface initialization now uses an XL-owned consumer with per-segment
 gain distribution, orientation-independent portal suppression and permanent
 linked ownership. See [surface audio evidence](evidence/surface-audio.md) for
 source/native comparisons, exact stock PCM isolation and platform status.
-Ambient sound objects and wall-change qualification remain unfinished, so
+The XL route cache now responds to actual texture, door, cloak and exploding-wall
+lifecycle events while the listener remains stationary; see
+[route evidence](evidence/audio-routes.md) for the demonstrated prior failure,
+source contract and platform status. Ambient sound objects, static explosion
+ambience and the remaining wall/audio consumers still need qualification, so
 classic replacements remain gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their

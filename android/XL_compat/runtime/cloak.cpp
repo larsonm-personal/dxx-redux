@@ -1,4 +1,5 @@
 #include "cloak.h"
+#include "linked_audio.h"
 #include "preview.h"
 #include <cstring>
 extern "C" {
@@ -65,6 +66,7 @@ void scale_light(const cloaking_wall &entry, fix scale)
 }
 void erase_entry(int index)
 {
+	xl_audio_update_routes();
 	--Num_cloaking_walls;
 	if (index < Num_cloaking_walls)
 		std::memmove(&CloakingWalls[index], &CloakingWalls[index + 1], (Num_cloaking_walls - index) * sizeof(cloaking_wall));
@@ -92,6 +94,7 @@ extern "C" int xl_start_wall_cloak(int segment_index, int side, int opening)
 	} else if (wall.state == WALL_DOOR_CLOSED && Num_cloaking_walls < DXX_XL_MAX_CLOAKING_WALLS) {
 		entry = &CloakingWalls[Num_cloaking_walls++];
 		*entry = {};
+		xl_audio_update_routes();
 	}
 	if (!entry) {
 		// Source open fallback; correct the decloak caller's type/state mix-up

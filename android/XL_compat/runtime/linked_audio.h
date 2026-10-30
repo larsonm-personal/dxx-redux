@@ -14,6 +14,8 @@ int64_t xl_audio_link_object_recorded(int sample, int sound_class, int object, i
 int64_t xl_audio_link_position_recorded(int sample, int segment, int side, const struct vms_vector *position, int forever, int volume, int range, int logical);
 void xl_audio_defer_objects(int deferred);
 void xl_audio_sync_objects(void);
+// Invalidate spatial paths without replacing owners, channels or playback phase
+void xl_audio_update_routes(void);
 int xl_audio_destroy_object(int object, int sample);
 int xl_audio_destroy_position(int segment, int side, int sample);
 int xl_audio_object_count(int object, int sample, int playing_only);

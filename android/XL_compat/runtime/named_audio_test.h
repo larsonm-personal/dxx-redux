@@ -218,6 +218,7 @@ static int named_audio_original(int argc, char **argv)
 #include "afterburner_audio_test.h"
 #include "actor_audio_test.h"
 #include "surface_audio_test.h"
+#include "audio_routes_test.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif

@@ -82,8 +82,6 @@ original-mission playthrough or a claim that every ambient consumer is finished.
 The checks join existing source/runtime test owners, without new CI jobs,
 additional Android automation steps or relaxed timeouts.
 
-The next known lifecycle gap is route invalidation: source `CAudio::Update`
-clears router endpoints after texture changes and wall lifecycle events. The
-current owned spatial cache refreshes after listener-segment changes, so a
-stationary listener can retain a stale route. That behavior requires a separate
-fix with actual wall/texture controls; these initializer checks do not cover it.
+The subsequent [route invalidation increment](audio-routes.md) addresses the
+stationary-listener gap in source `CAudio::Update`, with actual texture and wall
+lifecycle controls. Those results are separate from these initializer checks.

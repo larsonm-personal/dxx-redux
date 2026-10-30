@@ -1,4 +1,5 @@
 #include "preview.h"
+#include "linked_audio.h"
 #include "../trigger_flags.h"
 #include "../texture_change.h"
 extern "C" {
@@ -41,6 +42,7 @@ extern "C" int xl_trigger_texture_action(const trigger *action)
 	}
 	// Source audio.Update invalidates routes even for an empty or unchanged action
 	flush_fcd_cache_for_sound();
+	xl_audio_update_routes();
 	if (!(action->flags & TF_NO_MESSAGE)) HUD_init_message_literal(HM_DEFAULT, "Walls have been changed!");
 	return 0;
 }

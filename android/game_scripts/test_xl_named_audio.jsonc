@@ -620,8 +620,9 @@
     {
         "action": "wait_for",
         "expect": {
-            "xl_named_audio.output_probe.output_checks": 101,
+            "xl_named_audio.output_probe.output_checks": 111,
             "xl_named_audio.output_probe.surface_checks": 13,
+            "xl_named_audio.output_probe.route_checks": 10,
             "xl_named_audio.output_probe.actor_checks": 5,
             "xl_named_audio.output_probe.afterburner_checks": 8,
             "xl_named_audio.output_probe.combat_checks": 15,

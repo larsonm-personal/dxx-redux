@@ -469,9 +469,18 @@ finish original-mission qualification
     overlay precedence, portal identity and deferred permanent owners. Source
     receipts and native stock PCM checks qualify this consumer; platform status
     is maintained in [surface audio](../../XL_compat/evidence/surface-audio.md).
-    Next qualify wall/texture-change lifecycle and ambient sound objects, then
+    Qualify wall/texture-change lifecycle and ambient sound objects, then
     install classic replacements only after their remaining consumers are
     covered. No admission expansion follows from initializer tests alone.
+
+58. Stationary-listener audio routing: explicit source update points now
+    invalidate cached paths after texture actions and door/cloak/exploding-wall
+    lifecycle events. The regression demonstrates the prior stale route, then
+    exercises real consumers with retained ownership, playback and deferred
+    state. See [route evidence](../../XL_compat/evidence/audio-routes.md) for
+    platform results and limits. Next implement external WAV linked-owner
+    creation and restore validation before sound-effect object activation and
+    lifetime handling. Resource resolution alone cannot qualify those objects.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
