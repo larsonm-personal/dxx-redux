@@ -24,6 +24,7 @@
 #include "named_audio.h"
 #include "named_audio_state.h"
 #include "reactor_countdown.h"
+#include "robot_disarm_state.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -121,7 +122,8 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 18;
+		block["schema"] = 19;
+		block["neutral_robots"] = xl_compat::disarm_snapshot();
 		xl_countdown_state countdown{};
 		xl_countdown_get(&countdown);
 		require(xl_countdown_restore(&countdown, 0), "Cannot capture XL countdown state");
@@ -210,10 +212,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 14u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 18 &&
+		require(saved.is_object() && saved.size() == 15u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 19 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
+		require(xl_compat::disarm_restore(saved.at("neutral_robots"), false), "Invalid XL disarmed robot lifetime");
 		const auto &countdown = saved.at("countdown");
 		require(countdown.is_array() && countdown.size() == 7, "Invalid XL countdown state layout");
 		for (const auto &field : countdown)
@@ -392,6 +395,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);
 		xl_message_restore(&message_state, 1);
 		xl_countdown_restore(&countdown_state, 1);
+		xl_compat::disarm_restore(saved.at("neutral_robots"), true);
 		xl_compat::restore_named_audio(saved.at("audio"), true);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);

@@ -2,6 +2,7 @@
 #include "preview.h"
 #include "blocked.h"
 #include "boss_spawn.h"
+#include "robot_disarm.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -809,6 +810,9 @@ void do_ai_robot_hit_attack(object *robot, object *playerobj, vms_vector *collis
 {
 	ai_local		*ailp = &Ai_local_info[robot-Objects];
 	robot_info *robptr = &Robot_info[robot->id];
+#ifdef DXX_XL_RUNTIME
+	if (xl_robot_disarmed(robot - Objects)) return;
+#endif
 
 //#ifndef NDEBUG
 	if (cheats.robotfiringsuspended)
@@ -973,6 +977,9 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	//	If this robot is only awake because a camera woke it up, don't fire.
 	if (obj->ctype.ai_info.SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE)
 		return;
+#ifdef DXX_XL_RUNTIME
+	if (xl_robot_disarmed(obj - Objects)) return;
+#endif
 
 	if (cheats.robotfiringsuspended)
 		return;

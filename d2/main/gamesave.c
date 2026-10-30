@@ -1228,7 +1228,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 	for (i = 0; i < Num_triggers; ++i) {
 #ifdef DXX_XL_RUNTIME
-		/* Countdown, message and named-sound links are inert */
+		/* These actions do not bind geometric wall targets */
 		if (xl_loading_inert_trigger(Triggers[i].type)) continue;
 #endif
 		const int serialized_count = Triggers[i].num_links;

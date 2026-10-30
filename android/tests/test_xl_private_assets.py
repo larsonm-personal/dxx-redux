@@ -160,7 +160,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 105)
+        self.assertEqual(len(runner.FAST_TESTS), 106)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -177,6 +177,7 @@ class XlPrivateTests(unittest.TestCase):
                 "xl_level_text_reference",
                 "xl_texture_actions",
                 "xl_countdown_runtime",
+                "xl_disarm_runtime",
             }
             <= runner.FAST_TESTS
         )
@@ -188,7 +189,7 @@ class XlPrivateTests(unittest.TestCase):
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
             receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 105)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 106)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
@@ -615,7 +616,7 @@ class XlPrivateTests(unittest.TestCase):
             )
             passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
-            self.assertEqual(receipt(passed, 0)["required_passed"], 91)
+            self.assertEqual(receipt(passed, 0)["required_passed"], 92)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
             # CTest can exit zero when disabled tests are present
             disabled_required = ET.parse(path)
