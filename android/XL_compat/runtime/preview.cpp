@@ -16,6 +16,7 @@
 #include "named_audio.h"
 #include "ambient_objects.h"
 #include "particle_objects.h"
+#include "transparency_scene.h"
 #include "static_explosion_runtime.h"
 #include "reactor_countdown.h"
 #include "seismic_gameplay.h"
@@ -1305,7 +1306,6 @@ extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, c
 extern "C" void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment)
 {
 	if (!source || Game_mode & GM_MULTI) return;
-	xl_particle_render_scene(segments, count);
 	for (int i = 0; i < count; ++i) {
 		for (int side = 0; side < 6; ++side) {
 			xl_texture_emitter emitter{};
@@ -1465,7 +1465,7 @@ extern "C" void xl_preview_draw_water_portal(int segment_number, int side)
 {
 	int32_t points[4][3];
 	float colors[4][4];
-	if (xl_preview_water_portal(segment_number, side, points, colors)) ogl_draw_xl_water_portal(points, colors);
+	if (xl_preview_water_portal(segment_number, side, points, colors) && !xl_transparency_water(segment_number, side, points, colors)) ogl_draw_xl_water_portal(points, colors);
 }
 
 extern "C" void xl_preview_record_water_draw(int depth_enabled)

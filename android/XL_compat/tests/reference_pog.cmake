@@ -1,3 +1,14 @@
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/render/fastrender.cpp" transparency_hash)
+if(NOT transparency_hash STREQUAL
+   "51f893295a5f8e254315037e413fa6299debb9b88a2f8224d22d23ac75dd3d4d")
+    message(FATAL_ERROR "Source transparent face classification changed")
+endif()
+set(extracted "// Actual pinned textured/colored face transparency admission\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/fastrender.cpp"
+                      "static inline int32_t FaceIsTransparent (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_face_transparency.h"
+     CONTENT "${extracted}")
+
 foreach(
     pair IN
     ITEMS

@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "transparency_scene.h"
 #include "projectile.h"
 #include "object_pool.h"
 #include "fluids.h"
@@ -962,6 +963,9 @@ void render_object(object *obj)
 		android_render_record_visible_object(obj);
 		return;
 	}
+#endif
+#ifdef DXX_XL_RUNTIME
+	if (xl_transparency_object((int)(obj - Objects))) return;
 #endif
 	mld_save = Max_linear_depth;
 	Max_linear_depth = Max_linear_depth_objects;

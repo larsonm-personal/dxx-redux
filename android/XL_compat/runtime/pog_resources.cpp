@@ -38,7 +38,7 @@ extern "C" xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitm
 			entry.width = image.width;
 			entry.height = image.height;
 			entry.flags = image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_no_lighting |
-			                             xl_compat::pog_rle | xl_compat::pog_rle_big);
+			                             xl_compat::pog_rle | xl_compat::pog_rle_big | xl_compat::pog_see_through);
 			entry.average_index = image.average_index;
 			for (unsigned c = 0; c < 3; ++c) entry.average_rgb[c] = image.average_rgb[c];
 			entry.rgba = image.truecolor;

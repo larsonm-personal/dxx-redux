@@ -306,11 +306,13 @@ void install_named_audio(std::shared_ptr<const AudioResources> resources)
 	// Preparation and installation run on the game thread without reopening audio
 	if (resources && resources->prepared_rate != output_rate) throw std::runtime_error("XL named-audio output changed during level preparation");
 	auto samples = resources ? resources->prepared_samples : nullptr;
+	std::vector<AudioPlayback> playback(resources ? resources->sources.size() : 0);
 	std::shared_ptr<const AudioResources> previous;
 	{
 		AudioLock lock;
 		owners.clear(mixer);
 		mixer.clear();
+		mixer.playback.swap(playback);
 		looping = {};
 		events.fill({});
 		// Reset XL cadence on level/resource transitions without touching stock-only loads
@@ -507,6 +509,23 @@ extern "C" int xl_named_audio_action(trigger *action, int owner)
 
 namespace xl_compat
 {
+AudioSnapshotPause::AudioSnapshotPause()
+{
+	active = xl_level_extensions_active() != 0;
+	if (!active) return;
+	AudioLock lock;
+	paused = mixer.paused;
+	pending = resume_pending;
+	mixer.paused = true;
+	resume_pending = false;
+}
+AudioSnapshotPause::~AudioSnapshotPause()
+{
+	if (!active) return;
+	AudioLock lock;
+	mixer.paused = paused;
+	resume_pending = pending;
+}
 namespace
 {
 std::int64_t integer(const nlohmann::json &value, std::int64_t minimum, std::int64_t maximum)
@@ -695,6 +714,13 @@ nlohmann::json named_audio_diagnostics()
 	}
 	nlohmann::json result = { { "backend_ready", backend_ready }, { "rate", output_rate }, { "resources", bank ? bank->sources.size() : 0 }, { "actions", bank ? bank->actions.size() : 0 }, { "files", bank ? bank->names : std::vector<std::string>{} }, { "paused", copy.paused }, { "resume_pending", resume_pending }, { "effects_volume", priority_volume }, { "output_volume", copy.volume }, { "classic_samples", bank ? bank->classic.size() : 0 }, { "starts", copy.starts }, { "completions", copy.completions }, { "stops", copy.stops }, { "failed_starts", failed_starts }, { "output_callbacks", calls }, { "output_frames", delivered }, { "error", failure }, { "voices", nlohmann::json::array() } };
 	result["cursor"] = copy.cursor;
+	result["classic_playback"] = nlohmann::json::object();
+	if (bank)
+		for (unsigned physical = 0; physical < bank->classic.size(); ++physical) {
+			const auto &receipt = copy.playback.at(bank->classic[physical]);
+			if (receipt.attempts || receipt.completed || receipt.stopped || receipt.failed)
+				result["classic_playback"][std::to_string(physical)] = { { "attempts", receipt.attempts }, { "completed", receipt.completed }, { "stop_requested", receipt.stopped }, { "failed", receipt.failed } };
+		}
 	result["classic_replacements"] = bank ? nlohmann::json(bank->classic_replacements) : nlohmann::json::object();
 	std::set<std::string> named_files;
 	result["external_resources"] = nlohmann::json::object();

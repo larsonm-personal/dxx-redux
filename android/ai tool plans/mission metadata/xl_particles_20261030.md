@@ -270,3 +270,57 @@ schema 25 to 26. All implementation stays in XL_compat. The broader existing
 audio/save integration passes (112.18 seconds), including disk-save-through-stock
 controls, against the shared trailer change. Original Pumo and Android full-save
 workflows remain unqualified. Scoped formatting/lint passes.
+
+## Shared transparency ordering
+
+Particle saved state is published as draft PR #236, commit `8fce69b6e`, stacked on
+#235. Continue in the main checkout on `xl_more_85_transparency`.
+
+The core currently draws opaque/transparent wall passes, objects and particles
+separately. Pinned XL places transparent faces, sprites, selected polygon objects
+and particles in one distance-bucket queue. Particles alone have a ten-unit depth
+bias; other queued items use zero. Equal-bucket insertion is reversed. Preserve
+the classic path, and keep the queue implementation local to XL_compat.
+
+1. Generalize the checked source ordering consumer to mixed entry types and
+   execute the original face/object/sprite/particle admission/depth decisions
+2. Retain the source see-through bitmap classification needed to distinguish
+   opaque cutouts from blended faces; validate classification against source
+3. Connect a frame-scoped queue with minimal core hooks and preserved camera,
+   material, clipping and object ownership. Avoid replaying gameplay side effects
+4. Check mixed wall/object/particle pixels and depth, native frame lifecycle,
+   classic isolation and Android consumer behavior through existing owners
+
+Do not admit particles until mixed-scene behavior is demonstrated. Original Pumo,
+startup-installation images and Android resource/save qualification remain next.
+
+The frame queue is connected, including transparent water portals, with ten
+added core lines across `render.c` and `object.c`. Source face classification,
+weapon categories and mixed enqueue methods now execute in existing owners.
+The polygon enqueue oracle caught and corrected face depth clamping, which
+particle/object-only comparisons missed. Native queue lifecycle and mixed
+merged-wall/particle color/depth controls pass. Adjacent particle batching keeps
+graphics-state queries out of the per-particle path without reordering items.
+Full engine/Android scene checks, formatting and final validation are next;
+admission remains unchanged. PR #234's five returned PR workflows passed.
+PRs #235 and #236 each have four successes and the Linux gameplay workflow
+still running at the latest poll; final published-head audit remains due.
+
+Android Neptune now passes all 65 checks. The rejection fixture now uses outdoor
+segments instead of newly supported blocked segments and verifies its own
+unsupported requirement. Both automation catalog checks pass. Cloak testing
+found stale Redux-only sound receipts; per-sample XL mixer receipts now feed the
+existing Android semantic aliases without changing their assertions. The PCM
+owner passes, as does native audio/save integration (127.75 seconds). The rebuilt
+normal Android APK succeeds; cloak and water checks remain underway. PR #235's
+remaining gameplay jobs passed; #236 still has headed replay running.
+
+Water passes 51 Android steps, and cloak passes 81. Cloak and Arena also exposed
+an intermittent checkpoint comparison: forensic buffer comparison finds only
+two audio playheads advancing by 512 samples between the same-game-frame saves.
+The strict comparison now freezes XL callback time for its two captures and
+restores the original pause/resume state. Native callback integration passes
+(114.76 seconds), including all three pause/resume profiles and nested scopes.
+The final Android build passes Arena's 58 steps and cloak's 81 steps again.
+The capture remains byte-for-byte, including all audio fields; temporary
+diagnostic instrumentation was removed. PR #236's final headed replay job passed.

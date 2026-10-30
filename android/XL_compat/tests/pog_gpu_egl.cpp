@@ -16,6 +16,8 @@
 #include "../runtime/pog_renderer.h"
 #include "../runtime/particle_renderer.h"
 #include "../particle_render.h"
+#include "../transparency_order.h"
+#include "../transparency.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "xl_reference_pog_shaders.h"
 #endif

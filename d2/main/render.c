@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "transparency_scene.h"
 #include "fog.h"
 #ifdef __ANDROID__
 #include "corona_probe.h"
@@ -302,6 +303,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	// XL retains orientation when a texture-change action clears the overlay
 #ifdef DXX_XL_RUNTIME
 	if (xl_level_extensions_active() && !(tmap2 & 0x3fff)) tmap2 = 0;
+	if (xl_transparency_face(segnum, sidenum, nv, vp, tmap1, tmap2, uvlp, wid_flags)) return;
 #endif
 	grs_bitmap  *bm;
 #ifdef OGL
@@ -2299,6 +2301,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 	if (!_search_mode)
 		build_object_lists(N_render_segs);
+#ifdef DXX_XL_RUNTIME
+	xl_transparency_begin(Render_list, N_render_segs);
+#endif
 
 	if (eye_offset<=0) // Do for left eye or zero.
 		set_dynamic_light();
@@ -2601,6 +2606,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 #ifdef __ANDROID__
 		xl_corona_scene_probe(eye, Viewer->segnum);
 #endif
+		xl_transparency_flush();
 		xl_preview_render_emitters(Render_list, N_render_segs, eye, Viewer->segnum);
 		ogl_xl_fog_composite();
 	}

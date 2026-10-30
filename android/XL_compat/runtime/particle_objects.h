@@ -18,6 +18,12 @@ void bind_particle_objects(const Inventory &level);
 void particle_objects_frame(int milliseconds);
 const std::list<ParticleSystem> &particle_systems();
 std::vector<ParticleQuad> particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height);
+struct ParticleSceneItem {
+	ParticlePoint position;
+	ParticleQuad quad;
+};
+// Retain emitter insertion order for the shared transparency queue
+std::vector<ParticleSceneItem> particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

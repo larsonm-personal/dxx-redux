@@ -39,6 +39,7 @@
 #include "countdown_probe.h"
 #include "disarm_probe.h"
 #include "named_audio_probe.h"
+#include "named_audio_state.h"
 #include "fog_probe.h"
 #include "pog_probe.h"
 #include "corona_probe.h"
@@ -7419,6 +7420,9 @@ extern "C" void game_automate_tick(void)
 					break;
 				}
 				if (s.value == "capture" || s.value == "capture_disk") {
+#ifdef DXX_XL_RUNTIME
+					xl_compat::AudioSnapshotPause audio_epoch;
+#endif
 					ready = 0;
 					disk = s.value == "capture_disk";
 					level = Current_level_num;

@@ -62,7 +62,7 @@ static void installed(const std::vector<xl_compat::PogBitmap> &images)
 		         " stride=" + std::to_string(bitmap.bm_rowsize) + " offset=" + std::to_string(piggy_bitmap_get_offset(image.index)) +
 		         "; expected RGBA " + std::to_string(image.width) + "x" + std::to_string(image.height) + " with exact owned pixels")
 		            .c_str());
-		require(piggy_bitmap_get_flags(const_cast<grs_bitmap *>(&bitmap)) == int(image.flags & 7), "Installed RGBA semantic flags differ");
+		require(piggy_bitmap_get_flags(const_cast<grs_bitmap *>(&bitmap)) == int(image.flags & (7 | xl_compat::pog_see_through)), "Installed RGBA semantic flags differ");
 	}
 }
 
@@ -171,9 +171,12 @@ static void physics(const std::filesystem::path &root)
 	unsigned rays = 0, effects = 0;
 	for (int bottom : { 0, 32, 255 })
 		for (int top : { -1, 0, 32, 255 }) {
-			write_bytes((root / "control.pog").string().c_str(), fixture({ solid(Textures[1].index, bottom), solid(Textures[2].index, top) }));
+			const auto encoded = fixture({ solid(Textures[1].index, bottom), solid(Textures[2].index, top) });
+			const auto images = xl_compat::read_pog(encoded.data(), encoded.size(), Num_bitmap_files);
+			write_bytes((root / "control.pog").string().c_str(), encoded);
 			auto resources = prepare("control.pog");
 			require(xl_pog_install(resources.get()), "Cannot install native transparency control");
+			installed(images);
 			for (int orientation = 0; orientation < 4; ++orientation) {
 				surface.tmap_num2 = short(2 | orientation << 14);
 				const bool transparent = top < 0 || (top == 0 && bottom == 0);

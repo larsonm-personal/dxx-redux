@@ -18,6 +18,49 @@ foreach(
         message(FATAL_ERROR "Particle source changed: ${path}")
     endif()
 endforeach()
+foreach(pair IN
+        ITEMS "objects/object.cpp|e71b0a906cd686549c783563ab93365d1bbf5cf05f08c1971ef08c7116c67a64"
+              "include/laser.h|789a8116443be2068c76cecc7f962d9ef44a80a36d7590bc0e1b8a987ce12ec7")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Transparency object classification source changed: ${path}")
+    endif()
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/objects/object.cpp" weapon_source)
+string(FIND "${weapon_source}" "m_weaponInfo [CONCUSSION_ID]" begin)
+string(FIND "${weapon_source}" "m_bIsEquipment.Create (" end)
+if(begin LESS 0 OR end LESS begin)
+    message(FATAL_ERROR "Missing source weapon category initialization")
+endif()
+math(EXPR length "${end} - ${begin}")
+string(SUBSTRING "${weapon_source}" ${begin} ${length} weapon_assignments)
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/laser.h" weapon_header)
+string(REGEX MATCHALL "#define[ \t]+[A-Z_0-9]+_ID[ \t]+[0-9]+[^\n]*" weapon_constants
+             "${weapon_header}")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/segment.h" weapon_flags)
+string(REGEX MATCHALL "#define[ \t]+OBJ_[A-Z_]+[ \t]+[0-9]+[^\n]*" category_constants
+             "${weapon_flags}")
+set(weapon_code "// Pinned weapon category assignments and energy predicate\n")
+foreach(constant IN LISTS weapon_constants category_constants)
+    string(APPEND weapon_code "${constant}\n")
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/object.h" weapon_object_header)
+string(REGEX MATCH "static inline bool IsEnergyProjectile \\([^}]+}" energy_predicate
+             "${weapon_object_header}")
+if(NOT energy_predicate)
+    message(FATAL_ERROR "Missing source energy projectile predicate")
+endif()
+string(REPLACE "static inline" "inline" energy_predicate "${energy_predicate}")
+string(
+    APPEND
+    weapon_code
+    "struct WeaponTable { std::array<uint16_t, 256> m_weaponInfo{}; WeaponTable() {\n${weapon_assignments}\n}\n${energy_predicate}\n};\n"
+)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_transparency_weapons.h"
+     CONTENT "${weapon_code}")
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/object.h" header)
 set(extracted "// Actual pinned particle constants and authored parameter conversion\n")
 foreach(
@@ -287,9 +330,18 @@ foreach(
     signature IN
     ITEMS "void CTransparencyRenderer::InitBuffer ("
           "int32_t CTransparencyRenderer::Add (CTranspItem*"
-          "void CTransparencyRenderer::RenderBuffer (")
+          "void CTransparencyRenderer::RenderBuffer ("
+          "int32_t CTransparencyRenderer::AddObject ("
+          "int32_t CTransparencyRenderer::AddPoly ("
+          "int32_t CTransparencyRenderer::AddSprite ("
+          "int32_t CTransparencyRenderer::AddParticle (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/transprender.cpp" "${signature}")
 endforeach()
+string(REGEX MATCH "#define[ \t]+PARTICLE_TYPES[ \t]+[0-9]+" particle_types "${render_header}")
+if(NOT particle_types)
+    message(FATAL_ERROR "Missing source particle render type count")
+endif()
+set(extracted "${particle_types}\n${extracted}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_order.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_order.cpp)

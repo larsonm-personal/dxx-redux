@@ -300,9 +300,12 @@ isolation. Owned images and fire/smoke drawing now have native and GPU controls.
 The scene layer adds source-checked camera rotation, animation, visibility,
 depth bounds and particle ordering, plus real graphics-context replacement.
 Authored activation/deleted-owner state now round-trips the complete native XL
-trailer, with fresh transient clouds on restore. Ordering against other
-transparent content and Android/original-Pumo qualification remain unfinished;
-particles remain blocked.
+trailer, with fresh transient clouds on restore. A shared frame queue now
+interleaves transparent faces, water, sprites, selected polygon objects and
+particles, with source ordering/classification, native lifecycle and mixed
+wall/particle GPU controls. Android Neptune, cloak, water and original Arena POG
+regression owners pass. Original Pumo particle scenes, resource lifecycle and
+save qualification remain unfinished; particles remain blocked.
 See [particle evidence](evidence/particle-effects.md).
 
 Immediate singleplayer wall teleports now use detected requirements, including

@@ -45,12 +45,18 @@ struct AudioVoice {
 	AudioOwnerKind kind = AudioOwnerKind::action;
 };
 
+struct AudioPlayback {
+	std::uint64_t attempts = 0, completed = 0, stopped = 0, failed = 0;
+};
+
 // The engine owns the immutable sample bank and excludes concurrent control
 // operations with SDL's audio lock. mix() performs no allocation or I/O
 class AudioVoices
 {
   public:
 	std::array<AudioVoice, audio_voice_limit> voices{};
+	// Sized by the game thread when installing the bank; no callback allocation
+	std::vector<AudioPlayback> playback;
 	std::uint64_t next_serial = 1, starts = 0, completions = 0, stops = 0;
 	unsigned cursor = 0;
 	bool paused = false;

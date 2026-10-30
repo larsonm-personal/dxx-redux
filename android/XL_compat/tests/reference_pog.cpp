@@ -1,5 +1,6 @@
 #include "../pog.h"
 #include "../particle_image.h"
+#include "../transparency.h"
 #include "../scoped_texture.h"
 #include "../hog.h"
 #include "../xl_rgba_pixels.h"
@@ -266,6 +267,48 @@ static void require(bool value, const char *message)
 {
 	if (!value) throw std::runtime_error(message);
 }
+
+namespace face_transparency_reference
+{
+struct CSegFace {
+	struct {
+		int nTransparent = 0;
+		bool bTransparent = false, bAdditive = false;
+		struct {
+			float alpha = 1;
+			float Alpha() const
+			{
+				return alpha;
+			}
+		} color;
+	} m_info;
+};
+#define DBG 0
+#include "xl_reference_face_transparency.h"
+#undef DBG
+void controls()
+{
+	unsigned cases = 0;
+	for (int base : { -1, 0, 1, 2, 3, 64, 65, 66, 67 })
+		for (int overlay : { -1, 0, 1, 2, 3, 64, 65, 66, 67 })
+			for (bool forced : { false, true })
+				for (bool additive : { false, true })
+					for (float alpha : { 0.f, .5f, 1.f }) {
+						CBitmap bottom, top;
+						bottom.AddFlags(base < 0 ? 0 : base);
+						top.AddFlags(overlay < 0 ? 0 : overlay);
+						CSegFace face;
+						face.m_info.bTransparent = forced;
+						face.m_info.bAdditive = additive;
+						face.m_info.color.alpha = alpha;
+						const bool expected = FaceIsTransparent(&face, base < 0 ? nullptr : &bottom, overlay < 0 ? nullptr : &top) != 0;
+						const auto flags = [](int value) -> std::optional<unsigned> { return value < 0 ? std::nullopt : std::optional<unsigned>(unsigned(value)); };
+						require(xl_compat::transparent_face(flags(base), flags(overlay), forced, additive, alpha) == expected, "Transparent face classification differs from source");
+						++cases;
+					}
+	std::cout << "Pinned transparent faces: " << cases << " base/overlay, cutout, keyed, authored-alpha and additive classifications passed\n";
+}
+} // namespace face_transparency_reference
 static void put32(std::vector<uint8_t> &bytes, size_t offset, uint32_t value)
 {
 	for (unsigned c = 0; c < 4; ++c) bytes[offset + c] = uint8_t(value >> (c * 8));
@@ -387,6 +430,7 @@ try {
 		return 0;
 	}
 	particle_image_controls();
+	face_transparency_reference::controls();
 	particle_image_selection_controls();
 	for (const auto shape : { std::pair{ 4u, 4u }, { 4u, 12u }, { 32u, 32u }, { 257u, 1u }, { 512u, 2u } }) {
 		const auto height = shape.first > 256 ? shape.first * shape.second : shape.second;
