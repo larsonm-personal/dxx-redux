@@ -242,7 +242,7 @@ static int flicker_test(int argc, char **argv)
 		flicker_frame(F1_0);
 		require(same_flickers(advanced, flicker_snapshot()) && same_light_snapshot(advanced_lights, light_snapshot()), "Restored flicker continuation diverged");
 		require(state_restore_all_sub(save, 0), "Cannot reset authored flicker controls");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(check_trigger_sub(Num_triggers - 2, Player_num, 1) == 0, "Authored flicker off failed");
 		phase = flicker_snapshot();
 		require(phase[0].timer == INT32_MIN && phase[128].timer == INT32_MIN, "Authored off did not disable flicker owners");

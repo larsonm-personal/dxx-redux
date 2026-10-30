@@ -61,7 +61,7 @@ static int hog_test(int argc, char **argv)
 			require(state_save_all_sub(save, description), "Cannot save extended mission");
 			require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !PHYSFS_exists(long_name.c_str()), "Extended resource leaked into stock");
 			require(state_restore_all_sub(save, 0) && xl_level_trigger_identity() == identity && same_light_snapshot(light, light_snapshot()) && hog_test_read(long_name.c_str()) == payload, "Extended archive restore lost owner, source or light state");
-			start_time();
+			require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 			auto corrupt = bytes;
 			corrupt.pop_back();
 			const auto bad = root / (std::string(stem) + "-bad.hog");

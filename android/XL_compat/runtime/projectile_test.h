@@ -269,7 +269,7 @@ static int projectile_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() && projectile_capture().empty(), "Projectile state leaked into stock");
 		projectile_combat(false);
 		require(state_restore_all_sub(save, 0) && projectile_same(saved, projectile_capture()), "Disk through stock lost full projectile histories");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto shields = Objects[retained].shields;
 		collide_robot_and_weapon(&Objects[retained], &Objects[first], &Objects[retained].pos);
 		require(Objects[retained].shields == shields, "Restored projectile forgot an earlier victim");

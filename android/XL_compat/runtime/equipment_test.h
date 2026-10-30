@@ -435,7 +435,7 @@ static int equipment_test(int argc, char **argv)
 		char initial[] = "equip-initial.sav", pending[] = "equip-pending.sav", description[] = "XL equipment";
 		stop_time();
 		require(state_save_all_sub(initial, description), "equipment initial save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(check_trigger_sub(0, Player_num, 1) == 0 && state(0).enabled && state(1).enabled && Station[matcen_get_station_num(0)].Enabled, "authored action did not activate mixed producers");
 		FrameTime = i2f(9);
 		fuelcen_update_all();
@@ -448,7 +448,7 @@ static int equipment_test(int argc, char **argv)
 		const auto captured = state(0);
 		stop_time();
 		require(state_save_all_sub(pending, description), "pending equipment save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(xl_equipment_trigger(20) == 2, "equipment disable failed");
 		FrameTime = i2f(20);
 		fuelcen_update_all();

@@ -88,7 +88,7 @@ static void doorway_animation(std::ostream &out)
 	require(xl_wall_doorway(-1, stock_wall.segnum, stock_wall.sidenum) == -1 && WALL_IS_DOORWAY(&Segments[stock_wall.segnum], stock_wall.sidenum) == WID_TRANSILLUSORY_WALL, "Redux doorway alternate changed");
 	Walls[0] = stock_wall;
 	require(state_restore_all_sub(save, 0) && Num_open_doors == 1 && ActiveDoors[0].time == earned.time && Walls[0].state == WALL_DOOR_CLOSING && WALL_IS_DOORWAY(&Segments[24], 5) == WID_TRANSPARENT_WALL, "Disk through stock lost closing doorway state");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = F1_0 / 32;
 	sample();
 	require(check_trigger_sub(0, Player_num, 1) == 0 && Walls[0].state == WALL_DOOR_CLOSING, "Open trigger unexpectedly reversed a closing door");

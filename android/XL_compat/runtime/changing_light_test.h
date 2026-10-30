@@ -221,7 +221,7 @@ static int changing_light_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2"), "Light stock transition failed");
 		require(!xl_light_index_count() && !xl_light_segment_count() && !xl_changing_light(0, 0, -1), "Owned XL light state leaked into stock");
 		require(state_restore_all_sub(save, 0) && same_light_snapshot(earned, light_snapshot()), "Source restore reconstructed masks but lost earned clamped brightness");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require_owned_light_records(source);
 		light_bad_state(root);
 		std::cout << "XL changing-light controls passed: 501 sources, 73726 deltas, full first/count widths, authored toggles and exact disk through stock\n";

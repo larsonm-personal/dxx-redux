@@ -269,7 +269,7 @@ static void door_concurrency(const std::filesystem::path &output)
 	require(!xl_door_open(Walls[0].segnum, Walls[0].sidenum) && !xl_door_frame_process(), "XL door handler claimed stock");
 	require(state_restore_all_sub(save, 0) && Num_open_doors == 90 && !std::memcmp(earned.data(), ActiveDoors, earned.size() * sizeof(active_door)), "Full door identities/timers lost through stock");
 	door_saved_rejections(save);
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = WallAnims[Walls[first].clip_num].play_time;
 	wall_frame_process();
 	require(Num_open_doors == 0, "Simultaneous completion skipped compacted door entries");

@@ -154,7 +154,7 @@ static void cloak_concurrency()
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Cloak stock transition failed");
 	require(state_restore_all_sub(save, 0) && Num_cloaking_walls == 100 && !std::memcmp(saved.data(), CloakingWalls, saved.size() * sizeof(cloaking_wall)), "Cloak disk-through-stock lost timers, owners or lights");
 	require(Players[Player_num].shields == i2f(73) && Players[Player_num].energy == i2f(61), "Cloak restore lost earned resources");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	cloak_saved_rejections(save);
 	FrameTime = F1_0;
 	wall_frame_process();
@@ -179,7 +179,7 @@ static void cloak_concurrency()
 	require(xl_cloak_saved_valid(CloakingWalls, Num_cloaking_walls), "Reversed cloak state is invalid");
 	stop_time();
 	require(state_save_all_sub(save, description) && state_restore_all_sub(save, 0), "Reversed cloak save/restore failed");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	const std::vector<cloaking_wall> reversed(CloakingWalls, CloakingWalls + Num_cloaking_walls);
 	FrameTime = 2 * F1_0;
 	wall_frame_process();

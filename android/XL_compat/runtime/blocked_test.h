@@ -162,7 +162,7 @@ static void blocked_lifecycle(const std::filesystem::path &output)
 	const auto stock = *ConsoleObject;
 	require(!xl_blocked_segment(60) && !xl_blocked_entry(ConsoleObject - Objects, ConsoleObject->segnum, 0) && xl_blocked_map_color(ConsoleObject->segnum, 123) == 123 && !std::memcmp(&stock, ConsoleObject, sizeof(stock)), "Blocked behavior leaked into Redux");
 	require(state_restore_all_sub(save, 0) && xl_blocked_segment(60) && !xl_blocked_segment(61) && Objects[robot].signature == robot_signature && Objects[robot].segnum == 22 && xl_blocked_segment(Objects[item].segnum), "Blocked disk restoration through stock lost properties or generated actors");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	// A real closed wall still rejects a projectile even though blocked volumes alone permit it
 	std::ifstream manifest_file(output / "missions/blocked-fixture.json");
 	const auto manifest = nlohmann::json::parse(manifest_file);

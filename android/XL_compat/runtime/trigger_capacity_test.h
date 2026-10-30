@@ -254,7 +254,7 @@ static int trigger_capacity_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() && Num_triggers <= 100, "Trigger stock transition failed");
 		require(!xl_loading_extended_triggers() && !xl_preview_trigger_activated(128), "Trigger context leaked into Redux");
 		require(state_restore_all_sub(save, 0), "High trigger save failed through stock");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		xl_trigger_state restored{};
 		require(Num_triggers == 254 && Triggers[128].type == TT_CLOSE_WALL && xl_wall_trigger_state(100, &restored) && restored.elapsed == pending.elapsed && restored.delay_ms == pending.delay_ms && Players[Player_num].energy == i2f(61), "High trigger restore lost earned state");
 		GameTime64 += F1_0 / 2;
@@ -269,9 +269,10 @@ static int trigger_capacity_test(int argc, char **argv)
 		trigger_capacity_saved_controls(save, DXX_XL_MAX_TRIGGERS);
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2"), "Stock save control load failed");
 		char stock_save[] = "trig-stock.sav";
+		stop_time();
 		require(Num_triggers > 0 && state_save_all_sub(stock_save, description), "Stock trigger save control failed");
 		trigger_capacity_saved_controls(stock_save, DXX_CLASSIC_MAX_TRIGGERS);
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(load_base_mission("trigcap", error, sizeof(error)), error);
 		trigger_capacity_demo();
 		trigger_capacity_rejections(output);

@@ -69,7 +69,7 @@ static void spawn_points_lifecycle_test(const std::filesystem::path &root)
 	char marker_save[] = "spawn-marker.sav", marker_description[] = "XL named spawn marker";
 	stop_time();
 	require(state_save_all_sub(marker_save, marker_description), "named spawn marker save failed");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	respawn();
 	require(ConsoleObject->segnum == 92 && !std::memcmp(&ConsoleObject->pos, &marker_position, sizeof(marker_position)) && !std::memcmp(&ConsoleObject->orient, &marker_orientation, sizeof(marker_orientation)), "named SPAWN marker did not override authored respawn");
 	require(!check_trigger_sub(1, Player_num, 0) && MarkerObject[4] == -1 && MarkerObject[2] == lower_marker && Objects[lower_marker].id == 2, "spawn action failed to remove only the prior SPAWN marker");

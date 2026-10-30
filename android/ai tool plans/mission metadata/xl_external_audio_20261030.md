@@ -8,6 +8,55 @@ The new ten-hour block starts October 30 at 05:02:37 UTC and runs through
 or autonomous level navigation. Keep implementation owned by `XL_compat` with
 minimal core hooks and a separate Redux runtime path.
 
+## Current implementation status
+
+The stack is published through `xl_more_76_native_pause_checks` in the worktree
+above. The main checkout remains on `cmake`. The sections below this summary are
+the chronological execution record; their intermediate pending items are
+superseded by the maintained evidence and this status.
+
+| PR                                                            | Completed increment                                                     |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [218](https://github.com/larsonm-personal/dxx-redux/pull/218) | External linked WAV ownership, lookup and persistence                   |
+| [219](https://github.com/larsonm-personal/dxx-redux/pull/219) | PCM oracle preparation cost reduction with the same output assertions   |
+| [220](https://github.com/larsonm-personal/dxx-redux/pull/220) | Loaded ambient sound objects and ordered activation/lifetime handling   |
+| [221](https://github.com/larsonm-personal/dxx-redux/pull/221) | Classic mission WAV replacements in actual playback                     |
+| [222](https://github.com/larsonm-personal/dxx-redux/pull/222) | Partial-bank preparation and malformed-input verification               |
+| [223](https://github.com/larsonm-personal/dxx-redux/pull/223) | Static explosion animation, pixels, light and sound                     |
+| [224](https://github.com/larsonm-personal/dxx-redux/pull/224) | S11/S22 mission banks, source lookup behavior and partial-bank repair   |
+| [225](https://github.com/larsonm-personal/dxx-redux/pull/225) | Mine-shake actions and distance-scaled Earthshaker gameplay/persistence |
+| [226](https://github.com/larsonm-personal/dxx-redux/pull/226) | Valid native pause state throughout persistence controls                |
+
+Final local acceptance on the combined stack passes all 106 required Linux tests,
+sixteen original-format witnesses and three modern source levels. Both native
+hosts build. Android verification includes the combined 145-step named-audio and
+64-step seismic owner, with protected-state restoration. Exact scope, binaries,
+source comparisons and receipts remain in
+[seismic evidence](../../XL_compat/evidence/seismic-gameplay.md) and
+[native pause evidence](../../XL_compat/evidence/native-persistence-pause.md).
+These controlled checks do not qualify complete original campaigns.
+
+The CI audit on October 30 verifies successful latest-head runs for PRs 218-224.
+PRs 225-226 still have running jobs. PR 225's Android sample failed while
+downloading pinned KTX, before building the APK or running tests; its failed jobs
+have been retried. Final CI acceptance is still pending, not assumed from local
+results. No branches have been merged by this work.
+
+The measured PCM optimization retains all 119 output checks and reduces one
+Android run from 444.955 to 318.795 seconds; this is a local observation, not a CI
+speed guarantee. A separate preparation-cache optimization was discarded because
+its measurements did not justify it. CI cleanup removes only two Python command
+duplicates from the save-integrity job whose required build dependency already
+runs those same tests. Headed, headless, sanitizer and gameplay coverage remains.
+Added gameplay coverage needed larger aggregate audio-owner budgets; existing
+child bounds and assertions were retained.
+
+The combined core diff has no D1 edits and changes six D2 files for effect-object
+isolation and position-bearing Earthshaker calls. XL behavior remains owned in
+`android/XL_compat`. Pumo still has inventory blockers in thirteen of fourteen
+levels, plus resource/runtime qualification beyond that inventory. Removing its
+two seismic rejections is not a playability claim.
+
 ## First increment
 
 1. Execute actual pinned external object-sound creation, lookup and frame

@@ -4,13 +4,13 @@ Next increment after owned mission sound banks. Implement the XL behavior in
 `android/XL_compat`, retaining Redux as the alternate runtime path. This is a
 gameplay and persistence change, not just a new trigger dispatch or audio cue.
 
-## Published draft status
+## Published implementation status
 
-Branch `xl_more_75_seismic_gameplay` is a work-in-progress checkpoint for CI,
-stacked on `xl_more_74_sound_banks`. The source model passes 23,100 comparisons
-against the pinned XL implementation. The next checkpoint adds wall/object
-type-36 dispatch and admission, position-bearing Earthshaker callers, actual
-player/companion physics and PCM controls, and disk/rewind continuation tests.
+Branch `xl_more_75_seismic_gameplay` is published in PR 225, stacked on
+`xl_more_74_sound_banks`. The source model passes 23,100 comparisons against the
+pinned XL implementation. Wall/object type-36 dispatch and admission,
+position-bearing Earthshaker callers, actual player/companion physics and PCM
+controls, and disk/rewind continuation tests are implemented and locally verified.
 Durations above 32767 seconds remain rejected with a seismic-specific error.
 
 The implementation passes native 23/40 and 27/40 controls, including oblique
@@ -19,7 +19,9 @@ trailers. The final 64-step Android seismic run passes with 14 PCM comparisons,
 20 state checks and protected-file restoration. An intermediate full Linux run
 passed all 106 tests; final Linux audio acceptance and the broader 145-step
 Android named-audio regression pass. The default combined Android owner passes
-both scripts with protected-state restoration. Final-head CI remains required.
+both scripts with protected-state restoration. The follow-up native pause audit
+also passes the complete 106-test Linux acceptance selection with this gameplay
+implementation. Final-head CI remains required.
 See the maintained
 [seismic evidence](../../XL_compat/evidence/seismic-gameplay.md) for exact runs
 and remaining limits. This draft does not claim campaign playability; Pumo

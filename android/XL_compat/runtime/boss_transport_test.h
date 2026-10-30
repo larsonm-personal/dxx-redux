@@ -227,7 +227,7 @@ static int boss_transport_test(int argc, char **argv)
 		char baseline[] = "transport-base.sav", earned[] = "transport-earned.sav", description[] = "Boss transport";
 		stop_time();
 		require(state_save_all_sub(baseline, description), "boss transport baseline save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		boss_transport_samples(root, baseline, owners);
 		require(state_restore_all_sub(baseline, 0), "boss transport acceptance reset failed");
 		const auto initial = xl_compat::boss_routes();
@@ -252,7 +252,7 @@ static int boss_transport_test(int argc, char **argv)
 		require(same_boss_routes(routes, xl_compat::boss_routes()), "same-segment action refreshed an earned list after wall changes");
 		stop_time();
 		require(state_save_all_sub(earned, description), "earned boss destination save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		boss_route_guards(root.parent_path() / "preview-user");
 		const auto stock_time = Last_teleport_time;
 		for (int seed = 1; seed < 30; ++seed) {

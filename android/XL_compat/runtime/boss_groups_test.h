@@ -81,7 +81,7 @@ static int boss_groups_test(int argc, char **argv)
 		char save[] = "xl-groups.sav", description[] = "XL boss groups";
 		stop_time();
 		require(state_save_all_sub(save, description), "boss group save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		// Cross-group route corruption must reject before publishing event state
 		auto *file = PHYSFS_openWrite("groups-state.bin");
 		require(file && xl_wall_trigger_write(file) && PHYSFS_close(file), "group trailer capture failed");

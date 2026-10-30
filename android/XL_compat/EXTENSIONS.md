@@ -46,6 +46,12 @@ original formats, saves and Redux recovery. Fixed membership rejects missing or
 skipped tests and omitted source oracles. Original mission admission and human
 campaign playtesting remain separate requirements.
 
+Native persistence fixtures also require valid unpaused continuation. A
+reproduced save/resume imbalance could leave negative pause depth while directly
+called consumers still passed. The [native pause audit](evidence/native-persistence-pause.md)
+corrects those test calls and adds running-state assertions without changing
+production pause behavior or mission admission.
+
 Owned wall/object robot-disarming actions now suppress gunfire, melee and thief
 decisions through XL-owned state bound to robot lifetimes. Missing/nonrobot
 targets are inert; generated robot slots can be targeted. Save/rewind preserves

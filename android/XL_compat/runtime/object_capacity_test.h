@@ -432,10 +432,11 @@ static int object_capacity_test(int argc, char **argv)
 		for (int i = object_capacity(); i < MAX_OBJECTS; ++i)
 			require(stock.free_obj_list[i] == i, "Stock restore retained inactive allocator input");
 		char stock_save[] = "objects-stock.sav";
+		stop_time();
 		require(state_save_all_sub(stock_save, description), "Cannot save stock full pool");
 		object_capacity_saved_counts(stock_save);
 		require(state_restore_all_sub(save, 0) && object_capacity() == 32768, "High object disk restore through stock failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		object_runtime_state restored{};
 		object_get_runtime_state(&restored);
 		require(restored.num_objects == earned.num_objects && restored.highest_object_index == earned.highest_object_index && restored.signature_seed == earned.signature_seed && std::equal(restored.free_obj_list, restored.free_obj_list + object_capacity(), earned.free_obj_list), "High allocator order or identity changed through disk");

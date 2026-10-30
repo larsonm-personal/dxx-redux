@@ -154,7 +154,7 @@ static int runtime_layout_test(int argc, char **argv)
 			require(!xl_prepared_texture_brightness(302, &brightness) && !xl_repair_segment(repair) && !xl_preview_no_damage_segment(protected_room), "Modern resources or properties leaked into stock");
 			require(state_restore_all_sub(save, 0) && xl_source_level_version() == version && xl_level_trigger_identity() == identity && same_light_snapshot(earned, light_snapshot()) && Players[Player_num].shields == shields, "Modern disk-through-stock restore lost source or earned state");
 			require(add_light(light[0], light[1]) == 1, "Restored modern light cannot be enabled");
-			start_time();
+			require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 			std::cout << version << "/40 runtime layout: geometry/normals/UVLs, objects/walls/triggers, resources, repair/protection, rejection and disk-through-stock passed\n";
 		}
 		std::cout << "Canonical modern runtime layouts passed; original missions remain independently gated\n";
