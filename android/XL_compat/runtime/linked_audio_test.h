@@ -59,6 +59,64 @@ void malformed(const nlohmann::json &earned)
 		        ("Malformed linked state was accepted or changed playback: " + std::to_string(variant)).c_str());
 	}
 }
+void stock_combat()
+{
+	using namespace xl_compat;
+	using namespace xl_compat::audio_runtime;
+	require(!xl_level_extensions_active(), "Stock combat control requires Redux");
+	const auto plasma = Weapon_info[PLASMA_ID];
+	const auto mega = Weapon_info[MEGA_ID];
+	const auto quiet = PlayerCfg.QuietPlasma;
+	const auto viewer = Viewer;
+	Viewer = ConsoleObject;
+	PlayerCfg.QuietPlasma = 1;
+	Weapon_info[MEGA_ID].strength[Difficulty_level] = 0;
+	Weapon_info[MEGA_ID].children = -1;
+	const auto capture_stock = [&](auto event) {
+		begin_capture();
+		event();
+		require(Mix_Playing(-1) == 1 && snapshot().at("voices").empty() && !owners.count, "Stock combat did not stay exclusively in Redux");
+		run_output(2048);
+		std::vector<std::int16_t> result(captured.begin(), captured.begin() + 4096);
+		require(std::any_of(result.begin(), result.end(), [](auto sample) { return sample != 0; }), "Stock combat capture was silent");
+		digi_stop_all_channels();
+		return result;
+	};
+	const auto plasma_expected = capture_stock([&] { digi_play_sample(plasma.flash_sound, F1_0 * 3 / 4); });
+	int shot = -1;
+	const auto plasma_actual = capture_stock([&] {
+		shot = Laser_create_new(&Viewer->orient.fvec, &Viewer->pos, Viewer->segnum, int(Viewer - Objects), PLASMA_ID, 1);
+		require(shot >= 0 && !xl_gameplay_weapon_fire(&Objects[shot], 1), "Stock firing was consumed by XL");
+	});
+	require(plasma_actual == plasma_expected, "Stock QuietPlasma PCM changed to XL firing behavior");
+	obj_delete(shot);
+	shot = obj_create(OBJ_WEAPON, MEGA_ID, Viewer->segnum, &Viewer->pos, &Viewer->orient, F1_0, CT_WEAPON, MT_NONE, RT_NONE);
+	require(shot >= 0, "Cannot create stock explosion control");
+	Objects[shot].ctype.laser_info.parent_num = int(Viewer - Objects);
+	Objects[shot].ctype.laser_info.parent_type = Viewer->type;
+	const auto explosion_expected = capture_stock([&] { digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, short(shot), 0, F1_0); });
+	object *explosion = nullptr;
+	const auto explosion_actual = capture_stock([&] {
+		require(!xl_gameplay_weapon_explosion(shot, 0), "Stock weapon explosion was consumed by XL");
+		explosion = explode_badass_weapon(&Objects[shot], &Objects[shot].pos);
+		require(explosion, "Actual stock weapon explosion failed");
+	});
+	require(explosion_actual == explosion_expected, "Stock explosion PCM changed to the XL weapon sample");
+	obj_delete(int(explosion - Objects));
+	obj_delete(shot);
+	const auto actor_actual = capture_stock([&] {
+		require(!xl_gameplay_actor_explosion(int(Viewer - Objects)), "Stock actor explosion was consumed by XL");
+		explosion = explode_badass_object(Viewer, 0, 0, 0);
+		require(explosion, "Actual stock actor explosion failed");
+	});
+	require(actor_actual == explosion_expected, "Stock actor explosion PCM changed to the XL actor sample");
+	obj_delete(int(explosion - Objects));
+	Weapon_info[PLASMA_ID] = plasma;
+	Weapon_info[MEGA_ID] = mega;
+	PlayerCfg.QuietPlasma = quiet;
+	Viewer = viewer;
+	std::cout << "Stock combat isolation passed: exact Redux QuietPlasma and weapon/actor explosion PCM, with no XL voices or owners\n";
+}
 void persistence(int source, const nlohmann::json &initial)
 {
 	using namespace xl_compat;
@@ -123,6 +181,7 @@ void persistence(int source, const nlohmann::json &initial)
 	require(Mix_Playing(-1) > 0 && xl_linked_sound_count(int(ConsoleObject - Objects), SOUND_SHIP_IN_WATER, 0) == 1 && !owners.count, "Stock object API lost its separate Redux registry");
 	digi_kill_sound_linked_to_object(int(ConsoleObject - Objects));
 	require(!Mix_Playing(-1), "Stock object destruction retained Redux playback");
+	stock_combat();
 	require(state_restore_all_sub(save, 0) && snapshot() == earned && owners.valid(mixer), "Disk-through-stock restore changed linked playheads, stopped owners or identities");
 	require(looping.matches(mixer), "Disk restore lost the seismic loop controller");
 	digi_change_looping_volume(F1_0 / 4);

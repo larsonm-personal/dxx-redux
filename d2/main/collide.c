@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "gameplay_audio.h"
 #include "texture_pixels.h"
 #include "projectile.h"
 #include "fluids.h"
@@ -942,7 +943,10 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 
 			if ( Weapon_info[weapon->id].damage_radius ) {
 
-				digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, weapon-Objects, 0, volume);
+#ifdef DXX_XL_RUNTIME
+				if (!xl_gameplay_weapon_explosion(weapon-Objects, 1))
+#endif
+					digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, weapon-Objects, 0, volume);
 
 				//	MK: 09/13/95: Badass in water is 1/2 normal intensity.
 				object_create_badass_explosion( weapon, hitseg, hitpt,

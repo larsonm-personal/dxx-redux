@@ -6,6 +6,13 @@ void compare_linked_output(const json &state)
 void prepare_linked()
 {
 	reset_events();
+	xl_combat_audio_control::run([] {
+		capture_begin();
+		const auto starting = snapshot();
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		compare_shared_output(starting, combat_checks);
+	});
 	xl_gameplay_dispatch_control::run([] {
 		capture_begin();
 		const auto starting = snapshot();

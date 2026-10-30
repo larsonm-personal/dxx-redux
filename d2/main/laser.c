@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "gameplay_audio.h"
 #include "resource_validation.h"
 #endif
 #include <stdio.h>
@@ -900,6 +901,9 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	}
 
 	volume = F1_0;
+#ifdef DXX_XL_RUNTIME
+	if (!xl_gameplay_weapon_fire(obj, make_sound))
+#endif
 	if (Weapon_info[obj->id].flash_sound > -1 )	{
 		if (make_sound)	{
 			if ( parent == (Viewer-Objects) )	{

@@ -18,6 +18,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 #include <stdlib.h>
+#ifdef DXX_XL_RUNTIME
+#include "gameplay_audio.h"
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -388,7 +391,10 @@ object *explode_badass_weapon(object *obj,vms_vector *pos)
 	if ((obj->id == EARTHSHAKER_ID) || (obj->id == ROBOT_EARTHSHAKER_ID))
 		smega_rock_stuff();
 
-	digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, obj-Objects, 0, F1_0);
+#ifdef DXX_XL_RUNTIME
+	if (!xl_gameplay_weapon_explosion(obj-Objects, 0))
+#endif
+		digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, obj-Objects, 0, F1_0);
 
 	return object_create_badass_explosion(obj, obj->segnum, pos,
 	                                      wi->impact_size,
@@ -409,6 +415,9 @@ object *explode_badass_object(object *objp, fix damage, fix distance, fix force)
 					damage, distance, force,
 					objp-Objects);
 	if (rval)
+#ifdef DXX_XL_RUNTIME
+		if (!xl_gameplay_actor_explosion(rval-Objects))
+#endif
 		digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, rval-Objects, 0, F1_0);
 
 	return (rval);
