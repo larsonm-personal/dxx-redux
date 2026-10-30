@@ -22,10 +22,11 @@ namespace
 {
 xl_compat::SeismicState current;
 int phase = 0, fraction = 0;
-void add_rotation(fix &target, int delta)
+fix add_rotation(fix target, int delta)
 {
 	const auto bits = std::uint32_t(target) + std::uint32_t(delta);
 	std::memcpy(&target, &bits, sizeof(target));
+	return target;
 }
 } // namespace
 extern "C" void xl_seismic_clear(void)
@@ -77,12 +78,12 @@ extern "C" int xl_seismic_frame(void)
 	Seismic_tremor_magnitude = current.magnitude;
 	Next_seismic_sound_time = current.next_sound;
 	if (ConsoleObject) {
-		add_rotation(ConsoleObject->mtype.phys_info.rotvel.x, output.rotation_x);
-		add_rotation(ConsoleObject->mtype.phys_info.rotvel.z, output.rotation_z);
+		ConsoleObject->mtype.phys_info.rotvel.x = add_rotation(ConsoleObject->mtype.phys_info.rotvel.x, output.rotation_x);
+		ConsoleObject->mtype.phys_info.rotvel.z = add_rotation(ConsoleObject->mtype.phys_info.rotvel.z, output.rotation_z);
 	}
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index && Objects[Buddy_objnum].type == OBJ_ROBOT) {
-		add_rotation(Objects[Buddy_objnum].mtype.phys_info.rotvel.x, output.rotation_x * 4);
-		add_rotation(Objects[Buddy_objnum].mtype.phys_info.rotvel.z, output.rotation_z * 4);
+		Objects[Buddy_objnum].mtype.phys_info.rotvel.x = add_rotation(Objects[Buddy_objnum].mtype.phys_info.rotvel.x, output.rotation_x * 4);
+		Objects[Buddy_objnum].mtype.phys_info.rotvel.z = add_rotation(Objects[Buddy_objnum].mtype.phys_info.rotvel.z, output.rotation_z * 4);
 	}
 	for (unsigned i = 0; i < output.sound_count; ++i) {
 		const auto &sound = output.sounds[i];
