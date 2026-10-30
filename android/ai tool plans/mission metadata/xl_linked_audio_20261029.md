@@ -42,8 +42,8 @@ The published policy checkpoint is PR #209, commit `34bd48e`. Both public XL CI
 platforms passed its actual-source comparisons. The native consumer now shares
 the same owner registry and mixer as named and unlinked playback, prepares
 geometry outside the SDL lock, and updates from the frame and effects slider.
-Object/segment creation remains explicit; ordinary gameplay callers and linked
-persistence are not installed yet. Sound/lightning effect objects are still
+Object/segment creation remains explicit; ordinary gameplay callers are not
+installed yet. Sound/lightning effect objects are still
 outside native admission, so the native object adapter does not claim those
 effect enable/disable consumers despite the policy's source coverage.
 
@@ -60,5 +60,18 @@ source/listener PCM, out-of-range stop and restart, slider updates, object-slot
 reuse with unrelated voices, one-shot and deferred/custom behavior, and segment
 destruction. Linux's full existing runtime test takes 39.62 seconds. The 17
 mixed-owner controls also pass ASan/UBSan with leak detection. Full creation
-source comparisons, linked save/reopen/Android integration and ordinary/ambient
-gameplay dispatch are still required; see `android/XL_compat/evidence/linked-audio.md`.
+source comparisons and ordinary/ambient gameplay dispatch are still required;
+see `android/XL_compat/evidence/linked-audio.md`.
+
+## Linked persistence checkpoint
+
+Schema 21 now serializes linked owners and their shared-channel bindings,
+including quiet and deferred lifetimes. Native integration adds 30 atomic
+rejection cases, trailer/disk-through-stock restore and 48 kHz reopen output
+checks before and after save restoration. The Android diagnostic extends the
+existing runner to 101 steps with moving-source PCM and linked rewind/disk
+restoration. Platform results and remaining limits are recorded in the evidence.
+
+The working branch is `xl_more_61_linked_audio`, in
+`C:/local/dxx-redux/temp/xl-batch2-20261027`, published through PR #209. The main
+checkout remains on `cmake`; it does not contain this branch's unmerged work.

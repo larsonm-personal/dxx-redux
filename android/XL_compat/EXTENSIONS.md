@@ -152,8 +152,9 @@ guard reuse of converted stock PCM. See the shared-playback section of that
 evidence for limits and platform results. Moving native object/segment sources
 now use that same pool, with source-verified frame decisions and controlled
 Windows/Linux PCM. See [linked audio evidence](evidence/linked-audio.md).
-Ordinary/ambient gameplay dispatch, wall-change qualification and linked-owner
-saves remain unfinished, so classic replacements remain gated.
+Linked-owner saves now validate complete owner/channel bindings in schema 21.
+Ordinary/ambient gameplay dispatch and wall-change qualification remain
+unfinished, so classic replacements remain gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

@@ -8,10 +8,10 @@ sounds use the same 128-channel pool. A looping source retains its lifetime when
 inaudible and restarts when audible; an object signature change deletes the old
 lifetime. Effects-slider changes and the existing XL frame hook run updates.
 
-Ordinary gameplay callers are not switched over. Linked-owner save/restore,
-native ambient sound/lightning effects, external WAV owners, complete creation
-source comparisons and wall-change qualification remain unfinished. The current
-save reader still rejects linked voices. No admission rule changes or campaign
+Ordinary gameplay callers are not switched over. Native ambient sound/lightning
+effects, external WAV owners, complete creation source comparisons and wall-change
+qualification remain unfinished. Linked-owner persistence now uses XL trailer
+schema 21, with validated owner/channel bindings. No admission rule changes or campaign
 playability claims follow from this checkpoint. Native effect objects are not
 admitted, so source-policy coverage of enabled/disabled effects does not claim
 that those objects run in the engine.
@@ -48,12 +48,37 @@ Windows and Linux pass the existing named-audio runtime runner for 23/40 and
 - The distinction between missing-object cleanup retaining a stopped forever
   owner and a frame update deleting that missing lifetime
 
-Linux completes the full existing runtime test in 39.62 seconds, within its
-unchanged limits. Existing shared-bank, named-action, disk/rewind, 48 kHz reopen,
-resource-scope and 2,232 loaded-mine source comparisons still pass. Their save
-coverage applies to named/unlinked voices, not the new linked owners. Only the
-previously recorded teleport/projectile test warnings appeared in the Linux
-build. No Android integration result is claimed for these new consumers yet.
+The initial native consumer checkpoint completed the Linux runtime test in
+39.62 seconds. Existing shared-bank, named-action, resource-scope and 2,232
+loaded-mine source comparisons remain part of the runner. Only the previously
+recorded teleport/projectile test warnings appeared in the Linux build.
+
+## Linked persistence
+
+Schema 21 saves active, inaudible and deferred owners, object signatures, stable
+owner/channel identities, channel controls and playback positions. Restore
+validates the complete state before applying it; missing stopped object owners
+can survive until the next frame removes them. Unsupported external owners are
+still rejected.
+
+The native control checks mixed linked/named/unlinked PCM, 30 malformed states
+rejected without mutation, pause, trailer restore, disk restore through a stock
+level, and resumed quiet/deferred lifetimes. A 48 kHz reopen checks surviving
+owners, controls, converted playback positions and actual output before any save
+is restored, then separately checks restoration at the new rate.
+
+Windows and Linux pass both native fixtures with these persistence checks; the
+final Linux run takes 57.67 seconds. Android passes all 101 steps in 335.855
+seconds at 48 kHz, including moving-source PCM, pause, linked rewind and disk
+restore. The captured-output oracle checks 878,592 samples across 45 controls,
+including five linked controls. All 26 protected app files match their original
+hashes after cleanup. Artifacts include `android-state-test.log` and
+`temp/xl-named-audio-android/`.
+
+The broad Linux run passed 105 of 106 checks; preview lifecycle exceeded its
+internal limit while the Android build was running. Its isolated rerun passed in
+51.16 seconds with the same limit. The initial timeout is retained in
+`state-fast-tests.log`, with the rerun in `preview-isolated.log`.
 
 The movement fixture initially put the source directly on the listener's ear
 axis. The pinned ear-angle function returns zero at both exact unit-dot

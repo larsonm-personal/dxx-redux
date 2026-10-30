@@ -4,6 +4,7 @@
 #include "shared_audio.h"
 #include "shared_audio_internal.h"
 #include "linked_audio.h"
+#include "linked_audio_state.h"
 #include "audio_resource.h"
 #include "preview.h"
 #include "doorway.h"
@@ -461,16 +462,23 @@ std::int64_t source_duration(const WaveChannels &source, unsigned rate)
 
 nlohmann::json named_audio_snapshot()
 {
+	// A removed native object can precede its next frame update. Save its stopped
+	// lifetime, never an active channel bound to a different object signature
+	xl_audio_destroy_object(-1, -1);
 	std::array<AudioVoice, audio_voice_limit> voices;
+	AudioOwners saved_owners;
 	std::uint64_t next;
 	unsigned cursor;
 	{
 		AudioLock lock;
+		owners.reconcile(mixer);
+		saved_owners = owners;
 		voices = mixer.voices;
 		next = mixer.next_serial;
 		cursor = mixer.cursor;
 	}
 	nlohmann::json state = { { "source", bank ? bank->identity : "" }, { "rate", output_rate }, { "next", next }, { "cursor", cursor }, { "events", nlohmann::json::array() }, { "voices", nlohmann::json::array() } };
+	state["linked"] = encode_linked_audio(saved_owners, deferred);
 	if (bank)
 		for (const auto &[key, action] : bank->actions) {
 			(void) action;
@@ -488,7 +496,7 @@ nlohmann::json named_audio_snapshot()
 bool restore_named_audio(const nlohmann::json &state, bool apply)
 {
 	try {
-		if (!state.is_object() || state.size() != 6 || !state.at("source").is_string() ||
+		if (!state.is_object() || state.size() != 7 || !state.at("source").is_string() ||
 		    state.at("source").get<std::string>() != (bank ? bank->identity : "") ||
 		    !state.at("events").is_array() || state.at("events").size() != (bank ? bank->actions.size() : 0) ||
 		    !state.at("voices").is_array() || state.at("voices").size() > audio_voice_limit)
@@ -550,17 +558,24 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 				if (voice.owner != -1 || std::find(bank->classic.begin(), bank->classic.end(), voice.sample) == bank->classic.end() ||
 				    (voice.priority.sound_class == 0 && voice.priority.persistent) || (voice.priority.sound_class == -1 && !voice.priority.persistent))
 					throw std::runtime_error("Unlinked audio voice has an invalid sample, owner or class");
-			} else throw std::runtime_error("Linked audio persistence is not installed");
+			}
 			const auto frame_count = frames_at_rate(bank->sources.at(voice.sample), rate);
 			const auto position = std::uint64_t(integer(row[3], 0, std::int64_t(frame_count - 1)));
 			voice.position = unsigned((std::min) (position * output_rate / rate, std::uint64_t(converted->at(voice.sample).frames() - 1)));
 		}
+		AudioVoices saved_mixer;
+		saved_mixer.voices = voices;
+		saved_mixer.next_serial = next;
+		saved_mixer.cursor = cursor;
+		const auto linked = decode_linked_audio(state.at("linked"), saved_mixer);
 		if (apply) {
 			AudioLock lock;
 			// Do not consume restored samples while the loader is still running
 			resume_pending = resume_pending || !mixer.paused;
 			mixer.paused = true;
 			owners.clear(mixer);
+			owners = linked.owners;
+			deferred = linked.deferred;
 			mixer.voices = voices;
 			mixer.next_serial = next;
 			mixer.cursor = cursor;

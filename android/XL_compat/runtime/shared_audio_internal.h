@@ -9,6 +9,7 @@ namespace xl_compat::audio_runtime
 extern AudioVoices mixer;
 extern AudioOwners owners;
 extern bool backend_ready;
+extern bool deferred;
 extern int priority_volume;
 extern std::string failure;
 int classic_sample(int physical_sample);

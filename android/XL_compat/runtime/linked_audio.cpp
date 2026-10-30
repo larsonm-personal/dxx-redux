@@ -13,12 +13,12 @@ extern "C" {
 #include "segment.h"
 #include "config.h"
 }
+bool xl_compat::audio_runtime::deferred = false;
 namespace
 {
 using namespace xl_compat;
 using namespace xl_compat::audio_runtime;
 std::unique_ptr<ClassicAudioSpatial> scene;
-bool deferred = false;
 FixedLightPoint point(const vms_vector &value)
 {
 	return { value.x, value.y, value.z };
@@ -82,6 +82,7 @@ extern "C" std::int64_t xl_audio_link_object(int sample, int sound_class, int ob
 	try {
 		const int mapped = classic_sample(sample);
 		if (mapped < 0 || !valid_object(object_index) || sound_class < 0 || sound_class > 6 || volume < 0 || range <= 0 || decay < 0 || decay > 6) return -1;
+		(void) audio_extended_range(range, forever ? sound_class : decay);
 		const auto &object = Objects[object_index];
 		if (!valid_segment(object.segnum)) return -1;
 		for (unsigned i = 0; i < owners.count; ++i) {
@@ -121,6 +122,7 @@ extern "C" std::int64_t xl_audio_link_position(int sample, int segment, int side
 	try {
 		const int mapped = classic_sample(sample);
 		if (mapped < 0 || !position || !valid_segment(segment) || side < -1 || side >= 6 || volume < 0 || range <= 0) return -1;
+		(void) audio_extended_range(range, 0);
 		const auto location = point(*position);
 		for (unsigned i = 0; i < owners.count; ++i) {
 			const auto &entry = owners.entries[i];
