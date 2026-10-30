@@ -105,7 +105,10 @@ void run(const std::filesystem::path &root)
 		earned = snapshot();
 	}
 	char save[] = "bank-earned.sav", description[] = "XL mission bank";
+	require(!game_is_time_paused(), "Mission bank controls require running simulation");
+	stop_time();
 	require(state_save_all_sub(save, description), "Cannot save mission bank state");
+	require(!game_is_time_paused(), "Mission bank save unbalanced the simulation pause");
 	char error[256]{};
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() && snapshot().at("source") == "", "Custom bank leaked into Redux");
 	require(state_restore_all_sub(save, 0) && Current_level_num == -1 && snapshot() == earned, "Saved custom bank failed stock transition");

@@ -166,7 +166,10 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	require(prepare_classic_audio("scope23.rl2", 2, 11025).samples.size() == 1, "Wrong-rate custom bank suppressed WAVs");
 	std::filesystem::remove(custom);
 	char entry[] = "classic-entry.sav", description[] = "XL before replacements";
+	require(!game_is_time_paused(), "Classic audio controls require running simulation");
+	stop_time();
 	require(state_save_all_sub(entry, description), "Cannot preserve original playback before replacement controls");
+	require(!game_is_time_paused(), "Classic audio save unbalanced the simulation pause");
 	xl_classic_playback_control::run(root, filename);
 	for (const auto &path : created) std::filesystem::remove(path);
 	require(state_restore_all_sub(entry, 0) && xl_compat::named_audio_snapshot() == before, "Removing replacements did not restore the original bank and playback");

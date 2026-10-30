@@ -62,6 +62,14 @@ the explicit simulation-clock boundary, actual output and persistence controls.
 Pumo loses nine countdown rejections; all fourteen original levels retain
 independent blockers and remain unqualified.
 
+Owned wall/object mine-shake actions and position-bearing Earthshaker events now
+use separate XL player/companion rocking, distance scaling, rumble and saved
+timing. Source comparisons, native 23/40 and 27/40 controls, and all 64 Android
+seismic steps pass. See [seismic evidence](evidence/seismic-gameplay.md) for the
+clock/RNG boundary, persistence, final regression status and original inventory.
+Pumo loses two type-36 rejections in `tulev1.rl2`; its remaining wall/effect
+requirements still block that level. This does not qualify the campaign.
+
 Owned wall/object texture-change actions now preserve XL's packed texture
 values, retained overlay orientation and addressed-side behavior. Admission
 checks future material dependencies; normal rendering and collision consumers

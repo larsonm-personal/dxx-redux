@@ -109,7 +109,7 @@ static int audio_scope_test(int argc, char **argv)
 				char save[] = "scope-earned.sav", description[] = "XL level two sound scope";
 				stop_time();
 				require(state_save_all_sub(save, description), "Cannot save scoped audio to disk");
-				start_time();
+				require(!game_is_time_paused(), "Scoped audio save unbalanced the simulation pause");
 			}
 		}
 		require(saved.size() == 4, "Scoped audio omitted a normal, secret or fallback context");

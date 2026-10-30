@@ -4,9 +4,22 @@ param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
-    [switch]$Seismic
+    [switch]$Seismic,
+    [switch]$NamedOnly
 )
 $ErrorActionPreference = 'Stop'
+if ($Seismic -and $NamedOnly) { throw 'Choose only one focused audio script' }
+if (-not $Seismic -and -not $NamedOnly) {
+    # The normal owner runs both scripts; focused switches retain cheap reruns
+    $seismicHog = Join-Path (Split-Path -Parent $Hog) 'xseismic.hog'
+    $seismicDescriptor = Join-Path (Split-Path -Parent $Descriptor) 'xseismic.mn2'
+    if (-not (Test-Path -LiteralPath $seismicHog) -or -not (Test-Path -LiteralPath $seismicDescriptor)) {
+        throw 'Full named-audio acceptance requires sibling xseismic.hog/mn2 from xl_named_audio; use -NamedOnly for a focused regression'
+    }
+    & $PSCommandPath -Serial $Serial -Hog $Hog -Descriptor $Descriptor -NamedOnly
+    & $PSCommandPath -Serial $Serial -Hog $seismicHog -Descriptor $seismicDescriptor -Seismic
+    return
+}
 $expectedHog = if ($Seismic) { 'a5a1dce94983b482c9d3423b0f70f2084ca42f10bc131d8ac19f7805141bb2b8' } else { '87faf44175cf565e857baee2edfafd10c7feed8b57cb4cda0258b85e3e9d44f9' }
 $expectedDescriptor = if ($Seismic) { '518740b0f17389cb33c8e66309b8252159249c41b85b628174e9160cc6f6210d' } else { 'aae73cc30cdd3d61b2ce81a8a606e17d6a4b49a2ee1e58b09f8dfb985689d465' }
 $mission = if ($Seismic) { 'xseismic' } else { 'xsound' }
@@ -19,7 +32,7 @@ if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
-$output = Join-Path $PSScriptRoot '../../temp/xl-named-audio-android'
+$output = Join-Path $PSScriptRoot "../../temp/xl-named-audio-android/$mission"
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-NamedAudioAdb {

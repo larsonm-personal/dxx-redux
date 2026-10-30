@@ -13,14 +13,17 @@ type-36 dispatch and admission, position-bearing Earthshaker callers, actual
 player/companion physics and PCM controls, and disk/rewind continuation tests.
 Durations above 32767 seconds remain rejected with a seismic-specific error.
 
-The intermediate implementation passed both native 23/40 and 27/40 controls,
-all 106 Linux acceptance tests, and the 64-step Android seismic script (14 PCM
-comparisons, 20 state checks, and protected-file restoration). The latest
-distance change reuses the source-verified XL geometry helper; its oblique
-distance control and additional malformed-trailer controls were added after
-that Android run. Final Android regression and complete final-head CI remain
-required. This draft does not claim campaign playability; Pumo retains other
-independent blockers even where its two seismic actions are now admitted.
+The implementation passes native 23/40 and 27/40 controls, including oblique
+distance through the source-verified XL geometry helper and atomic malformed
+trailers. The final 64-step Android seismic run passes with 14 PCM comparisons,
+20 state checks and protected-file restoration. An intermediate full Linux run
+passed all 106 tests; final Linux audio acceptance and the broader 145-step
+Android named-audio regression pass. The default combined Android owner passes
+both scripts with protected-state restoration. Final-head CI remains required.
+See the maintained
+[seismic evidence](../../XL_compat/evidence/seismic-gameplay.md) for exact runs
+and remaining limits. This draft does not claim campaign playability; Pumo
+retains other blockers even where its two seismic actions are now admitted.
 
 ## Grounded requirements
 
