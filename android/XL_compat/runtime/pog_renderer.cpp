@@ -2,7 +2,7 @@
 #include <winsock2.h>
 #endif
 #include "pog_renderer.h"
-#include "../../app/src/main/cpp/shared/xl_rgba_pixels.h"
+#include "../xl_rgba_pixels.h"
 #include <exception>
 #include <string>
 #include <vector>
