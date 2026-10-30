@@ -7,7 +7,7 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-104 required CTests in independent directories, two at a time. Missing tests,
+105 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
@@ -47,15 +47,15 @@ make missing renderer or audio contracts fail selection instead of disappearing.
 
 ## Coverage
 
-| Area                   | Required evidence                                                                                                                                     |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Format and admission   | Canonical 25/27 runtime, older admitted layouts, malformed inputs, bounded HOG streaming, unsupported requirements and recovery                       |
-| Events and world state | Wall/object triggers, delays, flags, teleports, speed boosts, spawn points, resources, wall/door variants, lights, owned messages and texture actions |
-| Actors and generators  | Robot/equipment assignment, 25/27 startup, boss ownership/groups/transport, liquids, repair and capacity controls                                     |
-| Persistence and Redux  | Real disk/checkpoint ownership, mission changes, stock recovery and a normal executable without developer probes                                      |
-| Source comparisons     | Required extracted reference readers, arithmetic, geometry, resource precedence and gameplay functions; no optional missing oracle                    |
-| Rendering              | Production offscreen fog backend, depth formats, MSAA, GL state and inactive stock behavior; physical Android remains separate                        |
-| Original bytes         | Nine older witnesses plus all seven outcomes in the original modern Boiling Point HOG; three full 27/40 source-reader comparisons                     |
+| Area                   | Required evidence                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Format and admission   | Canonical 25/27 runtime, older admitted layouts, malformed inputs, bounded HOG streaming, unsupported requirements and recovery                             |
+| Events and world state | Wall/object triggers, delays, flags, teleports, speed boosts, spawn points, resources, wall/door variants, lights, messages, texture actions and countdowns |
+| Actors and generators  | Robot/equipment assignment, 25/27 startup, boss ownership/groups/transport, liquids, repair and capacity controls                                           |
+| Persistence and Redux  | Real disk/checkpoint ownership, mission changes, stock recovery and a normal executable without developer probes                                            |
+| Source comparisons     | Required extracted reference readers, arithmetic, geometry, resource precedence and gameplay functions; no optional missing oracle                          |
+| Rendering              | Production offscreen fog backend, depth formats, MSAA, GL state and inactive stock behavior; physical Android remains separate                              |
+| Original bytes         | Nine older witnesses plus all seven outcomes in the original modern Boiling Point HOG; three full 27/40 source-reader comparisons                           |
 
 The nine older witnesses retain positive inspection for 15/33, 17/36 and 23/40.
 The 15/34 witness `fbasin.rl2` retains its specific invalid packed-light rejection;

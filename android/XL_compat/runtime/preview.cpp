@@ -14,6 +14,7 @@
 #include "flicker.h"
 #include "level_messages.h"
 #include "named_audio.h"
+#include "reactor_countdown.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -297,6 +298,9 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	graph.weapon(LASER_ID_L5);
 	graph.weapon(LASER_ID_L6);
 	graph.weapon(FLARE_ID);
+	// Both reactor death and authored countdowns consume these ordinary samples
+	for (int id = SOUND_COUNTDOWN_0_SECS; id < SOUND_COUNTDOWN_0_SECS + 10; ++id) graph.sound(id);
+	for (int id : { SOUND_COUNTDOWN_13_SECS, SOUND_COUNTDOWN_29_SECS, SOUND_CONTROL_CENTER_WARNING_SIREN, SOUND_MINE_BLEW_UP }) graph.sound(id);
 	if (water_pilot) {
 		graph.sound(SOUND_SHIP_IN_WATER);
 		graph.sound(SOUND_SHIP_IN_WATERFALL);
@@ -546,6 +550,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_countdown_clear();
 	xl_named_audio_clear();
 	xl_message_clear();
 	xl_fog_bind(nullptr);
@@ -913,7 +918,7 @@ extern "C" int xl_loading_extended_triggers(void)
 extern "C" int xl_loading_inert_trigger(int type)
 {
 	// Every translated XL level has an active object-capacity scope while loading
-	return loading_object_capacity && (type == 29 || type == 30);
+	return loading_object_capacity && (type == 25 || type == 29 || type == 30);
 }
 
 extern "C" int object_capacity(void)
@@ -1007,6 +1012,7 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
+	field(source->countdown);
 	// Earlier generator saves used pre-initialization row selection. Reject those
 	// states rather than reinterpret their pending spawns with different definitions
 	if (!source->matcens.empty() || !source->equipment.empty()) field(0x584c5032);

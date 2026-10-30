@@ -46,6 +46,14 @@ original formats, saves and Redux recovery. Fixed membership rejects missing or
 skipped tests and omitted source oracles. Original mission admission and human
 campaign playtesting remain separate requirements.
 
+Owned wall/object countdown actions now retain their authored seconds and use
+separate XL timing, warning, rotation and terminal-death behavior. Saved state
+includes displayed seconds, extended duration and partial cadence. See
+[countdown evidence](evidence/countdowns.md) for executable source comparisons,
+the explicit simulation-clock boundary, actual output and persistence controls.
+Pumo loses nine countdown rejections; all fourteen original levels retain
+independent blockers and remain unqualified.
+
 Owned wall/object texture-change actions now preserve XL's packed texture
 values, retained overlay orientation and addressed-side behavior. Admission
 checks future material dependencies; normal rendering and collision consumers

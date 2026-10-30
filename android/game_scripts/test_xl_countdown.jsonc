@@ -1,0 +1,515 @@
+// Controlled countdown output, terminal death and disk/rewind; no traversal
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_xl_countdown",
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "XL: Derived XL countdowns",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Hotshot",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.source_level_version": 23,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "events",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "frames",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "prepare",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "stock",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "terminal_arm",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 30000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.source_level_version": 27,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "terminal_verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "robots_suspended",
+        "value": "true",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "events",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "frames",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "prepare",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "capture",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "drain",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "checkpoint_cycle",
+        "value": "roundtrip_paused",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disk_save",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disturb",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "disk_load",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "verify",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_countdown_probe",
+        "value": "hud",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_countdown.passed": true,
+            "xl_countdown.frame_sequences": 2,
+            "xl_countdown.terminal_deaths": 1,
+            "xl_countdown.hud_pixels": {
+                "gt": 100,
+            },
+            "xl_countdown.audible_samples": {
+                "gt": 1000,
+            },
+        },
+        "timeout_ms": 20000,
+        "post_delay_ms": 0,
+    },
+]

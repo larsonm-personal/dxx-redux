@@ -29,14 +29,14 @@ int Rand(int maximum)
 	return token;
 }
 struct CTrigger {
-	int flags = 8, times[2] = { -1, -1 }, fired = 0;
+	int flags = 8, times[2] = { -1, -1 }, fired = 0, type = 31;
 	struct {
 		std::int64_t tOperated = -1;
 		int nObject = -1, nPlayer = -1, bShot = -1;
 	} m_info;
 	int Type() const
 	{
-		return 31;
+		return type;
 	}
 	bool Flagged(int flag) const
 	{
@@ -98,7 +98,18 @@ int main(int argc, char **argv)
 			++count;
 		}
 		if (!samples.eof() || count != 140) throw std::runtime_error("Missing scheduler samples");
+		for (int type : { TT_COUNTDOWN, TT_MESSAGE, TT_SOUND })
+			for (int time : { 99, 1000, -1000, 900000, INT32_MIN }) {
+				CTrigger trigger;
+				trigger.type = type;
+				trigger.times[0] = time;
+				random_calls = 0;
+				trigger.Arm(7, 2, 1);
+				if (trigger.IsDelayed() || trigger.Delay() != -1 || trigger.GetTime(0) != time || trigger.GetTime(1) != -1 || random_calls)
+					throw std::runtime_error("Countdown/message/sound time entered the delayed scheduler");
+			}
 		std::cout << "Matched 130 runtime arming/timing samples plus 10 INT_MIN negative controls\n";
+		std::cout << "Matched 15 countdown/message/sound scheduling exceptions\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

@@ -260,6 +260,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_runtime_layouts'
             'test_xl_level_messages'
             'test_xl_texture_actions'
+            'test_xl_countdown'
             'test_xl_named_audio'
             'test_xl_audio_scopes'
             'test_xl_fog_runtime'

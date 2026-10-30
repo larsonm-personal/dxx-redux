@@ -23,6 +23,7 @@
 #include "level_messages.h"
 #include "named_audio.h"
 #include "named_audio_state.h"
+#include "reactor_countdown.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -120,7 +121,11 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 17;
+		block["schema"] = 18;
+		xl_countdown_state countdown{};
+		xl_countdown_get(&countdown);
+		require(xl_countdown_restore(&countdown, 0), "Cannot capture XL countdown state");
+		block["countdown"] = { countdown.destroyed, countdown.timer, countdown.seconds, countdown.total, countdown.pending, countdown.phase, countdown.fraction };
 		block["audio"] = xl_compat::named_audio_snapshot();
 		xl_message_state message{};
 		xl_message_state_get(&message);
@@ -205,10 +210,16 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 13u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 17 &&
+		require(saved.is_object() && saved.size() == 14u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 18 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
+		const auto &countdown = saved.at("countdown");
+		require(countdown.is_array() && countdown.size() == 7, "Invalid XL countdown state layout");
+		for (const auto &field : countdown)
+			require(field.is_number_integer() && (!field.is_number_unsigned() || field.get<std::uint64_t>() <= INT32_MAX) && field.get<std::int64_t>() >= INT32_MIN && field.get<std::int64_t>() <= INT32_MAX, "Invalid XL countdown integer");
+		const xl_countdown_state countdown_state{ countdown[0].get<int>(), countdown[1].get<int>(), countdown[2].get<int>(), countdown[3].get<int>(), countdown[4].get<int>(), countdown[5].get<int>(), countdown[6].get<int>() };
+		require(xl_countdown_restore(&countdown_state, 0), "Invalid XL countdown state or native timer mismatch");
 		const auto &message = saved.at("message");
 		require(message.is_array() && message.size() == 4 && message[0].is_string() && message[0].get<std::string>() == xl_message_identity(), "Invalid XL message resource identity");
 		for (unsigned i = 1; i < 4; ++i)
@@ -380,6 +391,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_light_segment_restore(light_states.data(), static_cast<int>(light_states.size()), 1);
 		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);
 		xl_message_restore(&message_state, 1);
+		xl_countdown_restore(&countdown_state, 1);
 		xl_compat::restore_named_audio(saved.at("audio"), true);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);

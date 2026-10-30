@@ -37,6 +37,7 @@
 #include "named_audio_state.h"
 #include "named_audio_probe.h"
 #include "texture_action_probe.h"
+#include "countdown_probe.h"
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -2242,6 +2243,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["xl_named_audio"] = xl_compat::named_audio_diagnostics();
 		j["xl_named_audio"]["output_probe"] = xl_named_audio_probe_diagnostics();
 		j["xl_texture_actions"] = json::parse(xl_texture_action_report());
+		j["xl_countdown"] = json::parse(xl_countdown_report());
 		j["xl_message"]["drawn_id"] = xl_message_drawn_id();
 		j["xl_message"]["drawn_alpha"] = xl_message_drawn_alpha();
 	}
