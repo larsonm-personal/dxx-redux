@@ -289,6 +289,12 @@ requirements still reject. The browser shows detected effect counts as
 unsupported. See [effect inspection evidence](evidence/effect-layouts.md) for
 source comparisons, production rejection/recovery and Android dialog checks.
 
+Particle work now includes source-matched parameter conversion, face sampling
+and authored fire CPU creation/update. The existing test owner compares original
+Pumo face geometry and controlled fire state transitions on Linux and Windows.
+Engine binding, real mine collision/lookup, resources and visible rendering are
+still unfinished; particles remain blocked. See [particle evidence](evidence/particle-effects.md).
+
 Immediate singleplayer wall teleports now use detected requirements, including
 destination validation, actor dispatch, reference-matched rotation and source
 save restoration. Bits 32/64 now have action-specific handling; multiplayer
