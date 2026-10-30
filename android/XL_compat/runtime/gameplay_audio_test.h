@@ -38,6 +38,7 @@ void run(int source, const nlohmann::json &initial)
 		run_output(2048);
 		xl_shared_audio_control::compare_output(before);
 	};
+	xl_seismic_audio_control::run(output);
 	reset();
 	int channel = xl_gameplay_sound_play(7, XL_SOUND_PLAYER, F1_0, 0, -1);
 	require(channel >= 0 && mixer.voices[unsigned(channel)].sample == unsigned(classic_sample(0)) && mixer.voices[unsigned(channel)].priority.sound_class == XL_SOUND_PLAYER, "Logical player sound did not enter the shared pool");

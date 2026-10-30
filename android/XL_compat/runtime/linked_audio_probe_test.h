@@ -1,16 +1,18 @@
 // Android-only diagnostic fixture, using the same captured PCM oracle as native
 void compare_linked_output(const json &state)
 {
-	xl_shared_audio_pcm::output(state, captured.data(), captured_music.data(), captured_samples, 20);
-	for (std::size_t i = 0; i < captured_samples; ++i)
-		if (captured_music[i]) ++music_samples;
-	checked_samples += captured_samples;
-	++output_checks;
-	++linked_checks;
+	compare_shared_output(state, linked_checks);
 }
 void prepare_linked()
 {
 	reset_events();
+	xl_seismic_audio_control::run([] {
+		capture_begin();
+		const auto starting = snapshot();
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		compare_shared_output(starting, seismic_checks);
+	});
 	capture_begin();
 	auto position = Viewer->pos;
 	vm_vec_scale_add2(&position, &Viewer->orient.rvec, 10 * F1_0);

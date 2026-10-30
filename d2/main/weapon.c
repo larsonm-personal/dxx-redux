@@ -24,6 +24,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "laser.h"
 #include "weapon.h"
+#ifdef DXX_XL_RUNTIME
+#include "gameplay_audio.h"
+#endif
 #include "player.h"
 #include "gauges.h"
 #include "dxxerror.h"
@@ -1593,6 +1596,9 @@ void DropSecondaryWeapon ()
 void do_seismic_stuff(void)
 {
 	int	stv_save;
+#ifdef DXX_XL_RUNTIME
+	xl_gameplay_seismic_begin();
+#endif
 
 	stv_save = Seismic_tremor_volume;
 	Seismic_tremor_magnitude = 0;
@@ -1600,6 +1606,9 @@ void do_seismic_stuff(void)
 
 	rock_the_mine_frame();
 	seismic_disturbance_frame();
+#ifdef DXX_XL_RUNTIME
+	xl_gameplay_seismic_end();
+#endif
 
 	if (stv_save != 0) {
 		if (Seismic_tremor_volume == 0) {

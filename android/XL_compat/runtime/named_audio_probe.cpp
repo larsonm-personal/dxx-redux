@@ -5,6 +5,7 @@
 #include "shared_audio.h"
 #include "linked_audio.h"
 #include "shared_audio_pcm_test.h"
+#include "seismic_audio_test.h"
 #include "preview.h"
 #include "object_trigger.h"
 #include "android_mission_assets.h"
@@ -54,6 +55,7 @@ bool shared_earned = false;
 bool linked_earned = false;
 unsigned shared_checks = 0;
 unsigned linked_checks = 0;
+unsigned seismic_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -189,14 +191,14 @@ void compare_pressure_output(const json &state)
 	++output_checks;
 }
 
-void compare_shared_output(const json &state)
+void compare_shared_output(const json &state, unsigned &category = shared_checks)
 {
 	xl_shared_audio_pcm::output(state, captured.data(), captured_music.data(), captured_samples, 20);
 	for (std::size_t i = 0; i < captured_samples; ++i)
 		if (captured_music[i]) ++music_samples;
 	checked_samples += captured_samples;
 	++output_checks;
-	++shared_checks;
+	++category;
 }
 
 void prepare_shared()
@@ -354,7 +356,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
@@ -365,6 +367,7 @@ const char *xl_named_audio_probe(const char *operation)
 			scope_control(operation + 6);
 		} else if (!std::strcmp(operation, "stock")) {
 			require(!xl_level_extensions_active() && snapshot().at("source") == "" && snapshot().at("voices").empty() && xl_compat::named_audio_diagnostics().at("resources") == 0, "Named audio leaked into Redux");
+			require(!Seismic_sound_playing && !Seismic_tremor_volume, "XL seismic control state leaked into Android stock gameplay");
 		} else if (!std::strcmp(operation, "disk_load")) {
 			require(!earned.is_null() && state_android_restore_slot(ANDROID_SAVE_META_SLOT_QUICK) == 1, "Cannot restore Android named audio");
 			verify();

@@ -102,8 +102,13 @@ void persistence(int source, const nlohmann::json &initial)
 	require(restore_named_audio(earned, true), "Cannot reset earned linked state for disk save");
 	char save[] = "linked-audio.sav", description[32] = "XL linked audio";
 	require(state_save_all_sub(save, description), "Cannot save mixed linked playback");
+	// Force stale XL control state immediately before the stock loader, without a frame
+	Seismic_sound_playing = 1;
+	Seismic_tremor_volume = 16;
+	Next_seismic_sound_time = GameTime64 + F1_0;
 	char error[256]{};
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Linked audio stock transition failed");
+	require(!Seismic_sound_playing && !Seismic_tremor_volume && !Next_seismic_sound_time, "XL seismic control state leaked into the stock loader");
 	require(!owners.count && !deferred && snapshot().at("voices").empty() && snapshot().at("loop").empty() && xl_audio_link_object(0, 3, 0, 1, F1_0, 64 * F1_0, -1, -1, 0, 0) < 0, "Linked ownership leaked into stock gameplay");
 	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0, -1, -1);
 	const int stock_channel = digi_looping_channel;

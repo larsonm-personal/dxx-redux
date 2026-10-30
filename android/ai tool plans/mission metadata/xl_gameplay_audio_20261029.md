@@ -67,8 +67,20 @@ Android build, catalog checks and all 101 steps of its existing audio runner pas
 with the extended loop fixture. All 26 protected app files were restored with
 matching hashes. See `android/XL_compat/evidence/gameplay-audio.md`.
 
-Next, exercise actual seismic events and restored/replaced loops. The current
-`Seismic_sound_playing` flag is separate from the mixer binding and is not part
-of `seismic_runtime_state`; do not assume that audio-only restore checks prove
-event-level continuation. Then connect other ordinary/classed callers, keeping
-their lifecycle and runtime registries separate from Redux.
+Actual seismic events reproduced a stale-flag restart. The XL frame hooks now
+derive playback from the mixer binding and recover missing ongoing disturbances.
+Schema 23 preserves volume cadence as well. A shared native/Android fixture checks
+six actual-output continuations, malformed timing, rebasing and expiration.
+Windows/Linux and all 101 Android steps pass; six seismic output cases are now
+included. All 52 additional private runtime checks passed. The final audio runs
+also verify immediate seismic cleanup when loading stock levels. Then connect
+other ordinary/classed callers, keeping their
+lifecycle and runtime registries separate from Redux.
+
+The next caller audit must change sound IDs as well as classes where XL does so.
+Pinned XL `effects/fireball.cpp` selects weapon/actor explosion IDs 57/58;
+Redux's corresponding constant is 11. Direct inspection of the retail HAM v3
+tables (using the layouts in `bm_read_all` and `tmap_info_read_n`) confirms these
+are different stock samples: 11 maps to physical 10 (`explode1`), 57 to physical
+51 (`dexp1v2`), and 58 to physical 52 (`dexp3`). Do not treat a new mixer with
+unchanged Redux caller IDs as verified XL explosion playback.
