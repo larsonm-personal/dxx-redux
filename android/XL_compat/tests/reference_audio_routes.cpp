@@ -8,9 +8,12 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <stdexcept>
+#include <string>
 #include <vector>
+xl_compat::AudioSpatialOutput audio_geometry_reference_output(int, const xl_compat::FixedLightPoint &, const xl_compat::FixedLightPoint &, const xl_compat::FixedLightPoint &, const xl_compat::FixedLightPoint &, int, int, int, bool, int);
 namespace route_reference
 {
 using fix = std::int32_t;
@@ -184,6 +187,49 @@ struct CAudio {
 };
 #include "xl_reference_audio_routes.h"
 } // namespace route_reference
+
+void audio_geometry_runtime_controls(const char *path)
+{
+	using namespace route_reference;
+	std::ifstream input(path);
+	std::string magic;
+	int version = 0;
+	unsigned count = 0;
+	if (!(input >> magic >> version >> count) || magic != "XL_AUDIO_GEOMETRY" || version != 1 || !count || count > 32767) throw std::runtime_error("Invalid loaded audio geometry header");
+	segments.assign(count, {});
+	gameData.segData.visible.assign(count, std::vector<bool>(count));
+	for (auto &segment : segments) {
+		for (auto &value : segment.center.point) input >> value;
+		for (unsigned side = 0; side < 6; ++side) input >> segment.m_children[side] >> segment.m_childDists[0][side] >> segment.m_childDists[1][side] >> segment.passable[side];
+	}
+	for (unsigned a = 0; a < count; ++a)
+		for (unsigned b = 0; b < count; ++b) {
+			bool visible = false;
+			input >> visible;
+			gameData.segData.visible[a][b] = visible;
+		}
+	if (!input) throw std::runtime_error("Truncated loaded audio geometry");
+	CAudio source;
+	if (!source.m_router[0].Create(int(count))) throw std::runtime_error("Cannot allocate loaded source audio router");
+	unsigned cases = 0;
+	int listener, sound, volume, range, decay, reverse, hires;
+	while (input >> listener) {
+		CFixVector a, b, direction;
+		xl_compat::FixedLightPoint right, up;
+		int volume_actual, pan_actual;
+		input >> sound >> volume >> range >> decay >> reverse >> hires;
+		for (auto *point : { &a.point, &b.point, &right, &up })
+			for (auto &value : *point) input >> value;
+		input >> volume_actual >> pan_actual;
+		if (!input || listener < 0 || sound < 0 || unsigned(listener) >= count || unsigned(sound) >= count) throw std::runtime_error("Invalid loaded audio geometry case");
+		const auto distance = source.Distance(a, int16_t(listener), b, int16_t(sound), range, decay, direction, 0);
+		const auto expected = audio_geometry_reference_output(distance, right, up, a.point, b.point, volume, range, decay, reverse != 0, hires);
+		if (expected.volume != volume_actual || expected.pan != pan_actual) throw std::runtime_error("Loaded audio geometry differs from source at case " + std::to_string(cases));
+		++cases;
+	}
+	if (!input.eof() || cases != count * 24) throw std::runtime_error("Loaded audio geometry case membership differs");
+	std::cout << "PASS: " << cases << " loaded-mine spatial audio outputs match actual source distance, ear angle, volume and pan\n";
+}
 
 void audio_route_source_controls()
 {

@@ -1,4 +1,5 @@
 // Preparation and admission controls; no claim of spatial or audible playback
+#include "audio_geometry_test.h"
 static nlohmann::json classic_audio_receipt(const xl_compat::ClassicAudioResources &resources)
 {
 	nlohmann::json result = nlohmann::json::array();
@@ -16,6 +17,7 @@ static nlohmann::json classic_audio_receipt(const xl_compat::ClassicAudioResourc
 
 static void classic_audio_controls(const std::filesystem::path &root)
 {
+	classic_audio_geometry_controls(root);
 	using xl_compat::prepare_classic_audio;
 	const auto before = xl_compat::named_audio_snapshot();
 	const char *name = piggy_sound_name(0);

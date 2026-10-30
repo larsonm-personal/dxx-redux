@@ -294,12 +294,16 @@ if(BUILD_TESTING)
                 -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/texture-actions -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/texture_actions.cmake)
         set_tests_properties(xl_texture_actions PROPERTIES TIMEOUT 110)
+        set(xl_audio_oracle_args)
+        if(TARGET xl_named_audio_source)
+            list(APPEND xl_audio_oracle_args "-DREFERENCE=$<TARGET_FILE:xl_named_audio_source>")
+        endif()
         add_test(
             NAME xl_named_audio_runtime
             COMMAND
                 ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DFIXTURE=$<TARGET_FILE:xl_audio_fixture>
                 -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/named-audio -P
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/named-audio ${xl_audio_oracle_args} -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/named_audio_runtime.cmake)
         set_tests_properties(xl_named_audio_runtime PROPERTIES TIMEOUT 110)
         add_test(

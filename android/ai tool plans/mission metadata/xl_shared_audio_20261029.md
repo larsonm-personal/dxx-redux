@@ -123,3 +123,34 @@ Complete runtime dispatch, ear-angle geometry, gain ownership, persistence and
 native/Android lifecycle coverage before claiming ordinary playback admission.
 No new CI processes are added; the existing named-audio source and native runtime
 tests own these checks. Android has not been run for this checkpoint.
+
+## Listener geometry and loaded-mine consumer
+
+The next increment supplies the actual ear angle from listener right/up axes
+and sound position. It preserves XL's inverse-cosine table, negative unit-boundary
+behavior, double dot/normalization operations and returning Cross overload's
+rounding. Redux's fixed-point math is unchanged. The pinned vector functions and
+GetVolPan pass 181,200 orientation-to-pan comparisons on Windows and Linux.
+
+`ClassicAudioSpatial` now combines loaded geometry, the existing symmetric
+segment-visibility builder, source routing, ear angle and decay/pan. It caches
+routes until the listener changes segment, matching the allocated source router;
+out-of-range and same-segment sounds do not populate that cache. Construct it
+after loading a mine and discard it with the owning level's audio bank.
+
+The Windows and Linux native integrations produce 2,232 outputs from the loaded 93-segment
+fixture, including repeated listener segments, position offsets, both reverse
+settings and three decay modes. The existing source oracle consumes the captured
+graph, visibility, positions and axes, and all final volume/pan outputs match.
+This checks consumer composition using native inputs; graph and visibility
+construction retain their separate geometry qualification. It does not yet
+prove moving sounds, shared ordinary/named PCM, wall mutations, save/restore or
+Android integration. Keep admission gated while completing those consumers.
+
+## Small CI duplication removal
+
+The engine matrix runs the same six Python helper checks with identical inputs
+and environment in its D1 and D2 jobs. Restrict that shared step to D2. The checks
+themselves still exercise both games where applicable; native builds, gameplay,
+metadata, replay and sanitizer jobs retain their existing coverage. This removes
+one duplicate invocation of each helper, not a game-specific test lane.

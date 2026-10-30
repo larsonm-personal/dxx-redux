@@ -40,6 +40,19 @@ file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
 if(NOT result EQUAL 0 OR NOT log MATCHES "XL sound scope runtime passed")
     message(FATAL_ERROR "Named audio scopes failed (${result}): ${log}${error}")
 endif()
+if(REFERENCE)
+    execute_process(
+        COMMAND "${REFERENCE}" --geometry-runtime "${OUTPUT}/audio-geometry.txt"
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES
+                             "loaded-mine spatial audio outputs match actual source")
+        message(FATAL_ERROR "Loaded audio geometry differs from source (${result}): ${log}${error}")
+    endif()
+endif()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL source_hash)
     message(FATAL_ERROR "Original geometry changed during named audio controls")

@@ -5,6 +5,9 @@
 namespace xl_compat
 {
 struct ClassicRouteGraph;
+int audio_point_distance(const FixedLightPoint &a, const FixedLightPoint &b);
+int audio_extended_range(int max_distance, int decay);
+std::int16_t audio_ear_angle(const FixedLightPoint &right, const FixedLightPoint &up, const FixedLightPoint &listener, const FixedLightPoint &sound);
 int audio_geometry_distance(const ClassicRouteGraph &graph, const std::vector<std::vector<bool>> &visibility, const std::vector<GeometryRouteNode> &routes, int listener, int sound, const FixedLightPoint &listener_position, const FixedLightPoint &sound_position, int max_distance, int decay);
 struct AudioSpatialOutput {
 	int volume = 0, pan = 0;
