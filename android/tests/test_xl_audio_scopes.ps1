@@ -3,9 +3,11 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$FixtureDirectory,
-    [switch]$StaticOnly
+    [switch]$StaticOnly,
+    [switch]$BanksOnly
 )
 $ErrorActionPreference = 'Stop'
+if ($StaticOnly -and $BanksOnly) { throw 'Choose only one focused audio script' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
@@ -42,8 +44,10 @@ try {
     $ready = $true
     Invoke-AudioScopesAdb -Arguments @('push', "$output/xl-audio-scopes.zip", '/data/local/tmp/xl-audio-scopes.zip') | Out-Null
     Invoke-AudioScopesPrivate 'mkdir -p files/imported/sets/default/.content/mods && cp /data/local/tmp/xl-audio-scopes.zip files/imported/sets/default/.content/mods/xl-audio-scopes.zip' | Out-Null
-    $scripts = if ($StaticOnly) { @('test_xl_static_explosions.jsonc') } else {
-        @('test_xl_audio_scopes.jsonc', 'test_xl_classic_audio_rejection.jsonc', 'test_xl_static_explosions.jsonc')
+    $scripts = if ($StaticOnly) { @('test_xl_static_explosions.jsonc') } elseif ($BanksOnly) {
+        @('test_xl_mission_sound_banks.jsonc')
+    } else {
+        @('test_xl_audio_scopes.jsonc', 'test_xl_classic_audio_rejection.jsonc', 'test_xl_static_explosions.jsonc', 'test_xl_mission_sound_banks.jsonc')
     }
     foreach ($scriptName in $scripts) {
         $receipt = Join-Path $output ([IO.Path]::GetFileNameWithoutExtension($scriptName))

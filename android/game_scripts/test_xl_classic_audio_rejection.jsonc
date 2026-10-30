@@ -41,7 +41,7 @@
         "expect": {
             "menu.title": "Cannot run XL level",
             "menu.subtitle": {
-                "contains": "sound bank suppresses external WAV replacements and requires scoped-bank decoding: mods/xsbank/xsbank.s22",
+                "contains": "Invalid XL mission sound bank mods/xsbank/xsbank.s22",
             },
             "in_game": false,
             "xl_pilot.runtime_active": false,

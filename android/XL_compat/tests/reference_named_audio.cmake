@@ -8,6 +8,7 @@ foreach(
           "main/textdata.cpp|d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c"
           "audio/audio.cpp|2add6d6d234d2d382ae895c8e49397ce2071510c5d8a2010b50461c144e2cea0"
           "gameio/loadsounds.cpp|997970aafdfbea0b8cba5c248ce9f8cfd559f0d94f329d2b3b7e4ea2c39b28e2"
+          "io/cfile.cpp|2f3703136b1d29efe375ede3660b026c112a59c9df1c7dc5cca03589afef475d"
           "main/gamefolders.cpp|1368f6dd0b6d3ec70149dff82930c46382ddd3ef9d4d2cb6f84390691370e666")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -95,6 +96,24 @@ string(
     APPEND extracted
     "\nint MixerLoops(int bLooping, int nLoopStart, int nLoopEnd) { return ${loop_expression}; }\n")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_named_audio.h"
+     CONTENT "${extracted}")
+set(extracted "// Actual file/HOG priority; OS handles and byte reads are adapters\n")
+# Exist contains a nested closing brace at column zero; keep its entire source section
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/io/cfile.cpp" classic_files)
+string(FIND "${classic_files}" "int32_t CFile::Exist (" start)
+if(start LESS 0)
+    message(FATAL_ERROR "Missing source CFile::Exist")
+endif()
+string(SUBSTRING "${classic_files}" ${start} -1 tail)
+string(FIND "${tail}"
+            "\n// ----------------------------------------------------------------------------" end)
+if(end LESS 0)
+    message(FATAL_ERROR "Missing source CFile::Exist section end")
+endif()
+string(SUBSTRING "${tail}" 0 ${end} exists_function)
+string(APPEND extracted "${exists_function}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/io/cfile.cpp" "int32_t CFile::Open (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_classic_files.h"
      CONTENT "${extracted}")
 set(extracted "// Pinned classic sound selection; storage adapters remain independent\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamefolders.cpp" "char* LevelFolder (")

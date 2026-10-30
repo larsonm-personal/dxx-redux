@@ -15,6 +15,13 @@ static int audio_scope_test(int argc, char **argv)
 		StartNewGame(1);
 		digi_set_digi_volume(32768);
 		Game_suspended = SUSP_ROBOTS;
+		if (!std::strcmp(find_arg_value(argc, argv, "-audio-scope-test"), "banks")) {
+			xl_bank_control::run(root);
+			Mix_SetPostMix(nullptr, nullptr);
+			xl_named_audio_clear();
+			SDL_PauseAudio(0);
+			return 0;
+		}
 		std::map<int, nlohmann::json> saved;
 		std::uint64_t checked = 0;
 		bool first = true;

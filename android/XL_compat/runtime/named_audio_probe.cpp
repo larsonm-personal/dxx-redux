@@ -15,6 +15,7 @@
 #include "external_audio_test.h"
 #include "ambient_objects_test.h"
 #include "classic_output_test.h"
+#include "bank_output_test.h"
 #include "preview.h"
 unsigned xl_static_explosion_gpu_check();
 #include "object_trigger.h"
@@ -487,18 +488,21 @@ void scope_control(const char *operation)
 	} else require(false, "Unknown Android scoped audio operation");
 }
 #include "static_explosion_probe.h"
+#include "bank_audio_probe.h"
 } // namespace
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks }, { "classic_checks", classic_checks }, { "static_checks", static_checks }, { "static_gpu_checks", static_gpu_checks } };
+	return { { "bank_checks", bank_checks }, { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks }, { "classic_checks", classic_checks }, { "static_checks", static_checks }, { "static_gpu_checks", static_gpu_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Named audio controls require running singleplayer");
-		if (!std::strncmp(operation, "static_", 7)) {
+		if (!std::strncmp(operation, "bank_", 5)) {
+			bank_control(operation + 5);
+		} else if (!std::strncmp(operation, "static_", 7)) {
 			static_control(operation + 7);
 		} else if (!std::strncmp(operation, "scope_", 6)) {
 			scope_control(operation + 6);

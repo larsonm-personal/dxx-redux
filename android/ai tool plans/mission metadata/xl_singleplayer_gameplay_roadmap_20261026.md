@@ -503,7 +503,8 @@ finish original-mission qualification
     the deliberate fixes are documented in
     [classic playback evidence](../../XL_compat/evidence/classic-playback.md).
     The partial-bank cache experiment did not show enough improvement to retain;
-    production caching remains unchanged. Custom S11/S22 banks remain gated.
+    production caching remains unchanged. Custom S11/S22 banks were still gated
+    at this increment; the following mission-bank work replaces that gate.
 
 62. Static explosions: type-19 stationary vclip objects use separate XL
     animation, sprite/light output, noncollision and permanent sound ownership.
@@ -514,6 +515,15 @@ finish original-mission qualification
     Pumo contains no type-19 records. Optional mission/settings-dependent secret
     manual saving remains unqualified; low-level secret serialization is not
     proof of that UI behavior.
+
+63. Owned mission sound banks: bounded S11/S22 decoding now installs selected
+    samples with source-matched name and folder/HOG precedence. Partial banks
+    preserve omitted stock samples instead of reproducing a source offset bug.
+    Actual Windows, Linux and Android output, signed scopes, mutation rejection and
+    restoration through Redux pass. See
+    [mission-bank evidence](../../XL_compat/evidence/mission-sound-banks.md) for
+    the 106-test Linux acceptance and exact platform receipts. DTX2 files, imported-D1
+    banks, global addons and original custom-bank campaigns remain unqualified.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

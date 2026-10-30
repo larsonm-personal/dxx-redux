@@ -4,6 +4,7 @@
 #include "runtime_layout_fixture.h"
 #include "legacy_audio_fixture.h"
 #include "trigger_capacity_fixture.h"
+#include "bank_fixture.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -227,6 +228,31 @@ void scopes(const Bytes &level, const std::vector<xl_compat::Member> &members, c
 		write(root / folder / "shared.wav", text("Malformed lower-priority level file must not shadow the HOG"));
 	}
 	std::cout << "Derived XL sound scopes: HOG, normal/secret ordinals, duplicate filenames and mission fallback\n";
+	write(directory / "xbank.hog", archive);
+	write(directory / "xbank.mn2", text("d2x-name = Derived XL mission banks\nnum_levels = 3\nscope23.rl2\nscope23.rl2\nscope27.rl2\nnum_secrets = 1\nscope23.rl2,1\n"));
+	const auto bank_root = directory.parent_path() / "mods" / "xbank";
+	std::filesystem::create_directories(bank_root / "sounds");
+	std::filesystem::copy(root, bank_root / "sounds", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	for (const std::string folder : { "", "level01/", "level02/", "slevel01/" })
+		write(bank_root / "sounds" / folder / "laser01.wav", text("Selected mission bank suppresses this malformed WAV"));
+	write(bank_root / "xbank.s22", xl_bank_fixture::make({ { "laser01", { 7, 8 } }, { "LASER01", Bytes(11025, 200) }, { "unknown", { 99 } } }));
+	write(bank_root / "xbank.s11", xl_bank_fixture::make({ { "laser01", Bytes(5512, 80) } }));
+	for (const std::string name : { "xbkhog", "xhwav" }) {
+		auto packed = archive;
+		if (name == "xbkhog") {
+			xl_test::hog_member(packed, name + ".s22", xl_bank_fixture::make({ { "LASER01", Bytes(11025, 200) } }), false);
+			xl_test::hog_member(packed, name + ".s11", xl_bank_fixture::make({ { "laser01", Bytes(5512, 80) } }), false);
+		}
+		xl_test::hog_member(packed, "laser01.wav", name == "xbkhog" ? text("Selected HOG bank suppresses this WAV") : constant_wave(8000, -4000), false);
+		write(directory / (name + ".hog"), packed);
+		const auto title = name == "xbkhog" ? "Derived XL HOG bank" : "Derived XL HOG WAV";
+		write(directory / (name + ".mn2"), text(std::string("d2x-name = ") + title + "\nnum_levels = 3\nscope23.rl2\nscope23.rl2\nscope27.rl2\nnum_secrets = 1\nscope23.rl2,1\n"));
+		const auto sound_root = directory.parent_path() / "mods" / name / "sounds";
+		std::filesystem::create_directories(sound_root);
+		std::filesystem::copy(root, sound_root, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+		write(sound_root / "laser01.wav", text("The level-folder HOG fallback precedes this mission-folder WAV"));
+		if (name == "xhwav") write(sound_root / "level02" / "laser01.wav", constant_wave(-3000, 9000));
+	}
 }
 
 void classic_packages(const Bytes &level, const std::vector<xl_compat::Member> &members, const std::filesystem::path &directory)

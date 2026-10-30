@@ -1,6 +1,6 @@
 # Pumo playability planning checkpoint
 
-After the last two long runs and the October 29 audio/resource work, budget
+Historical October 29 estimate, before the later ambient/replacement batches: budget
 50-80 further development hours, with about 60 hours as the working midpoint,
 before a serious human campaign playthrough. That is roughly four to six
 thirteen-hour runs including the remainder of the current run.
@@ -24,13 +24,17 @@ calling the campaign verified. Do not replace that with automated navigation.
 - Owned mission/normal/secret sound folders now have source, native and 65-step
   Android output/persistence evidence. All 644 Pumo ambient objects resolve to
   41 owned external WAVs with independent decoded-sample comparisons. This
-  establishes resources, not the still-missing spatial ambient runtime. The
-  other 220 external sound files require separate consumer/replacement auditing.
+  establishes original resource selection. The subsequent ambient-object
+  implementation has source/native/Android spatial output, activation, lifetime
+  and restore controls; original Pumo event combinations remain unqualified.
 - The ordinary sound-bank audit now resolves 1,988 level/sample selections to
   196 external WAVs matching 142 of 183 retail sample names. Pinned XL source,
   independent folder/bank selection and decoded PCM agree. The production
-  loader explicitly rejects these unapplied replacements; this is preparation,
-  not ordinary or spatial sound playback qualification.
+  loader now installs these replacements through the shared ordinary/spatial
+  playback bank, with derived actual-output and persistence controls. The 1,988
+  original selections remain preparation evidence, not an original-campaign
+  playback result. See [classic playback](../../XL_compat/evidence/classic-playback.md)
+  and [ambient objects](../../XL_compat/evidence/ambient-objects.md).
 - Required CI selections now contain 43/46 public and 106 private controls.
   See [current audio evidence](../../XL_compat/evidence/named-audio-runtime.md)
   for completed-run receipts and boundaries. These protect foundations without
@@ -41,19 +45,19 @@ calling the campaign verified. Do not replace that with automated navigation.
 
 ## Current original requirements
 
-A fresh inspection of the unchanged HOG
+The October 30 ambient-support inspection of the unchanged HOG
 6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043
-still finds independent runtime blockers in all fourteen levels. Counts below
+finds independent inventory blockers in thirteen of fourteen levels.
+`mvend.rl2` has no level-inventory blockers; its resource dependencies and runtime
+still require qualification. This is not a playable-level count. Counts below
 are levels containing a requirement, not separate work items or progress units.
 
 | Requirement                                              | Levels |
 | -------------------------------------------------------- | -----: |
-| Effect objects / sounds                                  |     14 |
+| Other effect object types                                |     13 |
 | Particle objects                                         |     13 |
 | Unsupported wall-action kinds                            |      1 |
-| Effect targets                                           |     12 |
 | Unsupported object-action kinds                          |      3 |
-| Object-action effect targets                             |      7 |
 | Wall flags                                               |      6 |
 | Segment function 10                                      |      5 |
 | Object owner/target lifecycle                            |      4 |
@@ -66,7 +70,8 @@ actions add nine cameras. The unchanged-HOG inspection previously removed the
 47 wall and thirteen object sound-action rejections. The subsequent texture
 inspection removes exactly fifteen action rejections across `pmlev1`, `pmlev2`
 and `pmlev3`, preserving every other inventory field and blocker. All fourteen
-levels remain blocked. See [texture evidence](../../XL_compat/evidence/texture-actions.md).
+levels remained blocked at that earlier checkpoint. Later ambient support yields
+the inventory outcome above. See [texture evidence](../../XL_compat/evidence/texture-actions.md).
 The countdown inspection removes exactly nine type-25 rejections across nine
 levels, again preserving every other inventory field and blocker. The
 [countdown evidence](../../XL_compat/evidence/countdowns.md) records source
@@ -111,12 +116,12 @@ need separate qualification; model-radius evidence alone does not cover them.
 1. Use the completed owned single-frame POG implementation while finishing the
    HXM/configuration audit and remaining texture profiles. Actual rendering and
    transparency must accompany decoding and persistence.
-2. Complete ordinary replacement-sound output using the audited bank and folder
-   rules, then use it alongside the owned named-sound foundation for ambient
-   sound objects. Verify spatial output, ownership, shared channel priorities,
-   pause, restoration and cleanup before enabling those consumers. The ambient
-   effect-object lifecycle is still blocked.
-3. Complete effect-object lifecycle and its enable/disable targets. Preserve
+2. Reuse the implemented ordinary replacement and ambient-sound foundations,
+   including spatial output, ownership, shared channel priorities, pause,
+   restoration and cleanup. Complete owned custom-bank qualification separately;
+   Pumo's audited package uses WAV replacements, so bank support alone removes
+   no Pumo requirement. Original cue timing and combinations need acceptance.
+3. Complete the remaining particle/lightning effect lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
 4. Complete the remaining event actions and world semantics: camera behavior,
    mine shaking, remaining wall variants,

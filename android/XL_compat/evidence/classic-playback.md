@@ -1,5 +1,9 @@
 # Classic WAV replacement playback
 
+This tranche's custom-bank rejection is historical. The subsequent
+[mission-bank work](mission-sound-banks.md) adds S11/S22 decoding and corrects
+HOG fallback selection; that evidence records current qualification status.
+
 The shared XL bank now installs the owned classic replacements selected for the
 incoming signed level number. Ordinary logical sounds, unlinked physical samples,
 object owners and position owners use that bank. The native sample registry and
