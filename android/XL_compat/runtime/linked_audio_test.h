@@ -365,6 +365,8 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 		std::ostringstream receipt;
 		receipt << "XL_SURFACE_AUDIO 1\n";
 		unsigned cases = 0;
+		xl_audio_route_control::run(output);
+		std::cout << "Native audio routes passed: ten PCM outputs, stationary texture/door/cloak/explosion changes, restored phase and retained ownership\n";
 		xl_surface_audio_control::run(output, [&](const auto &value) {
 			receipt << "case " << cases++ << '\n';
 			xl_surface_audio_receipt::write(receipt, value);

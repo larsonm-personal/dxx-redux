@@ -78,6 +78,11 @@ void xl_compat::audio_runtime::clear_linked_scene()
 	deferred = false;
 }
 
+extern "C" void xl_audio_update_routes(void)
+{
+	if (xl_level_extensions_active() && scene) scene->invalidate_routes();
+}
+
 extern "C" std::int64_t xl_audio_link_object(int sample, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom)
 {
 	return xl_audio_link_object_recorded(sample, sound_class, object_index, forever, volume, range, loop_start, loop_end, decay, custom, -1);

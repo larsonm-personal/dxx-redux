@@ -44,3 +44,23 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/audio/objectaudio.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_routes.h"
      CONTENT "${extracted}\n")
 target_sources(xl_named_audio_source PRIVATE tests/reference_audio_routes.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/audio.h" audio_hash)
+if(NOT audio_hash STREQUAL "7a0977cfefbc5de6c4805665d9b251264732179b99eb5ccd8b908b192bf3779f")
+    message(FATAL_ERROR "Audio route invalidation source changed")
+endif()
+set(extracted "// Actual pinned inline CAudio route invalidation\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/audio.h" audio_header)
+string(FIND "${audio_header}" "void Update (void)" update_start)
+if(update_start LESS 0)
+    message(FATAL_ERROR "Missing inline source route invalidation")
+endif()
+string(SUBSTRING "${audio_header}" ${update_start} -1 update_tail)
+string(FIND "${update_tail}" "\n\tprivate:" update_length)
+if(update_length LESS 0)
+    message(FATAL_ERROR "Missing inline source route invalidation end")
+endif()
+string(SUBSTRING "${update_tail}" 0 ${update_length} update)
+string(APPEND extracted "${update}\n")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_update.h"
+     CONTENT "${extracted}")

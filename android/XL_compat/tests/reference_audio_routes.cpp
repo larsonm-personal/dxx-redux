@@ -148,6 +148,14 @@ struct CDACSUniDirRouter {
 	{
 		return m_nDestSeg;
 	}
+	void SetStartSeg(int segment)
+	{
+		m_nStartSeg = segment;
+	}
+	void SetDestSeg(int segment)
+	{
+		m_nDestSeg = segment;
+	}
 	int16_t RouteLength(int16_t node)
 	{
 		return m_heap.RouteLength(node);
@@ -179,6 +187,9 @@ CDACSUniDirRouter uniDacsRouter[1];
 struct CAudio {
 	CDACSUniDirRouter m_router[1];
 	int m_nListenerSeg = -1;
+#define MAX_THREADS 1
+#include "xl_reference_audio_update.h"
+#undef MAX_THREADS
 	bool HaveRouter(int) const
 	{
 		return true;
@@ -333,4 +344,23 @@ void audio_route_source_controls()
 		}
 	}
 	std::cout << "PASS: " << distance_controls << " actual source audio-distance comparisons, same-segment boundaries, route interiors and endpoint corrections\n";
+	gameData.segData.visible.assign(node_count, std::vector<bool>(node_count, false));
+	CAudio source;
+	source.m_router[0].Create(node_count);
+	auto a = segments[0].center, b = segments[6].center;
+	CFixVector direction;
+	const auto distance = [&] { return source.Distance(a, 0, b, 6, 256 * 65536, 0, direction, 0); };
+	segments[3].passable[0] = segments[4].passable[1] = false;
+	require(distance() < 0, "Closed source audio route was reachable");
+	segments[3].passable[0] = segments[4].passable[1] = true;
+	require(distance() < 0, "Source unexpectedly refreshed an unchanged listener's cached route");
+	source.Update();
+	require(source.m_router[0].StartSeg() == -1 && source.m_router[0].DestSeg() == -1 && source.m_nListenerSeg == 0, "Source update changed listener identity or retained router endpoints");
+	const auto opened = distance();
+	require(opened > 0, "Source update failed to observe an opened route");
+	segments[3].passable[0] = segments[4].passable[1] = false;
+	require(distance() == opened, "Source unexpectedly discarded a cached open route");
+	source.Update();
+	require(distance() < 0, "Source update failed to observe a closed route");
+	std::cout << "PASS: stationary-listener source route invalidation, stale closed/open routes and preserved listener identity\n";
 }
