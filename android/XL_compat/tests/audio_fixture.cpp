@@ -153,11 +153,11 @@ Bytes ambient_objects(const Bytes &source)
 			++link;
 		}
 	};
-	action(2, 32, 0, { 50 });
-	action(7, 33, 0, { 49 });
-	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 2, 2, 1);
-	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 14, level.walls[0].segment, 2);
-	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 34, level.walls[0].side, 2);
+	action(2, 32, 0, { 32767, -1, 50 });
+	action(7, 33, 0, { 49, 50, 0 });
+	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 34, 0xfffe, 2);
+	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 16, level.walls[0].segment, 2);
+	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 36, level.walls[0].side, 2);
 	action(8, 32, 2 | 8 | 16, { 49, int(player - level.objects.begin()), 50 });
 	action(9, 33, 0, { 50 });
 	// Retain all four authored WAVs in their existing independent PCM-oracle order

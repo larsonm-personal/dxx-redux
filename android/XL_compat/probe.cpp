@@ -3,6 +3,7 @@
 #include "capacity.h"
 #include "producer_layout.h"
 #include "ambient_sound.h"
+#include "effect_targets.h"
 
 #include <limits>
 #include <algorithm>
@@ -178,8 +179,16 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	const auto trigger_offset = read_offset(out, new_game_offset + 71);
 	for (std::size_t i = 0; i < v.triggers.size(); ++i) {
 		const auto &trigger = v.triggers[i];
-		if (trigger.type != 31) continue;
 		const auto offset = static_cast<std::size_t>(trigger_offset) + i * 52;
+		if (trigger.type == 32 || trigger.type == 33) {
+			const auto targets = effect_targets(trigger, v.segments.size(), v.objects.size(), false);
+			patch(out, offset + 2, int(targets.size()), 1);
+			for (std::size_t link = 0; link < targets.size(); ++link) {
+				patch(out, offset + 12 + link * 2, targets[link][0], 2);
+				patch(out, offset + 32 + link * 2, targets[link][1], 2);
+			}
+		}
+		if (trigger.type != 31) continue;
 		if (v.game_version < 39) patch(out, offset + 4, 0);
 		else if (trigger.value > 0) {
 			patch(out, offset + 4, trigger.value / 65536);

@@ -25,6 +25,26 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"
                       "void CObject::Read (CFile& cf)")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_effects.h" CONTENT "${extracted}")
 add_executable(xl_effect_reference tests/reference_effects.cpp)
+foreach(
+    pair IN
+    ITEMS "main/trigger.cpp|74f1284260fb4a4bb7396bc45eeb83868a7f2dfa5e3fdf0bcb767b94f1b12852"
+          "gameio/loadobjects.cpp|01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Effect target reference differs: ${path}")
+    endif()
+endforeach()
+set(extracted "// Actual pinned target reader normalization and geometry cleanup\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
+                      "void CTriggerTargets::Check (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
+                      "static void CheckTriggerInfo (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_effect_targets.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_effect_targets.cpp)
 target_link_libraries(xl_effect_reference PRIVATE xl_inventory)
 target_include_directories(xl_effect_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_features(xl_effect_reference PRIVATE cxx_std_17)

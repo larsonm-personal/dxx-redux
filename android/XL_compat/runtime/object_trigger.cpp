@@ -1,4 +1,5 @@
 #include "object_trigger.h"
+#include "../effect_targets.h"
 #include "preview.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
@@ -177,10 +178,11 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 		entry.action.flags = source.flags;
 		entry.action.value = source.type == 31 ? 0 : source.value;
 		entry.action.time = source.type == 25 || source.type == 29 || source.type == 30 ? source.time : -1;
-		entry.action.num_links = static_cast<short>(source.targets.size());
-		for (std::size_t link = 0; link < source.targets.size(); ++link) {
-			entry.action.seg[link] = source.targets[link][0];
-			entry.action.side[link] = source.targets[link][1];
+		const auto targets = xl_compat::effect_targets(source, level.segments.size(), level.objects.size(), true);
+		entry.action.num_links = static_cast<short>(targets.size());
+		for (std::size_t link = 0; link < targets.size(); ++link) {
+			entry.action.seg[link] = targets[link][0];
+			entry.action.side[link] = targets[link][1];
 		}
 		actions.push_back(entry);
 	}

@@ -111,8 +111,8 @@ Pumo reader comparison passes all 14 levels, 3,182 object records and 795 effect
 payloads. These results do not establish original mission playability.
 
 Before marking ready for review: add actual-source activation comparisons, attached
-object-trigger controls, Android PCM/disk/rewind coverage, malformed full-trailer
-cross-binding controls, and relevant full native/stock regressions. Audit legacy
+object-trigger controls, Android PCM/disk/rewind coverage, and relevant full
+native/stock regressions. Audit legacy
 sound-layout coverage and original requirement outcomes. Update evidence and
 EXTENSIONS only with those results. Publish the current checkpoint as a draft
 at the user's request to start CI; these checks remain outstanding. Artifacts are under
@@ -142,3 +142,30 @@ pass in 54.64 seconds, including 53.91 seconds for the runtime member. These
 runs include scopes, persistence and stock isolation, but do not yet qualify
 Android ambient objects, attached activation or legacy ambient runtime layouts.
 Artifacts use the `ambient-source-*` prefix under the existing artifact root.
+
+### Full-trailer rejection and authored target normalization
+
+The shared ambient integration now sends 14 malformed complete trailers through
+the real restore entry point. Four stopped-owner mutations remain valid to the
+generic audio validator but violate the object's authored resource, gain, range
+or loop bounds. Ten more corrupt the ambient lifetime table or its schema. Every
+rejection preserves a byte-for-byte recapture of the complete owned trailer;
+valid restoration then recovers earned activation and playback. Both native
+formats pass on Windows and Linux.
+
+Source review also found a loader distinction that was previously missing:
+`CTriggerTargets::Check` removes out-of-range object indices before dispatch.
+The later `CheckTriggerInfo` pass additionally removes negative sides other than
+`-1` from wall triggers, swapping in the last target. Object-attached lists skip
+that second pass. This differs from reaching a valid ordinary object during
+enable/disable dispatch, which stops the remaining action targets.
+
+An XL-owned helper now applies those source loader rules to translated wall
+actions and loaded object-attached actions. The raw inventory remains unchanged.
+4,096 comparisons against the actual pinned source cover order, index bounds,
+negative sides and both list kinds. The real ambient fixture now contains invalid
+indices and a `-2` wall target, so native integration also checks the normalized
+loaded lists and subsequent dispatch. Windows full audio integration passes;
+Linux full audio integration passes in 54.76 seconds. These changes do not yet
+replace the pending source activation or actual attached-removal controls.
+Artifacts use `ambient-trailer-*` and `ambient-target-*` in the existing root.

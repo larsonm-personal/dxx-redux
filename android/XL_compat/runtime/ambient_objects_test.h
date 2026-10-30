@@ -10,6 +10,73 @@ extern "C" {
 namespace xl_ambient_objects_control
 {
 using xl_surface_audio_control::check;
+inline xl_compat::Bytes saved_bytes(const char *path)
+{
+	auto *file = PHYSFS_openRead(path);
+	check(file, "Cannot open ambient saved-state control");
+	const auto length = PHYSFS_fileLength(file);
+	check(length >= 16 && length <= 8 * 1024 * 1024 + 16, "Ambient saved-state control exceeds its read bound");
+	xl_compat::Bytes bytes(static_cast<std::size_t>(length));
+	const auto read = PHYSFS_readBytes(file, bytes.data(), bytes.size());
+	check(PHYSFS_close(file) && read == length, "Cannot read ambient saved-state control");
+	return bytes;
+}
+inline void malformed_trailers(const xl_compat::Bytes &encoded)
+{
+	using namespace xl_compat;
+	const auto original = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
+	check(original.at("ambient_objects").size() == 3, "Ambient corruption controls require three authored lifetimes");
+	for (unsigned variant = 0; variant < 14; ++variant) {
+		auto changed = original;
+		if (variant < 4) {
+			unsigned matched = 0;
+			for (auto &owner : changed["audio"]["linked"]["owners"]) {
+				if (owner["object"] != 50) continue;
+				check(owner["channel"] == -1, "Ambient cross-binding control requires a stopped owner");
+				++matched;
+				if (variant == 0) owner["sample"] = audio_runtime::external_sample("sound.wav");
+				if (variant == 1) owner["max_volume"] = 32768;
+				if (variant == 2) owner["max_distance"] = 64 * F1_0;
+				if (variant == 3) owner["loop_start"] = -1;
+			}
+			check(matched == 1 && restore_named_audio(changed["audio"], false), "Ambient cross-binding control did not pass ordinary audio validation");
+		} else {
+			auto &rows = changed["ambient_objects"];
+			if (variant == 4) rows.erase(0);
+			if (variant == 5) rows[0][0] = 50;
+			if (variant == 6) rows[0][1] = rows[0][1].get<int>() + 1;
+			if (variant == 7) rows[0][1] = -1;
+			if (variant == 8) rows[0][2] = 1;
+			if (variant == 9) rows[0][3] = bool(0);
+			if (variant == 10) rows[0][1] = UINT64_MAX;
+			if (variant == 11) rows[0].push_back(0);
+			if (variant == 12) changed.erase("ambient_objects");
+			if (variant == 13) rows = nlohmann::json::object();
+		}
+		const auto payload = changed.dump();
+		Bytes bytes(encoded.begin(), encoded.begin() + 16);
+		bytes.insert(bytes.end(), payload.begin(), payload.end());
+		std::uint32_t checksum = 2166136261u;
+		for (unsigned char byte : payload) checksum = (checksum ^ byte) * 16777619u;
+		for (unsigned i = 0; i < 4; ++i) {
+			bytes[8 + i] = static_cast<unsigned char>(payload.size() >> (i * 8));
+			bytes[12 + i] = static_cast<unsigned char>(checksum >> (i * 8));
+		}
+		auto *file = PHYSFS_openWrite("xl-ambient-bad.tmp");
+		check(file, "Cannot open malformed ambient trailer");
+		const auto written = PHYSFS_writeBytes(file, bytes.data(), bytes.size());
+		check(PHYSFS_close(file) && written == PHYSFS_sint64(bytes.size()), "Cannot write malformed ambient trailer");
+		file = PHYSFS_openRead("xl-ambient-bad.tmp");
+		REWIND_PHYSFS_FILE(reader, file);
+		check(file, "Cannot read malformed ambient trailer");
+		const int accepted = xl_wall_trigger_read(reader);
+		check(PHYSFS_close(file) && !accepted, "Malformed ambient trailer passed full restoration");
+		file = PHYSFS_openWrite("xl-ambient-after.tmp");
+		REWIND_PHYSFS_FILE(writer, file);
+		check(file && xl_wall_trigger_write(writer) && PHYSFS_close(file), "Cannot recapture full ambient trailer after rejection");
+		check(saved_bytes("xl-ambient-after.tmp") == encoded, "Rejected ambient trailer partially changed another owned runtime state");
+	}
+}
 template <class Output, class Record>
 void run(Output output, Record record)
 {
@@ -30,6 +97,9 @@ void run(Output output, Record record)
 		      "Ambient object native shadow lost normalized identity or became active geometry");
 	check(wall_trigger_index(Walls[0].controlling_trigger) == 7 && Triggers[7].num_links == 2,
 	      "Mixed effect/wall target list lost its source wall controller or object target");
+	check(Triggers[2].num_links == 1 && Triggers[2].seg[0] == 50 && Triggers[2].side[0] == -1 &&
+	          Triggers[7].seg[0] == 49 && Triggers[7].side[0] == -1 && Triggers[7].side[1] >= 0,
+	      "Effect target loading lost invalid-index compaction or geometry-list normalization");
 	object listener = *ConsoleObject;
 	listener.orient = vmd_identity_matrix;
 	struct Guard {
@@ -82,41 +152,20 @@ void run(Output output, Record record)
 	const auto earned_objects = ambient_objects_snapshot();
 	const auto earned_audio = named_audio_snapshot();
 	check(ambient_audio_matches(earned_audio), "Earned ambient loops do not match authored resources");
-	for (unsigned variant = 0; variant < 4; ++variant) {
-		auto bad = earned_audio;
-		for (auto &owner : bad["linked"]["owners"]) {
-			if (owner["object"] != 50) continue; // Stopped owners must retain the correct resource too
-			if (variant == 0) owner["sample"] = external_sample("sound.wav");
-			if (variant == 1) owner["max_volume"] = 32768;
-			if (variant == 2) owner["max_distance"] = 64 * F1_0;
-			if (variant == 3) owner["loop_start"] = -1;
-		}
-		check(!ambient_audio_matches(bad), "Foreign ambient resource or loop parameters passed authored validation");
-	}
-	for (unsigned variant = 0; variant < 8; ++variant) {
-		auto bad = earned_objects;
-		if (variant == 0) bad.erase(0);
-		if (variant == 1) bad[0][0] = 50;
-		if (variant == 2) bad[0][1] = bad[0][1].get<int>() + 1;
-		if (variant == 3) bad[0][1] = -1;
-		if (variant == 4) bad[0][2] = 1;
-		if (variant == 5) bad[0][3] = bool(0);
-		if (variant == 6) bad[0][1] = UINT64_MAX;
-		if (variant == 7) bad[0].push_back(0);
-		check(!restore_ambient_objects(bad, false) && !restore_ambient_objects(bad, true) && ambient_objects_snapshot() == earned_objects && named_audio_snapshot() == earned_audio,
-		      "Malformed ambient state changed object activation or audio");
-	}
 	constexpr const char *path = "xl-ambient-state.tmp";
-	check(!PHYSFS_exists(path), "Ambient trailer control requires an unused temporary path");
+	check(!PHYSFS_exists(path) && !PHYSFS_exists("xl-ambient-bad.tmp") && !PHYSFS_exists("xl-ambient-after.tmp"), "Ambient trailer controls require unused temporary paths");
 	struct FileGuard {
 		~FileGuard()
 		{
 			PHYSFS_delete("xl-ambient-state.tmp");
+			PHYSFS_delete("xl-ambient-bad.tmp");
+			PHYSFS_delete("xl-ambient-after.tmp");
 		}
 	} file_guard;
 	PHYSFS_file *file = PHYSFS_openWrite(path);
 	REWIND_PHYSFS_FILE(writer, file);
 	check(file && xl_wall_trigger_write(writer) && PHYSFS_close(file), "Cannot save ambient runtime trailer");
+	malformed_trailers(saved_bytes(path));
 	check(xl_ambient_object_set_enabled(50, 1), "Cannot disturb earned ambient activation");
 	xl_audio_sync_objects();
 	file = PHYSFS_openRead(path);
