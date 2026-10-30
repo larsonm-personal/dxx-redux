@@ -46,6 +46,10 @@ struct Stack {
 	{
 		return m_tos ? &storage[m_tos - 1] : nullptr;
 	}
+	int Index(const _T *entry) const
+	{
+		return int(entry - storage.data());
+	}
 	_T &operator[](unsigned i)
 	{
 		return storage.at(i);
@@ -119,6 +123,7 @@ int NDFindObject(int signature)
 }
 struct {
 	int nObject = 63;
+	int flags = 0;
 } localplayer;
 #define LOCALPLAYER localplayer
 constexpr int ND_STATE_RECORDING = 1, ND_STATE_PLAYBACK = 2;
@@ -140,13 +145,31 @@ struct {
 			} sounds[2][MAX_SOUNDS];
 		} sound;
 	} pigData;
+	struct {
+		int xAfterburnerCharge = 0;
+	} physicsData;
 } gameData;
 struct {
 	struct {
 		bool bDontStartObjects = false, bWasRecording = false;
 		int bD1Sound = 0;
 	} sound;
+	struct {
+		bool bEndLevelSequence = false, bPlayerIsDead = false;
+	} app;
+	struct {
+		int bLastAfterburnerState = 0, xLastAfterburnerCharge = 0;
+	} gameplay;
+	struct {
+		int nGameType = 0;
+	} multi;
 } gameStates;
+struct {
+	int afterburnerState = 0;
+} controls[1];
+constexpr bool IsMultiGame = false;
+constexpr int UDP_GAME = 1;
+void MultiSendSoundFunction(int, int) {}
 void NDRecordDestroySoundObject(int) {}
 void NDRecordCreateObjectSound(int, int, int, int, int, int) {}
 void NDRecordSound3DOnce(int, int, int) {}
@@ -167,6 +190,7 @@ struct Options {
 	struct {
 		bool bUseSDLMixer = true;
 		int xCustomSoundVolume = 65536;
+		int audioSampleRate = 22050;
 	} sound;
 } options;
 auto *gameOpts = &options;
@@ -270,6 +294,7 @@ struct CAudio {
 	std::array<int, 2> volumes{ 32768, 32768 };
 	unsigned cursor = 0;
 	bool fail_start = false;
+	unsigned start_calls = 0;
 	std::vector<int> stopped;
 	struct Request {
 		int sound, sound_class, volume, pan, loop, start, end, owner, speed;
@@ -299,6 +324,7 @@ struct CAudio {
 	int StartSound(int sound, int sound_class, int volume, int pan, int loop, int start, int end, int owner = -1, int speed = 65536, const char * = nullptr, CFixVector * = nullptr)
 	{
 		request = { sound, sound_class, volume, pan, loop, start, end, owner, speed };
+		++start_calls;
 		if (fail_start) return -1;
 		for (int step = 0; step < 128; ++step) {
 			const int i = int((cursor + unsigned(step)) % 128);
@@ -364,9 +390,10 @@ struct CAudio {
 		++source_spatial_calls;
 	}
 	int32_t PlaySound(int16_t, int32_t, fix, int32_t, int32_t, int32_t, const char *, CFixVector *);
-	CSoundObject *FindObjectSound(int16_t, CObject *, CFixVector *);
+	CSoundObject *FindObjectSound(int16_t, CObject *, CFixVector * = nullptr);
+	int32_t FindObjectSound(int32_t, int16_t);
 	CSoundObject *FindSegmentSound(int16_t, int16_t, int16_t, CFixVector &);
-	int32_t CreateObjectSound(int16_t, int32_t, int16_t, int32_t, fix, fix, int32_t, int32_t, const char *, int32_t, uint8_t, int32_t);
+	int32_t CreateObjectSound(int16_t, int32_t, int16_t, int32_t = 0, fix = 65536, fix = 256 * 65536, int32_t = -1, int32_t = -1, const char * = nullptr, int32_t = 0, uint8_t = 0, int32_t = 0);
 	int32_t CreateSegmentSound(int16_t, int16_t, int16_t, CFixVector &, int32_t, fix, fix, const char *);
 	void DeleteSoundObject(int32_t);
 	int32_t DestroyObjectSound(int32_t, int16_t = -1);
@@ -380,6 +407,7 @@ struct CAudio {
 #include "xl_reference_audio_controls.h"
 #include "xl_reference_audio_ownership.h"
 #include "xl_reference_audio_creation.h"
+#include "xl_reference_afterburner.h"
 void CAudioChannel::Stop()
 {
 	audio.UnregisterChannel(m_info.nIndex);
@@ -392,6 +420,7 @@ void reset(int count)
 	audio.m_info.nActiveObjects = count;
 	audio.stopped.clear();
 	audio.fail_start = false;
+	audio.start_calls = 0;
 	audio.volumes = { 32768, 32768 };
 	audio.cursor = 0;
 	audio.m_info.bLoMem = false;
@@ -430,6 +459,7 @@ void reset(int count)
 } // namespace ownership_reference
 #include "reference_audio_creation.h"
 #include "reference_audio_logical.h"
+#include "reference_afterburner_controls.h"
 namespace
 {
 struct NativeOwners {

@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "gameplay_audio.h"
 #include "blocked.h"
 #include "boss_spawn.h"
 #include "robot_disarm.h"
@@ -2182,6 +2183,11 @@ int do_robot_dying_frame(object *objp, fix64 start_time, fix roll_duration, sbyt
 	if (start_time + roll_duration - sound_duration < GameTime64) {
 		if (!*dying_sound_playing) {
 			*dying_sound_playing = 1;
+#ifdef DXX_XL_RUNTIME
+			if (xl_level_extensions_active())
+				xl_gameplay_sound_object(death_sound, XL_SOUND_ROBOT, objp-Objects, 0, sound_scale, sound_scale*256, -1, -1, 0);
+			else
+#endif
 			digi_link_sound_to_object2( death_sound, objp-Objects, 0, sound_scale, sound_scale*256 );	//	F1_0*512 means play twice as loud
 		// SIM RNG: retain original fireball cadence, scale and world-update draw order
 		} else if (d_rand() < FrameTime*16)
@@ -2239,6 +2245,11 @@ int do_any_robot_dying_frame(object *objp)
 		if (rval) {
 			objp->ctype.ai_info.dying_start_time = GameTime64; // make sure following only happens one time!
 			explode_object(objp, F1_0/4);
+#ifdef DXX_XL_RUNTIME
+			if (xl_level_extensions_active())
+				xl_gameplay_sound_object(SOUND_BADASS_EXPLOSION, XL_SOUND_EXPLOSION, objp-Objects, 0, F2_0, F1_0*512, -1, -1, 0);
+			else
+#endif
 			digi_link_sound_to_object2(SOUND_BADASS_EXPLOSION, objp-Objects, 0, F2_0, F1_0*512);
 			if ((Current_level_num < 0) && (Robot_info[objp->id].thief))
 				recreate_thief(objp);
