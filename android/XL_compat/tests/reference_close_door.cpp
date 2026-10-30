@@ -1,10 +1,13 @@
 #include <cstdint>
+#include <cassert>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include "xl_reference_door_capacity.h"
+#include "xl_reference_door_object_types.h"
+#define Assert assert
 using fix = int32_t;
 constexpr int WALL_DOOR_CLOSED = 0, WALL_DOOR_OPENING = 1, WALL_DOOR_WAITING = 2, WALL_DOOR_CLOSING = 3, WALL_DOOR_OPEN = 4;
 constexpr int ND_STATE_RECORDING = 1, ND_STATE_PLAYBACK = 2, NO_WALL = -1;
@@ -89,8 +92,18 @@ CWall *WALL(int index)
 	return &walls[index];
 }
 bool obstructed = false;
+struct CObject {
+	struct {
+		int16_t nType = 2, nNextInSeg = -1;
+	} info;
+} obstruction_object;
+CObject *OBJECT(int)
+{
+	return &obstruction_object;
+}
 struct CSegment {
 	int index = 0, m_children[6]{ 1, 1, 1, 1, 1, 1 };
+	int16_t m_objects = 0;
 	int frame = -1;
 	void SetTexture(int, CSegment *, int, int, int value)
 	{
@@ -100,10 +113,11 @@ struct CSegment {
 	{
 		return &walls[index];
 	}
-	bool DoorIsBlocked(int, bool)
+	bool PokesThrough(int, int)
 	{
 		return obstructed;
 	}
+	int32_t DoorIsBlocked(int32_t, bool);
 	int ConnectedSide(CSegment *)
 	{
 		return 0;
@@ -163,6 +177,18 @@ int main(int argc, char **argv)
 		}
 		if (samples != 3072) throw std::runtime_error("Incomplete close-door matrix");
 		std::cout << samples << " extracted-reference close-door state/allocation samples passed\n";
+		int obstruction_samples = 0;
+		for (int type = 0; type <= 20; ++type)
+			for (bool ignore_marker : { false, true })
+				for (bool overlap : { false, true }) {
+					obstruction_object.info.nType = int16_t(type);
+					obstructed = overlap;
+					const bool ignored = type == OBJ_WEAPON || type == OBJ_FIREBALL || type == OBJ_EXPLOSION || type == OBJ_EFFECT || (ignore_marker && type == OBJ_MARKER);
+					if (bool(segments[0].DoorIsBlocked(0, ignore_marker)) != (overlap && !ignored))
+						throw std::runtime_error("Source door obstruction filter differs");
+					++obstruction_samples;
+				}
+		std::cout << obstruction_samples << " extracted-reference object-filter cases passed; ignore-marker remains outside runtime admission\n";
 		std::ifstream animations(argv[2]);
 		int automatic, opening, frames, duration, elapsed_ticks, expected_state, expected_flags, expected_frame, expected_count, expected_time;
 		int animation_count = 0;

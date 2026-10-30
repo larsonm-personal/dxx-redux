@@ -71,6 +71,12 @@
     {
         "action": "set_debug",
         "field": "xl_door_probe",
+        "value": "obstruction",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_door_probe",
         "value": "prepare",
         "post_delay_ms": 0,
     },
@@ -98,6 +104,7 @@
             "checkpoints.pending": 0,
             "checkpoints.failed": 0,
             "time_paused": true,
+            "xl_named_audio.paused": true,
         },
         "timeout_ms": 15000,
         "post_delay_ms": 0,
@@ -160,6 +167,7 @@
         "action": "wait_for",
         "expect": {
             "time_paused": false,
+            "xl_named_audio.paused": false,
         },
         "timeout_ms": 20000,
         "post_delay_ms": 0,

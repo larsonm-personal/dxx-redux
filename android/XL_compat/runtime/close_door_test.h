@@ -1,5 +1,6 @@
 #include "close_door_fixture.h"
 #include "door_lifecycle_test.h"
+#include "door_obstruction_control.h"
 extern "C" int is_door_free(segment *, int);
 static void close_door_matrix(std::ostream &out)
 {
@@ -71,18 +72,18 @@ static void close_door_lifecycle()
 	require(Walls[0].state == WALL_DOOR_WAITING, "Door left waiting before authored close");
 	const auto waiting = ActiveDoors[0];
 	// Block on either side with real actor geometry; do not overwrite earned state
-	for (auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_POWERUP, OBJ_MARKER, OBJ_WEAPON, OBJ_FIREBALL })
+	for (auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_POWERUP, OBJ_MARKER, OBJ_WEAPON, OBJ_FIREBALL, object_type_t(19), object_type_t(20) })
 		for (int from : { 24, 21 }) {
 			vms_vector face;
 			const int side = from == 24 ? 5 : 4;
 			compute_center_point_on_side(&face, &Segments[from], side);
 			vm_vec_scale_add2(&face, &Segments[from].sides[side].normals[0], F1_0 / 16);
-			const int index = obj_create(type, 0, from, &face, &vmd_identity_matrix, F1_0 / 8, CT_NONE, MT_NONE, RT_NONE);
+			const int index = obj_create(type, 0, from, &face, &vmd_identity_matrix, F1_0 / 8, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_NONE, RT_NONE);
 			require(index >= 0, "Door obstruction allocation failed");
 			Walls[0].state = Walls[1].state = WALL_DOOR_WAITING;
 			ActiveDoors[0] = waiting;
 			require(xl_authored_close_door(24, 5) == 1, "Obstruction action selected stock");
-			const bool ignored = type == OBJ_WEAPON || type == OBJ_FIREBALL;
+			const bool ignored = type == OBJ_WEAPON || type == OBJ_FIREBALL || type == 19 || type == 20;
 			require((Walls[0].state == WALL_DOOR_CLOSING) == ignored, "Two-sided actor obstruction differs");
 			if (!ignored) require(ActiveDoors[0].time == waiting.time, "Blocked action changed earned waiting time");
 			obj_delete(index);
@@ -127,7 +128,8 @@ static void close_door_lifecycle()
 		doorway_rays(WALL_IS_DOORWAY(&Segments[24], 5));
 	}
 	require(Walls[0].state == WALL_DOOR_CLOSED && Num_open_doors == 0, "Forced close animation did not finish");
-	std::cout << "Authored waiting close, twelve actor obstructions, actual animation/rays, saves and Redux isolation passed\n";
+	xl_door_obstruction_control::run(require);
+	std::cout << "Authored waiting close, sixteen actor obstructions, 48 obstruction lifecycle cases, actual animation/rays, saves and Redux isolation passed\n";
 }
 static int close_door_test(int argc, char **argv)
 {

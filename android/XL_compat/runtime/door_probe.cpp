@@ -1,5 +1,6 @@
 #include "door_probe.h"
 #include "doors.h"
+#include "named_audio.h"
 #include "preview.h"
 #include <cstring>
 #include <stdexcept>
@@ -17,6 +18,7 @@ extern "C" {
 #include "android_log.h"
 #include "debug_log_categories.h"
 }
+#include "door_obstruction_control.h"
 namespace
 {
 std::string failure;
@@ -58,8 +60,15 @@ const char *xl_door_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Door controls require running singleplayer");
-		if (!std::strcmp(operation, "prepare")) {
+		if (!std::strcmp(operation, "obstruction")) {
+			xl_door_obstruction_control::run(require);
+			debug_log_force(DLOG_GAME, "XL door obstruction passed 48 actor/effect, side and lifecycle cases");
+		} else if (!std::strcmp(operation, "prepare")) {
 			require(xl_level_extensions_active() && Num_walls >= 184, "Door controls require the authored 91-door fixture");
+			require(game_is_time_paused(), "Door capture controls require paused simulation");
+			// Paired checkpoint snapshots must also freeze independent audio callbacks
+			// The normal running XL frame resumes playback after the overlay closes
+			xl_named_audio_resume();
 			first = Num_walls - 182;
 			saved.clear();
 			saved_walls.clear();

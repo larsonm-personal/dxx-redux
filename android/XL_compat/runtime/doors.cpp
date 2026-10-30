@@ -7,11 +7,12 @@
 extern "C" {
 #include "inferno.h"
 #include "segment.h"
+#include "object.h"
 #include "wall.h"
 #include "gameseg.h"
 #include "digi.h"
 #include "newdemo.h"
-int is_door_free(segment *, int);
+int check_poke(int, int, int);
 #ifdef __ANDROID__
 #include "guidebot_extensions.h"
 #endif
@@ -49,8 +50,17 @@ bool blocked(int index)
 	const auto &w = Walls[index];
 	const int child = Segments[w.segnum].children[w.sidenum];
 	// Ordinary obstruction checks require a reciprocal connection
-	if (child < 0 || child >= Num_segments || find_connect_side(&Segments[w.segnum], &Segments[child]) < 0) return false;
-	return !is_door_free(&Segments[w.segnum], w.sidenum);
+	if (child < 0 || child >= Num_segments) return false;
+	const int back_side = find_connect_side(&Segments[w.segnum], &Segments[child]);
+	if (back_side < 0) return false;
+	// Keep the two-sided geometry correction, with XL's nonblocking effect types
+	for (int segment : { w.segnum, child })
+		for (int object = Segments[segment].objects; object >= 0; object = Objects[object].next) {
+			const int type = Objects[object].type;
+			if (type == OBJ_WEAPON || type == OBJ_FIREBALL || type == 19 || type == 20) continue;
+			if (check_poke(object, segment, segment == w.segnum ? w.sidenum : back_side)) return true;
+		}
+	return false;
 }
 void notify(int index)
 {

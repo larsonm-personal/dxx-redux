@@ -413,6 +413,11 @@ clocks/compaction and checked saved ownership. See
 [door lifecycle evidence](evidence/door-lifecycle.md) for paired-face corrections,
 full-table and physical controls. Redux retains its original alternate; optional
 settings and other wall behaviors remain separate work.
+The final effect-object audit replaces Redux's obstruction filter in the XL
+door owner so supported static explosions and sound objects cannot hold doors
+open or reopen them. See [effect-door evidence](evidence/effect-door-obstruction.md)
+for the reproduced failure, source filter, positive actor controls and verification
+limits. Wider ignore-marker flags remain blocked.
 Other modern properties/damage, multiplayer-only objects, wide wall flags and unimplemented
 object-event variants remain blocked. Unchanged Neptune passes native geometry/record checks, ordinary
 startup, all authored LGT entries, switched-light save/restore, reactor/door and
