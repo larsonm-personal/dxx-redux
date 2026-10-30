@@ -1084,6 +1084,11 @@ void flush_fcd_cache(void)
 	flush_fcd_cache_state(&Sound_fcd_cache);
 }
 
+void flush_fcd_cache_for_sound(void)
+{
+	flush_fcd_cache_state(&Sound_fcd_cache);
+}
+
 void add_to_fcd_cache(int seg0, int seg1, int depth, fix dist)
 {
 	add_to_fcd_cache_state(&Gameplay_fcd_cache, seg0, seg1, depth, dist);

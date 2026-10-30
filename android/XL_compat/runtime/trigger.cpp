@@ -138,8 +138,9 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	auto &action = Triggers[index];
 	const bool chain = action.type >= 31 && action.type <= 33;
 	const bool resource = xl_compat::player_resource_action(action.type);
-	if (!chain && action.type > 14 && action.type != 15 && action.type != 28 && action.type != 29 && action.type != 30 && !resource) return 1;
+	if (!chain && action.type > 14 && action.type != 15 && action.type != 19 && action.type != 28 && action.type != 29 && action.type != 30 && !resource) return 1;
 	if ((Game_mode & GM_MULTI) || (action.flags & TF_DISABLED) || index >= MAX_TRIGGERS || object_index < 0 || object_index >= MAX_OBJECTS) return 1;
+	if (action.type == 19 && !xl_trigger_texture_valid(&action)) return 1;
 	const bool live = object_index <= Highest_object_index && (Objects[object_index].type == OBJ_PLAYER || xl_wall_teleport_actor(object_index)) && (signature < 0 || Objects[object_index].signature == signature);
 	// Attached events outlive their owner; geometry work does not require an actor
 	// Motion still requires the same live object, never a recycled slot
@@ -185,6 +186,8 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		xl_message_action(&action);
 	} else if (action.type == 30) {
 		xl_named_audio_action(&action, index);
+	} else if (action.type == 19) {
+		xl_trigger_texture_action(&action);
 	} else if (action.type == 28) {
 		xl_spawn_action(&action);
 	} else if (action.type == 15) {
@@ -326,7 +329,8 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		const auto &state = states[i];
 		const auto &action = Triggers[i];
 		const bool resource = xl_compat::player_resource_action(action.type);
-		if ((action.type > 14 && action.type != 15 && action.type != 28 && action.type != 29 && action.type != 30 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
+		if (action.type == 19 && !xl_trigger_texture_valid(&action)) return 0;
+		if ((action.type > 14 && action.type != 15 && action.type != 19 && action.type != 28 && action.type != 29 && action.type != 30 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
 		for (int target = 0; !resource && action.type != 29 && action.type != 30 && target < action.num_links; ++target)
 			if (action.seg[target] < 0 || action.seg[target] > Highest_segment_index || action.side[target] < 0 || action.side[target] >= 6) return 0;
 		if (state.destination < 0 || state.destination > Highest_segment_index) return 0;

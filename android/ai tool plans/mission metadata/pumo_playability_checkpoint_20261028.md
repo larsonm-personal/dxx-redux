@@ -31,7 +31,7 @@ calling the campaign verified. Do not replace that with automated navigation.
   independent folder/bank selection and decoded PCM agree. The production
   loader explicitly rejects these unapplied replacements; this is preparation,
   not ordinary or spatial sound playback qualification.
-- Required CI selections now contain 43/46 public and 103 private controls.
+- Required CI selections now contain 43/46 public and 104 private controls.
   See [current audio evidence](../../XL_compat/evidence/named-audio-runtime.md)
   for completed-run receipts and boundaries. These protect foundations without
   qualifying the original campaign.
@@ -50,7 +50,8 @@ are levels containing a requirement, not separate work items or progress units.
 | -------------------------------------------------------- | -----: |
 | Effect objects / sounds                                  |     14 |
 | Particle objects                                         |     13 |
-| Unsupported wall-action kinds / effect targets           |     12 |
+| Unsupported wall-action kinds                            |      9 |
+| Effect targets                                           |     12 |
 | Unsupported object-action kinds                          |      3 |
 | Object-action effect targets                             |      7 |
 | Wall flags                                               |      6 |
@@ -59,11 +60,14 @@ are levels containing a requirement, not separate work items or progress units.
 | Lightning / additional object types / segment properties | 3 each |
 | Additive wall rendering                                  |      1 |
 
-After the October 29 named-audio implementation, the outstanding wall actions
-include fifteen texture changes, nine countdowns, two mine shakes and one
-disarm. Object actions add nine cameras. The fresh unchanged-HOG inspection
-removes the 47 wall and thirteen object sound-action rejections, while every
-level retains independent blockers. Some apparent requirements may be representation
+After the October 29 named-audio and texture-action implementations, outstanding
+wall actions include nine countdowns, two mine shakes and one disarm. Object
+actions add nine cameras. The unchanged-HOG inspection previously removed the
+47 wall and thirteen object sound-action rejections. The subsequent texture
+inspection removes exactly fifteen action rejections across `pmlev1`, `pmlev2`
+and `pmlev3`, preserving every other inventory field and blocker. All fourteen
+levels remain blocked. See [texture evidence](../../XL_compat/evidence/texture-actions.md).
+Some apparent requirements may be representation
 or classification issues; only source/runtime evidence may remove their gates.
 Do not infer that a visual-looking effect is harmless to gameplay.
 
@@ -108,7 +112,7 @@ need separate qualification; model-radius evidence alone does not cover them.
 3. Complete effect-object lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
 4. Complete the remaining event actions and world semantics: countdowns,
-   texture changes, camera behavior, mine shaking, disarm, remaining wall variants,
+   camera behavior, mine shaking, disarm, remaining wall variants,
    skybox boundaries and remaining segment properties. Reuse the earlier event,
    asset and persistence foundations; audit each against actual XL behavior.
 5. Exercise combinations using controlled engine events and ordinary saves,

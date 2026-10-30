@@ -86,6 +86,8 @@ int xl_wall_trigger_stock_active(void);
 struct trigger;
 int xl_trigger_cue_enabled(const struct trigger *action, int sound);
 int xl_trigger_illusion_action(const struct trigger *action);
+int xl_trigger_texture_action(const struct trigger *action);
+int xl_trigger_texture_valid(const struct trigger *action);
 int xl_authored_close_door(int segment, int side);
 int xl_player_resource_trigger(const struct trigger *action);
 /* Debug-only process-cumulative cue decisions; not evidence of mixer playback */

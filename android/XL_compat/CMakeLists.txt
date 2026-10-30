@@ -271,6 +271,13 @@ if(BUILD_TESTING)
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     if(XL_NEPTUNE_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
+            NAME xl_texture_actions
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/texture-actions -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/texture_actions.cmake)
+        set_tests_properties(xl_texture_actions PROPERTIES TIMEOUT 110)
+        add_test(
             NAME xl_named_audio_runtime
             COMMAND
                 ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DFIXTURE=$<TARGET_FILE:xl_audio_fixture>
