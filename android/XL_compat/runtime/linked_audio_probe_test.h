@@ -6,6 +6,13 @@ void compare_linked_output(const json &state)
 void prepare_linked()
 {
 	reset_events();
+	xl_external_audio_control::run([] {
+		capture_begin();
+		const auto starting = snapshot();
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		compare_shared_output(starting, external_checks);
+	});
 	xl_audio_route_control::run([] {
 		capture_begin();
 		const auto starting = snapshot();
@@ -86,6 +93,10 @@ void prepare_linked()
 	require(xl_audio_link_position(0, Viewer->segnum, 1, &distant, 1, F1_0, 64 * F1_0) > 0, "Cannot prepare Android inaudible owner");
 	xl_audio_defer_objects(1);
 	require(xl_audio_link_position(1, Viewer->segnum, 2, &position, 1, F1_0, 64 * F1_0) > 0, "Cannot prepare Android deferred owner");
+	require(xl_audio_link_external("long.wav", 1, source, 1, F1_0, 64 * F1_0, 0, 0, 0, 0) > 0, "Cannot prepare Android deferred external owner");
+	xl_audio_defer_objects(0);
+	require(xl_audio_link_external("sound.wav", 1, source, 1, F1_0, 64 * F1_0, 0, 0, 0, 0) > 0, "Cannot prepare Android active external owner");
+	xl_audio_defer_objects(1);
 	++GameTime64;
 	require(xl_named_audio_action(&Triggers[2], 2), "Cannot prepare Android named companion");
 	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0, -1, -1);
@@ -94,7 +105,7 @@ void prepare_linked()
 	digi_change_looping_volume(F1_0 / 2);
 	xl_audio_sync_objects();
 	starting = snapshot();
-	require(starting.at("linked").at("owners").size() == 4 && starting.at("voices").size() == 4 &&
+	require(starting.at("linked").at("owners").size() == 6 && starting.at("voices").size() == 5 &&
 	            starting.at("linked").at("owners")[2].at("channel") == -1 && starting.at("linked").at("owners")[3].at("channel") == -1,
 	        "Android linked save fixture lost stopped owners or mixed voices");
 	xl_named_audio_pause(0);

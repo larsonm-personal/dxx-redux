@@ -34,7 +34,8 @@ AudioOutput audio_start_output(int effective_volume, int pan, AudioOutput previo
 
 enum class AudioOwnerKind { action,
 	                        object,
-	                        unlinked };
+	                        unlinked,
+	                        external_unlinked };
 struct AudioVoice {
 	std::uint64_t serial = 0;
 	unsigned sample = 0, position = 0;

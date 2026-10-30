@@ -39,3 +39,19 @@ measure a proposed speed improvement and retain equivalent coverage.
 Before ending the block, audit published branch/PR state, local verification,
 CI results, retained limitations and all changes against this plan. Do not claim
 campaign completion from controlled fixtures or mark unfinished work complete.
+
+## First increment verified
+
+`xl_more_68_external_audio` implements prepared external resource ownership,
+separate ordinary/external identities, source-qualified creation and atomic
+saved-state validation. The source lookup defects are reproduced before their
+explicit repairs. Windows/Linux compare 1,440 fresh creations per level format;
+native persistence and exact Redux isolation pass. Android passes all 101 steps
+with 119 output checks, including eight external cases, and restores all 26
+protected files. Pumo's 644 ambient references bind to 41 prepared owned WAVs at
+both rates. See [external audio evidence](../../XL_compat/evidence/external-audio.md).
+
+Sound-effect object loading and enabled-state consumers remain blocked and are
+the next gameplay dependency. Before that increment, measure reducing the PCM
+oracle's repeated preparation of unreferenced samples. Keep every captured-sample
+comparison, source oracle, test member and failure bound.

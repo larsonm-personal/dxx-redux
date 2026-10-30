@@ -482,6 +482,15 @@ finish original-mission qualification
     creation and restore validation before sound-effect object activation and
     lifetime handling. Resource resolution alone cannot qualify those objects.
 
+59. External linked audio: prepared mission WAV identity now survives object
+    motion, stopped/deferred playback and save restoration in the shared mixer.
+    Actual source creation comparisons and reproduced lookup defects distinguish
+    fidelity from deliberate repairs. See
+    [external audio evidence](../../XL_compat/evidence/external-audio.md) for
+    current platform results. Sound-effect object loading, enabled-state
+    consumers and saved object lifetimes remain the next dependency; their
+    admission is still blocked.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

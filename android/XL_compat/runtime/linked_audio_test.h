@@ -241,13 +241,18 @@ void persistence(int source, const nlohmann::json &initial)
 	xl_audio_defer_objects(1);
 	const auto pending = xl_audio_link_position(1, Viewer->segnum, 2, &position, 1, F1_0, 64 * F1_0);
 	require(quiet > 0 && pending > 0 && owner(quiet).channel < 0 && owner(pending).channel < 0, "Cannot create saved stopped and deferred owners");
+	const auto external_pending = xl_audio_link_external("long.wav", 1, source, 1, F1_0, 64 * F1_0, 0, 0, 0, 0);
+	xl_audio_defer_objects(0);
+	const auto external_active = xl_audio_link_external("sound.wav", 1, source, 1, F1_0, 64 * F1_0, 0, 0, 0, 0);
+	xl_audio_defer_objects(1);
+	require(external_pending > 0 && external_active > 0 && owner(external_pending).channel < 0 && owner(external_active).channel >= 0, "Cannot create saved external active and deferred owners");
 	++GameTime64;
 	require(xl_named_audio_action(&Triggers[2], 2), "Cannot create mixed linked save action");
 	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0 / 2, -1, -1);
 	require(looping.matches(mixer), "Cannot create mixed seismic looping save channel");
 	output();
 	const auto earned = snapshot();
-	require(earned.at("linked").at("owners").size() == 4 && earned.at("voices").size() == 4 && earned.at("linked").at("deferred").get<bool>(), ("Linked save fixture has wrong occupancy: " + earned.dump()).c_str());
+	require(earned.at("linked").at("owners").size() == 6 && earned.at("voices").size() == 5 && earned.at("linked").at("deferred").get<bool>(), ("Linked save fixture has wrong occupancy: " + earned.dump()).c_str());
 	for (const auto &row : earned.at("voices")) require(row[3] > 0, "Linked save did not earn a live playhead");
 	xl_named_audio_pause(1);
 	begin_capture();
@@ -272,6 +277,7 @@ void persistence(int source, const nlohmann::json &initial)
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Linked audio stock transition failed");
 	require(!Seismic_sound_playing && !Seismic_tremor_volume && !Next_seismic_sound_time, "XL seismic control state leaked into the stock loader");
 	require(!owners.count && !deferred && snapshot().at("voices").empty() && snapshot().at("loop").empty() && xl_audio_link_object(0, 3, 0, 1, F1_0, 64 * F1_0, -1, -1, 0, 0) < 0, "Linked ownership leaked into stock gameplay");
+	require(xl_audio_link_external("sound.wav", 1, 0, 1, F1_0, 64 * F1_0, 0, 0, 0, 0) < 0 && !owners.count && snapshot().at("voices").empty(), "External sound entered stock playback");
 	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0, -1, -1);
 	const int stock_channel = digi_looping_channel;
 	require(stock_channel >= 0 && Mix_Playing(stock_channel) && snapshot().at("loop").empty() && snapshot().at("voices").empty(), "Stock looping API entered XL playback or failed to start Redux");
@@ -323,6 +329,7 @@ void persistence(int source, const nlohmann::json &initial)
 	xl_audio_defer_objects(0);
 	xl_audio_sync_objects();
 	require(owner(pending).channel >= 0 && owner(quiet).channel < 0 && owner(object_token).signature == Objects[source].signature && owners.valid(mixer), "Restored deferred/quiet owners did not continue correctly");
+	require(owner(external_pending).channel >= 0 && owner(external_active).channel >= 0, "Restored external owners did not continue correctly");
 	output();
 	require(restore_named_audio(initial, true), "Cannot reset completed linked save controls");
 	std::cout << "Linked persistence passed: mixed PCM, 30 atomic rejections, paused/stopped/deferred owners, trailer and disk-through-stock restore, 48 kHz reopen and resumed lifetime updates\n";
@@ -361,6 +368,8 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 		}
 	} object_guard{ source };
 	xl_audio_creation_control::run(root, source, initial);
+	xl_external_audio_control::run(output);
+	std::cout << "External linked audio passed: eight PCM outputs, prepared identities, duplicate corrections, moving/stopped/deferred owners, atomic restore and object reuse\n";
 	{
 		std::ostringstream receipt;
 		receipt << "XL_SURFACE_AUDIO 1\n";

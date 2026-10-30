@@ -12,6 +12,7 @@
 #include "actor_audio_test.h"
 #include "surface_audio_test.h"
 #include "audio_routes_test.h"
+#include "external_audio_test.h"
 #include "preview.h"
 #include "object_trigger.h"
 #include "android_mission_assets.h"
@@ -68,6 +69,7 @@ unsigned afterburner_checks = 0;
 unsigned actor_checks = 0;
 unsigned surface_checks = 0;
 unsigned route_checks = 0;
+unsigned external_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -368,7 +370,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)

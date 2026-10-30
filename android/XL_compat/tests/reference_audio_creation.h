@@ -25,12 +25,15 @@ void audio_creation_runtime_controls(const char *path)
 		object.info.nSegment = value("segment");
 		object.info.position.vPos = { value("x"), value("y"), value("z") };
 		creation_input = &input;
-		const auto result = value("object") ? audio.CreateObjectSound(int16_t(value("sample")), value("class"), 0, value("forever"), value("volume"), value("range"), value("loop_start"), value("loop_end"), nullptr, value("decay"), uint8_t(value("custom")), 0) : audio.CreateSegmentSound(int16_t(value("sample")), int16_t(value("segment")), int16_t(value("side")), object.info.position.vPos, value("forever"), value("volume"), value("range"), nullptr);
+		const char *filename = value("object") == 2 ? (value("resource") ? "long.wav" : "sound.wav") : nullptr;
+		const auto result = value("object") ? audio.CreateObjectSound(int16_t(value("sample")), value("class"), 0, value("forever"), value("volume"), value("range"), value("loop_start"), value("loop_end"), filename, value("decay"), uint8_t(value("custom")), 0) : audio.CreateSegmentSound(int16_t(value("sample")), int16_t(value("segment")), int16_t(value("side")), object.info.position.vPos, value("forever"), value("volume"), value("range"), nullptr);
 		creation_input = nullptr;
 		Fields expected{ { "result", result }, { "owners", audio.m_objects.ToS() }, { "voices", 0 } };
 		if (audio.m_objects.ToS()) {
 			if (audio.m_objects.ToS() != 1) throw std::runtime_error("Fresh source creation installed multiple owners");
 			const auto &o = audio.m_objects[0];
+			expected["owner.external"] = *o.m_szSound != 0;
+			if (filename && std::string(o.m_szSound) != filename) throw std::runtime_error("Source external owner stored another resource");
 			expected.insert({ { "owner.flags", o.m_flags }, { "owner.sound", o.m_nSound }, { "owner.class", o.m_soundClass }, { "owner.channel", o.m_channel }, { "owner.volume", o.m_volume }, { "owner.pan", o.m_pan }, { "owner.max_volume", o.m_maxVolume }, { "owner.range", o.m_maxDistance }, { "owner.loop_start", o.m_nLoopStart }, { "owner.loop_end", o.m_nLoopEnd }, { "owner.decay", o.m_nDecay }, { "owner.ambient", o.m_bAmbient }, { "owner.custom", o.m_bCustom }, { "owner.audio_volume", o.m_audioVolume }, { "owner.sample", input.at("mapped") } });
 			if (value("object")) {
 				expected["owner.signature"] = o.m_linkType.obj.nObjSig;
@@ -42,8 +45,10 @@ void audio_creation_runtime_controls(const char *path)
 			if (!channel.m_info.bPlaying) continue;
 			++expected["voices"];
 			const auto &request = audio.request;
+			if (filename && request.filename != filename) throw std::runtime_error("Source external voice requested another resource");
 			const auto priority = audio_channel_reference_priority(request.sound_class, request.volume, request.pan, request.loop, request.owner);
-			expected.insert({ { "voice.class", priority.sound_class }, { "voice.persistent", priority.persistent }, { "voice.kind", request.owner >= 0 ? 1 : 2 } });
+			expected.insert({ { "voice.class", priority.sound_class }, { "voice.persistent", priority.persistent }, { "voice.kind", request.owner >= 0 ? 1 : filename ? 3
+			                                                                                                                                                          : 2 } });
 			if (request.sound != value("sample") || request.sound_class != (value("object") ? value("class") : 0)) throw std::runtime_error("Source requested another physical sample or class");
 			expected.insert({ { "voice.sample", input.at("mapped") }, { "voice.owner", request.owner }, { "voice.remaining", request.loop ? -1 : request.end - request.start + 1 }, { "voice.volume", channel.m_info.nVolume }, { "voice.output_volume", outputs[i].volume }, { "voice.left", outputs[i].pan[0] }, { "voice.right", outputs[i].pan[1] } });
 		}
@@ -56,7 +61,7 @@ void audio_creation_runtime_controls(const char *path)
 		}
 		++cases;
 	}
-	if (tag != "end" || cases != 768 || ordinal != cases) throw std::runtime_error("Creation receipt coverage is incomplete");
+	if (tag != "end" || cases != 1440 || ordinal != cases) throw std::runtime_error("Creation receipt coverage is incomplete");
 	if (stream >> tag) throw std::runtime_error("Unexpected trailing creation receipt data");
-	std::cout << cases << " native fresh sound creations match actual source; duplicate lookup, external owners and logical translation are separate\n";
+	std::cout << cases << " native fresh sound creations match actual source, including 672 external creations; duplicate corrections and logical translation are separate\n";
 }

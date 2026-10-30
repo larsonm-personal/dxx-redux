@@ -62,9 +62,10 @@ struct Stack {
 };
 struct CFixVector {
 	int x = 0, y = 0, z = 0;
-	static int Dist(CFixVector, CFixVector)
+	static int Dist(CFixVector a, CFixVector b)
 	{
-		throw std::runtime_error("Duplicate distance is outside the fresh creation fixture");
+		if (a.x == b.x && a.y == b.y && a.z == b.z) return 0;
+		throw std::runtime_error("Noncoincident duplicate distance is outside the creation fixture");
 	}
 };
 struct CFixMatrix {
@@ -298,6 +299,7 @@ struct CAudio {
 	std::vector<int> stopped;
 	struct Request {
 		int sound, sound_class, volume, pan, loop, start, end, owner, speed;
+		std::string filename;
 	} request{};
 	auto &Objects()
 	{
@@ -321,9 +323,9 @@ struct CAudio {
 		stopped.push_back(channel);
 		m_channels[channel].Stop();
 	}
-	int StartSound(int sound, int sound_class, int volume, int pan, int loop, int start, int end, int owner = -1, int speed = 65536, const char * = nullptr, CFixVector * = nullptr)
+	int StartSound(int sound, int sound_class, int volume, int pan, int loop, int start, int end, int owner = -1, int speed = 65536, const char *filename = nullptr, CFixVector * = nullptr)
 	{
-		request = { sound, sound_class, volume, pan, loop, start, end, owner, speed };
+		request = { sound, sound_class, volume, pan, loop, start, end, owner, speed, filename ? filename : "" };
 		++start_calls;
 		if (fail_start) return -1;
 		for (int step = 0; step < 128; ++step) {
@@ -460,6 +462,7 @@ void reset(int count)
 #include "reference_audio_creation.h"
 #include "reference_audio_logical.h"
 #include "reference_afterburner_controls.h"
+#include "reference_external_audio.h"
 namespace
 {
 struct NativeOwners {

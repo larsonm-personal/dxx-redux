@@ -79,12 +79,12 @@ Qualified binary SHA-256 values:
 
 ## Remaining support
 
-This fixes the route-cache lifecycle, not all ambient audio consumers. Ambient
-external sound objects still need resource-qualified linked creation, enabled
-state bound to object lifetimes, and saved external-owner validation. The current
-restore decoder deliberately rejects external linked owners. Static explosion
-ambience and classic replacement installation remain separate. Admission is
-unchanged, and no original campaign completion is claimed.
+This fixes the route-cache lifecycle, not all ambient audio consumers. The later
+[external-owner increment](external-audio.md) adds resource-qualified linked
+creation and saved external-owner validation. Sound-effect objects still need
+loading and enabled state bound to object lifetimes. Static explosion ambience
+and classic replacement installation remain separate. Admission is unchanged,
+and no original campaign completion is claimed.
 
 The checks extend existing source and native/Android owners. They add no CI job,
 extra Android automation step or timeout relaxation.
