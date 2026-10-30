@@ -438,9 +438,8 @@ jobs:
 
       - name: Check compact public replay admission
         timeout-minutes: 4
+        # Ordered codec and conversion helpers already gate build-public
         run: |
-          python3 android/tests/test_ordered_public_replay.py
-          python3 android/tests/test_convert_public_replay.py
           python3 android/tests/test_public_secondary_replay.py
           python3 android/tests/test_compact_public_replay.py
           python3 android/tests/test_run_compact_public_replays.py
