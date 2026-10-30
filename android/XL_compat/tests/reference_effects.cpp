@@ -1,5 +1,6 @@
 // Storage and engine adapters for the unchanged pinned CObject::Read body
 #include "inventory.h"
+#include "ambient_sound.h"
 #include "hog.h"
 #include <array>
 #include <cstdint>
@@ -180,11 +181,6 @@ void PrintLog(int, const char *, ...)
 {
 	++warnings;
 }
-// Volume arithmetic is not compared: preserve/check the consumed raw integer
-int FRound(float)
-{
-	return 0;
-}
 char *reference_strlwr(char *text)
 {
 	for (char *p = text; *p; ++p)
@@ -280,6 +276,37 @@ struct CObject {
 #include "xl_reference_effects.h"
 #undef strlwr
 
+static void volume_controls(const xl_compat::Bytes &bytes, const xl_compat::Object &object, int version)
+{
+	auto source = bytes;
+	const auto offset = object.source_end - (version >= 19 ? 5 : 4);
+	std::vector<int> values{ -327680, -327679, -327678, -65537, -65536, -11, -10, -9, -2, -1, 0,
+		                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 19, 20, 21, 100, 65535, 65536, 65537, 327678, 327679 };
+	std::uint32_t seed = 1;
+	for (int i = 0; i < 1024; ++i) {
+		seed = seed * 1664525u + 1013904223u;
+		values.push_back(int(seed % 655359u) - 327679);
+	}
+	for (int value : values) {
+		for (unsigned byte = 0; byte < 4; ++byte) source[offset + byte] = std::uint8_t(std::uint32_t(value) >> (8 * byte));
+		CFile file(source, object.source_offset, object.source_end);
+		CObject reference;
+		reference.Read(file);
+		if (file.Tell() != object.source_end || xl_compat::ambient_sound_volume(value) != reference.rType.soundInfo.nVolume)
+			throw std::runtime_error("Actual source ambient volume differs at serialized value " + std::to_string(value));
+	}
+	for (int value : { INT32_MIN, -327681, 327680, INT32_MAX }) {
+		bool rejected = false;
+		try {
+			(void) xl_compat::ambient_sound_volume(value);
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		if (!rejected) throw std::runtime_error("Out-of-range ambient volume reached an undefined integer conversion");
+	}
+	std::cout << "PASS: " << values.size() << " actual source ambient volume conversions and four overflow rejections\n";
+}
+
 static void compare_level(const xl_compat::Bytes &bytes, int &objects, int &effects)
 {
 	const auto level = xl_compat::inspect_level(bytes);
@@ -305,6 +332,14 @@ static void compare_level(const xl_compat::Bytes &bytes, int &objects, int &effe
 			for (auto value : p.color.bytes) fields.push_back(value);
 			fields.push_back(byte(p.bEnabled));
 		} else if (native.render == RT_SOUND) {
+			static bool volumes_checked = false;
+			if (!volumes_checked) {
+				volume_controls(bytes, native, level.level_version);
+				volumes_checked = true;
+			}
+			const auto loaded = xl_compat::decode_ambient_sound(native);
+			if (loaded.volume != reference.rType.soundInfo.nVolume || loaded.enabled != bool(reference.rType.soundInfo.bEnabled))
+				throw std::runtime_error("Reference sound runtime volume or enabled state differs");
 			fields = file.filename;
 			fields.push_back(file.integers.back());
 			fields.push_back(byte(reference.rType.soundInfo.bEnabled));
@@ -328,10 +363,17 @@ static void compare_level(const xl_compat::Bytes &bytes, int &objects, int &effe
 	}
 }
 
+void effect_target_source_controls();
+void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--ambient-runtime") {
+			ambient_activation_runtime_controls(argv[2]);
+			return 0;
+		}
 		if (argc != 2) throw std::runtime_error("Expected effect fixture directory or original HOG");
+		effect_target_source_controls();
 		int objects = 0, effects = 0, levels = 0;
 		const auto read = [](const std::filesystem::path &path) {
 			std::ifstream input(path, std::ios::binary);

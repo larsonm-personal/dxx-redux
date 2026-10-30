@@ -33,6 +33,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "speed_boost.h"
 #include "blocked.h"
 #include "doorway.h"
+#include "ambient_objects.h"
 #endif
 #include "fvi.h"
 #include "segment.h"
@@ -851,6 +852,10 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 	if (flags & FQ_CHECK_OBJS)
 		for (objnum=seg->objects;objnum!=-1;objnum=Objects[objnum].next)
 			if (	!(Objects[objnum].flags & OF_SHOULD_BE_DEAD) &&
+#ifdef DXX_XL_RUNTIME
+					!xl_ambient_object_noncolliding(Objects[objnum].type) &&
+					!(thisobjnum >= 0 && xl_ambient_object_noncolliding(Objects[thisobjnum].type)) &&
+#endif
 				 	!(thisobjnum == objnum ) &&
 				 	(ignore_obj_list==NULL || !obj_in_list(objnum,ignore_obj_list)) &&
 				 	!laser_are_related( objnum, thisobjnum ) &&
@@ -896,7 +901,11 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 					}
 			}
 
-	if (	(thisobjnum > -1 ) && (CollisionResult[Objects[thisobjnum].type][OBJ_WALL] == RESULT_NOTHING ) )
+	if (	(thisobjnum > -1 ) && (
+#ifdef DXX_XL_RUNTIME
+			xl_ambient_object_noncolliding(Objects[thisobjnum].type) ||
+#endif
+			CollisionResult[Objects[thisobjnum].type][OBJ_WALL] == RESULT_NOTHING ) )
 		rad = 0;		//HACK - ignore when edges hit walls
 
 	//now, check segment walls

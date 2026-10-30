@@ -223,6 +223,9 @@ static int named_audio_original(int argc, char **argv)
 #include "surface_audio_test.h"
 #include "audio_routes_test.h"
 #include "external_audio_test.h"
+#include "ambient_objects_test.h"
+#include "../ambient_sound.h"
+#include "../tests/ambient_audio_receipt.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif
@@ -238,8 +241,58 @@ static int named_audio_test(int argc, char **argv)
 		if (GameArg.SndNoSound || !xl_compat::named_audio_diagnostics().at("backend_ready").get<bool>())
 			throw std::runtime_error("Named audio controls require the real SDL_mixer output; nosound=" + std::to_string(GameArg.SndNoSound) + "; " + xl_compat::named_audio_diagnostics().dump());
 		const char *selected = find_arg_value(argc, argv, "-audio-level");
-		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2")), "Named audio controls require -audio-level 1 or 2");
+		const bool legacy = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-legacy");
+		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || (legacy && !std::strcmp(selected, "3"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
+		if (legacy || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
+			require(load_base_mission(legacy ? "xambold" : "xsound", error, sizeof(error)), error);
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(legacy ? ordinal : ordinal + 2);
+			require(xl_source_level_version() == (legacy ? (ordinal == 3 ? 17 : 15) : (ordinal == 1 ? 23 : 27)), "Ambient fixture loaded the wrong version");
+			require(xl_source_game_version() == (legacy ? (ordinal == 3 ? 36 : 32 + ordinal) : 40), "Ambient fixture loaded the wrong game-data version");
+			SDL_PauseAudio(1);
+			std::ofstream activation(root / "ambient-activation.txt");
+			activation << "XL_AMBIENT_ACTIVATION 1\n";
+			unsigned activation_cases = 0;
+			xl_ambient_objects_control::run([] { xl_linked_audio_control::output(); }, [&] {
+				using namespace xl_compat;
+				xl_ambient_audio_receipt::Case receipt;
+				const auto source = xl_ambient_objects_control::source_level();
+				for (unsigned i = 0; i < source.objects.size(); ++i) {
+					const auto &object = source.objects[i];
+					if (object.render != 13) continue;
+					const auto sound = decode_ambient_sound(object);
+					receipt.objects.push_back({ int(i), object.reader_id, sound.volume, int(sound.enabled), sound.filename });
+				}
+				const auto resources = named_audio_diagnostics().at("external_resources");
+				bool objects_started = false;
+				for (unsigned i = 0; i < audio_runtime::owners.count; ++i) {
+					const auto &owner = audio_runtime::owners.entries[i];
+					if (owner.object < 0) {
+						require(!objects_started, "Ambient initialization moved a surface owner after effect objects");
+						continue;
+					}
+					objects_started = true;
+					std::string filename;
+					for (auto it = resources.begin(); it != resources.end(); ++it)
+						if (it.value().at("sample") == owner.sample) filename = it.key();
+					require(!filename.empty(), "Ambient owner sample has no owned filename");
+					receipt.owners.push_back({ { owner.object, owner.sound, owner.sound_class, owner.max_volume, owner.max_distance,
+					                            int(owner.flags), owner.loop_start, owner.loop_end, owner.decay, int(owner.external), int(owner.ambient) }, filename });
+				}
+				std::ofstream out(root / "ambient-audio.txt");
+				xl_ambient_audio_receipt::write(out, receipt);
+				require(bool(out), "Cannot write actual ambient initializer receipt"); }, [&](const auto &receipt) {
+				activation << "case " << activation_cases++ << '\n';
+				xl_ambient_activation_receipt::write(activation, receipt); });
+			activation << "end " << activation_cases << '\n';
+			require(bool(activation) && activation_cases == 6, "Cannot record complete ambient activation coverage");
+			Mix_SetPostMix(nullptr, nullptr);
+			std::cout << "Loaded ambient objects " << xl_source_level_version() << '/' << xl_source_game_version()
+			          << ": activation, target order, real PCM, collision, lifetime and trailer restore passed\n";
+			return 0;
+		}
 		{
 			SDL_PauseAudio(1);
 			require(load_base_mission("xsound", error, sizeof(error)), error);

@@ -16,7 +16,7 @@ static int effect_inspection_test(int argc, char **argv)
 		std::ifstream effect_file(find_arg_value(argc, argv, "-effect-inspection-test"), std::ios::binary);
 		const xl_compat::Bytes effect{ std::istreambuf_iterator<char>(effect_file), std::istreambuf_iterator<char>() };
 		const auto decoded = xl_compat::inspect_level(effect);
-		require(decoded.objects.size() == 1 && decoded.objects[0].render == 13 && decoded.objects[0].render_data.size() == 42, "effect rejection fixture did not decode");
+		require(decoded.objects.size() == 1 && decoded.objects[0].render == 11 && decoded.objects[0].render_data.size() == 13, "effect rejection fixture did not decode");
 		std::ifstream original(root / "neptunxl.hog", std::ios::binary);
 		xl_compat::Bytes archive{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() };
 		require(archive.size() > 3 && archive[0] == 'D' && archive[1] == 'H' && archive[2] == 'F', "effect rejection source HOG missing");
@@ -46,8 +46,8 @@ static int effect_inspection_test(int argc, char **argv)
 			const auto vertex = Vertices[0], position = ConsoleObject->pos;
 			const int segments = Num_segments, objects = Highest_object_index, player = ConsoleObject - Objects;
 			const auto identity = xl_level_trigger_identity();
-			require(!xl_level_supported("badefx.rl2", 0) && std::strstr(xl_level_rejection(), "effect_sounds"), "decoded effect was admitted or lacked its specific requirement");
-			require(load_level("badefx.rl2") != 0 && std::strstr(xl_level_rejection(), "effect_sounds"), "production load bypassed effect capability rejection");
+			require(!xl_level_supported("badefx.rl2", 0) && std::strstr(xl_level_rejection(), "effect_particles"), "decoded effect was admitted or lacked its specific requirement");
+			require(load_level("badefx.rl2") != 0 && std::strstr(xl_level_rejection(), "effect_particles"), "production load bypassed effect capability rejection");
 			require(xl_level_extensions_active() == active && xl_level_trigger_identity() == identity && Num_segments == segments && Highest_object_index == objects && ConsoleObject - Objects == player && !std::memcmp(&Vertices[0], &vertex, sizeof(vertex)) && !std::memcmp(&ConsoleObject->pos, &position, sizeof(position)), "effect rejection replaced active level or player state");
 		}
 		require(xl_level_supported("neptunxl.rl2", 0) && load_level("neptunxl.rl2") == 0, "effect rejection prevented supported-source recovery");

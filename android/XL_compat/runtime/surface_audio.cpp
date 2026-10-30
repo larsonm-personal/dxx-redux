@@ -1,5 +1,6 @@
 #include "gameplay_audio.h"
 #include "linked_audio.h"
+#include "ambient_objects.h"
 #include "preview.h"
 #include <array>
 extern "C" {
@@ -56,6 +57,7 @@ extern "C" int xl_gameplay_surface_audio(void)
 			xl_gameplay_sound_position(sounds[unsigned(side)], segment, side, &center, 1, F1_0 / (2 * count), 256 * F1_0);
 		}
 	}
+	xl_ambient_objects_start();
 	xl_audio_defer_objects(0);
 	return 1;
 }

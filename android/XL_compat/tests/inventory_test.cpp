@@ -774,8 +774,11 @@ void trigger_chain_inventory_contract()
 				rejects([&] { xl_compat::inspect_level(bad); });
 				patch(bad, field, 0xffff, 2);
 				if (field == section.offset + 32 && type != 31) {
-					const auto blocked = xl_compat::runtime_blockers(xl_compat::inspect_level(bad));
-					check(!blocked.empty() && xl_compat::blocker_message(blocked).find("effect") != std::string::npos, "effect-object target not rejected helpfully");
+					const auto decoded = xl_compat::inspect_level(bad);
+					check(xl_compat::runtime_blockers(decoded).empty(), "implemented effect-target early stop was rejected");
+					const auto translated = xl_compat::prepare_source_runtime_probe(bad);
+					check(translated.source.triggers[0].targets == decoded.triggers[0].targets && decoded.triggers[0].targets[0][1] == -1,
+					      "source-owned effect target was discarded or changed to a wall target");
 				} else rejects([&] { xl_compat::inspect_level(bad); });
 			}
 		}

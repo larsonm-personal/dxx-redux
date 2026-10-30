@@ -77,10 +77,11 @@ void effect_layout_contract(const char *directory = nullptr)
 					if (profile == 3) check(json.find("sound_filename_ascii") == std::string::npos && out.render_data[0] == 255, "non-ASCII sound bytes were interpreted as a valid display name");
 					if (profile == 4) check(json.find("\"sound_filename_ascii\": \"\"") != std::string::npos, "empty sound filename changed");
 				}
-				check(!xl_compat::runtime_blockers(decoded).empty(), "decoded effect gained runtime admission");
+				const bool sound_supported = render == 13 && profile == 0;
+				check(xl_compat::runtime_blockers(decoded).empty() == sound_supported, "effect capability admission differs from implemented sound profile");
 				rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
 				const auto report = xl_compat::compatibility_json("effect.rl2", bytes);
-				check(feature_row(report, "effect_objects").find("\"status\": \"blocked\"") != std::string::npos && report.find("\"playable\": false") != std::string::npos, "effect metadata implied gameplay support");
+				check(feature_row(report, "effect_objects").find(sound_supported ? "\"status\": \"partial\"" : "\"status\": \"blocked\"") != std::string::npos && report.find("\"playable\": false") != std::string::npos, "effect metadata implied complete gameplay support");
 				for (std::size_t cut = header; cut < object.size(); ++cut) {
 					auto truncated = bytes;
 					truncated.resize(start + cut);
@@ -100,5 +101,5 @@ void effect_layout_contract(const char *directory = nullptr)
 				}
 				++cases;
 			}
-	std::cout << "XL effect layout controls passed: " << cases << " profiles and " << truncations << " payload truncations; gameplay remains gated\n";
+	std::cout << "XL effect layout controls passed: " << cases << " profiles and " << truncations << " payload truncations; unsupported effect requirements remain gated\n";
 }

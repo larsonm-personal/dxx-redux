@@ -6,9 +6,9 @@ param(
     [Parameter(Mandatory)][string]$Descriptor
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = '2491ed977ba30c6fecdf50810aaad0aa0a4f61d71edbe55349794802e71fe7fd'
+$expectedHog = '87faf44175cf565e857baee2edfafd10c7feed8b57cb4cda0258b85e3e9d44f9'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
-    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne '4a4e0e3bdd64b1d052206c3dc8f864ec900ff84b0d24a6de3af78d9274972d89') {
+    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'aae73cc30cdd3d61b2ce81a8a606e17d6a4b49a2ee1e58b09f8dfb985689d465') {
     throw 'Requires the pinned derived fixture from xl_named_audio'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"

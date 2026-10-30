@@ -1,4 +1,5 @@
 #include "linked_audio.h"
+#include "ambient_objects.h"
 #include "shared_audio.h"
 #include "shared_audio_internal.h"
 #include "audio_geometry.h"
@@ -46,6 +47,7 @@ AudioOwnerUpdate update(const AudioOwner &entry)
 	if (!(entry.flags & sound_link_position)) {
 		if (!valid_object(entry.object) || Objects[entry.object].signature != entry.signature) return { false, true, 0, 0 };
 		const auto &object = Objects[entry.object];
+		if (!xl_ambient_object_enabled(entry.object)) return { true, false, 0, 0 };
 		position = point(object.pos);
 		segment = object.segnum;
 	}

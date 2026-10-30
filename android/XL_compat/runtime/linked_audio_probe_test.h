@@ -125,7 +125,7 @@ void prepare_linked()
 	}
 	energy = Players[Player_num].energy;
 	version = xl_source_level_version();
-	pressure_earned = shared_earned = false;
+	pressure_earned = shared_earned = ambient_earned = false;
 	linked_earned = true;
 	SDL_PauseAudio(0);
 	verify();

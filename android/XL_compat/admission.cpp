@@ -4,6 +4,8 @@
 #include "fog.h"
 #include "texture_change.h"
 #include "countdown.h"
+#include "ambient_sound.h"
+#include "named_sound.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -36,6 +38,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
+		if (issue.feature == "effect_object_types" || issue.feature == "effect_sounds" ||
+		    issue.feature == "effect_trigger_target" || issue.feature == "object_effect_trigger_target") continue;
 		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
@@ -62,6 +66,21 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
 			result.push_back(issue);
+	for (unsigned index = 0; index < level.objects.size(); ++index) {
+		const auto &object = level.objects[index];
+		if (object.render == 13) {
+			try {
+				if (!ambient_sound_shape(object)) throw std::runtime_error("requires a stationary, uncontrolled sound effect object");
+				const auto sound = decode_ambient_sound(object);
+				if (sound.volume < 0 || sound.filename.empty()) throw std::runtime_error("requires a nonnegative playback volume and a nonempty filename");
+				(void) named_sound_filename(sound.filename + ".wav");
+			} catch (const std::exception &error) {
+				result.push_back({ "effect_sounds", int(index), error.what() });
+			}
+		}
+		if ((object.type == 18 || object.type == 19 || object.type == 20) && !ambient_sound_shape(object))
+			result.push_back({ "effect_object_types", int(index), "object type " + std::to_string(object.type) + " requires unsupported effect behavior" });
+	}
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};

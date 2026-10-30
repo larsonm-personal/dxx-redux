@@ -1,9 +1,11 @@
 #include "object_trigger.h"
+#include "../effect_targets.h"
 #include "preview.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
 #include "level_messages.h"
 #include "named_audio.h"
+#include "ambient_objects.h"
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include "../capacity.h"
@@ -96,6 +98,11 @@ void operate(ObjectAction &entry)
 	else if (action.type == 31) xl_object_master_action(&action, entry.owner);
 	else if (action.type == 32 || action.type == 33) {
 		for (int link = 0; link < action.num_links; ++link) {
+			if (action.side[link] < 0) {
+				if (!xl_ambient_object_set_enabled(action.seg[link], action.type == 32)) break;
+				continue;
+			}
+			if (action.seg[link] < 0 || action.seg[link] > Highest_segment_index || action.side[link] >= 6) break;
 			const auto wall = Segments[action.seg[link]].sides[action.side[link]].wall_num;
 			if (wall < 0 || wall >= Num_walls) continue;
 			const auto index = wall_trigger_index(Walls[wall].trigger);
@@ -171,10 +178,11 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 		entry.action.flags = source.flags;
 		entry.action.value = source.type == 31 ? 0 : source.value;
 		entry.action.time = source.type == 25 || source.type == 29 || source.type == 30 ? source.time : -1;
-		entry.action.num_links = static_cast<short>(source.targets.size());
-		for (std::size_t link = 0; link < source.targets.size(); ++link) {
-			entry.action.seg[link] = source.targets[link][0];
-			entry.action.side[link] = source.targets[link][1];
+		const auto targets = xl_compat::effect_targets(source, level.segments.size(), level.objects.size(), true);
+		entry.action.num_links = static_cast<short>(targets.size());
+		for (std::size_t link = 0; link < targets.size(); ++link) {
+			entry.action.seg[link] = targets[link][0];
+			entry.action.side[link] = targets[link][1];
 		}
 		actions.push_back(entry);
 	}
