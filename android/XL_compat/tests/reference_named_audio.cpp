@@ -576,6 +576,12 @@ void classic_audio_original(const char *bank, const char *folder, int levels);
 int main(int argc, char **argv)
 {
 	try {
+		// The public contract owner runs the complete primitive suite separately
+		// Runtime comparison needs only the captured mine and its source consumers
+		if (argc == 3 && std::string(argv[1]) == "--geometry-runtime") {
+			audio_geometry_runtime_controls(argv[2]);
+			return 0;
+		}
 		source_actions();
 		source_resources();
 		source_scopes();
@@ -588,8 +594,7 @@ int main(int argc, char **argv)
 		audio_route_source_controls();
 		audio_spatial_source_controls();
 		audio_geometry_source_controls();
-		if (argc == 3 && std::string(argv[1]) == "--geometry-runtime") audio_geometry_runtime_controls(argv[2]);
-		else if (argc == 5 && std::string(argv[1]) == "--classic-original") classic_audio_original(argv[2], argv[3], std::stoi(argv[4]));
+		if (argc == 5 && std::string(argv[1]) == "--classic-original") classic_audio_original(argv[2], argv[3], std::stoi(argv[4]));
 		else if (argc == 5) original(argv[1], std::stoi(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]));
 		else require(argc == 1, "Expected no arguments or original HOG and exact level/action/WAV counts");
 		return 0;

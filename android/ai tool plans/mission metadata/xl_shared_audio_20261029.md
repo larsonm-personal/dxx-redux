@@ -172,3 +172,31 @@ that probe adjustment has not yet been verified on a device for this checkpoint.
 This remains a draft foundation: ordinary engine call sites, moving linked owners,
 ambient/replacement admission and Android mixed-playback coverage are unfinished.
 No additional missions are admitted by this checkpoint.
+
+## Device checks and conversion reuse
+
+The 87-step Android owner now retains every prior named-only check and adds five
+mixed-output comparisons, live controls, full-pool replacement, pause, rewind and
+disk restore. The final 48 kHz run passes 39 output checks on 818,688 samples and
+restores all 26 protected files. Windows retains its mixed channel and device
+reopen checks. See `evidence/spatial-audio.md` for the exact run and limitations.
+
+Repeated preflights now validate native content before reusing the stock
+conversion. Same-allocation byte changes and rate changes invalidate that cache;
+malformed samples still reject. Reuse of output PCM does not reuse authored
+actions. The earlier Linux lifecycle and boss-spawn timeouts have passed with
+the original limits after this change. All 106 required fast checks now pass in
+477.01 seconds on the Windows-mounted WSL checkout, including the mixed native
+runtime in 39.75 seconds. This is not a native-filesystem CI timing claim.
+
+Another small CI duplication removal makes `--geometry-runtime` execute only
+its captured-mine comparison. The full source-contract test remains mandatory
+and unchanged in membership; both modes pass independently on both hosts.
+
+For linked-owner work, extract actual `SyncSounds` and supply independent object
+and spatial-output adapters. Preserve its reverse processing, deletion of missing
+objects, stop/retain behavior for disabled effects, custom-channel exemption,
+rounded old/new gain comparison, ambient update gain and main-volume startup.
+Resolve owner serials after replacement/removal rather than retaining references
+across dense-container shifts. Extend saves and controlled native/Android events
+before wiring gameplay callers or admitting classic/ambient replacements.

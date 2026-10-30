@@ -209,20 +209,24 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 {
 	auto resources = prepare_named_only(level, inventory, ordinal);
 	if (!resources) resources = std::make_shared<AudioResources>();
-	const auto classic = prepare_classic_playback({});
+	auto classic = prepare_classic_playback({});
 	std::size_t bytes = 0;
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
-	for (const auto &sample : classic.samples) {
+	for (auto &sample : classic.samples) {
 		if (sample.sample != int(resources->classic.size())) throw std::runtime_error("XL shared bank has an incomplete classic registry");
 		bytes += sample.pcm.samples.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("XL shared bank exceeds 128 MiB of source storage");
 		resources->classic.push_back(unsigned(resources->sources.size()));
 		resources->classic_names.push_back(sample.name);
-		resources->sources.push_back(sample.pcm);
+		resources->sources.push_back(std::move(sample.pcm));
 	}
 	resources->identity = picosha2::hash256_hex_string("xl-shared-audio-v1:" + resources->identity + ":" + classic.identity);
 	resources->prepared_rate = output_rate;
-	resources->prepared_samples = std::make_shared<const std::vector<AudioSample>>(convert_bank(*resources, output_rate));
+	// Reuse only immutable PCM. Authored actions and resource validation above
+	// remain fresh even when a different level selects the same sound content
+	resources->prepared_samples = bank && bank->identity == resources->identity && bank->prepared_rate == output_rate
+	                                  ? bank->prepared_samples
+	                                  : std::make_shared<const std::vector<AudioSample>>(convert_bank(*resources, output_rate));
 	return resources;
 }
 

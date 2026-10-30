@@ -46,6 +46,23 @@ static void classic_audio_controls(const std::filesystem::path &root)
 		GameSounds[0] = native_before;
 		require(rejected && xl_compat::named_audio_snapshot() == before, "Invalid native bank changed live playback or was accepted");
 	}
+	// A reused allocation and equal bytes at another sample rate must invalidate
+	// the conversion cache; malformed inputs above must still fail on a hit
+	std::vector<unsigned char> changed(native_before.data, native_before.data + native_before.length);
+	changed[changed.size() / 2] ^= 1;
+	GameSounds[0].data = changed.data();
+	const auto changed_bytes = xl_compat::prepare_classic_playback({});
+	require(changed_bytes.identity != baseline.identity && changed_bytes.samples[0].source_hash != baseline.samples[0].source_hash && changed_bytes.samples[0].pcm.samples != baseline.samples[0].pcm.samples, "Stock conversion cache ignored changed native bytes");
+	changed[changed.size() / 2] ^= 1;
+	const auto same_allocation = xl_compat::prepare_classic_playback({});
+	require(same_allocation.identity == baseline.identity && same_allocation.samples[0].pcm.samples == baseline.samples[0].pcm.samples, "Stock conversion cache trusted an unchanged pointer instead of its bytes");
+	GameSounds[0] = native_before;
+	GameSounds[0].freq = native_before.freq == 11025 ? 22050 : 11025;
+	const auto changed_rate = xl_compat::prepare_classic_playback({});
+	require(changed_rate.identity != baseline.identity && changed_rate.samples[0].pcm.samples.size() != baseline.samples[0].pcm.samples.size(), "Stock conversion cache ignored the native sample rate");
+	GameSounds[0] = native_before;
+	const auto recovered = xl_compat::prepare_classic_playback({});
+	require(recovered.identity == baseline.identity && recovered.samples[0].pcm.samples == baseline.samples[0].pcm.samples, "Stock conversion cache did not recover the original PCM");
 	const std::string filename = std::string(name) + ".wav";
 	const auto sound_root = root / "mods" / "xscope" / "sounds";
 	std::vector<std::filesystem::path> created;

@@ -60,3 +60,51 @@ Artifacts: `temp/xl-shared-audio-20261029/`, including `ear-asan.log`,
 - Routes are cached by listener segment. Out-of-range and same-segment sounds
   do not populate that cache. Dynamic wall mutation behavior remains to be
   exercised before activating the consumer.
+
+## Shared playback and persistence
+
+The runtime bank installs all 183 stock samples alongside named WAVs. Explicit
+physical-sample entry points use the same 128-channel allocator and SDL callback
+as named actions. Per-channel gain and pan are saved with class, persistence,
+playhead and allocation state in schema 20. Platform headroom remains separate
+from effects gain; changing the effects setting does not apply a second global
+gain to existing unlinked voices. Linked-owner persistence is still rejected.
+
+Both Windows and Linux level-format integrations pass mixed output, 64 ordinary plus 64
+named voices, class/volume replacement, live controls, 11 atomic malformed-state
+rejections, disk restore through stock and a 44.1-to-48 kHz device reopen. The
+shared PCM checker evaluates each saved channel in slot order against the known
+fixture waveform and source-qualified stock conversion, including per-channel
+integer gain, pan, saturation and any captured preexisting music. It does not use
+the production voice mixer to manufacture expected output. Stock conversion and
+device resampling retain their separate source/SDL qualification.
+
+Android's existing owned audio test now has 87 steps, preserving the earlier
+named-only checks and adding mixed playback, live gain/pan, full-pool replacement,
+pause, rewind and disk restore. The final 48 kHz run
+`0616ffa275c64e0eb099cddeabab903b` passes 39 output checks, including five shared
+checks, against 818,688 captured samples. All 26 protected state-file hashes
+match after restoration. The earlier uncached run also passed; neither run
+claims ordinary gameplay call-site or moving-owner qualification.
+
+Repeated preflight and restore reuse one bounded canonical stock bank after
+checking all native sample bytes, names, rates and formats. Existing output PCM
+can be shared when content and device rate match; authored actions and resource
+validation remain fresh. Native controls invalidate the cache for changed bytes,
+changes within the same allocation, and another valid bank rate. Malformed data
+still rejects before reuse. This addresses redundant conversion work without
+increasing any test timeouts.
+
+The captured-mine oracle mode now runs just its 2,232 source comparisons; it no
+longer repeats the full primitive suite that the required source-contract test
+already runs. Both modes pass separately on Windows and Linux. No test cases or
+platform lanes were removed.
+
+Current artifacts are under `temp/xl-shared-audio-20261029/`: native
+`windows-runtime/runtime.log`, `cache-android-test.log`, `dispatch-*-source.log`,
+`dispatch-*-runtime.log`, and the fast Linux suite's `cache-fast-tests.log` and
+`shared-fast-tests.xml`. All 106 required Linux fast checks pass in 477.01 seconds
+on this Windows-mounted WSL checkout, including the named runtime in 39.75
+seconds. The suite uses its normal two-process limit and original timeouts;
+campaign navigation is excluded by the existing authoritative selection. These
+host timings are not a measurement of native-filesystem CI performance.

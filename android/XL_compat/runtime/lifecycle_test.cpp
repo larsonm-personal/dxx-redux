@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 #include "named_audio.h"
 #include "shared_audio.h"
+#include "shared_audio_pcm_test.h"
 #include "named_audio_state.h"
 #include "audio_resource.h"
 #include "classic_audio.h"
