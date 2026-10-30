@@ -31,12 +31,14 @@ foreach(ordinal IN ITEMS 1 2)
     if(REFERENCE)
         execute_process(
             COMMAND "${REFERENCE}" --creation-runtime "${OUTPUT}/audio-creation.txt"
+                    --surface-runtime "${OUTPUT}/surface-audio.txt"
             RESULT_VARIABLE result
             OUTPUT_VARIABLE log
             ERROR_VARIABLE error
             TIMEOUT 15)
         file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
-        if(NOT result EQUAL 0 OR NOT log MATCHES "native fresh sound creations match actual source")
+        if(NOT result EQUAL 0 OR NOT log MATCHES "native fresh sound creations match actual source"
+           OR NOT log MATCHES "loaded-mine surface cases.*match actual source")
             message(
                 FATAL_ERROR "Native audio creation differs from source (${result}): ${log}${error}")
         endif()

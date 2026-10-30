@@ -302,6 +302,27 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 		}
 	} object_guard{ source };
 	xl_audio_creation_control::run(root, source, initial);
+	{
+		std::ostringstream receipt;
+		receipt << "XL_SURFACE_AUDIO 1\n";
+		unsigned cases = 0;
+		xl_surface_audio_control::run(output, [&](const auto &value) {
+			receipt << "case " << cases++ << '\n';
+			xl_surface_audio_receipt::write(receipt, value);
+		});
+		require(cases == 16, "Native surface receipt coverage is incomplete");
+		receipt << "end " << cases << '\n';
+		const auto path = root / "surface-audio.txt";
+		std::ifstream previous(path, std::ios::binary);
+		const std::string old{ std::istreambuf_iterator<char>(previous), std::istreambuf_iterator<char>() };
+		previous.close();
+		if (old != receipt.str()) {
+			std::ofstream file(path, std::ios::binary);
+			file << receipt.str();
+			require(bool(file), "Cannot write native surface receipt");
+		}
+		std::cout << "Native surface audio passed: 13 PCM controls, distribution, overlays, portal identity, forcefield scaling, saved phase and restart; 16 source receipts prepared\n";
+	}
 	xl_gameplay_audio_control::run(source, initial);
 	const auto create = [&](int forever = 1, int custom = 0) {
 		return xl_audio_link_object(0, 3, source, forever, F1_0, 64 * F1_0, -1, -1, 0, custom);
