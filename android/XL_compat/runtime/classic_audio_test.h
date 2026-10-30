@@ -162,7 +162,7 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	require(PHYSFS_removeFromSearchPath(foreign.string().c_str()) && rejected, "Foreign classic resource was accepted");
 	const auto custom = root / "mods" / "xscope" / "xscope.s22";
 	write_bytes(custom.string().c_str(), { 'b', 'a', 'd' });
-	require(!xl_level_supported_at("scope23.rl2", 0, 2) && std::strstr(xl_level_rejection(), "sound bank suppresses external WAV replacements"), "Unsupported selected bank did not suppress WAVs");
+	require(!xl_level_supported_at("scope23.rl2", 0, 2) && std::strstr(xl_level_rejection(), "Invalid XL mission sound bank"), "Malformed selected bank did not suppress WAVs");
 	require(prepare_classic_audio("scope23.rl2", 2, 11025).samples.size() == 1, "Wrong-rate custom bank suppressed WAVs");
 	std::filesystem::remove(custom);
 	char entry[] = "classic-entry.sav", description[] = "XL before replacements";

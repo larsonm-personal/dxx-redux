@@ -1,6 +1,7 @@
 #include "classic_audio.h"
 #include "audio_resource.h"
 #include "../classic_sample.h"
+#include "../classic_bank.h"
 #include <map>
 #include "picosha2.h"
 #include <stdexcept>
@@ -33,6 +34,29 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 	if (!scope) return result;
 	std::string identity;
 	std::size_t storage = 0;
+	if (scope->selected_bank) {
+		const auto &resource = *scope->selected_bank;
+		try {
+			std::vector<std::string> names;
+			for (int sample = 0; const char *name = piggy_sound_name(sample); ++sample) names.emplace_back(name);
+			if (names.empty()) throw std::runtime_error("native sample registry is empty");
+			const auto *data = reinterpret_cast<const std::uint8_t *>(resource.bytes.data());
+			const auto selected = select_classic_bank(data, resource.bytes.size(), names);
+			const unsigned rate = scope->rate >= 22050 ? 22050 : 11025;
+			const auto hash = picosha2::hash256_hex_string(resource.bytes);
+			for (const auto &[sample, entry] : selected) {
+				storage += entry.length * (44100u / rate) * 2 * sizeof(std::int16_t);
+				if (storage > 128 * 1024 * 1024) throw std::runtime_error("converted bank exceeds 128 MiB of source storage");
+				auto pcm = prepare_classic_sample(data + entry.offset, entry.length, rate, 44100);
+				result.samples.push_back({ sample, names[unsigned(sample)], resource.path, hash, { 44100, 2, 16, std::move(pcm.stereo) } });
+			}
+			// Include the entire selected bank even when it replaces no native slots
+			result.identity = picosha2::hash256_hex_string(resource.path + ":" + hash + ":" + std::to_string(rate));
+			return result;
+		} catch (const std::exception &error) {
+			throw std::runtime_error("Invalid XL mission sound bank " + resource.path + ": " + error.what());
+		}
+	}
 	for (int sample = 0; const char *name = piggy_sound_name(sample); ++sample) {
 		if (!*name) throw std::runtime_error("XL sound replacement requires a named native sample registry");
 		const auto resource = load_classic_audio_resource(name, *scope);
@@ -65,6 +89,7 @@ ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &repl
 	static ClassicAudioResources stock_cache;
 	ClassicAudioResources result;
 	std::string identity = "xl-classic-s16-44100-v1";
+	if (!replacements.identity.empty()) identity += ":" + replacements.identity;
 	std::size_t storage = 0;
 	for (int index = 0; const char *name = piggy_sound_name(index); ++index) {
 		ClassicAudioSample sample;

@@ -1596,6 +1596,7 @@ extern "C" void flicker_lights(void);
 #include "disarm_test.h"
 #include "named_audio_test.h"
 #include "classic_audio_test.h"
+#include "bank_audio_test.h"
 #include "audio_scope_test.h"
 #include "hxm_test.h"
 

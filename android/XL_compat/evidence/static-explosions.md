@@ -67,11 +67,13 @@ unchanged. The native audio integration's overall bound increases from 110 to
 150 seconds for its four additional static profiles; every child-process bound
 and all existing assertions remain unchanged.
 
-The first completed static run passes 75 steps, 24 offscreen pixel cases and
-seven actual audio output checks (62,464 samples at 48 kHz), including rewind,
+The final corrected Android build passes 75 steps, 24 offscreen pixel cases and
+seven actual audio output checks (60,416 samples at 48 kHz), including rewind,
 normal/legacy/secret transitions and disk restoration through Counterstrike.
-All 234 protected files restore with matching hashes. This run precedes the
-subsequent negative-timer admission correction; final validation is pending.
+All 234 protected files restore with matching hashes. Run
+`f63cd0df9b6c4684a98912616e182230` completes in 131.689 seconds, including the
+negative-timer admission correction. APK SHA-256:
+`5a985dfefe5809dd4e6bfccd6b6253dc9be6fbeefeffedbbca69b9781facab50`.
 
 The pixel test calls the real object renderer and checks every RGB pixel of a
 32x32 framebuffer for two frames with different aspect ratios, half/full texture
@@ -93,8 +95,8 @@ limit before the final two profiles. The revised total budget accounts for the
 added coverage, without increasing child limits or removing checks. The final
 Linux acceptance passes all 106 required tests in 389.33 seconds, with 16 format
 witnesses and three modern source levels. Final Windows audio integration also
-passes all four static profiles. The corrected Android build still awaits its
-focused rerun at this publication checkpoint.
+passes all four static profiles. The corrected Android result above completes
+that local platform checkpoint. Original campaign qualification remains separate.
 
 ## Original mission evidence
 

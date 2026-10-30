@@ -2,6 +2,7 @@
 #include "../named_sound.h"
 #include "../scoped_sound.h"
 #include "../wave.h"
+#include "../classic_bank.h"
 #include <SDL.h>
 #include <memory>
 #include <stdexcept>
@@ -58,11 +59,11 @@ bool owned_path(std::string &path, bool archive)
 	return true;
 }
 
-AudioResource read_audio(std::string path)
+AudioResource read_audio(std::string path, std::size_t limit = max_wave_bytes)
 {
 	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(path.c_str()), PHYSFS_close);
 	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
-	if (length < 0 || std::uint64_t(length) > max_wave_bytes)
+	if (length < 0 || std::uint64_t(length) > limit)
 		throw std::runtime_error("Invalid bounded XL sound resource: " + path);
 	std::string bytes(std::size_t(length), '\0');
 	if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length)
@@ -107,37 +108,47 @@ std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, 
 	const int incoming = incoming_ordinal(level, ordinal);
 	const std::string bank = "mods/" + mission + "/" + mission + (bank_rate >= 22050 ? ".s22" : ".s11");
 	auto corrected_bank = bank;
+	ClassicAudioScope scope{ mission, bank, incoming, bank_rate, {}, {} };
 	if (owned_path(corrected_bank, false))
-		throw std::runtime_error("XL mission sound bank suppresses external WAV replacements and requires scoped-bank decoding: " + corrected_bank);
-	return ClassicAudioScope{ mission, bank, incoming, bank_rate, {} };
+		scope.selected_bank = read_audio(std::move(corrected_bank), max_classic_bank_bytes);
+	else {
+		// CFile::Exist/Open fall back to the mission HOG after the mod folder
+		auto archived_bank = mission + (bank_rate >= 22050 ? ".s22" : ".s11");
+		if (owned_path(archived_bank, true)) scope.selected_bank = read_audio(std::move(archived_bank), max_classic_bank_bytes);
+	}
+	return scope;
 }
 
 std::optional<AudioResource> load_classic_audio_resource(const std::string &sample, ClassicAudioScope &scope)
 {
+	if (scope.selected_bank) return std::nullopt;
+	const auto locate = [&](const std::string &candidate, bool archive) {
+		const auto slash = candidate.find_last_of('/');
+		const auto directory = slash == std::string::npos ? std::string{} : candidate.substr(0, slash);
+		auto [entry, inserted] = scope.directories.try_emplace(directory);
+		if (inserted) {
+			auto corrected = directory;
+			if (corrected.empty() || PHYSFSEXT_locateCorrectCase(corrected.data()) == 0) {
+				std::unique_ptr<char *, decltype(&PHYSFS_freeList)> names(PHYSFS_enumerateFiles(corrected.c_str()), PHYSFS_freeList);
+				if (!names) throw std::runtime_error("Cannot enumerate XL sound folder: " + corrected);
+				for (char **name = names.get(); *name; ++name) {
+					std::string lower = *name;
+					SDL_strlwr(lower.data());
+					entry->second.insert(std::move(lower));
+				}
+			}
+		}
+		auto filename = slash == std::string::npos ? candidate : candidate.substr(slash + 1);
+		SDL_strlwr(filename.data());
+		if (!entry->second.count(filename)) return std::string{};
+		auto path = candidate;
+		return owned_path(path, archive) ? path : std::string{};
+	};
 	const auto selected = resolve_scoped_sound(scope.mission, sample, scope.ordinal, scope.rate,
 	                                           [&](const std::string &candidate) {
-		                                           // LoadD2Sounds selects its bank once before walking sample names
-		                                           if (candidate == scope.bank) return std::string{};
-		                                           const auto slash = candidate.find_last_of('/');
-		                                           const auto directory = candidate.substr(0, slash);
-		                                           auto [entry, inserted] = scope.directories.try_emplace(directory);
-		                                           if (inserted) {
-			                                           auto corrected = directory;
-			                                           if (PHYSFSEXT_locateCorrectCase(corrected.data()) == 0) {
-				                                           std::unique_ptr<char *, decltype(&PHYSFS_freeList)> names(PHYSFS_enumerateFiles(corrected.c_str()), PHYSFS_freeList);
-				                                           if (!names) throw std::runtime_error("Cannot enumerate XL sound folder: " + corrected);
-				                                           for (char **name = names.get(); *name; ++name) {
-					                                           std::string lower = *name;
-					                                           SDL_strlwr(lower.data());
-					                                           entry->second.insert(std::move(lower));
-				                                           }
-			                                           }
-		                                           }
-		                                           auto filename = candidate.substr(slash + 1);
-		                                           SDL_strlwr(filename.data());
-		                                           if (!entry->second.count(filename)) return std::string{};
-		                                           auto path = candidate;
-		                                           return owned_path(path, false) ? path : std::string{};
+		                                           // Bank selection was captured before walking any native names
+		                                           if (candidate == scope.bank || candidate == scope.bank.substr(scope.bank.find_last_of('/') + 1)) return std::string{};
+		                                           return locate(candidate, candidate.find('/') == std::string::npos);
 	                                           });
 	if (selected.path.empty()) return std::nullopt;
 	return read_audio(selected.path);

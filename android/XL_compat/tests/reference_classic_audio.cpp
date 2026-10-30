@@ -1,7 +1,9 @@
 // Actual pinned selection functions with independent files and sample registries
 #include "scoped_sound.h"
+#include "classic_bank.h"
 #include <array>
 #include <cstdint>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -12,6 +14,11 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+static void Error(const char *message)
+{
+	throw std::runtime_error(message);
+}
 
 namespace classic_reference
 {
@@ -29,45 +36,90 @@ template <class... T>
 void PrintLog(T...) {}
 std::map<std::string, Bytes> files;
 std::vector<std::string> opens;
-struct CFile {
+struct FILE {
 	const Bytes *bytes = nullptr;
 	std::string path;
-	std::size_t position = 0;
-	int Open(const char *name, const char *folder, const char *, int)
+};
+std::map<std::string, FILE> handles;
+FILE *open_adapter(const std::string &path)
+{
+	opens.push_back(path);
+	const auto entry = files.find(path);
+	if (entry == files.end()) return nullptr;
+	auto &handle = handles[path];
+	handle = { &entry->second, path };
+	return &handle;
+}
+FILE *GetFileHandle(const char *name, const char *folder, const char *)
+{
+	return open_adapter(std::string(folder ? folder : "") + name);
+}
+int fclose(FILE *)
+{
+	return 0;
+}
+long ftell(FILE *)
+{
+	return 0;
+}
+int ffilelength(FILE *file)
+{
+	return int(file->bytes->size());
+}
+int stricmp(const char *a, const char *b)
+{
+	for (; *a && *b; ++a, ++b)
+		if (std::tolower(static_cast<unsigned char>(*a)) != std::tolower(static_cast<unsigned char>(*b)))
+			return std::tolower(static_cast<unsigned char>(*a)) - std::tolower(static_cast<unsigned char>(*b));
+	return static_cast<unsigned char>(*a) - static_cast<unsigned char>(*b);
+}
+struct {
+	FILE *Find(const char *name, int *length, int)
 	{
-		path = std::string(folder) + name;
-		opens.push_back(path);
-		const auto it = files.find(path);
-		position = 0;
-		bytes = it == files.end() ? nullptr : &it->second;
-		return bytes != nullptr;
+		auto *file = open_adapter(std::string("hog/") + name);
+		if (file) *length = ffilelength(file);
+		return file;
 	}
-	static int Exist(const char *name, const char *folder, int)
+	const char *AltHogFile() const
 	{
-		return files.count(std::string(folder) + name) != 0;
+		return "mission.hog";
 	}
+} hogFileManager;
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+struct CFile {
+	struct {
+		FILE *file = nullptr;
+		std::size_t rawPosition = 0;
+		int size = 0, libOffset = 0, pBuffer = 0, bufLen = 0;
+		char *filename = nullptr;
+	} m_info;
+	int32_t Open(const char *name, const char *folder, const char *, int);
+	static int32_t Exist(const char *name, const char *folder, int);
 	int Length() const
 	{
-		return bytes ? static_cast<int>(bytes->size()) : 0;
+		return m_info.size;
 	}
 	void Close()
 	{
-		bytes = nullptr;
+		m_info.file = nullptr;
 	}
 	void Seek(long offset, int origin)
 	{
-		require(origin == SEEK_SET && offset >= 0 && bytes && std::size_t(offset) <= bytes->size(), "Reference bank seek outside adapter");
-		position = std::size_t(offset);
+		require(origin == SEEK_SET && offset >= 0 && m_info.file && std::size_t(offset) <= m_info.file->bytes->size(), "Reference bank seek outside adapter");
+		m_info.rawPosition = std::size_t(offset);
 	}
 	long Tell() const
 	{
-		return static_cast<long>(position);
+		return static_cast<long>(m_info.rawPosition);
 	}
 	std::size_t Read(void *out, std::size_t count)
 	{
-		require(bytes && position <= bytes->size() && count <= bytes->size() - position, "Reference bank read outside adapter");
-		std::memcpy(out, bytes->data() + position, count);
-		position += count;
+		const auto *bytes = m_info.file ? m_info.file->bytes : nullptr;
+		require(bytes && m_info.rawPosition <= bytes->size() && count <= bytes->size() - m_info.rawPosition, "Reference bank read outside adapter");
+		std::memcpy(out, bytes->data() + m_info.rawPosition, count);
+		m_info.rawPosition += count;
 		return count;
 	}
 	int32_t ReadInt()
@@ -95,7 +147,7 @@ struct Buffer {
 	std::size_t Read(CFile &file, int count)
 	{
 		require(count >= 0 && std::size_t(count) == bytes.size(), "Reference sample read size differs");
-		origin = file.path;
+		origin = file.m_info.file->path;
 		return file.Read(bytes.data(), std::size_t(count));
 	}
 };
@@ -127,7 +179,7 @@ struct {
 } gameData;
 struct {
 	struct {
-		bool bD1Mission = false, bNostalgia = false, bDemoData = false;
+		bool bD1Mission = false, bNostalgia = false, bDemoData = false, bReadOnly = false;
 	} app;
 	struct {
 		bool bD1Sound = false;
@@ -179,7 +231,11 @@ struct NameTable {
 } soundNames[2];
 int PiggyFindSound(const char *name)
 {
-	const auto found = names.find(name);
+	// CHashTable::Search uses stricmp in the pinned source
+	std::string key = name;
+	for (char &c : key)
+		if (c >= 'A' && c <= 'Z') c = char(c - 'A' + 'a');
+	const auto found = names.find(key);
 	return found == names.end() ? -1 : found->second;
 }
 void PiggyRegisterSound(const char *name, int, bool)
@@ -192,6 +248,7 @@ char *DefaultSoundFile()
 	static char high[] = "descent2.s22", low[] = "descent2.s11";
 	return options.sound.audioSampleRate >= 22050 ? high : low;
 }
+#include "xl_reference_classic_files.h"
 #include "xl_reference_classic_audio.h"
 #include "reference_classic_start.h"
 #undef USE_OPENAL
@@ -200,6 +257,7 @@ char *DefaultSoundFile()
 void reset()
 {
 	files.clear();
+	handles.clear();
 	opens.clear();
 	names.clear();
 	samples = {};
@@ -283,6 +341,44 @@ void classic_audio_source_controls()
 				require(sample.data[0].origin == expected && bool(sample.bHires) == (!(mask & 4) && (mask & 3) != 0), "Extracted source selected wrong bank or WAV");
 				require(selected.path == ((mask & 7) ? expected : "") && selected.bank == ((mask & 4) != 0), "Production scope selection differs from extracted source");
 				require(samples.at(names.at("robot01")).data[0].bytes == Bytes({ 4, 5 }) && names.size() == 2, "Custom bank lost a named sample or registered an unknown name");
+				if (mask & 4) {
+					const auto &bytes = files.at(custom);
+					const auto selected_bank = xl_compat::select_classic_bank(bytes.data(), bytes.size(), { "laser01", "robot01" });
+					require(selected_bank.size() == 2, "Production bank registered an unknown source name");
+					for (const auto &[slot, span] : selected_bank)
+						require(samples[unsigned(slot)].data[0].bytes == Bytes(bytes.begin() + span.offset, bytes.begin() + span.offset + span.length), "Production bank bytes differ from actual source load");
+				}
+				++cases;
+			}
+	for (int rate : { 11025, 44100 })
+		for (int ordinal : { 1, 2, -1 })
+			for (int mask = 0; mask < 32; ++mask) {
+				reset();
+				options.sound.audioSampleRate = rate;
+				files[std::string("data/") + DefaultSoundFile()] = base;
+				require(LoadD2Sounds(false), "Archive selection baseline failed");
+				select_mod(ordinal);
+				const auto bank_name = std::string("pilot") + (rate >= 22050 ? ".s22" : ".s11");
+				const auto level = std::string("mods/pilot/sounds/") + LevelFolder(ordinal) + "laser01.wav";
+				const std::string mission = "mods/pilot/sounds/laser01.wav", archived_wave = "hog/laser01.wav";
+				const auto folder_bank = "mods/pilot/" + bank_name, archived_bank = "hog/" + bank_name;
+				if (mask & 1) files[level] = { 11, 12 };
+				if (mask & 2) files[mission] = { 21, 22 };
+				if (mask & 4) files[archived_wave] = { 31, 32 };
+				if (mask & 8) files[folder_bank] = bank({ { "laser01", { 41, 42 } }, { "robot01", { 4, 5 } } });
+				if (mask & 16) files[archived_bank] = bank({ { "laser01", { 51, 52 } }, { "robot01", { 4, 5 } } });
+				require(LoadD2Sounds(true), "Archive source selection failed");
+				const auto selected = xl_compat::resolve_scoped_sound("pilot", "laser01", ordinal, rate, [&](const std::string &candidate) {
+					const auto path = candidate.find('/') == std::string::npos ? "hog/" + candidate : candidate;
+					return files.count(path) ? path : std::string{};
+				});
+				const auto expected = mask & 8 ? folder_bank : mask & 16 ? archived_bank
+				                                           : mask & 1    ? level
+				                                           : mask & 4    ? archived_wave
+				                                           : mask & 2    ? mission
+				                                                         : std::string("data/") + DefaultSoundFile();
+				require(samples[0].data[0].origin == expected && selected.path == (mask ? expected : "") && selected.bank == bool(mask & 24),
+				        "Production folder/HOG precedence differs from actual CFile and sound loader");
 				++cases;
 			}
 	for (int high : { 1, 2 })
@@ -316,8 +412,90 @@ void classic_audio_source_controls()
 	files["mods/pilot/sounds/laser01.wav"] = { 7, 8 };
 	require(LoadD2Sounds(true) && !samples[0].bHires && samples[0].data[0].bytes == Bytes({ 1, 2, 3 }), "Empty preferred reference WAV fell through to a lower folder");
 	++cases;
+	for (int variant = 0; variant < 5; ++variant) {
+		reset();
+		files["data/descent2.s22"] = base;
+		require(LoadD2Sounds(false), "Custom bank name-control baseline failed");
+		select_mod(-1);
+		auto custom = bank({ { "robot01", { 81, 82, 83 } }, { "laser01", { 71, 72 } }, { "LASER01", { 91, 92, 93, 94 } } });
+		if (variant == 1) custom[12 + 12] = 0;                 // data_length is not the read length
+		if (variant == 2) custom.insert(custom.end(), 19, 77); // trailing bytes are harmless
+		if (variant == 3) {
+			custom[12 + 16] = 3; // overlapping extents are allowed by the source
+			custom[12 + 8] = 2;
+		}
+		if (variant == 4) {
+			custom[12 + 40] = 'X';      // unknown duplicate does not replace laser01
+			custom[12 + 40 + 16] = 255; // unknown extents are not consumed
+		}
+		files["mods/pilot/pilot.s22"] = custom;
+		require(LoadD2Sounds(true), "Custom bank name-control source load failed");
+		const auto selected = xl_compat::select_classic_bank(custom.data(), custom.size(), { "laser01", "robot01" });
+		require(selected.size() == 2 && names.size() == 2, "Custom names changed the native registry");
+		for (const auto &[slot, span] : selected)
+			require(samples[unsigned(slot)].data[0].bytes == Bytes(custom.begin() + span.offset, custom.begin() + span.offset + span.length), "Reordered/duplicate/case bank differs from actual source");
+		++cases;
+	}
+	unsigned malformed = 0;
+	const auto reject = [&](const Bytes &bytes) {
+		try {
+			xl_compat::select_classic_bank(bytes.data(), bytes.size(), { "laser01", "robot01" });
+		} catch (const std::exception &) {
+			++malformed;
+			return;
+		}
+		throw std::runtime_error("Malformed selected bank was accepted");
+	};
+	for (std::size_t end = 0; end < base.size(); ++end) reject(Bytes(base.begin(), base.begin() + end));
+	for (unsigned offset : { 0u, 4u, 8u, 12u + 8u, 12u + 16u }) {
+		auto bytes = base;
+		for (unsigned i = 0; i < 4; ++i) bytes[offset + i] = 255;
+		reject(bytes);
+	}
+	std::cout << "Classic custom banks: full/reordered/case/duplicate/ignored-name source agreement and " << malformed << " malformed extents rejected\n";
+	// A partial custom bank reuses omitted samples' old offsets in LoadSounds
+	// Record this source defect before implementing safe base-sample retention
+	for (bool padded : { false, true }) {
+		reset();
+		files["data/descent2.s22"] = base;
+		require(LoadD2Sounds(false), "Partial custom baseline failed");
+		select_mod(1);
+		auto custom = bank({ { "laser01", { 31, 32 } } });
+		if (padded) custom.resize(64, 99);
+		files["mods/pilot/pilot.s22"] = custom;
+		bool out_of_bounds = false;
+		try {
+			require(LoadD2Sounds(true), "Partial custom source load failed");
+		} catch (const std::runtime_error &error) {
+			out_of_bounds = std::string(error.what()) == "Reference bank seek outside adapter";
+			if (!out_of_bounds) throw;
+		}
+		require(padded ? !out_of_bounds && samples[1].data[0].bytes == Bytes({ 99, 99 }) : out_of_bounds,
+		        "Partial custom bank no longer exposes the pinned stale-offset defect");
+		require(samples[0].data[0].bytes == Bytes({ 31, 32 }), "Partial source bank lost the explicitly replaced sample");
+		++cases;
+	}
 	std::cout << "Classic audio source: " << cases << " bank suppression, signed scopes, registry, fallback and profile controls\n";
 	classic_start_controls();
+}
+
+void classic_bank_original(const char *path)
+{
+	using namespace classic_reference;
+	reset();
+	const auto bytes = read(path);
+	files["data/descent2.s22"] = bytes;
+	require(LoadD2Sounds(false), "Original reference bank did not load");
+	std::vector<std::string> registry(unsigned(gameData.pigData.sound.nSoundFiles[0]));
+	for (const auto &[name, slot] : names) registry.at(unsigned(slot)) = name;
+	select_mod(1);
+	files["mods/pilot/pilot.s22"] = bytes;
+	require(LoadD2Sounds(true), "Original complete custom bank did not load");
+	const auto selected = xl_compat::select_classic_bank(bytes.data(), bytes.size(), registry);
+	require(selected.size() == registry.size() && !selected.empty(), "Original bank did not retain all named samples");
+	for (const auto &[slot, span] : selected)
+		require(samples[unsigned(slot)].data[0].bytes == Bytes(bytes.begin() + span.offset, bytes.begin() + span.offset + span.length), "Original DSND sample differs from actual source");
+	std::cout << "Original custom bank: " << selected.size() << " registered samples exactly match actual source loading\n";
 }
 
 void classic_audio_original(const char *bank_path, const char *folder, int levels)

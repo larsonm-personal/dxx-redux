@@ -68,6 +68,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../audio_owners.cpp"
                 "${xl_runtime_dir}/../audio_logical.cpp"
                 "${xl_runtime_dir}/../classic_sample.cpp"
+                "${xl_runtime_dir}/../classic_bank.cpp"
                 "${xl_runtime_dir}/../audio_spatial.cpp"
                 "${xl_runtime_dir}/../named_sound.cpp"
                 "${xl_runtime_dir}/../pog.cpp"

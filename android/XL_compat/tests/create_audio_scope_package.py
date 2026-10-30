@@ -27,6 +27,12 @@ def main():
             }
         )
     if args.classic:
+        pinned["missions/xbank.hog"] = "b472c3f6b74add7af35ec87272c014bf76daf1bfd61d41e4ad3ade100796fd8c"
+        pinned["missions/xbank.mn2"] = "3861555cf5bd670fcf8bd47227b7d913eacdebf34ed0190e4ecbab7ce721d4db"
+        pinned["missions/xbkhog.hog"] = "e7f739e0e69c170bfb4c53d4dcd7d9d1629a66b69f261515373e26fd1ae8f15c"
+        pinned["missions/xbkhog.mn2"] = "c8ee78d51d1448c3b2b24363277f4f2d1205f38817abe1c051001dabc6b64a68"
+        pinned["missions/xhwav.hog"] = "09a1c2863373173d82da98f7d1037f889e965f7b78174325486ef3b72cdf525a"
+        pinned["missions/xhwav.mn2"] = "075bf964f2cb5ad17a74ebc660bfee7fd9b51ec12b18b4ea369acec08ce45bfd"
         for name in ("xwav", "xwbad", "xsbank"):
             pinned[f"missions/{name}.hog"] = "6544b4ea235166c6131b5c1ab9bee83c57f9d2c6933898d1a73e7a3f9bdaee3b"
         pinned.update(
@@ -46,6 +52,20 @@ def main():
         names += [root + folder + "/" + name for name in ("scoped.wav", "shared.wav")]
     if args.classic:
         names += ["mods/xwav/sounds/laser01.wav", "mods/xwbad/sounds/laser01.wav", "mods/xsbank/xsbank.s22"]
+        bank_root = "mods/xbank/"
+        names += [bank_root + "xbank.s22", bank_root + "xbank.s11"]
+        names += [bank_root + "sounds/" + name for name in ("scoped.wav", "mission.wav", "shared.wav")]
+        for folder in ("", "level01/", "level02/", "slevel01/"):
+            names.append(bank_root + "sounds/" + folder + "laser01.wav")
+            if folder:
+                names += [bank_root + "sounds/" + folder + name for name in ("scoped.wav", "shared.wav")]
+        for mission in ("xbkhog", "xhwav"):
+            root_path = "mods/" + mission + "/sounds/"
+            names += [root_path + name for name in ("scoped.wav", "mission.wav", "laser01.wav")]
+            for folder in ("level01/", "level02/", "slevel01/"):
+                names.append(root_path + folder + "scoped.wav")
+            if mission == "xhwav":
+                names.append(root_path + "level02/laser01.wav")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(args.output, "w") as archive:
         for name in sorted(names):

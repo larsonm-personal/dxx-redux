@@ -194,7 +194,7 @@ static int named_audio_original(int argc, char **argv)
 				std::ofstream output(receipt, std::ios::binary);
 				output << ambient_files.dump(2) << '\n';
 				require(bool(output), "Cannot record original ambient resource receipt");
-				std::cout << "Original ambient resources: " << ambient << " objects, " << ambient_files.size() << " owned scoped WAVs; spatial runtime remains gated\n";
+				std::cout << "Original ambient resources: " << ambient << " objects, " << ambient_files.size() << " owned scoped WAVs; original spatial playback is not exercised by this audit\n";
 			}
 		}
 		xl_named_audio_clear();

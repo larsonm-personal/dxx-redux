@@ -18,6 +18,7 @@ add_library(
     audio_owners.cpp
     audio_logical.cpp
     classic_sample.cpp
+    classic_bank.cpp
     audio_spatial.cpp
     named_sound.cpp
     pog.cpp

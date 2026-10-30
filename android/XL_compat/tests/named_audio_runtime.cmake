@@ -140,6 +140,31 @@ if(REFERENCE)
         message(FATAL_ERROR "Loaded audio geometry differs from source (${result}): ${log}${error}")
     endif()
 endif()
+execute_process(
+    COMMAND "${ENGINE}" -audio-scope-test banks -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
+            "${OUTPUT}/preview-user" -nomusic
+    RESULT_VARIABLE result
+    OUTPUT_VARIABLE log
+    ERROR_VARIABLE error
+    TIMEOUT 30)
+file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+if(NOT result EQUAL 0 OR NOT log MATCHES "XL mission banks passed")
+    message(FATAL_ERROR "Mission sound banks failed (${result}): ${log}${error}")
+endif()
+if(REFERENCE)
+    execute_process(
+        COMMAND "${REFERENCE}" --bank-original "${DATA}/descent2.s22"
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES "183 registered samples exactly match actual source")
+        message(
+            FATAL_ERROR "Original sound-bank source comparison failed (${result}): ${log}${error}")
+    endif()
+endif()
+
 # Static objects share this integration owner and the existing reference executables
 foreach(ordinal IN ITEMS 1 2 3 -1)
     execute_process(
