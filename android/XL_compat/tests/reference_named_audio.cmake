@@ -189,3 +189,4 @@ include("${CMAKE_CURRENT_LIST_DIR}/reference_audio_routes.cmake")
 
 include("${CMAKE_CURRENT_LIST_DIR}/reference_audio_spatial.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/reference_audio_geometry.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/reference_seismic.cmake")

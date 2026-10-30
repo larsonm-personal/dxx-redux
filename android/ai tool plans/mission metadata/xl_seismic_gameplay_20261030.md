@@ -4,6 +4,20 @@ Next increment after owned mission sound banks. Implement the XL behavior in
 `android/XL_compat`, retaining Redux as the alternate runtime path. This is a
 gameplay and persistence change, not just a new trigger dispatch or audio cue.
 
+## Published draft status
+
+Branch `xl_more_75_seismic_gameplay` is a work-in-progress checkpoint for CI,
+stacked on `xl_more_74_sound_banks`. The source model passes 23,100 comparisons
+against the pinned XL implementation. Initial runtime, frame and persistence
+hooks compile in the Windows headless engine.
+
+This does not qualify seismic gameplay. Wall/object type-36 dispatch and
+admission, position-bearing Earthshaker call sites, runtime physics/audio
+controls, disk/rewind continuation and Android qualification remain unfinished.
+The existing seismic audio controls still target the preceding implementation
+and need to be extended for the new physics path. No mission blocker is removed
+and no campaign playability claim is added by this draft.
+
 ## Grounded requirements
 
 Pinned source remains `arbruijn/d2x-xl` revision
