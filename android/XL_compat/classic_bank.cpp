@@ -40,11 +40,14 @@ std::map<int, ClassicBankSample> select_classic_bank(const std::uint8_t *data, s
 		const auto native = registry.find(name);
 		if (native == registry.end()) continue;
 		const auto bytes = word(at + 8), offset = word(at + 16);
-		// The source reads length bytes, ignoring the historical data_length field
-		if (!bytes || offset > size - payload || bytes > size - payload - offset)
-			throw std::runtime_error("invalid DSND sample extent for " + names[unsigned(native->second)]);
 		// SetupSounds overwrites earlier headers for the same registered name
-		selected[native->second] = { payload + offset, bytes };
+		selected[native->second] = { offset, bytes };
+	}
+	for (auto &[sample, span] : selected) {
+		// LoadSounds reads only the final header and ignores data_length
+		if (!span.length || span.offset > size - payload || span.length > size - payload - span.offset)
+			throw std::runtime_error("invalid DSND sample extent for " + names[unsigned(sample)]);
+		span.offset += payload;
 	}
 	return selected;
 }

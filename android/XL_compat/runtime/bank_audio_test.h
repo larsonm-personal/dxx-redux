@@ -32,7 +32,8 @@ void run(const std::filesystem::path &root)
 		for (unsigned slot = 0; slot < native.size(); ++slot)
 			require(retained.samples[slot].pcm.samples == baseline.samples[slot].pcm.samples, "Empty-name bank changed a native sample");
 	}
-	const auto partial = xl_bank_fixture::make({ { native[0].first, xl_compat::Bytes(11025, 200) }, { "unknown", { 99 } } });
+	auto partial = xl_bank_fixture::make({ { native[0].first, { 7, 8 } }, { native[0].first, xl_compat::Bytes(11025, 200) }, { "unknown", { 99 } } });
+	for (unsigned i = 0; i < 3; ++i) partial[12 + 16 + i] = 255; // Out-of-range earlier duplicate is superseded
 	write_bytes(bank_path.string().c_str(), partial);
 	const auto low = xl_bank_fixture::make({ { native[0].first, xl_compat::Bytes(5512, 80) } });
 	write_bytes(low_path.string().c_str(), low);
@@ -72,12 +73,13 @@ void run(const std::filesystem::path &root)
 		}
 	require(logical >= 0, "Bank fixture has no ordinary sample route");
 	std::uint64_t checked = 0;
+	int physical = 0;
 	const auto output = [&](unsigned byte = 200, unsigned source_rate = 22050, unsigned source_frames = 11025, unsigned frames = 4096) {
 		const auto start = snapshot();
 		begin_capture();
 		xl_named_audio_pause(0);
 		run_output(frames);
-		xl_bank_output::compare(start, captured.data(), nullptr, captured_samples, 128, 4, byte, source_rate, source_frames);
+		xl_bank_output::compare(start, captured.data(), nullptr, captured_samples, 128, physical + 4, byte, source_rate, source_frames);
 		checked += captured_samples;
 		xl_named_audio_pause(1);
 	};
@@ -153,13 +155,19 @@ void run(const std::filesystem::path &root)
 	StartNewGame(1);
 	SDL_PauseAudio(1);
 	const auto archived = xl_compat::prepare_classic_audio("scope23.rl2", 1, 44100);
-	require(archived.samples.size() == 1 && archived.samples[0].path == "xbkhog.s22", "Owned HOG bank was ignored or lost to a WAV");
+	require(archived.samples.size() == 1 && archived.samples[0].path == "xbkhog.s22" && archived.samples[0].name == "laser01", "Owned HOG bank was ignored or lost to a WAV");
+	// Packaged controls name laser01; native slot zero is a different sample
+	physical = archived.samples[0].sample;
+	logical = -1;
+	for (int id = 0; id < MAX_SOUNDS; ++id)
+		if (xl_gameplay_sound_sample(id) == physical) {
+			logical = id;
+			break;
+		}
+	require(logical >= 0 && !std::strcmp(piggy_sound_name(physical), "laser01"), "Archive bank lacks its named ordinary route");
 	digi_stop_digi_sounds();
 	digi_play_sample(logical, F1_0);
-	std::cout << "Archive bank diagnostic: prepared=" << archived.samples[0].pcm.samples[0]
-	          << " rate=" << xl_compat::named_audio_diagnostics().at("rate")
-	          << " replacements=" << xl_compat::named_audio_diagnostics().at("classic_replacements")
-	          << " voices=" << snapshot().at("voices") << '\n';
+	require(snapshot().at("voices").size() == 1 && snapshot().at("voices")[0][2] == physical + 4, "Archive bank voice selected the wrong native sample");
 	output();
 	const auto archived_state = snapshot();
 	const auto override_bank = root / "mods" / "xbkhog" / "xbkhog.s22";
@@ -192,7 +200,13 @@ void run(const std::filesystem::path &root)
 		}
 		digi_stop_digi_sounds();
 		digi_play_sample(logical, F1_0);
-		xl_classic_playback_control::capture_output(ordinal == 1 ? 3 : 2);
+		const auto wave_state = snapshot();
+		require(wave_state.at("voices").size() == 1 && wave_state.at("voices")[0][2] == physical + 4, "Archive WAV voice selected the wrong native sample");
+		begin_capture();
+		xl_named_audio_pause(0);
+		run_output(4096);
+		xl_classic_output::compare(wave_state, ordinal == 1 ? 3 : 2, captured.data(), nullptr, captured_samples, 128, physical + 4);
+		xl_classic_playback_control::checked += captured_samples;
 	}
 	std::cout << "XL mission banks passed: " << native.size() << " original samples, partial retention, S11/S22 selection, signed scopes, atomic rejection, persistence, " << checked << " bank and " << xl_classic_playback_control::checked << " archive-WAV PCM samples\n";
 }

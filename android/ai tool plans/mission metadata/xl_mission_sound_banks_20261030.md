@@ -38,3 +38,24 @@ passes 405 selection controls, but the new native HOG-bank output check fails
 at its first sample (15 instead of 25). Keep that test enabled, diagnose the
 installed playback path, then finish Linux and expanded Android qualification.
 The earlier successful Android bank checkpoint predates the HOG fallback work.
+
+The failure is now diagnosed: the native harness played `arnold_1` at physical
+slot zero while the archive fixture replaces `laser01`. Resolving that name and
+asserting the actual voice binding passes 311,296 bank and 16,384 archive-WAV
+output samples without changing production playback. Finish the pending
+platform checks before upgrading the draft's qualification status.
+
+Final Windows audio owner and Android bank regression now pass. Android's full
+four-script owner passes 65/35/75/119 steps; after the duplicate-header correction
+the focused bank run passes 119 steps, 15 output checks and 361,472 samples at
+48 kHz, restoring all 234 protected files unchanged. Final Linux acceptance
+passes 106 required controls, 16 original-format witnesses and three modern
+source levels. The expanded audio owner takes 138.47 seconds within its
+unchanged 150-second bound; total CTest wall time is 408.09 seconds.
+
+The CI side change removes only the second invocations of the pure ordered-codec
+and replay-conversion helpers from `save-integrity`. Its `needs: build-public`
+dependency already requires those exact commands to pass on the same commit.
+All 27 and five helper tests pass locally (1.117 seconds combined wall time).
+This is a small duplicate cleanup, not a substantial CI speedup; no headed,
+headless, ASan, graphics or engine replay coverage is removed.

@@ -3,6 +3,8 @@
 This records the original resource-preparation tranche. The subsequent
 [classic playback tranche](classic-playback.md) installs selected WAVs into the
 shared bank and supersedes the historical missing-consumer gate below.
+The later [mission-bank tranche](mission-sound-banks.md) adds S11/S22 decoding
+and corrects the original folder-only lookup model using actual CFile functions.
 
 Owned D2 replacement WAVs now have a production preparation path and an explicit
 admission gate. A level requiring them cannot silently play the stock samples.
@@ -18,9 +20,12 @@ normal and secret folders, output-rate bank choice, wrong-rate banks, WAV
 priority, incomplete global profiles and complete/mixed custom profiles.
 
 The selected `mods/<hog>/<hog>.s22` or `.s11` bank suppresses WAV replacements.
-Without that bank, the incoming level folder precedes the mission sound folder.
+The initial audit modeled incoming level-folder lookup before mission-folder
+lookup. Actual CFile::Exist/Open comparisons in the later mission-bank tranche
+show an intervening HOG lookup: folder bank, then HOG bank; otherwise level WAV,
+then HOG WAV, then mission WAV. The old folder-only adapter missed that fallback.
 Ordinary replacement names come from the actual loaded native sample registry;
-named-sound aliases and HOG-root WAV priority do not apply. Global high-resolution
+named-sound aliases do not apply. Global high-resolution
 installations remain outside the qualified owned-resource profile.
 
 The production provider uses the selected descriptor root on desktop and active

@@ -412,7 +412,7 @@ void classic_audio_source_controls()
 	files["mods/pilot/sounds/laser01.wav"] = { 7, 8 };
 	require(LoadD2Sounds(true) && !samples[0].bHires && samples[0].data[0].bytes == Bytes({ 1, 2, 3 }), "Empty preferred reference WAV fell through to a lower folder");
 	++cases;
-	for (int variant = 0; variant < 5; ++variant) {
+	for (int variant = 0; variant < 6; ++variant) {
 		reset();
 		files["data/descent2.s22"] = base;
 		require(LoadD2Sounds(false), "Custom bank name-control baseline failed");
@@ -428,6 +428,7 @@ void classic_audio_source_controls()
 			custom[12 + 40] = 'X';      // unknown duplicate does not replace laser01
 			custom[12 + 40 + 16] = 255; // unknown extents are not consumed
 		}
+		if (variant == 5) custom[12 + 20 + 16] = 255; // superseded duplicate extents are never read
 		files["mods/pilot/pilot.s22"] = custom;
 		require(LoadD2Sounds(true), "Custom bank name-control source load failed");
 		const auto selected = xl_compat::select_classic_bank(custom.data(), custom.size(), { "laser01", "robot01" });
