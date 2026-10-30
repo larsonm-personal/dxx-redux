@@ -175,3 +175,24 @@ The Windows/x86 native build, Windows/x64 and Linux source owners, shared audio
 source controls, and the registered native effect gate pass. Next is resource
 ownership and visible fire rendering, then persistence and Android qualification.
 The twelve-hour tranche remains active; this checkpoint does not enable Pumo.
+
+Emitter ownership is published as draft [PR #232](https://github.com/larsonm-personal/dxx-redux/pull/232),
+commit `338e24e5b`, stacked on #230. The PR shows one new commit and 21 files.
+Its five returned PR-triggered workflows are running. Work continues in the
+same main checkout on `xl_more_81_particle_images`.
+
+The uncommitted image layer reuses the existing XL pixel normalizer and POG
+source test owner. Raw 24/32-bit TGA source comparisons and the original 128x128
+fire atlas pass on Linux and Windows/x64. Source addon selection and active image
+table comparisons now also pass on both platforms. Native prepared resources own
+the pixels and enforce mission/default precedence, origin checks and rejection
+without fallback for malformed present files. The registered native effect gate
+passes both shadow controls, case-insensitive lookup, retained storage and recovery
+in 6.02 seconds, reusing its existing engine startup. Scoped formatting/lint passes.
+
+Next implement and independently compare GPU upload and fire/additive versus
+smoke/multiply atlas rendering. The startup-installation fallback and Android
+resource mounts need platform witnesses; saved authored state remains next after
+rendering. No particle admission has changed. PR #230's six returned PR workflows
+passed; #232's XL, Rust and LAN workflows passed, with engine smoke running and
+Linux gameplay queued at the latest poll. Full published-head audit remains due.

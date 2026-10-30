@@ -34,7 +34,7 @@ bool span(std::size_t size, std::size_t offset, std::size_t count)
 
 void prepare_pog_rgba(PogBitmap &bitmap)
 {
-	if (!bitmap.width || bitmap.width > 4095 || !bitmap.height || bitmap.height > 32767 || bitmap.frames > 128 || !bitmap.frames ||
+	if (!bitmap.width || bitmap.width > 4096 || !bitmap.height || bitmap.height > 32767 || bitmap.frames > 128 || !bitmap.frames ||
 	    bitmap.frames != (bitmap.height / bitmap.width ? bitmap.height / bitmap.width : 1) ||
 	    (bitmap.frames > 1 && bitmap.height != bitmap.width * bitmap.frames) ||
 	    bitmap.pixels.size() != std::size_t(bitmap.width) * bitmap.height * 4)

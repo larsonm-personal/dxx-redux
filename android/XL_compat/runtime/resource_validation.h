@@ -12,6 +12,7 @@ void xl_resource_select_mission(int requires_xl);
 void xl_resource_commit_mission(void);
 /* New D2 texture capability, not a general package-ownership or gameplay flag */
 int xl_resource_texture_scope_enabled(void);
+int xl_resource_owns_installation(const char *source);
 const char *xl_resource_base_rejection(void);
 void xl_discard_prepared_resources(void);
 int xl_install_prepared_hxm(const char *level_filename);
@@ -32,7 +33,8 @@ struct ObjectDependencies;
 namespace xl_compat
 {
 struct Inventory;
-}
+struct ParticleImageResource;
+} // namespace xl_compat
 
 // Own the definitions used by both companion and level dependency checks
 class XlPreparedResources
@@ -47,12 +49,14 @@ class XlPreparedResources
 	bool texture_brightness(int texture, int &brightness) const;
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 	int custom_model_radius(int model, int fallback) const;
+	const xl_compat::ParticleImageResource *particle_image() const;
 
   private:
 	struct State;
 	std::unique_ptr<State> state;
 };
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources);
+const xl_compat::ParticleImageResource *xl_prepared_particle_image();
 #endif
 
 #endif

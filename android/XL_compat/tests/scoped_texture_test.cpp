@@ -10,6 +10,9 @@ int main()
 	using xl_compat::static_mission_texture_path;
 	require(static_mission_texture_path("missions/single/boilpnt.hog", "ceil002") == "mods/boilpnt/textures/ceil002.tga");
 	require(static_mission_texture_path("missions\\BOILPNT.HOG", "CEIL002") == "mods/BOILPNT/textures/CEIL002.tga");
+	require(xl_compat::addon_mission_texture_path("missions/pmines.hog", "smokingfire") == "mods/pmines/textures/d2x-xl/smokingfire.tga");
+	require(xl_compat::addon_mission_texture_path("archive.zip", "smokingfire").empty());
+	require(xl_compat::addon_mission_texture_path("pmines.hog", "../smokingfire").empty());
 	for (const char *name : { "", "..", "../ceil002", "x/ceil002", "x\\ceil002", "C:ceil002", "door#0", "bad\n" })
 		require(static_mission_texture_path("boilpnt.hog", name).empty());
 	for (const char *hog : { "", ".hog", "archive.zip", "..hog", "C:bad.hog" })

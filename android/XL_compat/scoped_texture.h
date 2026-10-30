@@ -30,6 +30,14 @@ inline std::string static_mission_texture_path(const char *hog, const char *bitm
 	if (!component(identity) || !component(name)) return {};
 	return "mods/" + identity + "/textures/" + name + ".tga";
 }
+// Pinned addon lookup uses a d2x-xl subdirectory within the mission texture scope
+inline std::string addon_mission_texture_path(const char *hog, const char *bitmap)
+{
+	auto path = static_mission_texture_path(hog, bitmap);
+	if (!path.empty()) path.insert(path.find_last_of('/') + 1, "d2x-xl/");
+	return path;
+}
+
 // Animation names require a bounded decimal frame suffix; directory components stay forbidden.
 inline std::string animation_mission_texture_path(const char *hog, const char *bitmap)
 {

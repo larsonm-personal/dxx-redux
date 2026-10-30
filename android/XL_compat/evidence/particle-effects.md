@@ -293,3 +293,50 @@ sources are unchanged.
 
 No runtime particle admission or drawing is enabled. Resource/image ownership,
 visible output, saved authored state and Android lifecycle checks remain next.
+
+## Particle image preparation work in progress
+
+`xl_more_81_particle_images` adds a bounded raw 24/32-bit TGA decoder, reusing
+the existing owned bitmap and XL RGBA alpha/key normalization. The pixel
+normalizer now accepts width 4096, which the source TGA header permits; packed
+POG headers still cannot encode that width. The reader preserves the source's
+`yStart` row/channel convention, including its unused descriptor bits, rather
+than silently substituting another decoder's orientation policy. The 24-bit
+source path remains opaque and does not apply the RGBA transparency color key.
+
+The existing POG source owner now also executes actual `CTGAHeader::Read` and
+`ReadData`/`SetProperties` against particle images. Linux and Windows/x64 pass the
+synthetic header/row/channel/alpha comparisons and fourteen malformed or
+unsupported-input rejections; existing POG checks still pass. The user's original
+128-by-128, 24-bit `smokingfire.tga` matches all 65,536 decoded RGBA bytes on both
+platforms. The original art remains private and is not committed.
+
+The existing POG source owner also executes `LoadAddonBitmap` and the particle
+image manager's active quality-2 table and `Load` body. It verifies the atlas
+name, two cells per axis, nonanimated policy, one-pixel borders, mod-before-base
+lookup, failed present-mod rejection without fallback, and cached successful
+loads. Bitmap allocation and filesystem reads are adapters; this is not GPU
+upload evidence. These comparisons pass on Linux and Windows/x64.
+
+Native preparation now owns decoded pixels in the prepared level resources.
+It checks `mods/<selected-hog>/textures/d2x-xl/smokingfire.tga` before
+`textures/d2x-xl/smokingfire.tga`. Mission images must belong to the selected
+mission; the default may also come from the captured startup HAM installation.
+Malformed present images reject instead of falling back. Preparation currently
+qualifies square power-of-two fire atlases only; other layouts reject explicitly.
+No particle objects means no image read or allocation.
+
+The existing native effect gate passes mission/default precedence, both forms
+of foreign shadow rejection, case-insensitive lookup, missing/malformed inputs,
+retained pixels after file changes/removal, failure recovery, and unchanged
+current prepared resources. Its final Windows/x86 run passed in 6.02 seconds,
+including the previous CPU owner, rejection/recovery and loaded-world controls.
+The separate startup-installation fallback and Android resource mounts still
+need platform witnesses. No new CTest owner, workflow or core source edit was
+added for this layer.
+
+The original atlas requires distinct render behavior: source `RenderType`
+selects fire versus smoke cells, and `CParticleBuffer::Flush` uses emissive
+blending for the former and multiply for the latter. GPU upload, visible
+rendering, saved authored state and Android lifecycle remain unqualified.
+Particle admission stays blocked; resource preparation is not rendered fidelity.
