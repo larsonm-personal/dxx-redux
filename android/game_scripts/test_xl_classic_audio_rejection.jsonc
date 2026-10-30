@@ -1,0 +1,67 @@
+// Published owned classic resources must not be silently ignored
+[
+    { "_info": { "_standalone": false, "_owner": "test_xl_audio_scopes", "games": ["d2"] } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Derived XL WAV", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.title": "Cannot run XL level",
+            "menu.subtitle": {
+                "contains": "classic WAV replacements require their playback consumer: mods/xwav/sounds/laser01.wav",
+            },
+            "in_game": false,
+            "xl_pilot.runtime_active": false,
+            "xl_named_audio.resources": 0,
+        },
+        "timeout_ms": 15000,
+    },
+    { "action": "key", "key": "enter", "post_delay_ms": 300 },
+    { "action": "key", "key": "escape", "post_delay_ms": 300 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Derived XL bad WAV", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.title": "Cannot run XL level",
+            "menu.subtitle": { "contains": "Invalid XL classic sound mods/xwbad/sounds/laser01.wav" },
+            "in_game": false,
+            "xl_pilot.runtime_active": false,
+        },
+        "timeout_ms": 15000,
+    },
+    { "action": "key", "key": "enter", "post_delay_ms": 300 },
+    { "action": "key", "key": "escape", "post_delay_ms": 300 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Derived XL bank", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.title": "Cannot run XL level",
+            "menu.subtitle": {
+                "contains": "sound bank suppresses external WAV replacements and requires scoped-bank decoding: mods/xsbank/xsbank.s22",
+            },
+            "in_game": false,
+            "xl_pilot.runtime_active": false,
+        },
+        "timeout_ms": 15000,
+    },
+    { "action": "key", "key": "enter", "post_delay_ms": 300 },
+    { "action": "key", "key": "escape", "post_delay_ms": 300 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "Counterstrike!", "timeout_ms": 15000 },
+    { "action": "select", "text": "Ok", "timeout_ms": 15000 },
+    { "action": "select", "text": "Trainee", "timeout_ms": 15000 },
+    { "action": "skip_briefing", "timeout_ms": 20000 },
+    {
+        "action": "wait_for",
+        "expect": { "in_game": true, "xl_pilot.runtime_active": false, "xl_named_audio.resources": 0 },
+        "timeout_ms": 20000,
+    },
+]

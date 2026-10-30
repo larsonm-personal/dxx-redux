@@ -108,6 +108,7 @@ static int audio_scope_test(int argc, char **argv)
 		for (std::size_t i = 0; i < captured_samples; ++i)
 			require(captured[i] == std::int16_t(float(i % 2 ? -1500 : 1500) * (127.0f / 255.0f)), "Scoped disk restore did not produce the saved PCM");
 		checked += captured_samples;
+		classic_audio_controls(root);
 		Mix_SetPostMix(nullptr, nullptr);
 		xl_named_audio_clear();
 		SDL_PauseAudio(0);

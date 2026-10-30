@@ -1,9 +1,10 @@
 # Pumo playability planning checkpoint
 
-At the start of the October 29 run, following the message runtime, stereo decoder, named-audio source
-contracts, wall-key checks and final package audit, budget four to seven further
-twelve-hour runs (48-84 development hours), with five runs as the working
-midpoint, before a serious human campaign playthrough. This is a judgment about implementation and
+After the last two long runs and the October 29 audio/resource work, budget
+50-80 further development hours, with about 60 hours as the working midpoint,
+before a serious human campaign playthrough. That is roughly four to six
+thirteen-hour runs including the remainder of the current run.
+This is a judgment about implementation and
 integration work, not a measured completion percentage or a release promise.
 Human end-to-end acceptance and fixes it uncovers remain necessary before
 calling the campaign verified. Do not replace that with automated navigation.
@@ -25,6 +26,11 @@ calling the campaign verified. Do not replace that with automated navigation.
   41 owned external WAVs with independent decoded-sample comparisons. This
   establishes resources, not the still-missing spatial ambient runtime. The
   other 220 external sound files require separate consumer/replacement auditing.
+- The ordinary sound-bank audit now resolves 1,988 level/sample selections to
+  196 external WAVs matching 142 of 183 retail sample names. Pinned XL source,
+  independent folder/bank selection and decoded PCM agree. The production
+  loader explicitly rejects these unapplied replacements; this is preparation,
+  not ordinary or spatial sound playback qualification.
 - Required CI selections now contain 43/46 public and 103 private controls.
   See [current audio evidence](../../XL_compat/evidence/named-audio-runtime.md)
   for completed-run receipts and boundaries. These protect foundations without
@@ -73,15 +79,32 @@ qualification.
 See the [earlier resource audit](../../XL_compat/evidence/truecolor-pog-admission.md).
 INI presence alone is not counted as a missing feature: audit the authored
 settings against source defaults and their actual consumers.
+All fifteen authored INIs select the medium ship, disallow the light/heavy
+ships, disable automap marker teleport and permit 3D powerups; `mvlev5.ini` also enables secret
+saves. Fourteen correspond to descriptor levels; `pmend.ini` is an additional
+member. None contains an audio setting. Source `CAutomap::ReadControls` consumes
+the teleport option for F9 marker travel; authored teleport triggers are separate.
+`Use3DPowerups` also requires the user's rendering option, and secret-save
+permission affects negative mission ordinals. These consumer findings refine
+the audit; they do not establish configuration application or transitions.
+
+Do not infer a required hitbox profile from an absent `-collision_model` line.
+Source `CMissionConfig::Load` inherits that field for a level INI. Pumo has no
+`global.ini`, and a fresh source process begins with the field zero. The source
+`Init` method omits its reset, making prior-mission inheritance an explicit
+transition hazard. Optional hitbox profiles and static-object collision still
+need separate qualification; model-radius evidence alone does not cover them.
 
 ## Order
 
 1. Use the completed owned single-frame POG implementation while finishing the
    HXM/configuration audit and remaining texture profiles. Actual rendering and
    transparency must accompany decoding and persistence.
-2. Use the owned named-sound voice and mission/level-folder foundation for ambient sound
-   objects. Verify spatial output, ownership, pause, restoration and cleanup
-   before enabling that consumer. Its effect-object lifecycle is still blocked.
+2. Complete ordinary replacement-sound output using the audited bank and folder
+   rules, then use it alongside the owned named-sound foundation for ambient
+   sound objects. Verify spatial output, ownership, shared channel priorities,
+   pause, restoration and cleanup before enabling those consumers. The ambient
+   effect-object lifecycle is still blocked.
 3. Complete effect-object lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
 4. Complete the remaining event actions and world semantics: countdowns,

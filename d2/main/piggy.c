@@ -175,6 +175,13 @@ int Num_sound_files_new = 0;
 BitmapFile AllBitmaps[ MAX_BITMAP_FILES ];
 static SoundFile AllSounds[ MAX_SOUND_FILES ];
 
+#ifdef DXX_XL_RUNTIME
+const char *piggy_sound_name(int sample)
+{
+	return sample >= 0 && sample < Num_sound_files ? AllSounds[sample].name : NULL;
+}
+#endif
+
 char LastSndfileDir[ PATH_MAX ];
 
 int Piggy_hamfile_version = 0;

@@ -14,6 +14,7 @@
 #include "pog_resources.h"
 #include "pog_renderer.h"
 #include "named_audio.h"
+#include "classic_audio.h"
 #include "companion_resources.h"
 #include "../inventory.h"
 #include "preview.h"
@@ -384,6 +385,11 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	state = std::make_unique<State>(*mission_base);
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
 	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);
+	if (level) {
+		const auto classic = xl_compat::prepare_classic_audio(level_filename, ordinal, xl_compat::classic_audio_output_rate());
+		if (!classic.samples.empty())
+			throw std::runtime_error("XL classic WAV replacements require their playback consumer: " + classic.samples.front().path);
+	}
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
