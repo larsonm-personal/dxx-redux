@@ -1,16 +1,18 @@
 // Android-only diagnostic fixture, using the same captured PCM oracle as native
 void compare_linked_output(const json &state)
 {
-	xl_shared_audio_pcm::output(state, captured.data(), captured_music.data(), captured_samples, 20);
-	for (std::size_t i = 0; i < captured_samples; ++i)
-		if (captured_music[i]) ++music_samples;
-	checked_samples += captured_samples;
-	++output_checks;
-	++linked_checks;
+	compare_shared_output(state, linked_checks);
 }
 void prepare_linked()
 {
 	reset_events();
+	xl_seismic_audio_control::run([] {
+		capture_begin();
+		const auto starting = snapshot();
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		compare_shared_output(starting, seismic_checks);
+	});
 	capture_begin();
 	auto position = Viewer->pos;
 	vm_vec_scale_add2(&position, &Viewer->orient.rvec, 10 * F1_0);
@@ -44,7 +46,11 @@ void prepare_linked()
 	xl_audio_defer_objects(1);
 	require(xl_audio_link_position(1, Viewer->segnum, 2, &position, 1, F1_0, 64 * F1_0) > 0, "Cannot prepare Android deferred owner");
 	++GameTime64;
-	require(xl_named_audio_action(&Triggers[2], 2) && xl_audio_start_sample(1, 2, F1_0 / 2, 32767, 1, -1, -1) >= 0, "Cannot prepare Android named/unlinked companions");
+	require(xl_named_audio_action(&Triggers[2], 2), "Cannot prepare Android named companion");
+	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0, -1, -1);
+	auto loop = snapshot();
+	require(loop.at("loop").size() == 2, "Android seismic loop did not enter the XL pool");
+	digi_change_looping_volume(F1_0 / 2);
 	xl_audio_sync_objects();
 	starting = snapshot();
 	require(starting.at("linked").at("owners").size() == 4 && starting.at("voices").size() == 4 &&
@@ -55,12 +61,14 @@ void prepare_linked()
 	compare_linked_output(starting);
 	xl_named_audio_pause(1);
 	earned = snapshot();
-	for (unsigned variant = 0; variant < 3; ++variant) {
+	for (unsigned variant = 0; variant < 5; ++variant) {
 		auto bad = earned;
 		auto &entry = bad["linked"]["owners"][0];
 		if (variant == 0) entry["signature"] = entry["signature"].get<int>() + 1;
 		if (variant == 1) entry["channel_serial"] = bad["next"];
 		if (variant == 2) entry["sample"] = 0;
+		if (variant == 3) bad["loop"][1] = bad["next"];
+		if (variant == 4) bad["loop"][0] = -1;
 		require(!xl_compat::restore_named_audio(bad, false) && !xl_compat::restore_named_audio(bad, true) && snapshot() == earned, "Android malformed linked state changed playback");
 	}
 	energy = Players[Player_num].energy;

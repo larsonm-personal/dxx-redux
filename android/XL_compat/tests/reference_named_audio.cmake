@@ -28,7 +28,14 @@ foreach(
           "maths.h|X2I"
           "maths.h|F2X"
           "audio.h|SOUNDCLASS_GENERIC"
+          "audio.h|DEFAULT_PAN"
           "audio.h|SOUNDCLASS_AMBIENT"
+          "audio.h|SOUNDCLASS_PLAYER"
+          "audio.h|SOUNDCLASS_ROBOT"
+          "audio.h|SOUNDCLASS_LASER"
+          "audio.h|SOUNDCLASS_MISSILE"
+          "audio.h|SOUNDCLASS_EXPLOSION"
+          "sounds.h|MAX_SOUNDS"
           "audio.h|MAX_SOUND_CHANNELS"
           "piggy.h|MAX_ADDON_SOUND_FILES")
     string(REPLACE "|" ";" parts "${pair}")

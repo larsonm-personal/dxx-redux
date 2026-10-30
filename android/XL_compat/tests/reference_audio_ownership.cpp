@@ -1,6 +1,7 @@
 // Actual pinned owner/container consumers with independent channel and object storage
 #include "audio_owners.h"
 #include "audio_creation_receipt.h"
+#include "audio_logical.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -20,6 +21,7 @@ using fix = int;
 #define USE_SDL_MIXER  1
 #define MIX_MAX_VOLUME 128
 #include "xl_reference_audio_constants.h"
+std::uint8_t Sounds[2][MAX_SOUNDS]{}, AltSounds[2][MAX_SOUNDS]{};
 template <class _T, unsigned N>
 struct Stack {
 	std::array<_T, N> storage{};
@@ -135,7 +137,7 @@ struct {
 		struct {
 			struct {
 				const char *data = "fixture";
-			} sounds[1][2];
+			} sounds[2][MAX_SOUNDS];
 		} sound;
 	} pigData;
 } gameData;
@@ -261,6 +263,9 @@ struct CAudio {
 	struct {
 		int nActiveObjects = 0;
 		int nNextSignature = 1;
+		bool bLoMem = false;
+		int16_t nLoopingSound = -1, nLoopingVolume = 0, nLoopingStart = -1, nLoopingEnd = -1;
+		int32_t nLoopingChannel = -1;
 	} m_info;
 	std::array<int, 2> volumes{ 32768, 32768 };
 	unsigned cursor = 0;
@@ -291,7 +296,7 @@ struct CAudio {
 		stopped.push_back(channel);
 		m_channels[channel].Stop();
 	}
-	int StartSound(int sound, int sound_class, int volume, int pan, int loop, int start, int end, int owner, int speed, const char *, CFixVector *)
+	int StartSound(int sound, int sound_class, int volume, int pan, int loop, int start, int end, int owner = -1, int speed = 65536, const char * = nullptr, CFixVector * = nullptr)
 	{
 		request = { sound, sound_class, volume, pan, loop, start, end, owner, speed };
 		if (fail_start) return -1;
@@ -313,10 +318,7 @@ struct CAudio {
 		}
 		return -1;
 	}
-	int XlatSound(int sound)
-	{
-		return sound;
-	}
+	int16_t XlatSound(int16_t sound);
 	bool Available() const
 	{
 		return true;
@@ -343,6 +345,10 @@ struct CAudio {
 	}
 	void RecordSoundObjects() {}
 	void SyncSounds();
+	void StartLoopingSound();
+	void PlayLoopingSound(int16_t, fix, int32_t, int32_t);
+	void ChangeLoopingVolume(fix);
+	void StopLoopingSound();
 	void GetVolPan(CFixMatrix, CFixVector, int, CFixVector position, int segment_index, int maximum, int *volume, int *pan, int range, int decay, int = 0)
 	{
 		if (creation_input) {
@@ -388,6 +394,13 @@ void reset(int count)
 	audio.fail_start = false;
 	audio.volumes = { 32768, 32768 };
 	audio.cursor = 0;
+	audio.m_info.bLoMem = false;
+	audio.m_info.nLoopingSound = audio.m_info.nLoopingChannel = -1;
+	audio.m_info.nLoopingVolume = 0;
+	audio.m_info.nLoopingStart = audio.m_info.nLoopingEnd = -1;
+	gameStates.sound.bD1Sound = 0;
+	for (unsigned profile = 0; profile < 2; ++profile)
+		for (unsigned i = 0; i < MAX_SOUNDS; ++i) Sounds[profile][i] = AltSounds[profile][i] = std::uint8_t(i);
 	outputs.fill({});
 	gameData.demoData.nState = 0;
 	show_lightning = true;
@@ -416,6 +429,7 @@ void reset(int count)
 }
 } // namespace ownership_reference
 #include "reference_audio_creation.h"
+#include "reference_audio_logical.h"
 namespace
 {
 struct NativeOwners {

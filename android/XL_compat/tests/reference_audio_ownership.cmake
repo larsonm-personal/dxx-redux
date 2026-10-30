@@ -44,7 +44,11 @@ foreach(
           "void CAudio::EndSoundObject ("
           "void CAudio::StopObjectSounds ("
           "void CAudio::Cleanup ("
-          "void CAudio::SyncSounds (")
+          "void CAudio::SyncSounds ("
+          "void CAudio::StartLoopingSound ("
+          "void CAudio::PlayLoopingSound ("
+          "void CAudio::ChangeLoopingVolume ("
+          "void CAudio::StopLoopingSound (")
     extract_audio_owner("${signature}")
 endforeach()
 foreach(signature IN ITEMS "void CAudioChannel::SetPlaying (" "void CAudio::UnregisterChannel (")
@@ -57,7 +61,7 @@ foreach(
     signature IN
     ITEMS "int32_t CAudio::PlaySound (" "CSoundObject *CAudio::FindObjectSound ("
           "CSoundObject *CAudio::FindSegmentSound (" "int32_t CAudio::CreateObjectSound ("
-          "int32_t CAudio::CreateSegmentSound (")
+          "int32_t CAudio::CreateSegmentSound (" "int16_t CAudio::XlatSound (")
     extract_audio_owner("${signature}")
 endforeach()
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/sounds.h" sounds)

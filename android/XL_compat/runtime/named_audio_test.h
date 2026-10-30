@@ -211,6 +211,9 @@ static int named_audio_original(int argc, char **argv)
 #ifdef USE_SDLMIXER
 #include "shared_audio_test.h"
 #include "audio_creation_test.h"
+#include "looping_audio_test.h"
+#include "seismic_audio_test.h"
+#include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif
 static int named_audio_test(int argc, char **argv)

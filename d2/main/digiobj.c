@@ -25,6 +25,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "digi.h"
 #ifdef DXX_XL_RUNTIME
 #include "named_audio.h"
+#include "gameplay_audio.h"
+#include "preview.h"
 #endif
 #include "sounds.h"
 #include "args.h"
@@ -262,6 +264,12 @@ void digi_play_sample_looping_sub()
 
 void digi_play_sample_looping( int soundno, fix max_volume,int loop_start, int loop_end )
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_gameplay_loop_start(soundno, max_volume, loop_start, loop_end);
+		return;
+	}
+#endif
 	soundno = digi_xlat_sound(soundno);
 
 	if (soundno < 0 ) return;
@@ -278,6 +286,12 @@ void digi_play_sample_looping( int soundno, fix max_volume,int loop_start, int l
 
 void digi_change_looping_volume( fix volume )
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_gameplay_loop_volume(volume);
+		return;
+	}
+#endif
 	if ( digi_looping_channel > -1 )
 		digi_set_channel_volume( digi_looping_channel, volume );
 	digi_looping_volume = volume;
@@ -285,6 +299,9 @@ void digi_change_looping_volume( fix volume )
 
 void digi_stop_looping_sound()
 {
+#ifdef DXX_XL_RUNTIME
+	xl_gameplay_loop_stop();
+#endif
 	if ( digi_looping_channel > -1 )
 		digi_stop_sound( digi_looping_channel );
 	digi_looping_channel = -1;

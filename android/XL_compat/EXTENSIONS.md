@@ -152,7 +152,11 @@ guard reuse of converted stock PCM. See the shared-playback section of that
 evidence for limits and platform results. Moving native object/segment sources
 now use that same pool, with source-verified frame decisions and controlled
 Windows/Linux PCM. See [linked audio evidence](evidence/linked-audio.md).
-Linked-owner saves now validate complete owner/channel bindings in schema 21.
+Linked-owner saves now validate complete owner/channel bindings; schema 23 also
+preserves a serial-qualified looping controller and seismic volume cadence. Logical translation and
+forcefield scaling have source comparisons, and the looping engine entry points
+select XL or Redux at runtime. See [gameplay audio evidence](evidence/gameplay-audio.md)
+for playback, persistence, source corrections and remaining event-level checks.
 Fresh object/segment creation also passes 768 comparisons per fixture against
 the actual source functions on Windows/Linux; see the linked-audio evidence.
 Ordinary/ambient gameplay dispatch and wall-change qualification remain

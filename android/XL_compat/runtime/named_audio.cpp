@@ -5,6 +5,8 @@
 #include "shared_audio_internal.h"
 #include "linked_audio.h"
 #include "linked_audio_state.h"
+#include "gameplay_audio_state.h"
+#include "seismic_audio_state.h"
 #include "audio_resource.h"
 #include "preview.h"
 #include "doorway.h"
@@ -249,7 +251,10 @@ void install_named_audio(std::shared_ptr<const AudioResources> resources)
 		AudioLock lock;
 		owners.clear(mixer);
 		mixer.clear();
+		looping = {};
 		events.fill({});
+		// Reset XL cadence on level/resource transitions without touching stock-only loads
+		if (bank || resources) reset_seismic_audio();
 		previous = std::move(bank);
 		bank = std::move(resources);
 		converted.swap(samples);
@@ -348,6 +353,7 @@ extern "C" void xl_named_audio_stop(void)
 	AudioLock lock;
 	owners.clear(mixer);
 	mixer.clear();
+	looping = {};
 }
 extern "C" void xl_named_audio_clear(void)
 {
@@ -467,11 +473,14 @@ nlohmann::json named_audio_snapshot()
 	xl_audio_destroy_object(-1, -1);
 	std::array<AudioVoice, audio_voice_limit> voices;
 	AudioOwners saved_owners;
+	LoopingAudioState saved_loop;
 	std::uint64_t next;
 	unsigned cursor;
 	{
 		AudioLock lock;
 		owners.reconcile(mixer);
+		if (!looping.matches(mixer)) looping = {};
+		saved_loop = looping;
 		saved_owners = owners;
 		voices = mixer.voices;
 		next = mixer.next_serial;
@@ -479,6 +488,9 @@ nlohmann::json named_audio_snapshot()
 	}
 	nlohmann::json state = { { "source", bank ? bank->identity : "" }, { "rate", output_rate }, { "next", next }, { "cursor", cursor }, { "events", nlohmann::json::array() }, { "voices", nlohmann::json::array() } };
 	state["linked"] = encode_linked_audio(saved_owners, deferred);
+	state["loop"] = saved_loop.channel < 0 ? nlohmann::json::array() : nlohmann::json{ saved_loop.channel, saved_loop.serial };
+	const auto seismic = bank ? seismic_audio_snapshot() : SeismicAudioState{ GameTime64, 0 };
+	state["seismic"] = { seismic.previous_volume ? seismic.next_volume_time - GameTime64 : 0, seismic.previous_volume };
 	if (bank)
 		for (const auto &[key, action] : bank->actions) {
 			(void) action;
@@ -496,7 +508,7 @@ nlohmann::json named_audio_snapshot()
 bool restore_named_audio(const nlohmann::json &state, bool apply)
 {
 	try {
-		if (!state.is_object() || state.size() != 7 || !state.at("source").is_string() ||
+		if (!state.is_object() || state.size() != 9 || !state.at("source").is_string() ||
 		    state.at("source").get<std::string>() != (bank ? bank->identity : "") ||
 		    !state.at("events").is_array() || state.at("events").size() != (bank ? bank->actions.size() : 0) ||
 		    !state.at("voices").is_array() || state.at("voices").size() > audio_voice_limit)
@@ -568,6 +580,19 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 		saved_mixer.next_serial = next;
 		saved_mixer.cursor = cursor;
 		const auto linked = decode_linked_audio(state.at("linked"), saved_mixer);
+		LoopingAudioState saved_loop;
+		const auto &seismic = state.at("seismic");
+		if (!seismic.is_array() || seismic.size() != 2) throw std::runtime_error("Invalid seismic audio timing layout");
+		const SeismicAudioState saved_seismic{ GameTime64 + integer(seismic[0], -SAVE_EPOCH_MAX, SAVE_EPOCH_MAX), int(integer(seismic[1], 0, 80)) };
+		// Four detonation slots plus one level disturbance, each contributing <= 16
+		if (!save_timestamp_valid(saved_seismic.next_volume_time) || (!saved_seismic.previous_volume && seismic[0] != 0) || (!bank && saved_seismic.previous_volume)) throw std::runtime_error("Invalid seismic audio deadline");
+		const auto &loop = state.at("loop");
+		if (!loop.is_array() || (!loop.empty() && loop.size() != 2)) throw std::runtime_error("Invalid looping-audio binding");
+		if (!loop.empty()) {
+			saved_loop.channel = int(integer(loop[0], 0, audio_voice_limit - 1));
+			saved_loop.serial = std::uint64_t(integer(loop[1], 1, std::int64_t(next - 1)));
+			if (!saved_loop.matches(saved_mixer)) throw std::runtime_error("Looping-audio binding differs from its live channel");
+		}
 		if (apply) {
 			AudioLock lock;
 			// Do not consume restored samples while the loader is still running
@@ -576,6 +601,8 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			owners.clear(mixer);
 			owners = linked.owners;
 			deferred = linked.deferred;
+			looping = saved_loop;
+			if (bank) restore_seismic_audio(saved_seismic);
 			mixer.voices = voices;
 			mixer.next_serial = next;
 			mixer.cursor = cursor;
