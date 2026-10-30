@@ -2,7 +2,8 @@
 #include "named_audio_state.h"
 #include "classic_audio.h"
 #include "shared_audio.h"
-#include "../audio_owners.h"
+#include "shared_audio_internal.h"
+#include "linked_audio.h"
 #include "audio_resource.h"
 #include "preview.h"
 #include "doorway.h"
@@ -57,9 +58,27 @@ struct AudioResources {
 };
 } // namespace xl_compat
 
+namespace xl_compat::audio_runtime
+{
+AudioVoices mixer;
+AudioOwners owners;
+bool backend_ready = false;
+int priority_volume = 32768;
+std::string failure;
+AudioLock::AudioLock() : locked(backend_ready)
+{
+	if (locked) SDL_LockAudio();
+}
+AudioLock::~AudioLock()
+{
+	if (locked) SDL_UnlockAudio();
+}
+} // namespace xl_compat::audio_runtime
+
 namespace
 {
 using namespace xl_compat;
+using namespace xl_compat::audio_runtime;
 constexpr unsigned event_limit = DXX_XL_MAX_TRIGGERS * 2;
 struct AudioEvent {
 	std::int64_t started = 0, cooldown = -1;
@@ -70,26 +89,9 @@ struct AudioEvent {
 std::shared_ptr<const AudioResources> bank;
 std::shared_ptr<const std::vector<AudioSample>> converted;
 std::array<AudioEvent, event_limit> events;
-AudioVoices mixer;
-AudioOwners owners;
-bool backend_ready = false;
 bool resume_pending = false;
 unsigned output_rate = 44100;
-int priority_volume = 32768;
-std::string failure;
 std::uint64_t callbacks = 0, output_frames = 0, failed_starts = 0;
-
-struct AudioLock {
-	bool locked = backend_ready;
-	AudioLock()
-	{
-		if (locked) SDL_LockAudio();
-	}
-	~AudioLock()
-	{
-		if (locked) SDL_UnlockAudio();
-	}
-};
 
 std::string owned_bytes(std::string name, std::size_t limit)
 {
@@ -143,6 +145,12 @@ void mix_output(int, void *stream, int length, void *)
 }
 #endif
 } // namespace
+
+int xl_compat::audio_runtime::classic_sample(int physical_sample)
+{
+	if (!xl_level_extensions_active() || !bank || physical_sample < 0 || unsigned(physical_sample) >= bank->classic.size()) return -1;
+	return int(bank->classic[unsigned(physical_sample)]);
+}
 
 namespace xl_compat
 {
@@ -246,6 +254,7 @@ void install_named_audio(std::shared_ptr<const AudioResources> resources)
 		converted.swap(samples);
 		failure.clear();
 	}
+	clear_linked_scene();
 }
 } // namespace xl_compat
 
@@ -302,9 +311,12 @@ extern "C" void xl_named_audio_set_volume(int volume)
 #ifdef __ANDROID__
 	gain *= AUDIO_EFFECTS_VOLUME_SCALE * AUDIO_GAMEPLAY_HEADROOM_SCALE;
 #endif
-	AudioLock lock;
-	mixer.volume = int(gain);
-	priority_volume = (std::clamp) (volume, 0, 32768);
+	{
+		AudioLock lock;
+		mixer.volume = int(gain);
+		priority_volume = (std::clamp) (volume, 0, 32768);
+	}
+	xl_audio_sync_objects();
 }
 
 extern "C" void xl_named_audio_pause(int paused)
@@ -322,10 +334,13 @@ extern "C" void xl_named_audio_resume(void)
 }
 extern "C" void xl_named_audio_frame(void)
 {
-	if (!resume_pending || game_is_time_paused()) return;
-	AudioLock lock;
-	mixer.paused = false;
-	resume_pending = false;
+	if (game_is_time_paused()) return;
+	if (resume_pending) {
+		AudioLock lock;
+		mixer.paused = false;
+		resume_pending = false;
+	}
+	xl_audio_sync_objects();
 }
 extern "C" void xl_named_audio_stop(void)
 {

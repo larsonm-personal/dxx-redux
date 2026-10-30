@@ -8,12 +8,13 @@ removed on completion; forever owners detach and remain restartable. Registry
 mutation belongs to the game thread under the mixer lock; the PCM callback only
 advances voices and records completion.
 
-This increment supplies and verifies the lifecycle library. The runtime still
-only routes named actions through the owned mixer. Ordinary playback, actual
-caller classes, linked spatial updates, ambient objects and saved nondefault
-channel/owner state remain unfinished and gated. No admission rule changes and
-no original mission is newly qualified. The new ownership tests combine real
-library allocation, PCM mixing and cleanup; they are not engine consumer tests.
+This document records the initial lifecycle increment. Subsequent
+[shared playback](spatial-audio.md) adds physical stock-sample APIs and saved
+channel controls, and [linked playback](linked-audio.md) adds frame policy plus
+explicit native object/segment consumers. Ordinary gameplay callers, ambient
+objects and linked-owner saves remain unfinished and gated. No original mission
+is newly qualified. The original ownership tests below exercise library
+allocation, PCM mixing and cleanup; later native consumer evidence is separate.
 
 ## Executed reference and intentional correction
 

@@ -33,6 +33,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/flicker.cpp"
                 "${xl_runtime_dir}/level_messages.cpp"
                 "${xl_runtime_dir}/named_audio.cpp"
+                "${xl_runtime_dir}/linked_audio.cpp"
                 "${xl_runtime_dir}/audio_resource.cpp"
                 "${xl_runtime_dir}/classic_audio.cpp"
                 "${xl_runtime_dir}/audio_geometry.cpp"

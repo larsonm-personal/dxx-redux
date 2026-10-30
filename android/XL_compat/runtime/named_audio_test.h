@@ -210,6 +210,7 @@ static int named_audio_original(int argc, char **argv)
 
 #ifdef USE_SDLMIXER
 #include "shared_audio_test.h"
+#include "linked_audio_test.h"
 #endif
 static int named_audio_test(int argc, char **argv)
 {
@@ -419,6 +420,7 @@ static int named_audio_test(int argc, char **argv)
 				if (captured[i] != expected) throw std::runtime_error("Restored audio output differs at sample " + std::to_string(i) + ": " + std::to_string(captured[i]) + " != " + std::to_string(expected) + "; " + xl_compat::named_audio_diagnostics().dump());
 			}
 			xl_shared_audio_control::run(root, initial);
+			xl_linked_audio_control::run(initial);
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 sounds: wall/master/object/autoplay, actual stereo output, repetitions, pause, atomic ownership and disk-through-stock passed\n";
 		}
 		Mix_SetPostMix(nullptr, nullptr);
