@@ -251,6 +251,62 @@ void classic_packages(const Bytes &level, const std::vector<xl_compat::Member> &
 	std::cout << "Derived classic audio: owned WAV, malformed preferred WAV and selected custom-bank controls\n";
 }
 
+void static_explosion_package(const Bytes &source, const std::vector<xl_compat::Member> &members, const std::filesystem::path &directory)
+{
+	auto bytes = source;
+	const auto level = xl_compat::inspect_level(source);
+	const auto player = std::find_if(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.type == 4; });
+	require(player != level.objects.end() && level.level_version == 23 && level.objects.size() == 49, "Static explosion fixture geometry changed");
+	xl_test::layout_patch(bytes, level.game_offset + 35, unsigned(bytes.size()));
+	xl_test::layout_patch(bytes, level.game_offset + 39, unsigned(level.objects.size() + 2));
+	for (const auto &object : level.objects)
+		bytes.insert(bytes.end(), source.begin() + object.source_offset, source.begin() + object.source_end);
+	for (int index = 0; index < 2; ++index) {
+		Bytes object(source.begin() + player->source_offset, source.begin() + player->source_offset + 80);
+		object[0] = 19;
+		object[1] = 0;
+		object[2] = 13;
+		object[3] = object[5] = object[6] = 0;
+		object[4] = 5;
+		object[77] = object[78] = 255;
+		object[79] = 0;
+		xl_test::layout_patch(object, 9, std::uint32_t(player->position[0] + (index + 1) * 16384));
+		xl_test::layout_patch(object, 17, std::uint32_t(player->position[2] + (index + 1) * 16384));
+		xl_test::layout_patch(object, 57, 399147);
+		xl_test::layout_put(object, 128, 4);
+		xl_test::layout_put(object, 1, 4); // Initializer replaces this with object ID zero
+		xl_test::layout_put(object, 0, 4);
+		xl_test::layout_put(object, 0, 1);
+		bytes.insert(bytes.end(), object.begin(), object.end());
+	}
+	Bytes archive{ 'D', 'H', 'F' };
+	for (int version : { 23, 27, 17 }) {
+		const auto name = "static" + std::to_string(version);
+		xl_test::hog_member(archive, name + ".rl2", version == 23 ? bytes : version == 17 ? xl_test::legacy_audio_fixture(bytes, 36)
+		                                                                                  : xl_test::runtime_layout_fixture(bytes, 27).bytes,
+		                    false);
+		for (const auto &member : members) {
+			if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
+			const auto extension = member.name.substr(8);
+			if (extension != ".rl2" && extension != ".mn2" && !(version == 17 && extension == ".clr")) xl_test::hog_member(archive, name + extension, member.bytes, false);
+		}
+	}
+	const auto decoded = xl_compat::inspect_level(bytes);
+	const auto at = decoded.objects.back().source_offset;
+	for (const std::string name : { "stbadid", "stbadfr", "stbadct", "stbadmv", "stbadrn", "stbadtm" }) {
+		auto rejected = bytes;
+		if (name == "stbadid") rejected.at(at + 1) = 255;
+		if (name == "stbadfr") rejected.at(at + 92) = 127;
+		if (name == "stbadct") rejected.at(at + 2) = 0;
+		if (name == "stbadmv") rejected.at(at + 3) = 42;
+		if (name == "stbadrn") rejected.at(at + 4) = 0;
+		if (name == "stbadtm") xl_test::layout_patch(rejected, at + 88, 0xffffffff);
+		xl_test::hog_member(archive, name + ".rl2", rejected, false);
+	}
+	write(directory / "xstatic.hog", archive);
+	write(directory / "xstatic.mn2", text("d2x-name = Derived XL explosions\nnum_levels = 3\nstatic23.rl2\nstatic27.rl2\nstatic17.rl2\nnum_secrets = 1\nstatic23.rl2,1\n"));
+}
+
 void fixture(const char *original, const std::filesystem::path &directory)
 {
 	std::ifstream input(original, std::ios::binary);
@@ -317,6 +373,7 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	write(directory / "xambold.mn2", text("d2x-name = Derived legacy ambience\nnum_levels = 3\namb33.rl2\namb34.rl2\namb36.rl2\n"));
 	scopes(level, members, directory);
 	classic_packages(found->bytes, members, directory);
+	static_explosion_package(found->bytes, members, directory);
 	std::cout << "Derived XL sound packages: synthetic stereo/mono PCM, wall/object actions, 23/27 layouts and rejection controls\n";
 }
 } // namespace

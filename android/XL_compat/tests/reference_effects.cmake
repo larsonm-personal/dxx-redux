@@ -87,3 +87,5 @@ add_test(
         -DREFERENCE=$<TARGET_FILE:xl_effect_reference>
         -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/effect-decode -P
         ${CMAKE_CURRENT_LIST_DIR}/effect_decode.cmake)
+
+include("${CMAKE_CURRENT_LIST_DIR}/reference_static_explosion.cmake")

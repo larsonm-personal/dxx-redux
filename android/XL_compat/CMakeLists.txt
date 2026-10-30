@@ -310,7 +310,8 @@ if(BUILD_TESTING)
                 -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/named-audio ${xl_audio_oracle_args} -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/named_audio_runtime.cmake)
-        set_tests_properties(xl_named_audio_runtime PROPERTIES TIMEOUT 110)
+        # Includes four static-explosion lifecycle profiles; child limits remain bounded
+        set_tests_properties(xl_named_audio_runtime PROPERTIES TIMEOUT 150)
         add_test(
             NAME xl_level_messages
             COMMAND

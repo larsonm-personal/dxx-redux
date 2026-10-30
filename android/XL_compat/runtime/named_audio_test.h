@@ -228,6 +228,7 @@ static int named_audio_original(int argc, char **argv)
 #include "../tests/ambient_audio_receipt.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
+#include "static_explosion_test.h"
 #endif
 static int named_audio_test(int argc, char **argv)
 {
@@ -241,10 +242,15 @@ static int named_audio_test(int argc, char **argv)
 		if (GameArg.SndNoSound || !xl_compat::named_audio_diagnostics().at("backend_ready").get<bool>())
 			throw std::runtime_error("Named audio controls require the real SDL_mixer output; nosound=" + std::to_string(GameArg.SndNoSound) + "; " + xl_compat::named_audio_diagnostics().dump());
 		const char *selected = find_arg_value(argc, argv, "-audio-level");
+		const bool static_objects = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "static");
 		const bool legacy = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-legacy");
-		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || (legacy && !std::strcmp(selected, "3"))), "Named audio controls require a valid fixture ordinal");
+		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || ((legacy || static_objects) && !std::strcmp(selected, "3")) || (static_objects && !std::strcmp(selected, "-1"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
-		if (legacy || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
+		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "static")) {
+			xl_static_explosion_control::run(root, ordinal);
+			Mix_SetPostMix(nullptr, nullptr);
+			return 0;
+		} else if (legacy || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
 			require(load_base_mission(legacy ? "xambold" : "xsound", error, sizeof(error)), error);
 			std::strcpy(Players[Player_num].callsign, "XLTest");
 			input_demo_set_skip_level_intro(1);

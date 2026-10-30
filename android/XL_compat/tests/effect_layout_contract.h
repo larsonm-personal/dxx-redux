@@ -101,5 +101,38 @@ void effect_layout_contract(const char *directory = nullptr)
 				}
 				++cases;
 			}
-	std::cout << "XL effect layout controls passed: " << cases << " profiles and " << truncations << " payload truncations; unsupported effect requirements remain gated\n";
+	for (int version : { 15, 17, 23, 25, 27 })
+		for (bool supported : { false, true }) {
+			auto bytes = fixture(version);
+			const auto base = xl_compat::inspect_level(bytes);
+			const auto start = bytes.size();
+			patch(bytes, base.game_offset + 35, static_cast<unsigned>(start));
+			patch(bytes, base.game_offset + 39, 1);
+			patch(bytes, base.game_offset + 43, 264);
+			Bytes object(version >= 23 ? 80 : 79);
+			object[0] = 19;
+			object[2] = 13;
+			object[4] = supported ? 5 : 0;
+			const int shift = version >= 23;
+			for (int i = 0; i < 9; ++i) patch(object, 20 + shift + i * 4, i % 4 == 0 ? 65536 : 0);
+			patch(object, 56 + shift, 65536);
+			patch(object, 60 + shift, 65536);
+			object[76 + shift] = object[77 + shift] = 255;
+			put(object, 128, 4);
+			if (supported) {
+				put(object, 0, 4);
+				put(object, static_cast<unsigned>(-1), 4);
+				put(object, 0, 1);
+			}
+			bytes.insert(bytes.end(), object.begin(), object.end());
+			const auto decoded = xl_compat::inspect_level(bytes);
+			check(xl_compat::runtime_blockers(decoded).empty() == supported, "static explosion capability differs from its shape");
+			const auto report = xl_compat::compatibility_json("static.rl2", bytes);
+			const auto row = feature_row(report, "effect_objects");
+			check(row.find(supported ? "\"status\": \"partial\"" : "\"status\": \"blocked\"") != std::string::npos &&
+			          row.find("1 static explosions") != std::string::npos && report.find("\"playable\": false") != std::string::npos,
+			      "Static explosion metadata lost its count, shape blocker or resource-dependent qualification");
+			if (!supported) check(row.find("static_explosion at record 0") != std::string::npos, "Static shape rejection appeared in the wrong browser row");
+		}
+	std::cout << "XL effect layout controls passed: " << cases << " profiles and " << truncations << " payload truncations; ten static-explosion browser profiles; unsupported effect requirements remain gated\n";
 }

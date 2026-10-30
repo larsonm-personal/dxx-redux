@@ -1,6 +1,7 @@
 #include "gameplay_audio.h"
 #include "linked_audio.h"
 #include "ambient_objects.h"
+#include "static_explosion_runtime.h"
 #include "preview.h"
 #include <array>
 extern "C" {
@@ -58,6 +59,7 @@ extern "C" int xl_gameplay_surface_audio(void)
 		}
 	}
 	xl_ambient_objects_start();
+	xl_static_explosions_start();
 	xl_audio_defer_objects(0);
 	return 1;
 }

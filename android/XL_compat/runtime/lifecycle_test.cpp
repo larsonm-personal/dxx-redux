@@ -555,19 +555,24 @@ void dynamic_lighting(const xl_compat::Inventory &source, int vertex)
 	Vclip[0].frames[1].index = 3;
 	Vclip[0].light_value = F1_0;
 	Vclip[0].play_time = 2 * F1_0;
+	for (int type : { int(OBJ_FIREBALL), 19 }) {
+		Objects[0].type = type;
+		GameBitmaps[3].bm_flags = 0;
+		GameBitmaps[3].bm_data = pixels;
+		Objects[0].id = 0;
+		Objects[0].lifeleft = 4 * F1_0;
+		xl_preview_dynamic_frame();
+		require(xl_preview_unresolved_emitters() == 0, "indexed explosion unresolved");
+		check_color(vertex, F1_0 / 4, { 0.25f, 0.25f, 1 });
+		// Same fallback pixels encoded as RLE_BIG: transparent bytes require runs
+		ubyte encoded[] = { 13, 0, 0, 0, 7, 0, 8, 9, 0, 0xe1, 255, 0xe0, 0 };
+		GameBitmaps[3].bm_flags = BM_FLAG_RLE | BM_FLAG_RLE_BIG;
+		GameBitmaps[3].bm_data = encoded;
+		Objects[0].lifeleft = F1_0;
+		xl_preview_dynamic_frame();
+		check_color(vertex, F1_0 / 8, { 0.25f, 0.25f, 1 });
+	}
 	Objects[0].type = OBJ_FIREBALL;
-	Objects[0].id = 0;
-	Objects[0].lifeleft = 4 * F1_0;
-	xl_preview_dynamic_frame();
-	require(xl_preview_unresolved_emitters() == 0, "indexed explosion unresolved");
-	check_color(vertex, F1_0 / 4, { 0.25f, 0.25f, 1 });
-	// Same fallback pixels encoded as RLE_BIG: transparent bytes require runs
-	ubyte encoded[] = { 13, 0, 0, 0, 7, 0, 8, 9, 0, 0xe1, 255, 0xe0, 0 };
-	GameBitmaps[3].bm_flags = BM_FLAG_RLE | BM_FLAG_RLE_BIG;
-	GameBitmaps[3].bm_data = encoded;
-	Objects[0].lifeleft = F1_0;
-	xl_preview_dynamic_frame();
-	check_color(vertex, F1_0 / 8, { 0.25f, 0.25f, 1 });
 	Vclip[0] = original_clip;
 	GameBitmaps[1] = bitmap_one;
 	GameBitmaps[3] = bitmap_three;

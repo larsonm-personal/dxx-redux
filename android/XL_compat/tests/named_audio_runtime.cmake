@@ -140,6 +140,46 @@ if(REFERENCE)
         message(FATAL_ERROR "Loaded audio geometry differs from source (${result}): ${log}${error}")
     endif()
 endif()
+# Static objects share this integration owner and the existing reference executables
+foreach(ordinal IN ITEMS 1 2 3 -1)
+    execute_process(
+        COMMAND "${ENGINE}" -named-audio-test static -audio-level "${ordinal}" -hogdir "${DATA}"
+                -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nomusic
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES "Loaded static explosions.*passed")
+        message(FATAL_ERROR "Static explosion lifecycle failed (${result}): ${log}${error}")
+    endif()
+    if(REFERENCE)
+        execute_process(
+            COMMAND "${REFERENCE}" --static-runtime "${OUTPUT}/static-audio.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES "2 loaded static owners match actual source")
+            message(
+                FATAL_ERROR "Static initialization differs from source (${result}): ${log}${error}")
+        endif()
+    endif()
+    if(EFFECT_REFERENCE)
+        execute_process(
+            COMMAND "${EFFECT_REFERENCE}" --static-runtime "${OUTPUT}/static-animation.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES
+                                 "48 loaded static explosion animation steps match actual source")
+            message(FATAL_ERROR "Static animation differs from source (${result}): ${log}${error}")
+        endif()
+    endif()
+endforeach()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL source_hash)
     message(FATAL_ERROR "Original geometry changed during named audio controls")

@@ -72,7 +72,7 @@ extern "C" int xl_ambient_object_set_enabled(int index, int enabled)
 }
 extern "C" int xl_ambient_object_noncolliding(int type)
 {
-	return type == 20 && xl_level_extensions_active();
+	return (type == 19 || type == 20) && xl_level_extensions_active();
 }
 
 nlohmann::json xl_compat::ambient_objects_snapshot()

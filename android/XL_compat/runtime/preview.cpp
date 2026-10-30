@@ -15,6 +15,7 @@
 #include "level_messages.h"
 #include "named_audio.h"
 #include "ambient_objects.h"
+#include "static_explosion_runtime.h"
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include "object_trigger.h"
@@ -353,6 +354,20 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 						for (int index = 0, id; (id = xl_boss_spawn_default_type(graph.robot_data[obj.id].boss_flag, index)) >= 0; ++index) graph.robot(id);
 					graph.clip(VCLIP_MORPHING_ROBOT);
 				}
+			}
+			if (obj.type == 19) {
+				const int sound = xl_static_explosion_sound();
+				if (sound >= 0) graph.sound(sound);
+				graph.clip(obj.id); // Explosion lighting uses the ID independently of rendering
+				const int clip = sound >= 0 ? obj.id : obj.render_data.at(0);
+				graph.clip(clip);
+				if (obj.id < 0 || obj.id >= Num_vclips || clip < 0 || clip >= Num_vclips)
+					throw std::runtime_error("static explosion references an invalid animation ID");
+				const auto &animation = Vclip[clip];
+				if (Vclip[obj.id].play_time <= 0 || animation.frame_time <= 0 ||
+				    obj.render_data.at(2) < 0 || obj.render_data.at(2) >= animation.num_frames)
+					throw std::runtime_error("static explosion requires a valid clip, positive timing and an in-range initial frame");
+				graph.clip(VCLIP_POWERUP_DISAPPEARANCE);
 			}
 			if (obj.type == OBJ_POWERUP) graph.powerup(obj.id);
 			if (obj.type == OBJ_WEAPON) graph.weapon(obj.id);
@@ -1608,6 +1623,7 @@ extern "C" void xl_preview_dynamic_frame(void)
 					force_color = headlight;
 					has_color = true;
 					break;
+				case 19: // XL static explosion
 				case OBJ_FIREBALL: {
 					if (obj.id == 255 || obj.id >= Num_vclips) break;
 					const auto &clip = Vclip[obj.id];

@@ -10,7 +10,7 @@
 #include <stdexcept>
 namespace xl_shared_audio_pcm
 {
-inline std::map<unsigned, xl_compat::AudioSample> reference_bank(const nlohmann::json &state)
+inline std::map<unsigned, xl_compat::AudioSample> reference_bank(const nlohmann::json &state, unsigned classic_offset = 4)
 {
 	const auto rate = state.at("rate").get<unsigned>();
 	std::map<unsigned, xl_compat::AudioSample> result;
@@ -20,10 +20,10 @@ inline std::map<unsigned, xl_compat::AudioSample> reference_bank(const nlohmann:
 	for (const auto &row : state.at("voices")) {
 		const auto index = row[2].get<unsigned>();
 		if (result.count(index)) continue;
-		if (index >= 4) {
+		if (index >= classic_offset) {
 			// Stock conversion has an independent pinned-source PCM comparison
 			if (!classic) classic = xl_compat::prepare_classic_playback({});
-			result.emplace(index, xl_compat::prepare_audio_sample(classic->samples.at(index - 4).pcm, rate));
+			result.emplace(index, xl_compat::prepare_audio_sample(classic->samples.at(index - classic_offset).pcm, rate));
 			continue;
 		}
 		const unsigned channels = index == 2 ? 1u : 2u, source_rate = index == 2 ? 22050u : 44100u;
@@ -38,9 +38,9 @@ inline std::map<unsigned, xl_compat::AudioSample> reference_bank(const nlohmann:
 	}
 	return result;
 }
-inline void output(const nlohmann::json &state, const std::int16_t *captured, const std::int16_t *music, std::size_t captured_samples, int gain)
+inline void output(const nlohmann::json &state, const std::int16_t *captured, const std::int16_t *music, std::size_t captured_samples, int gain, unsigned classic_offset = 4)
 {
-	const auto samples = reference_bank(state);
+	const auto samples = reference_bank(state, classic_offset);
 	for (std::size_t i = 0; i < captured_samples; ++i) {
 		int expected = music ? music[i] : 0;
 		for (const auto &row : state.at("voices")) {

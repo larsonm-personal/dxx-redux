@@ -2,7 +2,8 @@
 # Published mission/level sound ownership, actual PCM and disk/rewind isolation
 param(
     [Parameter(Mandatory)][string]$Serial,
-    [Parameter(Mandatory)][string]$FixtureDirectory
+    [Parameter(Mandatory)][string]$FixtureDirectory,
+    [switch]$StaticOnly
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
@@ -12,7 +13,7 @@ Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-audio-scopes-android'
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
-& python "$PSScriptRoot/../XL_compat/tests/create_audio_scope_package.py" $FixtureDirectory "$output/xl-audio-scopes.zip" --classic
+& python "$PSScriptRoot/../XL_compat/tests/create_audio_scope_package.py" $FixtureDirectory "$output/xl-audio-scopes.zip" --classic --static
 if ($LASTEXITCODE -ne 0) { throw 'Cannot create the pinned scoped-audio package' }
 function Invoke-AudioScopesAdb {
     param([string[]]$Arguments)
@@ -41,7 +42,10 @@ try {
     $ready = $true
     Invoke-AudioScopesAdb -Arguments @('push', "$output/xl-audio-scopes.zip", '/data/local/tmp/xl-audio-scopes.zip') | Out-Null
     Invoke-AudioScopesPrivate 'mkdir -p files/imported/sets/default/.content/mods && cp /data/local/tmp/xl-audio-scopes.zip files/imported/sets/default/.content/mods/xl-audio-scopes.zip' | Out-Null
-    foreach ($scriptName in @('test_xl_audio_scopes.jsonc', 'test_xl_classic_audio_rejection.jsonc')) {
+    $scripts = if ($StaticOnly) { @('test_xl_static_explosions.jsonc') } else {
+        @('test_xl_audio_scopes.jsonc', 'test_xl_classic_audio_rejection.jsonc', 'test_xl_static_explosions.jsonc')
+    }
+    foreach ($scriptName in $scripts) {
         $receipt = Join-Path $output ([IO.Path]::GetFileNameWithoutExtension($scriptName))
         New-Item -ItemType Directory -Force -Path $receipt | Out-Null
         Invoke-AudioScopesAdb -Arguments @('logcat', '-c') | Out-Null

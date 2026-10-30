@@ -295,3 +295,98 @@ The timing option is opt-in; default iteration count and CI ownership stay uncha
 Publish this two-file follow-up on `xl_more_72_audio_preparation`, stacked on
 `xl_more_71_classic_replacements` (PR #221). The checkout remains
 `C:/local/dxx-redux/temp/xl-batch2-20261027`; the main checkout remains on `cmake`.
+
+### Static explosion objects
+
+Continue in the same checkout on `xl_more_73_static_explosions`, based on #222.
+Treat type 19 as an XL-owned object consumer, with minimal engine dispatch hooks.
+Original Boiling Point contains examples in canyon.rl2 and canyon2.rl2; Pumo
+contains no type-19 records, so this is a foundation for complete support rather
+than a Pumo playability claim.
+
+1. Extend existing pinned-source owners for static initializer, sound lookup,
+   animation direction/timing and render selection. Keep missing-sound behavior
+   explicit: the source only replaces render type and clip when lookup succeeds.
+2. Implement validated loaded-object binding, source animation, sprite drawing,
+   explosion light emission and noncollision; route its permanent classic sound
+   through the existing owned playback bank. Retain stock behavior outside XL.
+3. Exercise loaded normal/secret and stock transitions, object reuse/deletion,
+   save/restore, audio output, animation boundaries and visual/light output.
+   Use executable controls and introspection, not autonomous level navigation.
+4. Admit only behavior supported by the complete implementation and its tests;
+   reject malformed or still-unsupported configurations with specific messages.
+   Audit original records independently and document remaining restrictions.
+
+Use existing test owners where possible; do not add duplicate broad CI runs.
+
+Static explosion development checkpoint (09:59 UTC): the local implementation
+now admits the stationary CT_POWERUP/RT_POWERUP shape after asset and initial
+frame validation, dispatches animation/drawing through two small D2 powerup
+hooks, adds type 19 to owned explosion lighting and the noncollision gate, and
+creates the source's permanent named classic sound. This is uncommitted feature
+work; publication still requires the remaining checks below.
+
+Verified locally:
+
+- Pinned source initializer/name lookup controls cover 17 cases, including first
+  inverse mapping, missing sound, static list order, clip replacement and the
+  source's unmapped-name fallback. The existing audio source owner retains all
+  prior cases.
+- 1,925 source animation/bitmap-selection comparisons plus expiration pass.
+  Large time steps exposed source float rounding; the implementation preserves
+  it. A separate source review found ONE/ONE additive blending, now used by the
+  runtime rather than SRC_ALPHA/ONE.
+- Derived loaded 23/40 and 27/40 objects pass odd/even slot animation, 48 captured
+  steps per layout compared with actual source, real PCM output, FVI with a
+  positive ordinary-object control, explosion light color/intensity, disk saves
+  through Redux, and deletion/signature reuse cleanup.
+- The complete existing Windows audio integration owner passes with both new
+  static cases. The PCM oracle now accepts a classic-bank offset because this
+  fixture has no four-entry named WAV table; existing callers retain offset four.
+- Scoped formatting/lint and diff checks pass. Original Boiling Point reader
+  comparison matches four decoded levels / 267 object identities and 92 effect
+  payloads; three other levels still fail inspection and were explicitly skipped.
+  This is not whole-mission qualification.
+
+Remaining before publication: source render-policy and actual GPU/Android
+checks, malformed static admission/asset cases and atomic rejection, direct
+source startup comparison for loaded owners, legacy/secret transition coverage,
+full required native/stock checks, Android persistence/output verification,
+original feature inventory/evidence refresh, final scoped quality checks, and
+PR publication/CI. No static explosion playability claim is made yet.
+
+Publication checkpoint requested by the user: publish the current static-explosion
+work as a draft stacked on #222 so GitHub CI can run while qualification continues.
+The checkout remains `C:/local/dxx-redux/temp/xl-batch2-20261027`, branch
+`xl_more_73_static_explosions`; the main checkout remains on `cmake`.
+Since the checkpoint above, pinned render-policy controls and malformed-object
+rejection checks pass, and the Android APK builds with GPU and lifecycle probes.
+Those Android probes have not yet been executed or connected to the reusable
+automation script. Full native/stock qualification, direct loaded-owner startup
+comparison, original evidence refresh, and Android GPU/persistence validation
+remain outstanding. Publishing this draft does not qualify original missions.
+
+Before this draft push, the rebuilt Windows audio integration owner passes all
+four static cases (23/40, 27/40, 17/36 and the secret level), including 48 source
+animation comparisons per case. The pinned effect reference test also passes.
+
+The published draft is PR #223, commit `a99120deb`. Follow-up verification now
+compares two loaded startup owners directly with actual source translation and
+initializer order. The Android script completed 75 steps with 24 pixel cases,
+seven PCM captures, rewind and disk-through-stock restoration; all 234 protected
+files restored unchanged. Secret manual save rejection is explicit, with the
+optional XL mission/settings override still unqualified. Negative initial
+animation timers proved source-valid in 3,205 comparisons, so remove that
+overstrict admission check and verify the corrected build before publication.
+
+The first Linux run passed 105/106; its existing audio-scope child exceeded 45
+seconds under concurrent Android/build load. The exact child then passed alone
+in 37.57 seconds. Keep its timeout and coverage unchanged; finish builds before
+the next full native run, then run Android separately to avoid that contention.
+
+Second publication checkpoint requested by the user: the final Linux run passes
+all 106 required tests, 16 format witnesses and three modern source levels.
+The aggregate audio-test budget is now 150 seconds instead of 110 to cover the
+four added profiles; all child limits and assertions remain unchanged. Final
+Windows audio integration passes. Publish the follow-up to PR #223 now to start
+CI; the corrected Android APK's focused rerun remains pending.
