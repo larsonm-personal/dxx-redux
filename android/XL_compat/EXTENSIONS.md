@@ -158,11 +158,14 @@ forcefield scaling have source comparisons. Ordinary and looping engine entry
 points now select XL or Redux at runtime, including linked-source lifecycle and
 registry queries. See [gameplay audio evidence](evidence/gameplay-audio.md) and
 [engine dispatch evidence](evidence/gameplay-dispatch.md) for playback,
-persistence, source corrections and remaining caller-specific work.
+persistence and source corrections. Ordinary weapon firing and weapon/actor/water
+explosion selection now have separate XL policies and actual event/PCM controls;
+see [combat audio evidence](evidence/combat-audio.md). Robot/boss and afterburner
+caller policies remain unfinished.
 Fresh object/segment creation also passes 768 comparisons per fixture against
 the actual source functions on Windows/Linux; see the linked-audio evidence.
-Ordinary/ambient gameplay dispatch and wall-change qualification remain
-unfinished, so classic replacements remain gated.
+Ambient gameplay dispatch and wall-change qualification remain unfinished,
+so classic replacements remain gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

@@ -74,9 +74,10 @@ runtime checks.
 ## Remaining fidelity work
 
 Generic engine dispatch does not establish the source's explicit sound classes
-or sample choices at every gameplay caller. Weapon fire, robot/boss sounds,
-explosions and afterburner still need their caller-specific changes and actual
-event checks. XL explosion IDs 57/58 differ from Redux's 11 in the retail bank.
+or sample choices at every gameplay caller. The subsequent
+[combat increment](combat-audio.md) implements ordinary weapon fire and
+weapon/actor/water explosion selection with actual event checks. Robot/boss
+sounds and afterburner still need their caller-specific work.
 Ambient-source distribution, external sound objects, wall changes and classic
 replacement installation also remain separate requirements. Queued multiplayer
 voice callers remain deferred. Admission has not been expanded.

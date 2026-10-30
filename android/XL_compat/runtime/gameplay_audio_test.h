@@ -40,6 +40,8 @@ void run(int source, const nlohmann::json &initial)
 	};
 	xl_seismic_audio_control::run(output);
 	xl_gameplay_dispatch_control::run(output);
+	xl_combat_audio_control::run(output);
+	std::cout << "Native combat audio passed: 15 real PCM controls, actual local/remote firing, missing/empty parent, silent/missing cues, weapon/actor/water explosions and logical demo event\n";
 	reset();
 	int channel = xl_gameplay_sound_play(7, XL_SOUND_PLAYER, F1_0, 0, -1);
 	require(channel >= 0 && mixer.voices[unsigned(channel)].sample == unsigned(classic_sample(0)) && mixer.voices[unsigned(channel)].priority.sound_class == XL_SOUND_PLAYER, "Logical player sound did not enter the shared pool");
