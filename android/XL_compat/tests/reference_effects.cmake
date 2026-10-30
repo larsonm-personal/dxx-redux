@@ -2,7 +2,8 @@ foreach(
     pair IN
     ITEMS "objects/objectio.cpp|528f64e09469b5a452e9c6cf0ae8e9d5dd3eaffeaf5478378669f0783deaf68f"
           "include/object.h|ed546edd2bbda56a84e9fef8543706707d47a08b48e36616852346b5a2f96127"
-          "include/cfile.h|34d3db395260649003a848015d3ac4dbac516779012f34c4315b530626016191")
+          "include/cfile.h|34d3db395260649003a848015d3ac4dbac516779012f34c4315b530626016191"
+          "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -12,6 +13,12 @@ foreach(
     endif()
 endforeach()
 set(extracted "// Actual pinned object reader and effect identity normalization\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/maths.h" math_header)
+string(REGEX MATCH "inline float FRound[^\n]+" rounded "${math_header}")
+if(NOT rounded)
+    message(FATAL_ERROR "Missing source effect volume rounding")
+endif()
+string(APPEND extracted "${rounded}\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"
                       "void CObject::FixEffectRenderType (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"

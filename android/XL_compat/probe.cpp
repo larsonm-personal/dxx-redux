@@ -2,6 +2,7 @@
 #include "admission.h"
 #include "capacity.h"
 #include "producer_layout.h"
+#include "ambient_sound.h"
 
 #include <limits>
 #include <algorithm>
@@ -57,6 +58,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	require(blockers.empty(), blocker_message(blockers));
 	const auto producers = producer_layout(v);
 	if (!source_runtime) {
+		require(std::none_of(v.objects.begin(), v.objects.end(), ambient_sound_shape), "ambient sound objects require the source-owned XL runtime");
 		require(v.flicker_lights.size() <= 100, "classic probe flicker capacity requires the source-owned XL runtime");
 		std::size_t translated_indices = 0;
 		for (const auto &index : v.light_indices) {
@@ -184,16 +186,26 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
-	if (modern_layout) {
+	const bool ambient_objects = std::any_of(v.objects.begin(), v.objects.end(), ambient_sound_shape);
+	if (modern_layout || ambient_objects) {
 		// Stock uses explicit section offsets. Retain the original game payload as
 		// inert evidence, then point at records with the audited stock widths
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "object table offset overflow");
 		patch(out, new_game_offset + 35, static_cast<int>(out.size()));
 		for (const auto &object : v.objects) {
-			require(object.multiplayer == 0 && object.source_end >= object.source_offset + 80 && object.source_end <= source.size(), "invalid object translation span");
+			const unsigned header = modern_layout ? 80 : 79;
+			require(object.multiplayer == 0 && object.source_end >= object.source_offset + header && object.source_end <= source.size(), "invalid object translation span");
+			const auto start = out.size();
 			out.insert(out.end(), source.begin() + object.source_offset, source.begin() + object.source_offset + 6);
-			out.insert(out.end(), source.begin() + object.source_offset + 7, source.begin() + object.source_end);
+			const auto end = ambient_sound_shape(object) ? object.source_offset + header : object.source_end;
+			out.insert(out.end(), source.begin() + object.source_offset + (modern_layout ? 7 : 6), source.begin() + end);
+			if (ambient_sound_shape(object)) {
+				patch(out, start + 1, object.reader_id, 1);
+				patch(out, start + 4, 0, 1); // Audio payload and enable state remain source-owned
+			}
 		}
+	}
+	if (modern_layout) {
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "wall table offset overflow");
 		patch(out, new_game_offset + 47, static_cast<int>(out.size()));
 		patch(out, new_game_offset + 55, 24);

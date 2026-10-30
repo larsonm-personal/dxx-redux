@@ -223,6 +223,7 @@ static int named_audio_original(int argc, char **argv)
 #include "surface_audio_test.h"
 #include "audio_routes_test.h"
 #include "external_audio_test.h"
+#include "ambient_objects_test.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif
@@ -240,6 +241,17 @@ static int named_audio_test(int argc, char **argv)
 		const char *selected = find_arg_value(argc, argv, "-audio-level");
 		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2")), "Named audio controls require -audio-level 1 or 2");
 		const int ordinal = std::atoi(selected);
+		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
+			require(load_base_mission("xsound", error, sizeof(error)), error);
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(ordinal + 2);
+			SDL_PauseAudio(1);
+			xl_ambient_objects_control::run([] { xl_linked_audio_control::output(); });
+			Mix_SetPostMix(nullptr, nullptr);
+			std::cout << "Loaded ambient objects: activation, target order, real PCM, collision, lifetime and trailer restore passed\n";
+			return 0;
+		}
 		{
 			SDL_PauseAudio(1);
 			require(load_base_mission("xsound", error, sizeof(error)), error);

@@ -11,6 +11,7 @@
 #include "preview.h"
 #include "doorway.h"
 #include "../audio_voice.h"
+#include "../ambient_sound.h"
 #include "../named_sound.h"
 #include "../inventory.h"
 #include "../level_text.h"
@@ -251,9 +252,9 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		throw std::runtime_error("XL ambient sounds require the SDL_mixer backend");
 #endif
 		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL ambient sounds require an initialized stereo 16-bit SDL_mixer output");
-		if (object.render_data.size() != 42) throw std::runtime_error("XL ambient sound object has an invalid resource layout");
-		std::string name;
-		for (unsigned i = 0; i < 39 && object.render_data[i]; ++i) name.push_back(char(object.render_data[i]));
+		const auto sound = decode_ambient_sound(object);
+		if (sound.volume < 0) throw std::runtime_error("XL ambient sound object has a negative playback volume");
+		auto name = sound.filename;
 		if (name.empty()) throw std::runtime_error("XL ambient sound object has an empty filename");
 		name += ".wav";
 		const auto key = external_key(name);

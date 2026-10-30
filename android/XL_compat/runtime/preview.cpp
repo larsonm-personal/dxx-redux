@@ -14,6 +14,7 @@
 #include "flicker.h"
 #include "level_messages.h"
 #include "named_audio.h"
+#include "ambient_objects.h"
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include "object_trigger.h"
@@ -554,6 +555,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_disarm_clear();
 	xl_countdown_clear();
 	xl_named_audio_clear();
+	xl_ambient_objects_clear();
 	xl_message_clear();
 	xl_fog_bind(nullptr);
 	xl_projectile_clear();
@@ -739,6 +741,8 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		xl_compat::bind_ambient_objects(*source);
+		xl_wall_trigger_bind_effect_targets();
 		xl_fog_bind(source.get());
 		xl_changing_light_bind(source.get());
 		xl_flicker_bind(source.get());
@@ -920,7 +924,7 @@ extern "C" int xl_loading_extended_triggers(void)
 extern "C" int xl_loading_inert_trigger(int type)
 {
 	// Every translated XL level has an active object-capacity scope while loading
-	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 34);
+	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 32 || type == 33 || type == 34);
 }
 
 extern "C" int object_capacity(void)
@@ -1014,6 +1018,14 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	};
 	field(source->level_version);
 	field(source->game_version);
+	for (unsigned index = 0; index < source->objects.size(); ++index) {
+		const auto &object = source->objects[index];
+		if (object.render != 13) continue;
+		field(int(index));
+		for (int value : { object.type, object.reader_id, object.control, object.movement, object.render, object.segment }) field(value);
+		for (int value : object.position) field(value);
+		for (int value : object.render_data) field(value);
+	}
 	field(source->countdown);
 	// Earlier generator saves used pre-initialization row selection. Reject those
 	// states rather than reinterpret their pending spawns with different definitions

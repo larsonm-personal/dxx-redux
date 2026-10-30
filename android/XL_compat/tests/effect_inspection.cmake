@@ -12,7 +12,7 @@ endif()
 foreach(version IN ITEMS 23 25 27)
     execute_process(
         COMMAND
-            "${ENGINE}" -effect-inspection-test "${OUTPUT}/fixtures/e${version}r13p0.rl2" -hogdir
+            "${ENGINE}" -effect-inspection-test "${OUTPUT}/fixtures/e${version}r11p0.rl2" -hogdir
             "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
         RESULT_VARIABLE result
         OUTPUT_VARIABLE log

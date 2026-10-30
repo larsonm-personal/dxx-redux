@@ -107,6 +107,64 @@ Bytes constant_wave(int left, int right)
 	return bytes;
 }
 
+Bytes ambient_objects(const Bytes &source)
+{
+	auto bytes = source;
+	const auto level = xl_compat::inspect_level(source);
+	const auto player = std::find_if(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.type == 4; });
+	require(player != level.objects.end() && level.level_version == 23 && level.objects.size() == 49, "Ambient fixture lost its original player/object layout");
+	xl_test::layout_patch(bytes, level.game_offset + 35, unsigned(bytes.size()));
+	xl_test::layout_patch(bytes, level.game_offset + 39, unsigned(level.objects.size() + 3));
+	for (const auto &object : level.objects)
+		bytes.insert(bytes.end(), source.begin() + object.source_offset, source.begin() + object.source_end);
+	for (int index = 0; index < 3; ++index) {
+		Bytes object(source.begin() + player->source_offset, source.begin() + player->source_offset + 80);
+		object[0] = 20;
+		object[1] = 7; // The real XL reader normalizes authored IDs to SOUND_ID
+		object[2] = object[3] = object[5] = object[6] = 0;
+		object[4] = 13;
+		object[77] = object[78] = 255;
+		object[79] = 0;
+		xl_test::layout_patch(object, 9, std::uint32_t(player->position[0] + (index + 1) * 16384));
+		xl_test::layout_patch(object, 17, std::uint32_t(player->position[2] + (index + 1) * 16384));
+		xl_test::layout_patch(object, 57, 8192);
+		const char *name = index == 0 ? "SOUND" : index == 1 ? "mono"
+		                                                     : "long";
+		const auto offset = object.size();
+		object.resize(offset + 40);
+		std::copy(name, name + std::char_traits<char>::length(name), object.begin() + offset);
+		xl_test::layout_put(object, index == 0 ? 5 : index == 1 ? 10
+		                                                        : 3,
+		                    4);
+		xl_test::layout_put(object, index == 1 ? 0 : 1, 1);
+		bytes.insert(bytes.end(), object.begin(), object.end());
+	}
+	const auto action = [&](int index, int type, int flags, std::initializer_list<int> targets) {
+		const auto at = level.sections[3].offset + index * 52;
+		std::fill(bytes.begin() + at, bytes.begin() + at + 52, 0);
+		xl_test::layout_patch(bytes, at, type, 1);
+		xl_test::layout_patch(bytes, at + 1, flags, 1);
+		xl_test::layout_patch(bytes, at + 2, unsigned(targets.size()), 1);
+		xl_test::layout_patch(bytes, at + 8, 0xffffffff);
+		int link = 0;
+		for (int target : targets) {
+			xl_test::layout_patch(bytes, at + 12 + link * 2, unsigned(target), 2);
+			xl_test::layout_patch(bytes, at + 32 + link * 2, 0xffff, 2);
+			++link;
+		}
+	};
+	action(2, 32, 0, { 50 });
+	action(7, 33, 0, { 49 });
+	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 2, 2, 1);
+	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 14, level.walls[0].segment, 2);
+	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 34, level.walls[0].side, 2);
+	action(8, 32, 2 | 8 | 16, { 49, int(player - level.objects.begin()), 50 });
+	action(9, 33, 0, { 50 });
+	// Retain all four authored WAVs in their existing independent PCM-oracle order
+	xl_test::layout_patch(bytes, level.sections[3].offset + 3 * 52 + 4, 3 * 65536);
+	return bytes;
+}
+
 void scopes(const Bytes &level, const std::vector<xl_compat::Member> &members, const std::filesystem::path &directory)
 {
 	Bytes archive{ 'D', 'H', 'F' };
@@ -178,8 +236,10 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	const auto level = actions(found->bytes);
 	const std::string sounds = "1:sound.wav\r\n2:long.wav\r\n3:mono.wav\r\n4:tiny.wav";
 	Bytes output{ 'D', 'H', 'F' }, changed{ 'D', 'H', 'F' };
-	for (const std::string name : { "audio23", "audio27", "nosnd", "badsnd", "badid", "badwave" }) {
-		xl_test::hog_member(output, name + ".rl2", name == "audio27" ? xl_test::runtime_layout_fixture(level, 27).bytes : level, false);
+	for (const std::string name : { "audio23", "audio27", "amb23", "amb27", "nosnd", "badsnd", "badid", "badwave" }) {
+		auto data = name.substr(0, 3) == "amb" ? ambient_objects(level) : level;
+		if (name == "audio27" || name == "amb27") data = xl_test::runtime_layout_fixture(data, 27).bytes;
+		xl_test::hog_member(output, name + ".rl2", data, false);
 		if (name == "audio23") xl_test::hog_member(changed, name + ".rl2", level, false);
 		if (name != "nosnd") {
 			const auto value = name == "badsnd" ? "1:First\n1:Duplicate" : name == "badid" ? "1:sound.wav"
@@ -205,7 +265,7 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	}
 	std::filesystem::create_directories(directory);
 	write(directory / "xsound.hog", output);
-	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 2\naudio23.rl2\naudio27.rl2\n"));
+	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 4\naudio23.rl2\naudio27.rl2\namb23.rl2\namb27.rl2\n"));
 	write(directory / "xschange.hog", changed);
 	write(directory / "xschange.mn2", text("d2x-name = Changed XL sounds\nnum_levels = 1\naudio23.rl2\n"));
 	scopes(level, members, directory);

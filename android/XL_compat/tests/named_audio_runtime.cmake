@@ -43,6 +43,17 @@ foreach(ordinal IN ITEMS 1 2)
                 FATAL_ERROR "Native audio creation differs from source (${result}): ${log}${error}")
         endif()
     endif()
+    execute_process(
+        COMMAND "${ENGINE}" -named-audio-test ambient -audio-level "${ordinal}" -hogdir "${DATA}"
+                -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nomusic
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES "Loaded ambient objects:.*passed")
+        message(FATAL_ERROR "Ambient object version ${version} failed (${result}): ${log}${error}")
+    endif()
 endforeach()
 execute_process(
     COMMAND "${ENGINE}" -audio-scope-test production -hogdir "${DATA}" -extra-dir "${OUTPUT}"

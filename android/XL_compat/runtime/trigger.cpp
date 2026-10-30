@@ -3,6 +3,7 @@
 #include "spawn_points.h"
 #include "level_messages.h"
 #include "named_audio.h"
+#include "ambient_objects.h"
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include <array>
@@ -131,6 +132,24 @@ extern "C" void xl_wall_trigger_exit(void)
 	if (depth >= 0) ++exit_generation;
 }
 
+extern "C" void xl_wall_trigger_bind_effect_targets(void)
+{
+	// The stock loader skips these mixed wall/object lists. Preserve the source
+	// wall back-pointers for positive sides without interpreting negative sides
+	// as geometry. Later authored triggers retain precedence
+	for (int index = 0; index < Num_triggers; ++index) {
+		const auto &action = Triggers[index];
+		if (action.type != 32 && action.type != 33) continue;
+		for (int link = 0; link < action.num_links; ++link) {
+			const int segment = action.seg[link], side = action.side[link];
+			if (segment < 0 || segment > Highest_segment_index || side < 0 || side >= 6) continue;
+			const int wall = Segments[segment].sides[side].wall_num;
+			if (wall >= 0 && wall < Num_walls && index > wall_trigger_index(Walls[wall].controlling_trigger))
+				Walls[wall].controlling_trigger = static_cast<sbyte>(index);
+		}
+	}
+}
+
 // Return -1 for ordinary engine dispatch; children retain the original actor
 static int operate_wall(int index, int object_index, int shot, bool attached, int signature = -1)
 {
@@ -157,7 +176,8 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	} else if (!attached && action.type != 31 && action.type != 14 && action.type != 15) return 1;
 	if ((action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 1;
 	for (int i = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && action.type != 34 && i < action.num_links; ++i)
-		if (action.seg[i] < 0 || action.seg[i] > Highest_segment_index || action.side[i] < 0 || action.side[i] >= 6) return 1;
+		if ((action.type == 32 || action.type == 33) && action.side[i] < 0) continue;
+		else if (action.seg[i] < 0 || action.seg[i] > Highest_segment_index || action.side[i] < 0 || action.side[i] >= 6) return 1;
 	TriggerDepth scope;
 	const auto entry_exit = exit_generation;
 	if (!depth && !attached && action.type != 14 && action.type != 15) {
@@ -217,6 +237,12 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		if (exit_generation != entry_exit) return 1;
 	}
 	for (int i = 0; chain && i < action.num_links; ++i) {
+		if (action.type != 31 && action.side[i] < 0) {
+			// Source stops this target loop at a missing/non-effect object, then
+			// Operate still applies the action's one-shot/alternate flags
+			if (!xl_ambient_object_set_enabled(action.seg[i], action.type == 32)) break;
+			continue;
+		}
 		const int target_index = linked_trigger(action, i);
 		if (target_index < 0) continue;
 		auto &target = Triggers[target_index];
@@ -342,7 +368,8 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		if (action.type == 34 && !xl_disarm_action_valid(&action)) return 0;
 		if ((action.type > 14 && action.type != 15 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
 		for (int target = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && action.type != 34 && target < action.num_links; ++target)
-			if (action.seg[target] < 0 || action.seg[target] > Highest_segment_index || action.side[target] < 0 || action.side[target] >= 6) return 0;
+			if ((action.type == 32 || action.type == 33) && action.side[target] < 0) continue;
+			else if (action.seg[target] < 0 || action.seg[target] > Highest_segment_index || action.side[target] < 0 || action.side[target] >= 6) return 0;
 		if (state.destination < 0 || state.destination > Highest_segment_index) return 0;
 		if (state.destination) {
 			if (!xl_object_trigger_count() || action.type != 14) return 0;

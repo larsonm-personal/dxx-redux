@@ -73,3 +73,49 @@ particle-object references. Activation must therefore preserve authored target
 order and independent unsupported particle requirements. Source volume loading
 also scales the serialized integer by `65536 / 10` with float rounding; decoding
 the raw payload does not yet qualify that runtime behavior.
+
+## Ambient-object increment in progress
+
+Branch `xl_more_70_ambient_objects`, in the same worktree, builds on #219.
+Qualify the actual source loader's volume and filename conversion first, then
+implement authored sound-object state separately from Redux object unions.
+Retain real XL object identity and indices, with a non-rendering native shadow
+and narrow collision/lifecycle hooks where required. Do not widen Redux network
+or replay admission as a side effect. Verify the source's ordered effect-target
+activation, initial disabled objects, permanent linked ownership, removal/reuse,
+and atomic disk/rewind state before admitting sound objects. Particle, lightning,
+waypoint and other independent requirements remain blockers.
+
+Extend existing source, native and Android integrations rather than adding
+duplicate runners. Exercise actual loaded objects and trigger consumers, actual
+PCM and saved state, plus stock transitions. Survey original Pumo requirements
+again after the implementation; resource preparation alone is not playability.
+
+### Local progress, not publication qualification
+
+The branch now has XL-owned ambient definitions/lifetimes, source float volume
+conversion, normalized object identity with a non-rendering native shadow,
+deferred spatial owners, enable/disable targets, and schema-24 saved activation.
+Stopped loops are checked against their authored resource at trailer restoration.
+Only `d2/main/fvi.c` changes outside XL code: narrow checks prevent effect objects
+from entering Redux's collision table. Redux type/network/demo bounds are intact.
+
+Focused Windows and Linux controls pass with actual 23/40 and 27/40 loads. They
+check eight PCM outputs, initial disabled objects, ordered wall targets, mixed
+wall/object targets and their controller back-pointers, malformed state,
+earned trailer restoration, a positive ordinary-object collision control,
+signature reuse and real deletion. The existing three effect tests pass,
+including atomic rejection/recovery for still-unsupported particles. Source
+reader controls compare 1,055 volumes and four overflow rejections. The original
+Pumo reader comparison passes all 14 levels, 3,182 object records and 795 effect
+payloads. These results do not establish original mission playability.
+
+Before marking ready for review: add actual-source initializer/activation comparisons, attached
+object-trigger controls, Android PCM/disk/rewind coverage, malformed full-trailer
+cross-binding controls, and relevant full native/stock regressions. Audit legacy
+sound-layout coverage and original requirement outcomes. Update evidence and
+EXTENSIONS only with those results. Publish the current checkpoint as a draft
+at the user's request to start CI; these checks remain outstanding. Artifacts are under
+`temp/xl-ambient-audio-20261030`; the latest Linux verification has a retained
+`verify-ambient.sh` runner. Existing Android fixture hashes need updating after
+the final fixture is fixed, since the package now contains two ambient levels.
