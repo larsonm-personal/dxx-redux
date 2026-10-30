@@ -525,6 +525,14 @@ finish original-mission qualification
     the 106-test Linux acceptance and exact platform receipts. DTX2 files, imported-D1
     banks, global addons and original custom-bank campaigns remain unqualified.
 
+64. Mine disturbances and Earthshaker rocking: XL-owned type-36 actions retain
+    authored seconds, one-shot pending intervals, player/companion physics,
+    distance-scaled detonation slots and saved cadence. Actual source comparisons,
+    both native layouts and 64 Android disk/rewind/PCM controls pass. See
+    [seismic evidence](../../XL_compat/evidence/seismic-gameplay.md) for final
+    regression status, clock/RNG policy and remaining profiles. Two Pumo action
+    rejections are removed; independent wall/effect blockers remain.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

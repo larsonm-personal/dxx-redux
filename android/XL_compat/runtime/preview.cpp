@@ -17,6 +17,7 @@
 #include "ambient_objects.h"
 #include "static_explosion_runtime.h"
 #include "reactor_countdown.h"
+#include "seismic_gameplay.h"
 #include "robot_disarm.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -569,6 +570,7 @@ extern "C" void xl_preview_clear_mission(void)
 {
 	xl_disarm_clear();
 	xl_countdown_clear();
+	xl_seismic_clear();
 	xl_named_audio_clear();
 	xl_ambient_objects_clear();
 	xl_message_clear();
@@ -756,6 +758,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		xl_seismic_bind();
 		xl_compat::bind_ambient_objects(*source);
 		xl_wall_trigger_bind_effect_targets();
 		xl_fog_bind(source.get());
@@ -939,7 +942,7 @@ extern "C" int xl_loading_extended_triggers(void)
 extern "C" int xl_loading_inert_trigger(int type)
 {
 	// Every translated XL level has an active object-capacity scope while loading
-	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 32 || type == 33 || type == 34);
+	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 32 || type == 33 || type == 34 || type == 36);
 }
 
 extern "C" int object_capacity(void)

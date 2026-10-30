@@ -1,0 +1,252 @@
+{
+    "schema": 1,
+    "status": "inspection_only",
+    "campaign_playable": false,
+    "mission": "Pumo Mines",
+    "hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "notes": [
+        "Inventory observations are distinct from runtime blockers; two type-36 requirements are now implemented.",
+        "No original campaign qualification is implied. mvend.rl2 has zero inventory blockers but still requires resource and runtime qualification.",
+        "Actual source-parameter controls use a derived fixture; this report does not claim playthrough of tulev1.rl2."
+    ],
+    "levels": [
+        {
+            "level": "mvlev1.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 13,
+            "runtime_blockers": 13,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 12,
+                "effect_particles": 1
+            }
+        },
+        {
+            "level": "pm-hub.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 298,
+            "runtime_blockers": 298,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 1,
+                "effect_particles": 1,
+                "segment_function_v21": 295,
+                "segment_properties": 1
+            }
+        },
+        {
+            "level": "mvlev2.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 12,
+            "runtime_blockers": 12,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 11,
+                "effect_particles": 1
+            }
+        },
+        {
+            "level": "mvlev3.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 12,
+            "runtime_blockers": 12,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 11,
+                "effect_particles": 1
+            }
+        },
+        {
+            "level": "mvlev4.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 11,
+            "runtime_blockers": 11,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 10,
+                "effect_particles": 1
+            }
+        },
+        {
+            "level": "mvlev6.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 11,
+            "runtime_blockers": 11,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 10,
+                "effect_particles": 1
+            }
+        },
+        {
+            "level": "tulev1.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [
+                {
+                    "owner": "wall",
+                    "record": 63,
+                    "type": 36,
+                    "flags": 3,
+                    "value": 196608,
+                    "time": 3,
+                    "targets": []
+                },
+                {
+                    "owner": "wall",
+                    "record": 66,
+                    "type": 36,
+                    "flags": 3,
+                    "value": 196608,
+                    "time": 3,
+                    "targets": []
+                }
+            ],
+            "previous_runtime_blockers": 17,
+            "runtime_blockers": 15,
+            "removed_blockers": [
+                {
+                    "feature": "trigger_type",
+                    "record": 63,
+                    "detail": "36"
+                },
+                {
+                    "feature": "trigger_type",
+                    "record": 66,
+                    "detail": "36"
+                }
+            ],
+            "remaining_features": {
+                "effect_object_types": 13,
+                "effect_particles": 1,
+                "wall_flags": 1
+            }
+        },
+        {
+            "level": "tulev2.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 25,
+            "runtime_blockers": 25,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 21,
+                "effect_particles": 1,
+                "object triggers": 1,
+                "segment_function_v21": 1,
+                "wall_flags": 1
+            }
+        },
+        {
+            "level": "tulev4.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 23,
+            "runtime_blockers": 23,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_lightning": 1,
+                "effect_object_types": 19,
+                "effect_particles": 1,
+                "wall_flags": 2
+            }
+        },
+        {
+            "level": "mvend.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 0,
+            "runtime_blockers": 0,
+            "removed_blockers": [],
+            "remaining_features": {}
+        },
+        {
+            "level": "mvlev5.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 9,
+            "runtime_blockers": 9,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 8,
+                "effect_particles": 1
+            }
+        },
+        {
+            "level": "pmlev1.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 20,
+            "runtime_blockers": 20,
+            "removed_blockers": [],
+            "remaining_features": {
+                "additive_wall_rendering": 10,
+                "effect_lightning": 1,
+                "effect_object_types": 3,
+                "effect_particles": 1,
+                "object triggers": 1,
+                "object_trigger_type": 1,
+                "object_type": 1,
+                "segment_function_v21": 1,
+                "wall_flags": 1
+            }
+        },
+        {
+            "level": "pmlev2.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 30,
+            "runtime_blockers": 30,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_object_types": 6,
+                "effect_particles": 1,
+                "object triggers": 3,
+                "object_trigger_type": 3,
+                "object_type": 3,
+                "segment_function_v21": 1,
+                "segment_properties": 5,
+                "wall_flags": 8
+            }
+        },
+        {
+            "level": "pmlev3.rl2",
+            "level_version": 27,
+            "game_version": 40,
+            "seismic_actions": [],
+            "previous_runtime_blockers": 77,
+            "runtime_blockers": 77,
+            "removed_blockers": [],
+            "remaining_features": {
+                "effect_lightning": 1,
+                "effect_object_types": 26,
+                "effect_particles": 1,
+                "object triggers": 5,
+                "object_trigger_type": 5,
+                "object_type": 5,
+                "segment_function_v21": 1,
+                "segment_properties": 12,
+                "wall_flags": 21
+            }
+        }
+    ]
+}

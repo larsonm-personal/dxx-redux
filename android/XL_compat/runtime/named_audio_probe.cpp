@@ -6,6 +6,7 @@
 #include "linked_audio.h"
 #include "shared_audio_pcm_test.h"
 #include "seismic_audio_test.h"
+#include "seismic_controls.h"
 #include "gameplay_dispatch_test.h"
 #include "combat_audio_test.h"
 #include "afterburner_audio_test.h"
@@ -286,6 +287,7 @@ void prepare_shared()
 }
 
 #include "linked_audio_probe_test.h"
+#include "seismic_probe_test.h"
 void prepare_ambient()
 {
 	require(Current_level_num == 3 || Current_level_num == 4, "Android ambient controls require the loaded ambient levels");
@@ -493,14 +495,26 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "bank_checks", bank_checks }, { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks }, { "classic_checks", classic_checks }, { "static_checks", static_checks }, { "static_gpu_checks", static_gpu_checks } };
+	return { { "bank_checks", bank_checks }, { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "seismic_verifies", seismic_verifies }, { "seismic_events", seismic_event_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks }, { "classic_checks", classic_checks }, { "static_checks", static_checks }, { "static_gpu_checks", static_gpu_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Named audio controls require running singleplayer");
-		if (!std::strncmp(operation, "bank_", 5)) {
+		if (!std::strncmp(operation, "seismic_", 8) && std::strcmp(operation, "seismic_frames")) {
+			seismic_control(operation + 8);
+		} else if (!std::strcmp(operation, "seismic_frames")) {
+			require(!game_is_time_paused(), "Seismic controls require running simulation");
+			xl_seismic_audio_control::run([] {
+				capture_begin();
+				const auto starting = snapshot();
+				xl_named_audio_pause(0);
+				capture_run(4096);
+				compare_shared_output(starting, seismic_checks);
+			});
+			SDL_PauseAudio(0);
+		} else if (!std::strncmp(operation, "bank_", 5)) {
 			bank_control(operation + 5);
 		} else if (!std::strncmp(operation, "static_", 7)) {
 			static_control(operation + 7);

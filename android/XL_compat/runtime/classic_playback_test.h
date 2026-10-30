@@ -64,7 +64,10 @@ void run(const std::filesystem::path &root, const std::string &filename)
 		}
 		saved[ordinal] = earned;
 		char save[] = "classic-playback.sav", description[] = "XL classic replacement";
+		require(!game_is_time_paused(), "Replacement playback requires running simulation");
+		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save replacement playback");
+		require(!game_is_time_paused(), "Replacement save unbalanced the simulation pause");
 		char error[256]{};
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Replacement stock transition failed");
 		require(snapshot().at("source") == "" && snapshot().at("voices").empty(), "Replacement bank leaked into Redux");

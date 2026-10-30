@@ -150,7 +150,10 @@ void run(const std::filesystem::path &root, int ordinal)
 	const auto earned = snapshot();
 	const auto first = Objects[49].rtype.vclip_info, second = Objects[50].rtype.vclip_info;
 	char save[] = "static-explosion.sav", description[] = "XL static explosions";
+	require(!game_is_time_paused(), "Static explosion controls require running simulation");
+	stop_time();
 	require(state_save_all_sub(save, description), "Cannot save static explosion state");
+	require(!game_is_time_paused(), "Static explosion save unbalanced the simulation pause");
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Static explosion stock transition failed");
 	require(snapshot().at("source") == "" && snapshot().at("voices").empty(), "Static explosion sound leaked into Redux");
 	require(!xl_static_explosion_animate(ConsoleObject) && !xl_static_explosion_draw(ConsoleObject), "XL static explosion dispatch intercepted Redux");

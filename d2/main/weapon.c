@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #ifdef DXX_XL_RUNTIME
 #include "gameplay_audio.h"
+#include "seismic_gameplay.h"
 #endif
 #include "player.h"
 #include "gauges.h"
@@ -1123,6 +1124,10 @@ fix64	Seismic_disturbance_start_time = 0, Seismic_disturbance_end_time;
 // Absolute timestamps retain the original zero-inactive convention
 void weapon_get_seismic_runtime_state(seismic_runtime_state *state)
 {
+#ifdef DXX_XL_RUNTIME
+	/* XL persists its wider magnitude and distance scales in the XL trailer */
+	if (xl_seismic_owned()) { memset(state, 0, sizeof(*state)); return; }
+#endif
 	memcpy(state->detonation_times, Smega_detonate_times, sizeof(Smega_detonate_times));
 	state->disturbance_start_time = Seismic_disturbance_start_time;
 	state->disturbance_end_time = Seismic_disturbance_end_time;
@@ -1232,6 +1237,9 @@ void seismic_disturbance_frame(void)
 void smega_rock_stuff(void)
 {
 	int	i;
+#ifdef DXX_XL_RUNTIME
+	if (xl_seismic_detonation(NULL)) return;
+#endif
 
 	for (i=0; i<MAX_SMEGA_DETONATES; i++) {
 		if (Smega_detonate_times[i] + SMEGA_SHAKE_TIME < GameTime64)
@@ -1244,6 +1252,14 @@ void smega_rock_stuff(void)
 			break;
 		}
 	}
+}
+
+void smega_rock_stuff_at(const vms_vector *position)
+{
+#ifdef DXX_XL_RUNTIME
+	if (xl_seismic_detonation(position)) return;
+#endif
+	smega_rock_stuff();
 }
 
 int	Super_mines_yes = 1;
@@ -1597,7 +1613,7 @@ void do_seismic_stuff(void)
 {
 	int	stv_save;
 #ifdef DXX_XL_RUNTIME
-	xl_gameplay_seismic_begin();
+	if (xl_seismic_frame()) return;
 #endif
 
 	stv_save = Seismic_tremor_volume;
@@ -1606,9 +1622,6 @@ void do_seismic_stuff(void)
 
 	rock_the_mine_frame();
 	seismic_disturbance_frame();
-#ifdef DXX_XL_RUNTIME
-	xl_gameplay_seismic_end();
-#endif
 
 	if (stv_save != 0) {
 		if (Seismic_tremor_volume == 0) {

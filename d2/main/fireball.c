@@ -390,7 +390,7 @@ object *explode_badass_weapon(object *obj,vms_vector *pos)
 	Assert(wi->damage_radius);
 
 	if ((obj->id == EARTHSHAKER_ID) || (obj->id == ROBOT_EARTHSHAKER_ID))
-		smega_rock_stuff();
+		smega_rock_stuff_at(pos);
 
 #ifdef DXX_XL_RUNTIME
 	if (!xl_gameplay_weapon_explosion(obj-Objects, 0))

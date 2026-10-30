@@ -54,13 +54,7 @@ void prepare_linked()
 		capture_run(4096);
 		compare_shared_output(starting, dispatch_checks);
 	});
-	xl_seismic_audio_control::run([] {
-		capture_begin();
-		const auto starting = snapshot();
-		xl_named_audio_pause(0);
-		capture_run(4096);
-		compare_shared_output(starting, seismic_checks);
-	});
+
 	capture_begin();
 	auto position = Viewer->pos;
 	vm_vec_scale_add2(&position, &Viewer->orient.rvec, 10 * F1_0);

@@ -229,6 +229,7 @@ static int named_audio_original(int argc, char **argv)
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #include "static_explosion_test.h"
+#include "seismic_test.h"
 #endif
 static int named_audio_test(int argc, char **argv)
 {
@@ -246,7 +247,11 @@ static int named_audio_test(int argc, char **argv)
 		const bool legacy = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-legacy");
 		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || ((legacy || static_objects) && !std::strcmp(selected, "3")) || (static_objects && !std::strcmp(selected, "-1"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
-		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "static")) {
+		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "seismic")) {
+			native_seismic_test(root, ordinal);
+			Mix_SetPostMix(nullptr, nullptr);
+			return 0;
+		} else if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "static")) {
 			xl_static_explosion_control::run(root, ordinal);
 			Mix_SetPostMix(nullptr, nullptr);
 			return 0;
@@ -488,9 +493,8 @@ static int named_audio_test(int argc, char **argv)
 			SDL_PauseAudio(1);
 			require(xl_named_audio_backend_open(44100, AUDIO_S16SYS, 2) && xl_compat::restore_named_audio(earned, true), "Cannot recover original-rate playback after device reopen");
 			begin_capture();
-			start_time();
-			// Headless disk-through-stock controls retain nested menu pauses
-			// Permit only the captured output, without inventing a gameplay frame
+			// state_save_all_sub balances its caller's stop_time itself
+			require(!game_is_time_paused(), "Audio restore left an unbalanced simulation pause");
 			xl_named_audio_pause(0);
 			run_output(4096);
 			const auto position = earned.at("voices")[0][3].get<std::size_t>();

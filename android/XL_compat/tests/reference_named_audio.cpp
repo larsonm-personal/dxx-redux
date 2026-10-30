@@ -563,6 +563,7 @@ void original(const char *path, int expected_levels, int expected_actions, int e
 } // namespace
 
 void classic_audio_source_controls();
+void seismic_source_controls();
 void audio_channel_source_controls();
 void audio_output_source_controls();
 void audio_ownership_source_controls();
@@ -618,6 +619,7 @@ int main(int argc, char **argv)
 		source_scopes();
 		source_lifecycle();
 		classic_audio_source_controls();
+		seismic_source_controls();
 		audio_channel_source_controls();
 		audio_output_source_controls();
 		audio_ownership_source_controls();
