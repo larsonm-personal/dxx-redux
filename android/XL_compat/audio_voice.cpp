@@ -56,9 +56,9 @@ int AudioVoices::start(unsigned sample, int repetitions, int owner)
 	return start(sample, repetitions, owner, audio_priority(0, 65536, 32768, -1, repetitions < 0));
 }
 
-int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output)
+int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output, AudioOwnerKind kind, AudioVoice *retired)
 {
-	if (owner < 0 || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0 || output.volume < 0 || output.volume > 128) return -1;
+	if ((owner < 0 && (kind != AudioOwnerKind::unlinked || owner != -1)) || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0 || output.volume < 0 || output.volume > 128) return -1;
 	const auto class_count = std::count_if(voices.begin(), voices.end(), [&](const auto &voice) {
 		return voice.remaining && voice.priority.sound_class == priority.sound_class;
 	});
@@ -77,8 +77,9 @@ int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriorit
 	}
 	if (selected < 0) selected = minimum[0] >= 0 ? minimum[0] : minimum[1];
 	if (selected < 0) return -1;
+	if (retired) *retired = voices[unsigned(selected)];
 	stop(selected);
-	voices[unsigned(selected)] = { next_serial++, sample, 0, owner, repetitions <= 0 ? -1 : repetitions, priority, output };
+	voices[unsigned(selected)] = { next_serial++, sample, 0, owner, repetitions <= 0 ? -1 : repetitions, priority, output, kind };
 	cursor = (unsigned(selected) + 1) % unsigned(voices.size());
 	++starts;
 	return selected;

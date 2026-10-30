@@ -114,6 +114,14 @@ See [channel-control evidence](evidence/audio-controls.md). These primitives
 prepare shared ordinary/ambient playback; those consumers and their saved
 nondefault channel state remain gated and unfinished.
 
+The owned library now has a 500-entry sound registry, shared-channel owner kinds
+and checked completion/replacement cleanup. Source and mixed PCM controls cover
+compaction, full capacity and lifetime reuse. It intentionally repairs a proven
+source deletion bug that loses unrelated sounds. See
+[ownership evidence](evidence/audio-ownership.md). Engine routing for ordinary
+and ambient sounds, spatial updates and saved owners are still unfinished;
+this library foundation does not change mission admission.
+
 Owned mission, normal-level and secret-level sound folders now preserve XL
 resource priority and use the incoming signed mission ordinal, including repeated
 level filenames. Native and all 65 Android publication/output/persistence checks

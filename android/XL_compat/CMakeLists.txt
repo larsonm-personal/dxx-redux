@@ -15,6 +15,7 @@ add_library(
     admission.cpp
     level_text.cpp
     audio_voice.cpp
+    audio_owners.cpp
     named_sound.cpp
     pog.cpp
     ../app/src/main/cpp/shared/bounded_rle.c
@@ -41,7 +42,7 @@ include(CTest)
 option(XL_FOG_GPU_TESTS "Build the public offscreen desktop fog and POG renderer controls" OFF)
 option(XL_AUDIO_MIXER_TESTS "Compare named voice output with actual SDL_mixer channels" OFF)
 if(BUILD_TESTING)
-    add_executable(xl_audio_voice_test tests/audio_voice_test.cpp)
+    add_executable(xl_audio_voice_test tests/audio_voice_test.cpp tests/audio_owners_test.cpp)
     target_link_libraries(xl_audio_voice_test PRIVATE xl_inventory)
     add_test(NAME xl_audio_voice_contract COMMAND xl_audio_voice_test)
     if(XL_AUDIO_MIXER_TESTS)
