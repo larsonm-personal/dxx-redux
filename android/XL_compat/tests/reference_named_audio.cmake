@@ -134,3 +134,9 @@ target_link_libraries(xl_named_audio_source PRIVATE xl_inventory)
 target_include_directories(xl_named_audio_source PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_named_audio_source COMMAND xl_named_audio_source)
 include("${CMAKE_CURRENT_LIST_DIR}/reference_audio_ownership.cmake")
+
+include("${CMAKE_CURRENT_LIST_DIR}/reference_classic_sample.cmake")
+
+include("${CMAKE_CURRENT_LIST_DIR}/reference_audio_routes.cmake")
+
+include("${CMAKE_CURRENT_LIST_DIR}/reference_audio_spatial.cmake")

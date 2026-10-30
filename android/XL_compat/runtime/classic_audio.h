@@ -16,6 +16,7 @@ struct ClassicAudioResources {
 	std::vector<ClassicAudioSample> samples;
 };
 ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate);
+ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements);
 int classic_audio_output_rate();
 } // namespace xl_compat
 #endif

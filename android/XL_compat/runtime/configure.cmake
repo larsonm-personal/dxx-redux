@@ -55,6 +55,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../lighting.cpp"
                 "${xl_runtime_dir}/../level_text.cpp"
                 "${xl_runtime_dir}/../audio_voice.cpp"
+                "${xl_runtime_dir}/../classic_sample.cpp"
                 "${xl_runtime_dir}/../named_sound.cpp"
                 "${xl_runtime_dir}/../pog.cpp"
                 "${xl_runtime_dir}/../scoped_sound.cpp"

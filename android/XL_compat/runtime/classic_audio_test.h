@@ -20,6 +20,30 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	const auto before = xl_compat::named_audio_snapshot();
 	const char *name = piggy_sound_name(0);
 	require(name && *name && prepare_classic_audio("scope23.rl2", 2, 44100).samples.empty(), "Classic audio baseline is not empty");
+	const auto baseline = xl_compat::prepare_classic_playback({});
+	require(!baseline.samples.empty() && !baseline.identity.empty(), "Complete native bank is empty");
+	unsigned native_samples = 0;
+	for (const auto &sample : baseline.samples) {
+		require(sample.sample == int(native_samples) && sample.name == piggy_sound_name(int(native_samples)) && sample.path == "native:" + sample.name && sample.pcm.rate == 44100 && sample.pcm.source_channels == 2 && sample.pcm.source_bits == 16 && !sample.pcm.samples.empty(), "Complete native bank omitted or misidentified a stock sample");
+		++native_samples;
+	}
+	require(!piggy_sound_name(int(native_samples)), "Complete native bank omitted trailing samples");
+	const auto native_before = GameSounds[0];
+	for (int malformed : { 0, 1, 2, 3 }) {
+		GameSounds[0] = native_before;
+		if (malformed == 0) GameSounds[0].data = nullptr;
+		if (malformed == 1) GameSounds[0].bits = 16;
+		if (malformed == 2) GameSounds[0].freq = 12345;
+		if (malformed == 3) GameSounds[0].length = 0;
+		bool rejected = false;
+		try {
+			xl_compat::prepare_classic_playback({});
+		} catch (const std::exception &) {
+			rejected = true;
+		}
+		GameSounds[0] = native_before;
+		require(rejected && xl_compat::named_audio_snapshot() == before, "Invalid native bank changed live playback or was accepted");
+	}
 	const std::string filename = std::string(name) + ".wav";
 	const auto sound_root = root / "mods" / "xscope" / "sounds";
 	std::vector<std::filesystem::path> created;
@@ -39,6 +63,10 @@ static void classic_audio_controls(const std::filesystem::path &root)
 		require(prepared.samples.size() == 1 && prepared.samples[0].sample == 0 && prepared.samples[0].name == name &&
 		            prepared.samples[0].path == "mods/xscope/sounds/" + folder + filename,
 		        "Classic audio selected a different sample or scope");
+		const auto complete = xl_compat::prepare_classic_playback(prepared);
+		require(complete.samples.size() == baseline.samples.size() && complete.identity != baseline.identity && complete.samples[0].path == prepared.samples[0].path && complete.samples[0].pcm.samples == prepared.samples[0].pcm.samples, "Complete bank did not install its selected replacement");
+		for (std::size_t i = 1; i < complete.samples.size(); ++i)
+			require(complete.samples[i].source_hash == baseline.samples[i].source_hash && complete.samples[i].pcm.samples == baseline.samples[i].pcm.samples, "Replacement changed an unrelated native sample");
 		const auto &pcm = prepared.samples[0].pcm;
 		require(pcm.source_channels == 2 && pcm.source_bits == 16 && pcm.rate == 44100 && pcm.samples.size() == 44100, "Classic preparation lost stereo source format");
 		const int left = ordinal == 1 ? 2500 : ordinal == 2 ? -3000
@@ -84,6 +112,8 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	for (const auto &path : created) std::filesystem::remove(path);
 	require(prepare_classic_audio("scope23.rl2", 2, 44100).samples.empty() && xl_level_supported_at("scope23.rl2", 0, 2) && xl_compat::named_audio_snapshot() == before,
 	        "Classic rejection recovery retained assets or changed live playback");
+	require(xl_compat::prepare_classic_playback({}).identity == baseline.identity, "Complete stock bank identity changed after rejection recovery");
+	std::cout << "Classic complete bank passed: " << native_samples << " stock samples, four scoped replacements, unchanged unrelated PCM and atomic malformed-native rejection\n";
 	std::cout << "Classic audio preparation passed: four source scopes, stereo PCM, bank suppression, atomic malformed/foreign/unsupported rejection and cleanup\n";
 }
 

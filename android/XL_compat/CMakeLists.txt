@@ -16,6 +16,8 @@ add_library(
     level_text.cpp
     audio_voice.cpp
     audio_owners.cpp
+    classic_sample.cpp
+    audio_spatial.cpp
     named_sound.cpp
     pog.cpp
     ../app/src/main/cpp/shared/bounded_rle.c
