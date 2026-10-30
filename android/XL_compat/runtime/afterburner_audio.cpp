@@ -10,7 +10,7 @@ extern "C" {
 #include "endlevel.h"
 #include "sounds.h"
 #include "digi.h"
-#include "args.h"
+#include "newdemo.h"
 extern ubyte Last_afterburner_state;
 extern fix Last_afterburner_charge;
 }
@@ -26,12 +26,14 @@ extern "C" int xl_gameplay_afterburner(void)
 		if (player.afterburner_charge && Controls.afterburner_state && (player.flags & PLAYER_FLAGS_AFTERBURNER)) {
 			// A muted/stopped owner is still this loop; frame sync resumes it
 			if (!owned) {
-				const bool full_rate = GameArg.SndDigiSampleRate == SAMPLE_RATE_22K;
+				// The qualified XL S16 profile sets audioSampleRate to 44100
+				// Redux's input-bank rate and device resampling do not change it
 				xl_gameplay_sound_object(SOUND_AFTERBURNER_IGNITE, XL_SOUND_PLAYER, player.objnum, 1, F1_0, 256 * F1_0,
-				                         full_rate ? 32027 : 32027 / 2, full_rate ? 48452 : 48452 / 2, 0);
+				                         32027 / 2, 48452 / 2, 0);
 			}
 		} else if (owned) {
 			const bool audible = xl_audio_object_count(player.objnum, sample, 1) != 0;
+			if (Newdemo_state == ND_STATE_RECORDING) newdemo_record_kill_sound_linked_to_object(player.objnum);
 			xl_audio_destroy_object(player.objnum, sample);
 			// Remove stopped loops too, so unmuting cannot resurrect a released key
 			if (audible) xl_gameplay_sound_object(SOUND_AFTERBURNER_PLAY, XL_SOUND_PLAYER, player.objnum, 0, F1_0, 256 * F1_0, -1, -1, 0);

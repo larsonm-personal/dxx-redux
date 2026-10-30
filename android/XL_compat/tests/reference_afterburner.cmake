@@ -10,6 +10,16 @@ foreach(pair IN
     endif()
 endforeach()
 set(extracted "// Actual pinned afterburner controller and sound lookup\n")
+# The enclosing owner pins audio.cpp. This is the profile already used by classic_sample.cpp, not
+# Redux's input-bank setting or device resampling rate
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/audio/audio.cpp" backend)
+string(
+    FIND "${backend}"
+         "gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K) / fSlowDown), m_info.nFormat = AUDIO_S16SYS"
+         profile)
+if(profile LESS 0)
+    message(FATAL_ERROR "Qualified XL signed-16 output profile changed")
+endif()
 foreach(pair IN
         ITEMS "main/game.cpp|AFTERBURNER_LOOP_[A-Z]+" "include/player.h|PLAYER_FLAGS_AFTERBURNER"
               "include/sounds.h|SOUND_AFTERBURNER_[A-Z]+" "include/audio.h|SAMPLE_RATE_22K")

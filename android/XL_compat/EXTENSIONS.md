@@ -161,7 +161,9 @@ registry queries. See [gameplay audio evidence](evidence/gameplay-audio.md) and
 persistence and source corrections. Ordinary weapon firing and weapon/actor/water
 explosion selection now have separate XL policies and actual event/PCM controls;
 see [combat audio evidence](evidence/combat-audio.md). Robot/boss and afterburner
-caller policies remain unfinished.
+callers now have separate XL policies and shared native/Android event controls;
+see [actor/afterburner evidence](evidence/actor-afterburner-audio.md) for verification,
+source corrections, the qualified output profile and remaining limits.
 Fresh object/segment creation also passes 768 comparisons per fixture against
 the actual source functions on Windows/Linux; see the linked-audio evidence.
 Ambient gameplay dispatch and wall-change qualification remain unfinished,

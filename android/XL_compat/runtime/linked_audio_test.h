@@ -117,6 +117,52 @@ void stock_combat()
 	Viewer = viewer;
 	std::cout << "Stock combat isolation passed: exact Redux QuietPlasma and weapon/actor explosion PCM, with no XL voices or owners\n";
 }
+void stock_afterburner()
+{
+	using namespace xl_compat::audio_runtime;
+	require(!xl_level_extensions_active(), "Stock afterburner control requires Redux");
+	xl_afterburner_audio_control::Guard guard;
+	Viewer = ConsoleObject;
+	Player_is_dead = Endlevel_sequence = 0;
+	GameArg.SysLowMem = 0;
+	auto &player = Players[Player_num];
+	player.flags |= PLAYER_FLAGS_AFTERBURNER;
+	player.afterburner_charge = F1_0;
+	const auto capture_stock = [&](auto event) {
+		digi_kill_sound_linked_to_object(player.objnum);
+		begin_capture();
+		event();
+		require(Mix_Playing(-1) == 1 && snapshot().at("voices").empty() && !owners.count, "Stock afterburner entered XL playback");
+		run_output(2048);
+		std::vector<std::int16_t> result(captured.begin(), captured.begin() + 4096);
+		require(std::any_of(result.begin(), result.end(), [](auto sample) { return sample != 0; }), "Stock afterburner PCM was silent");
+		return result;
+	};
+	const bool full = GameArg.SndDigiSampleRate == SAMPLE_RATE_22K;
+	const auto expected = capture_stock([&] { digi_link_sound_to_object3(SOUND_AFTERBURNER_IGNITE, player.objnum, 1, F1_0, 256 * F1_0, full ? 32027 : 16013, full ? 48452 : 24226); });
+	const auto actual = capture_stock([&] {
+		Controls.afterburner_state = 1;
+		Last_afterburner_state = 0;
+		Last_afterburner_charge = F1_0;
+		require(!xl_gameplay_afterburner(), "XL consumed stock afterburner controller");
+		do_afterburner_stuff();
+	});
+	require(expected == actual && xl_linked_sound_count(player.objnum, SOUND_AFTERBURNER_IGNITE, 0) == 1, "Stock afterburner PCM or Redux ownership changed");
+	digi_kill_sound_linked_to_object(player.objnum);
+	do_afterburner_stuff();
+	require(!Mix_Playing(-1) && !xl_linked_sound_count(player.objnum, SOUND_AFTERBURNER_IGNITE, 0), "XL missing-loop recovery leaked into the transition-based Redux controller");
+	const auto shutdown_expected = capture_stock([&] { digi_link_sound_to_object2(SOUND_AFTERBURNER_PLAY, player.objnum, 0, F1_0, 256 * F1_0); });
+	const auto shutdown_actual = capture_stock([&] {
+		Controls.afterburner_state = 0;
+		Last_afterburner_state = 1;
+		Last_afterburner_charge = F1_0;
+		do_afterburner_stuff();
+	});
+	require(shutdown_expected == shutdown_actual, "Stock afterburner shutdown PCM changed");
+	digi_kill_sound_linked_to_object(player.objnum);
+	digi_stop_all_channels();
+	std::cout << "Stock afterburner isolation passed: exact Redux ignite/shutdown PCM and transition-based missing-loop behavior\n";
+}
 void persistence(int source, const nlohmann::json &initial)
 {
 	using namespace xl_compat;
@@ -182,6 +228,7 @@ void persistence(int source, const nlohmann::json &initial)
 	digi_kill_sound_linked_to_object(int(ConsoleObject - Objects));
 	require(!Mix_Playing(-1), "Stock object destruction retained Redux playback");
 	stock_combat();
+	stock_afterburner();
 	require(state_restore_all_sub(save, 0) && snapshot() == earned && owners.valid(mixer), "Disk-through-stock restore changed linked playheads, stopped owners or identities");
 	require(looping.matches(mixer), "Disk restore lost the seismic loop controller");
 	digi_change_looping_volume(F1_0 / 4);

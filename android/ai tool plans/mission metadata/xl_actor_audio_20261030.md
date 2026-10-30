@@ -9,7 +9,7 @@ Authorized block ends October 30 at 04:57:30 UTC.
    avoid changing already-qualified boss or robot simulation decisions.
 2. Give XL an afterburner controller based on owned loop identity. Match source
    startup, class, loop bounds, release and death behavior, while preventing
-   duplicate muted owners and loops returning after release. Keep the existing
+   duplicate stopped owners and loops returning after release. Keep the existing
    Redux controller as the runtime alternate.
 3. Execute extracted source caller/controller code and real native/Android
    events. Cover missing-loop recovery, mute/release, saved ownership and stock
@@ -23,12 +23,26 @@ The live XL boss consumer is `runtime/boss_spawn.cpp`, not the old core boss
 path. Ordinary robot completion uses sound 11 at volume 2; boss completion uses
 58 at volume 4. Both use explosion class; see/groan cues use robot class.
 
-## Draft publication checkpoint
+## Publication and verification
 
-Published at the user's request to start CI, before the full runtime verification
-in step 3 is complete. The Windows native engine builds, and the pinned-source
-audio suite passes, including 576 afterburner cases and 60 actor sound-call cases.
-These new checks execute the reference source; they do not yet verify the new
-production controller's PCM, mute/release, save/restore or Redux isolation.
-Keep this PR in draft until those native/Android integration checks are complete.
-No mission admission or gameplay qualification is expanded by this checkpoint.
+The first commit was published as draft PR #215 at the user's request to start
+CI. Production qualification is now complete for this increment: Windows passes
+both formats and source/scope comparisons; Linux passes the audio and three boss
+regressions; Android passes all 101 steps with 88 PCM cases and unchanged hashes
+for all 26 protected files. The source suite includes 576 afterburner and 60 actor
+cases. Both automation catalogs and scoped formatting pass.
+
+The shared production tests verify eight afterburner and five actor output cases,
+stopped/muted release, earned trailer restoration, missing-owner recovery, the
+actual boss/robot consumers and exact Redux afterburner PCM. They also exposed a
+missing release demo event, now covered by a 43-byte recording check. The XL
+S16-profile loop markers are independent of Redux's input-bank sample rate.
+See [evidence](../../XL_compat/evidence/actor-afterburner-audio.md) for exact scope,
+source corrections, logs and binary identities. Admission is unchanged.
+
+Next: ambient surface selection and per-segment volume distribution. The source
+uses F1_0 / (2 * emitting sides), while Redux uses F1_0 / 2 for each side. Extract
+the actual source selector/setup, retain Redux as the alternate, and verify loaded
+geometry, ownership and PCM before extending external sound-object playback or
+installing classic replacements. Keep the new cases within existing audio test
+owners rather than adding duplicate CI jobs.

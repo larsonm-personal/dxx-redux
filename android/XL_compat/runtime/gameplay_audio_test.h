@@ -41,6 +41,10 @@ void run(int source, const nlohmann::json &initial)
 	xl_seismic_audio_control::run(output);
 	xl_gameplay_dispatch_control::run(output);
 	xl_combat_audio_control::run(output);
+	xl_afterburner_audio_control::run(output);
+	xl_actor_audio_control::run(output);
+	std::cout << "Native actor audio passed: 5 PCM controls through ordinary robot death, owned boss teleport/groan/completion and reactor countdown\n";
+	std::cout << "Native afterburner audio passed: 8 PCM controls, held/stopped ownership, loop rates, trailer phase, mute/release, depletion and terminal state\n";
 	std::cout << "Native combat audio passed: 15 real PCM controls, actual local/remote firing, missing/empty parent, silent/missing cues, weapon/actor/water explosions and logical demo event\n";
 	reset();
 	int channel = xl_gameplay_sound_play(7, XL_SOUND_PLAYER, F1_0, 0, -1);
