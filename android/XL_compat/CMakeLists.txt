@@ -14,6 +14,8 @@ add_library(
     mission_label.cpp
     admission.cpp
     level_text.cpp
+    audio_voice.cpp
+    named_sound.cpp
     pog.cpp
     ../app/src/main/cpp/shared/bounded_rle.c
     wave.cpp
@@ -37,12 +39,31 @@ endif()
 
 include(CTest)
 option(XL_FOG_GPU_TESTS "Build the public offscreen desktop fog and POG renderer controls" OFF)
+option(XL_AUDIO_MIXER_TESTS "Compare named voice output with actual SDL_mixer channels" OFF)
 if(BUILD_TESTING)
+    add_executable(xl_audio_voice_test tests/audio_voice_test.cpp)
+    target_link_libraries(xl_audio_voice_test PRIVATE xl_inventory)
+    add_test(NAME xl_audio_voice_contract COMMAND xl_audio_voice_test)
+    if(XL_AUDIO_MIXER_TESTS)
+        find_path(XL_AUDIO_SDL_INCLUDE SDL.h PATH_SUFFIXES SDL REQUIRED)
+        find_path(XL_AUDIO_MIXER_INCLUDE SDL_mixer.h PATH_SUFFIXES SDL REQUIRED)
+        find_library(XL_AUDIO_SDL_LIBRARY SDL REQUIRED)
+        find_library(XL_AUDIO_MIXER_LIBRARY SDL_mixer REQUIRED)
+        add_executable(xl_audio_mixer_reference tests/audio_mixer_reference.cpp)
+        target_include_directories(xl_audio_mixer_reference PRIVATE ${XL_AUDIO_SDL_INCLUDE}
+                                                                    ${XL_AUDIO_MIXER_INCLUDE})
+        target_link_libraries(xl_audio_mixer_reference PRIVATE xl_inventory ${XL_AUDIO_SDL_LIBRARY}
+                                                               ${XL_AUDIO_MIXER_LIBRARY})
+        add_test(NAME xl_audio_mixer_reference COMMAND xl_audio_mixer_reference)
+        set_tests_properties(xl_audio_mixer_reference PROPERTIES TIMEOUT 30)
+    endif()
     add_executable(xl_pog_test tests/pog_test.cpp)
     target_link_libraries(xl_pog_test PRIVATE xl_inventory)
     add_test(NAME xl_pog_contract COMMAND xl_pog_test)
     add_executable(xl_level_text_test tests/level_text_test.cpp)
     add_executable(xl_message_fixture tests/message_fixture.cpp)
+    add_executable(xl_audio_fixture tests/audio_fixture.cpp)
+    target_link_libraries(xl_audio_fixture PRIVATE xl_inventory)
     target_link_libraries(xl_message_fixture PRIVATE xl_inventory)
     target_link_libraries(xl_level_text_test PRIVATE xl_inventory)
     add_test(NAME xl_level_text_contract COMMAND xl_level_text_test)
@@ -249,6 +270,14 @@ if(BUILD_TESTING)
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     if(XL_NEPTUNE_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_named_audio_runtime
+            COMMAND
+                ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DFIXTURE=$<TARGET_FILE:xl_audio_fixture>
+                -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/named-audio -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/named_audio_runtime.cmake)
+        set_tests_properties(xl_named_audio_runtime PROPERTIES TIMEOUT 110)
         add_test(
             NAME xl_level_messages
             COMMAND

@@ -67,6 +67,7 @@ const char *xl_preview_level_path(const char *filename);
 /* Transient permissions for verified private XL level adapters */
 int xl_loading_wide_walls(void);
 int xl_loading_extended_triggers(void);
+int xl_loading_inert_trigger(int type);
 unsigned xl_preview_unresolved_emitters(void);
 int xl_preview_pilot_active(void);
 int xl_runtime_active(void);

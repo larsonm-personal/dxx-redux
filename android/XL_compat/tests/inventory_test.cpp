@@ -376,8 +376,10 @@ void teleport_inventory_contract()
 		check(feature_row(message_report, "level_messages").find("\"count\": 1") != std::string::npos && feature_row(message_report, "level_messages").find("\"status\": \"partial\"") != std::string::npos, "Message row hides the action or claims unchecked resource support");
 		check(feature_row(message_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(message_report, "delayed_wall_actions").find("\"status\": \"not_required\"") != std::string::npos, "Message duration was mistaken for an unsupported scheduler delay");
 		patch(message, offset, 30, 1);
-		patch(message, offset + 32, 0, 2);
-		check(!xl_compat::runtime_blockers(xl_compat::inspect_level(message)).empty() && feature_row(xl_compat::compatibility_json("sound.rl2", message), "stateful_trigger_flags").find("\"status\": \"blocked\"") != std::string::npos, "Message support admitted the sound action");
+		const auto sound_report = xl_compat::compatibility_json("sound.rl2", message);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(message)).empty(), "Sound action or inert target rejected before resource checks");
+		check(feature_row(sound_report, "named_sounds").find("\"count\": 1") != std::string::npos && feature_row(sound_report, "named_sounds").find("\"status\": \"partial\"") != std::string::npos, "Sound row hides the action or claims unchecked resource support");
+		check(feature_row(sound_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(sound_report, "delayed_wall_actions").find("\"status\": \"not_required\"") != std::string::npos, "Sound repeats were mistaken for an unsupported scheduler delay");
 		auto spawns = boost;
 		patch(spawns, offset, 28, 1);
 		check(xl_compat::runtime_blockers(xl_compat::inspect_level(spawns)).empty(), "authored spawn action rejected");
@@ -522,7 +524,12 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		const auto &message_action = prepared_message.source.object_trigger_records[0].action;
 		check(message_action.type == 29 && message_action.time == admitted.source.object_trigger_records[0].action.time && message_action.value == admitted.source.object_trigger_records[0].action.value, "Message layout discarded authored ID or display duration");
 		check(feature_row(xl_compat::compatibility_json("message.rl2", message), "level_messages").find("\"count\": 1") != std::string::npos, "Message browser omitted the object action");
-		for (const int type : { 16, 26, 30 }) {
+		patch(message, trigger + 4, 30, 1);
+		const auto prepared_sound = xl_compat::prepare_gameplay_probe(message);
+		const auto &sound_action = prepared_sound.source.object_trigger_records[0].action;
+		check(sound_action.type == 30 && sound_action.time == message_action.time && sound_action.value == message_action.value, "Sound layout discarded authored ID or repetitions");
+		check(feature_row(xl_compat::compatibility_json("sound.rl2", message), "named_sounds").find("\"count\": 1") != std::string::npos, "Sound browser omitted the object action");
+		for (const int type : { 16, 26, 35 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);
 			rejects([&] { xl_compat::prepare_gameplay_probe(bad); });

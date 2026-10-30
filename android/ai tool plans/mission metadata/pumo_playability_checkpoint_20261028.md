@@ -1,6 +1,6 @@
 # Pumo playability planning checkpoint
 
-Following the completed message runtime, stereo decoder, named-audio source
+At the start of the October 29 run, following the message runtime, stereo decoder, named-audio source
 contracts, wall-key checks and final package audit, budget four to seven further
 twelve-hour runs (48-84 development hours), with five runs as the working
 midpoint, before a serious human campaign playthrough. This is a judgment about implementation and
@@ -16,9 +16,13 @@ calling the campaign verified. Do not replace that with automated navigation.
   lifecycle has native/source and 80-step Android evidence.
 - All 25 WAVs match an independent decoder sample-for-sample on Windows/Linux.
   The 60 sound actions resolve through twelve SND tables to 22 owned WAVs.
-  Their resources are available; named playback still needs implementation.
-- Required CI now includes 40/41 public and 96 private controls. A complete
-  local private run passes. That evidence protects foundations without
+  The October 29 named runtime implements owned playback and saved voice
+  positions, with actual output controls. All 60 original actions pass the
+  production resource preparation path at 44.1 and 48 kHz; original event
+  playback and campaign acceptance remain separate.
+- Required CI selections now contain 43/46 public and 103 private controls.
+  See [current audio evidence](../../XL_compat/evidence/named-audio-runtime.md)
+  for completed-run receipts and boundaries. These protect foundations without
   qualifying the original campaign.
 - All wall-key byte values retain the distinct source player/robot semantics.
   Source/native and 90 Android controls remove 73 key-value rejections across
@@ -36,7 +40,7 @@ are levels containing a requirement, not separate work items or progress units.
 | Effect objects / sounds                                  |     14 |
 | Particle objects                                         |     13 |
 | Unsupported wall-action kinds / effect targets           |     12 |
-| Unsupported object-action kinds                          |     12 |
+| Unsupported object-action kinds                          |      3 |
 | Object-action effect targets                             |      7 |
 | Wall flags                                               |      6 |
 | Segment function 10                                      |      5 |
@@ -44,9 +48,11 @@ are levels containing a requirement, not separate work items or progress units.
 | Lightning / additional object types / segment properties | 3 each |
 | Additive wall rendering                                  |      1 |
 
-The outstanding wall actions include 47 named sounds, fifteen texture changes,
-nine countdowns, two mine shakes and one disarm. Object actions add thirteen
-named sounds and nine cameras. Some apparent requirements may be representation
+After the October 29 named-audio implementation, the outstanding wall actions
+include fifteen texture changes, nine countdowns, two mine shakes and one
+disarm. Object actions add nine cameras. The fresh unchanged-HOG inspection
+removes the 47 wall and thirteen object sound-action rejections, while every
+level retains independent blockers. Some apparent requirements may be representation
 or classification issues; only source/runtime evidence may remove their gates.
 Do not infer that a visual-looking effect is harmless to gameplay.
 
@@ -65,12 +71,12 @@ settings against source defaults and their actual consumers.
 
 ## Order
 
-1. Complete owned true-color POG pixels/frames and their application, alongside
-   the remaining HXM/configuration audit. Actual rendering and transparency
-   behavior must accompany decoding and persistence.
-2. Finish owned named-sound playback and persistence, then use that voice and
-   resource foundation for ambient sound objects. Verify real mixed output,
-   repetitions, pause, restoration and cleanup before enabling either consumer.
+1. Use the completed owned single-frame POG implementation while finishing the
+   HXM/configuration audit and remaining texture profiles. Actual rendering and
+   transparency must accompany decoding and persistence.
+2. Use the owned named-sound voice and resource foundation for ambient sound
+   objects. Verify spatial output, ownership, pause, restoration and cleanup
+   before enabling that consumer. Its effect-object lifecycle is still blocked.
 3. Complete effect-object lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
 4. Complete the remaining event actions and world semantics: countdowns,

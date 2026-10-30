@@ -676,3 +676,13 @@ consumers and normal Android lifecycle controls. See
 exact scope, frame/cockpit rejection and original Pumo coverage. This does not
 qualify the Pumo campaign. The historical fixture results above retain their
 original scope.
+
+# Owned named-sound acceptance
+
+Action 30 has separate XL wall/object playback with owned SND/WAV resources,
+stereo output and saved voice positions. Positive counts, infinite loops,
+cooldowns, autoplay, pause, volume and level/Redux cleanup have independent
+controls. See [named-audio evidence and commands](evidence/named-audio-runtime.md).
+The public Linux owner requires `--gpu --audio`; Windows requires the portable
+contracts, with actual native output covered by the private runtime owner.
+External sound folders and ambient sound objects are separate requirements.

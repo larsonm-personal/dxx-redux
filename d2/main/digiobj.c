@@ -23,6 +23,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "joy.h"
 #include "digi.h"
+#ifdef DXX_XL_RUNTIME
+#include "named_audio.h"
+#endif
 #include "sounds.h"
 #include "args.h"
 #include "key.h"
@@ -693,6 +696,9 @@ void digi_pause_digi_sounds()
 {
 
 	int i;
+#ifdef DXX_XL_RUNTIME
+	xl_named_audio_pause(1);
+#endif
 
 	digi_pause_looping_sound();
 
@@ -712,6 +718,9 @@ void digi_pause_digi_sounds()
 
 void digi_resume_digi_sounds()
 {
+#ifdef DXX_XL_RUNTIME
+	xl_named_audio_resume();
+#endif
 	digi_sync_sounds();	//don't think we really need to do this, but can't hurt
 	digi_unpause_looping_sound();
 }
@@ -730,6 +739,9 @@ void digi_end_soundobj(int i)
 void digi_stop_digi_sounds()
 {
 	int i;
+#ifdef DXX_XL_RUNTIME
+	xl_named_audio_stop();
+#endif
 
 	digi_stop_looping_sound();
 

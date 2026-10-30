@@ -31,13 +31,13 @@ jobs:
       - name: Verify preserved static survey evidence
         run: python android/XL_compat/evidence/audit_survey.py
 
-      - name: Install production renderer dependencies
+      - name: Install production renderer and audio dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev libsdl1.2-dev libphysfs-dev libpng-dev
+        run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev
 
       # Public reference sources are pinned by commit and consumed-file hashes
       # Private game files and private credentials are absent
       # Linux exercises production fog and POG rendering in a surfaceless Mesa context
       # Passing these contracts does not qualify pilot gameplay or Android support
       - name: Build source adapters and require every public contract
-        run: python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci ${{ runner.os == 'Linux' && '--gpu' || '' }}
+        run: python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci ${{ runner.os == 'Linux' && '--gpu --audio' || '' }}

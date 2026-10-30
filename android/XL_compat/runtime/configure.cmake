@@ -32,6 +32,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/changing_light.cpp"
                 "${xl_runtime_dir}/flicker.cpp"
                 "${xl_runtime_dir}/level_messages.cpp"
+                "${xl_runtime_dir}/named_audio.cpp"
                 "${xl_runtime_dir}/cloak.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/speed_boost.cpp"
@@ -49,6 +50,8 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../probe.cpp"
                 "${xl_runtime_dir}/../lighting.cpp"
                 "${xl_runtime_dir}/../level_text.cpp"
+                "${xl_runtime_dir}/../audio_voice.cpp"
+                "${xl_runtime_dir}/../named_sound.cpp"
                 "${xl_runtime_dir}/../pog.cpp"
                 "${xl_runtime_dir}/../scoped_sound.cpp"
                 "${xl_runtime_dir}/../wave.cpp"
@@ -78,6 +81,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/hog_probe.cpp"
                     "${xl_runtime_dir}/runtime_layout_probe.cpp"
                     "${xl_runtime_dir}/level_message_probe.cpp"
+                    "${xl_runtime_dir}/named_audio_probe.cpp"
                     "${xl_runtime_dir}/fog_probe.cpp"
                     "${xl_runtime_dir}/pog_probe.cpp"
                     "${xl_runtime_dir}/corona_probe.cpp")
@@ -93,6 +97,8 @@ target_sources(
     PRIVATE "${xl_runtime_dir}/corona_renderer.c" "${xl_runtime_dir}/water_renderer.c"
             "${xl_runtime_dir}/fog_renderer.cpp" "${xl_runtime_dir}/pog_renderer.cpp")
 target_compile_features(${DXX_TARGET_PREFIX}arch_ogl PRIVATE cxx_std_17)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE DXX_XL_RUNTIME)
+target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE "${xl_runtime_dir}")
 if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
     # Export earned private checkpoints with Android's real source-definition trailer
     set(xl_checkpoint_sources "${xl_runtime_dir}/checkpoint_export.cpp"

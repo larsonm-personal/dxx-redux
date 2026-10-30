@@ -13,6 +13,7 @@
 #include "asset_dependencies.h"
 #include "pog_resources.h"
 #include "pog_renderer.h"
+#include "named_audio.h"
 #include "companion_resources.h"
 #include "../inventory.h"
 #include "preview.h"
@@ -336,6 +337,7 @@ struct XlPreparedResources::State {
 	HxmChanges changes;
 	xl_compat::MissionLightingCompanions lighting;
 	std::shared_ptr<const xl_compat::MessageResources> messages;
+	std::shared_ptr<const xl_compat::NamedAudioResources> audio;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 
@@ -381,6 +383,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		throw std::runtime_error("model definition registry changed since mission initialization");
 	state = std::make_unique<State>(*mission_base);
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
+	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level);
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
@@ -433,6 +436,7 @@ void XlPreparedResources::install_pog()
 void XlPreparedResources::install_messages()
 {
 	xl_compat::install_messages(state->messages);
+	xl_compat::install_named_audio(state->audio);
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const

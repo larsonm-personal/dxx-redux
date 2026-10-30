@@ -40,6 +40,9 @@
 #include "fix.h"
 #include "gr.h" // needed for piggy.h
 #include "piggy.h"
+#ifdef DXX_XL_RUNTIME
+#include "named_audio.h"
+#endif
 
 #define MIX_DIGI_DEBUG 0
 #define MIX_OUTPUT_FORMAT	AUDIO_S16
@@ -115,6 +118,14 @@ int digi_mixer_init()
 	Mix_Pause(0);
 
 	digi_initialised = 1;
+#ifdef DXX_XL_RUNTIME
+	{
+		int rate, count;
+		Uint16 format;
+		if (Mix_QuerySpec(&rate, &format, &count))
+			xl_named_audio_backend_open(rate, format, count);
+	}
+#endif
 
 	digi_mixer_set_digi_volume( (GameCfg.DigiVolume*32768)/8 );
 
@@ -126,6 +137,9 @@ void digi_mixer_close() {
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_close (SDL_Mixer)\n");
 	if (!digi_initialised) return;
 	digi_initialised = 0;
+#ifdef DXX_XL_RUNTIME
+	xl_named_audio_backend_close();
+#endif
 #if defined(__ANDROID__) && defined(INTROSPECT_ON)
 	android_sound_completion_stop(-1);
 #endif
@@ -299,6 +313,9 @@ void digi_mixer_end_sound(int channel)
 void digi_mixer_set_digi_volume( int dvolume )
 {
 	digi_volume = dvolume;
+#ifdef DXX_XL_RUNTIME
+	xl_named_audio_set_volume(dvolume);
+#endif
 	if (!digi_initialised) return;
 #ifdef __ANDROID__
 	Mix_Volume(-1, (int)(fix2byte(dvolume) * AUDIO_EFFECTS_VOLUME_SCALE * AUDIO_GAMEPLAY_HEADROOM_SCALE));

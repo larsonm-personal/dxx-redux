@@ -58,7 +58,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 42)
+        self.assertEqual(len(public.PUBLIC_TESTS), 43)
         self.assertEqual(public.GPU_TESTS, {"xl_fog_gpu", "xl_pog_gpu"})
         self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
         with tempfile.TemporaryDirectory() as temporary:
@@ -66,8 +66,12 @@ class XlPrivateTests(unittest.TestCase):
             oracle = root / "oracle"
             oracle.write_bytes(b"fixture executable")
             report = root / "public.xml"
-            for gpu in (False, True):
-                required = public.PUBLIC_TESTS | (public.GPU_TESTS if gpu else set())
+            for gpu, audio in ((False, False), (True, False), (False, True), (True, True)):
+                required = (
+                    public.PUBLIC_TESTS
+                    | (public.GPU_TESTS if gpu else set())
+                    | (public.AUDIO_TESTS if audio else set())
+                )
                 listing = {
                     "tests": [
                         {
@@ -81,27 +85,27 @@ class XlPrivateTests(unittest.TestCase):
                         for name in sorted(required)
                     ]
                 }
-                public.validate_registration(listing, gpu=gpu)
+                public.validate_registration(listing, gpu=gpu, audio=audio)
                 for tests in (
                     listing["tests"][1:],
                     listing["tests"] + [{"name": "xl_preview_lifecycle"}],
                     listing["tests"] + [listing["tests"][0]],
                 ):
                     with self.assertRaises(ValueError):
-                        public.validate_registration({"tests": tests}, gpu=gpu)
+                        public.validate_registration({"tests": tests}, gpu=gpu, audio=audio)
                 missing = copy.deepcopy(listing)
                 for test in missing["tests"]:
                     if test["name"] in runner.SOURCE_ARGUMENTS:
                         test["command"] = ["cmake"]
                 with self.assertRaises(ValueError):
-                    public.validate_registration(missing, gpu=gpu)
+                    public.validate_registration(missing, gpu=gpu, audio=audio)
                 suite = ET.Element("testsuite")
                 for name in sorted(required):
                     ET.SubElement(suite, "testcase", name=name, status="run")
                 ET.ElementTree(suite).write(report)
-                self.assertEqual(public.require_result(report, 0, gpu=gpu), len(required))
+                self.assertEqual(public.require_result(report, 0, gpu=gpu, audio=audio), len(required))
                 with self.assertRaises(ValueError):
-                    public.require_result(report, 8, gpu=gpu)
+                    public.require_result(report, 8, gpu=gpu, audio=audio)
                 for mode in ("missing", "duplicate", "disabled", "skipped", "failure", "error"):
                     changed = copy.deepcopy(suite)
                     if mode == "missing":
@@ -114,7 +118,7 @@ class XlPrivateTests(unittest.TestCase):
                         ET.SubElement(changed[0], mode)
                     ET.ElementTree(changed).write(report)
                     with self.subTest(gpu=gpu, mode=mode), self.assertRaises(ValueError):
-                        public.require_result(report, 0, gpu=gpu)
+                        public.require_result(report, 0, gpu=gpu, audio=audio)
 
     def test_fast_registration_requires_built_source_oracles(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -156,7 +160,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 100)
+        self.assertEqual(len(runner.FAST_TESTS), 103)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -182,7 +186,7 @@ class XlPrivateTests(unittest.TestCase):
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
             receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 100)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 103)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
@@ -609,7 +613,7 @@ class XlPrivateTests(unittest.TestCase):
             )
             passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
-            self.assertEqual(receipt(passed, 0)["required_passed"], 88)
+            self.assertEqual(receipt(passed, 0)["required_passed"], 89)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
             # CTest can exit zero when disabled tests are present
             disabled_required = ET.parse(path)

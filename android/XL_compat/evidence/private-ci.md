@@ -7,7 +7,7 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-100 required CTests in independent directories, two at a time. Missing tests,
+103 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
@@ -21,10 +21,11 @@ selection.
 ## Public source coverage
 
 Every matching pull request builds the pinned XL source adapters on Windows and
-Linux, without private files or credentials. The public owner requires 42
-contracts on Windows and 44 on Linux, including the standalone XL source comparisons,
-a named-audio source-behavior contract, an independent WAV-channel comparison
-the POG reader/source contract and Linux's offscreen fog and POG backends.
+Linux, without private files or credentials. The public owner requires 43
+contracts on Windows and 46 on Linux, including the standalone XL source comparisons,
+named-audio event and voice contracts, an independent WAV-channel comparison,
+the POG reader/source contract, Linux's offscreen fog/POG backends and actual
+SDL_mixer output comparisons.
 Both platforms reject omissions, duplicates,
 skips and unexpected tests before granting a pass. Optional source executables
 must be present in the registered commands. Runtime comparisons that need actual
@@ -37,10 +38,12 @@ phases take 17.438 and 5.988 seconds respectively. These are local measurements,
 not hosted-run durations.
 
 ```text
-python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci --gpu
+python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci --gpu --audio
 ```
 
-Omit `--gpu` on Windows. The GPU cases currently require Linux EGL/Mesa.
+Omit `--gpu --audio` on Windows. The GPU cases require Linux EGL/Mesa; the audio
+oracle requires SDL 1.2 and SDL_mixer development libraries. Explicit options
+make missing renderer or audio contracts fail selection instead of disappearing.
 
 ## Coverage
 
@@ -174,3 +177,13 @@ builds and original inspections. The private asset checkout is now pinned to
 8c9988a96a7e306f8aac04c85e2610492917b7ac, which includes the manifest's required
 modern originals. This is the measured hosted baseline before the POG addition
 and further CI trimming, not a timing inferred from local results.
+
+The owned named-audio increment passes all 103 required local private tests,
+sixteen original-format outcomes and three modern source comparisons. CTest
+takes 320.16 seconds; the test/inspection phase takes 323.479 seconds. The new
+required controls cover pure voices, actual SDL output and native lifecycle.
+Public Windows passes 43 cases in 12.203 seconds of tests; public Linux passes
+46 in 6.242 seconds, including its GPU and audio backends. See
+[named-audio evidence](named-audio-runtime.md) for normal Android output,
+classic-audio checks and the remaining qualification boundaries. These local
+durations do not replace the hosted baseline above.

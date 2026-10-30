@@ -358,14 +358,32 @@ finish original-mission qualification
     results unchanged. Wider wall flags and every level's independent gameplay
     blockers remain; required public/private membership stays 40/41 and 96.
 
-44. Package-resource audit: valid true-color POGs currently pass indexed bounds
-    validation and are misinterpreted by the installer. Pumo has 26 replacements
+44. Initial package-resource audit: valid true-color POGs passed indexed bounds
+    validation and were misinterpreted by the installer. Pumo has 26 replacements
     in five POGs; original Robotech Arena has nineteen. The native reproduction
     and trial-guard limitation are recorded in
     [the resource audit](../../XL_compat/evidence/truecolor-pog-admission.md).
-    This is an identified gap, not completed support. Implement owned RGBA/frame
-    application and verify actual pixels/transparency before qualifying these
-    originals. HXM and INI application remain package-level audit obligations.
+    The subsequent implementation is recorded below. HXM and INI application
+    remain package-level audit obligations.
+
+45. Owned true-color POGs: single-frame RGBA resources now retain dimensions,
+    pixels, transparency and averages through installation, rendering, collision
+    and destructible textures. All 26 Pumo replacements and nineteen Arena
+    replacements have source and desktop shader comparisons. All 58 normal
+    Android GPU-readback, disk/rewind, context-loss and stock-transition steps
+    pass. See [POG runtime evidence](../../XL_compat/evidence/truecolor-pog-runtime.md).
+    Animation strips, cockpit replacements and remaining rendering profiles are
+    separate requirements; this does not qualify either campaign.
+
+46. Owned named-sound playback: separate XL wall/object voices preserve stereo,
+    repetitions, cooldowns and exact saved playheads. Actual SDL output and all
+    73 Android controls cover mute/volume, pause, disk/rewind, level transitions
+    and stock cleanup. All 60 Pumo actions pass production resource preparation
+    at 44.1/48 kHz on Windows and Linux. See
+    [audio runtime evidence](../../XL_compat/evidence/named-audio-runtime.md).
+    Required selections become 43/46 public and 103 private cases. Mission/level
+    sound-folder ownership, ambient spatialization and effect-object lifecycle
+    remain subsequent consumers. Every Pumo level still has independent blockers.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to

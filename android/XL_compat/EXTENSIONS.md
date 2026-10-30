@@ -58,14 +58,23 @@ requirements remain. Public Windows and private Linux coverage now require
 [stereo PCM foundation](evidence/stereo-pcm.md) preserves both authored WAV
 channels through shared bounded validation, with independent comparisons of
 all 25 original Pumo WAVs and unchanged classic mono controls. It adds one
-required public/private test; named playback remains gated.
+required public/private test; named playback was still gated at that increment.
 
 The [named-audio source contracts](evidence/named-audio-source.md) execute the
 pinned sound action, resource lookup, repetition, frame and restore behavior.
 All 60 original Pumo sound actions resolve to owned SND/WAV resources on both
 hosts. This establishes inputs and reference behavior, not audible playback.
-The required selections now contain 40/41 public and 96 private contracts;
-the source's finite-sound restore issue is an explicit runtime obligation.
+That source-only increment required 40/41 public and 96 private contracts.
+
+Owned named-sound playback now uses a separate XL voice bank and real stereo
+output, with wall/object actions, repetition counts, source cooldowns, autoplay,
+pause and exact saved playheads. Resource preparation rejects missing, malformed
+or foreign SND/WAV files before installation. Restored voices wait for an
+unpaused gameplay frame. See [named-audio runtime evidence](evidence/named-audio-runtime.md)
+for actual SDL/Android sample comparisons, volume controls, disk/rewind and stock
+transitions. External sound folders, ambient sound objects and shared-channel
+priority under mixed exhaustion remain unqualified. The browser retains a
+resource-dependent partial row; this does not qualify the Pumo campaign.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;
