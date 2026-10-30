@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "linked_audio.h"
 #include "spawn_points.h"
 #include "resource_validation.h"
 #endif
@@ -735,6 +736,9 @@ void set_sound_sources()
 	digi_init_sounds();		//clear old sounds
 
 	Dont_start_sound_objects = 1;
+#ifdef DXX_XL_RUNTIME
+	xl_audio_defer_objects(1);
+#endif
 
 	for (seg=&Segments[0],segnum=0;segnum<=Highest_segment_index;seg++,segnum++)
 		for (sidenum=0;sidenum<MAX_SIDES_PER_SEGMENT;sidenum++) {
@@ -770,6 +774,9 @@ void set_sound_sources()
 		}
 
 	Dont_start_sound_objects = 0;
+#ifdef DXX_XL_RUNTIME
+	xl_audio_defer_objects(0);
+#endif
 
 }
 

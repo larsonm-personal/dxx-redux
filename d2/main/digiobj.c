@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "named_audio.h"
 #include "gameplay_audio.h"
+#include "linked_audio.h"
 #include "preview.h"
 #endif
 #include "sounds.h"
@@ -175,6 +176,13 @@ void digi_play_sample_once( int soundno, fix max_volume )
 	if ( Newdemo_state == ND_STATE_RECORDING )
 		newdemo_record_sound( soundno );
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_gameplay_sound_play(soundno, XL_SOUND_GENERIC, max_volume, 0xffff/2, -1);
+		return;
+	}
+#endif
+
 	soundno = digi_xlat_sound(soundno);
 
 	if (soundno < 0 ) return;
@@ -188,6 +196,13 @@ void digi_play_sample( int soundno, fix max_volume )
 {
 	if ( Newdemo_state == ND_STATE_RECORDING )
 		newdemo_record_sound( soundno );
+
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_gameplay_sound_play(soundno, XL_SOUND_GENERIC, max_volume, 0xffff/2, -1);
+		return;
+	}
+#endif
 
 	soundno = digi_xlat_sound(soundno);
 
@@ -210,6 +225,13 @@ void digi_play_sample_3d( int soundno, int angle, int volume, int no_dups )
 			newdemo_record_sound_3d( soundno, angle, volume );
 	}
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_gameplay_sound_play(soundno, XL_SOUND_GENERIC, volume, angle, -1);
+		return;
+	}
+#endif
+
 	soundno = digi_xlat_sound(soundno);
 
 	if (soundno < 0 ) return;
@@ -228,6 +250,10 @@ void SoundQ_pause();
 void digi_init_sounds()
 {
 	int i;
+#ifdef DXX_XL_RUNTIME
+	xl_named_audio_stop();
+	xl_audio_defer_objects(0);
+#endif
 
 	SoundQ_init();
 
@@ -364,6 +390,11 @@ int digi_link_sound_to_object3( int org_soundnum, short objnum, int forever, fix
 	object * objp;
 	int soundnum;
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active())
+		return xl_gameplay_link_object(org_soundnum, objnum, forever, max_volume, max_distance, loop_start, loop_end);
+#endif
+
 	soundnum = digi_xlat_sound(org_soundnum);
 
 	if ( max_volume < 0 ) return -1;
@@ -451,6 +482,11 @@ int digi_link_sound_to_pos2( int org_soundnum, short segnum, short sidenum, vms_
 	int i, volume, pan;
 	int soundnum;
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active())
+		return xl_gameplay_link_position(org_soundnum, segnum, sidenum, pos, forever, max_volume, max_distance);
+#endif
+
 	soundnum = digi_xlat_sound(org_soundnum);
 
 	if ( max_volume < 0 ) return -1;
@@ -529,6 +565,12 @@ int digi_link_sound_to_pos( int soundnum, short segnum, short sidenum, vms_vecto
 void digi_kill_sound_linked_to_segment( int segnum, int sidenum, int soundnum )
 {
 	int i,killed;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_audio_destroy_position(segnum, sidenum, soundnum == -1 ? -1 : xl_gameplay_sound_sample(soundnum));
+		return;
+	}
+#endif
 
 	if (soundnum != -1)
 		soundnum = digi_xlat_sound(soundnum);
@@ -561,6 +603,12 @@ void digi_kill_sound_linked_to_object( int objnum )
 	if ( Newdemo_state == ND_STATE_RECORDING )		{
 		newdemo_record_kill_sound_linked_to_object( objnum );
 	}
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_audio_destroy_object(objnum, -1);
+		return;
+	}
+#endif
 
 	for (i=0; i<MAX_SOUND_OBJECTS; i++ )	{
 		if ( (SoundObjects[i].flags & SOF_USED) && (SoundObjects[i].flags & SOF_LINK_TO_OBJ ) )	{
@@ -581,6 +629,12 @@ void digi_kill_sound_linked_to_object( int objnum )
 void digi_record_sound_objects()
 {
 	int i;
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_gameplay_record_objects();
+		return;
+	}
+#endif
 
 	for (i=0; i<MAX_SOUND_OBJECTS; i++ )	{
 		if ( (SoundObjects[i].flags & SOF_USED)&&
@@ -612,6 +666,13 @@ void digi_sync_sounds()
 	}
 
 	SoundQ_process();
+
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_audio_sync_objects();
+		return;
+	}
+#endif
 
 	for (i=0; i<MAX_SOUND_OBJECTS; i++ )	{
 		if ( SoundObjects[i].flags & SOF_USED )	{

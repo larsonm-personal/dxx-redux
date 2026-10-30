@@ -6,6 +6,7 @@
 #include "linked_audio.h"
 #include "shared_audio_pcm_test.h"
 #include "seismic_audio_test.h"
+#include "gameplay_dispatch_test.h"
 #include "preview.h"
 #include "object_trigger.h"
 #include "android_mission_assets.h"
@@ -56,6 +57,7 @@ bool linked_earned = false;
 unsigned shared_checks = 0;
 unsigned linked_checks = 0;
 unsigned seismic_checks = 0;
+unsigned dispatch_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -356,7 +358,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)

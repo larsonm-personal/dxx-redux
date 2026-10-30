@@ -30,7 +30,15 @@ static int audio_scope_test(int argc, char **argv)
 			                                                                    : "";
 			const auto diagnostic = xl_compat::named_audio_diagnostics();
 			require(diagnostic.at("files") == nlohmann::json::array({ "shared.wav", "mods/xscope/sounds/" + folder + "scoped.wav", "mods/xscope/sounds/mission.wav", "tiny.wav" }), "Scoped audio selected the wrong priority or folder");
-			require(snapshot().at("voices").empty() && gamesave_level_data_warning_count() == 0, "Incoming scope retained voices or repaired inert links");
+			const auto incoming = snapshot();
+			const auto &incoming_owners = incoming.at("linked").at("owners");
+			require(incoming_owners.size() == 1 && incoming_owners[0].at("segment") == 74 && incoming_owners[0].at("side") == 2 &&
+			            incoming_owners[0].at("sound") == 93 && incoming.at("voices").size() <= 1 && gamesave_level_data_warning_count() == 0,
+			        "Incoming scope retained unrelated owners or repaired inert links");
+			for (const auto &voice : incoming.at("voices"))
+				require(voice[4] == 0 && voice[2] == incoming_owners[0].at("sample"), "Incoming scope retained outgoing named playback");
+			for (const auto &event : incoming.at("events")) require(event[1] == -1, "Incoming scope retained an outgoing named event");
+			digi_stop_digi_sounds();
 			const auto initial = snapshot();
 			require(xl_level_supported_at(filename, 0, ordinal), xl_level_rejection());
 			require(snapshot() == initial, "Successful scoped preflight changed playback");

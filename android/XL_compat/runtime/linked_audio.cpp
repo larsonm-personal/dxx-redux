@@ -12,6 +12,7 @@ extern "C" {
 #include "object.h"
 #include "segment.h"
 #include "config.h"
+#include "newdemo.h"
 }
 bool xl_compat::audio_runtime::deferred = false;
 namespace
@@ -79,6 +80,10 @@ void xl_compat::audio_runtime::clear_linked_scene()
 
 extern "C" std::int64_t xl_audio_link_object(int sample, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom)
 {
+	return xl_audio_link_object_recorded(sample, sound_class, object_index, forever, volume, range, loop_start, loop_end, decay, custom, -1);
+}
+extern "C" std::int64_t xl_audio_link_object_recorded(int sample, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom, int logical)
+{
 	try {
 		const int mapped = classic_sample(sample);
 		if (mapped < 0 || !valid_object(object_index) || sound_class < 0 || sound_class > 6 || volume < 0 || range <= 0 || decay < 0 || decay > 6) return -1;
@@ -92,9 +97,14 @@ extern "C" std::int64_t xl_audio_link_object(int sample, int sound_class, int ob
 		}
 		if (!forever) {
 			const auto output = spatial(point(object.pos), object.segnum, volume, range, decay);
-			if (output.volume > 0) xl_audio_start_sample(sample, sound_class, output.volume, output.pan, 0, -1, -1);
+			if (output.volume > 0) {
+				if (logical >= 0 && Newdemo_state == ND_STATE_RECORDING) newdemo_record_sound_3d(logical, output.pan, output.volume);
+				xl_audio_start_sample(sample, sound_class, output.volume, output.pan, 0, -1, -1);
+			}
 			return -1;
 		}
+		if (logical >= 0 && Newdemo_state == ND_STATE_RECORDING)
+			newdemo_record_link_sound_to_object3(logical, object_index, volume, range, loop_start, loop_end);
 		AudioOwner entry;
 		entry.flags = sound_used | sound_link_object | sound_forever;
 		entry.sound = sample;
@@ -119,6 +129,10 @@ extern "C" std::int64_t xl_audio_link_object(int sample, int sound_class, int ob
 
 extern "C" std::int64_t xl_audio_link_position(int sample, int segment, int side, const vms_vector *position, int forever, int volume, int range)
 {
+	return xl_audio_link_position_recorded(sample, segment, side, position, forever, volume, range, -1);
+}
+extern "C" std::int64_t xl_audio_link_position_recorded(int sample, int segment, int side, const vms_vector *position, int forever, int volume, int range, int logical)
+{
 	try {
 		const int mapped = classic_sample(sample);
 		if (mapped < 0 || !position || !valid_segment(segment) || side < -1 || side >= 6 || volume < 0 || range <= 0) return -1;
@@ -131,7 +145,10 @@ extern "C" std::int64_t xl_audio_link_position(int sample, int segment, int side
 		}
 		if (!forever) {
 			const auto output = spatial(location, segment, volume, range, 0);
-			if (output.volume > 0) xl_audio_start_sample(sample, 0, output.volume, output.pan, 0, -1, -1);
+			if (output.volume > 0) {
+				if (logical >= 0 && Newdemo_state == ND_STATE_RECORDING) newdemo_record_sound_3d(logical, output.pan, output.volume);
+				xl_audio_start_sample(sample, 0, output.volume, output.pan, 0, -1, -1);
+			}
 			return -1;
 		}
 		AudioOwner entry;
@@ -183,4 +200,31 @@ extern "C" int xl_audio_destroy_position(int segment, int side, int sample)
 	if (!xl_level_extensions_active()) return 0;
 	AudioLock lock;
 	return owners.destroy_segment(segment, side, sample, mixer);
+}
+
+extern "C" int xl_audio_object_count(int object_index, int sample, int playing_only)
+{
+	if (!xl_level_extensions_active() || !valid_object(object_index) || sample < 0) return 0;
+	AudioLock lock;
+	owners.reconcile(mixer);
+	int count = 0;
+	for (unsigned i = 0; i < owners.count; ++i) {
+		const auto &entry = owners.entries[i];
+		if ((entry.flags & sound_link_object) && entry.object == object_index && entry.signature == Objects[object_index].signature &&
+		    entry.sound == sample && (!playing_only || entry.channel >= 0)) ++count;
+	}
+	return count;
+}
+extern "C" int xl_audio_position_count(int segment, int side, int sample, int playing_only)
+{
+	if (!xl_level_extensions_active() || !valid_segment(segment) || side < -1 || side >= 6 || sample < 0) return 0;
+	AudioLock lock;
+	owners.reconcile(mixer);
+	int count = 0;
+	for (unsigned i = 0; i < owners.count; ++i) {
+		const auto &entry = owners.entries[i];
+		if ((entry.flags & sound_link_position) && entry.segment == segment && entry.side == side && entry.sound == sample &&
+		    (!playing_only || entry.channel >= 0)) ++count;
+	}
+	return count;
 }

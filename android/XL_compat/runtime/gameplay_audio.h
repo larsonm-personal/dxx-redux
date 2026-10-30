@@ -15,6 +15,10 @@ void xl_gameplay_seismic_begin(void);
 void xl_gameplay_seismic_end(void);
 int64_t xl_gameplay_sound_object(int sound, int sound_class, int object, int forever, int volume, int range, int loop_start, int loop_end, int decay);
 int64_t xl_gameplay_sound_position(int sound, int segment, int side, const struct vms_vector *position, int forever, int volume, int range);
+// Legacy engine callers use an int token; saved owner identities remain 64-bit
+int xl_gameplay_link_object(int sound, int object, int forever, int volume, int range, int loop_start, int loop_end);
+int xl_gameplay_link_position(int sound, int segment, int side, const struct vms_vector *position, int forever, int volume, int range);
+void xl_gameplay_record_objects(void);
 #ifdef __cplusplus
 }
 #endif

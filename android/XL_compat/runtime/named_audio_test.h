@@ -213,6 +213,7 @@ static int named_audio_original(int argc, char **argv)
 #include "audio_creation_test.h"
 #include "looping_audio_test.h"
 #include "seismic_audio_test.h"
+#include "gameplay_dispatch_test.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif
@@ -247,8 +248,16 @@ static int named_audio_test(int argc, char **argv)
 			GameTime64 = 10 * F1_0;
 			require(xl_source_level_version() == (ordinal == 1 ? 23 : 27) && Num_triggers == 10 && xl_object_trigger_count() == 2, "Named audio fixture layout did not load");
 			require(gamesave_level_data_warning_count() == 0, "Inert sound links produced a level repair warning");
+			const auto startup = snapshot();
+			require(startup.at("linked").at("owners").size() == 1 && startup.at("voices").size() == 1 &&
+			            startup.at("linked").at("owners")[0].at("segment") == 74 && startup.at("linked").at("owners")[0].at("side") == 2 &&
+			            startup.at("linked").at("owners")[0].at("sound") == 93,
+			        "Derived fixture ambient source did not enter the XL registry at startup");
+			xl_linked_audio_control::output();
+			// Isolate authored trigger controls from the separately checked startup source
+			digi_stop_digi_sounds();
 			const auto initial = snapshot();
-			require(initial.at("events").size() == 11 && initial.at("voices").empty() && initial.at("source").get<std::string>().size() == 64, "Named audio resources did not install");
+			require(initial.at("events").size() == 11 && initial.at("voices").empty() && initial.at("source").get<std::string>().size() == 64, ("Named audio resources did not install: " + initial.dump()).c_str());
 			std::array<trigger, 10> authored;
 			std::copy(Triggers, Triggers + 10, authored.begin());
 			const auto reset = [&] {

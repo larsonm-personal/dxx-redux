@@ -154,9 +154,11 @@ now use that same pool, with source-verified frame decisions and controlled
 Windows/Linux PCM. See [linked audio evidence](evidence/linked-audio.md).
 Linked-owner saves now validate complete owner/channel bindings; schema 23 also
 preserves a serial-qualified looping controller and seismic volume cadence. Logical translation and
-forcefield scaling have source comparisons, and the looping engine entry points
-select XL or Redux at runtime. See [gameplay audio evidence](evidence/gameplay-audio.md)
-for playback, persistence, source corrections and remaining event-level checks.
+forcefield scaling have source comparisons. Ordinary and looping engine entry
+points now select XL or Redux at runtime, including linked-source lifecycle and
+registry queries. See [gameplay audio evidence](evidence/gameplay-audio.md) and
+[engine dispatch evidence](evidence/gameplay-dispatch.md) for playback,
+persistence, source corrections and remaining caller-specific work.
 Fresh object/segment creation also passes 768 comparisons per fixture against
 the actual source functions on Windows/Linux; see the linked-audio evidence.
 Ordinary/ambient gameplay dispatch and wall-change qualification remain

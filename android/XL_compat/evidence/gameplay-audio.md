@@ -84,7 +84,8 @@ native and Android audio runs also verify that XL-to-stock loading clears seismi
 flags and cadence immediately, without a frame. Unchanged public CI contracts,
 already-passed audio and navigation are excluded from that selection.
 
-Other ordinary sound callers, caller
-classes, ambient emission, wall changes and classic replacement installation
+Ordinary engine entry points and their linked lifecycle are connected in the
+[dispatch increment](gameplay-dispatch.md). Caller-specific classes and sample
+selection, ambient emission, wall changes and classic replacement installation
 remain unfinished. Admission has not been expanded. Multiplayer queued voice
 callers remain deferred with multiplayer support.
