@@ -28,6 +28,7 @@ foreach(
           "maths.h|X2I"
           "maths.h|F2X"
           "audio.h|SOUNDCLASS_GENERIC"
+          "audio.h|DEFAULT_PAN"
           "audio.h|SOUNDCLASS_AMBIENT"
           "audio.h|SOUNDCLASS_PLAYER"
           "audio.h|SOUNDCLASS_ROBOT"

@@ -1,4 +1,5 @@
 // Native object/segment consumers and real PCM; source math is qualified separately
+extern "C" int digi_looping_channel;
 namespace xl_linked_audio_control
 {
 using namespace named_audio_control;
@@ -79,7 +80,9 @@ void persistence(int source, const nlohmann::json &initial)
 	const auto pending = xl_audio_link_position(1, Viewer->segnum, 2, &position, 1, F1_0, 64 * F1_0);
 	require(quiet > 0 && pending > 0 && owner(quiet).channel < 0 && owner(pending).channel < 0, "Cannot create saved stopped and deferred owners");
 	++GameTime64;
-	require(xl_named_audio_action(&Triggers[2], 2) && xl_audio_start_sample(1, 2, F1_0 / 2, 32767, 1, -1, -1) >= 0, "Cannot create mixed linked save channels");
+	require(xl_named_audio_action(&Triggers[2], 2), "Cannot create mixed linked save action");
+	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0 / 2, -1, -1);
+	require(looping.matches(mixer), "Cannot create mixed seismic looping save channel");
 	output();
 	const auto earned = snapshot();
 	require(earned.at("linked").at("owners").size() == 4 && earned.at("voices").size() == 4 && earned.at("linked").at("deferred").get<bool>(), ("Linked save fixture has wrong occupancy: " + earned.dump()).c_str());
@@ -101,8 +104,18 @@ void persistence(int source, const nlohmann::json &initial)
 	require(state_save_all_sub(save, description), "Cannot save mixed linked playback");
 	char error[256]{};
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Linked audio stock transition failed");
-	require(!owners.count && !deferred && snapshot().at("voices").empty() && xl_audio_link_object(0, 3, 0, 1, F1_0, 64 * F1_0, -1, -1, 0, 0) < 0, "Linked ownership leaked into stock gameplay");
+	require(!owners.count && !deferred && snapshot().at("voices").empty() && snapshot().at("loop").empty() && xl_audio_link_object(0, 3, 0, 1, F1_0, 64 * F1_0, -1, -1, 0, 0) < 0, "Linked ownership leaked into stock gameplay");
+	digi_play_sample_looping(SOUND_SEISMIC_DISTURBANCE_START, F1_0, -1, -1);
+	const int stock_channel = digi_looping_channel;
+	require(stock_channel >= 0 && Mix_Playing(stock_channel) && snapshot().at("loop").empty() && snapshot().at("voices").empty(), "Stock looping API entered XL playback or failed to start Redux");
+	digi_change_looping_volume(F1_0 / 4);
+	digi_stop_looping_sound();
+	require(!Mix_Playing(stock_channel), "Stock looping stop failed");
 	require(state_restore_all_sub(save, 0) && snapshot() == earned && owners.valid(mixer), "Disk-through-stock restore changed linked playheads, stopped owners or identities");
+	require(looping.matches(mixer), "Disk restore lost the seismic loop controller");
+	digi_change_looping_volume(F1_0 / 4);
+	require(mixer.voices[unsigned(looping.channel)].priority.volume == F1_0 / 8, "Restored engine loop control addressed the wrong voice");
+	require(restore_named_audio(earned, true), "Cannot recover earned loop volume");
 	output();
 	xl_audio_sync_objects();
 	const auto before_reopen = snapshot();

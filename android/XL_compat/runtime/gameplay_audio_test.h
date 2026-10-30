@@ -28,6 +28,7 @@ void run(int source, const nlohmann::json &initial)
 	AltSounds[7] = 8;
 	AltSounds[8] = 9;
 	GameArg.SysLowMem = 0;
+	xl_looping_audio_control::run(initial);
 	require(xl_gameplay_sound_sample(7) == 0 && xl_gameplay_sound_sample(9) == -1 && xl_gameplay_sound_sample(MAX_SOUNDS) == -1, "Native XL logical table translation differs");
 	const auto reset = [&] { require(restore_named_audio(initial, true), "Cannot reset logical sound fixture"); };
 	const auto output = [&] {

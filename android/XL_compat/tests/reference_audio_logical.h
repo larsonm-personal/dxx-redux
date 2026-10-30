@@ -43,5 +43,28 @@ void audio_logical_source_controls()
 		}
 	reset(0);
 	options.sound.xCustomSoundVolume = 65536;
+	unsigned loops = 0;
+	for (int volume : { 0, 1, 8192, 16384, 32767 }) {
+		reset(0);
+		Sounds[0][7] = 1;
+		Sounds[0][8] = 255;
+		audio.PlayLoopingSound(7, volume, -1, -1);
+		const auto &request = audio.request;
+		const int channel = audio.m_info.nLoopingChannel;
+		if (channel < 0 || request.sound != 1 || request.sound_class != XL_SOUND_GENERIC || request.volume != volume || request.pan != 32767 || request.loop != 1 || request.start != -1 || request.end != -1 || request.owner != -1)
+			throw std::runtime_error("Actual looping source requested unexpected playback controls");
+		audio.PlayLoopingSound(8, volume, -1, -1);
+		if (audio.m_info.nLoopingChannel != channel || !audio.stopped.empty()) throw std::runtime_error("Missing source loop displaced its previous channel");
+		audio.ChangeLoopingVolume(65536);
+		if (audio.m_channels[channel].m_info.nVolume != 32768) throw std::runtime_error("Source looping volume update lost full-width gain");
+		audio.StopLoopingSound();
+		if (audio.m_info.nLoopingChannel != -1 || audio.m_info.nLoopingSound != -1 || audio.ChannelIsPlaying(channel)) throw std::runtime_error("Source looping stop retained playback");
+		++loops;
+	}
+	reset(0);
+	audio.PlayLoopingSound(7, 65536, -1, -1);
+	if (audio.request.volume != 0) throw std::runtime_error("Documented source loop-volume truncation changed");
+	reset(0);
+	std::cout << "PASS: " << loops << " actual source looping start/change/stop controls; full-scale startup truncation reproduced as an explicit port correction\n";
 	std::cout << "PASS: " << translations << " actual source logical translations and " << forcefields << " forcefield creation scales, with explicit rejection of out-of-range mappings\n";
 }

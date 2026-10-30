@@ -44,7 +44,11 @@ foreach(
           "void CAudio::EndSoundObject ("
           "void CAudio::StopObjectSounds ("
           "void CAudio::Cleanup ("
-          "void CAudio::SyncSounds (")
+          "void CAudio::SyncSounds ("
+          "void CAudio::StartLoopingSound ("
+          "void CAudio::PlayLoopingSound ("
+          "void CAudio::ChangeLoopingVolume ("
+          "void CAudio::StopLoopingSound (")
     extract_audio_owner("${signature}")
 endforeach()
 foreach(signature IN ITEMS "void CAudioChannel::SetPlaying (" "void CAudio::UnregisterChannel (")

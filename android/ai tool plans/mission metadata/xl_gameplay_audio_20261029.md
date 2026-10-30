@@ -58,3 +58,17 @@ save/restore checks. Scoped formatting passed. Android has not been rerun for
 this checkpoint. Logs are under `temp/xl-gameplay-audio-20261029` in this worktree;
 Windows native runtime receipts remain under
 `temp/xl-shared-audio-20261029/windows-runtime`.
+
+## Looping follow-up
+
+The engine looping entry points now select XL at runtime, with a saved
+slot/serial binding in schema 22. Native/source checks pass on Windows/Linux;
+Android build, catalog checks and all 101 steps of its existing audio runner pass
+with the extended loop fixture. All 26 protected app files were restored with
+matching hashes. See `android/XL_compat/evidence/gameplay-audio.md`.
+
+Next, exercise actual seismic events and restored/replaced loops. The current
+`Seismic_sound_playing` flag is separate from the mixer binding and is not part
+of `seismic_runtime_state`; do not assume that audio-only restore checks prove
+event-level continuation. Then connect other ordinary/classed callers, keeping
+their lifecycle and runtime registries separate from Redux.

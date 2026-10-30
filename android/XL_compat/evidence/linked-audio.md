@@ -11,7 +11,8 @@ lifetime. Effects-slider changes and the existing XL frame hook run updates.
 Ordinary gameplay callers are not switched over. Native ambient sound/lightning
 effects, external WAV owners, complete creation source comparisons and wall-change
 qualification remain unfinished. Linked-owner persistence now uses XL trailer
-schema 21, with validated owner/channel bindings. No admission rule changes or campaign
+schema 21, with validated owner/channel bindings. Schema 22 additionally preserves
+the [looping controller](gameplay-audio.md). No admission rule changes or campaign
 playability claims follow from this checkpoint. Native effect objects are not
 admitted, so source-policy coverage of enabled/disabled effects does not claim
 that those objects run in the engine.

@@ -1,6 +1,8 @@
 #include "gameplay_audio.h"
 #include "linked_audio.h"
 #include "shared_audio.h"
+#include "shared_audio_internal.h"
+#include "gameplay_audio_state.h"
 #include "preview.h"
 #include <algorithm>
 extern "C" {
@@ -10,6 +12,37 @@ extern "C" {
 #include "config.h"
 }
 static_assert(MAX_SOUNDS == xl_compat::audio_logical_sound_count);
+namespace xl_compat::audio_runtime
+{
+LoopingAudioState looping;
+}
+extern "C" void xl_gameplay_loop_stop(void)
+{
+	using namespace xl_compat::audio_runtime;
+	AudioLock lock;
+	if (looping.matches(mixer)) mixer.stop(looping.channel);
+	looping = {};
+}
+extern "C" void xl_gameplay_loop_start(int sound, int volume, int loop_start, int loop_end)
+{
+	using namespace xl_compat::audio_runtime;
+	const int sample = xl_gameplay_sound_sample(sound);
+	// Invalid translation leaves the previous loop intact, as in the source
+	if (sample < 0 || volume < 0) return;
+	xl_gameplay_loop_stop();
+	// Keep fixed-point volume full-width; the source's int16_t field truncates it
+	const int channel = xl_audio_start_sample(sample, XL_SOUND_GENERIC, volume, 32767, 1, loop_start, loop_end);
+	AudioLock lock;
+	if (channel >= 0) looping = { channel, mixer.voices[unsigned(channel)].serial };
+}
+extern "C" void xl_gameplay_loop_volume(int volume)
+{
+	using namespace xl_compat::audio_runtime;
+	if (!xl_level_extensions_active() || volume < 0) return;
+	AudioLock lock;
+	if (looping.matches(mixer)) mixer.set_volume(looping.channel, volume, priority_volume);
+	else looping = {};
+}
 extern "C" int xl_gameplay_sound_sample(int logical)
 {
 	if (!xl_level_extensions_active()) return -1;

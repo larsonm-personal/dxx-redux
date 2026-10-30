@@ -16,6 +16,7 @@
 #include <string>
 extern "C" {
 #include "inferno.h"
+#include "sounds.h"
 #include "game.h"
 #include "gameseq.h"
 #include "gamesave.h"
@@ -111,6 +112,7 @@ void reset_events()
 	xl_named_audio_pause(1);
 	auto empty = snapshot();
 	empty["voices"] = json::array();
+	empty["loop"] = json::array();
 	empty["linked"]["owners"] = json::array();
 	empty["linked"]["deferred"] = bool(0);
 	for (auto &row : empty["events"]) {
@@ -165,6 +167,16 @@ void verify()
 		xl_audio_pressure::continuation(pressure_origin);
 		require(xl_compat::restore_named_audio(earned, true) && snapshot() == earned, "Android pressure continuation did not recover exact saved voices and cursor");
 		++pressure_checks;
+	}
+	if (linked_earned) {
+		const int slot = earned.at("loop")[0].get<int>();
+		digi_change_looping_volume(F1_0 / 4);
+		const auto changed = snapshot();
+		bool controlled = false;
+		for (const auto &voice : changed.at("voices"))
+			if (voice[0] == slot) controlled = voice[6] == F1_0 / 8;
+		require(controlled && changed.at("loop") == earned.at("loop"), "Android restored loop control lost its channel identity");
+		require(xl_compat::restore_named_audio(earned, true) && snapshot() == earned, "Android loop control could not recover exact saved state");
 	}
 }
 
