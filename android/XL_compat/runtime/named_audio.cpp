@@ -56,6 +56,7 @@ struct AudioResources {
 	std::vector<std::string> names;
 	std::vector<unsigned> classic;
 	std::vector<std::string> classic_names;
+	std::map<std::string, std::string> classic_replacements;
 	std::map<int, Action> actions;
 	std::map<std::string, unsigned> external;
 	unsigned prepared_rate = 0;
@@ -273,7 +274,15 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		resources->names.push_back(resource.path);
 		external_identity += ":" + name + ":" + resource.path + ":" + picosha2::hash256_hex_string(resource.bytes);
 	}
-	auto classic = prepare_classic_playback({});
+	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate());
+	for (const auto &sample : replacements.samples) resources->classic_replacements.emplace(sample.name, sample.path);
+	if (!replacements.samples.empty()) {
+#ifndef USE_SDLMIXER
+		throw std::runtime_error("XL classic replacements require the SDL_mixer backend");
+#endif
+		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL classic replacements require an initialized stereo 16-bit SDL_mixer output");
+	}
+	auto classic = prepare_classic_playback(replacements);
 	for (auto &sample : classic.samples) {
 		if (sample.sample != int(resources->classic.size())) throw std::runtime_error("XL shared bank has an incomplete classic registry");
 		bytes += sample.pcm.samples.size() * sizeof(std::int16_t);
@@ -686,6 +695,7 @@ nlohmann::json named_audio_diagnostics()
 	}
 	nlohmann::json result = { { "backend_ready", backend_ready }, { "rate", output_rate }, { "resources", bank ? bank->sources.size() : 0 }, { "actions", bank ? bank->actions.size() : 0 }, { "files", bank ? bank->names : std::vector<std::string>{} }, { "paused", copy.paused }, { "resume_pending", resume_pending }, { "effects_volume", priority_volume }, { "output_volume", copy.volume }, { "classic_samples", bank ? bank->classic.size() : 0 }, { "starts", copy.starts }, { "completions", copy.completions }, { "stops", copy.stops }, { "failed_starts", failed_starts }, { "output_callbacks", calls }, { "output_frames", delivered }, { "error", failure }, { "voices", nlohmann::json::array() } };
 	result["cursor"] = copy.cursor;
+	result["classic_replacements"] = bank ? nlohmann::json(bank->classic_replacements) : nlohmann::json::object();
 	std::set<std::string> named_files;
 	result["external_resources"] = nlohmann::json::object();
 	if (bank) {

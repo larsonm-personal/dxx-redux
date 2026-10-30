@@ -193,6 +193,7 @@ char *DefaultSoundFile()
 	return options.sound.audioSampleRate >= 22050 ? high : low;
 }
 #include "xl_reference_classic_audio.h"
+#include "reference_classic_start.h"
 #undef USE_OPENAL
 #undef HIRES_SOUND_FOLDER
 
@@ -316,6 +317,7 @@ void classic_audio_source_controls()
 	require(LoadD2Sounds(true) && !samples[0].bHires && samples[0].data[0].bytes == Bytes({ 1, 2, 3 }), "Empty preferred reference WAV fell through to a lower folder");
 	++cases;
 	std::cout << "Classic audio source: " << cases << " bank suppression, signed scopes, registry, fallback and profile controls\n";
+	classic_start_controls();
 }
 
 void classic_audio_original(const char *bank_path, const char *folder, int levels)

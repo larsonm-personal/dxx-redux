@@ -231,3 +231,41 @@ WAV replacement installation. Keep particles/lightning and independent gameplay
 requirements explicit. The measured PCM-oracle cost reduction in #219 is green
 in all of its workflows; further CI trimming still requires equivalent coverage
 and measured evidence. End-of-block audit remains outstanding.
+
+### Classic replacement consumer
+
+Continue in the same checkout on `xl_more_71_classic_replacements`, stacked on
+the published ambient branch. The static-explosion audit found dependencies on
+powerup animation, additive rendering, lighting and collision behavior in
+addition to `SetSoundSources`. Keep that consumer together with its object
+lifecycle rather than admitting an audio-only approximation.
+
+Install the already-owned classic WAV selections into the shared immutable bank.
+Verify source startup decisions, output conversion, gameplay entry points,
+normal/secret folder changes, disk/rewind restoration, backend reopen and Redux
+transitions. Retain malformed/foreign/custom-bank rejection and unchanged native
+sample storage. Extend existing integration owners rather than adding duplicate
+build jobs. Pumo original resource audits remain component evidence, not a
+playability claim.
+
+The replacement tranche now passes full Windows audio integration, all 106
+required native tests (379.02 seconds), and both Android scope/classic scripts
+(65 and 35 steps). Android compares 237,568 PCM samples in 26 output checks,
+including 14 replacement cases, and restores all 234 protected files unchanged.
+Existing owners, source oracles and timeout bounds are retained. Pinned startup
+comparisons reproduce the mixed-bank empty-buffer defect; production explicitly
+uses the owned WAV bytes and actual device rate. Native checks also cover finite
+completion, permanent loops, stale saves after valid same-path WAV edits, and
+recovery when the original bytes return.
+
+Original Pumo complete-bank and converted-output receipts match across Windows
+and Linux for all 1,988 selections and 196 WAVs at both output rates, with an
+independent Python audit. This does not qualify original level callbacks or
+gameplay. See [classic playback evidence](../../XL_compat/evidence/classic-playback.md).
+Publish this tranche from the same disclosed checkout; no D1/D2 core changes.
+
+Next, measure repeated stock conversion during partial replacement preparation
+as a possible CI/load-time improvement, retaining fresh content validation and
+all existing checks. Then return to the static-explosion object lifecycle and
+other remaining single-player consumers. The ten-hour deadline and final audit
+remain unchanged.

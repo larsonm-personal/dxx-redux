@@ -14,6 +14,7 @@
 #include "audio_routes_test.h"
 #include "external_audio_test.h"
 #include "ambient_objects_test.h"
+#include "classic_output_test.h"
 #include "preview.h"
 #include "object_trigger.h"
 #include "android_mission_assets.h"
@@ -25,6 +26,8 @@
 #include <string>
 extern "C" {
 #include "inferno.h"
+#include "gr.h"
+#include "piggy.h"
 #include "sounds.h"
 #include "game.h"
 #include "gameseq.h"
@@ -75,6 +78,7 @@ unsigned surface_checks = 0;
 unsigned route_checks = 0;
 unsigned external_checks = 0;
 unsigned ambient_checks = 0;
+unsigned classic_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -338,6 +342,85 @@ void scope_output(int action)
 	SDL_PauseAudio(0);
 }
 
+int classic_laser_sample()
+{
+	for (int sample = 0; const char *name = piggy_sound_name(sample); ++sample)
+		if (!std::strcmp(name, "laser01")) return sample;
+	throw std::runtime_error("Replacement fixture requires the laser01 sample registry entry");
+}
+
+void scope_classic_output()
+{
+	const std::string folder = Current_level_num == 1 ? "level01/" : Current_level_num == 2 ? "level02/"
+	                                                             : Current_level_num == -1  ? "slevel01/"
+	                                                                                        : "";
+	require(xl_compat::named_audio_diagnostics().at("classic_replacements") == json{ { "laser01", "mods/xscope/sounds/" + folder + "laser01.wav" } },
+	        "Android did not install the selected scoped classic WAV");
+	int logical = -1;
+	const int physical = classic_laser_sample();
+	for (int id = 0; id < MAX_SOUNDS; ++id)
+		if (xl_gameplay_sound_sample(id) == physical) {
+			logical = id;
+			break;
+		}
+	require(logical >= 0, "Android replacement lacks a logical sample route");
+	for (int linked : { 0, 1 }) {
+		reset_events();
+		capture_begin();
+		if (!linked) digi_play_sample(logical, F1_0);
+		else {
+			require(xl_gameplay_sound_object(logical, XL_SOUND_AMBIENT, Players[Player_num].objnum, 1, F1_0, 256 * F1_0, -1, -1, 0) >= 0,
+			        "Cannot create Android replacement object owner");
+			require(xl_gameplay_sound_position(logical, ConsoleObject->segnum, 0, &ConsoleObject->pos, 1, F1_0 / 2, 256 * F1_0) >= 0,
+			        "Cannot create Android replacement position owner");
+			xl_audio_sync_objects();
+			Triggers[1].flags = 0;
+			require(check_trigger_sub(1, Player_num, 1) == 0, "Cannot mix Android named/replacement playback");
+		}
+		const auto starting = snapshot();
+		require(starting.at("voices").size() == (linked ? 3 : 1) && starting.at("voices")[0][2] == physical + 4,
+		        "Android replacement routes did not start the expected channels");
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		xl_classic_output::compare(starting, Current_level_num, captured.data(), captured_music.data(), captured_samples, 20, physical + 4);
+		checked_samples += captured_samples;
+		++output_checks;
+		++classic_checks;
+		xl_named_audio_pause(1);
+		SDL_PauseAudio(0);
+	}
+}
+
+void classic_single_output()
+{
+	require(Current_mission && !std::strcmp(Current_mission_filename, "xwav") && game_is_time_paused(), "Classic-only output requires the paused owned WAV mission");
+	reset_events();
+	capture_begin();
+	int logical = -1;
+	const int physical = classic_laser_sample();
+	for (int id = 0; id < MAX_SOUNDS; ++id)
+		if (xl_gameplay_sound_sample(id) == physical) {
+			logical = id;
+			break;
+		}
+	require(logical >= 0, "Classic-only replacement lacks its ordinary route");
+	digi_play_sample(logical, F1_0);
+	const auto starting = snapshot();
+	require(starting.at("voices").size() == 1 && starting.at("voices")[0][2] == physical && xl_compat::named_audio_diagnostics().at("resources") == 183,
+	        "Classic-only mission did not install its replacement bank");
+	xl_named_audio_pause(0);
+	capture_run(4096);
+	for (std::size_t i = 0; i < captured_samples; ++i) {
+		const int sample = int(float(i % 2 ? -6000 : 3500) * (127.0f / 255.0f));
+		require(captured[i] == (std::clamp) (sample * 20 / 128 + int(captured_music[i]), -32768, 32767), "Classic-only mission played stock or incorrect replacement PCM");
+	}
+	checked_samples += captured_samples;
+	++output_checks;
+	++classic_checks;
+	xl_named_audio_pause(1);
+	SDL_PauseAudio(0);
+}
+
 void scope_control(const char *operation)
 {
 	if (!std::strcmp(operation, "disk_load")) {
@@ -369,14 +452,15 @@ void scope_control(const char *operation)
 		                                                                                        : "";
 		require(diagnostic.at("files") == json::array({ "shared.wav", "mods/xscope/sounds/" + folder + "scoped.wav", "mods/xscope/sounds/mission.wav", "tiny.wav" }), "Android selected an incorrect sound scope or priority");
 		for (int action : { 0, 1, 2 }) scope_output(action);
+		scope_classic_output();
 	} else if (!std::strcmp(operation, "prepare")) {
-		pressure_earned = false;
-		scope_output(1);
+		pressure_earned = shared_earned = linked_earned = ambient_earned = false;
+		scope_classic_output();
 		earned = snapshot();
 		energy = Players[Player_num].energy;
 		version = xl_source_level_version();
 		scope_ordinal = Current_level_num;
-		require(scope_ordinal == 2 && earned.at("voices").size() == 1 && earned.at("voices")[0][3] > 0, "Scoped save must earn level-two playback");
+		require(scope_ordinal == 2 && earned.at("voices").size() == 3 && earned.at("voices")[0][3] > 0, "Scoped save must earn level-two replacement playback");
 		verify();
 		require(!xl_level_supported("scope23.rl2", 0) && std::strstr(xl_level_rejection(), "explicit incoming level number"), "Android ambiguous sound scope passed admission");
 		verify();
@@ -391,12 +475,10 @@ void scope_control(const char *operation)
 		capture_begin();
 		xl_named_audio_pause(0);
 		capture_run(4096);
-		for (std::size_t i = 0; i < captured_samples; ++i) {
-			const int sample = std::int16_t(float(i % 2 ? 9000 : -3000) * (127.0f / 255.0f));
-			require(captured[i] == (std::clamp) (sample * 20 / 128 + int(captured_music[i]), -32768, 32767), "Restored scoped voice produced another level's audio");
-		}
+		xl_classic_output::compare(earned, scope_ordinal, captured.data(), captured_music.data(), captured_samples, 20, classic_laser_sample() + 4);
 		checked_samples += captured_samples;
 		++output_checks;
+		++classic_checks;
 		xl_named_audio_pause(1);
 		require(xl_compat::restore_named_audio(earned, true), "Cannot recover scoped output playhead");
 		SDL_PauseAudio(0);
@@ -407,7 +489,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks }, { "classic_checks", classic_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
@@ -416,6 +498,8 @@ const char *xl_named_audio_probe(const char *operation)
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Named audio controls require running singleplayer");
 		if (!std::strncmp(operation, "scope_", 6)) {
 			scope_control(operation + 6);
+		} else if (!std::strcmp(operation, "classic_single")) {
+			classic_single_output();
 		} else if (!std::strcmp(operation, "stock")) {
 			require(!xl_level_extensions_active() && snapshot().at("source") == "" && snapshot().at("voices").empty() && xl_compat::named_audio_diagnostics().at("resources") == 0, "Named audio leaked into Redux");
 			require(!Seismic_sound_playing && !Seismic_tremor_volume, "XL seismic control state leaked into Android stock gameplay");

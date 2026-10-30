@@ -104,6 +104,17 @@ foreach(signature IN ITEMS "int32_t LoadHiresSound (" "int32_t SetupSounds (" "v
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_classic_audio.h"
      CONTENT "${extracted}")
+# Preserve the actual replacement startup decision, including the mixed-bank empty-channel-buffer
+# defect. Mixer adapters record which bytes were supplied
+string(FIND "${audio}" "\t\tif (!gameOpts->sound.bHires [0] && pSound->bHires) {" start)
+string(FIND "${audio}" "\n\t\t}\n\tMix_VolPan" end)
+if(start LESS 0 OR end LESS start)
+    message(FATAL_ERROR "Missing classic replacement startup branch")
+endif()
+math(EXPR length "${end} - ${start}")
+string(SUBSTRING "${audio}" ${start} ${length} startup)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_classic_start.h"
+     CONTENT "// Actual pinned classic sample startup branch\n${startup}\n")
 set(extracted "// Actual pinned channel allocation; channel playback is an adapter\n")
 foreach(signature IN
         ITEMS "int32_t CAudio::SoundClassCount (" "CAudioChannel* CAudio::FindFreeChannel ("

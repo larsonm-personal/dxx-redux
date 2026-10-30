@@ -1,5 +1,9 @@
 # Ordinary XL sound replacement resources
 
+This records the original resource-preparation tranche. The subsequent
+[classic playback tranche](classic-playback.md) installs selected WAVs into the
+shared bank and supersedes the historical missing-consumer gate below.
+
 Owned D2 replacement WAVs now have a production preparation path and an explicit
 admission gate. A level requiring them cannot silently play the stock samples.
 Playback installation, spatial consumers, shared channel priorities and saved
