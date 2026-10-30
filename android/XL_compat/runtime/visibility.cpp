@@ -17,7 +17,9 @@ namespace xl_compat
 {
 bool geometry_lighting_available()
 {
-	return Current_mission && (Current_mission->descent_version == 1 || xl_preview_pilot_active());
+	// Shared geometry also serves audio in admitted legacy XL fluid levels
+	// Availability here does not enable a rendering profile
+	return Current_mission && (Current_mission->descent_version == 1 || xl_level_extensions_active());
 }
 
 ClassicVisibilityCamera classic_default_lighting_camera()

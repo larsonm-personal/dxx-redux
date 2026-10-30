@@ -116,6 +116,13 @@ void persistence(int source, const nlohmann::json &initial)
 	digi_change_looping_volume(F1_0 / 4);
 	digi_stop_looping_sound();
 	require(!Mix_Playing(stock_channel), "Stock looping stop failed");
+	digi_play_sample_once(SOUND_SEISMIC_DISTURBANCE_START, F1_0);
+	require(Mix_Playing(-1) > 0 && snapshot().at("voices").empty(), "Stock immediate API entered XL playback or failed to start Redux");
+	digi_stop_all_channels();
+	digi_link_sound_to_object(SOUND_SHIP_IN_WATER, short(ConsoleObject - Objects), 1, F1_0);
+	require(Mix_Playing(-1) > 0 && xl_linked_sound_count(int(ConsoleObject - Objects), SOUND_SHIP_IN_WATER, 0) == 1 && !owners.count, "Stock object API lost its separate Redux registry");
+	digi_kill_sound_linked_to_object(int(ConsoleObject - Objects));
+	require(!Mix_Playing(-1), "Stock object destruction retained Redux playback");
 	require(state_restore_all_sub(save, 0) && snapshot() == earned && owners.valid(mixer), "Disk-through-stock restore changed linked playheads, stopped owners or identities");
 	require(looping.matches(mixer), "Disk restore lost the seismic loop controller");
 	digi_change_looping_volume(F1_0 / 4);

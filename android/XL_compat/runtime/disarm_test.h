@@ -3,6 +3,9 @@
 static void disarm_corruption(const std::filesystem::path &user)
 {
 	using xl_disarm_controls::require;
+	// Compare complete trailers while real audio cannot advance between writes
+	const auto audio_status = SDL_GetAudioStatus();
+	SDL_PauseAudio(1);
 	auto *file = PHYSFS_openWrite("disarm-state.bin");
 	require(file && xl_wall_trigger_write(file) && PHYSFS_close(file), "Cannot capture disarm trailer");
 	std::ifstream input(user / "disarm-state.bin", std::ios::binary);
@@ -39,6 +42,7 @@ static void disarm_corruption(const std::filesystem::path &user)
 		std::ifstream after(user / "disarm-after.bin", std::ios::binary);
 		require(xl_compat::Bytes(std::istreambuf_iterator<char>(after), std::istreambuf_iterator<char>()) == encoded, "Rejected disarm state partially published another owned state");
 	}
+	if (audio_status == SDL_AUDIO_PLAYING) SDL_PauseAudio(0);
 }
 static int disarm_test(int argc, char **argv)
 {

@@ -620,7 +620,8 @@
     {
         "action": "wait_for",
         "expect": {
-            "xl_named_audio.output_probe.output_checks": 51,
+            "xl_named_audio.output_probe.output_checks": 60,
+            "xl_named_audio.output_probe.dispatch_checks": 9,
             "xl_named_audio.output_probe.seismic_checks": 6,
             "xl_named_audio.output_probe.shared_checks": 5,
             "xl_named_audio.output_probe.linked_checks": 5,

@@ -10,6 +10,9 @@ extern "C" {
 #include "sounds.h"
 #include "args.h"
 #include "config.h"
+#include "newdemo.h"
+#include "digi.h"
+int digi_unxlat_sound(int sound);
 }
 static_assert(MAX_SOUNDS == xl_compat::audio_logical_sound_count);
 namespace xl_compat::audio_runtime
@@ -57,7 +60,7 @@ extern "C" int xl_gameplay_sound_play(int sound, int sound_class, int volume, in
 }
 extern "C" std::int64_t xl_gameplay_sound_object(int sound, int sound_class, int object, int forever, int volume, int range, int loop_start, int loop_end, int decay)
 {
-	return xl_audio_link_object(xl_gameplay_sound_sample(sound), sound_class, object, forever, volume, range, loop_start, loop_end, decay, 0);
+	return xl_audio_link_object_recorded(xl_gameplay_sound_sample(sound), sound_class, object, forever, volume, range, loop_start, loop_end, decay, 0, sound);
 }
 extern "C" std::int64_t xl_gameplay_sound_position(int sound, int segment, int side, const vms_vector *position, int forever, int volume, int range)
 {
@@ -65,5 +68,28 @@ extern "C" std::int64_t xl_gameplay_sound_position(int sound, int segment, int s
 	if (sample < 0 || volume < 0) return -1;
 	// Source profile/menu derives custom volume from the integer main slider
 	if (sound == SOUND_FORCEFIELD_HUM) volume = xl_compat::audio_forcefield_volume(volume, (std::clamp) (int(GameCfg.DigiVolume), 0, 8) * 8192);
-	return xl_audio_link_position(sample, segment, side, position, forever, volume, range);
+	return xl_audio_link_position_recorded(sample, segment, side, position, forever, volume, range, sound);
+}
+
+extern "C" int xl_gameplay_link_object(int sound, int object, int forever, int volume, int range, int loop_start, int loop_end)
+{
+	const auto token = xl_gameplay_sound_object(sound, XL_SOUND_GENERIC, object, forever, volume, range, loop_start, loop_end, 0);
+	// No engine caller resolves this token; ownership and serialization use the
+	// full serial. Keep successful legacy return values nonnegative after wrap
+	return token < 0 ? -1 : int(std::uint64_t(token) & INT32_MAX);
+}
+extern "C" int xl_gameplay_link_position(int sound, int segment, int side, const vms_vector *position, int forever, int volume, int range)
+{
+	const auto token = xl_gameplay_sound_position(sound, segment, side, position, forever, volume, range);
+	return token < 0 ? -1 : int(std::uint64_t(token) & INT32_MAX);
+}
+extern "C" void xl_gameplay_record_objects(void)
+{
+	using namespace xl_compat;
+	using namespace xl_compat::audio_runtime;
+	for (unsigned i = 0; i < owners.count; ++i) {
+		const auto &entry = owners.entries[i];
+		if ((entry.flags & (sound_link_object | sound_forever)) == (sound_link_object | sound_forever))
+			newdemo_record_link_sound_to_object3(digi_unxlat_sound(entry.sound), entry.object, entry.max_volume, entry.max_distance, entry.loop_start, entry.loop_end);
+	}
 }

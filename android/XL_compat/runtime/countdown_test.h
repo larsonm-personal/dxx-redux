@@ -3,6 +3,9 @@
 static void countdown_corruption(const std::filesystem::path &user)
 {
 	using xl_countdown_controls::require;
+	// Keep live voices in the atomicity assertion without callback advancement
+	const auto audio_status = SDL_GetAudioStatus();
+	SDL_PauseAudio(1);
 	auto *file = PHYSFS_openWrite("countdown-state.bin");
 	require(file && xl_wall_trigger_write(file) && PHYSFS_close(file), "Cannot capture countdown trailer");
 	std::ifstream input(user / "countdown-state.bin", std::ios::binary);
@@ -41,6 +44,7 @@ static void countdown_corruption(const std::filesystem::path &user)
 		std::ifstream after(user / "countdown-after.bin", std::ios::binary);
 		require(xl_compat::Bytes(std::istreambuf_iterator<char>(after), std::istreambuf_iterator<char>()) == encoded, "Rejected countdown changed other owned state");
 	}
+	if (audio_status == SDL_AUDIO_PLAYING) SDL_PauseAudio(0);
 }
 static int countdown_test(int argc, char **argv)
 {

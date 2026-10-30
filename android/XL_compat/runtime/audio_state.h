@@ -5,6 +5,7 @@
 int xl_linked_sound_count(int object_index, int sound, int playing_only)
 {
 	int i, count = 0;
+	if (xl_level_extensions_active()) return xl_audio_object_count(object_index, xl_gameplay_sound_sample(sound), playing_only);
 	const int sample = digi_xlat_sound(sound);
 	if (object_index < 0 || object_index > Highest_object_index || sample < 0) return 0;
 	for (i = 0; i < MAX_SOUND_OBJECTS; ++i) {
@@ -29,6 +30,7 @@ int xl_linked_sound_count(int object_index, int sound, int playing_only)
 int xl_segment_sound_count(int segment, int side, int sound, int playing_only)
 {
 	int i, count = 0;
+	if (xl_level_extensions_active()) return xl_audio_position_count(segment, side, xl_gameplay_sound_sample(sound), playing_only);
 	const int sample = digi_xlat_sound(sound);
 	if (segment < 0 || segment > Highest_segment_index || side < 0 || side >= 6 || sample < 0) return 0;
 	for (i = 0; i < MAX_SOUND_OBJECTS; ++i) {

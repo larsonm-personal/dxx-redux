@@ -158,7 +158,7 @@ static void arena_water_contract()
 	require(xl_preview_water_sound(Players[Player_num].objnum, 1, SOUND_SHIP_IN_WATERFALL) == SOUND_SHIP_IN_WATERFALL, "texture waterfall sound lost");
 	require(xl_preview_water_sound(Players[Player_num].objnum, 0, SOUND_SHIP_IN_WATERFALL) == SOUND_SHIP_IN_WATER, "segment contact misclassified as waterfall");
 	int playing = xl_preview_fluid_loop(Players[Player_num].objnum, SOUND_SHIP_IN_WATERFALL, 0);
-	require(playing == SOUND_SHIP_IN_WATERFALL + 1, "waterfall loop bookkeeping");
+	require(playing == SOUND_SHIP_IN_WATERFALL + 1, ("waterfall loop bookkeeping: " + xl_compat::named_audio_diagnostics().dump()).c_str());
 	playing = xl_preview_fluid_loop(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, playing);
 	require(playing == SOUND_SHIP_IN_WATER + 1, "waterfall to interior loop did not switch");
 	require(xl_linked_sound_count(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, 0) == 1, "water loop did not create a native sound object");
@@ -173,11 +173,15 @@ static void arena_water_contract()
 	require(silent == -1 && xl_preview_fluid_loop(Players[Player_num].objnum, silent, playing) == 0, "idle segment contact retained fluid loop");
 	require(xl_linked_sound_count(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, 0) == 0, "idle water left native loop linked");
 	int filled = 0;
-	while (filled < 1000 && digi_link_sound_to_object3(SOUND_SHIP_IN_WATERFALL, Players[Player_num].objnum, 1, F1_0, i2f(256), -1, -1) >= 0) ++filled;
+	auto sound_position = ConsoleObject->pos;
+	while (filled < 1000 && digi_link_sound_to_pos2(SOUND_SHIP_IN_WATERFALL, ConsoleObject->segnum, -1, &sound_position, 1, F1_0, i2f(256)) >= 0) {
+		++filled;
+		sound_position.x += F1_0;
+	}
 	require(filled > 0 && filled < 1000, "sound registry exhaustion fixture failed");
 	playing = xl_preview_fluid_loop(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, 0);
 	require(playing == 0 && xl_linked_sound_count(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, 0) == 0, "failed fluid allocation was marked playing");
-	digi_kill_sound_linked_to_object(Players[Player_num].objnum);
+	digi_kill_sound_linked_to_segment(ConsoleObject->segnum, -1, SOUND_SHIP_IN_WATERFALL);
 	playing = xl_preview_fluid_loop(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, playing);
 	require(playing == SOUND_SHIP_IN_WATER + 1 && xl_linked_sound_count(Players[Player_num].objnum, SOUND_SHIP_IN_WATER, 0) == 1, "water loop did not retry after registry capacity recovered");
 	digi_kill_sound_linked_to_object(Players[Player_num].objnum);
