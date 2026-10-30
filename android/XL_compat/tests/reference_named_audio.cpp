@@ -576,6 +576,8 @@ void audio_geometry_runtime_controls(const char *);
 void audio_creation_runtime_controls(const char *);
 void classic_audio_original(const char *bank, const char *folder, int levels);
 void combat_audio_source_controls();
+void afterburner_source_controls();
+void actor_audio_source_controls();
 
 int main(int argc, char **argv)
 {
@@ -601,6 +603,8 @@ int main(int argc, char **argv)
 		audio_sync_source_controls();
 		audio_logical_source_controls();
 		combat_audio_source_controls();
+		afterburner_source_controls();
+		actor_audio_source_controls();
 		classic_sample_source_controls();
 		audio_route_source_controls();
 		audio_spatial_source_controls();

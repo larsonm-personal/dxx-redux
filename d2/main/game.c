@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "gameplay_audio.h"
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -769,6 +770,9 @@ extern void multi_send_sound_function (char,char);
 
 void do_afterburner_stuff(void)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_gameplay_afterburner()) return;
+#endif
 	static sbyte func_play = 0;
 
 	if (!(Players[Player_num].flags & PLAYER_FLAGS_AFTERBURNER))

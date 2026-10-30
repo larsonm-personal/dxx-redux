@@ -86,6 +86,7 @@ const char *AddonSoundName(int)
 }
 struct Request {
 	int calls = 0, kind = -1, sound = -1, sound_class = -1, volume = -1;
+	int range = 0, loop = 0;
 } request;
 struct Audio {
 	void PlaySound(int sound, int sound_class, int volume, int = 32767, int = 0, int = -1, const char *addon = nullptr)
@@ -98,15 +99,40 @@ struct Audio {
 		if (addon) throw std::runtime_error("Unexpected optional segment addon");
 		request = { request.calls + 1, 1, sound, SOUNDCLASS_GENERIC, volume };
 	}
-	void CreateObjectSound(int sound, int sound_class, int, int = 0, int volume = 65536, int = 256 * 65536, int = -1, int = -1, const char *addon = nullptr, int = 0)
+	void CreateObjectSound(int sound, int sound_class, int, int loop = 0, int volume = 65536, int range = 256 * 65536, int = -1, int = -1, const char *addon = nullptr, int = 0)
 	{
 		// Flare's optional addon is separate from the ordinary flash event
 		if (addon) return;
-		request = { request.calls + 1, 2, sound, sound_class, volume };
+		request = { request.calls + 1, 2, sound, sound_class, volume, range, loop };
 	}
 } audio;
 #include "xl_reference_combat_audio.h"
+#include "xl_reference_actor_audio.h"
 } // namespace combat_reference
+void actor_audio_source_controls()
+{
+	using namespace combat_reference;
+	unsigned cases = 0;
+	for (int sound : { -1, 7, 22 })
+		for (int scale : { 8192, 32768, 65536, 4 * 65536, 127 * 32768 }) {
+			const auto check = [&](int expected_sound, int expected_class, int volume, int range, int loop) {
+				if (request.calls != 1 || request.kind != 2 || request.sound != expected_sound || request.sound_class != expected_class || request.volume != volume || request.range != range || request.loop != loop)
+					throw std::runtime_error("Actual actor sound call changed");
+				++cases;
+				request = {};
+			};
+			request = {};
+			BossSee(&objects[0], sound, scale);
+			check(sound, XL_SOUND_ROBOT, 65536, 512 * 65536, 1);
+			BossFinal(&objects[0], sound, scale);
+			check(58, XL_SOUND_EXPLOSION, 4 * 65536, 512 * 65536, 0);
+			RobotGroan(&objects[0], sound, scale);
+			check(sound, XL_SOUND_ROBOT, scale, scale * 256, 0);
+			RobotFinal(&objects[0], sound, scale);
+			check(11, XL_SOUND_EXPLOSION, 2 * 65536, 512 * 65536, 0);
+		}
+	std::cout << "PASS: " << cases << " actual boss/robot sound calls with source class, sample, gain, range and loop controls\n";
+}
 void combat_audio_source_controls()
 {
 	using namespace combat_reference;

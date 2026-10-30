@@ -65,8 +65,9 @@ Logs are under `temp/xl-gameplay-audio-20261029` in
 
 ## Remaining work
 
-Robot/boss and afterburner caller policies, ambient source distribution,
-external sound-object playback, wall-change lifecycle and classic replacement
-installation remain separate requirements. This increment does not expand
+Robot/boss and afterburner caller policies are covered by the subsequent
+[actor/afterburner increment](actor-afterburner-audio.md). Ambient source
+distribution, external sound-object playback, wall-change lifecycle and classic
+replacement installation remain separate requirements. This increment does not expand
 mission admission or establish complete gameplay sound fidelity. Legacy demo
 event writing is checked; complete XL demo playback is not claimed.

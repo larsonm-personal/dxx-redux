@@ -37,6 +37,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/linked_audio_state.cpp"
                 "${xl_runtime_dir}/gameplay_audio.cpp"
                 "${xl_runtime_dir}/combat_audio.cpp"
+                "${xl_runtime_dir}/afterburner_audio.cpp"
                 "${xl_runtime_dir}/seismic_audio.cpp"
                 "${xl_runtime_dir}/audio_resource.cpp"
                 "${xl_runtime_dir}/classic_audio.cpp"

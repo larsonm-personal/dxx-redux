@@ -1,4 +1,5 @@
 #include "boss_spawn.h"
+#include "gameplay_audio.h"
 #include "boss_routes.h"
 #include "boss_destinations.h"
 #include "object_trigger.h"
@@ -415,7 +416,7 @@ extern "C" void xl_boss_teleport(int owner)
 	escort_note_boss_teleported(owner);
 	digi_link_sound_to_pos(Vclip[VCLIP_MORPHING_ROBOT].sound_num, segment, 0, &object.pos, 0, F1_0);
 	digi_kill_sound_linked_to_object(owner);
-	digi_link_sound_to_object2(Robot_info[object.id].see_sound, owner, 1, F1_0, i2f(512));
+	xl_gameplay_sound_object(Robot_info[object.id].see_sound, XL_SOUND_ROBOT, owner, 1, F1_0, i2f(512), -1, -1, 0);
 	Ai_local_info[owner].next_fire = Ai_local_info[owner].next_fire2 = 0;
 }
 extern "C" void xl_boss_ai_frame(int owner, int visible)
@@ -462,7 +463,7 @@ extern "C" void xl_boss_deaths_frame(void)
 		if (boss.death_start + BOSS_DEATH_DURATION - (duration ? duration : F1_0) < GameTime64) {
 			if (!boss.sound) {
 				boss.sound = 1;
-				digi_link_sound_to_object2(sound, boss.owner, 0, i2f(4), i2f(1024));
+				xl_gameplay_sound_object(sound, XL_SOUND_ROBOT, boss.owner, 0, i2f(4), i2f(1024), -1, -1, 0);
 			} else if (d_rand() < FrameTime * 16) {
 				const fix scale = (F1_0 + d_rand()) * 8;
 				const int audible = d_rand() < FrameTime * 2;
@@ -478,7 +479,7 @@ extern "C" void xl_boss_deaths_frame(void)
 			boss.dying = 2;
 			boss.owner = -1;
 			do_controlcen_destroyed_stuff(nullptr);
-			digi_link_sound_to_object2(SOUND_BADASS_EXPLOSION, owner, 0, i2f(4), i2f(512));
+			xl_gameplay_sound_object(58, XL_SOUND_EXPLOSION, owner, 0, i2f(4), i2f(512), -1, -1, 0);
 			explode_object(&object, F1_0 / 4);
 		}
 	}

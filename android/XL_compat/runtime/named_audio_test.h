@@ -215,6 +215,8 @@ static int named_audio_original(int argc, char **argv)
 #include "seismic_audio_test.h"
 #include "gameplay_dispatch_test.h"
 #include "combat_audio_test.h"
+#include "afterburner_audio_test.h"
+#include "actor_audio_test.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif
