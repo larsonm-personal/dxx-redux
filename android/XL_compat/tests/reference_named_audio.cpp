@@ -582,6 +582,7 @@ void actor_audio_source_controls();
 void surface_audio_source_controls();
 void surface_audio_runtime_controls(const char *);
 void ambient_audio_source_controls();
+void static_explosion_audio_source_controls();
 void ambient_audio_runtime_controls(const char *);
 
 int main(int argc, char **argv)
@@ -618,6 +619,7 @@ int main(int argc, char **argv)
 		actor_audio_source_controls();
 		surface_audio_source_controls();
 		ambient_audio_source_controls();
+		static_explosion_audio_source_controls();
 		classic_sample_source_controls();
 		audio_route_source_controls();
 		audio_spatial_source_controls();

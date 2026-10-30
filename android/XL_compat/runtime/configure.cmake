@@ -40,6 +40,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/afterburner_audio.cpp"
                 "${xl_runtime_dir}/surface_audio.cpp"
                 "${xl_runtime_dir}/ambient_objects.cpp"
+                "${xl_runtime_dir}/static_explosion.cpp"
                 "${xl_runtime_dir}/seismic_audio.cpp"
                 "${xl_runtime_dir}/audio_resource.cpp"
                 "${xl_runtime_dir}/classic_audio.cpp"
@@ -102,6 +103,7 @@ foreach(xl_target IN LISTS xl_targets)
                     "${xl_runtime_dir}/countdown_probe.cpp"
                     "${xl_runtime_dir}/disarm_probe.cpp"
                     "${xl_runtime_dir}/named_audio_probe.cpp"
+                    "${xl_runtime_dir}/static_explosion_gpu.cpp"
                     "${xl_runtime_dir}/fog_probe.cpp"
                     "${xl_runtime_dir}/pog_probe.cpp"
                     "${xl_runtime_dir}/corona_probe.cpp")

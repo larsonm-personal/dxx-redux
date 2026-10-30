@@ -58,6 +58,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "playsave.h"
 #include "xmodel.h"
+#ifdef DXX_XL_RUNTIME
+#include "static_explosion_runtime.h"
+#endif
 #ifdef ANDROID
 #include "android_visual_policy.h"
 #endif
@@ -72,7 +75,11 @@ void do_powerup_frame(object *obj)
 	vclip_info *vci = &obj->rtype.vclip_info;
 	vclip *vc = &Vclip[vci->vclip_num];
 
-	if (!d1_in_d2_animate_powerup(obj)) {
+	if (
+#ifdef DXX_XL_RUNTIME
+		!xl_static_explosion_animate(obj) &&
+#endif
+		!d1_in_d2_animate_powerup(obj)) {
 		fudge = (FrameTime * ((obj-Objects)&3)) >> 4;
 
 		vci->frametime -= FrameTime+fudge;
@@ -125,6 +132,9 @@ void draw_blob_outline(void)
 
 void draw_powerup(object *obj)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_static_explosion_draw(obj)) return;
+#endif
 #ifdef OGL
 #ifdef ANDROID
 	int allow_xmodel = android_visual_replacements_allowed();

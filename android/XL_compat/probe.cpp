@@ -3,6 +3,7 @@
 #include "capacity.h"
 #include "producer_layout.h"
 #include "ambient_sound.h"
+#include "static_explosion.h"
 #include "effect_targets.h"
 
 #include <limits>
@@ -60,6 +61,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	const auto producers = producer_layout(v);
 	if (!source_runtime) {
 		require(std::none_of(v.objects.begin(), v.objects.end(), ambient_sound_shape), "ambient sound objects require the source-owned XL runtime");
+		require(std::none_of(v.objects.begin(), v.objects.end(), static_explosion_shape), "static explosion objects require the source-owned XL runtime");
 		require(v.flicker_lights.size() <= 100, "classic probe flicker capacity requires the source-owned XL runtime");
 		std::size_t translated_indices = 0;
 		for (const auto &index : v.light_indices) {

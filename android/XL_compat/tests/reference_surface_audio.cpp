@@ -1,4 +1,5 @@
 #include "surface_audio_receipt.h"
+#include "static_explosion.h"
 #include "ambient_audio_receipt.h"
 #include <array>
 #include <cstdint>
@@ -18,20 +19,20 @@ namespace surface_reference
 #define IS_CHILD(value)           ((value) >= 0)
 #define OBJ_LIST_TYPE             1
 #define FORALL_EFFECT_OBJS(value) for ((value) = effect_list.head; (value); (value) = (value)->m_links[1].next)
-#define FORALL_STATIC_OBJS(value) for ((value) = nullptr; (value); (value) = nullptr)
-constexpr int SEGMENT_SIDE_COUNT = 6, FILENAME_LEN = 256, SOUND_ID = 2, SOUNDCLASS_AMBIENT = 1, OBJ_EXPLOSION = 0, RT_POWERUP = 0;
+#define FORALL_STATIC_OBJS(value) for ((value) = static_list.head; (value); (value) = (value)->m_links[2].next)
+constexpr int SEGMENT_SIDE_COUNT = 6, FILENAME_LEN = 256, SOUND_ID = 2, SOUNDCLASS_AMBIENT = 1, OBJ_EXPLOSION = 19, RT_POWERUP = 5, MAX_SOUNDS = 254;
 struct CObject;
 struct tObjListRef {
 	CObject *head = nullptr, *tail = nullptr;
 	int nObjects = 0;
-} effect_list;
+} effect_list, static_list;
 struct CObjListLink {
 	CObject *prev = nullptr, *next = nullptr;
 	tObjListRef *list = nullptr;
 };
 struct CObject {
 	int index = 0;
-	std::array<CObjListLink, 2> m_links{};
+	std::array<CObjListLink, 3> m_links{};
 	void Link(tObjListRef &, int32_t);
 	struct {
 		int nId = 0, nType = 0, renderType = 0;
@@ -50,7 +51,18 @@ struct CObject {
 		return index;
 	}
 };
-std::vector<CObject> effect_objects;
+std::vector<CObject> effect_objects, static_objects;
+std::uint8_t Sounds[2][MAX_SOUNDS]{}, AltSounds[2][MAX_SOUNDS]{};
+int named_sample = -1, lookup_traps = 0;
+int PiggyFindSound(const char *name)
+{
+	if (std::strcmp(name, "explode2")) throw std::runtime_error("Unexpected static explosion sound name");
+	return named_sample;
+}
+void Int3()
+{
+	++lookup_traps;
+}
 struct Side {
 	int m_nOvlTex = 0, m_nBaseTex = 0, flags = 2;
 	std::array<int, 3> center{};
@@ -106,7 +118,7 @@ struct {
 } gameData;
 struct {
 	struct {
-		int bDontStartObjects = 0;
+		int bDontStartObjects = 0, bD1Sound = 0;
 	} sound;
 } gameStates;
 struct {
@@ -129,7 +141,12 @@ struct Call {
 	std::array<int, 3> position;
 	bool deferred;
 };
-struct Audio {
+struct CAudio {
+	struct {
+		bool bLoMem = false;
+	} m_info;
+	int32_t UnXlatSound(int32_t);
+	int32_t GetSoundByName(const char *);
 	std::vector<Call> calls;
 	std::vector<xl_ambient_audio_receipt::Owner> object_calls;
 	unsigned resets = 0;
@@ -143,19 +160,14 @@ struct Audio {
 	{
 		calls.push_back({ sound, segment, side, loop, volume, range, position, gameStates.sound.bDontStartObjects != 0 });
 	}
-	int GetSoundByName(const char *)
-	{
-		return -1;
-	}
 	void CreateObjectSound(int sound, int sound_class, int object, int loop, int volume = 65536, int range = 256 * 65536, int loop_start = -1, int loop_end = -1, const char *filename = nullptr)
 	{
-		if (!filename) throw std::runtime_error("Ambient source control entered unqualified static-object dispatch");
 		// Capture initializer arguments; the separate creation source suite qualifies
 		// their mapping to owner flags, external identity and class-derived decay
 		object_calls.push_back({ { object, sound, sound_class, volume, range,
 		                           1 | 4 | (loop ? 16 : 0) | (gameStates.sound.bDontStartObjects ? 32 : 0),
-		                           loop_start, loop_end, 1, 1, 1 },
-		                         filename });
+		                           loop_start, loop_end, 1, filename ? 1 : 0, 1 },
+		                         filename ? filename : "" });
 	}
 } audio;
 #include "xl_reference_surface_audio.h"
@@ -172,6 +184,14 @@ void reset(unsigned segments)
 	audio.resets = 0;
 	effect_objects.clear();
 	effect_list = {};
+	static_list = {};
+	static_objects.clear();
+	named_sample = -1;
+	lookup_traps = 0;
+	gameStates.sound.bD1Sound = 0;
+	audio.m_info.bLoMem = false;
+	std::memset(Sounds, 255, sizeof(Sounds));
+	std::memset(AltSounds, 255, sizeof(AltSounds));
 }
 void install_effects(const std::vector<xl_ambient_audio_receipt::Object> &objects)
 {
@@ -310,4 +330,54 @@ void surface_audio_runtime_controls(const char *path)
 	}
 	if (tag != "end" || ordinal != cases || cases != 16 || compared < 30 || input >> tag) throw std::runtime_error("Surface receipt coverage incomplete");
 	std::cout << "PASS: " << cases << " loaded-mine surface cases and " << compared << " owners match actual source selection, volume, position and lifetime flags\n";
+}
+
+void static_explosion_audio_source_controls()
+{
+	using namespace surface_reference;
+	unsigned cases = 0;
+	for (int game : { 0, 1 })
+		for (bool low_memory : { false, true })
+			for (int sample : { -1, 0, 37, 253 }) {
+				reset(0);
+				gameStates.sound.bD1Sound = game;
+				audio.m_info.bLoMem = low_memory;
+				named_sample = sample;
+				auto *table = low_memory ? AltSounds[game] : Sounds[game];
+				// Repeated physical mappings must choose the first logical entry
+				table[17] = table[29] = static_cast<std::uint8_t>(sample);
+				install_effects({ { 9, 2, 32768, 1, "ambient" } });
+				static_objects.resize(3);
+				for (unsigned i = 0; i < static_objects.size(); ++i) {
+					auto &object = static_objects[i];
+					object.index = int(i) * 2 + 1;
+					object.info.nType = i == 1 ? 7 : OBJ_EXPLOSION;
+					object.info.nId = i ? 80 : 0;
+					object.info.renderType = 0;
+					object.rType.animationInfo.nClipIndex = 7;
+					object.Link(static_list, 2);
+				}
+				if (xl_compat::static_explosion_logical_sound(sample, table, MAX_SOUNDS) != audio.GetSoundByName("explode2"))
+					throw std::runtime_error("Static explosion sound policy differs from source lookup");
+				SetSoundSources();
+				std::vector<xl_ambient_audio_receipt::Owner> expected{
+					{ { 9, -1, 1, 32768, 256 * 65536, 53, 0, 0, 1, 1, 1 }, "ambient.wav" }
+				};
+				if (sample >= 0)
+					for (int index : { 1, 5 }) expected.push_back({ { index, 17, 1, 65536, 256 * 65536, 53, -1, -1, 1, 0, 1 }, "" });
+				if (audio.object_calls != expected || audio.resets != 1 || gameStates.sound.bDontStartObjects || lookup_traps)
+					throw std::runtime_error("Static explosion source ownership, ordering or name translation differs");
+				for (unsigned i = 0; i < static_objects.size(); ++i) {
+					const auto &object = static_objects[i];
+					const bool active = sample >= 0 && i != 1;
+					if (object.info.renderType != (active ? RT_POWERUP : 0) || object.rType.animationInfo.nClipIndex != (active ? object.info.nId : 7))
+						throw std::runtime_error("Static explosion source missing-sound or clip initialization differs");
+				}
+				++cases;
+			}
+	reset(0);
+	named_sample = 37;
+	if (audio.GetSoundByName("explode2") != 0 || lookup_traps != 1)
+		throw std::runtime_error("Source unmapped named sample fallback differs");
+	std::cout << "PASS: " << cases + 1 << " actual static explosion initializer/name controls, including missing sound, mapping and list order\n";
 }

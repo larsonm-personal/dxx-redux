@@ -5,6 +5,7 @@
 #include "texture_change.h"
 #include "countdown.h"
 #include "ambient_sound.h"
+#include "static_explosion.h"
 #include "named_sound.h"
 #include <algorithm>
 #include <cstdint>
@@ -78,7 +79,9 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 				result.push_back({ "effect_sounds", int(index), error.what() });
 			}
 		}
-		if ((object.type == 18 || object.type == 19 || object.type == 20) && !ambient_sound_shape(object))
+		if (object.type == 19 && !static_explosion_shape(object))
+			result.push_back({ "static_explosion", int(index), "requires a stationary single-player object with powerup control and vclip rendering (control 13, movement 0, render 5)" });
+		if ((object.type == 18 || object.type == 20) && !ambient_sound_shape(object))
 			result.push_back({ "effect_object_types", int(index), "object type " + std::to_string(object.type) + " requires unsupported effect behavior" });
 	}
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {

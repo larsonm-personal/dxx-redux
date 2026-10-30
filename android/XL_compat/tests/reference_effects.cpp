@@ -364,16 +364,25 @@ static void compare_level(const xl_compat::Bytes &bytes, int &objects, int &effe
 }
 
 void effect_target_source_controls();
+void static_explosion_source_controls();
+void static_explosion_render_source_controls();
+void static_explosion_runtime_controls(const char *);
 void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--static-runtime") {
+			static_explosion_runtime_controls(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--ambient-runtime") {
 			ambient_activation_runtime_controls(argv[2]);
 			return 0;
 		}
 		if (argc != 2) throw std::runtime_error("Expected effect fixture directory or original HOG");
 		effect_target_source_controls();
+		static_explosion_source_controls();
+		static_explosion_render_source_controls();
 		int objects = 0, effects = 0, levels = 0;
 		const auto read = [](const std::filesystem::path &path) {
 			std::ifstream input(path, std::ios::binary);
