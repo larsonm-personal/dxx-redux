@@ -5,13 +5,27 @@
 #include "../audio_voice.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <map>
+#include <optional>
 #include <stdexcept>
 namespace xl_shared_audio_pcm
 {
-inline std::vector<xl_compat::AudioSample> reference_bank(unsigned rate)
+inline std::map<unsigned, xl_compat::AudioSample> reference_bank(const nlohmann::json &state)
 {
-	std::vector<xl_compat::AudioSample> result;
-	for (unsigned index = 0; index < 4; ++index) {
+	const auto rate = state.at("rate").get<unsigned>();
+	std::map<unsigned, xl_compat::AudioSample> result;
+	std::optional<xl_compat::ClassicAudioResources> classic;
+	// Every captured voice still gets fresh expected PCM. Unreferenced samples
+	// cannot contribute to this capture and need no repeated output conversion
+	for (const auto &row : state.at("voices")) {
+		const auto index = row[2].get<unsigned>();
+		if (result.count(index)) continue;
+		if (index >= 4) {
+			// Stock conversion has an independent pinned-source PCM comparison
+			if (!classic) classic = xl_compat::prepare_classic_playback({});
+			result.emplace(index, xl_compat::prepare_audio_sample(classic->samples.at(index - 4).pcm, rate));
+			continue;
+		}
 		const unsigned channels = index == 2 ? 1u : 2u, source_rate = index == 2 ? 22050u : 44100u;
 		const unsigned frames = index == 1 ? 44100u : index == 2 ? 11025u
 		                                          : index == 3   ? 1u
@@ -20,16 +34,13 @@ inline std::vector<xl_compat::AudioSample> reference_bank(unsigned rate)
 		for (unsigned frame = 0; frame < frames; ++frame)
 			for (unsigned channel = 0; channel < channels; ++channel)
 				pcm.samples.push_back(std::int16_t(int((frame * (channel ? 53 : 37) + (channel ? 3 : 0)) % 511) * 100 - 25500));
-		result.push_back(xl_compat::prepare_audio_sample(pcm, rate));
+		result.emplace(index, xl_compat::prepare_audio_sample(pcm, rate));
 	}
-	// Stock conversion has an independent pinned-source PCM comparison
-	for (const auto &sample : xl_compat::prepare_classic_playback({}).samples)
-		result.push_back(xl_compat::prepare_audio_sample(sample.pcm, rate));
 	return result;
 }
 inline void output(const nlohmann::json &state, const std::int16_t *captured, const std::int16_t *music, std::size_t captured_samples, int gain)
 {
-	const auto samples = reference_bank(state.at("rate").get<unsigned>());
+	const auto samples = reference_bank(state);
 	for (std::size_t i = 0; i < captured_samples; ++i) {
 		int expected = music ? music[i] : 0;
 		for (const auto &row : state.at("voices")) {

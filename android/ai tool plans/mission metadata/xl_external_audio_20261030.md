@@ -55,3 +55,21 @@ Sound-effect object loading and enabled-state consumers remain blocked and are
 the next gameplay dependency. Before that increment, measure reducing the PCM
 oracle's repeated preparation of unreferenced samples. Keep every captured-sample
 comparison, source oracle, test member and failure bound.
+
+## CI cost increment verified
+
+`xl_more_69_audio_test_cost` removes conversion of unreferenced samples from the
+shared PCM oracle. Windows/Linux checks and all 101 Android steps still pass,
+with unchanged 119 output cases and restored protected files. The Android run
+takes 318.795 seconds versus 444.955 before; its linked phase falls from 74.151
+to 34.976 seconds. Timings and measurement limits are recorded in
+[audio test cost](../../XL_compat/evidence/audio-test-cost.md). No runtime engine
+behavior, source oracle, CI membership or timeout changes.
+
+The next object-runtime survey confirms that Pumo's 644 sound objects are all
+type/id/control/movement `20/2/0/0`; 611 start enabled and 33 disabled. Its wall
+enable/disable actions have 56 sound-object target references alongside 92
+particle-object references. Activation must therefore preserve authored target
+order and independent unsupported particle requirements. Source volume loading
+also scales the serialized integer by `65536 / 10` with float rounding; decoding
+the raw payload does not yet qualify that runtime behavior.
