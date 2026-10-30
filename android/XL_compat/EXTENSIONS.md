@@ -128,18 +128,19 @@ resource priority and use the incoming signed mission ordinal, including repeate
 level filenames. Native and all 65 Android publication/output/persistence checks
 pass. The original Pumo resource audit resolves its 644 ambient objects to 41
 owned external WAVs, with independent PCM comparisons. See
-[sound-folder evidence](evidence/audio-scopes.md). This supplies resources for
-the future ambient runtime; spatial playback, global addons and the remaining
-external replacement consumers are still unqualified.
+[sound-folder evidence](evidence/audio-scopes.md). These resources feed the named
+and ambient playback described below. Global addon installations remain unqualified.
 
 Ordinary D2 sound replacements now have separate source and production resource
 checks. The selected output-rate mission bank suppresses external WAV lookup;
 otherwise incoming normal/secret files precede mission files. All 1,988 Pumo
 level/sample selections resolve to 196 WAVs with independent source and PCM
-comparisons. The loader explicitly rejects unapplied classic replacements and
-unsupported custom banks rather than silently using stock sounds. See
-[classic sound-bank evidence](evidence/classic-audio-bank.md). This is resource
-preparation and honest admission, not classic playback qualification.
+comparisons. The shared bank now installs the selected WAVs for ordinary engine
+sounds and linked owners while preserving native sample storage for Redux.
+See [classic sound-bank evidence](evidence/classic-audio-bank.md) for selection
+and [classic playback evidence](evidence/classic-playback.md) for actual output,
+saved voices, signed scopes and explicit source startup corrections. Malformed
+or foreign WAVs and selected custom banks still reject before installation.
 
 The complete 183-sample stock bank and XL spatial audio calculation are now
 implemented as preparation for ordinary playback. Stock PCM, routing, ear-angle
@@ -182,8 +183,8 @@ have owned enabled state, ordered wall/attached activation, permanent spatial
 loops and saved lifetime validation. Shared native and Android controls cover
 actual PCM, removal/reuse and restoration; see [ambient-object evidence](evidence/ambient-objects.md)
 for the tested format profiles and explicit limits. Particles and lightning
-remain blocked. Static explosion ambience and the remaining wall/audio consumers
-also need qualification, so classic replacements remain gated.
+remain blocked. Static explosion objects and custom S11/S22 bank decoding still
+need qualification; ordinary WAV support does not imply those features work.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

@@ -46,6 +46,16 @@ def main():
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             archive.writestr(info, source.read_bytes())
+        if args.classic:
+            # The same independent labels exercise ordinary replacements through
+            # the existing normal/secret scope and disk/rewind automation
+            for folder in ("", "level01/", "level02/", "slevel01/"):
+                source = args.fixture / (root + folder + "scoped.wav")
+                info = zipfile.ZipInfo(root + folder + "laser01.wav", date_time=(1980, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.external_attr = 0o100644 << 16
+                archive.writestr(info, source.read_bytes())
+                names.append(info.filename)
     print(f"Packaged {len(names)} scoped resources: {args.output}")
 
 

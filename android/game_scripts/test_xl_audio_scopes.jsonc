@@ -405,8 +405,9 @@
     {
         "action": "wait_for",
         "expect": {
-            "xl_named_audio.output_probe.output_checks": 16,
-            "xl_named_audio.resources": 4,
+            "xl_named_audio.output_probe.output_checks": 25,
+            "xl_named_audio.output_probe.classic_checks": 13,
+            "xl_named_audio.resources": 187,
             "xl_pilot.source_level_version": 23,
         },
         "timeout_ms": 20000,

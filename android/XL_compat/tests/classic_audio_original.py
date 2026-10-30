@@ -57,6 +57,40 @@ def wave_receipt(path):
     }
 
 
+def output_receipt(path, output_rate):
+    """Independent device-timestamp interpolation, without production helpers."""
+    with wave.open(str(path), "rb") as source:
+        channels, width, rate, frames = (
+            source.getnchannels(),
+            source.getsampwidth(),
+            source.getframerate(),
+            source.getnframes(),
+        )
+        raw = source.readframes(frames)
+    if width == 1:
+        words = array("h", ((byte - 128) * 256 for byte in raw))
+    else:
+        words = array("h", raw)
+        if sys.byteorder != "little":
+            words.byteswap()
+    count = max(1, (frames * output_rate + rate // 2) // rate)
+    if rate == output_rate and channels == 2:
+        output = words
+    else:
+        output = array("h")
+        for frame in range(count):
+            whole, fraction = divmod(frame * rate, output_rate)
+            first, second = min(whole, frames - 1), min(whole + 1, frames - 1)
+            for channel in range(2):
+                offset = channel if channels == 2 else 0
+                numerator = words[first * channels + offset] * (output_rate - fraction)
+                numerator += words[second * channels + offset] * fraction
+                output.append(numerator // output_rate if numerator >= 0 else -((-numerator) // output_rate))
+    if sys.byteorder != "little":
+        output.byteswap()
+    return {"frames": count, "pcm_sha256": hashlib.sha256(output.tobytes()).hexdigest()}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bank", type=Path, required=True)
@@ -101,10 +135,26 @@ def main():
         raise ValueError("Pinned XL source selection differs from independent bank/folder selection")
     if len(files) != args.waves or len(source_rows) != args.selections:
         raise ValueError("Original replacement coverage differs")
+    converted = {}
     for rate in (44100, 48000):
         native = json.loads((args.receipts / f"classic-resources-{rate}.json").read_text())
         if native != expected:
             raise ValueError(f"Production original resources or decoded PCM differ at output profile {rate}")
+        outputs = {relative: output_receipt(root / relative, rate) for relative in files}
+        converted[str(rate)] = outputs
+        playback = {}
+        for ordinal, rows in expected.items():
+            playback[ordinal] = [
+                {
+                    "sample": row["sample"],
+                    "path": row["path"],
+                    **outputs[row["path"].removeprefix(f"mods/{args.identity}/sounds/")],
+                }
+                for row in rows
+            ]
+        native_playback = json.loads((args.receipts / f"classic-playback-{rate}.json").read_text())
+        if native_playback != playback:
+            raise ValueError(f"Complete original bank or converted playback PCM differs at {rate} Hz")
     report = {
         "bank_sha256": hashlib.sha256(args.bank.read_bytes()).hexdigest(),
         "bank_names": len(names),
@@ -112,6 +162,7 @@ def main():
         "selections": len(source_rows),
         "distinct_replacements": len(files),
         "resources": files,
+        "prepared_output": converted,
         "playback_qualified": False,
     }
     encoded = (json.dumps(report, indent=2, sort_keys=True) + "\n").encode()
@@ -119,7 +170,7 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_bytes(encoded)
     print(
-        f"PASS: independent original bank, pinned source and both production profiles agree on {len(source_rows)} selections and {len(files)} decoded WAVs; playback unqualified"
+        f"PASS: independent original bank, pinned source and both production profiles agree on {len(source_rows)} selections and {len(files)} decoded/converted WAVs; original level playback unqualified"
     )
 
 

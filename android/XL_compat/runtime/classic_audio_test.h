@@ -1,5 +1,6 @@
-// Preparation and admission controls; no claim of spatial or audible playback
+// Resource preparation and loaded replacement playback controls
 #include "audio_geometry_test.h"
+#include "classic_playback_test.h"
 static nlohmann::json classic_audio_receipt(const xl_compat::ClassicAudioResources &resources)
 {
 	nlohmann::json result = nlohmann::json::array();
@@ -96,8 +97,8 @@ static void classic_audio_controls(const std::filesystem::path &root)
 		                                                      : -4000;
 		for (std::size_t i = 0; i < pcm.samples.size(); ++i) require(pcm.samples[i] == (i % 2 ? right : left), "Classic prepared PCM differs from selected scope");
 		identities.insert(prepared.identity);
-		require(!xl_level_supported_at(level, 0, ordinal) && std::strstr(xl_level_rejection(), "classic WAV replacements require their playback consumer") && xl_compat::named_audio_snapshot() == before,
-		        "Unapplied classic replacements silently admitted or disturbed live named voices");
+		require(xl_level_supported_at(level, 0, ordinal) && xl_compat::named_audio_snapshot() == before,
+		        "Valid replacement preflight failed or disturbed live named voices");
 	}
 	require(identities.size() == 4, "Distinct classic scopes share an identity");
 	const auto preferred = sound_root / "level02" / filename;
@@ -128,7 +129,11 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	require(!xl_level_supported_at("scope23.rl2", 0, 2) && std::strstr(xl_level_rejection(), "sound bank suppresses external WAV replacements"), "Unsupported selected bank did not suppress WAVs");
 	require(prepare_classic_audio("scope23.rl2", 2, 11025).samples.size() == 1, "Wrong-rate custom bank suppressed WAVs");
 	std::filesystem::remove(custom);
+	char entry[] = "classic-entry.sav", description[] = "XL before replacements";
+	require(state_save_all_sub(entry, description), "Cannot preserve original playback before replacement controls");
+	xl_classic_playback_control::run(root, filename);
 	for (const auto &path : created) std::filesystem::remove(path);
+	require(state_restore_all_sub(entry, 0) && xl_compat::named_audio_snapshot() == before, "Removing replacements did not restore the original bank and playback");
 	require(prepare_classic_audio("scope23.rl2", 2, 44100).samples.empty() && xl_level_supported_at("scope23.rl2", 0, 2) && xl_compat::named_audio_snapshot() == before,
 	        "Classic rejection recovery retained assets or changed live playback");
 	require(xl_compat::prepare_classic_playback({}).identity == baseline.identity, "Complete stock bank identity changed after rejection recovery");
@@ -152,6 +157,7 @@ static int classic_audio_original(int argc, char **argv)
 		const int waves = expected("-audio-waves"), count = expected("-audio-selections");
 		for (int rate : { 44100, 48000 }) {
 			nlohmann::json receipt = nlohmann::json::object();
+			nlohmann::json playback = nlohmann::json::object();
 			std::set<std::string> paths;
 			int selections = 0;
 			for (int ordinal = 1; ordinal <= Last_level; ++ordinal) {
@@ -159,6 +165,21 @@ static int classic_audio_original(int argc, char **argv)
 				for (const auto &sample : prepared.samples) paths.insert(sample.path);
 				selections += int(prepared.samples.size());
 				receipt[std::to_string(ordinal)] = classic_audio_receipt(prepared);
+				const auto complete = xl_compat::prepare_classic_playback(prepared);
+				auto &outputs = playback[std::to_string(ordinal)] = nlohmann::json::array();
+				for (const auto &replacement : prepared.samples) {
+					const auto &selected = complete.samples.at(unsigned(replacement.sample));
+					require(selected.path == replacement.path && selected.source_hash == replacement.source_hash,
+					        "Original complete bank did not install the selected replacement");
+					const auto converted = xl_compat::prepare_audio_sample(selected.pcm, unsigned(rate));
+					std::string bytes;
+					bytes.reserve(converted.stereo.size() * 2);
+					for (auto word : converted.stereo) {
+						bytes.push_back(char(std::uint16_t(word) & 255));
+						bytes.push_back(char(std::uint16_t(word) >> 8));
+					}
+					outputs.push_back({ { "sample", selected.sample }, { "path", selected.path }, { "frames", converted.frames() }, { "pcm_sha256", picosha2::hash256_hex_string(bytes) } });
+				}
 			}
 			require(int(paths.size()) == waves && selections == count, "Classic original selected WAV membership differs");
 			const auto output = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / ("classic-resources-" + std::to_string(rate) + ".json");
@@ -171,7 +192,17 @@ static int classic_audio_original(int argc, char **argv)
 				out << text;
 				require(bool(out), "Cannot write classic original receipt");
 			}
-			std::cout << "Classic original preparation: " << int(Last_level) << " levels, " << selections << " selections, " << paths.size() << " WAVs at " << rate << "; playback unqualified\n";
+			const auto playback_output = output.parent_path() / ("classic-playback-" + std::to_string(rate) + ".json");
+			const auto playback_text = playback.dump(2) + "\n";
+			std::ifstream previous_playback(playback_output, std::ios::binary);
+			const std::string old_playback{ std::istreambuf_iterator<char>(previous_playback), std::istreambuf_iterator<char>() };
+			previous_playback.close();
+			if (old_playback != playback_text) {
+				std::ofstream out(playback_output, std::ios::binary);
+				out << playback_text;
+				require(bool(out), "Cannot write original prepared playback receipt");
+			}
+			std::cout << "Classic original preparation: " << int(Last_level) << " levels, " << selections << " selections, " << paths.size() << " WAVs at " << rate << "; complete bank and converted PCM witnessed, original level playback unqualified\n";
 		}
 		return 0;
 	} catch (const std::exception &error) {
