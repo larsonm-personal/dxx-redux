@@ -28,17 +28,24 @@ void capture(void *, Uint8 *stream, int bytes)
 	captured_samples += samples;
 }
 
-void compare(const xl_compat::AudioSample &sample, int repetitions, int volume, int count)
+void compare(const xl_compat::AudioSample &sample, int repetitions, int volume, int count, xl_compat::AudioOutput controls = {}, bool varied = false)
 {
 	SDL_PauseAudio(1);
 	Mix_HaltChannel(-1);
 	captured.fill(0);
 	captured_samples = 0;
 	overflow = false;
-	Mix_Chunk chunk{ 0, reinterpret_cast<Uint8 *>(const_cast<std::int16_t *>(sample.stereo.data())), Uint32(sample.stereo.size() * 2), 128 };
+	Mix_Chunk chunk{ 0, reinterpret_cast<Uint8 *>(const_cast<std::int16_t *>(sample.stereo.data())), Uint32(sample.stereo.size() * 2), Uint8(volume) };
+	std::vector<xl_compat::AudioOutput> channels;
 	for (int i = 0; i < count; ++i) {
-		Mix_Volume(i, volume);
-		require(Mix_SetPanning(i, 127, 127) != 0, "SDL reference panning failed");
+		auto output = controls;
+		if (varied) {
+			output.volume = (output.volume + 37 * i) % 129;
+			output.pan = { Uint8(output.pan[0] + 37 * i), Uint8(output.pan[1] - 29 * i) };
+		}
+		channels.push_back(output);
+		Mix_Volume(i, output.volume);
+		require(Mix_SetPanning(i, output.pan[0], output.pan[1]) != 0, "SDL reference panning failed");
 		require(Mix_PlayChannel(i, &chunk, repetitions - 1) == i, "SDL reference voice failed to start");
 	}
 	SDL_PauseAudio(0);
@@ -56,7 +63,7 @@ void compare(const xl_compat::AudioSample &sample, int repetitions, int volume, 
 	require(!overflow && !Mix_Playing(-1), "SDL reference voice did not complete within its captured output");
 	xl_compat::AudioVoices actual;
 	actual.volume = volume;
-	for (int i = 0; i < count; ++i) require(actual.start(0, repetitions, i) >= 0, "Native reference voice allocation failed");
+	for (int i = 0; i < count; ++i) require(actual.start(0, repetitions, i, xl_compat::audio_priority(0, 65536, 32768, -1, false), channels[unsigned(i)]) >= 0, "Native reference voice allocation failed");
 	std::vector<std::int16_t> output(captured_samples);
 	actual.mix(reinterpret_cast<unsigned char *>(output.data()), output.size() / 2, { sample });
 	for (std::size_t i = 0; i < output.size(); ++i)
@@ -95,9 +102,14 @@ int main()
 					compare(sample, repeats, volume, count);
 					++cases;
 				}
+		for (const std::array<Uint8, 2> pan : { std::array<Uint8, 2>{ 0, 254 }, { 254, 0 }, { 1, 253 }, { 253, 1 }, { 128, 126 }, { 255, 255 }, { 0, 0 }, { 255, 0 } })
+			for (int volume : { 1, 127, 128 }) {
+				compare(sample, 2, volume, 4, { 63, pan }, true);
+				++cases;
+			}
 		Mix_CloseAudio();
 		SDL_Quit();
-		std::cout << "PASS: " << cases << " actual SDL_mixer output comparisons, stereo extremes, repeats, volume and clipping\n";
+		std::cout << "PASS: " << cases << " actual SDL_mixer output comparisons, stereo extremes, repeats, per-channel volume/pan and clipping\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

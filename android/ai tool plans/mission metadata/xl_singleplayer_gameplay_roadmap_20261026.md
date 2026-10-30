@@ -436,6 +436,14 @@ finish original-mission qualification
     fourteen original levels remain blocked. Required private membership becomes
     106; public membership remains 43/46. Reprogramming stays separate.
 
+53. Per-channel gain and pan foundation: executable source controls preserve
+    startup/update quantization and priority changes; actual SDL PCM comparisons
+    exercise independent simultaneous channel settings. Existing named output
+    and persistence retain their prior behavior. See
+    [channel-control evidence](../../XL_compat/evidence/audio-controls.md).
+    Ordinary/ambient playback, shared owner cleanup and saved nondefault channel
+    settings remain separate work. No admission gate or CI membership changes.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

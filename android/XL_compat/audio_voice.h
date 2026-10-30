@@ -25,11 +25,19 @@ struct AudioPriority {
 };
 AudioPriority audio_priority(int sound_class, int requested_volume, int effective_volume, int sound_object, bool looping);
 
+struct AudioOutput {
+	int volume = 128;
+	std::array<std::uint8_t, 2> pan{ 127, 127 };
+};
+// Mix_VolPan startup and SetPan updates use different source quantization
+AudioOutput audio_start_output(int effective_volume, int pan, AudioOutput previous = {});
+
 struct AudioVoice {
 	std::uint64_t serial = 0;
 	unsigned sample = 0, position = 0;
 	int owner = -1, remaining = 0;
 	AudioPriority priority;
+	AudioOutput output;
 };
 
 // The engine owns the immutable sample bank and excludes concurrent control
@@ -43,7 +51,9 @@ class AudioVoices
 	bool paused = false;
 	int volume = 128;
 	int start(unsigned sample, int repetitions, int owner);
-	int start(unsigned sample, int repetitions, int owner, AudioPriority priority);
+	int start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output = {});
+	bool set_volume(int slot, int requested_volume, int effects_volume);
+	bool set_pan(int slot, int pan);
 	void stop(int slot);
 	void clear();
 	void mix(unsigned char *stream, std::size_t frames, const std::vector<AudioSample> &samples);
