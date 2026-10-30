@@ -23,6 +23,7 @@
 #include "audio_resource.h"
 #include "classic_audio.h"
 #include "audio_geometry.h"
+#include "../tests/audio_creation_receipt.h"
 #include "../wave.h"
 #include "picosha2.h"
 #ifdef USE_SDLMIXER

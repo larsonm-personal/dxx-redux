@@ -1,10 +1,12 @@
 // Actual pinned owner/container consumers with independent channel and object storage
 #include "audio_owners.h"
+#include "audio_creation_receipt.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -54,6 +56,10 @@ struct Stack {
 };
 struct CFixVector {
 	int x = 0, y = 0, z = 0;
+	static int Dist(CFixVector, CFixVector)
+	{
+		throw std::runtime_error("Duplicate distance is outside the fresh creation fixture");
+	}
 };
 struct CFixMatrix {
 };
@@ -75,8 +81,17 @@ struct CObject {
 	{
 		return signature;
 	}
+	int Index() const;
+	CFixVector &Position()
+	{
+		return info.position.vPos;
+	}
 };
 std::array<CObject, 64> objects;
+int CObject::Index() const
+{
+	return int(this - objects.data());
+}
 CObject *object(int index)
 {
 	return index >= 0 && index < int(objects.size()) ? &objects[unsigned(index)] : nullptr;
@@ -114,20 +129,42 @@ struct {
 	} multiplayer;
 	struct {
 		CObject *pViewer = &objects[63];
+		int nLastObject[1]{ 63 };
 	} objData;
+	struct {
+		struct {
+			struct {
+				const char *data = "fixture";
+			} sounds[1][2];
+		} sound;
+	} pigData;
 } gameData;
 struct {
 	struct {
 		bool bDontStartObjects = false, bWasRecording = false;
+		int bD1Sound = 0;
 	} sound;
 } gameStates;
 void NDRecordDestroySoundObject(int) {}
+void NDRecordCreateObjectSound(int, int, int, int, int, int) {}
+void NDRecordSound3DOnce(int, int, int) {}
+void NDRecordSound3D(int, int, int) {}
+void Int3()
+{
+	throw std::runtime_error("Unexpected source sound trap");
+}
+bool segment(int index)
+{
+	return index >= 0;
+}
+#define SEGMENT(i) segment(i)
 struct {
 	void Process() {}
 } soundQueue;
 struct Options {
 	struct {
 		bool bUseSDLMixer = true;
+		int xCustomSoundVolume = 65536;
 	} sound;
 } options;
 auto *gameOpts = &options;
@@ -151,6 +188,11 @@ int Mix_SetPanning(int channel, std::uint8_t left, std::uint8_t right)
 void Mix_VolPan(int32_t, int32_t, int32_t);
 int spatial_volume = 32768, spatial_pan = 32767;
 unsigned source_spatial_calls = 0;
+const xl_audio_creation_receipt::Fields *creation_input = nullptr;
+int FixMul(int a, int b)
+{
+	return int(std::int64_t(a) * b / 65536);
+}
 
 int Max(int a, int b)
 {
@@ -218,6 +260,7 @@ struct CAudio {
 	Channels m_channels;
 	struct {
 		int nActiveObjects = 0;
+		int nNextSignature = 1;
 	} m_info;
 	std::array<int, 2> volumes{ 32768, 32768 };
 	unsigned cursor = 0;
@@ -300,12 +343,25 @@ struct CAudio {
 	}
 	void RecordSoundObjects() {}
 	void SyncSounds();
-	void GetVolPan(CFixMatrix, CFixVector, int, CFixVector, int, int, int *volume, int *pan, int, int)
+	void GetVolPan(CFixMatrix, CFixVector, int, CFixVector position, int segment_index, int maximum, int *volume, int *pan, int range, int decay, int = 0)
 	{
-		*volume = spatial_volume;
-		*pan = spatial_pan;
+		if (creation_input) {
+			const auto &input = *creation_input;
+			if (maximum != input.at("volume") || range != input.at("range") || segment_index != input.at("segment") || position.x != input.at("x") || position.y != input.at("y") || position.z != input.at("z"))
+				throw std::runtime_error("Source creation requested different geometry inputs");
+			*volume = int(input.at("volume" + std::to_string(decay)));
+			*pan = int(input.at("pan" + std::to_string(decay)));
+		} else {
+			*volume = spatial_volume;
+			*pan = spatial_pan;
+		}
 		++source_spatial_calls;
 	}
+	int32_t PlaySound(int16_t, int32_t, fix, int32_t, int32_t, int32_t, const char *, CFixVector *);
+	CSoundObject *FindObjectSound(int16_t, CObject *, CFixVector *);
+	CSoundObject *FindSegmentSound(int16_t, int16_t, int16_t, CFixVector &);
+	int32_t CreateObjectSound(int16_t, int32_t, int16_t, int32_t, fix, fix, int32_t, int32_t, const char *, int32_t, uint8_t, int32_t);
+	int32_t CreateSegmentSound(int16_t, int16_t, int16_t, CFixVector &, int32_t, fix, fix, const char *);
 	void DeleteSoundObject(int32_t);
 	int32_t DestroyObjectSound(int32_t, int16_t = -1);
 	int32_t DestroySegmentSound(int16_t, int16_t, int16_t);
@@ -317,6 +373,7 @@ struct CAudio {
 } audio;
 #include "xl_reference_audio_controls.h"
 #include "xl_reference_audio_ownership.h"
+#include "xl_reference_audio_creation.h"
 void CAudioChannel::Stop()
 {
 	audio.UnregisterChannel(m_info.nIndex);
@@ -358,6 +415,7 @@ void reset(int count)
 	}
 }
 } // namespace ownership_reference
+#include "reference_audio_creation.h"
 namespace
 {
 struct NativeOwners {

@@ -88,6 +88,34 @@ edge coverage. Production math was unchanged. The earlier full-pool test also
 corrected its expected `SetPan(65536)` bytes to `{254, 0}` and corresponding PCM;
 the independently source-compared channel implementation was unchanged.
 
+## Fresh creation against source
+
+Fresh native object/segment creation is now compared with the extracted pinned
+`CreateObjectSound`, `CreateSegmentSound` and `PlaySound` functions. Both 23/40
+and 27/40 fixtures pass 768 comparisons each on Windows and Linux. The receipts
+check all seven classes, one-shot/forever requests, negative/zero/positive volume,
+near/distant sources, deferred/unavailable starts, loop fields, custom channels,
+owner identity and actual channel controls. Priority classification also executes
+the actual source `StartSound` and channel persistence expression.
+
+The oracle uses independently stored objects and channels, fresh owner storage,
+an identity physical-sample translation, and a common initial serial of one.
+Spatial outputs for every decay are supplied by the independently qualified
+native geometry path; the actual source creation function chooses which output
+to request. The receipt transport shares only field serialization. These are
+fresh creation checks, not duplicate lookup, logical translation, forcefield
+scaling, reused source storage or external-WAV qualification.
+
+The full Linux runtime runner, including both creation comparisons and existing
+audio lifecycles, passes in 44.06 seconds with unchanged timeouts. Existing source
+contracts also pass on Windows/Linux after extending their adapters. The creation
+comparisons use the existing private-asset native runner, with no added CI job.
+Public XL CI compiles the source adapters; the native receipts require retail
+geometry and are checked locally. Runtime oracle modes do not repeat the
+separately registered primitive suite. Evidence
+includes `windows-creation-test.log`, `linux-creation-test.log`, their runtime
+logs, and the normalized `audio-creation.txt` receipts in each runtime output.
+
 ## Deliberate source corrections and limits
 
 Ordered-container binding repair remains the documented correction in

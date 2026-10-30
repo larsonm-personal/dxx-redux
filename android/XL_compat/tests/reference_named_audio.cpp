@@ -572,6 +572,7 @@ void audio_route_source_controls();
 void audio_spatial_source_controls();
 void audio_geometry_source_controls();
 void audio_geometry_runtime_controls(const char *);
+void audio_creation_runtime_controls(const char *);
 void classic_audio_original(const char *bank, const char *folder, int levels);
 
 int main(int argc, char **argv)
@@ -581,6 +582,10 @@ int main(int argc, char **argv)
 		// Runtime comparison needs only the captured mine and its source consumers
 		if (argc == 3 && std::string(argv[1]) == "--geometry-runtime") {
 			audio_geometry_runtime_controls(argv[2]);
+			return 0;
+		}
+		if (argc == 3 && std::string(argv[1]) == "--creation-runtime") {
+			audio_creation_runtime_controls(argv[2]);
 			return 0;
 		}
 		source_actions();

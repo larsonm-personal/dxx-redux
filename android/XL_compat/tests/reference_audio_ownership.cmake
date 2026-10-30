@@ -1,6 +1,7 @@
 foreach(
     pair IN
     ITEMS "audio/objectaudio.cpp|e44484af297ce0c20c92feb00bfb2795316980434e3f1e1d85194c1d46b992e3"
+          "include/sounds.h|9bada81164bb79a1207ddf94045544760cb453a336bd24e90b8d18f8c4d9384d"
           "include/cstack.h|7ee46bb90556774f7d983b5737815813e5a6e96e4195be71f9f58dfc6705f8ee")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -51,6 +52,21 @@ foreach(signature IN ITEMS "void CAudioChannel::SetPlaying (" "void CAudio::Unre
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_ownership.h"
      CONTENT "${extracted}")
+set(extracted "// Actual pinned native sound creation consumers\n")
+foreach(
+    signature IN
+    ITEMS "int32_t CAudio::PlaySound (" "CSoundObject *CAudio::FindObjectSound ("
+          "CSoundObject *CAudio::FindSegmentSound (" "int32_t CAudio::CreateObjectSound ("
+          "int32_t CAudio::CreateSegmentSound (")
+    extract_audio_owner("${signature}")
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/sounds.h" sounds)
+string(REGEX MATCH "#define[ \t]+SOUND_FORCEFIELD_HUM[ \t]+[0-9]+" forcefield "${sounds}")
+if(NOT forcefield)
+    message(FATAL_ERROR "Missing source forcefield hum sound")
+endif()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_creation.h"
+     CONTENT "${forcefield}\n${extracted}")
 # Extract inline methods up to the next method, preserving the actual container operation
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/cstack.h" stack)
 set(extracted "// Actual pinned stack methods; backing storage is independent\n")
@@ -58,7 +74,7 @@ foreach(
     pair IN
     ITEMS "inline bool Grow (|inline bool Push ("
           "inline bool Delete (|inline bool DeleteElement ("
-          "inline void Shrink (|inline _T& Pop (")
+          "inline void Shrink (|inline _T& Pop (" "inline _T& Pop (|inline void Truncate (")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 begin)
     list(GET parts 1 end)

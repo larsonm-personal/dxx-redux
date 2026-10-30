@@ -137,7 +137,7 @@ void persistence(int source, const nlohmann::json &initial)
 	require(restore_named_audio(initial, true), "Cannot reset completed linked save controls");
 	std::cout << "Linked persistence passed: mixed PCM, 30 atomic rejections, paused/stopped/deferred owners, trailer and disk-through-stock restore, 48 kHz reopen and resumed lifetime updates\n";
 }
-void run(const nlohmann::json &initial)
+void run(const std::filesystem::path &root, const nlohmann::json &initial)
 {
 	using namespace xl_compat;
 	using namespace xl_compat::audio_runtime;
@@ -170,6 +170,7 @@ void run(const nlohmann::json &initial)
 			obj_delete(index);
 		}
 	} object_guard{ source };
+	xl_audio_creation_control::run(root, source, initial);
 	const auto create = [&](int forever = 1, int custom = 0) {
 		return xl_audio_link_object(0, 3, source, forever, F1_0, 64 * F1_0, -1, -1, 0, custom);
 	};

@@ -2,7 +2,7 @@
 
 Worktree: `C:/local/dxx-redux/temp/xl-batch2-20261027`.
 Branch: `xl_more_61_linked_audio`, based on the published shared-audio checkpoint
-`6ad5c1f3f64d8b179169e6eff9c33a1c4d5136c8` (PR #208).
+`397682d7171ee7ea9220769e0f0d7df9e47aa59e` (PR #208, after stack rebase).
 The active eleven-hour block ends October 30 at 04:57:30 UTC.
 
 Implement XL behavior as its own runtime; Redux keeps its existing path. Use
@@ -75,3 +75,26 @@ restoration. Platform results and remaining limits are recorded in the evidence.
 The working branch is `xl_more_61_linked_audio`, in
 `C:/local/dxx-redux/temp/xl-batch2-20261027`, published through PR #209. The main
 checkout remains on `cmake`; it does not contain this branch's unmerged work.
+
+## Creation and gameplay dispatch
+
+The save/restore checkpoint is published as `84bd3b22c` on PR #209. Before
+connecting Redux callers, compare actual native creation receipts against the
+pinned `CreateObjectSound`, `CreateSegmentSound` and `PlaySound` functions.
+Fresh owner and channel state must agree across all seven classes, one-shot and
+forever requests, silent and distant sources, deferred starts, unavailable audio,
+loop bounds and custom channels. Geometry is supplied by the independently
+source-qualified spatial path. Duplicate lookup, logical translation and external
+WAV owners need separate coverage; this receipt does not certify those paths.
+
+The caller survey found explicit XL classes at robot, weapon and explosion
+sites. Redux's older APIs generally omit that information, so a single generic
+low-level redirect would change replacement and persistent-source decay. Add
+typed XL dispatch at the audited callers, leaving the Redux path as the alternate.
+
+Fresh creation now passes 768 source comparisons for each format fixture on
+Windows/Linux, including priority classification through actual source channel
+startup. The existing primitive suite and full native audio runner still pass;
+Linux completes the latter in 44.06 seconds. Continue with logical translation,
+forcefield scaling and duplicate/reused-lifetime behavior before connecting
+gameplay callers. Ordinary dispatch is still not installed.
