@@ -160,6 +160,33 @@ Bytes ambient_objects(const Bytes &source)
 	xl_test::layout_patch(bytes, level.sections[3].offset + 7 * 52 + 36, level.walls[0].side, 2);
 	action(8, 32, 2 | 8 | 16, { 49, int(player - level.objects.begin()), 50 });
 	action(9, 33, 0, { 50 });
+	// Real powerup removals dispatch the two object-attached actions
+	for (int i = 0; i < 2; ++i) {
+		const auto at = level.sections[3].offset + 10 * 52 + 4 + i * 53;
+		std::fill(bytes.begin() + at, bytes.begin() + at + 53, 0);
+		xl_test::layout_patch(bytes, at, i ? 33 : 32, 1);
+		xl_test::layout_patch(bytes, at + 1, 2 | 16 | (i ? 0 : 8), 2);
+		xl_test::layout_patch(bytes, at + 3, i ? 3 : 4, 1);
+		xl_test::layout_patch(bytes, at + 9, 0xffffffff);
+		if (!i) {
+			// Invalid indices compact; attached negative sides other than -1 survive
+			for (int link = 0; link < 4; ++link) {
+				const int target = link == 0 ? 32767 : link == 1 ? -1
+				                                   : link == 2   ? 50
+				                                                 : level.walls[0].segment;
+				xl_test::layout_patch(bytes, at + 13 + link * 2, unsigned(target), 2);
+				xl_test::layout_patch(bytes, at + 33 + link * 2, link == 3 ? level.walls[0].side : link == 2 ? 0xfffe
+				                                                                                             : 0xffff,
+				                      2);
+			}
+		} else {
+			const int targets[]{ 50, int(player - level.objects.begin()), 49 };
+			for (int link = 0; link < 3; ++link) {
+				xl_test::layout_patch(bytes, at + 13 + link * 2, targets[link], 2);
+				xl_test::layout_patch(bytes, at + 33 + link * 2, 0xffff, 2);
+			}
+		}
+	}
 	// Retain all four authored WAVs in their existing independent PCM-oracle order
 	xl_test::layout_patch(bytes, level.sections[3].offset + 3 * 52 + 4, 3 * 65536);
 	return bytes;

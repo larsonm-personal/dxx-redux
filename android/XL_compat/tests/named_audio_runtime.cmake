@@ -1,4 +1,7 @@
 file(SHA256 "${HOG}" source_hash)
+if(REFERENCE AND NOT EFFECT_REFERENCE)
+    message(FATAL_ERROR "Audio source comparison also requires the ambient activation reference")
+endif()
 if(NOT source_hash STREQUAL "4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303")
     message(FATAL_ERROR "Named audio controls require unchanged audited Neptune geometry")
 endif()
@@ -66,6 +69,20 @@ foreach(ordinal IN ITEMS 1 2)
             message(
                 FATAL_ERROR "Ambient initialization differs from source (${result}): ${log}${error}"
             )
+        endif()
+    endif()
+    if(EFFECT_REFERENCE)
+        execute_process(
+            COMMAND "${EFFECT_REFERENCE}" --ambient-runtime "${OUTPUT}/ambient-activation.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES
+                                 "loaded wall/attached ambient actions match actual source")
+            message(
+                FATAL_ERROR "Ambient activation differs from source (${result}): ${log}${error}")
         endif()
     endif()
 endforeach()

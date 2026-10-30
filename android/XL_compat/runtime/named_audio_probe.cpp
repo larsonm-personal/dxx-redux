@@ -13,6 +13,7 @@
 #include "surface_audio_test.h"
 #include "audio_routes_test.h"
 #include "external_audio_test.h"
+#include "ambient_objects_test.h"
 #include "preview.h"
 #include "object_trigger.h"
 #include "android_mission_assets.h"
@@ -60,6 +61,9 @@ bool invalid = false;
 bool pressure_earned = false;
 bool shared_earned = false;
 bool linked_earned = false;
+bool ambient_earned = false;
+json earned_ambient;
+std::vector<int> ambient_removed;
 unsigned shared_checks = 0;
 unsigned linked_checks = 0;
 unsigned seismic_checks = 0;
@@ -70,6 +74,7 @@ unsigned actor_checks = 0;
 unsigned surface_checks = 0;
 unsigned route_checks = 0;
 unsigned external_checks = 0;
+unsigned ambient_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -194,6 +199,11 @@ void verify()
 		require(controlled && changed.at("loop") == earned.at("loop"), "Android restored loop control lost its channel identity");
 		require(xl_compat::restore_named_audio(earned, true) && snapshot() == earned, "Android loop control could not recover exact saved state");
 	}
+	if (ambient_earned) {
+		require(xl_compat::ambient_objects_snapshot() == earned_ambient && Objects[51].type == OBJ_NONE,
+		        "Android ambient restoration lost activation, signatures or deleted sound state");
+		for (int owner : ambient_removed) require(Objects[owner].type == OBJ_NONE, "Android ambient restore resurrected an attached-action owner");
+	}
 }
 
 void compare_pressure_output(const json &state)
@@ -264,11 +274,35 @@ void prepare_shared()
 	pressure_earned = false;
 	shared_earned = true;
 	linked_earned = false;
+	ambient_earned = false;
 	SDL_PauseAudio(0);
 	verify();
 }
 
 #include "linked_audio_probe_test.h"
+void prepare_ambient()
+{
+	require(Current_level_num == 3 || Current_level_num == 4, "Android ambient controls require the loaded ambient levels");
+	pressure_earned = shared_earned = linked_earned = ambient_earned = false;
+	xl_ambient_objects_control::run([] {
+		capture_begin();
+		const auto starting = snapshot();
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		compare_shared_output(starting, ambient_checks);
+	});
+	xl_named_audio_pause(1);
+	earned = snapshot();
+	earned_ambient = xl_compat::ambient_objects_snapshot();
+	ambient_removed.clear();
+	for (const auto &record : xl_ambient_objects_control::source_level().object_trigger_records)
+		ambient_removed.push_back(record.object);
+	energy = Players[Player_num].energy;
+	version = xl_source_level_version();
+	ambient_earned = true;
+	SDL_PauseAudio(0);
+	verify();
+}
 
 void scope_output(int action)
 {
@@ -370,7 +404,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks }, { "seismic_checks", seismic_checks }, { "dispatch_checks", dispatch_checks }, { "combat_checks", combat_checks }, { "afterburner_checks", afterburner_checks }, { "actor_checks", actor_checks }, { "surface_checks", surface_checks }, { "route_checks", route_checks }, { "external_checks", external_checks }, { "ambient_checks", ambient_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
@@ -389,7 +423,7 @@ const char *xl_named_audio_probe(const char *operation)
 		} else {
 			fixture();
 			if (!std::strcmp(operation, "next")) {
-				require(!game_is_time_paused() && Current_level_num == 1 && Last_level == 2, "Sound transition requires the running two-level fixture");
+				require(!game_is_time_paused() && Current_level_num == 1 && Last_level == 4, "Sound transition requires the running four-level fixture");
 				StartNewLevelSub(2, 1, 0);
 				const auto next = snapshot();
 				// Both fixture levels intentionally contain identical sound resources
@@ -397,6 +431,12 @@ const char *xl_named_audio_probe(const char *operation)
 				            std::all_of(next.at("voices").begin(), next.at("voices").end(), [&](const auto &voice) { return voice[1] >= earned.at("next"); }) &&
 				            std::any_of(next.at("events").begin(), next.at("events").end(), [](const auto &row) { return row[0] == 0 && row[1] == -1 && row[3] == 0; }),
 				        "Sound level transition retained an old voice or event");
+			} else if (!std::strcmp(operation, "ambient_next")) {
+				require(!game_is_time_paused() && (Current_level_num == 2 || Current_level_num == 3) && Last_level == 4, "Ambient transition requires the running derived fixture");
+				ambient_earned = false;
+				StartNewLevelSub(Current_level_num + 1, 1, 0);
+				require(xl_source_level_version() == (Current_level_num == 3 ? 23 : 27) && xl_compat::ambient_objects_snapshot().size() == 3,
+				        "Android ambient transition did not install the next authored object set");
 			} else {
 				require(game_is_time_paused(), "Controlled Android audio requires paused gameplay");
 				if (!std::strcmp(operation, "events")) {
@@ -459,6 +499,7 @@ const char *xl_named_audio_probe(const char *operation)
 				} else if (!std::strcmp(operation, "prepare") || !std::strcmp(operation, "pressure")) {
 					shared_earned = false;
 					linked_earned = false;
+					ambient_earned = false;
 					pressure_earned = !std::strcmp(operation, "pressure");
 					reset_events();
 					capture_begin();
@@ -489,6 +530,7 @@ const char *xl_named_audio_probe(const char *operation)
 					}
 				} else if (!std::strcmp(operation, "shared")) prepare_shared();
 				else if (!std::strcmp(operation, "linked")) prepare_linked();
+				else if (!std::strcmp(operation, "ambient")) prepare_ambient();
 				else if (!std::strcmp(operation, "verify")) verify();
 				else if (!std::strcmp(operation, "pause_output")) {
 					verify();
@@ -502,7 +544,8 @@ const char *xl_named_audio_probe(const char *operation)
 					capture_begin();
 					xl_named_audio_pause(0);
 					capture_run(4096);
-					if (linked_earned) compare_linked_output(earned);
+					if (ambient_earned) compare_shared_output(earned, ambient_checks);
+					else if (linked_earned) compare_linked_output(earned);
 					else if (shared_earned) compare_shared_output(earned);
 					else if (pressure_earned) compare_pressure_output(earned);
 					else compare_output(earned.at("voices")[0][3].get<unsigned>(), 2, false);
@@ -513,6 +556,10 @@ const char *xl_named_audio_probe(const char *operation)
 				} else if (!std::strcmp(operation, "disturb")) {
 					verify();
 					Players[Player_num].energy -= F1_0;
+					if (ambient_earned) {
+						require(xl_ambient_object_set_enabled(49, 0) && xl_ambient_object_set_enabled(50, 1), "Cannot disturb Android ambient activation");
+						require(xl_compat::ambient_objects_snapshot() != earned_ambient, "Ambient disturbance left earned activation unchanged");
+					}
 					xl_named_audio_stop();
 					require(snapshot().at("voices").empty(), "Named audio disturbance did not stop playback");
 				} else if (!std::strcmp(operation, "disk_save")) {

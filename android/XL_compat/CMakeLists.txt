@@ -299,6 +299,10 @@ if(BUILD_TESTING)
         if(TARGET xl_named_audio_source)
             list(APPEND xl_audio_oracle_args "-DREFERENCE=$<TARGET_FILE:xl_named_audio_source>")
         endif()
+        if(TARGET xl_effect_reference)
+            list(APPEND xl_audio_oracle_args
+                 "-DEFFECT_REFERENCE=$<TARGET_FILE:xl_effect_reference>")
+        endif()
         add_test(
             NAME xl_named_audio_runtime
             COMMAND

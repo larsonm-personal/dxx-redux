@@ -249,15 +249,13 @@ static int named_audio_test(int argc, char **argv)
 			input_demo_set_skip_level_intro(1);
 			StartNewGame(ordinal + 2);
 			SDL_PauseAudio(1);
+			std::ofstream activation(root / "ambient-activation.txt");
+			activation << "XL_AMBIENT_ACTIVATION 1\n";
+			unsigned activation_cases = 0;
 			xl_ambient_objects_control::run([] { xl_linked_audio_control::output(); }, [&] {
 				using namespace xl_compat;
 				xl_ambient_audio_receipt::Case receipt;
-				std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(ordinal == 1 ? "amb23.rl2" : "amb27.rl2"), PHYSFS_close);
-				const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
-				require(length > 0 && length < 128 * 1024 * 1024, "Ambient receipt source exceeds its read bound");
-				Bytes bytes(static_cast<std::size_t>(length));
-				require(PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) == length, "Cannot read ambient receipt source");
-				const auto source = inspect_level(bytes);
+				const auto source = xl_ambient_objects_control::source_level();
 				for (unsigned i = 0; i < source.objects.size(); ++i) {
 					const auto &object = source.objects[i];
 					if (object.render != 13) continue;
@@ -282,7 +280,11 @@ static int named_audio_test(int argc, char **argv)
 				}
 				std::ofstream out(root / "ambient-audio.txt");
 				xl_ambient_audio_receipt::write(out, receipt);
-				require(bool(out), "Cannot write actual ambient initializer receipt"); });
+				require(bool(out), "Cannot write actual ambient initializer receipt"); }, [&](const auto &receipt) {
+				activation << "case " << activation_cases++ << '\n';
+				xl_ambient_activation_receipt::write(activation, receipt); });
+			activation << "end " << activation_cases << '\n';
+			require(bool(activation) && activation_cases == 6, "Cannot record complete ambient activation coverage");
 			Mix_SetPostMix(nullptr, nullptr);
 			std::cout << "Loaded ambient objects: activation, target order, real PCM, collision, lifetime and trailer restore passed\n";
 			return 0;

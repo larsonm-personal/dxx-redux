@@ -169,3 +169,27 @@ loaded lists and subsequent dispatch. Windows full audio integration passes;
 Linux full audio integration passes in 54.76 seconds. These changes do not yet
 replace the pending source activation or actual attached-removal controls.
 Artifacts use `ambient-trailer-*` and `ambient-target-*` in the existing root.
+
+### Activation comparison checkpoint for CI
+
+Loaded receipts now compare four wall actions and two actual attached-object
+removals per format against the pinned XL enable/disable consumers and
+post-action flags. The checks cover mixed targets, ordinary-object early stops,
+permanent reset, alternate/disabled flags and activation after owner removal.
+Windows full audio integration passes. Linux effect/source and full audio
+integration pass in 55.57 seconds. Artifacts use `ambient-activation-*` in the
+existing root.
+
+Android diagnostic commands for ambient PCM and disk/rewind checks are included
+in this checkpoint, but the automation script does not yet invoke them and
+on-device verification remains pending. Fixture hashes and transition assertions
+now match the four-level package. The Android debug x86_64 APK builds successfully
+after adding the existing named-sound implementation to the metadata library's
+link inputs. Scoped formatting, diff checks and both automation catalogs pass.
+
+Publish this checkpoint on `xl_more_70_ambient_objects` / draft PR #220 at the
+user's request to start CI. The working checkout is
+`C:/local/dxx-redux/temp/xl-batch2-20261027`; the main checkout remains on `cmake`.
+Android ambient automation/runtime checks, full native/stock qualification,
+legacy ambient runtime layouts and refreshed original mission evidence remain
+outstanding. This checkpoint does not establish original mission playability.
