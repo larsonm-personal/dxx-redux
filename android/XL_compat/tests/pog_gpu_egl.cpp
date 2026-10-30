@@ -14,6 +14,8 @@
 #include "../pog.h"
 #include "../hog.h"
 #include "../runtime/pog_renderer.h"
+#include "../runtime/particle_renderer.h"
+#include "../particle_render.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "xl_reference_pog_shaders.h"
 #endif
@@ -420,6 +422,7 @@ void original(const char *path)
 	check(resources && count, "Original GPU control had no RGBA POG replacements");
 	std::cout << "Original GPU resources: " << resources << " POG files, " << count << " complete uploads/mipmaps and source shader comparisons\n";
 }
+#include "particle_gpu_controls.h"
 } // namespace
 int main(int argc, char **argv)
 {
@@ -451,8 +454,10 @@ int main(int argc, char **argv)
 		ogl_init_texture_list_internal();
 		ogl_init_pixel_buffers(32, 32);
 		ogl_init_prog();
-		if (argc == 1) controls();
-		else
+		if (argc == 1) {
+			controls();
+			particle_gpu_controls();
+		} else
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		ogl_done_prog();
 		ogl_close_pixel_buffers();

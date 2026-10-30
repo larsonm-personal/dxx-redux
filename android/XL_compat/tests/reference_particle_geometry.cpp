@@ -517,7 +517,7 @@ void particle_fire_source_controls()
 							throw std::runtime_error("Actual source rejected an authored fire particle");
 						if (actual.position != point(source.m_vPos) || actual.start != point(source.m_vStartPos) || actual.drift != point(source.m_vDrift) || actual.direction != point(source.m_vDir) ||
 						    actual.life != source.m_nLife || actual.ttl != source.m_nTTL || actual.updated != source.m_nUpdated || actual.moved != source.m_nMoved || actual.segment != source.m_nSegment ||
-						    actual.frame != source.m_iFrame || actual.rotation != source.m_nRotFrame || actual.orientation != source.m_nOrient || actual.radius != source.m_nRad || actual.width != source.m_nWidth || actual.height != source.m_nHeight || actual.decay != source.m_decay ||
+						    actual.frame != source.m_iFrame || actual.rotation != source.m_nRotFrame || actual.orientation != source.m_nOrient || actual.radius != source.m_nRad || actual.width != source.m_nWidth || actual.height != source.m_nHeight || actual.decay != source.m_decay || actual.rotates != (source.m_bRotate != 0) ||
 						    actual.bounce != source.m_nBounce || actual.locate_delay != source.m_nDelayPosUpdate || actual.skybox != bool(source.m_bSkybox) || random.state != source_random.state || random.trace != source_random.trace)
 							throw std::runtime_error("Actual source fire creation differs at seed " + std::to_string(seed) + " value " + std::to_string(value));
 						for (unsigned i = 0; i < 4; ++i)

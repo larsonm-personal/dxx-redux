@@ -94,6 +94,57 @@ target_link_libraries(xl_pog_reference PRIVATE xl_inventory)
 target_include_directories(xl_pog_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_pog_reference COMMAND xl_pog_reference)
 if(TARGET xl_pog_gpu_test)
+    foreach(
+        pair IN
+        ITEMS
+            "include/ogl_lib.h|5be28badbe117772281c6b656aa13da9f6e28428f8b795197da7cf8cb5548c06"
+            "effects/particle_buffer.cpp|b4d4cf4468e79300d58aeb28071f1964ff8e7c48c1e517cec247f3d4ab3878e7"
+    )
+        string(REPLACE "|" ";" parts "${pair}")
+        list(GET parts 0 path)
+        list(GET parts 1 expected)
+        file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+        if(NOT actual STREQUAL expected)
+            message(FATAL_ERROR "Particle blend source changed: ${path}")
+        endif()
+    endforeach()
+    file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/ogl_lib.h" ogl_header)
+    set(extracted "// Actual particle blend selection and OpenGL factor dispatch\n")
+    string(REGEX MATCH "#define[ \t]+PARTICLE_TYPES[ \t]+[^\n]+" constant "${particle_header}")
+    string(APPEND extracted "${constant}\n")
+    foreach(name IN ITEMS OGL_BLEND_ALPHA OGL_BLEND_ADD OGL_BLEND_ADD_WEAK OGL_BLEND_REPLACE
+                          OGL_BLEND_MULTIPLY OGL_BLEND_ALPHA_CONTROLLED)
+        string(REGEX MATCH "#define[ \t]+${name}[ \t]+[^\n]+" constant "${ogl_header}")
+        if(NOT constant)
+            message(FATAL_ERROR "Missing source blend constant: ${name}")
+        endif()
+        string(APPEND extracted "${constant}\n")
+    endforeach()
+    string(FIND "${ogl_header}" "inline void SetBlendMode (int32_t" begin)
+    string(FIND "${ogl_header}" "inline GLenum SetDepthMode (" end)
+    if(begin LESS 0 OR end LESS begin)
+        message(FATAL_ERROR "Missing source GL blend dispatch")
+    endif()
+    math(EXPR length "${end} - ${begin}")
+    string(SUBSTRING "${ogl_header}" ${begin} ${length} blend_body)
+    string(
+        APPEND
+        extracted
+        "struct ParticleBlendSource {\nstd::array<GLenum, 2> factors{};\nvoid SetBlendMode(GLenum a, GLenum b) { factors = {a,b}; }\n${blend_body}\n};\n"
+    )
+    file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_buffer.cpp" buffer_source)
+    string(REGEX MATCH "ogl.SetBlendMode \\(\\(m_nType < PARTICLE_TYPES\\)[^;]+;" blend_call
+                 "${buffer_source}")
+    if(NOT blend_call)
+        message(FATAL_ERROR "Missing source particle blend call")
+    endif()
+    string(
+        APPEND
+        extracted
+        "static std::array<GLenum, 2> source_particle_blend(int m_nType, int m_bEmissive) { ParticleBlendSource ogl; ${blend_call} return ogl.factors; }\n"
+    )
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_blend.h"
+         CONTENT "${extracted}")
     file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/texmerge.cpp" merge)
     string(FIND "${merge}" "const char *texMergeFS [6] = {" begin)
     string(FIND "${merge}" "const char *texMergeFSData =" end)

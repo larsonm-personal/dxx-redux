@@ -196,3 +196,25 @@ resource mounts need platform witnesses; saved authored state remains next after
 rendering. No particle admission has changed. PR #230's six returned PR workflows
 passed; #232's XL, Rust and LAN workflows passed, with engine smoke running and
 Linux gameplay queued at the latest poll. Full published-head audit remains due.
+
+## Billboard and GPU backend checkpoint
+
+The image layer is published as draft PR #233, commit `9c2d1bd67`, stacked on
+#232. Its XL and Rust checks passed at the latest poll, with the other returned
+PR workflows still running. Work continues on `xl_more_82_particle_render` in
+the same visible checkout.
+
+The active source billboard branch uses world coordinates, and its fire blend
+is weak additive (`ONE, ONE_MINUS_SRC_COLOR`). Both distinctions are now covered
+by executable source comparisons. Windows/x64 and Linux pass 1,536 billboard
+cases; the existing emitter owner additionally verifies fresh/reused rotation
+selection from the preceding slot's atlas frame. The native engine builds and
+the effect gate passes in 5.37 seconds. The existing EGL owner passes production
+18 particle pixel/depth/blend cases, including mixed-order controls, in 0.41
+seconds alongside its previous RGBA/indexed controls.
+
+Next connect the owned image and renderer to live camera, visibility/order and
+render-animation state, with source/native evidence. Then finish saved authored
+state and Android/original-Pumo qualification. The backend alone does not earn
+admission. All changes in this layer stay under XL_compat and reuse existing
+test owners.

@@ -15,7 +15,7 @@ struct FireParticle {
 	int segment = -1, life = 0, ttl = 0, updated = 0, moved = 0;
 	int frame = 0, rotation = 0, orientation = 0, bounce = 2, locate_delay = -2;
 	float radius = 0, width = 0, height = 0, decay = 0;
-	bool skybox = false;
+	bool skybox = false, rotates = true;
 };
 
 namespace particle_detail
@@ -48,15 +48,18 @@ inline float fire_decay(int life, int ttl)
 }
 } // namespace particle_detail
 
-// Authored fire path of the active XL Create body; visuals use white additive
+// Authored fire path of the active XL Create body; visuals use white
 // fire/smoke atlas cells, regardless of the authored RGB/alpha values
 template <typename Random>
-FireParticle create_fire_particle(const ParticleEmitterDefinition &definition, const ParticlePoint &position, const ParticleFace *face, int segment, bool skybox, int time, Random &random)
+FireParticle create_fire_particle(const ParticleEmitterDefinition &definition, const ParticlePoint &position, const ParticleFace *face, int segment, bool skybox, int time, Random &random, const FireParticle *previous = nullptr)
 {
 	using namespace particle_detail;
 	if (definition.image != 5 || definition.life >= 0 || definition.life == INT32_MIN || definition.speed < 0 || definition.speed > INT32_MAX / 65536 || !(definition.scale < 0) || !std::isfinite(definition.scale) || double(-definition.scale) > INT32_MAX)
 		throw std::runtime_error("Invalid XL authored fire particle definition");
 	FireParticle result;
+	// Source chooses rotation from the slot's preceding frame before replacing
+	// it. Fresh emitter storage is cleared (zero frames), which selects rotation
+	result.rotates = !previous || !previous->ttl || previous->frame >= 2;
 	result.segment = segment;
 	result.skybox = skybox;
 	result.updated = result.moved = time;
