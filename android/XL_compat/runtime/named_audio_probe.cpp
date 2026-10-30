@@ -330,8 +330,9 @@ const char *xl_named_audio_probe(const char *operation)
 					for (unsigned level = 0; level < gains.size(); ++level) {
 						capture_begin();
 						digi_set_digi_volume(int(level) * 4096);
-						require(xl_compat::named_audio_diagnostics().at("volume") == gains[level], "Android named audio gain differs from the SFX slider");
 						require(xl_named_audio_action(&Triggers[0], 0), "Cannot start the Android volume control");
+						const auto diagnostics = xl_compat::named_audio_diagnostics();
+						require(diagnostics.at("effects_volume") == int(level) * 4096 && diagnostics.at("output_volume") == 20 && snapshot().at("voices")[0][10] == int(level) * 16, "Android named audio channel gain or platform headroom differs");
 						xl_named_audio_pause(0);
 						capture_run(4096);
 						compare_output(0, 2, false, false, gains[level]);

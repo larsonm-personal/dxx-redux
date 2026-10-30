@@ -154,3 +154,21 @@ and environment in its D1 and D2 jobs. Restrict that shared step to D2. The chec
 themselves still exercise both games where applicable; native builds, gameplay,
 metadata, replay and sanitizer jobs retain their existing coverage. This removes
 one duplicate invocation of each helper, not a game-specific test lane.
+
+## Shared playback checkpoint
+
+The installed XL bank now combines all 183 stock samples with named WAVs. Explicit
+physical-sample APIs share the same 128-channel pool, with class-aware replacement,
+per-channel gain and pan, and platform headroom applied separately. Save schema 20
+preserves these channel controls and rejects linked-owner rows until their runtime
+and persistence are implemented.
+
+The native integration exercises mixed PCM, full-pool replacement, live controls,
+11 malformed shared-state rejections, disk restore through a stock mission and a
+48 kHz device reopen. Both level layouts passed on Windows before publication.
+The Android slider probe now checks channel gain and platform headroom separately;
+that probe adjustment has not yet been verified on a device for this checkpoint.
+
+This remains a draft foundation: ordinary engine call sites, moving linked owners,
+ambient/replacement admission and Android mixed-playback coverage are unfinished.
+No additional missions are admitted by this checkpoint.
