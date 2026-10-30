@@ -83,6 +83,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "linked_audio.h"
+#include "gameplay_audio.h"
 #include "spawn_points.h"
 #include "resource_validation.h"
 #endif
@@ -730,6 +731,9 @@ extern int Dont_start_sound_objects;
 //go through this level and start any eclip sounds
 void set_sound_sources()
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_gameplay_surface_audio()) return;
+#endif
 	int segnum,sidenum;
 	segment *seg;
 

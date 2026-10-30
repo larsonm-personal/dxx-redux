@@ -1,5 +1,6 @@
 // Native object/segment consumers and real PCM; source math is qualified separately
 extern "C" int digi_looping_channel;
+extern "C" int Dont_start_sound_objects;
 namespace xl_linked_audio_control
 {
 using namespace named_audio_control;
@@ -163,6 +164,63 @@ void stock_afterburner()
 	digi_stop_all_channels();
 	std::cout << "Stock afterburner isolation passed: exact Redux ignite/shutdown PCM and transition-based missing-loop behavior\n";
 }
+void stock_surface()
+{
+	using namespace xl_compat::audio_runtime;
+	require(!xl_level_extensions_active(), "Stock surface control requires Redux");
+	xl_surface_audio_control::Guard guard;
+	object listener = *ConsoleObject;
+	Viewer = &listener;
+	GameArg.SysLowMem = 0;
+	GameCfg.DigiVolume = 8;
+	digi_set_digi_volume(32768);
+	int room = -1;
+	std::array<int, 2> sides{};
+	for (int segment = 0; segment < Num_segments && room < 0; ++segment) {
+		unsigned count = 0;
+		for (int side = 0; side < 6 && count < sides.size(); ++side)
+			if (Segments[segment].children[side] == -1 && (WALL_IS_DOORWAY(&Segments[segment], side) & WID_RENDER_FLAG)) sides[count++] = side;
+		if (count == sides.size()) room = segment;
+	}
+	require(room >= 0 && NumTextures > 1 && Num_effects > 0, "Stock surface fixture needs two real boundary faces");
+	listener.segnum = short(room);
+	compute_segment_center(&listener.pos, &Segments[room]);
+	for (int segment = 0; segment < Num_segments; ++segment)
+		for (auto &face : Segments[segment].sides) face.tmap_num = face.tmap_num2 = 0;
+	for (int i = 0; i < NumTextures; ++i) TmapInfo[i].eclip_num = -1;
+	for (int i = 0; i < Num_effects; ++i) Effects[i].sound_num = -1;
+	TmapInfo[1].eclip_num = 0;
+	Effects[0].sound_num = 7;
+	Sounds[7] = 0;
+	for (const auto side : sides) Segments[room].sides[side].tmap_num2 = 1;
+	const auto capture_stock = [&](auto initialize) {
+		digi_init_sounds();
+		begin_capture();
+		initialize();
+		digi_sync_sounds();
+		require(Mix_Playing(-1) == 2 && !owners.count && snapshot().at("voices").empty(), "Stock surfaces did not stay in the Redux registry");
+		run_output(2048);
+		std::vector<std::int16_t> result(captured.begin(), captured.begin() + 4096);
+		require(std::any_of(result.begin(), result.end(), [](auto value) { return value != 0; }), "Stock surface output was silent");
+		digi_init_sounds();
+		return result;
+	};
+	const auto expected = capture_stock([&] {
+		Dont_start_sound_objects = 1;
+		for (const auto side : sides) {
+			vms_vector center;
+			compute_center_point_on_side(&center, &Segments[room], side);
+			digi_link_sound_to_pos(7, short(room), short(side), &center, 1, F1_0 / 2);
+		}
+		Dont_start_sound_objects = 0;
+	});
+	const auto actual = capture_stock([&] {
+		require(!xl_gameplay_surface_audio(), "XL consumed the stock surface initializer");
+		set_sound_sources();
+	});
+	require(actual == expected, "Stock surface PCM changed to XL per-segment gain distribution");
+	std::cout << "Stock surface isolation passed: two real boundary faces retain exact Redux half-volume PCM and separate ownership\n";
+}
 void persistence(int source, const nlohmann::json &initial)
 {
 	using namespace xl_compat;
@@ -229,6 +287,7 @@ void persistence(int source, const nlohmann::json &initial)
 	require(!Mix_Playing(-1), "Stock object destruction retained Redux playback");
 	stock_combat();
 	stock_afterburner();
+	stock_surface();
 	require(state_restore_all_sub(save, 0) && snapshot() == earned && owners.valid(mixer), "Disk-through-stock restore changed linked playheads, stopped owners or identities");
 	require(looping.matches(mixer), "Disk restore lost the seismic loop controller");
 	digi_change_looping_volume(F1_0 / 4);
@@ -302,6 +361,27 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 		}
 	} object_guard{ source };
 	xl_audio_creation_control::run(root, source, initial);
+	{
+		std::ostringstream receipt;
+		receipt << "XL_SURFACE_AUDIO 1\n";
+		unsigned cases = 0;
+		xl_surface_audio_control::run(output, [&](const auto &value) {
+			receipt << "case " << cases++ << '\n';
+			xl_surface_audio_receipt::write(receipt, value);
+		});
+		require(cases == 16, "Native surface receipt coverage is incomplete");
+		receipt << "end " << cases << '\n';
+		const auto path = root / "surface-audio.txt";
+		std::ifstream previous(path, std::ios::binary);
+		const std::string old{ std::istreambuf_iterator<char>(previous), std::istreambuf_iterator<char>() };
+		previous.close();
+		if (old != receipt.str()) {
+			std::ofstream file(path, std::ios::binary);
+			file << receipt.str();
+			require(bool(file), "Cannot write native surface receipt");
+		}
+		std::cout << "Native surface audio passed: 13 PCM controls, distribution, overlays, portal identity, forcefield scaling, saved phase and restart; 16 source receipts prepared\n";
+	}
 	xl_gameplay_audio_control::run(source, initial);
 	const auto create = [&](int forever = 1, int custom = 0) {
 		return xl_audio_link_object(0, 3, source, forever, F1_0, 64 * F1_0, -1, -1, 0, custom);

@@ -452,6 +452,27 @@ finish original-mission qualification
     Ordinary/ambient engine consumers, spatial updates and saved owners remain
     unfinished. No admission rule or CI membership changes.
 
+55. Shared ordinary audio and spatial ownership: the complete stock bank now
+    shares the XL channel pool with named WAVs. Logical translation, linked
+    object/segment lifetime, spatial routing and saved ownership have source
+    comparisons and native/Android output controls. See
+    [linked audio](../../XL_compat/evidence/linked-audio.md) and
+    [engine dispatch](../../XL_compat/evidence/gameplay-dispatch.md).
+
+56. Gameplay sound callers: separate XL weapon/explosion, robot/boss and
+    afterburner policies now have actual event, PCM and stock-isolation checks.
+    Source corrections and output-profile limits are explicit in
+    [combat audio](../../XL_compat/evidence/combat-audio.md) and
+    [actor/afterburner audio](../../XL_compat/evidence/actor-afterburner-audio.md).
+
+57. Ambient surfaces: the real initializer now preserves XL per-segment gain,
+    overlay precedence, portal identity and deferred permanent owners. Source
+    receipts and native stock PCM checks qualify this consumer; platform status
+    is maintained in [surface audio](../../XL_compat/evidence/surface-audio.md).
+    Next qualify wall/texture-change lifecycle and ambient sound objects, then
+    install classic replacements only after their remaining consumers are
+    covered. No admission expansion follows from initializer tests alone.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

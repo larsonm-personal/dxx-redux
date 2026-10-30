@@ -578,6 +578,8 @@ void classic_audio_original(const char *bank, const char *folder, int levels);
 void combat_audio_source_controls();
 void afterburner_source_controls();
 void actor_audio_source_controls();
+void surface_audio_source_controls();
+void surface_audio_runtime_controls(const char *);
 
 int main(int argc, char **argv)
 {
@@ -588,8 +590,9 @@ int main(int argc, char **argv)
 			audio_geometry_runtime_controls(argv[2]);
 			return 0;
 		}
-		if (argc == 3 && std::string(argv[1]) == "--creation-runtime") {
+		if ((argc == 3 || (argc == 5 && std::string(argv[3]) == "--surface-runtime")) && std::string(argv[1]) == "--creation-runtime") {
 			audio_creation_runtime_controls(argv[2]);
+			if (argc == 5) surface_audio_runtime_controls(argv[4]);
 			return 0;
 		}
 		source_actions();
@@ -605,6 +608,7 @@ int main(int argc, char **argv)
 		combat_audio_source_controls();
 		afterburner_source_controls();
 		actor_audio_source_controls();
+		surface_audio_source_controls();
 		classic_sample_source_controls();
 		audio_route_source_controls();
 		audio_spatial_source_controls();

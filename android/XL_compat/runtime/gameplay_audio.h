@@ -12,6 +12,7 @@ int xl_gameplay_weapon_fire(const struct object *weapon, int make_sound);
 int xl_gameplay_weapon_explosion(int object, int water);
 int xl_gameplay_actor_explosion(int object);
 int xl_gameplay_afterburner(void);
+int xl_gameplay_surface_audio(void);
 int xl_gameplay_sound_sample(int logical);
 int xl_gameplay_sound_play(int sound, int sound_class, int volume, int pan, int loops);
 void xl_gameplay_loop_start(int sound, int volume, int loop_start, int loop_end);
