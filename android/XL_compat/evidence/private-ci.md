@@ -7,7 +7,7 @@ the private runner; published receipts retain fixed counts and outcomes.
 
 `xl-fast` selects one Linux owner, `host-profile:retail-xl-fast`. It builds the
 normal D2 metadata executable and the developer lifecycle executable, then runs
-105 required CTests in independent directories, two at a time. Missing tests,
+106 required CTests in independent directories, two at a time. Missing tests,
 skips, disabled tests, errors and failures all fail the lane. The adapter checks
 the same exact membership as the owner, replacing the stale hardcoded count of 40. The longer `xl-originals` selection retains its separate campaign controls
 and explicitly reported unfinished level-two experiment.
@@ -50,7 +50,7 @@ make missing renderer or audio contracts fail selection instead of disappearing.
 | Area                   | Required evidence                                                                                                                                           |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Format and admission   | Canonical 25/27 runtime, older admitted layouts, malformed inputs, bounded HOG streaming, unsupported requirements and recovery                             |
-| Events and world state | Wall/object triggers, delays, flags, teleports, speed boosts, spawn points, resources, wall/door variants, lights, messages, texture actions and countdowns |
+| Events and world state | Wall/object triggers, delays, flags, teleports, speed boosts, spawn points, resources, wall/door variants, lights, messages, texture actions, countdowns and robot disarming |
 | Actors and generators  | Robot/equipment assignment, 25/27 startup, boss ownership/groups/transport, liquids, repair and capacity controls                                           |
 | Persistence and Redux  | Real disk/checkpoint ownership, mission changes, stock recovery and a normal executable without developer probes                                            |
 | Source comparisons     | Required extracted reference readers, arithmetic, geometry, resource precedence and gameplay functions; no optional missing oracle                          |

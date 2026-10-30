@@ -46,6 +46,14 @@ original formats, saves and Redux recovery. Fixed membership rejects missing or
 skipped tests and omitted source oracles. Original mission admission and human
 campaign playtesting remain separate requirements.
 
+Owned wall/object robot-disarming actions now suppress gunfire, melee and thief
+decisions through XL-owned state bound to robot lifetimes. Missing/nonrobot
+targets are inert; generated robot slots can be targeted. Save/rewind preserves
+earned neutral state and pending actions. See [disarming evidence](evidence/disarming.md)
+for actual attack consumers, source quirks and stock-isolation controls.
+Reprogramming remains separate and rejected. One Pumo action rejection is
+removed; all fourteen original levels still have independent blockers.
+
 Owned wall/object countdown actions now retain their authored seconds and use
 separate XL timing, warning, rotation and terminal-death behavior. Saved state
 includes displayed seconds, extended duration and partial cadence. See

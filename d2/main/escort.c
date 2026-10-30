@@ -69,6 +69,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+#ifdef DXX_XL_RUNTIME
+#include "robot_disarm.h"
+#endif
 
 #ifdef NETWORK
 #include "multi.h"
@@ -3030,6 +3033,9 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 
 	if ((dist_to_player > F1_0*500) && (ailp->next_action_time > 0))
 		return;
+#ifdef DXX_XL_RUNTIME
+	if (xl_robot_disarmed(objnum)) return;
+#endif
 
 	if (replay_thief_probe_active)
 		input_demo_log_thief_detail_probe(1,

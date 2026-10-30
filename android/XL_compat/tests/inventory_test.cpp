@@ -377,6 +377,17 @@ void teleport_inventory_contract()
 		patch(countdown, offset + 8, 32768);
 		check(feature_row(xl_compat::compatibility_json("overflow.rl2", countdown), "countdown_actions").find("\"status\": \"blocked\"") != std::string::npos && !xl_compat::runtime_blockers(xl_compat::inspect_level(countdown)).empty(), "Overflow countdown browser disagrees with admission");
 		auto texture = boost;
+		auto disarm = boost;
+		patch(disarm, offset, 34, 1);
+		patch(disarm, offset + 12, 32767, 2);
+		patch(disarm, offset + 32, 42, 2);
+		const auto disarm_report = xl_compat::compatibility_json("disarm.rl2", disarm);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(disarm)).empty() && feature_row(disarm_report, "robot_disarming").find("\"count\": 1") != std::string::npos, "Disarm inert positive target was rejected or omitted");
+		check(feature_row(disarm_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(disarm_report, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos, "Disarm browser rejected supported flags or delayed scheduling");
+		patch(disarm, offset + 32, 0xffff, 2);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(disarm)).empty(), "Missing runtime disarm slot was treated as invalid authored geometry");
+		patch(disarm, offset + 12, 0xffff, 2);
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(disarm)).empty(), "Source null object target was rejected");
 		patch(texture, offset, 19, 1);
 		const auto texture_report = xl_compat::compatibility_json("texture.rl2", texture);
 		check(feature_row(texture_report, "stateful_trigger_flags").find("\"status\": \"supported\"") != std::string::npos && feature_row(texture_report, "delayed_wall_actions").find("\"status\": \"supported\"") != std::string::npos, "Browser still rejects implemented texture scheduling or flags");
@@ -544,6 +555,16 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(feature_row(xl_compat::compatibility_json("sound.rl2", message), "named_sounds").find("\"count\": 1") != std::string::npos, "Sound browser omitted the object action");
 		patch(message, trigger + 4, 25, 1);
 		check(xl_compat::prepare_gameplay_probe(message).source.object_trigger_records[0].action.type == 25 && feature_row(xl_compat::compatibility_json("countdown.rl2", message), "countdown_actions").find("\"count\": 1") != std::string::npos, "Countdown browser omitted the object action");
+		patch(message, trigger + 4, 34, 1);
+		patch(message, trigger + 17, 0, 2);
+		patch(message, trigger + 37, 0xffff, 2);
+		check(xl_compat::prepare_gameplay_probe(message).source.object_trigger_records[0].action.type == 34 && feature_row(xl_compat::compatibility_json("disarm.rl2", message), "robot_disarming").find("\"count\": 1") != std::string::npos, "Disarm browser omitted object actions or rejected a bounded nonrobot target");
+		patch(message, trigger + 17, 32767, 2);
+		check(xl_compat::prepare_gameplay_probe(message).source.object_trigger_records[0].action.targets[0][0] == 32767, "Disarm slot was bounded by the authored object table instead of runtime lookup");
+		patch(message, trigger + 5, 256, 2);
+		rejects([&] { xl_compat::prepare_gameplay_probe(message); });
+		check(feature_row(xl_compat::compatibility_json("invalid.rl2", message), "robot_disarming").find("\"status\": \"blocked\"") != std::string::npos, "Unsupported object disarm flags passed the browser");
+		// Reprogramming remains distinct from disarming
 		for (const int type : { 16, 26, 35 }) {
 			auto bad = eligible;
 			patch(bad, trigger + 4, type, 1);

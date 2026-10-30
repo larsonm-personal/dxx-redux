@@ -37,6 +37,7 @@
 #include "level_message_probe.h"
 #include "texture_action_probe.h"
 #include "countdown_probe.h"
+#include "disarm_probe.h"
 #include "named_audio_probe.h"
 #include "fog_probe.h"
 #include "pog_probe.h"
@@ -7673,6 +7674,13 @@ extern "C" void game_automate_tick(void)
 				else LOGI("XL controlled named audio %s passed", s.value.c_str());
 #else
 				stop_script_fail("Named audio probe requires Android D2");
+#endif
+			} else if (s.field == "xl_disarm_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_disarm_probe(s.value.c_str())) stop_script_fail(failure);
+				else LOGI("XL controlled disarming %s passed", s.value.c_str());
+#else
+				stop_script_fail("Disarming probe requires Android D2");
 #endif
 			} else if (s.field == "xl_countdown_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)

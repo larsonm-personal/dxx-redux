@@ -15,6 +15,7 @@
 #include "level_messages.h"
 #include "named_audio.h"
 #include "reactor_countdown.h"
+#include "robot_disarm.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -550,6 +551,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_disarm_clear();
 	xl_countdown_clear();
 	xl_named_audio_clear();
 	xl_message_clear();
@@ -918,7 +920,7 @@ extern "C" int xl_loading_extended_triggers(void)
 extern "C" int xl_loading_inert_trigger(int type)
 {
 	// Every translated XL level has an active object-capacity scope while loading
-	return loading_object_capacity && (type == 25 || type == 29 || type == 30);
+	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 34);
 }
 
 extern "C" int object_capacity(void)

@@ -31,7 +31,7 @@ calling the campaign verified. Do not replace that with automated navigation.
   independent folder/bank selection and decoded PCM agree. The production
   loader explicitly rejects these unapplied replacements; this is preparation,
   not ordinary or spatial sound playback qualification.
-- Required CI selections now contain 43/46 public and 105 private controls.
+- Required CI selections now contain 43/46 public and 106 private controls.
   See [current audio evidence](../../XL_compat/evidence/named-audio-runtime.md)
   for completed-run receipts and boundaries. These protect foundations without
   qualifying the original campaign.
@@ -50,7 +50,7 @@ are levels containing a requirement, not separate work items or progress units.
 | -------------------------------------------------------- | -----: |
 | Effect objects / sounds                                  |     14 |
 | Particle objects                                         |     13 |
-| Unsupported wall-action kinds                            |      2 |
+| Unsupported wall-action kinds                            |      1 |
 | Effect targets                                           |     12 |
 | Unsupported object-action kinds                          |      3 |
 | Object-action effect targets                             |      7 |
@@ -60,8 +60,8 @@ are levels containing a requirement, not separate work items or progress units.
 | Lightning / additional object types / segment properties | 3 each |
 | Additive wall rendering                                  |      1 |
 
-After the October 29 named-audio, texture-action and countdown implementations,
-outstanding wall actions include two mine shakes and one disarm. Object
+After the October 29 named-audio, texture, countdown and disarming implementations,
+outstanding wall actions are two mine shakes. Object
 actions add nine cameras. The unchanged-HOG inspection previously removed the
 47 wall and thirteen object sound-action rejections. The subsequent texture
 inspection removes exactly fifteen action rejections across `pmlev1`, `pmlev2`
@@ -72,6 +72,8 @@ levels, again preserving every other inventory field and blocker. The
 [countdown evidence](../../XL_compat/evidence/countdowns.md) records source
 semantics, saved timing, output and terminal-death controls; it does not qualify
 Pumo's original event combinations.
+The [disarming evidence](../../XL_compat/evidence/disarming.md) removes the one
+type-34 rejection in `mvlev5`, again leaving every other requirement unchanged.
 Some apparent requirements may be representation
 or classification issues; only source/runtime evidence may remove their gates.
 Do not infer that a visual-looking effect is harmless to gameplay.
@@ -117,7 +119,7 @@ need separate qualification; model-radius evidence alone does not cover them.
 3. Complete effect-object lifecycle and its enable/disable targets. Preserve
    gameplay cues and ownership even where optional visual polish is deferred.
 4. Complete the remaining event actions and world semantics: camera behavior,
-   mine shaking, disarm, remaining wall variants,
+   mine shaking, remaining wall variants,
    skybox boundaries and remaining segment properties. Reuse the earlier event,
    asset and persistence foundations; audit each against actual XL behavior.
 5. Exercise combinations using controlled engine events and ordinary saves,

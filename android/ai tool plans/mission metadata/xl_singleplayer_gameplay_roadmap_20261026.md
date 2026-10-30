@@ -427,6 +427,15 @@ finish original-mission qualification
     unchanged. Required private membership becomes 105; public membership
     remains 43/46. All fourteen original levels still have independent blockers.
 
+52. Owned robot disarming: wall/object type-34 actions bind neutral state to
+    current robot lifetimes, including generated slots. Actual ranged, melee and
+    thief controls cover attack suppression and source collision-time quirks;
+    disk/rewind, malformed state and stock transitions protect persistence.
+    See [disarming evidence](../../XL_compat/evidence/disarming.md). One Pumo
+    action rejection disappears with every other requirement unchanged; all
+    fourteen original levels remain blocked. Required private membership becomes
+    106; public membership remains 43/46. Reprogramming stays separate.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

@@ -1580,6 +1580,7 @@ extern "C" void flicker_lights(void);
 #include "level_message_test.h"
 #include "texture_action_test.h"
 #include "countdown_test.h"
+#include "disarm_test.h"
 #include "named_audio_test.h"
 #include "classic_audio_test.h"
 #include "audio_scope_test.h"
@@ -1590,6 +1591,7 @@ int main(int argc, char **argv)
 	xl_install_crash_diagnostic();
 	if (find_arg_value(argc, argv, "-texture-action-test")) return texture_action_test(argc, argv);
 	if (find_arg_value(argc, argv, "-countdown-test")) return countdown_test(argc, argv);
+	if (find_arg_value(argc, argv, "-disarm-test")) return disarm_test(argc, argv);
 	if (find_arg_value(argc, argv, "-named-audio-original")) return named_audio_original(argc, argv);
 	if (find_arg_value(argc, argv, "-classic-audio-original")) return classic_audio_original(argc, argv);
 	if (find_arg_value(argc, argv, "-named-audio-test")) return named_audio_test(argc, argv);

@@ -4,6 +4,7 @@
 #include "level_messages.h"
 #include "named_audio.h"
 #include "reactor_countdown.h"
+#include "robot_disarm.h"
 #include <array>
 #include <cstdint>
 #include <cstdlib>
@@ -139,10 +140,11 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	auto &action = Triggers[index];
 	const bool chain = action.type >= 31 && action.type <= 33;
 	const bool resource = xl_compat::player_resource_action(action.type);
-	if (!chain && action.type > 14 && action.type != 15 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && !resource) return 1;
+	if (!chain && action.type > 14 && action.type != 15 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && !resource) return 1;
 	if ((Game_mode & GM_MULTI) || (action.flags & TF_DISABLED) || index >= MAX_TRIGGERS || object_index < 0 || object_index >= MAX_OBJECTS) return 1;
 	if (action.type == 19 && !xl_trigger_texture_valid(&action)) return 1;
 	if (action.type == 25 && !xl_countdown_valid(&action)) return 1;
+	if (action.type == 34 && !xl_disarm_action_valid(&action)) return 1;
 	const bool live = object_index <= Highest_object_index && (Objects[object_index].type == OBJ_PLAYER || xl_wall_teleport_actor(object_index)) && (signature < 0 || Objects[object_index].signature == signature);
 	// Attached events outlive their owner; geometry work does not require an actor
 	// Motion still requires the same live object, never a recycled slot
@@ -154,7 +156,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		if (object_index != Players[Player_num].objnum) return 1;
 	} else if (!attached && action.type != 31 && action.type != 14 && action.type != 15) return 1;
 	if ((action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 1;
-	for (int i = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && i < action.num_links; ++i)
+	for (int i = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && action.type != 34 && i < action.num_links; ++i)
 		if (action.seg[i] < 0 || action.seg[i] > Highest_segment_index || action.side[i] < 0 || action.side[i] >= 6) return 1;
 	TriggerDepth scope;
 	const auto entry_exit = exit_generation;
@@ -186,6 +188,8 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	}
 	if (action.type == 25) {
 		xl_countdown_action(&action);
+	} else if (action.type == 34) {
+		xl_disarm_action(&action);
 	} else if (action.type == 29) {
 		xl_message_action(&action);
 	} else if (action.type == 30) {
@@ -335,8 +339,9 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		const bool resource = xl_compat::player_resource_action(action.type);
 		if (action.type == 19 && !xl_trigger_texture_valid(&action)) return 0;
 		if (action.type == 25 && !xl_countdown_valid(&action)) return 0;
-		if ((action.type > 14 && action.type != 15 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
-		for (int target = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && target < action.num_links; ++target)
+		if (action.type == 34 && !xl_disarm_action_valid(&action)) return 0;
+		if ((action.type > 14 && action.type != 15 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
+		for (int target = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && action.type != 34 && target < action.num_links; ++target)
 			if (action.seg[target] < 0 || action.seg[target] > Highest_segment_index || action.side[target] < 0 || action.side[target] >= 6) return 0;
 		if (state.destination < 0 || state.destination > Highest_segment_index) return 0;
 		if (state.destination) {
