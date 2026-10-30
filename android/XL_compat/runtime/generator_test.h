@@ -74,7 +74,7 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 	char baseline[] = "genbase.sav", description[20] = "XL generator tests";
 	stop_time();
 	require(state_save_all_sub(baseline, description) != 0, "generator control baseline save failed");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	const int original_mode = matcen_mode_get();
 	const auto reset = [&] {
 		require(state_restore_all_sub(baseline, 0) != 0, "generator control reset failed");
@@ -463,7 +463,7 @@ static int generator_assignment_test(int argc, char **argv)
 		char snapshot[] = "genmap.sav", description[20] = "XL generator map";
 		stop_time();
 		require(state_save_all_sub(snapshot, description) != 0, "pending generator disk save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto spawn = [] {
 			FrameTime = F1_0;
 			for (int native = 0; native < 3; ++native) {

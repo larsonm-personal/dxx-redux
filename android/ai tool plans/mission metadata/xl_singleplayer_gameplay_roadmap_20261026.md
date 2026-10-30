@@ -33,6 +33,12 @@ rejections. Every admitted feature needs reference semantics, activation through
 the production runtime, persistence/lifecycle checks and stock isolation.
 Loading, gameplay qualification and presentation remain separate claims
 
+Native persistence fixtures must also verify running simulation at continuation
+boundaries. The low-level save consumes its caller's pause; fixtures must not
+resume it a second time. See the [native pause audit](../../XL_compat/evidence/native-persistence-pause.md)
+for a reproduced false assumption and the corrected checks. Direct consumer
+assertions alone do not establish that pause-aware gameplay frames can advance
+
 Defer multiplayer and cosmetic rendering work. Retain gameplay-affecting
 visibility, transparency, collision, audio cues and authored resource semantics.
 Use controlled poses, physical crossings, authored actions and combat checks;

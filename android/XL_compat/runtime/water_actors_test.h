@@ -146,7 +146,7 @@ static int water_actors_test(int argc, char **argv)
 		char pending[] = "water-pending.sav", description[] = "XL water actors";
 		stop_time();
 		require(state_save_all_sub(pending, description), "wet pending producer save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		FrameTime = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2;
 		fuelcen_update_all();
 		require(items(20).size() == 1 && items(23).size() == 1, "wet item generation missing");
@@ -163,7 +163,7 @@ static int water_actors_test(int argc, char **argv)
 		char earned[] = "water-actors.sav";
 		stop_time();
 		require(state_save_all_sub(earned, description), "water actor save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		std::ofstream samples(root.parent_path() / "water-actor-motion.txt");
 		unsigned count = 0;
 		for (const auto type : { OBJ_ROBOT, OBJ_WEAPON, OBJ_POWERUP }) {

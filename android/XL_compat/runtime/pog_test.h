@@ -311,7 +311,7 @@ static int pog_test(int argc, char **argv)
 		}
 		require(state_restore_all_sub(save, 0) && xl_level_extensions_active(), "RGBA disk restore through stock failed");
 		installed(arena);
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		std::cout << "Original Arena RGBA: 19 installed replacements, immutable mixed resources, repeated replacement, rejection recovery, disk through stock and paging passed\n";
 		return 0;
 	} catch (const std::exception &exception) {

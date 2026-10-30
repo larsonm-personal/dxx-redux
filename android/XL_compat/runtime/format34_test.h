@@ -69,7 +69,7 @@ static int format34_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "15/34 stock transition leaked runtime");
 		require(state_restore_all_sub(save, 0) && xl_level_extensions_active() && !std::strcmp(Current_mission_filename, "format34") && !std::strcmp(Gamesave_current_filename, "alarlof.rl2"), "15/34 saved source not restored");
 		require(face_lights() == expected && (Light_subtracted[light[0]] & (1 << light[1])) && Players[Player_num].shields == i2f(73) && Players[Player_num].energy == i2f(61), "15/34 saved light/player state differs");
-		start_time();
+		require(!game_is_time_paused(), "15/34 save/restore left the simulation paused");
 		require(add_light(light[0], light[1]) == 1, "15/34 restored light cannot be enabled");
 		std::cout << "XL 15/34 native geometry, 68 packed light sources, 5083 deltas and disk-through-stock controls passed\n";
 		return 0;

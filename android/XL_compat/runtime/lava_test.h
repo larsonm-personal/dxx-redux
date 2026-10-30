@@ -295,7 +295,7 @@ static void lava_lifecycle(const std::filesystem::path &output)
 	int playing = 0;
 	require(!xl_lava_segment(60) && !xl_fluid_frame(ConsoleObject - Objects, &playing) && xl_fluid_wall(ConsoleObject - Objects, ConsoleObject->segnum, 0) == -1 && !xl_fluid_scrape(ConsoleObject - Objects, ConsoleObject->segnum, 0, point) && !std::memcmp(&stock, ConsoleObject, sizeof(stock)), "XL fluids modified Redux state");
 	require(state_restore_all_sub(save, 0) && xl_lava_segment(63) && xl_preview_no_damage_segment(63) && xl_fluid_scrape_elapsed() == F1_0 / 8, "Lava disk restore through stock lost source or scrape timing");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	// Backward-clock and extreme malicious elapsed values never overflow the stored clock
 	require(xl_fluid_restore(-1, 1) && xl_fluid_scrape_elapsed() == -1, "Backward-clock restore rejected");
 	require(!xl_fluid_restore(INT64_MIN, 0) && xl_fluid_scrape_elapsed() == -1, "Overflow clock accepted or validation mutated state");

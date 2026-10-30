@@ -47,7 +47,7 @@ static int texture_action_test(int argc, char **argv)
 			require(state_restore_all_sub(save, 0) && xl_source_level_version() == (ordinal == 1 ? 23 : 27) && snapshot() == earned,
 			        "Disk-through-stock lost texture IDs, orientation or UV/light records");
 			continuation(pending);
-			start_time();
+			require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 textures: wall/master/object/autoplay, actual collision, rotated clear/restore and delayed disk-through-stock passed\n";
 		}
 		std::cout << "XL texture action runtime controls passed\n";

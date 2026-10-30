@@ -103,6 +103,7 @@ static int object_chain_delay_test(int argc, char **argv)
 		require(replacement == robot && Objects[replacement].signature != original_signature, "removed owner slot was not reused");
 		advance(ticks(250));
 		const auto pending = state(0);
+		stop_time();
 		require(state_save_all_sub(pending_save, description), "pending removed-owner save failed");
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "delayed stock transition failed");
 		require(!xl_level_extensions_active() && !xl_wall_trigger_state(0, nullptr) && xl_wall_trigger(0, ConsoleObject - Objects, 0) == -1, "delayed XL state leaked into stock dispatch");

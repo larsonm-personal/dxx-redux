@@ -112,7 +112,7 @@ static void close_door_lifecycle()
 	require(Walls[0].state == WALL_DOOR_WAITING, "Redux waiting-close behavior changed");
 	Walls[0] = stock;
 	require(state_restore_all_sub(save, 0) && Walls[0].state == WALL_DOOR_WAITING && Num_open_doors == 1 && ActiveDoors[0].time == waiting.time, "Waiting door state lost through stock");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	require(check_trigger_sub(1, Player_num, 1) == 0 && Walls[0].state == WALL_DOOR_CLOSING && Walls[1].state == WALL_DOOR_CLOSING && Num_open_doors == 1, "Authored waiting close failed");
 	require(ActiveDoors[0].time == std::max<fix>(0, WallAnims[Walls[0].clip_num].play_time - waiting.time), "Forced closing timer differs from source");
 	const auto closing = ActiveDoors[0];
@@ -120,7 +120,7 @@ static void close_door_lifecycle()
 	require(state_save_all_sub(save, description), "Closing door save failed");
 	wall_open_door(&Segments[24], 5);
 	require(state_restore_all_sub(save, 0) && Walls[0].state == WALL_DOOR_CLOSING && ActiveDoors[0].time == closing.time, "Closing restore lost active timer");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = F1_0 / 32;
 	for (int i = 0; i < 512 && Walls[0].state != WALL_DOOR_CLOSED; ++i) {
 		wall_frame_process();

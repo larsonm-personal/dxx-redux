@@ -151,7 +151,7 @@ static int level_message_test(int argc, char **argv)
 			message_expect(10, 100, "Repeat message");
 			const auto restored = message_snapshot();
 			require(restored.elapsed_ms >= earned.elapsed_ms && restored.elapsed_ms < earned.elapsed_ms + 2000, "Disk restore restarted or consumed message duration");
-			start_time();
+			require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 messages: wall/master/object/autoplay dispatch, duration, expiry, owned rejection and disk-through-stock passed\n";
 		}
 		std::cout << "XL message runtime controls passed\n";

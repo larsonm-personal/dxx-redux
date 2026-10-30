@@ -198,7 +198,7 @@ static void keyed_wall_lifecycle()
 	Walls[0] = wall;
 	require(state_restore_all_sub(save, 0) && (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) && xl_wall_doorway(ConsoleObject - Objects, 24, 5) == WID_ILLUSORY_WALL && WALL_IS_DOORWAY(&Segments[24], 5) == WID_TRANSPARENT_WALL, "Disk restore lost keys or mixed actor/visibility state");
 	require(Walls[6].keys == 255 && Walls[7].keys == 255, "Disk-through-stock restore changed raw wall-key bytes");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	// Owning a key does not bypass the source boost-area exit constraint
 	obj_relink(ConsoleObject - Objects, 24);
 	compute_segment_center(&ConsoleObject->pos, &Segments[24]);

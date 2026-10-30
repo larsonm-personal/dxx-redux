@@ -212,7 +212,7 @@ static int wide_wall_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Wide-wall stock transition failed");
 		require(Num_walls <= DXX_CLASSIC_MAX_WALLS && !xl_loading_wide_walls(), "Wide capacity permission leaked into stock");
 		require(state_restore_all_sub(save, 0), "High-index door restore through stock failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(Num_walls == DXX_XL_MAX_WALLS && Segments[24].sides[5].wall_num == front &&
 		            Num_open_doors == 1 && !std::memcmp(&earned, &ActiveDoors[0], sizeof(earned)) &&
 		            Players[Player_num].shields == i2f(73) && Players[Player_num].energy == i2f(61),
@@ -235,12 +235,13 @@ static int wide_wall_test(int argc, char **argv)
 		require(state_save_all_sub(save, description), "High-index cloak save failed");
 		for (int frame = 0; frame < 80; ++frame) wall_frame_process();
 		require(state_restore_all_sub(save, 0) && Num_cloaking_walls == 1 && !std::memcmp(&cloaking, &CloakingWalls[0], sizeof(cloaking)), "High-index cloak restore lost timer or identities");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		wide_wall_demo(front, back);
 		require(state_restore_all_sub(save, 0), "Recovery after wall demo controls failed");
 		wide_wall_saved_count_controls(save, DXX_XL_MAX_WALLS);
 		wide_wall_rejections(output);
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Final stock capacity control failed");
+		stop_time();
 		require(state_save_all_sub(save, description), "Stock wall-count control save failed");
 		wide_wall_saved_count_controls(save, DXX_CLASSIC_MAX_WALLS);
 		std::cout << "XL wide-wall load, authored opening/closing, collision, disk through stock and earned state passed\n";

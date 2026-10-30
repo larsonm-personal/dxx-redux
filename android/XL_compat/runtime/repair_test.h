@@ -125,7 +125,7 @@ static void repair_lifecycle(const std::filesystem::path &output, int repair)
 	require(repaircen_give_shields(&Segments[ConsoleObject->segnum], i2f(100)) == 25 * F1_0 / 4, "Redux repair rate changed");
 	Segment2s[ConsoleObject->segnum].special = special;
 	require(state_restore_all_sub(save, 0) && xl_repair_segment(repair) && Players[Player_num].shields == i2f(50) && xl_repair_elapsed() == F1_0 / 8, "Repair disk restore lost source, health or pending cue");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = F1_0 / 4;
 	const auto cues = xl_repair_cues();
 	require(repaircen_give_shields(&Segments[repair], F1_0) == F1_0 && xl_repair_cues() == cues, "Restored cue interval replayed too soon");

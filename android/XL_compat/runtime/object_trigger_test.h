@@ -193,7 +193,7 @@ static int object_trigger_test(int argc, char **argv)
 		char initial[] = "xl-object-initial.sav", snapshot[] = "xl-object-live.sav", description[] = "Object events";
 		stop_time();
 		require(state_save_all_sub(initial, description) != 0, "initial object save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto velocity = vms_vector{ F1_0, 2 * F1_0, -3 * F1_0 };
 		Objects[robot].mtype.phys_info.velocity = velocity;
 		const auto orientation = Objects[robot].orient;
@@ -237,7 +237,7 @@ static int object_trigger_test(int argc, char **argv)
 		Control_center_destroyed = 0;
 		stop_time();
 		require(state_save_all_sub(snapshot, description) != 0, "live object save failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const int saved_destination = state(repeat).destination;
 		xl_object_trigger_event(robot, 0);
 		require(state(death).owner == -1 && state(death).type == TT_ILLUSION_ON && (Walls[8].flags & WALL_ILLUSION_OFF), "death action did not alternate and consume owner");

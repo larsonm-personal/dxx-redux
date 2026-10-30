@@ -144,7 +144,7 @@ static void hxm_projectile_controls(const std::filesystem::path &root)
 	        "Custom projectile radius polluted stock firing");
 	obj_delete(stock_shot);
 	require(state_restore_all_sub(save, 0), "Custom projectile restore through stock failed");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	fire();
 	std::cout << "Derived HXM projectile computed radius, firing, disk through stock and stock firing isolation passed\n";
 }
@@ -229,7 +229,7 @@ static int hxm_test(int argc, char **argv)
 		check_actor();
 		require(Objects[actor].shields == i2f(713) && gameplay_definitions() == custom_definitions && hxm_model_receipt(6) == custom_model,
 		        "HXM restore lost earned combat or replacement definitions");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(apply_damage_to_robot(&Objects[actor], i2f(714), ConsoleObject - Objects), "Restored custom actor cannot be killed");
 		StartNewGame(1);
 		check_actor();

@@ -32,7 +32,7 @@ static void boss_lifecycle_controls(const std::vector<int> &owners)
 	char live[] = "boss-life.sav", dying[] = "boss-dying.sav", description[] = "Boss lifecycle";
 	stop_time();
 	require(state_save_all_sub(live, description), "boss cloak/teleport save failed");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	const auto saved = state(0);
 	GameTime64 += i2f(20);
 	do_boss_stuff(&Objects[first], 1);
@@ -44,7 +44,7 @@ static void boss_lifecycle_controls(const std::vector<int> &owners)
 	do_ai_frame_all();
 	stop_time();
 	require(state_save_all_sub(dying, description), "boss rolling-death save failed");
-	start_time();
+	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	const auto rolling = state(0);
 	GameTime64 += i2f(10);
 	do_ai_frame_all();
@@ -387,7 +387,7 @@ static int boss_spawn_test(int argc, char **argv)
 		char snapshot[] = "xl-bosses.sav", description[] = "XL boss spawning";
 		stop_time();
 		require(state_save_all_sub(snapshot, description), "boss spawn disk capture failed");
-		start_time();
+		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto original = state(0);
 		GameTime64 += original.interval;
 		d_srand(123);
