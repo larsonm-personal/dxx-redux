@@ -19,10 +19,17 @@ struct AudioSample {
 };
 AudioSample prepare_audio_sample(const WaveChannels &source, unsigned rate);
 
+struct AudioPriority {
+	int sound_class = 0, volume = 32768;
+	bool persistent = false;
+};
+AudioPriority audio_priority(int sound_class, int requested_volume, int effective_volume, int sound_object, bool looping);
+
 struct AudioVoice {
 	std::uint64_t serial = 0;
 	unsigned sample = 0, position = 0;
 	int owner = -1, remaining = 0;
+	AudioPriority priority;
 };
 
 // The engine owns the immutable sample bank and excludes concurrent control
@@ -32,9 +39,11 @@ class AudioVoices
   public:
 	std::array<AudioVoice, audio_voice_limit> voices{};
 	std::uint64_t next_serial = 1, starts = 0, completions = 0, stops = 0;
+	unsigned cursor = 0;
 	bool paused = false;
 	int volume = 128;
 	int start(unsigned sample, int repetitions, int owner);
+	int start(unsigned sample, int repetitions, int owner, AudioPriority priority);
 	void stop(int slot);
 	void clear();
 	void mix(unsigned char *stream, std::size_t frames, const std::vector<AudioSample> &samples);

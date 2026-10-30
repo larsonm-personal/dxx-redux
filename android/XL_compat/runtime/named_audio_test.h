@@ -1,4 +1,5 @@
 // Controlled events and real SDL output; no autonomous level navigation
+#include "audio_pressure_test.h"
 namespace named_audio_control
 {
 #ifdef USE_SDLMIXER
@@ -64,7 +65,7 @@ void bad_states(const std::filesystem::path &root)
 	const auto before = snapshot();
 	const auto lights = light_snapshot();
 	require(!before.at("voices").empty(), "Malformed audio controls need a live saved voice");
-	for (unsigned variant = 0; variant < 24; ++variant) {
+	for (unsigned variant = 0; variant < 33; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &audio = block["audio"];
 		auto &voice = audio["voices"][0];
@@ -92,6 +93,15 @@ void bad_states(const std::filesystem::path &root)
 		if (variant == 21) audio["extra"] = 0;
 		if (variant == 22) audio["events"].erase(0);
 		if (variant == 23) block.erase("audio");
+		if (variant == 24) audio["cursor"] = -1;
+		if (variant == 25) audio["cursor"] = 128;
+		if (variant == 26) audio["cursor"] = 0.5;
+		if (variant == 27) audio.erase("cursor");
+		if (variant == 28) voice[6] = -1;
+		if (variant == 29) voice[6] = 32769;
+		if (variant == 30) voice[6] = 8192.5;
+		if (variant == 31) voice.erase(6);
+		if (variant == 32) voice.push_back(0);
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -108,7 +118,7 @@ void bad_states(const std::filesystem::path &root)
 	}
 	file = PHYSFS_openRead("audio-state.bin");
 	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && snapshot() == before, "Valid named audio trailer did not recover exactly");
-	std::cout << "Twenty-four malformed named audio trailers rejected atomically; valid playheads recovered\n";
+	std::cout << "Thirty-three malformed named audio trailers rejected atomically; valid playheads, priorities and cursor recovered\n";
 }
 } // namespace named_audio_control
 
@@ -274,6 +284,46 @@ static int named_audio_test(int argc, char **argv)
 			require(xl_named_audio_action(&Triggers[1], 1) == 1 && xl_named_audio_action(&Triggers[2], 2) == 1 && xl_named_audio_action(&Triggers[2], 2) == 1 && snapshot().at("voices").size() == 4, "Zero/negative repeat overlap differs");
 			const auto infinite = snapshot();
 			for (const auto &voice : infinite.at("voices")) require(voice[5] == -1, "Nonpositive repeat did not create an infinite voice");
+			reset();
+			const auto pressure_origin = xl_audio_pressure::prepare();
+			const auto pressure_start = snapshot();
+			begin_capture();
+			run_output(4096);
+			xl_audio_pressure::output(pressure_start, captured.data(), nullptr, captured_samples, 44100, 128);
+			xl_named_audio_pause(1);
+			const auto pressure = snapshot();
+			require(std::all_of(pressure.at("voices").begin(), pressure.at("voices").end(), [](const auto &voice) { return voice[3] > 0; }), "Full-pool save did not earn live playheads");
+			bad_states(root);
+			xl_audio_pressure::continuation(pressure_origin);
+			xl_named_audio_stop();
+			require(snapshot().at("cursor") == (pressure_origin + 1) % xl_compat::audio_voice_limit, "Stopping named voices reset the source allocation cursor");
+			require(xl_named_audio_action(&Triggers[2], 2) == 1 && snapshot().at("cursor") != pressure.at("cursor"), "Cannot disturb the saved allocation position");
+			auto *pressure_file = PHYSFS_openRead("audio-state.bin");
+			require(pressure_file && xl_wall_trigger_read(pressure_file) && PHYSFS_close(pressure_file) && snapshot() == pressure, "Full-pool trailer lost voices or the allocation cursor");
+			xl_audio_pressure::continuation(pressure_origin);
+			require(xl_compat::restore_named_audio(pressure, true) && snapshot() == pressure, "Cannot recover exact full-pool playback after continuation");
+			begin_capture();
+			xl_named_audio_pause(0);
+			run_output(4096);
+			xl_audio_pressure::output(pressure, captured.data(), nullptr, captured_samples, 44100, 128);
+			std::cout << "Full 128-voice pool: class threshold, zero/negative priority, real PCM, saved cursor and continuation passed\n";
+			reset();
+			const unsigned volume_origin = snapshot().at("cursor").get<unsigned>();
+			for (unsigned i = 0; i < xl_compat::audio_voice_limit; ++i) {
+				digi_set_digi_volume(i == 17 ? 8192 : i == 43 ? 0
+				                                              : 32768);
+				++GameTime64;
+				require(xl_named_audio_action(&Triggers[1], 1) == 1, "Cannot earn different source channel priorities");
+			}
+			digi_set_digi_volume(32768);
+			const auto volumes = snapshot();
+			require(volumes.at("voices")[(volume_origin + 17) % 128][6] == 8192 && volumes.at("voices")[(volume_origin + 43) % 128][6] == 0,
+			        "Named channel priority lost its start-time volume");
+			bad_states(root);
+			xl_audio_pressure::replace(1, (volume_origin + 43) % 128);
+			require(xl_compat::restore_named_audio(volumes, true), "Cannot restore earned channel volume priorities");
+			xl_audio_pressure::replace(1, (volume_origin + 43) % 128);
+			xl_audio_pressure::replace(1, (volume_origin + 17) % 128);
 			reset();
 			check_trigger_sub(8, Player_num, 1);
 			const auto cooldown = event(8)[2].get<std::int64_t>();

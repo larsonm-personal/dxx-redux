@@ -9,6 +9,9 @@ not qualify any original Pumo level or the campaign.
 The subsequent [sound-folder increment](audio-scopes.md) implements owned mission,
 normal-level and secret-level lookup. The initial HOG-only scope and receipts
 below describe this earlier playback increment.
+The subsequent [channel increment](audio-channels.md) replaces first-free-only
+allocation with XL class/persistence/volume selection and saves its cursor and
+priority history. It also records the existing global-slider output difference.
 
 ## Runtime and source behavior
 

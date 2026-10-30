@@ -23,7 +23,7 @@ string(REGEX MATCHALL "#define[ \t]+(TF_[A-Z_]+|TT_COUNTDOWN|TT_MESSAGE|TT_SOUND
              constants "${trigger_header}")
 string(REPLACE ";" "\n" constants "${constants}")
 foreach(pair IN ITEMS "maths.h|I2X" "maths.h|X2I" "maths.h|F2X" "audio.h|SOUNDCLASS_GENERIC"
-                      "piggy.h|MAX_ADDON_SOUND_FILES")
+                      "audio.h|MAX_SOUND_CHANNELS" "piggy.h|MAX_ADDON_SOUND_FILES")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 name)
@@ -90,8 +90,26 @@ foreach(signature IN ITEMS "int32_t LoadHiresSound (" "int32_t SetupSounds (" "v
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_classic_audio.h"
      CONTENT "${extracted}")
-add_executable(xl_named_audio_source tests/reference_named_audio.cpp
-                                     tests/reference_classic_audio.cpp)
+set(extracted "// Actual pinned channel allocation; channel playback is an adapter\n")
+foreach(signature IN
+        ITEMS "int32_t CAudio::SoundClassCount (" "CAudioChannel* CAudio::FindFreeChannel ("
+              "int32_t CAudio::StartSound (" "void CAudio::StopAllChannels (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/audio/audio.cpp" "${signature}")
+endforeach()
+string(REGEX MATCH "int32_t[ \t]+bPersistent = ([^;]+);" persistent "${audio}")
+if(NOT persistent)
+    message(FATAL_ERROR "Missing source channel persistence expression")
+endif()
+string(
+    APPEND
+    extracted
+    "\nint ChannelPersistent(int nSoundObj, int bLooping, int nVolume) { return ${CMAKE_MATCH_1}; }\n"
+)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_audio_channels.h"
+     CONTENT "${extracted}")
+add_executable(
+    xl_named_audio_source tests/reference_named_audio.cpp tests/reference_classic_audio.cpp
+                          tests/reference_audio_channels.cpp)
 target_link_libraries(xl_named_audio_source PRIVATE xl_inventory)
 target_include_directories(xl_named_audio_source PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_named_audio_source COMMAND xl_named_audio_source)
