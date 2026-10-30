@@ -444,6 +444,14 @@ finish original-mission qualification
     Ordinary/ambient playback, shared owner cleanup and saved nondefault channel
     settings remain separate work. No admission gate or CI membership changes.
 
+54. Sound-owner lifecycle foundation: actual source callback/container controls
+    and mixed PCM tests verify the 500-owner/128-channel limits, completion,
+    replacement, dense compaction and native lifetime reuse. Ordered deletion
+    intentionally repairs a proven source back-reference bug. See
+    [ownership evidence](../../XL_compat/evidence/audio-ownership.md).
+    Ordinary/ambient engine consumers, spatial updates and saved owners remain
+    unfinished. No admission rule or CI membership changes.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

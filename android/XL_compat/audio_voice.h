@@ -32,12 +32,16 @@ struct AudioOutput {
 // Mix_VolPan startup and SetPan updates use different source quantization
 AudioOutput audio_start_output(int effective_volume, int pan, AudioOutput previous = {});
 
+enum class AudioOwnerKind { action,
+	                        object,
+	                        unlinked };
 struct AudioVoice {
 	std::uint64_t serial = 0;
 	unsigned sample = 0, position = 0;
 	int owner = -1, remaining = 0;
 	AudioPriority priority;
 	AudioOutput output;
+	AudioOwnerKind kind = AudioOwnerKind::action;
 };
 
 // The engine owns the immutable sample bank and excludes concurrent control
@@ -51,7 +55,7 @@ class AudioVoices
 	bool paused = false;
 	int volume = 128;
 	int start(unsigned sample, int repetitions, int owner);
-	int start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output = {});
+	int start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output = {}, AudioOwnerKind kind = AudioOwnerKind::action, AudioVoice *retired = nullptr);
 	bool set_volume(int slot, int requested_volume, int effects_volume);
 	bool set_pan(int slot, int pan);
 	void stop(int slot);

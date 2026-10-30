@@ -22,6 +22,8 @@ static void rejects(Operation operation)
 	require(failed, "Malformed input was accepted");
 }
 
+void audio_owner_pcm_controls();
+
 int main()
 {
 	try {
@@ -103,6 +105,7 @@ int main()
 		rejects([] { named_sound_filename("../foreign.wav"); });
 		rejects([] { named_sound_filename(""); });
 		std::cout << "PASS: named stereo voices, conversion, repeat boundaries, pause, overlap, capacity, volume and aliases\n";
+		audio_owner_pcm_controls();
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';
