@@ -166,8 +166,12 @@ see [actor/afterburner evidence](evidence/actor-afterburner-audio.md) for verifi
 source corrections, the qualified output profile and remaining limits.
 Fresh object/segment creation also passes 768 comparisons per fixture against
 the actual source functions on Windows/Linux; see the linked-audio evidence.
-Ambient gameplay dispatch and wall-change qualification remain unfinished,
-so classic replacements remain gated.
+Ambient surface initialization now uses an XL-owned consumer with per-segment
+gain distribution, orientation-independent portal suppression and permanent
+linked ownership. See [surface audio evidence](evidence/surface-audio.md) for
+source/native comparisons, exact stock PCM isolation and platform status.
+Ambient sound objects and wall-change qualification remain unfinished, so
+classic replacements remain gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

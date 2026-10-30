@@ -33,7 +33,16 @@ compares 16 surface cases and 35 owners against the actual source initializer.
 The existing audio scope and loaded-geometry source comparisons also pass.
 Scoped formatting passes.
 
-This is a draft checkpoint for CI, not completed platform qualification.
-The new Android surface controls and Linux build/runtime still need execution.
-A dedicated exact-PCM stock surface comparison remains to be added; existing
-stock combat and afterburner isolation checks pass. Admission is unchanged.
+The initial draft checkpoint is followed by completed platform qualification.
+The dedicated stock surface check now compares two real boundary faces against
+the original half-volume Redux PCM, with separate ownership. Both native formats
+pass on Windows and Linux. Five Linux audio/texture/doorway/water checks pass in
+87.87 seconds. Android passes 101/101 steps in 381.678 seconds with 1,400,832
+checked samples and all 26 protected files restored unchanged. Both catalogs and
+scoped formatting pass. See [surface evidence](../../XL_compat/evidence/surface-audio.md)
+for exact artifacts, binary hashes and remaining requirements. Admission is
+unchanged.
+
+Next address source `CAudio::Update` route invalidation on texture and wall
+lifecycle changes, with a stationary listener and actual PCM/ownership checks.
+Ambient sound objects and static explosion ambience remain separate consumers.
