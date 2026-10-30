@@ -583,6 +583,7 @@ void surface_audio_source_controls();
 void surface_audio_runtime_controls(const char *);
 void ambient_audio_source_controls();
 void static_explosion_audio_source_controls();
+void static_explosion_audio_runtime_controls(const char *);
 void ambient_audio_runtime_controls(const char *);
 
 int main(int argc, char **argv)
@@ -590,6 +591,10 @@ int main(int argc, char **argv)
 	try {
 		// The public contract owner runs the complete primitive suite separately
 		// Runtime comparison needs only the captured mine and its source consumers
+		if (argc == 3 && std::string(argv[1]) == "--static-runtime") {
+			static_explosion_audio_runtime_controls(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--ambient-runtime") {
 			ambient_audio_runtime_controls(argv[2]);
 			return 0;

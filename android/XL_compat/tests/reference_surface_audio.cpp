@@ -1,6 +1,7 @@
 #include "surface_audio_receipt.h"
 #include "static_explosion.h"
 #include "ambient_audio_receipt.h"
+#include "static_audio_receipt.h"
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -146,6 +147,7 @@ struct CAudio {
 		bool bLoMem = false;
 	} m_info;
 	int32_t UnXlatSound(int32_t);
+	int16_t XlatSound(int16_t);
 	int32_t GetSoundByName(const char *);
 	std::vector<Call> calls;
 	std::vector<xl_ambient_audio_receipt::Owner> object_calls;
@@ -380,4 +382,42 @@ void static_explosion_audio_source_controls()
 	if (audio.GetSoundByName("explode2") != 0 || lookup_traps != 1)
 		throw std::runtime_error("Source unmapped named sample fallback differs");
 	std::cout << "PASS: " << cases + 1 << " actual static explosion initializer/name controls, including missing sound, mapping and list order\n";
+}
+void static_explosion_audio_runtime_controls(const char *path)
+{
+	using namespace surface_reference;
+	std::ifstream input(path);
+	const auto receipt = xl_static_audio_receipt::read(input);
+	static_assert(MAX_SOUNDS == std::tuple_size<decltype(receipt.sounds)>::value);
+	if (receipt.objects.size() != 2 || receipt.owners.size() != 2)
+		throw std::runtime_error("Loaded static initializer coverage incomplete");
+	reset(0);
+	audio.m_info.bLoMem = receipt.low_memory != 0;
+	named_sample = receipt.named_sample;
+	std::copy(receipt.sounds.begin(), receipt.sounds.end(), Sounds[0]);
+	std::copy(receipt.alternate.begin(), receipt.alternate.end(), AltSounds[0]);
+	static_objects.resize(receipt.objects.size());
+	for (unsigned i = 0; i < receipt.objects.size(); ++i) {
+		const auto &row = receipt.objects[i];
+		auto &object = static_objects[i];
+		object.index = row[0];
+		object.info.nType = OBJ_EXPLOSION;
+		object.info.nId = row[1];
+		object.info.renderType = row[2];
+		object.rType.animationInfo.nClipIndex = row[3];
+		object.Link(static_list, 2);
+	}
+	SetSoundSources();
+	std::vector<std::array<int, 11>> expected;
+	for (const auto &call : audio.object_calls) {
+		auto owner = call.first;
+		owner[1] = audio.XlatSound(static_cast<int16_t>(owner[1]));
+		if (owner[1] >= 0) expected.push_back(owner);
+	}
+	if (expected != receipt.owners || audio.resets != 1 || gameStates.sound.bDontStartObjects || lookup_traps)
+		throw std::runtime_error("Loaded static owners differ from actual source initialization, translation or order");
+	for (unsigned i = 0; i < receipt.objects.size(); ++i)
+		if (static_objects[i].info.renderType != receipt.objects[i][4] || static_objects[i].rType.animationInfo.nClipIndex != receipt.objects[i][5])
+			throw std::runtime_error("Loaded static clip selection differs from actual source initializer");
+	std::cout << "PASS: 2 loaded static owners match actual source initialization, clip, mapping, order and permanent flags\n";
 }

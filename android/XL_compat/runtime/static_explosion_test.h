@@ -1,7 +1,44 @@
 #include "static_explosion_runtime.h"
+#include "../tests/static_audio_receipt.h"
 namespace xl_static_explosion_control
 {
 using namespace named_audio_control;
+void record_initialization(const std::filesystem::path &root)
+{
+	using namespace xl_compat::audio_runtime;
+	xl_static_audio_receipt::Case receipt;
+	static_assert(MAX_SOUNDS == std::tuple_size<decltype(receipt.sounds)>::value);
+	receipt.low_memory = GameArg.SysLowMem != 0;
+	std::copy_n(Sounds, MAX_SOUNDS, receipt.sounds.begin());
+	std::copy_n(AltSounds, MAX_SOUNDS, receipt.alternate.begin());
+	for (int index = 0; const char *name = piggy_sound_name(index); ++index)
+		if (!std::strcmp(name, "explode2")) {
+			receipt.named_sample = index;
+			break;
+		}
+	const auto source = xl_ambient_objects_control::source_level();
+	for (unsigned i = 0; i < source.objects.size(); ++i) {
+		const auto &object = source.objects[i];
+		if (object.type == 19)
+			receipt.objects.push_back({ int(i), object.id, object.render, object.render_data.at(0), Objects[i].render_type, Objects[i].rtype.vclip_info.vclip_num });
+	}
+	AudioLock lock;
+	bool objects_started = false;
+	for (unsigned i = 0; i < owners.count; ++i) {
+		const auto &owner = owners.entries[i];
+		if (owner.object < 0) {
+			require(!objects_started, "Static initialization reordered surface and object owners");
+			continue;
+		}
+		objects_started = true;
+		require(owner.channel == -1, "Static initialization started audio before synchronization");
+		receipt.owners.push_back({ owner.object, owner.sound, owner.sound_class, owner.max_volume, owner.max_distance,
+		                           int(owner.flags), owner.loop_start, owner.loop_end, owner.decay, int(owner.external), int(owner.ambient) });
+	}
+	std::ofstream out(root / "static-audio.txt");
+	xl_static_audio_receipt::write(out, receipt);
+	require(bool(out), "Cannot record loaded static explosion initialization");
+}
 void output()
 {
 	const auto before = snapshot();
@@ -29,16 +66,20 @@ void run(const std::filesystem::path &root, int ordinal)
 	Viewer = ConsoleObject;
 	digi_set_digi_volume(32768);
 	set_sound_sources();
+	record_initialization(root);
 	xl_audio_sync_objects();
 	const auto initial = snapshot();
 	const auto before_object = Objects[49];
-	for (const auto &entry : std::array<std::pair<const char *, const char *>, 6>{ { { "stbadid.rl2", "missing vclip" }, { "stbadfr.rl2", "in-range initial frame" }, { "stbadct.rl2", "static_explosion" }, { "stbadmv.rl2", "unsupported movement layout" }, { "stbadrn.rl2", "static_explosion" }, { "stbadtm.rl2", "positive timing" } } }) {
+	for (const auto &entry : std::array<std::pair<const char *, const char *>, 5>{ { { "stbadid.rl2", "missing vclip" }, { "stbadfr.rl2", "in-range initial frame" }, { "stbadct.rl2", "static_explosion" }, { "stbadmv.rl2", "unsupported movement layout" }, { "stbadrn.rl2", "static_explosion" } } }) {
 		require(!xl_level_supported_at(entry.first, 0, 1) && std::strstr(xl_level_rejection(), entry.second),
 		        (std::string("Static malformed admission lacks a specific rejection: ") + entry.first + ": " + xl_level_rejection()).c_str());
 		require(snapshot() == initial && Objects[49].signature == before_object.signature && Objects[49].type == 19 &&
 		            Objects[49].rtype.vclip_info.frametime == before_object.rtype.vclip_info.frametime && xl_level_extensions_active(),
 		        "Rejected static level changed the current object or sound state");
 	}
+	// Despite its historical fixture name, a negative initial timer is legal XL
+	require(xl_level_supported_at("stbadtm.rl2", 0, 1) && snapshot() == initial,
+	        "Source-valid negative static animation timer was rejected or changed audio state");
 	for (bool duration : { false, true }) {
 		const auto clip = Vclip[0];
 		if (duration) Vclip[0].frame_time = 0;
@@ -88,7 +129,7 @@ void run(const std::filesystem::path &root, int ordinal)
 	for (int index : { 49, 50 }) {
 		auto &object = Objects[index];
 		const auto &clip = Vclip[0];
-		for (int initial_time : { 0, clip.frame_time / 2, clip.frame_time }) {
+		for (int initial_time : { -1, 0, clip.frame_time }) {
 			object.rtype.vclip_info.frametime = initial_time;
 			object.rtype.vclip_info.framenum = static_cast<sbyte>(clip.num_frames - 1);
 			for (int elapsed : { 0, 1, clip.frame_time - 1, clip.frame_time, clip.frame_time + 1, clip.frame_time * clip.num_frames * 3 + 17, 1092, 2184 }) {

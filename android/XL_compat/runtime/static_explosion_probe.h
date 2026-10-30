@@ -65,6 +65,12 @@ void static_control(const char *operation)
 			require(object.control_type == CT_POWERUP && object.movement_type == MT_NONE && object.render_type == RT_POWERUP &&
 			            object.rtype.vclip_info.vclip_num == object.id && object.lifeleft == IMMORTAL_TIME && clip.num_frames > 3,
 			        "Android static initializer differs from source identity/clip/lifetime");
+			object.rtype.vclip_info.frametime = -1;
+			object.rtype.vclip_info.framenum = 0;
+			FrameTime = 0;
+			do_powerup_frame(&object);
+			require(object.rtype.vclip_info.frametime == clip.frame_time - 1 && object.rtype.vclip_info.framenum == 1,
+			        "Android static animation rejected a source-valid negative timer");
 			object.rtype.vclip_info.frametime = 0;
 			object.rtype.vclip_info.framenum = 0;
 			FrameTime = clip.frame_time;
@@ -100,11 +106,19 @@ void static_control(const char *operation)
 	} else if (!std::strcmp(operation, "disk_save")) {
 		static_verify();
 		require(state_android_save_to_slot(ANDROID_SAVE_META_SLOT_QUICK, "XL static explosions", ANDROID_SAVE_META_KIND_MANUAL) == 1, "Cannot save Android static explosion state");
+	} else if (!std::strcmp(operation, "disk_save_rejected")) {
+		static_verify();
+		require(Current_level_num < 0 && !state_android_save_to_slot(ANDROID_SAVE_META_SLOT_QUICK, "XL secret control", ANDROID_SAVE_META_KIND_MANUAL),
+		        "Default secret-level save restriction changed");
+		static_verify();
+		++static_checks;
 	} else if (!std::strcmp(operation, "reject")) {
 		const auto before = snapshot();
-		for (const char *name : { "stbadid.rl2", "stbadfr.rl2", "stbadct.rl2", "stbadmv.rl2", "stbadrn.rl2", "stbadtm.rl2" })
+		for (const char *name : { "stbadid.rl2", "stbadfr.rl2", "stbadct.rl2", "stbadmv.rl2", "stbadrn.rl2" })
 			require(!xl_level_supported_at(name, 0, 1) && *xl_level_rejection() && snapshot() == before && Objects[49].type == 19,
 			        "Malformed static object was admitted or changed current Android state");
+		require(xl_level_supported_at("stbadtm.rl2", 0, 1) && snapshot() == before && Objects[49].type == 19,
+		        "Source-valid negative static timer was rejected or changed current Android state");
 		static_checks += 6;
 	} else throw std::runtime_error("Unknown Android static explosion operation");
 }

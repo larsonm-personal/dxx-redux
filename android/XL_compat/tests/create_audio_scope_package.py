@@ -11,11 +11,21 @@ def main():
     parser.add_argument("fixture", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--classic", action="store_true", help="Include the owned classic-resource admission controls")
+    parser.add_argument(
+        "--static", action="store_true", help="Include the static explosion lifecycle and rendering controls"
+    )
     args = parser.parse_args()
     pinned = {
         "missions/xscope.hog": "b472c3f6b74add7af35ec87272c014bf76daf1bfd61d41e4ad3ade100796fd8c",
         "missions/xscope.mn2": "a7e492541d504bbfd7d303e08feca7c4438545a61242f73f43a237c0f79ecc58",
     }
+    if args.static:
+        pinned.update(
+            {
+                "missions/xstatic.hog": "be044e377874dfc832f20df182984801871572e0348dd245a04c6424273acc53",
+                "missions/xstatic.mn2": "89abea52944d70bd85ac444c13eecc8f32b94fd0d181efae1875e3238efb6603",
+            }
+        )
     if args.classic:
         for name in ("xwav", "xwbad", "xsbank"):
             pinned[f"missions/{name}.hog"] = "6544b4ea235166c6131b5c1ab9bee83c57f9d2c6933898d1a73e7a3f9bdaee3b"

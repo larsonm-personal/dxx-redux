@@ -20,6 +20,7 @@ set(extracted
     "// Actual pinned surface selection and initializer; storage/geometry/audio calls are adapters\n${flags}\n${forcefield}\n"
 )
 extract_audio_owner("int32_t CAudio::UnXlatSound (")
+extract_audio_owner("int16_t CAudio::XlatSound (")
 extract_audio_owner("int32_t CAudio::GetSoundByName (")
 extract_audio_owner("static int32_t SideIsSoundSource (")
 extract_audio_owner("void SetSoundSources (")

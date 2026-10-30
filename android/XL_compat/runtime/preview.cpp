@@ -365,7 +365,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 					throw std::runtime_error("static explosion references an invalid animation ID");
 				const auto &animation = Vclip[clip];
 				if (Vclip[obj.id].play_time <= 0 || animation.frame_time <= 0 ||
-				    obj.render_data.at(1) < 0 || obj.render_data.at(2) < 0 || obj.render_data.at(2) >= animation.num_frames)
+				    obj.render_data.at(2) < 0 || obj.render_data.at(2) >= animation.num_frames)
 					throw std::runtime_error("static explosion requires a valid clip, positive timing and an in-range initial frame");
 				graph.clip(VCLIP_POWERUP_DISAPPEARANCE);
 			}

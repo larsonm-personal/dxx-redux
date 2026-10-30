@@ -369,3 +369,24 @@ remain outstanding. Publishing this draft does not qualify original missions.
 Before this draft push, the rebuilt Windows audio integration owner passes all
 four static cases (23/40, 27/40, 17/36 and the secret level), including 48 source
 animation comparisons per case. The pinned effect reference test also passes.
+
+The published draft is PR #223, commit `a99120deb`. Follow-up verification now
+compares two loaded startup owners directly with actual source translation and
+initializer order. The Android script completed 75 steps with 24 pixel cases,
+seven PCM captures, rewind and disk-through-stock restoration; all 234 protected
+files restored unchanged. Secret manual save rejection is explicit, with the
+optional XL mission/settings override still unqualified. Negative initial
+animation timers proved source-valid in 3,205 comparisons, so remove that
+overstrict admission check and verify the corrected build before publication.
+
+The first Linux run passed 105/106; its existing audio-scope child exceeded 45
+seconds under concurrent Android/build load. The exact child then passed alone
+in 37.57 seconds. Keep its timeout and coverage unchanged; finish builds before
+the next full native run, then run Android separately to avoid that contention.
+
+Second publication checkpoint requested by the user: the final Linux run passes
+all 106 required tests, 16 format witnesses and three modern source levels.
+The aggregate audio-test budget is now 150 seconds instead of 110 to cover the
+four added profiles; all child limits and assertions remain unchanged. Final
+Windows audio integration passes. Publish the follow-up to PR #223 now to start
+CI; the corrected Android APK's focused rerun remains pending.

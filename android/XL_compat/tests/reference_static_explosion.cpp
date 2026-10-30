@@ -119,7 +119,7 @@ void static_explosion_source_controls()
 	for (int index = 0; index < 4; ++index)
 		for (int frames : { 1, 2, 7, 30, 110 })
 			for (int duration : { 1, 1092, 4096, 65536 })
-				for (int initial : { 0, duration / 2, duration }) {
+				for (int initial : { -duration, -1, 0, duration / 2, duration }) {
 					auto &object = objects[unsigned(index)];
 					object = {};
 					object.index = index;

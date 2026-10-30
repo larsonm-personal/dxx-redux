@@ -183,8 +183,13 @@ have owned enabled state, ordered wall/attached activation, permanent spatial
 loops and saved lifetime validation. Shared native and Android controls cover
 actual PCM, removal/reuse and restoration; see [ambient-object evidence](evidence/ambient-objects.md)
 for the tested format profiles and explicit limits. Particles and lightning
-remain blocked. Static explosion objects and custom S11/S22 bank decoding still
-need qualification; ordinary WAV support does not imply those features work.
+remain blocked. Stationary static explosions now have separate source animation,
+sprite rendering, lighting, noncollision and permanent classic sound ownership.
+See [static-explosion evidence](evidence/static-explosions.md) for loaded format
+profiles, actual pixel/PCM checks, persistence, negative initial timers and
+explicit remaining limits. The effects browser counts these objects and keeps
+unsupported shapes blocked; successful inventory still requires load-time asset
+checks. Custom S11/S22 bank decoding remains gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

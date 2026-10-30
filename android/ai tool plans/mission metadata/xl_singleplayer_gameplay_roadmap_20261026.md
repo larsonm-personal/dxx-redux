@@ -488,8 +488,32 @@ finish original-mission qualification
     fidelity from deliberate repairs. See
     [external audio evidence](../../XL_compat/evidence/external-audio.md) for
     current platform results. Sound-effect object loading, enabled-state
-    consumers and saved object lifetimes remain the next dependency; their
-    admission is still blocked.
+    consumers and saved object lifetimes are covered by the following increment.
+
+60. Ambient sound objects: source-normalized stationary sound effects now own
+    enabled state, permanent spatial loops and lifetime-qualified restoration.
+    Wall/attached activation, actual PCM, removal/reuse and normal/legacy layouts
+    have source, native and Android controls. See
+    [ambient-object evidence](../../XL_compat/evidence/ambient-objects.md).
+    Particles, lightning and other independent effects remain blocked.
+
+61. Ordinary WAV replacements: the owned complete bank now installs selected
+    mission/normal/secret WAVs for gameplay and linked consumers, with actual
+    output and saved voice isolation through Redux. Source startup defects and
+    the deliberate fixes are documented in
+    [classic playback evidence](../../XL_compat/evidence/classic-playback.md).
+    The partial-bank cache experiment did not show enough improvement to retain;
+    production caching remains unchanged. Custom S11/S22 banks remain gated.
+
+62. Static explosions: type-19 stationary vclip objects use separate XL
+    animation, sprite/light output, noncollision and permanent sound ownership.
+    Loaded 23/40, 27/40, 17/36 and secret controls compare source startup/animation,
+    PCM and persistence; Android checks actual pixels and restore through Redux.
+    See [static-explosion evidence](../../XL_compat/evidence/static-explosions.md)
+    for current acceptance results and remaining graphics/settings limits.
+    Pumo contains no type-19 records. Optional mission/settings-dependent secret
+    manual saving remains unqualified; low-level secret serialization is not
+    proof of that UI behavior.
 
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
