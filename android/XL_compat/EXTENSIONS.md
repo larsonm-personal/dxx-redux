@@ -299,8 +299,10 @@ controls cover activation, draining/re-enable, recycled owners, pause and RNG
 isolation. Owned images and fire/smoke drawing now have native and GPU controls.
 The scene layer adds source-checked camera rotation, animation, visibility,
 depth bounds and particle ordering, plus real graphics-context replacement.
-Ordering against other transparent scene content, saved authored state and
-Android/original-Pumo qualification remain unfinished; particles remain blocked.
+Authored activation/deleted-owner state now round-trips the complete native XL
+trailer, with fresh transient clouds on restore. Ordering against other
+transparent content and Android/original-Pumo qualification remain unfinished;
+particles remain blocked.
 See [particle evidence](evidence/particle-effects.md).
 
 Immediate singleplayer wall teleports now use detected requirements, including

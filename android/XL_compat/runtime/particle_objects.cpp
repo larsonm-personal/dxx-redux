@@ -1,4 +1,5 @@
 #include "particle_objects.h"
+#include "particle_state.h"
 #include "particle_world.h"
 #include "particle_resources.h"
 #include "particle_renderer.h"
@@ -7,6 +8,7 @@
 #include "../particle_visibility.h"
 #include "preview.h"
 #include <map>
+#include <nlohmann/json.hpp>
 #include <SDL.h>
 extern "C" {
 #include "inferno.h"
@@ -114,6 +116,48 @@ extern "C" int xl_particle_object_set_enabled(int index, int enabled)
 const std::list<xl_compat::ParticleSystem> &xl_compat::particle_systems()
 {
 	return systems;
+}
+
+nlohmann::json xl_compat::particle_objects_snapshot()
+{
+	auto state = nlohmann::json::array();
+	for (const auto &[index, entry] : entries)
+		state.push_back({ index, entry.signature, entry.effect.enabled, bound(index, entry) });
+	return state;
+}
+
+bool xl_compat::restore_particle_objects(const nlohmann::json &state, bool apply)
+{
+	try {
+		if (!state.is_array() || state.size() != entries.size()) return false;
+		auto prepared = entries;
+		unsigned ordinal = 0;
+		for (auto &[index, entry] : prepared) {
+			const auto &row = state[ordinal++];
+			if (!row.is_array() || row.size() != 4 || !row[0].is_number_integer() || row[0] != index || !row[1].is_number_integer() ||
+			    (row[1].is_number_unsigned() && row[1].get<std::uint64_t>() > INT32_MAX) ||
+			    row[1].get<std::int64_t>() < 0 || row[1].get<std::int64_t>() > INT32_MAX ||
+			    !row[2].is_boolean() || !row[3].is_boolean()) return false;
+			entry.signature = row[1].get<int>();
+			entry.effect.enabled = row[2].get<bool>();
+			entry.alive = row[3].get<bool>();
+			entry.system = nullptr;
+			const bool native = native_particle(index) && Objects[index].signature == entry.signature;
+			if (entry.alive ? !native : native_particle(index)) return false;
+		}
+		if (apply) {
+			// Source saves authored enable bytes, then rebuilds the level and its
+			// particle manager on restore. Live clouds are transient visual state
+			systems.clear();
+			entries = std::move(prepared);
+			epoch = SDL_GetTicks();
+			last_update = last_frame = 0;
+			animation_clock = {};
+		}
+		return true;
+	} catch (const std::exception &) {
+		return false;
+	}
 }
 
 std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)

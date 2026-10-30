@@ -305,8 +305,63 @@ void particle_emitter_position_controls()
 	std::cout << "Pinned point emitter: " << comparisons << " position and RNG-order comparisons, face no-jitter controls passed\n";
 }
 
+namespace particle_save_reference
+{
+struct CFile {
+	std::vector<unsigned char> bytes;
+	std::size_t cursor = 0;
+	void WriteByte(int value)
+	{
+		bytes.push_back(static_cast<unsigned char>(value));
+	}
+	int ReadByte()
+	{
+		return bytes.at(cursor++);
+	}
+};
+struct {
+	int version = 60;
+	int Version() const
+	{
+		return version;
+	}
+} saveGameManager;
+struct CObject {
+	struct {
+		struct {
+			int bEnabled = 0;
+		} particleInfo;
+	} rType;
+	void SaveParticleState(CFile &);
+	void LoadParticleState(CFile &);
+};
+#define RT_PARTICLES 11
+#include "xl_reference_particle_save.h"
+#undef RT_PARTICLES
+void controls()
+{
+	for (int enabled : { 0, 1 }) {
+		CObject authored;
+		authored.rType.particleInfo.bEnabled = enabled;
+		CFile file;
+		authored.SaveParticleState(file);
+		if (file.bytes != std::vector<unsigned char>{ static_cast<unsigned char>(enabled) }) throw std::runtime_error("Source particle save payload differs from enabled byte policy");
+		for (int version : { 48, 49, 60 }) {
+			saveGameManager.version = version;
+			file.cursor = 0;
+			CObject restored;
+			restored.rType.particleInfo.bEnabled = 7;
+			restored.LoadParticleState(file);
+			if (restored.rType.particleInfo.bEnabled != (version < 49 ? 1 : enabled) || file.cursor != unsigned(version >= 49)) throw std::runtime_error("Source particle restore payload differs from enabled byte policy");
+		}
+	}
+	std::cout << "Pinned particle saved payload: authored enabled byte and six version/state restores passed; transient cloud state is absent from this payload\n";
+}
+} // namespace particle_save_reference
+
 void particle_source_controls()
 {
+	particle_save_reference::controls();
 	particle_emitter_position_controls();
 	static_assert(int(xl_compat::ParticleKind::smoke) == SMOKE_TYPE_SMOKE && int(xl_compat::ParticleKind::spray) == SMOKE_TYPE_SPRAY &&
 	                  int(xl_compat::ParticleKind::bubbles) == SMOKE_TYPE_BUBBLES && int(xl_compat::ParticleKind::fire) == SMOKE_TYPE_FIRE &&

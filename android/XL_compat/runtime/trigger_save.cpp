@@ -24,6 +24,7 @@
 #include "named_audio.h"
 #include "named_audio_state.h"
 #include "ambient_objects.h"
+#include "particle_state.h"
 #include "reactor_countdown.h"
 #include "seismic_gameplay.h"
 #include "robot_disarm_state.h"
@@ -124,10 +125,12 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 25;
+		block["schema"] = 26;
 		block["seismic"] = xl_compat::seismic_gameplay_snapshot();
 		require(xl_compat::restore_seismic_gameplay(block["seismic"], false), "Cannot capture XL seismic state");
 		block["ambient_objects"] = xl_compat::ambient_objects_snapshot();
+		block["particle_objects"] = xl_compat::particle_objects_snapshot();
+		require(xl_compat::restore_particle_objects(block["particle_objects"], false), "Cannot capture XL particle object lifetime or enabled state");
 		block["neutral_robots"] = xl_compat::disarm_snapshot();
 		xl_countdown_state countdown{};
 		xl_countdown_get(&countdown);
@@ -217,13 +220,14 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 17u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 25 &&
+		require(saved.is_object() && saved.size() == 18u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 26 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
 		require(xl_compat::restore_seismic_gameplay(saved.at("seismic"), false), "Invalid XL seismic state");
 		require(xl_compat::ambient_audio_matches(saved.at("audio")), "Saved ambient audio differs from the authored object resource");
 		require(xl_compat::restore_ambient_objects(saved.at("ambient_objects"), false), "Invalid XL ambient sound object lifetime or enabled state");
+		require(xl_compat::restore_particle_objects(saved.at("particle_objects"), false), "Invalid XL particle object lifetime or enabled state");
 		require(xl_compat::disarm_restore(saved.at("neutral_robots"), false), "Invalid XL disarmed robot lifetime");
 		const auto &countdown = saved.at("countdown");
 		require(countdown.is_array() && countdown.size() == 7, "Invalid XL countdown state layout");
@@ -407,6 +411,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_compat::restore_named_audio(saved.at("audio"), true);
 		xl_compat::restore_seismic_gameplay(saved.at("seismic"), true);
 		xl_compat::restore_ambient_objects(saved.at("ambient_objects"), true);
+		xl_compat::restore_particle_objects(saved.at("particle_objects"), true);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
 		xl_repair_restore(repair.get<std::int64_t>(), 1);

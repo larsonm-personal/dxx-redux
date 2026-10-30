@@ -444,3 +444,40 @@ or other objects. Source buffer batching and complete original-scene output are
 also unqualified. Saved authored enable state, startup-installation image fallback,
 Android resource/graphics lifecycle and the original Pumo package still need
 integration evidence. These requirements continue to block admission.
+
+## Saved authored particle state
+
+`xl_more_84_particle_saves` adds particle owner rows to development trailer schema 26. Each row carries the authored object index, native signature, enabled flag
+and live/deleted binding state. The common authored-source identity now includes
+particle definition bytes, position and orientation. Missing, extra, reordered,
+ill-typed, out-of-range or mismatched rows reject during the trailer's validation
+phase, before any owned state is applied. Schema 25 is replaced, consistent with
+the pre-release XL save policy; this is not an XL-native save importer.
+
+Pinned `CObject::SaveState` writes only the particle enabled byte in its render
+payload. `LoadState` reads it from version 49 onward and defaults it for earlier
+versions. These exact branches now execute in the existing source effect owner;
+both Boolean values and six version/state restores pass on Windows/x64 and Linux.
+The source restore path calls `PrepareLevel`; its `CleanupBeforeGame` destroys
+game data and shuts down the particle manager. That lifecycle connection is a
+source audit, not execution of the whole XL save manager. Production restores
+the authored state and starts fresh transient particle systems and visual clocks.
+
+The existing native effect owner now round-trips the complete XL trailer with a
+live particle cloud and mixed enabled/disabled authored objects. Twelve corrupted
+trailers test rejection without changing recaptured trailer bytes or the live
+cloud. Successful restoration discards old clouds, creates only the enabled
+owner, resumes emission and preserves both RNG streams during restoration;
+subsequent emission uses only effects RNG. Deleted owners remain dead, and a
+recycled native identity cannot inherit a dead binding. Native Windows/x86 build
+and effect integration pass (6.92 seconds). No core or Android application code
+changes or new test owner were needed.
+
+The existing comprehensive `xl_named_audio_runtime` owner also passes with
+schema 26 (112.18 seconds), including ambient lifetime/trailer rejection and
+seismic disk-save-through-stock controls. It was run because the common trailer
+changed, rather than repeating the unrelated GPU or classic replay suites.
+
+This is native trailer/lifecycle evidence with injected effects. A complete
+original-Pumo save/load, Android save restoration and cross-level/secret-return
+qualification remain outstanding, along with the rendering/resource gates above.
