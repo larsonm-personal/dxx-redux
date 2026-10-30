@@ -101,6 +101,42 @@ static void classic_audio_controls(const std::filesystem::path &root)
 		        "Valid replacement preflight failed or disturbed live named voices");
 	}
 	require(identities.size() == 4, "Distinct classic scopes share an identity");
+	// Repeated partial-bank preparation must validate and fingerprint native members
+	const auto partial = prepare_classic_audio("scope23.rl2", 2, 44100);
+	const auto partial_baseline = xl_compat::prepare_classic_playback(partial);
+	const auto partial_native = GameSounds[1];
+	for (int malformed : { 0, 1, 2, 3 }) {
+		GameSounds[1] = partial_native;
+		if (malformed == 0) GameSounds[1].data = nullptr;
+		if (malformed == 1) GameSounds[1].bits = 16;
+		if (malformed == 2) GameSounds[1].freq = 12345;
+		if (malformed == 3) GameSounds[1].length = 0;
+		bool rejected = false;
+		try {
+			xl_compat::prepare_classic_playback(partial);
+		} catch (const std::exception &) {
+			rejected = true;
+		}
+		GameSounds[1] = partial_native;
+		require(rejected && xl_compat::named_audio_snapshot() == before, "Repeated partial-bank preparation accepted malformed native data or changed live playback");
+	}
+	std::vector<unsigned char> partial_bytes(partial_native.data, partial_native.data + partial_native.length);
+	GameSounds[1].data = partial_bytes.data();
+	partial_bytes[partial_bytes.size() / 2] ^= 1;
+	const auto changed_partial = xl_compat::prepare_classic_playback(partial);
+	require(changed_partial.identity != partial_baseline.identity && changed_partial.samples[1].pcm.samples != partial_baseline.samples[1].pcm.samples &&
+	            changed_partial.samples[0].pcm.samples == partial_baseline.samples[0].pcm.samples,
+	        "Repeated partial-bank preparation ignored changed native bytes or damaged its replacement");
+	partial_bytes[partial_bytes.size() / 2] ^= 1;
+	require(xl_compat::prepare_classic_playback(partial).identity == partial_baseline.identity, "Partial-bank preparation trusted an unchanged pointer instead of its bytes");
+	GameSounds[1] = partial_native;
+	GameSounds[1].freq = partial_native.freq == 11025 ? 22050 : 11025;
+	const auto changed_partial_rate = xl_compat::prepare_classic_playback(partial);
+	GameSounds[1] = partial_native;
+	require(changed_partial_rate.identity != partial_baseline.identity && changed_partial_rate.samples[1].pcm.samples.size() != partial_baseline.samples[1].pcm.samples.size(),
+	        "Repeated partial-bank preparation ignored a changed native rate");
+	require(xl_compat::prepare_classic_playback(partial).identity == partial_baseline.identity && xl_compat::named_audio_snapshot() == before,
+	        "Partial bank did not recover its original content or disturbed playback");
 	const auto preferred = sound_root / "level02" / filename;
 	auto uppercase = filename;
 	SDL_strupr(uppercase.data());
@@ -155,7 +191,11 @@ static int classic_audio_original(int argc, char **argv)
 		};
 		require(Last_level == expected("-audio-levels") && Last_secret_level == 0, "Classic original normal-level membership differs");
 		const int waves = expected("-audio-waves"), count = expected("-audio-selections");
+		const char *repeat_argument = find_arg_value(argc, argv, "-audio-preparation-iterations");
+		const int iterations = repeat_argument ? std::atoi(repeat_argument) : 1;
+		require(iterations > 0 && iterations <= 100, "Original bank preparation iterations must be between 1 and 100");
 		for (int rate : { 44100, 48000 }) {
+			std::uint32_t preparation_ms = 0;
 			nlohmann::json receipt = nlohmann::json::object();
 			nlohmann::json playback = nlohmann::json::object();
 			std::set<std::string> paths;
@@ -165,7 +205,14 @@ static int classic_audio_original(int argc, char **argv)
 				for (const auto &sample : prepared.samples) paths.insert(sample.path);
 				selections += int(prepared.samples.size());
 				receipt[std::to_string(ordinal)] = classic_audio_receipt(prepared);
-				const auto complete = xl_compat::prepare_classic_playback(prepared);
+				const auto started = SDL_GetTicks();
+				auto complete = xl_compat::prepare_classic_playback(prepared);
+				for (int iteration = 1; iteration < iterations; ++iteration) {
+					auto repeated = xl_compat::prepare_classic_playback(prepared);
+					require(repeated.identity == complete.identity && repeated.samples.size() == complete.samples.size(), "Repeated bank preparation changed identity or membership");
+					complete = std::move(repeated);
+				}
+				preparation_ms += SDL_GetTicks() - started;
 				auto &outputs = playback[std::to_string(ordinal)] = nlohmann::json::array();
 				for (const auto &replacement : prepared.samples) {
 					const auto &selected = complete.samples.at(unsigned(replacement.sample));
@@ -203,6 +250,7 @@ static int classic_audio_original(int argc, char **argv)
 				require(bool(out), "Cannot write original prepared playback receipt");
 			}
 			std::cout << "Classic original preparation: " << int(Last_level) << " levels, " << selections << " selections, " << paths.size() << " WAVs at " << rate << "; complete bank and converted PCM witnessed, original level playback unqualified\n";
+			if (repeat_argument) std::cout << "Classic bank preparation timing: " << Last_level * iterations << " calls, " << preparation_ms << " ms at " << rate << '\n';
 		}
 		return 0;
 	} catch (const std::exception &error) {
