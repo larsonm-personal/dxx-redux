@@ -19,6 +19,11 @@ struct AudioOwner {
 	bool ambient = false, custom = false, external = false;
 };
 
+struct AudioOwnerUpdate {
+	bool exists = true, enabled = true;
+	int volume = 0, pan = 0;
+};
+
 // The game thread owns this registry; callers hold the mixer lock while changing
 // bindings. The audio callback only changes voice playheads and completion state
 class AudioOwners
@@ -39,6 +44,8 @@ class AudioOwners
 	bool destroy_segment(int segment, int side, int sound, AudioVoices &mixer);
 	bool destroy_missing(const std::function<bool(int, int)> &matches, AudioVoices &mixer);
 	void reconcile(AudioVoices &mixer);
+	void sync(const std::function<AudioOwnerUpdate(const AudioOwner &)> &update, AudioVoices &mixer,
+	          std::array<int, 2> effects_volume, bool deferred = false, bool available = true);
 	void clear(AudioVoices &mixer);
 	bool valid(const AudioVoices &mixer) const;
 

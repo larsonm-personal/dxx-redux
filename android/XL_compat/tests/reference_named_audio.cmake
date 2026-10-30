@@ -22,8 +22,15 @@ file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/trigger.h" trigger_header)
 string(REGEX MATCHALL "#define[ \t]+(TF_[A-Z_]+|TT_COUNTDOWN|TT_MESSAGE|TT_SOUND)[ \t]+[0-9]+"
              constants "${trigger_header}")
 string(REPLACE ";" "\n" constants "${constants}")
-foreach(pair IN ITEMS "maths.h|I2X" "maths.h|X2I" "maths.h|F2X" "audio.h|SOUNDCLASS_GENERIC"
-                      "audio.h|MAX_SOUND_CHANNELS" "piggy.h|MAX_ADDON_SOUND_FILES")
+foreach(
+    pair IN
+    ITEMS "maths.h|I2X"
+          "maths.h|X2I"
+          "maths.h|F2X"
+          "audio.h|SOUNDCLASS_GENERIC"
+          "audio.h|SOUNDCLASS_AMBIENT"
+          "audio.h|MAX_SOUND_CHANNELS"
+          "piggy.h|MAX_ADDON_SOUND_FILES")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 name)

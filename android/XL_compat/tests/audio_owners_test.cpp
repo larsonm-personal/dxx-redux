@@ -135,5 +135,55 @@ void audio_owner_pcm_controls()
 		require(owners.count == 2 && owners.entries[0].signature == 101 && owners.entries[0].channel == -1 && owners.entries[1].signature == 102 && owners.entries[1].channel == 2 && owners.valid(mixer), "Object-slot reuse stopped the replacement lifetime");
 		++controls;
 	}
+
+	// Sync can start the newest owner, retire the oldest finite owner, and then
+	// compact hundreds of absent owners. Every surviving lifetime is visited once
+	{
+		AudioOwners owners;
+		AudioVoices mixer;
+		for (unsigned i = 0; i < audio_owner_limit; ++i) {
+			auto entry = owner(i != 0);
+			entry.volume = i ? 65536 : 1024;
+			entry.audio_volume = 32768;
+			if (i == audio_owner_limit - 1) entry.pan = 0;
+			require(owners.add(entry) == int(i), "Cannot fill linked frame-update owners");
+		}
+		for (unsigned i = 0; i < audio_voice_limit; ++i) require(owners.start(i, 32768, false, mixer), "Cannot fill linked frame-update channels");
+		std::array<std::int16_t, 2> pcm{};
+		mixer.mix(reinterpret_cast<unsigned char *>(pcm.data()), 1, samples);
+		const auto before = mixer.voices;
+		const auto replacement_serial = mixer.next_serial;
+		std::vector<std::uint64_t> visited;
+		owners.sync([&](const AudioOwner &entry) {
+			visited.push_back(entry.serial);
+			return AudioOwnerUpdate{ entry.serial <= 128 || entry.serial == 500, true, 65536, entry.serial == 500 ? 65536 : 32767 };
+		},
+		            mixer, { 32768, 32768 });
+		require(owners.count == 128 && owners.valid(mixer) && visited.size() == 499 && visited.front() == 500 && visited.back() == 2, "Linked update lost a surviving owner or visited an already removed lifetime");
+		for (unsigned i = 1; i < visited.size(); ++i) require(visited[i - 1] > visited[i], "Linked update visited an owner twice or changed reverse order");
+		require(owners.entries[127].serial == 500 && owners.entries[127].channel == 0 && mixer.voices[0].owner == 127 && mixer.voices[0].serial == replacement_serial && mixer.voices[0].output.pan == std::array<std::uint8_t, 2>{ 254, 0 }, "Linked update applied pan to the wrong owner after replacement/compaction");
+		for (unsigned i = 1; i < audio_voice_limit; ++i) require(mixer.voices[i].serial == before[i].serial && mixer.voices[i].position == before[i].position && mixer.voices[i].remaining == before[i].remaining && mixer.voices[i].output.pan == before[i].output.pan, "Linked update changed an unrelated playing channel");
+		pcm.fill(0);
+		mixer.mix(reinterpret_cast<unsigned char *>(pcm.data()), 1, samples);
+		// SetPan(65536) yields {254, 0}; 127 survivors each contribute {254, -254}
+		require(pcm == std::array<std::int16_t, 2>{ 32512, -32258 }, "Linked update produced the wrong mixed PCM after full-pool replacement");
+		++controls;
+	}
+	for (unsigned removed : { 0u, 1u }) {
+		AudioOwners owners;
+		AudioVoices mixer;
+		for (unsigned i = 0; i < 3; ++i) {
+			owners.add(owner(true));
+			require(owners.start(i, 32768, false, mixer), "Cannot start linked sync removal controls");
+		}
+		const int named = owners.start_voice(0, -1, 0, audio_priority(0, 65536, 32768, -1, true), {}, AudioOwnerKind::action, mixer);
+		const int unlinked = owners.start_voice(0, -1, -1, audio_priority(2, 65536, 32768, -1, true), {}, AudioOwnerKind::unlinked, mixer);
+		auto expected = mixer;
+		expected.stop(int(removed));
+		owners.sync([&](const AudioOwner &entry) { return AudioOwnerUpdate{ entry.serial != removed + 1, true, entry.volume, entry.pan }; }, mixer, { 32768, 32768 });
+		require(owners.count == 2 && owners.valid(mixer) && mixer.voices[unsigned(named)].remaining && mixer.voices[unsigned(unlinked)].remaining, "Missing linked lifetime removed unrelated named or unlinked playback");
+		check_survivors(mixer, expected, samples);
+		++controls;
+	}
 	std::cout << "PASS: " << controls << " mixed-pool PCM, 500-owner/128-channel exhaustion, preemption, compaction, actual completion and object-reuse controls\n";
 }

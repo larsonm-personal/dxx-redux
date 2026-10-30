@@ -42,7 +42,8 @@ foreach(
           "int32_t CAudio::DestroySegmentSound ("
           "void CAudio::EndSoundObject ("
           "void CAudio::StopObjectSounds ("
-          "void CAudio::Cleanup (")
+          "void CAudio::Cleanup ("
+          "void CAudio::SyncSounds (")
     extract_audio_owner("${signature}")
 endforeach()
 foreach(signature IN ITEMS "void CAudioChannel::SetPlaying (" "void CAudio::UnregisterChannel (")
