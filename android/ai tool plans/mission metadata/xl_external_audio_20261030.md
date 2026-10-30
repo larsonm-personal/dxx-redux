@@ -269,3 +269,29 @@ as a possible CI/load-time improvement, retaining fresh content validation and
 all existing checks. Then return to the static-explosion object lifecycle and
 other remaining single-player consumers. The ten-hour deadline and final audit
 remain unchanged.
+
+### Repeated audio-bank preparation cost
+
+Use `xl_more_72_audio_preparation` in the existing checkout. Measure repeated
+complete-bank preparation with the original Pumo selections before changing
+production caching. Keep decoding, ownership checks, native-byte hashing and
+bank-size validation fresh. If the cost is material, permit the existing single
+bounded bank cache to reuse validated partial-replacement banks as well as
+stock-only banks. Preserve exact output receipts, malformed-input rejection,
+same-path edit invalidation, and all native/Android integration assertions.
+
+Publication scope: retain the optional preparation timing diagnostic and partial-bank
+regression checks; leave production caching unchanged. The checks cover malformed
+native members, same-pointer byte edits, rate changes, restored identity, and live
+playback isolation when the bank also contains a replacement.
+
+The candidate cache took 28,325 ms versus 28,700 ms for the unchanged implementation
+in one full Windows scope run. Both passed. This single roughly 1.3% difference is
+insufficient evidence to justify the production change. The focused repeated-bank
+measurements were also mixed: 6,268/6,009 ms baseline versus 5,997/5,031 ms candidate
+at 44.1/48 kHz. These are local observations, not a demonstrated CI speedup.
+The timing option is opt-in; default iteration count and CI ownership stay unchanged.
+
+Publish this two-file follow-up on `xl_more_72_audio_preparation`, stacked on
+`xl_more_71_classic_replacements` (PR #221). The checkout remains
+`C:/local/dxx-redux/temp/xl-batch2-20261027`; the main checkout remains on `cmake`.
