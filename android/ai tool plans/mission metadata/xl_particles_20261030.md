@@ -89,3 +89,37 @@ extracted from spatial audio without copying its table; the existing audio
 source comparisons still pass. See particle evidence for exact coverage and
 adapter limits. Real mine lookup/collision, emitter scheduling, resources,
 rendering and runtime lifecycle still remain. No particle admission has changed.
+
+The foundation is committed as `3b7c6cbb6`, pushed on `xl_more_78_particles`, and
+published as draft [PR #229](https://github.com/larsonm-personal/dxx-redux/pull/229)
+against `cmake`. The next layer uses `xl_more_79_particle_world` in the same main
+checkout. Pure world consumers pass actual-source comparisons with supplied
+compiled geometry; a fresh Windows/x86 native engine build includes the new
+compiler. Real loaded-mine compilation/execution still needs verification.
+At the latest CI poll, PR #229's XL contracts and server Rust workflows passed;
+the gameplay, engine smoke and LAN workflows were still running. Full CI is not
+yet recorded as complete.
+
+## Loaded geometry and test-cost checkpoint
+
+The native world compiler now passes actual-source setup and query comparisons
+for stock D2 level one and Neptune: 321 segments and 6,099 queries. The source
+adapter independently builds side topology, fixed normals, centers, radii and
+spatial grids; every loaded grid candidate list is compared. Windows/x86 native
+execution and Windows/x64 and Linux oracles agree. A changed exported normal
+fails, stale geometry rejects, and native state and both RNG call counts remain
+unchanged. Original Pumo face/particle inventory comparisons still pass, but its
+loaded geometry and gameplay remain unqualified.
+
+The existing effect gate now initializes once for all three format versions,
+retaining six stock/XL rejection controls and three supported recovery loads.
+A three-sample before/after local experiment measured median 6.361 versus 5.603
+seconds before adding grid comparisons, about 12 percent less time for this
+owner. Required originals validation now requires its source oracle argument.
+No workflow or new CTest owner was added; no core D1/D2/application source changed.
+
+Next is actual emitter scheduling and its engine ownership, then resources and
+visible rendering, activation and save/load. This geometry checkpoint does not
+enable particle admission. PR #229's XL contracts, server Rust and public LAN
+workflows have passed; engine smoke and Linux gameplay were still running at the
+latest authoritative poll.

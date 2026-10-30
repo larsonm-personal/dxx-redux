@@ -60,6 +60,12 @@ struct CFixVector {
 		Set(0, 0, 0);
 	}
 	fix Mag() const;
+	void Check();
+	static const CFixVector Perp(const CFixVector &, const CFixVector &, const CFixVector &);
+	static const CFixVector Normal(const CFixVector &, const CFixVector &, const CFixVector &);
+	static const fix Dist(const CFixVector &, const CFixVector &);
+	const fix DistToPlane(const CFixVector &, const CFixVector &) const;
+	static const fix Dot(fix, fix, fix, const CFixVector &);
 	static const CFixVector Cross(const CFixVector &, const CFixVector &);
 	static const CFixVector Avg(const CFixVector &, const CFixVector &);
 	static const fix Dot(const CFixVector &, const CFixVector &);
@@ -181,20 +187,14 @@ struct tQuadInt {
 	std::uint32_t low;
 	std::int32_t high;
 };
-void FixMulAccum(tQuadInt *, fix, fix)
-{
-	throw std::runtime_error("Unexpected integer particle vector profile");
-}
-fix QuadSqrt(std::uint32_t, std::int32_t)
-{
-	throw std::runtime_error("Unexpected integer particle vector profile");
-}
+#include "xl_reference_particle_integer.h"
 std::int64_t mul64(fix a, fix b)
 {
 	return std::int64_t(a) * b;
 }
 #undef XRound
 #include "xl_reference_audio_geometry.h"
+#include "xl_reference_particle_normal.h"
 
 // Matrix creation is not a fire billboard consumer; capture only its RNG calls
 struct CAngleVector {
@@ -390,6 +390,25 @@ float compare_face(const xl_compat::Inventory &level, int segment, int side)
 	return actual;
 }
 } // namespace particle_geometry_reference
+
+int particle_source_plane_distance(const xl_compat::ParticlePoint &p, const xl_compat::ParticlePoint &normal, const xl_compat::ParticlePoint &anchor)
+{
+	using namespace particle_geometry_reference;
+	return point(p).DistToPlane(point(normal), point(anchor));
+}
+int particle_source_distance(const xl_compat::ParticlePoint &a, const xl_compat::ParticlePoint &b)
+{
+	using namespace particle_geometry_reference;
+	return CFixVector::Dist(point(a), point(b));
+}
+xl_compat::ParticlePoint particle_source_normal(const xl_compat::ParticlePoint &a, const xl_compat::ParticlePoint &b, const xl_compat::ParticlePoint &c)
+{
+	using namespace particle_geometry_reference;
+	options.render.nMathFormat = 0;
+	const auto normal = CFixVector::Normal(point(a), point(b), point(c));
+	options.render.nMathFormat = 2;
+	return point(normal);
+}
 
 namespace particle_reference
 {

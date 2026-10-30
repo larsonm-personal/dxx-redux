@@ -8,6 +8,7 @@ foreach(
         "effects/objsmoke.cpp|ce39fc41866b703f0978af4ec0af6b4b98e30071b6c8015eaa60b719f8d32b80"
         "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd"
         "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667"
+        "include/fix.h|02c3d92d65d137e3d746cbe292fdaf32d4b7c997c9ac7a87c4375b509a5dca22"
         "include/vecmat.h|83d7f73f89a2f588a0b56a08fb9e293b747cc65a5ed22bad6771d64319bdca0f")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -103,6 +104,7 @@ foreach(
     ITEMS "effects/particles.cpp|fecc45b948ef2200c64052813514cfec1239e51c82130ea008de9287160f061e"
           "main/segment.cpp|eece1c8ba624bd42e6e77b9f2a3dd9a54489338139ee102245672b2b7353e60d"
           "main/side.cpp|5f8552e6fb177b24a624c47c9c644029acf95eda9f7001624c7f28e7972b4989"
+          "main/findsegment.cpp|dcacfd889edf869699eb49ac8e39c4027c1da48f7c2f95eb90581bf1e7701be7"
           "maths/vecmat.cpp|4115afe844ad77a81e9f0de57ae1bbf577b06d5f49aed8b02d19002ff2021335")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -180,6 +182,9 @@ foreach(
     signature IN
     ITEMS "inline const CFloatVector CFloatVector::Min (CFloatVector& v, const float"
           "inline const CFixVector CFixVector::Avg (const CFixVector&"
+          "inline const fix CFixVector::Dist ("
+          "inline const fix CFixVector::DistToPlane ("
+          "inline const fix CFixVector::Dot (const fix"
           "inline const fixang CFixVector::DeltaAngle (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
 endforeach()
@@ -218,4 +223,105 @@ foreach(
     string(APPEND extracted "${body}\n")
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_create.h"
+     CONTENT "${extracted}")
+
+set(extracted "// Actual source point containment, exhaustive fallback and particle collision\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/side.cpp" "CSegMasks CSide::Masks (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp"
+                      "CSegMasks CSegment::Masks (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/findsegment.cpp" "int32_t PointInSeg (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/findsegment.cpp"
+                      "int32_t FindSegByPosExhaustive (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "int32_t CParticle::CollideWithWall (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_world.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_particle_world.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/segmath.cpp" sort_hash)
+if(NOT sort_hash STREQUAL "65949a1ce9a0a001ccb4a474b7b009d41e9cf0ea6975376350418d85ed1b6f4c")
+    message(FATAL_ERROR "Particle normal ordering source changed")
+endif()
+set(extracted "// Pinned side topology, fixed normal setup and segment radii\n")
+foreach(name IN ITEMS F2X I2X X2I FixDiv)
+    string(REGEX MATCH "#define[ \t]+${name}\\([^\n]+" definition "${math_header}")
+    if(NOT definition)
+        message(FATAL_ERROR "Missing particle world fixed conversion: ${name}")
+    endif()
+    string(APPEND extracted "${definition}\n")
+endforeach()
+string(APPEND extracted "#define XRound(value) (fix)(value)\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segmath.cpp"
+                      "uint16_t SortVertsForNormal (")
+foreach(
+    signature IN
+    ITEMS "void CSide::SetupCorners ("
+          "void CSide::SetupFaceVertIndex ("
+          "void CSide::SetupVertexList ("
+          "void CSide::SetupAsTriangles ("
+          "fix CSide::Height ("
+          "bool CSide::IsPlanar ("
+          "uint8_t CSide::Dist (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/side.cpp" "${signature}")
+endforeach()
+# Supplied-geometry cases retain their explicit planar flag; compiled cases use the actual body
+string(REPLACE "bool CSide::IsPlanar (" "bool CSide::ComputedPlanar (" extracted "${extracted}")
+foreach(signature IN ITEMS "void CSegment::ComputeCenter (" "void CSegment::ComputeRads (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp" "${signature}")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline CFixVector& CFixVector::Assign (const CFloatVector&")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_world_setup.h"
+     CONTENT "${extracted}")
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/gamedata.cpp" grid_hash)
+if(NOT grid_hash STREQUAL "782acd85fae6fa5fbb0162a9f05474ae449063d70bf566d172c9d47ae4ed1a12")
+    message(FATAL_ERROR "Particle spatial grid source changed")
+endif()
+set(extracted "// Pinned fixed-grid construction and candidate lookup\ninline fix Ceil(fix);\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/gamedata.cpp" grid_source)
+string(REGEX MATCH "#define GRID_INDEX[^\n]+" grid_macro "${grid_source}")
+if(NOT grid_macro)
+    message(FATAL_ERROR "Missing source spatial grid index")
+endif()
+string(APPEND extracted "${grid_macro}\n")
+foreach(
+    signature IN
+    ITEMS "inline fix Floor ("
+          "inline fix Ceil (fix v)\n{"
+          "inline CFixVector& Floor ("
+          "inline CFixVector& Ceil ("
+          "inline CFixVector& ToInt ("
+          "inline int32_t CSegmentGrid::GridIndex ("
+          "bool CSegmentGrid::Create ("
+          "void CSegmentGrid::Destroy ("
+          "int32_t CSegmentGrid::GetSegList (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamedata.cpp" "${signature}")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const CFixVector& CFixVector::operator/= (const fix")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_grid.h"
+     CONTENT "${extracted}")
+
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/maths/tables.cpp" math_tables)
+string(REGEX MATCH "uint8_t guess_table \\[\\] = \\{[^}]*\\};" guesses "${math_tables}")
+if(NOT guesses)
+    message(FATAL_ERROR "Missing actual integer square-root table")
+endif()
+set(extracted "// Pinned setup-format integer magnitude and fixed normal\n${guesses}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/fix.h"
+                      "static inline void FixQuadNegate (")
+foreach(signature IN ITEMS "void FixMulAccum (" "uint32_t FixDivQuadLongU (" "uint16_t LongSqrt ("
+                           "uint32_t QuadSqrt (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/fixc.cpp" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_integer.h"
+     CONTENT "${extracted}")
+set(extracted "// Pinned fixed normal construction, including source edge scaling\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp" "void CFixVector::Check (")
+foreach(signature IN ITEMS "inline const CFixVector CFixVector::Perp ("
+                           "inline const CFixVector CFixVector::Normal (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_normal.h"
      CONTENT "${extracted}")
