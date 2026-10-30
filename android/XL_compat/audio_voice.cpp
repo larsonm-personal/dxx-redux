@@ -59,7 +59,7 @@ int AudioVoices::start(unsigned sample, int repetitions, int owner)
 
 int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output, AudioOwnerKind kind, AudioVoice *retired)
 {
-	if ((owner < 0 && (kind != AudioOwnerKind::unlinked || owner != -1)) || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0 || output.volume < 0 || output.volume > 128) return -1;
+	if ((owner < 0 && ((kind != AudioOwnerKind::unlinked && kind != AudioOwnerKind::external_unlinked) || owner != -1)) || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0 || output.volume < 0 || output.volume > 128) return -1;
 	const auto class_count = std::count_if(voices.begin(), voices.end(), [&](const auto &voice) {
 		return voice.remaining && voice.priority.sound_class == priority.sound_class;
 	});

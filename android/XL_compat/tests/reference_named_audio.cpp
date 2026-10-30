@@ -567,6 +567,7 @@ void audio_channel_source_controls();
 void audio_output_source_controls();
 void audio_ownership_source_controls();
 void audio_sync_source_controls();
+void external_audio_source_controls();
 void audio_logical_source_controls();
 void classic_sample_source_controls();
 void audio_route_source_controls();
@@ -604,6 +605,7 @@ int main(int argc, char **argv)
 		audio_output_source_controls();
 		audio_ownership_source_controls();
 		audio_sync_source_controls();
+		external_audio_source_controls();
 		audio_logical_source_controls();
 		combat_audio_source_controls();
 		afterburner_source_controls();

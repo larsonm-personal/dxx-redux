@@ -15,7 +15,7 @@ void run(const std::filesystem::path &root, int source, const nlohmann::json &in
 	std::ostringstream receipt;
 	receipt << "XL_AUDIO_CREATION 1\n";
 	unsigned cases = 0;
-	for (int object_link : { 0, 1 })
+	for (int object_link : { 0, 1, 2 })
 		for (int sound_class = 0; sound_class < (object_link ? 7 : 1); ++sound_class)
 			for (int forever : { 0, 1 })
 				for (int defer : { 0, 1 })
@@ -31,10 +31,13 @@ void run(const std::filesystem::path &root, int source, const nlohmann::json &in
 								auto position = saved_position;
 								if (distant) position.x += 500 * F1_0;
 								Objects[source].pos = position;
-								const int sample = int(cases / 2 % 2), range = (cases / 4 % 2 ? 64 : 256) * F1_0;
+								const int resource = int(cases / 2 % 2), sample = object_link == 2 ? -1 : resource, range = (cases / 4 % 2 ? 64 : 256) * F1_0;
+								const char *filename = resource ? "long.wav" : "sound.wav";
 								const int decay = int(cases / 4 % 7), custom = int(cases / 4 % 2);
 								const int start = cases / 4 % 3 ? -1 : 7, end = start < 0 ? -1 : 19;
 								Fields input{ { "object", object_link }, { "sample", sample }, { "class", sound_class }, { "forever", forever }, { "deferred", defer }, { "volume", volume }, { "range", range }, { "loop_start", start }, { "loop_end", end }, { "decay", decay }, { "custom", custom }, { "available", available }, { "signature", int(Objects[source].signature) }, { "segment", int(Objects[source].segnum) }, { "side", 2 }, { "x", int(position.x) }, { "y", int(position.y) }, { "z", int(position.z) }, { "mapped", classic_sample(sample) } };
+								input["resource"] = resource;
+								if (object_link == 2) input["mapped"] = external_sample(filename);
 								// Geometry is independently source-qualified. Supply every decay output,
 								// so the source creation function still chooses which one it requests
 								for (int mode = 0; mode <= 6; ++mode) {
@@ -42,11 +45,14 @@ void run(const std::filesystem::path &root, int source, const nlohmann::json &in
 									input["volume" + std::to_string(mode)] = value.volume;
 									input["pan" + std::to_string(mode)] = value.pan;
 								}
-								const auto result = object_link ? xl_audio_link_object(sample, sound_class, source, forever, volume, range, start, end, decay, custom) : xl_audio_link_position(sample, Objects[source].segnum, 2, &position, forever, volume, range);
+								const auto result = object_link == 2 ? xl_audio_link_external(filename, sound_class, source, forever, volume, range, start, end, decay, custom)
+								                    : object_link    ? xl_audio_link_object(sample, sound_class, source, forever, volume, range, start, end, decay, custom)
+								                                     : xl_audio_link_position(sample, Objects[source].segnum, 2, &position, forever, volume, range);
 								Fields output{ { "result", result }, { "owners", owners.count }, { "voices", 0 } };
 								if (owners.count) {
 									require(owners.count == 1, "Fresh creation installed multiple owners");
 									const auto &o = owners.entries[0];
+									output["owner.external"] = o.external;
 									output.insert({ { "owner.flags", o.flags }, { "owner.sound", o.sound }, { "owner.class", o.sound_class }, { "owner.channel", o.channel }, { "owner.volume", o.volume }, { "owner.pan", o.pan }, { "owner.max_volume", o.max_volume }, { "owner.range", o.max_distance }, { "owner.loop_start", o.loop_start }, { "owner.loop_end", o.loop_end }, { "owner.decay", o.decay }, { "owner.ambient", o.ambient }, { "owner.custom", o.custom }, { "owner.audio_volume", o.audio_volume }, { "owner.sample", o.sample } });
 									if (object_link) {
 										output["owner.signature"] = o.signature;

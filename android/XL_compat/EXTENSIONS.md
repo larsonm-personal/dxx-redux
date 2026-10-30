@@ -164,8 +164,9 @@ see [combat audio evidence](evidence/combat-audio.md). Robot/boss and afterburne
 callers now have separate XL policies and shared native/Android event controls;
 see [actor/afterburner evidence](evidence/actor-afterburner-audio.md) for verification,
 source corrections, the qualified output profile and remaining limits.
-Fresh object/segment creation also passes 768 comparisons per fixture against
-the actual source functions on Windows/Linux; see the linked-audio evidence.
+Fresh ordinary/external object and segment creation passes 1,440 comparisons per
+fixture against actual source functions on Windows/Linux; see the
+[external audio evidence](evidence/external-audio.md).
 Ambient surface initialization now uses an XL-owned consumer with per-segment
 gain distribution, orientation-independent portal suppression and permanent
 linked ownership. See [surface audio evidence](evidence/surface-audio.md) for
@@ -173,9 +174,12 @@ source/native comparisons, exact stock PCM isolation and platform status.
 The XL route cache now responds to actual texture, door, cloak and exploding-wall
 lifecycle events while the listener remains stationary; see
 [route evidence](evidence/audio-routes.md) for the demonstrated prior failure,
-source contract and platform status. Ambient sound objects, static explosion
-ambience and the remaining wall/audio consumers still need qualification, so
-classic replacements remain gated.
+source contract and platform status. External linked WAVs now use prepared
+mission resources, distinct ordinary/external identities and validated saved
+owners; the external audio evidence records reproduced source lookup defects,
+explicit corrections and platform status. Ambient sound objects still need
+loading and enabled-state consumers. Static explosion ambience and the remaining
+wall/audio consumers also need qualification, so classic replacements remain gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

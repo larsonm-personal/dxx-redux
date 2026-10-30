@@ -1,5 +1,6 @@
 // Controlled events and real SDL output; no autonomous level navigation
 #include "audio_pressure_test.h"
+#include "../named_sound.h"
 namespace named_audio_control
 {
 #ifdef USE_SDLMIXER
@@ -157,7 +158,7 @@ static int named_audio_original(int argc, char **argv)
 				xl_compat::install_named_audio(xl_compat::prepare_named_audio(name, source, ordinal));
 				const auto prepared = xl_compat::named_audio_diagnostics();
 				require(prepared.at("actions") == count && prepared.at("voices").empty() && prepared.at("rate") == rate, "Original production audio preparation lost authored actions or started playback");
-				for (const auto &filename : prepared.at("files")) names.insert(filename.get<std::string>());
+				for (const auto &filename : prepared.at("named_files")) names.insert(filename.get<std::string>());
 				actions += int(count);
 				if (expected_ambient) {
 					for (const auto &object : source.objects) {
@@ -170,6 +171,8 @@ static int named_audio_original(int argc, char **argv)
 							sound += char(byte >= 'A' && byte <= 'Z' ? byte + 'a' - 'A' : byte);
 						}
 						const auto resource = xl_compat::load_audio_resource(sound + ".wav", name, ordinal);
+						const auto &binding = prepared.at("external_resources").at(xl_compat::named_sound_filename(sound + ".wav"));
+						require(binding.at("path") == resource.path && binding.at("sample").get<unsigned>() < prepared.at("resources").get<unsigned>(), "Original ambient resource was not installed in its prepared bank");
 						const auto pcm = xl_compat::decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource.bytes.data()), resource.bytes.size());
 						xl_compat::Bytes samples;
 						samples.reserve(pcm.samples.size() * 2);
@@ -219,6 +222,7 @@ static int named_audio_original(int argc, char **argv)
 #include "actor_audio_test.h"
 #include "surface_audio_test.h"
 #include "audio_routes_test.h"
+#include "external_audio_test.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif

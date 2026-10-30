@@ -87,24 +87,25 @@ extern "C" std::int64_t xl_audio_link_object(int sample, int sound_class, int ob
 {
 	return xl_audio_link_object_recorded(sample, sound_class, object_index, forever, volume, range, loop_start, loop_end, decay, custom, -1);
 }
-extern "C" std::int64_t xl_audio_link_object_recorded(int sample, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom, int logical)
+static std::int64_t link_object_resource(int sample, int mapped, bool external, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom, int logical)
 {
 	try {
-		const int mapped = classic_sample(sample);
 		if (mapped < 0 || !valid_object(object_index) || sound_class < 0 || sound_class > 6 || volume < 0 || range <= 0 || decay < 0 || decay > 6) return -1;
 		(void) audio_extended_range(range, forever ? sound_class : decay);
 		const auto &object = Objects[object_index];
 		if (!valid_segment(object.segnum)) return -1;
 		for (unsigned i = 0; i < owners.count; ++i) {
 			const auto &entry = owners.entries[i];
-			if ((entry.flags & sound_link_object) && entry.sound == sample && entry.channel >= 0 && entry.object == object_index && entry.signature == object.signature)
+			// External owners use resource identity, never physical sample zero or -1
+			// Repeated requests also retain stopped owners instead of accumulating loops
+			if ((entry.flags & sound_link_object) && entry.external == external && entry.sample == unsigned(mapped) && (external || entry.channel >= 0) && entry.object == object_index && entry.signature == object.signature)
 				return std::int64_t(entry.serial);
 		}
 		if (!forever) {
 			const auto output = spatial(point(object.pos), object.segnum, volume, range, decay);
 			if (output.volume > 0) {
 				if (logical >= 0 && Newdemo_state == ND_STATE_RECORDING) newdemo_record_sound_3d(logical, output.pan, output.volume);
-				xl_audio_start_sample(sample, sound_class, output.volume, output.pan, 0, -1, -1);
+				start_resource_sample(unsigned(mapped), sound_class, output.volume, output.pan, 0, -1, -1);
 			}
 			return -1;
 		}
@@ -114,6 +115,7 @@ extern "C" std::int64_t xl_audio_link_object_recorded(int sample, int sound_clas
 		entry.flags = sound_used | sound_link_object | sound_forever;
 		entry.sound = sample;
 		entry.sample = unsigned(mapped);
+		entry.external = external;
 		entry.sound_class = sound_class;
 		entry.object = object_index;
 		entry.signature = object.signature;
@@ -126,6 +128,21 @@ extern "C" std::int64_t xl_audio_link_object_recorded(int sample, int sound_clas
 		entry.ambient = sound_class == 1;
 		entry.custom = custom != 0;
 		return install(entry);
+	} catch (const std::exception &error) {
+		failure = error.what();
+		return -1;
+	}
+}
+
+extern "C" std::int64_t xl_audio_link_object_recorded(int sample, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom, int logical)
+{
+	return link_object_resource(sample, classic_sample(sample), false, sound_class, object_index, forever, volume, range, loop_start, loop_end, decay, custom, logical);
+}
+
+extern "C" std::int64_t xl_audio_link_external(const char *filename, int sound_class, int object_index, int forever, int volume, int range, int loop_start, int loop_end, int decay, int custom)
+{
+	try {
+		return link_object_resource(-1, external_sample(filename), true, sound_class, object_index, forever, volume, range, loop_start, loop_end, decay, custom, -1);
 	} catch (const std::exception &error) {
 		failure = error.what();
 		return -1;

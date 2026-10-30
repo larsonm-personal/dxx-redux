@@ -44,7 +44,7 @@ LinkedAudioState decode_linked_audio(const nlohmann::json &state, const AudioVoi
 		entry.channel_serial = std::uint64_t(number(row.at("channel_serial"), 0, std::int64_t(voices.next_serial - 1)));
 		entry.flags = unsigned(number(row.at("flags"), 0, 63));
 		entry.sample = unsigned(number(row.at("sample"), 0, INT32_MAX));
-		entry.sound = int(number(row.at("sound"), 0, INT32_MAX));
+		entry.sound = int(number(row.at("sound"), -1, INT32_MAX));
 		entry.sound_class = int(number(row.at("class"), 0, 6));
 		entry.channel = int(number(row.at("channel"), -1, audio_voice_limit - 1));
 		entry.object = int(number(row.at("object"), -1, MAX_OBJECTS - 1));
@@ -65,9 +65,10 @@ LinkedAudioState decode_linked_audio(const nlohmann::json &state, const AudioVoi
 		entry.custom = row.at("custom").get<bool>();
 		entry.external = row.at("external").get<bool>();
 		const auto link = entry.flags & (sound_link_object | sound_link_position);
+		const bool valid_sample = entry.external ? entry.sound == -1 && link == sound_link_object && audio_runtime::external_sample_valid(entry.sample)
+		                                         : audio_runtime::classic_sample(entry.sound) == int(entry.sample);
 		if ((entry.flags & ~(sound_permanent | sound_link_object | sound_link_position)) != (sound_used | sound_forever) ||
-		    (link != sound_link_object && link != sound_link_position) || entry.external ||
-		    audio_runtime::classic_sample(entry.sound) != int(entry.sample))
+		    (link != sound_link_object && link != sound_link_position) || !valid_sample)
 			throw std::runtime_error("Linked-audio owner has an invalid type or sample");
 		(void) audio_extended_range(entry.max_distance, entry.decay);
 		if (link == sound_link_object) {
