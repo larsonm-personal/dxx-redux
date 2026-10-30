@@ -110,7 +110,7 @@ reader controls compare 1,055 volumes and four overflow rejections. The original
 Pumo reader comparison passes all 14 levels, 3,182 object records and 795 effect
 payloads. These results do not establish original mission playability.
 
-Before marking ready for review: add actual-source initializer/activation comparisons, attached
+Before marking ready for review: add actual-source activation comparisons, attached
 object-trigger controls, Android PCM/disk/rewind coverage, malformed full-trailer
 cross-binding controls, and relevant full native/stock regressions. Audit legacy
 sound-layout coverage and original requirement outcomes. Update evidence and
@@ -119,3 +119,26 @@ at the user's request to start CI; these checks remain outstanding. Artifacts ar
 `temp/xl-ambient-audio-20261030`; the latest Linux verification has a retained
 `verify-ambient.sh` runner. Existing Android fixture hashes need updating after
 the final fixture is fixed, since the package now contains two ambient levels.
+
+### Initializer comparison and first CI follow-up
+
+The current checkpoint is published as draft PR #220, stacked on #219. Its first
+public XL CI run found an obsolete inventory assertion that rejected every
+negative effect target. The corrected assertion checks supported early-stop
+admission and preservation of the negative target in the owned source; separate
+particle/lightning rejection controls remain intact.
+
+The pinned `SetSoundSources` function now consumes effect-object storage in its
+source adapter. Actual pinned list insertion checks ordering, and ten controls
+cover enabled/disabled states, effect-ID filtering, zero/positive volumes and
+literal `.wav` appending. Native receipts from actual 23/40 and 27/40 loads match
+the initializer's arguments and the separately qualified creation semantics.
+This composes with the source reader's volume/name checks and the existing
+external creation/PCM controls; it does not replace them.
+
+Windows source/inventory/effect contracts and the full named/ambient audio
+integration pass. The corresponding Linux contracts and full audio integration
+pass in 54.64 seconds, including 53.91 seconds for the runtime member. These
+runs include scopes, persistence and stock isolation, but do not yet qualify
+Android ambient objects, attached activation or legacy ambient runtime layouts.
+Artifacts use the `ambient-source-*` prefix under the existing artifact root.

@@ -224,6 +224,8 @@ static int named_audio_original(int argc, char **argv)
 #include "audio_routes_test.h"
 #include "external_audio_test.h"
 #include "ambient_objects_test.h"
+#include "../ambient_sound.h"
+#include "../tests/ambient_audio_receipt.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
 #endif
@@ -247,7 +249,40 @@ static int named_audio_test(int argc, char **argv)
 			input_demo_set_skip_level_intro(1);
 			StartNewGame(ordinal + 2);
 			SDL_PauseAudio(1);
-			xl_ambient_objects_control::run([] { xl_linked_audio_control::output(); });
+			xl_ambient_objects_control::run([] { xl_linked_audio_control::output(); }, [&] {
+				using namespace xl_compat;
+				xl_ambient_audio_receipt::Case receipt;
+				std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(ordinal == 1 ? "amb23.rl2" : "amb27.rl2"), PHYSFS_close);
+				const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
+				require(length > 0 && length < 128 * 1024 * 1024, "Ambient receipt source exceeds its read bound");
+				Bytes bytes(static_cast<std::size_t>(length));
+				require(PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) == length, "Cannot read ambient receipt source");
+				const auto source = inspect_level(bytes);
+				for (unsigned i = 0; i < source.objects.size(); ++i) {
+					const auto &object = source.objects[i];
+					if (object.render != 13) continue;
+					const auto sound = decode_ambient_sound(object);
+					receipt.objects.push_back({ int(i), object.reader_id, sound.volume, int(sound.enabled), sound.filename });
+				}
+				const auto resources = named_audio_diagnostics().at("external_resources");
+				bool objects_started = false;
+				for (unsigned i = 0; i < audio_runtime::owners.count; ++i) {
+					const auto &owner = audio_runtime::owners.entries[i];
+					if (owner.object < 0) {
+						require(!objects_started, "Ambient initialization moved a surface owner after effect objects");
+						continue;
+					}
+					objects_started = true;
+					std::string filename;
+					for (auto it = resources.begin(); it != resources.end(); ++it)
+						if (it.value().at("sample") == owner.sample) filename = it.key();
+					require(!filename.empty(), "Ambient owner sample has no owned filename");
+					receipt.owners.push_back({ { owner.object, owner.sound, owner.sound_class, owner.max_volume, owner.max_distance,
+					                            int(owner.flags), owner.loop_start, owner.loop_end, owner.decay, int(owner.external), int(owner.ambient) }, filename });
+				}
+				std::ofstream out(root / "ambient-audio.txt");
+				xl_ambient_audio_receipt::write(out, receipt);
+				require(bool(out), "Cannot write actual ambient initializer receipt"); });
 			Mix_SetPostMix(nullptr, nullptr);
 			std::cout << "Loaded ambient objects: activation, target order, real PCM, collision, lifetime and trailer restore passed\n";
 			return 0;

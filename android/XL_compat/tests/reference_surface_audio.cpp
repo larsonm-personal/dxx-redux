@@ -1,7 +1,9 @@
 #include "surface_audio_receipt.h"
+#include "ambient_audio_receipt.h"
 #include <array>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -14,17 +16,30 @@ namespace surface_reference
 #define RETVAL(value)             return (value);
 #define I2X(value)                ((value) * 65536)
 #define IS_CHILD(value)           ((value) >= 0)
-#define FORALL_EFFECT_OBJS(value) for ((value) = nullptr; (value); (value) = nullptr)
+#define OBJ_LIST_TYPE             1
+#define FORALL_EFFECT_OBJS(value) for ((value) = effect_list.head; (value); (value) = (value)->m_links[1].next)
 #define FORALL_STATIC_OBJS(value) for ((value) = nullptr; (value); (value) = nullptr)
-constexpr int SEGMENT_SIDE_COUNT = 6, FILENAME_LEN = 256, SOUND_ID = 0, SOUNDCLASS_AMBIENT = 1, OBJ_EXPLOSION = 0, RT_POWERUP = 0;
+constexpr int SEGMENT_SIDE_COUNT = 6, FILENAME_LEN = 256, SOUND_ID = 2, SOUNDCLASS_AMBIENT = 1, OBJ_EXPLOSION = 0, RT_POWERUP = 0;
+struct CObject;
+struct tObjListRef {
+	CObject *head = nullptr, *tail = nullptr;
+	int nObjects = 0;
+} effect_list;
+struct CObjListLink {
+	CObject *prev = nullptr, *next = nullptr;
+	tObjListRef *list = nullptr;
+};
 struct CObject {
+	int index = 0;
+	std::array<CObjListLink, 2> m_links{};
+	void Link(tObjListRef &, int32_t);
 	struct {
 		int nId = 0, nType = 0, renderType = 0;
 	} info;
 	struct {
 		struct {
 			char szFilename[40]{};
-			int nVolume = 0;
+			int nVolume = 0, bEnabled = 0;
 		} soundInfo;
 		struct {
 			int nClipIndex = 0;
@@ -32,9 +47,10 @@ struct CObject {
 	} rType;
 	int Index() const
 	{
-		return 0;
+		return index;
 	}
 };
+std::vector<CObject> effect_objects;
 struct Side {
 	int m_nOvlTex = 0, m_nBaseTex = 0, flags = 2;
 	std::array<int, 3> center{};
@@ -115,10 +131,12 @@ struct Call {
 };
 struct Audio {
 	std::vector<Call> calls;
+	std::vector<xl_ambient_audio_receipt::Owner> object_calls;
 	unsigned resets = 0;
 	void InitSounds()
 	{
 		calls.clear();
+		object_calls.clear();
 		++resets;
 	}
 	void CreateSegmentSound(int sound, int segment, int side, const std::array<int, 3> &position, int loop, int volume, int range = 256 * 65536)
@@ -129,9 +147,15 @@ struct Audio {
 	{
 		return -1;
 	}
-	void CreateObjectSound(int, int, int, int, int = 65536, int = 256 * 65536, int = -1, int = -1, const char * = nullptr)
+	void CreateObjectSound(int sound, int sound_class, int object, int loop, int volume = 65536, int range = 256 * 65536, int loop_start = -1, int loop_end = -1, const char *filename = nullptr)
 	{
-		throw std::runtime_error("Surface-only fixture entered unqualified ambient object dispatch");
+		if (!filename) throw std::runtime_error("Ambient source control entered unqualified static-object dispatch");
+		// Capture initializer arguments; the separate creation source suite qualifies
+		// their mapping to owner flags, external identity and class-derived decay
+		object_calls.push_back({ { object, sound, sound_class, volume, range,
+		                           1 | 4 | (loop ? 16 : 0) | (gameStates.sound.bDontStartObjects ? 32 : 0),
+		                           loop_start, loop_end, 1, 1, 1 },
+		                         filename });
 	}
 } audio;
 #include "xl_reference_surface_audio.h"
@@ -144,7 +168,26 @@ void reset(unsigned segments)
 	gameData.effectData.pEffect.assign(8, {});
 	gameStates.sound.bDontStartObjects = 0;
 	audio.calls.clear();
+	audio.object_calls.clear();
 	audio.resets = 0;
+	effect_objects.clear();
+	effect_list = {};
+}
+void install_effects(const std::vector<xl_ambient_audio_receipt::Object> &objects)
+{
+	effect_objects.resize(objects.size());
+	for (unsigned i = 0; i < objects.size(); ++i) {
+		const auto &input = objects[i];
+		auto &object = effect_objects[i];
+		if (input.filename.size() >= sizeof(object.rType.soundInfo.szFilename)) throw std::runtime_error("Ambient source filename exceeds loaded field");
+		object.index = input.index;
+		object.info.nType = 20;
+		object.info.nId = input.id;
+		object.rType.soundInfo.nVolume = input.volume;
+		object.rType.soundInfo.bEnabled = input.enabled;
+		std::strcpy(object.rType.soundInfo.szFilename, input.filename.c_str());
+		object.Link(effect_list, 1);
+	}
 }
 } // namespace surface_reference
 void surface_audio_source_controls()
@@ -191,7 +234,39 @@ void surface_audio_source_controls()
 		}
 		++cases;
 	}
-	std::cout << "PASS: " << cases << " actual source surface selector/setup controls; effect objects are excluded\n";
+	std::cout << "PASS: " << cases << " actual source surface selector/setup controls\n";
+}
+void ambient_audio_source_controls()
+{
+	using namespace surface_reference;
+	unsigned cases = 0;
+	for (int enabled : { 0, 1 })
+		for (int volume : { 0, 1, 19661, 65536, 131072 }) {
+			reset(0);
+			install_effects({ { 9, 2, volume, enabled, "first" }, { 3, 0, volume, enabled, "particle" }, { 17, 1, volume, enabled, "lightning" }, { 1, 2, volume, !enabled, "last.wav" } });
+			SetSoundSources();
+			const std::vector<xl_ambient_audio_receipt::Owner> expected{
+				{ { 9, -1, 1, volume, 256 * 65536, 53, 0, 0, 1, 1, 1 }, "first.wav" },
+				{ { 1, -1, 1, volume, 256 * 65536, 53, 0, 0, 1, 1, 1 }, "last.wav.wav" }
+			};
+			if (audio.object_calls != expected || audio.resets != 1 || gameStates.sound.bDontStartObjects || effect_list.nObjects != 4)
+				throw std::runtime_error("Actual ambient initializer changed disabled ownership, effect filtering, list order or resource arguments");
+			++cases;
+		}
+	std::cout << "PASS: " << cases << " actual ambient initializer controls, including disabled ownership and real source list insertion\n";
+}
+void ambient_audio_runtime_controls(const char *path)
+{
+	using namespace surface_reference;
+	std::ifstream input(path);
+	const auto receipt = xl_ambient_audio_receipt::read(input);
+	if (receipt.objects.size() != 3 || receipt.owners.size() != 3) throw std::runtime_error("Loaded ambient initializer coverage incomplete");
+	reset(0);
+	install_effects(receipt.objects);
+	SetSoundSources();
+	if (audio.object_calls != receipt.owners || audio.resets != 1 || gameStates.sound.bDontStartObjects)
+		throw std::runtime_error("Native ambient initializer differs from actual source ownership or resource arguments");
+	std::cout << "PASS: 3 loaded ambient owners match actual source initialization, order, resource, volume and permanent flags\n";
 }
 void surface_audio_runtime_controls(const char *path)
 {

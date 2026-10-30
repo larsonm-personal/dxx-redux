@@ -21,6 +21,12 @@ set(extracted
 )
 extract_audio_owner("static int32_t SideIsSoundSource (")
 extract_audio_owner("void SetSoundSources (")
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/objects/object.cpp" object_hash)
+if(NOT object_hash STREQUAL "e71b0a906cd686549c783563ab93365d1bbf5cf05f08c1971ef08c7116c67a64")
+    message(FATAL_ERROR "Ambient object list insertion source changed")
+endif()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/object.cpp"
+                      "void CObject::Link (tObjListRef& ref, int32_t nLink)")
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/audio/objectaudio.cpp" source)
 string(REGEX MATCH "if \\(nOrgSound == SOUND_FORCEFIELD_HUM\\)[ \t\r\n]+maxVolume = [^;]+;" scaling
              "${source}")

@@ -10,8 +10,8 @@ extern "C" {
 namespace xl_ambient_objects_control
 {
 using xl_surface_audio_control::check;
-template <class Output>
-void run(Output output)
+template <class Output, class Record>
+void run(Output output, Record record)
 {
 	using namespace xl_compat;
 	using namespace xl_compat::audio_runtime;
@@ -42,6 +42,7 @@ void run(Output output)
 	Viewer = &listener;
 	xl_named_audio_set_volume(32768);
 	set_sound_sources();
+	record();
 	xl_named_audio_pause(0);
 	xl_audio_sync_objects();
 	const auto owner = [&](int index) {
@@ -152,6 +153,11 @@ void run(Output output)
 	for (unsigned i = 0; i < owners.count; ++i) check(owners.entries[i].object != 51, "Deleted ambient source retained its loop");
 	check(restore_ambient_objects(ambient_objects_snapshot(), true), "Deleted ambient lifetime cannot be restored");
 	output();
+}
+template <class Output>
+void run(Output output)
+{
+	run(output, [] {});
 }
 } // namespace xl_ambient_objects_control
 #endif

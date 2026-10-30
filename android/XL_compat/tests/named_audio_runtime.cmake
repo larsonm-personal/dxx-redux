@@ -54,6 +54,20 @@ foreach(ordinal IN ITEMS 1 2)
     if(NOT result EQUAL 0 OR NOT log MATCHES "Loaded ambient objects:.*passed")
         message(FATAL_ERROR "Ambient object version ${version} failed (${result}): ${log}${error}")
     endif()
+    if(REFERENCE)
+        execute_process(
+            COMMAND "${REFERENCE}" --ambient-runtime "${OUTPUT}/ambient-audio.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES "loaded ambient owners match actual source")
+            message(
+                FATAL_ERROR "Ambient initialization differs from source (${result}): ${log}${error}"
+            )
+        endif()
+    endif()
 endforeach()
 execute_process(
     COMMAND "${ENGINE}" -audio-scope-test production -hogdir "${DATA}" -extra-dir "${OUTPUT}"
