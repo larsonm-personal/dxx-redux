@@ -241,13 +241,16 @@ static int named_audio_test(int argc, char **argv)
 		if (GameArg.SndNoSound || !xl_compat::named_audio_diagnostics().at("backend_ready").get<bool>())
 			throw std::runtime_error("Named audio controls require the real SDL_mixer output; nosound=" + std::to_string(GameArg.SndNoSound) + "; " + xl_compat::named_audio_diagnostics().dump());
 		const char *selected = find_arg_value(argc, argv, "-audio-level");
-		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2")), "Named audio controls require -audio-level 1 or 2");
+		const bool legacy = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-legacy");
+		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || (legacy && !std::strcmp(selected, "3"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
-		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
-			require(load_base_mission("xsound", error, sizeof(error)), error);
+		if (legacy || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
+			require(load_base_mission(legacy ? "xambold" : "xsound", error, sizeof(error)), error);
 			std::strcpy(Players[Player_num].callsign, "XLTest");
 			input_demo_set_skip_level_intro(1);
-			StartNewGame(ordinal + 2);
+			StartNewGame(legacy ? ordinal : ordinal + 2);
+			require(xl_source_level_version() == (legacy ? (ordinal == 3 ? 17 : 15) : (ordinal == 1 ? 23 : 27)), "Ambient fixture loaded the wrong version");
+			require(xl_source_game_version() == (legacy ? (ordinal == 3 ? 36 : 32 + ordinal) : 40), "Ambient fixture loaded the wrong game-data version");
 			SDL_PauseAudio(1);
 			std::ofstream activation(root / "ambient-activation.txt");
 			activation << "XL_AMBIENT_ACTIVATION 1\n";
@@ -286,7 +289,8 @@ static int named_audio_test(int argc, char **argv)
 			activation << "end " << activation_cases << '\n';
 			require(bool(activation) && activation_cases == 6, "Cannot record complete ambient activation coverage");
 			Mix_SetPostMix(nullptr, nullptr);
-			std::cout << "Loaded ambient objects: activation, target order, real PCM, collision, lifetime and trailer restore passed\n";
+			std::cout << "Loaded ambient objects " << xl_source_level_version() << '/' << xl_source_game_version()
+			          << ": activation, target order, real PCM, collision, lifetime and trailer restore passed\n";
 			return 0;
 		}
 		{

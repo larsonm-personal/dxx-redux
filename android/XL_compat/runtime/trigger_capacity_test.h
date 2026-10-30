@@ -80,6 +80,9 @@ static void trigger_capacity_object_links()
 		for (int type : { 33, 32 }) {
 			Walls[7].trigger = static_cast<sbyte>(id);
 			xl_compat::Inventory sample;
+			// Source loading validates targets against the authored table bounds
+			sample.segments.resize(Num_segments);
+			sample.objects.resize(Highest_object_index + 1);
 			sample.object_triggers = 1;
 			sample.object_trigger_records.push_back({ { type, 0, 0, -1, { { host.segnum, host.sidenum } } }, owner });
 			xl_object_trigger_load(sample);

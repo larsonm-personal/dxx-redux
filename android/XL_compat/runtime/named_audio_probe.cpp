@@ -291,6 +291,9 @@ void prepare_ambient()
 		capture_run(4096);
 		compare_shared_output(starting, ambient_checks);
 	});
+	// The shared controls restore the real viewer after their fixed listener
+	// Earn persistence state only after spatial gains match that restored viewer
+	xl_audio_sync_objects();
 	xl_named_audio_pause(1);
 	earned = snapshot();
 	earned_ambient = xl_compat::ambient_objects_snapshot();

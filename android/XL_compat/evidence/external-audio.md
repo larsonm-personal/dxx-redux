@@ -92,6 +92,10 @@ Qualified binary SHA-256 values:
 
 ## Remaining support
 
+The subsequent [ambient-object tranche](ambient-objects.md) addresses the sound
+object work listed below. The remaining audio requirements are tracked there;
+this section records the external-owner tranche's original boundary.
+
 Sound-effect objects still need native loading, an XL-owned enabled state tied
 to object lifetimes, real activation/deactivation consumers and saved object
 state. Static explosion ambience, classic replacement installation and global

@@ -2,6 +2,7 @@
 #include "inventory.h"
 #include "hog_fixture.h"
 #include "runtime_layout_fixture.h"
+#include "legacy_audio_fixture.h"
 #include "trigger_capacity_fixture.h"
 #include <filesystem>
 #include <fstream>
@@ -295,6 +296,25 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 4\naudio23.rl2\naudio27.rl2\namb23.rl2\namb27.rl2\n"));
 	write(directory / "xschange.hog", changed);
 	write(directory / "xschange.mn2", text("d2x-name = Changed XL sounds\nnum_levels = 1\naudio23.rl2\n"));
+	Bytes legacy{ 'D', 'H', 'F' };
+	const auto ambient = ambient_objects(level);
+	for (int version : { 33, 34, 36 }) {
+		const auto name = "amb" + std::to_string(version);
+		xl_test::hog_member(legacy, name + ".rl2", xl_test::legacy_audio_fixture(ambient, version), false);
+		xl_test::hog_member(legacy, name + ".snd", text(sounds), false);
+		for (const auto &member : members) {
+			if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
+			const auto extension = member.name.substr(8);
+			// Keep the embedded colors; legacy CLR overrides are an independent gate
+			if (extension != ".rl2" && extension != ".mn2" && extension != ".snd" && extension != ".clr")
+				xl_test::hog_member(legacy, name + extension, member.bytes, false);
+		}
+	}
+	for (const auto &member : xl_compat::read_hog(output))
+		if (member.name.size() > 4 && member.name.substr(member.name.size() - 4) == ".wav")
+			xl_test::hog_member(legacy, member.name, member.bytes, false);
+	write(directory / "xambold.hog", legacy);
+	write(directory / "xambold.mn2", text("d2x-name = Derived legacy ambience\nnum_levels = 3\namb33.rl2\namb34.rl2\namb36.rl2\n"));
 	scopes(level, members, directory);
 	classic_packages(found->bytes, members, directory);
 	std::cout << "Derived XL sound packages: synthetic stereo/mono PCM, wall/object actions, 23/27 layouts and rejection controls\n";

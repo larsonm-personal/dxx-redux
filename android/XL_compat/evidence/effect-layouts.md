@@ -1,5 +1,11 @@
 # Effect payload inspection
 
+This records the original inspection-only tranche. Subsequent
+[ambient-object work](ambient-objects.md) implements stationary sound playback,
+activation and saved lifetimes with separate evidence. Particle, lightning and
+other effect runtimes remain blocked; the historical checks below describe the
+earlier state.
+
 The bounded 15/33, 17/36 and 23/40 inspector now reads particle, lightning,
 ambient-sound and empty thruster payloads. It also reads waypoint controllers and
 the known no-payload static movement encoding. These remain runtime blockers.

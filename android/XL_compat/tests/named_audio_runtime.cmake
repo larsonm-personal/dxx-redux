@@ -12,6 +12,48 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "Cannot create named audio controls: ${log}${error}")
 endif()
 file(WRITE "${OUTPUT}/runtime.log" "")
+function(check_ambient ordinal version mode)
+    execute_process(
+        COMMAND "${ENGINE}" -named-audio-test "${mode}" -audio-level "${ordinal}" -hogdir "${DATA}"
+                -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nomusic
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES "Loaded ambient objects ${version}:.*passed")
+        message(FATAL_ERROR "Ambient object version ${version} failed (${result}): ${log}${error}")
+    endif()
+    if(REFERENCE)
+        execute_process(
+            COMMAND "${REFERENCE}" --ambient-runtime "${OUTPUT}/ambient-audio.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES "loaded ambient owners match actual source")
+            message(
+                FATAL_ERROR "Ambient initialization differs from source (${result}): ${log}${error}"
+            )
+        endif()
+    endif()
+    if(EFFECT_REFERENCE)
+        execute_process(
+            COMMAND "${EFFECT_REFERENCE}" --ambient-runtime "${OUTPUT}/ambient-activation.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES
+                                 "loaded wall/attached ambient actions match actual source")
+            message(
+                FATAL_ERROR "Ambient activation differs from source (${result}): ${log}${error}")
+        endif()
+    endif()
+endfunction()
+
 # Each format starts with a fresh window/pause lifecycle in the headless host
 foreach(ordinal IN ITEMS 1 2)
     if(ordinal EQUAL 1)
@@ -46,46 +88,34 @@ foreach(ordinal IN ITEMS 1 2)
                 FATAL_ERROR "Native audio creation differs from source (${result}): ${log}${error}")
         endif()
     endif()
+    check_ambient(${ordinal} "${version}/40" ambient)
+endforeach()
+foreach(ordinal IN ITEMS 1 2 3)
+    if(ordinal EQUAL 1)
+        set(version "15/33")
+    elseif(ordinal EQUAL 2)
+        set(version "15/34")
+    else()
+        set(version "17/36")
+    endif()
+    check_ambient(${ordinal} "${version}" ambient-legacy)
+endforeach()
+if(EFFECT_REFERENCE)
     execute_process(
-        COMMAND "${ENGINE}" -named-audio-test ambient -audio-level "${ordinal}" -hogdir "${DATA}"
-                -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nomusic
+        COMMAND "${EFFECT_REFERENCE}" "${OUTPUT}/missions/xambold.hog"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE log
         ERROR_VARIABLE error
         TIMEOUT 15)
     file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
-    if(NOT result EQUAL 0 OR NOT log MATCHES "Loaded ambient objects:.*passed")
-        message(FATAL_ERROR "Ambient object version ${version} failed (${result}): ${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES
+                             "3 levels, 156 object ends/identities and 9 effect payloads matched")
+        message(
+            FATAL_ERROR
+                "Legacy ambient object reader differs from source (${result}): ${log}${error}")
     endif()
-    if(REFERENCE)
-        execute_process(
-            COMMAND "${REFERENCE}" --ambient-runtime "${OUTPUT}/ambient-audio.txt"
-            RESULT_VARIABLE result
-            OUTPUT_VARIABLE log
-            ERROR_VARIABLE error
-            TIMEOUT 15)
-        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
-        if(NOT result EQUAL 0 OR NOT log MATCHES "loaded ambient owners match actual source")
-            message(
-                FATAL_ERROR "Ambient initialization differs from source (${result}): ${log}${error}"
-            )
-        endif()
-    endif()
-    if(EFFECT_REFERENCE)
-        execute_process(
-            COMMAND "${EFFECT_REFERENCE}" --ambient-runtime "${OUTPUT}/ambient-activation.txt"
-            RESULT_VARIABLE result
-            OUTPUT_VARIABLE log
-            ERROR_VARIABLE error
-            TIMEOUT 15)
-        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
-        if(NOT result EQUAL 0 OR NOT log MATCHES
-                                 "loaded wall/attached ambient actions match actual source")
-            message(
-                FATAL_ERROR "Ambient activation differs from source (${result}): ${log}${error}")
-        endif()
-    endif()
-endforeach()
+endif()
+
 execute_process(
     COMMAND "${ENGINE}" -audio-scope-test production -hogdir "${DATA}" -extra-dir "${OUTPUT}"
             -userdir "${OUTPUT}/preview-user" -nomusic

@@ -193,3 +193,41 @@ user's request to start CI. The working checkout is
 Android ambient automation/runtime checks, full native/stock qualification,
 legacy ambient runtime layouts and refreshed original mission evidence remain
 outstanding. This checkpoint does not establish original mission playability.
+
+### Ambient qualification completed within the recorded scopes
+
+The shared ambient integration now runs loaded 15/33, 15/34, 17/36, 23/40 and
+27/40 profiles. Older fixtures encode the source's default-enabled sound records
+and legacy object/trigger/reference layouts while retaining the original dry
+geometry. They omit the separately unsupported legacy CLR override. Actual
+source object and attached-trigger readers match the derived legacy records;
+all five profiles compare initializer owners and real wall/removal activation
+against pinned source consumers. The existing audio test owns these checks.
+
+Windows full audio integration passes. The fresh Linux lane passes all 106
+required tests in 389.08 seconds, with 16 format witnesses and three modern
+source levels in its acceptance receipt. Its audio member passes in 73.23
+seconds. The initial sweep's sole failure was an incomplete synthetic inventory
+in the high-trigger endpoint test; supplying its actual segment/object bounds
+restores that test without weakening source validation or endpoint assertions.
+
+Android passes all 144 steps in 467.970 seconds, including 145 PCM output checks,
+24 ambient cases, 1,812,992 checked samples, and both disk/rewind paths. All 26
+protected files are unchanged after restoration. The earlier listener-pan test
+setup error was corrected by synchronizing against the restored real viewer
+before recording earned state. Timeouts remain unchanged. Both catalogs and
+scoped formatting pass.
+
+The current Pumo inventory retains all 644 ambient records across 14 levels and
+no longer reports ambient-sound blockers. Thirteen levels retain independent
+decoded blockers; the end level's empty inventory blocker list is not proof of
+resource admission or gameplay. See
+[ambient-object evidence](../../XL_compat/evidence/ambient-objects.md) for exact
+counts, binary hashes, limitations and retained artifact names.
+
+Next in the remaining ten-hour block: audit the static-explosion audio consumer
+and its required object/render lifecycle, then continue toward faithful classic
+WAV replacement installation. Keep particles/lightning and independent gameplay
+requirements explicit. The measured PCM-oracle cost reduction in #219 is green
+in all of its workflows; further CI trimming still requires equivalent coverage
+and measured evidence. End-of-block audit remains outstanding.

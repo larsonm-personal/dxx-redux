@@ -10,13 +10,14 @@
 extern "C" {
 #include "switch.h"
 #include "fvi.h"
+#include "gamesave.h"
 }
 namespace xl_ambient_objects_control
 {
 using xl_surface_audio_control::check;
 inline xl_compat::Inventory source_level()
 {
-	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(xl_source_level_version() == 23 ? "amb23.rl2" : "amb27.rl2"), PHYSFS_close);
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(Gamesave_current_filename), PHYSFS_close);
 	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
 	check(length > 0 && length < 128 * 1024 * 1024, "Ambient source exceeds its read bound");
 	xl_compat::Bytes bytes(static_cast<std::size_t>(length));
@@ -122,12 +123,13 @@ void run(Output output, Record record, Activation activation)
 	SDL_PauseAudio(1);
 	const auto initial = ambient_objects_snapshot();
 	const auto source = source_level();
+	const bool default_enabled = source.level_version < 19;
 	std::string native_state;
 	for (int i = 49; i <= 51 && i <= Highest_object_index; ++i)
 		native_state += "; " + std::to_string(i) + ":" + std::to_string(Objects[i].type) + "/" + std::to_string(Objects[i].id) + "/" + std::to_string(Objects[i].signature);
 	if (initial.size() != 3) throw std::runtime_error("Ambient fixture state: " + initial.dump() + "; native object count " + std::to_string(Highest_object_index + 1));
 	check(initial.size() == 3 && initial[0][0] == 49 && initial[1][0] == 50 && initial[2][0] == 51 &&
-	          initial[0][2].get<bool>() && !initial[1][2].get<bool>() && initial[2][2].get<bool>(),
+	          initial[0][2].get<bool>() && initial[1][2].get<bool>() == default_enabled && initial[2][2].get<bool>(),
 	      ("Loaded ambient fixture lost authored objects or initial enabled states: " + initial.dump() + native_state).c_str());
 	for (int index : { 49, 50, 51 })
 		check(Objects[index].type == 20 && Objects[index].id == 2 && Objects[index].control_type == CT_NONE &&
@@ -164,10 +166,15 @@ void run(Output output, Record record, Activation activation)
 		                                                     : 19661;
 		check(entry.external && entry.sound == -1 && entry.sound_class == 1 && entry.decay == 1 && entry.ambient &&
 		          entry.max_volume == volume && entry.max_distance == 256 * F1_0 && entry.loop_start == 0 && entry.loop_end == 0 &&
-		          (entry.flags & sound_permanent) && (entry.channel >= 0) == (index != 50),
+		          (entry.flags & sound_permanent) && (entry.channel >= 0) == (index != 50 || default_enabled),
 		      "Actual ambient initialization lost source volume, deferred ownership or disabled playback");
 	}
 	output();
+	if (default_enabled) {
+		check(xl_ambient_object_set_enabled(50, 0), "Cannot disable the legacy default-enabled source");
+		xl_audio_sync_objects();
+		check(owner(50).channel < 0, "Legacy default-enabled source did not stop");
+	}
 	const auto serial = owner(50).serial;
 	const auto operate = [&](int index) {
 		auto receipt = activation_before(Triggers[index], index);
