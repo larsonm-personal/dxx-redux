@@ -268,6 +268,7 @@ void persistence(int source, const nlohmann::json &initial)
 	output();
 	require(restore_named_audio(earned, true), "Cannot reset earned linked state for disk save");
 	char save[] = "linked-audio.sav", description[32] = "XL linked audio";
+	stop_time();
 	require(state_save_all_sub(save, description), "Cannot save mixed linked playback");
 	// Force stale XL control state immediately before the stock loader, without a frame
 	Seismic_sound_playing = 1;

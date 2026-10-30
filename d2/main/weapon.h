@@ -231,6 +231,7 @@ extern int spit_powerup(struct object *spitter, int id, int seed);
 
 extern void rock_the_mine_frame(void);
 extern void smega_rock_stuff(void);
+extern void smega_rock_stuff_at(const vms_vector *position);
 extern void init_smega_detonates(void);
 
 #define SEISMIC_RUNTIME_DETONATION_SLOTS 4

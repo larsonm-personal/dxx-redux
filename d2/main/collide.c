@@ -893,7 +893,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 	}
 
 	if (weapon->id == EARTHSHAKER_ID)
-		smega_rock_stuff();
+		smega_rock_stuff_at(&weapon->pos);
 
 	wall_type = wall_hit_process( seg, hitwall, weapon->shields, playernum, weapon );
 	int overlay = seg->sides[hitwall].tmap_num2;
@@ -1877,7 +1877,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	}
 
 	if (weapon->id == EARTHSHAKER_ID)
-		smega_rock_stuff();
+		smega_rock_stuff_at(&weapon->pos);
 
 #if 1
 	/*
@@ -2782,7 +2782,7 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 				return;
 
 	if (weapon->id == EARTHSHAKER_ID)
-		smega_rock_stuff();
+		smega_rock_stuff_at(&weapon->pos);
 
 	damage = fixmul(damage, weapon->ctype.laser_info.multiplier);
 #ifndef SHAREWARE

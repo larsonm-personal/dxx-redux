@@ -942,7 +942,7 @@ extern "C" int xl_loading_extended_triggers(void)
 extern "C" int xl_loading_inert_trigger(int type)
 {
 	// Every translated XL level has an active object-capacity scope while loading
-	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 32 || type == 33 || type == 34);
+	return loading_object_capacity && (type == 25 || type == 29 || type == 30 || type == 32 || type == 33 || type == 34 || type == 36);
 }
 
 extern "C" int object_capacity(void)

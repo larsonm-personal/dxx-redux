@@ -38,7 +38,6 @@ void run(int source, const nlohmann::json &initial)
 		run_output(2048);
 		xl_shared_audio_control::compare_output(before);
 	};
-	xl_seismic_audio_control::run(output);
 	xl_gameplay_dispatch_control::run(output);
 	xl_combat_audio_control::run(output);
 	xl_afterburner_audio_control::run(output);

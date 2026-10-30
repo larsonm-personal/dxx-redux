@@ -53,6 +53,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "29") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "30") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "34") continue;
+		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "36") continue;
 		if (issue.feature == "object_triggers") continue;
 		if (issue.feature == "object_trigger_type" && (issue.detail == "14" || issue.detail == "26" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
 		if (issue.feature == "trigger_type" && (issue.detail == "14" || issue.detail == "31" || issue.detail == "32" || issue.detail == "33")) continue;
@@ -116,6 +117,12 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	};
 	for (std::size_t i = 0; i < level.triggers.size(); ++i) countdown_action(level.triggers[i], int(i), "trigger countdown");
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) countdown_action(level.object_trigger_records[i].action, int(i), "object trigger countdown");
+	const auto seismic_action = [&](const Trigger &action, int index, const char *kind) {
+		if (action.type == 36 && action.time > 32767)
+			result.push_back({ kind, index, "mine-shake duration must fit 0..32767 whole seconds; negative time selects ten seconds, not a randomized delay" });
+	};
+	for (std::size_t i = 0; i < level.triggers.size(); ++i) seismic_action(level.triggers[i], int(i), "trigger seismic");
+	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) seismic_action(level.object_trigger_records[i].action, int(i), "object trigger seismic");
 	const auto texture_action = [&](const Trigger &action, int index, const char *kind) {
 		if (action.type != 19 || action.targets.empty()) return;
 		const auto change = texture_change(action.value);

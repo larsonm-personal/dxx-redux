@@ -2,6 +2,7 @@
 #include "../seismic.h"
 #include "../countdown.h"
 #include "gameplay_audio.h"
+#include "geometry.h"
 #include "preview.h"
 #include "save_epoch_format.h"
 #include <nlohmann/json.hpp>
@@ -56,7 +57,7 @@ extern "C" int xl_seismic_action(const trigger *action)
 extern "C" int xl_seismic_detonation(const vms_vector *position)
 {
 	if (!xl_level_extensions_active()) return 0;
-	const float distance = position && ConsoleObject ? float(vm_vec_dist(position, &ConsoleObject->pos)) / F1_0 : 0.0f;
+	const float distance = position && ConsoleObject ? float(xl_compat::geometry_fixed_distance({ position->x, position->y, position->z }, { ConsoleObject->pos.x, ConsoleObject->pos.y, ConsoleObject->pos.z })) / F1_0 : 0.0f;
 	xl_compat::seismic_detonate(current, GameTime64, distance, position != nullptr);
 	return 1;
 }

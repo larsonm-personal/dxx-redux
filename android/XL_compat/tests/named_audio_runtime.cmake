@@ -205,6 +205,20 @@ foreach(ordinal IN ITEMS 1 2 3 -1)
         endif()
     endif()
 endforeach()
+# Complete authored seismic gameplay uses fresh running worlds in both layouts
+foreach(ordinal IN ITEMS 1 2)
+    execute_process(
+        COMMAND "${ENGINE}" -named-audio-test seismic -audio-level "${ordinal}" -hogdir "${DATA}"
+                -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nomusic
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES "seismic:.*disk-through-stock passed")
+        message(FATAL_ERROR "Seismic gameplay failed (${result}): ${log}${error}")
+    endif()
+endforeach()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL source_hash)
     message(FATAL_ERROR "Original geometry changed during named audio controls")

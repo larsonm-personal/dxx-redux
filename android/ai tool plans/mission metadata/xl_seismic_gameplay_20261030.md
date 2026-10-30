@@ -8,15 +8,19 @@ gameplay and persistence change, not just a new trigger dispatch or audio cue.
 
 Branch `xl_more_75_seismic_gameplay` is a work-in-progress checkpoint for CI,
 stacked on `xl_more_74_sound_banks`. The source model passes 23,100 comparisons
-against the pinned XL implementation. Initial runtime, frame and persistence
-hooks compile in the Windows headless engine.
+against the pinned XL implementation. The next checkpoint adds wall/object
+type-36 dispatch and admission, position-bearing Earthshaker callers, actual
+player/companion physics and PCM controls, and disk/rewind continuation tests.
+Durations above 32767 seconds remain rejected with a seismic-specific error.
 
-This does not qualify seismic gameplay. Wall/object type-36 dispatch and
-admission, position-bearing Earthshaker call sites, runtime physics/audio
-controls, disk/rewind continuation and Android qualification remain unfinished.
-The existing seismic audio controls still target the preceding implementation
-and need to be extended for the new physics path. No mission blocker is removed
-and no campaign playability claim is added by this draft.
+The intermediate implementation passed both native 23/40 and 27/40 controls,
+all 106 Linux acceptance tests, and the 64-step Android seismic script (14 PCM
+comparisons, 20 state checks, and protected-file restoration). The latest
+distance change reuses the source-verified XL geometry helper; its oblique
+distance control and additional malformed-trailer controls were added after
+that Android run. Final Android regression and complete final-head CI remain
+required. This draft does not claim campaign playability; Pumo retains other
+independent blockers even where its two seismic actions are now admitted.
 
 ## Grounded requirements
 

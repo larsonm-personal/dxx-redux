@@ -5,6 +5,7 @@
 #include "legacy_audio_fixture.h"
 #include "trigger_capacity_fixture.h"
 #include "bank_fixture.h"
+#include "seismic_fixture.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -400,6 +401,7 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	scopes(level, members, directory);
 	classic_packages(found->bytes, members, directory);
 	static_explosion_package(found->bytes, members, directory);
+	xl_test::write_seismic_fixture(original, directory);
 	std::cout << "Derived XL sound packages: synthetic stereo/mono PCM, wall/object actions, 23/27 layouts and rejection controls\n";
 }
 } // namespace

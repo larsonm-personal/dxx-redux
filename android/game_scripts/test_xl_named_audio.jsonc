@@ -62,6 +62,12 @@
     },
     {
         "action": "set_debug",
+        "field": "xl_named_audio_probe",
+        "value": "seismic_frames",
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
         "field": "android_game_request",
         "value": "overlay_pause",
         "post_delay_ms": 0,

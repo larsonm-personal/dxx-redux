@@ -85,6 +85,7 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 	malformed(snapshot());
 	require(xl_compat::restore_named_audio(full, true), "Cannot restore full mixed playback");
 	char save[] = "shared-audio.sav", description[32] = "XL shared audio";
+	stop_time();
 	require(state_save_all_sub(save, description), "Cannot save mixed ordinary/named playback");
 	char error[256]{};
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Shared audio stock transition failed");

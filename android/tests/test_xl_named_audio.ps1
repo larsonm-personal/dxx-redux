@@ -3,12 +3,16 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [switch]$Seismic
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = '87faf44175cf565e857baee2edfafd10c7feed8b57cb4cda0258b85e3e9d44f9'
+$expectedHog = if ($Seismic) { 'a5a1dce94983b482c9d3423b0f70f2084ca42f10bc131d8ac19f7805141bb2b8' } else { '87faf44175cf565e857baee2edfafd10c7feed8b57cb4cda0258b85e3e9d44f9' }
+$expectedDescriptor = if ($Seismic) { '518740b0f17389cb33c8e66309b8252159249c41b85b628174e9160cc6f6210d' } else { 'aae73cc30cdd3d61b2ce81a8a606e17d6a4b49a2ee1e58b09f8dfb985689d465' }
+$mission = if ($Seismic) { 'xseismic' } else { 'xsound' }
+$scriptName = if ($Seismic) { 'test_xl_seismic.jsonc' } else { 'test_xl_named_audio.jsonc' }
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
-    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'aae73cc30cdd3d61b2ce81a8a606e17d6a4b49a2ee1e58b09f8dfb985689d465') {
+    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $expectedDescriptor) {
     throw 'Requires the pinned derived fixture from xl_named_audio'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
@@ -32,7 +36,7 @@ function Invoke-NamedAudioPrivate {
 $backup = 'files/xl-named-audio-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
-    'files/d2x-redux/missions/xsound.hog', 'files/d2x-redux/missions/xsound.mn2')
+    "files/d2x-redux/missions/$mission.hog", "files/d2x-redux/missions/$mission.mn2")
 $ready = $false
 try {
     Invoke-NamedAudioAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -45,9 +49,9 @@ try {
     $ready = $true
     Invoke-NamedAudioAdb -Arguments @('push', (Resolve-Path -LiteralPath $Hog).Path, '/data/local/tmp/xl-named-audio.hog') | Out-Null
     Invoke-NamedAudioAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-named-audio.mn2') | Out-Null
-    Invoke-NamedAudioPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-named-audio.hog files/d2x-redux/missions/xsound.hog && cp /data/local/tmp/xl-named-audio.mn2 files/d2x-redux/missions/xsound.mn2' | Out-Null
+    Invoke-NamedAudioPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-named-audio.hog files/d2x-redux/missions/$mission.hog && cp /data/local/tmp/xl-named-audio.mn2 files/d2x-redux/missions/$mission.mn2" | Out-Null
     Invoke-NamedAudioAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_named_audio.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-NamedAudioAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-NamedAudioPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
@@ -56,7 +60,7 @@ try {
     if ($testExit -ne 0) { throw "NamedAudio runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete NamedAudio runtime result' }
-    Write-Host "PASS: Named audio Android PCM/dispatch/pause, disk/rewind and stock transition ($($result.total_steps) steps)"
+    Write-Host "PASS: $mission Android PCM/dispatch/pause, disk/rewind and stock transition ($($result.total_steps) steps)"
 } finally {
     try {
         Invoke-NamedAudioAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

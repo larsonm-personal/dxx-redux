@@ -555,6 +555,15 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(feature_row(xl_compat::compatibility_json("sound.rl2", message), "named_sounds").find("\"count\": 1") != std::string::npos, "Sound browser omitted the object action");
 		patch(message, trigger + 4, 25, 1);
 		check(xl_compat::prepare_gameplay_probe(message).source.object_trigger_records[0].action.type == 25 && feature_row(xl_compat::compatibility_json("countdown.rl2", message), "countdown_actions").find("\"count\": 1") != std::string::npos, "Countdown browser omitted the object action");
+		patch(message, trigger + 4, 36, 1);
+		for (int seconds : { -2147483647 - 1, -100, -1, 0, 99, 1000, 32767 }) {
+			patch(message, trigger + 13, seconds);
+			check(xl_compat::prepare_gameplay_probe(message).source.object_trigger_records[0].action.time == seconds && feature_row(xl_compat::compatibility_json("quake.rl2", message), "seismic_actions").find("\"count\": 1") != std::string::npos, "Mine-shake browser or object duration lost authored seconds");
+		}
+		patch(message, trigger + 13, 32768);
+		rejects([&] { xl_compat::prepare_gameplay_probe(message); });
+		check(feature_row(xl_compat::compatibility_json("quake.rl2", message), "seismic_actions").find("\"status\": \"blocked\"") != std::string::npos, "Overflow mine-shake duration passed the browser");
+		patch(message, trigger + 13, -1);
 		patch(message, trigger + 4, 34, 1);
 		patch(message, trigger + 17, 0, 2);
 		patch(message, trigger + 37, 0xffff, 2);
