@@ -3,6 +3,7 @@
 #include "named_audio.h"
 #include "named_audio_state.h"
 #include "shared_audio.h"
+#include "linked_audio.h"
 #include "shared_audio_pcm_test.h"
 #include "preview.h"
 #include "object_trigger.h"
@@ -49,7 +50,9 @@ unsigned capture_rate = 0;
 bool invalid = false;
 bool pressure_earned = false;
 bool shared_earned = false;
+bool linked_earned = false;
 unsigned shared_checks = 0;
+unsigned linked_checks = 0;
 unsigned pressure_origin = 0, pressure_checks = 0;
 void require(bool condition, const char *message)
 {
@@ -108,6 +111,8 @@ void reset_events()
 	xl_named_audio_pause(1);
 	auto empty = snapshot();
 	empty["voices"] = json::array();
+	empty["linked"]["owners"] = json::array();
+	empty["linked"]["deferred"] = bool(0);
 	for (auto &row : empty["events"]) {
 		row[1] = -1;
 		row[2] = -1;
@@ -230,9 +235,12 @@ void prepare_shared()
 	version = xl_source_level_version();
 	pressure_earned = false;
 	shared_earned = true;
+	linked_earned = false;
 	SDL_PauseAudio(0);
 	verify();
 }
+
+#include "linked_audio_probe_test.h"
 
 void scope_output(int action)
 {
@@ -334,7 +342,7 @@ void scope_control(const char *operation)
 
 json xl_named_audio_probe_diagnostics()
 {
-	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks } };
+	return { { "output_checks", output_checks }, { "checked_samples", checked_samples }, { "music_samples", music_samples }, { "rate", capture_rate }, { "pressure_checks", pressure_checks }, { "shared_checks", shared_checks }, { "linked_checks", linked_checks } };
 }
 
 const char *xl_named_audio_probe(const char *operation)
@@ -421,6 +429,7 @@ const char *xl_named_audio_probe(const char *operation)
 					SDL_PauseAudio(0);
 				} else if (!std::strcmp(operation, "prepare") || !std::strcmp(operation, "pressure")) {
 					shared_earned = false;
+					linked_earned = false;
 					pressure_earned = !std::strcmp(operation, "pressure");
 					reset_events();
 					capture_begin();
@@ -450,6 +459,7 @@ const char *xl_named_audio_probe(const char *operation)
 						verify();
 					}
 				} else if (!std::strcmp(operation, "shared")) prepare_shared();
+				else if (!std::strcmp(operation, "linked")) prepare_linked();
 				else if (!std::strcmp(operation, "verify")) verify();
 				else if (!std::strcmp(operation, "pause_output")) {
 					verify();
@@ -463,7 +473,8 @@ const char *xl_named_audio_probe(const char *operation)
 					capture_begin();
 					xl_named_audio_pause(0);
 					capture_run(4096);
-					if (shared_earned) compare_shared_output(earned);
+					if (linked_earned) compare_linked_output(earned);
+					else if (shared_earned) compare_shared_output(earned);
 					else if (pressure_earned) compare_pressure_output(earned);
 					else compare_output(earned.at("voices")[0][3].get<unsigned>(), 2, false);
 					xl_named_audio_pause(1);

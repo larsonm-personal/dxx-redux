@@ -28,6 +28,19 @@ foreach(ordinal IN ITEMS 1 2)
        OR NOT log MATCHES "${version}/40 sounds: wall/master/object/autoplay")
         message(FATAL_ERROR "Named audio version ${version} failed (${result}): ${log}${error}")
     endif()
+    if(REFERENCE)
+        execute_process(
+            COMMAND "${REFERENCE}" --creation-runtime "${OUTPUT}/audio-creation.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES "native fresh sound creations match actual source")
+            message(
+                FATAL_ERROR "Native audio creation differs from source (${result}): ${log}${error}")
+        endif()
+    endif()
 endforeach()
 execute_process(
     COMMAND "${ENGINE}" -audio-scope-test production -hogdir "${DATA}" -extra-dir "${OUTPUT}"

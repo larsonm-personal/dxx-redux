@@ -1,6 +1,7 @@
 #include "audio_owners.h"
 #include <algorithm>
 #include <limits>
+#include <stdexcept>
 
 namespace xl_compat
 {
@@ -152,6 +153,72 @@ void AudioOwners::reconcile(AudioVoices &mixer)
 		--i;
 		if (entries[i].channel >= 0 && (!bound(i, mixer) || !mixer.voices[unsigned(entries[i].channel)].remaining)) end(i, mixer);
 	}
+}
+
+void AudioOwners::sync(const std::function<AudioOwnerUpdate(const AudioOwner &)> &update, AudioVoices &mixer,
+                       std::array<int, 2> effects_volume, bool deferred, bool available)
+{
+	if (count > entries.size() || effects_volume[0] < 0 || effects_volume[0] > 65536 || effects_volume[1] < 0 || effects_volume[1] > 65536)
+		throw std::runtime_error("Invalid XL sound-owner update state");
+	const auto rounded_gain = [](int volume, int setting) {
+		const auto effective = std::int64_t(volume) * setting / 65536;
+		if (volume < 0 || setting < -1 || setting > 65536 || effective < INT32_MIN / 2 || effective > INT32_MAX / 2)
+			throw std::runtime_error("XL linked gain exceeds the defined source range");
+		const float scaled = float(2 * effective) / 65536.0f * 128.0f;
+		return int(scaled < 0.0f ? scaled - 0.5f : scaled + 0.5f);
+	};
+	const auto find_serial = [&](std::uint64_t serial) {
+		return std::lower_bound(entries.begin(), entries.begin() + count, serial,
+		                        [](const AudioOwner &entry, std::uint64_t value) { return entry.serial < value; });
+	};
+	// Callback completions retire owners on the game thread, before frame updates
+	reconcile(mixer);
+	std::uint64_t cursor = next_serial;
+	while (count) {
+		auto found = find_serial(cursor);
+		if (found == entries.begin()) break;
+		--found;
+		const auto previous = *found;
+		cursor = previous.serial;
+		if (!(previous.flags & sound_used)) continue;
+		const unsigned index = unsigned(found - entries.begin());
+		const int old_volume = rounded_gain(previous.volume, previous.audio_volume);
+		if (!(previous.flags & sound_forever) && previous.channel < 0) {
+			erase(index, mixer);
+			continue;
+		}
+		const bool object_link = !(previous.flags & sound_link_position) && (previous.flags & sound_link_object);
+		const auto next = previous.flags & (sound_link_position | sound_link_object)
+		                      ? update(previous)
+		                      : AudioOwnerUpdate{ true, true, previous.volume, previous.pan };
+		if (object_link && !next.exists) {
+			erase(index, mixer);
+			continue;
+		}
+		if (object_link && !next.enabled) {
+			stop(index, mixer);
+			continue;
+		}
+		if (next.volume < 0 || next.pan < 0 || next.pan > 65536)
+			throw std::runtime_error("Invalid XL linked spatial output");
+		found->volume = next.volume;
+		found->pan = next.pan;
+		if (previous.custom) continue;
+		const int setting = effects_volume[previous.ambient ? 1 : 0];
+		const int new_volume = rounded_gain(next.volume, setting);
+		if (old_volume != new_volume || ((new_volume <= 0) != (previous.channel < 0))) {
+			found->audio_volume = setting;
+			if (new_volume <= 0) {
+				if (previous.channel >= 0) end(index, mixer);
+			} else if (previous.channel < 0) start(index, effects_volume[0], deferred, mixer, available);
+			else mixer.set_volume(previous.channel, next.volume, setting);
+		}
+		// Starting can retire an earlier owner and shift this owner's dense index
+		found = find_serial(previous.serial);
+		if (found != entries.begin() + count && found->serial == previous.serial && new_volume > 0 && previous.pan != next.pan && found->channel >= 0)
+			mixer.set_pan(found->channel, next.pan);
+	}
+	reconcile(mixer);
 }
 
 void AudioOwners::clear(AudioVoices &mixer)

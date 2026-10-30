@@ -16,11 +16,14 @@
 #include <nlohmann/json.hpp>
 #include "named_audio.h"
 #include "shared_audio.h"
+#include "shared_audio_internal.h"
+#include "linked_audio.h"
 #include "shared_audio_pcm_test.h"
 #include "named_audio_state.h"
 #include "audio_resource.h"
 #include "classic_audio.h"
 #include "audio_geometry.h"
+#include "../tests/audio_creation_receipt.h"
 #include "../wave.h"
 #include "picosha2.h"
 #ifdef USE_SDLMIXER

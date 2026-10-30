@@ -118,9 +118,10 @@ The owned library now has a 500-entry sound registry, shared-channel owner kinds
 and checked completion/replacement cleanup. Source and mixed PCM controls cover
 compaction, full capacity and lifetime reuse. It intentionally repairs a proven
 source deletion bug that loses unrelated sounds. See
-[ownership evidence](evidence/audio-ownership.md). Engine routing for ordinary
-and ambient sounds, spatial updates and saved owners are still unfinished;
-this library foundation does not change mission admission.
+[ownership evidence](evidence/audio-ownership.md). The linked frame policy and
+explicit native object/segment consumers now have source and captured-output
+checks; gameplay dispatch, ambient effects and saved owners remain unfinished.
+This work does not change mission admission.
 
 Owned mission, normal-level and secret-level sound folders now preserve XL
 resource priority and use the incoming signed mission ordinal, including repeated
@@ -148,9 +149,14 @@ The installed bank now shares 128 channels between stock samples and named WAVs.
 Controlled Windows, Linux and Android output verifies mixed playback, class-aware
 replacement, gain/pan, pause and saved unlinked channels. Source-content checks
 guard reuse of converted stock PCM. See the shared-playback section of that
-evidence for limits and platform results. Ordinary/ambient gameplay dispatch,
-moving owners, wall changes and linked-owner saves remain unfinished, so classic
-replacements remain gated.
+evidence for limits and platform results. Moving native object/segment sources
+now use that same pool, with source-verified frame decisions and controlled
+Windows/Linux PCM. See [linked audio evidence](evidence/linked-audio.md).
+Linked-owner saves now validate complete owner/channel bindings in schema 21.
+Fresh object/segment creation also passes 768 comparisons per fixture against
+the actual source functions on Windows/Linux; see the linked-audio evidence.
+Ordinary/ambient gameplay dispatch and wall-change qualification remain
+unfinished, so classic replacements remain gated.
 
 All authored wall-key bytes now pass source/native comparisons and retain their
 exact values through loading and saves. Nonstandard values are observations;

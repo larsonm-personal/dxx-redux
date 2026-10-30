@@ -566,11 +566,13 @@ void classic_audio_source_controls();
 void audio_channel_source_controls();
 void audio_output_source_controls();
 void audio_ownership_source_controls();
+void audio_sync_source_controls();
 void classic_sample_source_controls();
 void audio_route_source_controls();
 void audio_spatial_source_controls();
 void audio_geometry_source_controls();
 void audio_geometry_runtime_controls(const char *);
+void audio_creation_runtime_controls(const char *);
 void classic_audio_original(const char *bank, const char *folder, int levels);
 
 int main(int argc, char **argv)
@@ -582,6 +584,10 @@ int main(int argc, char **argv)
 			audio_geometry_runtime_controls(argv[2]);
 			return 0;
 		}
+		if (argc == 3 && std::string(argv[1]) == "--creation-runtime") {
+			audio_creation_runtime_controls(argv[2]);
+			return 0;
+		}
 		source_actions();
 		source_resources();
 		source_scopes();
@@ -590,6 +596,7 @@ int main(int argc, char **argv)
 		audio_channel_source_controls();
 		audio_output_source_controls();
 		audio_ownership_source_controls();
+		audio_sync_source_controls();
 		classic_sample_source_controls();
 		audio_route_source_controls();
 		audio_spatial_source_controls();

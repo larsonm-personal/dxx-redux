@@ -1,10 +1,12 @@
 // Actual pinned owner/container consumers with independent channel and object storage
 #include "audio_owners.h"
+#include "audio_creation_receipt.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -12,9 +14,11 @@ namespace ownership_reference
 {
 using fix = int;
 #define ENTER(a, b)
-#define RETVAL(x) return x;
-#define RETURN    return;
-#define DBG       0
+#define RETVAL(x)      return x;
+#define RETURN         return;
+#define DBG            0
+#define USE_SDL_MIXER  1
+#define MIX_MAX_VOLUME 128
 #include "xl_reference_audio_constants.h"
 template <class _T, unsigned N>
 struct Stack {
@@ -52,30 +56,70 @@ struct Stack {
 };
 struct CFixVector {
 	int x = 0, y = 0, z = 0;
+	static int Dist(CFixVector, CFixVector)
+	{
+		throw std::runtime_error("Duplicate distance is outside the fresh creation fixture");
+	}
+};
+struct CFixMatrix {
 };
 struct CObject {
 	int signature = 0;
 	struct {
 		struct {
 			CFixVector vPos;
+			CFixMatrix mOrient;
 		} position;
+		int nType = 1, nId = 0, nSignature = 0, nSegment = 0;
 	} info;
+	struct {
+		struct {
+			bool bEnabled = true;
+		} soundInfo, lightningInfo;
+	} rType;
 	int Signature() const
 	{
 		return signature;
 	}
+	int Index() const;
+	CFixVector &Position()
+	{
+		return info.position.vPos;
+	}
 };
 std::array<CObject, 64> objects;
+int CObject::Index() const
+{
+	return int(this - objects.data());
+}
 CObject *object(int index)
 {
 	return index >= 0 && index < int(objects.size()) ? &objects[unsigned(index)] : nullptr;
 }
 #define OBJECT(i) object(i)
+#define OBJPOS(p) (&(p)->info.position)
+#define OBJSEG(p) ((p)->info.nSegment)
+struct {
+	CObject *Buffer()
+	{
+		return objects.data();
+	}
+} object_store;
+#define OBJECTS object_store
+constexpr int OBJ_NONE = 255, OBJ_EFFECT = 20, SOUND_ID = 2, LIGHTNING_ID = 1;
+bool show_lightning = true;
+#define SHOW_LIGHTNING(i) show_lightning
+int NDFindObject(int signature)
+{
+	for (unsigned i = 0; i < objects.size(); ++i)
+		if (objects[i].info.nSignature == signature) return int(i);
+	return -1;
+}
 struct {
 	int nObject = 63;
 } localplayer;
 #define LOCALPLAYER localplayer
-constexpr int ND_STATE_RECORDING = 1;
+constexpr int ND_STATE_RECORDING = 1, ND_STATE_PLAYBACK = 2;
 struct {
 	struct {
 		int nState = 0;
@@ -83,13 +127,73 @@ struct {
 	struct {
 		int bMoving = 0;
 	} multiplayer;
+	struct {
+		CObject *pViewer = &objects[63];
+		int nLastObject[1]{ 63 };
+	} objData;
+	struct {
+		struct {
+			struct {
+				const char *data = "fixture";
+			} sounds[1][2];
+		} sound;
+	} pigData;
 } gameData;
 struct {
 	struct {
-		bool bDontStartObjects = false;
+		bool bDontStartObjects = false, bWasRecording = false;
+		int bD1Sound = 0;
 	} sound;
 } gameStates;
 void NDRecordDestroySoundObject(int) {}
+void NDRecordCreateObjectSound(int, int, int, int, int, int) {}
+void NDRecordSound3DOnce(int, int, int) {}
+void NDRecordSound3D(int, int, int) {}
+void Int3()
+{
+	throw std::runtime_error("Unexpected source sound trap");
+}
+bool segment(int index)
+{
+	return index >= 0;
+}
+#define SEGMENT(i) segment(i)
+struct {
+	void Process() {}
+} soundQueue;
+struct Options {
+	struct {
+		bool bUseSDLMixer = true;
+		int xCustomSoundVolume = 65536;
+	} sound;
+} options;
+auto *gameOpts = &options;
+struct ChannelOutput {
+	int volume = 128;
+	std::array<std::uint8_t, 2> pan{ 127, 127 };
+};
+std::array<ChannelOutput, 128> outputs;
+int Mix_Volume(int channel, int volume)
+{
+	auto &out = outputs.at(unsigned(channel));
+	const int old = out.volume;
+	if (volume >= 0) out.volume = (std::min) (128, volume);
+	return old;
+}
+int Mix_SetPanning(int channel, std::uint8_t left, std::uint8_t right)
+{
+	outputs.at(unsigned(channel)).pan = { left, right };
+	return 1;
+}
+void Mix_VolPan(int32_t, int32_t, int32_t);
+int spatial_volume = 32768, spatial_pan = 32767;
+unsigned source_spatial_calls = 0;
+const xl_audio_creation_receipt::Fields *creation_input = nullptr;
+int FixMul(int a, int b)
+{
+	return int(std::int64_t(a) * b / 65536);
+}
+
 int Max(int a, int b)
 {
 	return (std::max) (a, b);
@@ -97,6 +201,8 @@ int Max(int a, int b)
 struct CSoundObject {
 	int m_nSignature = 0, m_flags = 0, m_channel = -1, m_volume = 0, m_soundClass = 0, m_nSound = 0;
 	int m_pan = 0, m_nLoopStart = -1, m_nLoopEnd = -1;
+	int m_audioVolume = -1, m_maxVolume = 65536, m_maxDistance = 256 * 65536, m_nDecay = 0;
+	bool m_bAmbient = false, m_bCustom = false;
 	char m_szSound[32]{};
 	struct {
 		struct {
@@ -113,6 +219,7 @@ struct CSoundObject {
 struct CAudioChannel {
 	struct {
 		int nSoundObj = -1, nIndex = -1, bPlaying = 0;
+		int nVolume = 0, nPan = 32767, nChannel = 0, bAmbient = 0;
 	} m_info;
 	CAudioChannel(int owner = -1, bool playing = false)
 	{
@@ -131,6 +238,8 @@ struct CAudioChannel {
 	{
 		m_info.nIndex = index;
 	}
+	void SetVolume(int32_t);
+	void SetPan(int32_t);
 	void SetPlaying(int32_t);
 	void Stop();
 };
@@ -151,7 +260,10 @@ struct CAudio {
 	Channels m_channels;
 	struct {
 		int nActiveObjects = 0;
+		int nNextSignature = 1;
 	} m_info;
+	std::array<int, 2> volumes{ 32768, 32768 };
+	unsigned cursor = 0;
 	bool fail_start = false;
 	std::vector<int> stopped;
 	struct Request {
@@ -183,20 +295,73 @@ struct CAudio {
 	{
 		request = { sound, sound_class, volume, pan, loop, start, end, owner, speed };
 		if (fail_start) return -1;
-		for (int i = 0; i < 128; ++i)
+		for (int step = 0; step < 128; ++step) {
+			const int i = int((cursor + unsigned(step)) % 128);
 			if (!m_channels[i].m_info.bPlaying) {
 				m_channels[i] = { owner, true };
+				m_channels[i].m_info.nVolume = int(std::int64_t(volume) * volumes[0] / 65536);
+				m_channels[i].m_info.nPan = pan;
+				m_channels[i].m_info.nChannel = i;
+				m_channels[i].m_info.bAmbient = sound_class == SOUNDCLASS_AMBIENT;
+				Mix_VolPan(i, m_channels[i].m_info.nVolume, pan);
+				cursor = (unsigned(i) + 1) % 128;
 				if (!m_usedChannels.Grow()) throw std::runtime_error("Source channel registry overflow");
 				m_channels[i].SetIndex(int(m_usedChannels.ToS() - 1));
 				*m_usedChannels.Top() = i;
 				return i;
 			}
+		}
 		return -1;
 	}
 	int XlatSound(int sound)
 	{
 		return sound;
 	}
+	bool Available() const
+	{
+		return true;
+	}
+	int Volume(int ambient = 0) const
+	{
+		return volumes.at(unsigned(ambient));
+	}
+	CAudioChannel *Channel()
+	{
+		return m_channels.storage.data();
+	}
+	bool ChannelIsPlaying(int index) const
+	{
+		return index >= 0 && index < 128 && m_channels.storage[unsigned(index)].m_info.bPlaying;
+	}
+	void SetVolume(int channel, int volume)
+	{
+		m_channels[channel].SetVolume(volume);
+	}
+	void SetPan(int channel, int pan)
+	{
+		m_channels[channel].SetPan(pan);
+	}
+	void RecordSoundObjects() {}
+	void SyncSounds();
+	void GetVolPan(CFixMatrix, CFixVector, int, CFixVector position, int segment_index, int maximum, int *volume, int *pan, int range, int decay, int = 0)
+	{
+		if (creation_input) {
+			const auto &input = *creation_input;
+			if (maximum != input.at("volume") || range != input.at("range") || segment_index != input.at("segment") || position.x != input.at("x") || position.y != input.at("y") || position.z != input.at("z"))
+				throw std::runtime_error("Source creation requested different geometry inputs");
+			*volume = int(input.at("volume" + std::to_string(decay)));
+			*pan = int(input.at("pan" + std::to_string(decay)));
+		} else {
+			*volume = spatial_volume;
+			*pan = spatial_pan;
+		}
+		++source_spatial_calls;
+	}
+	int32_t PlaySound(int16_t, int32_t, fix, int32_t, int32_t, int32_t, const char *, CFixVector *);
+	CSoundObject *FindObjectSound(int16_t, CObject *, CFixVector *);
+	CSoundObject *FindSegmentSound(int16_t, int16_t, int16_t, CFixVector &);
+	int32_t CreateObjectSound(int16_t, int32_t, int16_t, int32_t, fix, fix, int32_t, int32_t, const char *, int32_t, uint8_t, int32_t);
+	int32_t CreateSegmentSound(int16_t, int16_t, int16_t, CFixVector &, int32_t, fix, fix, const char *);
 	void DeleteSoundObject(int32_t);
 	int32_t DestroyObjectSound(int32_t, int16_t = -1);
 	int32_t DestroySegmentSound(int16_t, int16_t, int16_t);
@@ -206,7 +371,9 @@ struct CAudio {
 	void Cleanup();
 	void UnregisterChannel(int32_t);
 } audio;
+#include "xl_reference_audio_controls.h"
 #include "xl_reference_audio_ownership.h"
+#include "xl_reference_audio_creation.h"
 void CAudioChannel::Stop()
 {
 	audio.UnregisterChannel(m_info.nIndex);
@@ -219,9 +386,18 @@ void reset(int count)
 	audio.m_info.nActiveObjects = count;
 	audio.stopped.clear();
 	audio.fail_start = false;
+	audio.volumes = { 32768, 32768 };
+	audio.cursor = 0;
+	outputs.fill({});
+	gameData.demoData.nState = 0;
+	show_lightning = true;
+	source_spatial_calls = 0;
 	gameStates.sound.bDontStartObjects = false;
 	for (auto &channel : audio.m_channels.storage) channel = {};
-	for (unsigned i = 0; i < objects.size(); ++i) objects[i].signature = 100 + int(i);
+	for (unsigned i = 0; i < objects.size(); ++i) {
+		objects[i] = {};
+		objects[i].info.nSignature = objects[i].signature = 100 + int(i);
+	}
 	for (int i = 0; i < count; ++i) {
 		if (!audio.m_objects.Grow()) throw std::runtime_error("Source object fixture exceeded capacity");
 		auto &owner = audio.m_objects[unsigned(i)];
@@ -239,6 +415,7 @@ void reset(int count)
 	}
 }
 } // namespace ownership_reference
+#include "reference_audio_creation.h"
 namespace
 {
 struct NativeOwners {
@@ -262,6 +439,12 @@ NativeOwners native_owners()
 		entry.sound_class = source.m_soundClass;
 		entry.volume = source.m_volume;
 		entry.pan = source.m_pan;
+		entry.audio_volume = source.m_audioVolume;
+		entry.ambient = source.m_bAmbient;
+		entry.custom = source.m_bCustom;
+		entry.max_volume = source.m_maxVolume;
+		entry.max_distance = source.m_maxDistance;
+		entry.decay = source.m_nDecay;
 		entry.loop_start = source.m_nLoopStart;
 		entry.loop_end = source.m_nLoopEnd;
 		entry.object = source.m_linkType.obj.nObject;
@@ -429,4 +612,109 @@ void audio_ownership_source_controls()
 					++cases;
 				}
 	std::cout << "PASS: " << cases << " source owner lifecycle comparisons; ordered removal retains every surviving voice through repaired back-references\n";
+}
+
+void audio_sync_source_controls()
+{
+	using namespace ownership_reference;
+	unsigned cases = 0;
+	const auto run = [&](int old_volume, int new_volume, int old_setting, int main_gain, int ambient_gain, unsigned config, unsigned object_state) {
+		owner_case = "sync config=" + std::to_string(config) + " object=" + std::to_string(object_state) + " old=" + std::to_string(old_volume) + " new=" + std::to_string(new_volume) + " setting=" + std::to_string(old_setting);
+		reset(1);
+		auto &entry = audio.m_objects[0];
+		entry.m_flags = SOF_USED;
+		if (!(config & 128)) entry.m_flags |= (config & 64) ? SOF_LINK_TO_POS : SOF_LINK_TO_OBJ;
+		if (config & 2) entry.m_flags |= SOF_PLAY_FOREVER;
+		entry.m_volume = old_volume;
+		entry.m_pan = int((config % 3) * 32768);
+		entry.m_audioVolume = old_setting;
+		entry.m_bCustom = (config & 4) != 0;
+		entry.m_bAmbient = (config & 8) != 0;
+		entry.m_soundClass = entry.m_bAmbient ? SOUNDCLASS_AMBIENT : 3;
+		audio.volumes = { main_gain, ambient_gain };
+		gameStates.sound.bDontStartObjects = (config & 16) != 0;
+		audio.fail_start = (config & 32) != 0;
+		if (!(config & 1)) entry.Stop();
+		if (object_state == 1) entry.m_linkType.obj.nObject = -1;
+		if (object_state == 2) objects[0].info.nType = OBJ_NONE;
+		if (object_state == 3) ++objects[0].info.nSignature;
+		if (object_state >= 4) {
+			objects[0].info.nType = OBJ_EFFECT;
+			objects[0].info.nId = (object_state == 4 || object_state == 7) ? SOUND_ID : LIGHTNING_ID;
+			objects[0].rType.soundInfo.bEnabled = object_state != 4;
+			objects[0].rType.lightningInfo.bEnabled = object_state != 5;
+			show_lightning = object_state != 6;
+		}
+		auto native = native_owners();
+		if (entry.m_channel >= 0) {
+			const int effective = int(std::int64_t(old_volume) * (old_setting < 0 ? 32768 : old_setting) / 65536);
+			auto &channel = audio.m_channels[entry.m_channel];
+			channel.m_info.nVolume = effective;
+			channel.m_info.nPan = entry.m_pan;
+			channel.m_info.nChannel = entry.m_channel;
+			channel.m_info.bAmbient = entry.m_bAmbient;
+			Mix_VolPan(entry.m_channel, effective, entry.m_pan);
+			auto &voice = native.mixer.voices[unsigned(entry.m_channel)];
+			voice.priority.volume = effective;
+			voice.output = xl_compat::audio_start_output(effective, entry.m_pan);
+		}
+		for (unsigned frame = 0; frame < 3; ++frame) {
+			spatial_volume = frame == 0 ? new_volume : frame == 1 ? 0
+			                                                      : 65536;
+			spatial_pan = frame == 0 ? 32767 : frame == 1 ? 0
+			                                              : 65536;
+			if (frame == 1) {
+				// Enabled effects can return, but a deleted lifetime cannot revive
+				objects[0].info.nType = 1;
+				objects[0].info.nSignature = objects[0].signature;
+				objects[0].rType.soundInfo.bEnabled = objects[0].rType.lightningInfo.bEnabled = true;
+				show_lightning = true;
+			}
+			if (frame == 2) {
+				gameStates.sound.bDontStartObjects = false;
+				audio.fail_start = false;
+				audio.volumes = { 16384, 8192 };
+			}
+			unsigned native_spatial_calls = 0;
+			source_spatial_calls = 0;
+			audio.SyncSounds();
+			native.owners.sync([&](const xl_compat::AudioOwner &owner) {
+				if (!(owner.flags & xl_compat::sound_link_position)) {
+					const auto *obj = object(owner.object);
+					if (!obj || obj->info.nType == OBJ_NONE || obj->info.nSignature != owner.signature)
+						return xl_compat::AudioOwnerUpdate{ false, true, 0, 0 };
+					const bool enabled = obj->info.nType != OBJ_EFFECT ||
+					                     !((obj->info.nId == SOUND_ID && !obj->rType.soundInfo.bEnabled) ||
+					                       (obj->info.nId == LIGHTNING_ID && !(show_lightning && obj->rType.lightningInfo.bEnabled)));
+					if (!enabled) return xl_compat::AudioOwnerUpdate{ true, false, 0, 0 };
+				}
+				++native_spatial_calls;
+				return xl_compat::AudioOwnerUpdate{ true, true, spatial_volume, spatial_pan };
+			},
+			                   native.mixer, audio.volumes, gameStates.sound.bDontStartObjects, !audio.fail_start);
+			compare_owners(native);
+			require_owner(native_spatial_calls == source_spatial_calls, "Sync evaluated geometry for a missing, disabled or unlinked owner");
+			for (unsigned i = 0; i < native.owners.count; ++i) {
+				const auto &actual = native.owners.entries[i];
+				const auto &expected = audio.m_objects[i];
+				require_owner(actual.pan == expected.m_pan && actual.audio_volume == expected.m_audioVolume, "Source owner pan or remembered effects gain differs");
+				if (actual.channel >= 0) {
+					const auto &voice = native.mixer.voices[unsigned(actual.channel)];
+					const auto &channel = audio.m_channels[actual.channel];
+					const auto &output = outputs[unsigned(actual.channel)];
+					require_owner(voice.priority.volume == channel.m_info.nVolume && voice.output.volume == output.volume && voice.output.pan == output.pan, "Sync changed gain or pan differently from source channel consumers");
+				}
+			}
+			++cases;
+		}
+	};
+	constexpr std::array<int, 10> volumes{ 0, 1, 127, 128, 129, 255, 256, 32768, 65536, 131072 };
+	constexpr std::array<int, 4> settings{ -1, 0, 8192, 32768 };
+	for (unsigned config = 0; config < 256; ++config)
+		for (unsigned state = 0; state < 9; ++state)
+			run(volumes[(config + state) % volumes.size()], volumes[(config * 3 + state * 7) % volumes.size()], settings[(config + 2 * state) % settings.size()], state % 3 ? 32768 : 0, config % 3 ? 8192 : 32768, config, state);
+	for (int volume = 0; volume <= 65536; volume += 128)
+		for (int delta : { -1, 0, 1 })
+			run(volume, (std::max) (0, volume + delta), 32768, 32768, 8192, 3, 0);
+	std::cout << "PASS: " << cases << " actual source linked updates, quantized gain, ambient/start gain, custom channels, missing/disabled owners and restart decisions\n";
 }

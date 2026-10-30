@@ -121,6 +121,15 @@ int CAudioChannel::Start(int16_t, int sound_class_, fix volume_, int32_t, int32_
 #undef RETVAL
 #undef RETURN
 } // namespace channel_reference
+xl_compat::AudioPriority audio_channel_reference_priority(int sound_class, int volume, int pan, int looping, int owner)
+{
+	using namespace channel_reference;
+	audio = {};
+	const int slot = audio.StartSound(0, sound_class, volume, pan, looping, -1, -1, owner, 65536, nullptr, nullptr);
+	if (slot < 0) throw std::runtime_error("Source priority fixture did not start");
+	const auto &channel = audio.m_channels[slot];
+	return { channel.sound_class, channel.volume, channel.persistent };
+}
 
 namespace
 {
