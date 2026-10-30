@@ -1,4 +1,5 @@
 #include "particle_resources.h"
+#include "particle_renderer.h"
 #include "resource_validation.h"
 #include "../inventory.h"
 #include "../particle_image.h"
@@ -13,6 +14,8 @@ extern "C" {
 
 namespace xl_compat
 {
+ParticleImageResource::ParticleImageResource() = default;
+ParticleImageResource::~ParticleImageResource() = default;
 namespace
 {
 bool locate(std::string &path, bool installation)
@@ -66,6 +69,7 @@ std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Invent
 	const unsigned width = image->bitmap.width;
 	if (width < 2 * fire_image_atlas_side || image->bitmap.height != width || (width & (width - 1)))
 		throw std::runtime_error("XL fire image requires a square power-of-two 2-by-2 atlas with room for its one-pixel cell borders: " + image->path);
+	image->texture = std::make_unique<ParticleTexture>(image->bitmap, image->path.c_str());
 	return image;
 }
 } // namespace xl_compat

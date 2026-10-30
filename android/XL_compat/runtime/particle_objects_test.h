@@ -9,6 +9,8 @@ static void particle_objects_native_case(bool active)
 	if (!active) {
 		xl_particle_objects_frame();
 		particle_objects_frame(1000);
+		xl_particle_render_scene(nullptr, 0);
+		require(particle_scene({}, {}, {}, 1000, 128, 128).empty(), "Stock level produced an XL particle scene");
 		require(!xl_particle_object_set_enabled(1, 1) && particle_systems().empty(), "Stock level accepted an XL particle owner");
 		require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Stock particle hooks consumed RNG");
 		return;
@@ -75,6 +77,18 @@ static void particle_objects_native_case(bool active)
 	require(particle_systems().front().emitter.moved == 0 && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Particle manager bypassed the 25-ms update gate");
 	particle_objects_frame(25);
 	require(particle_systems().front().emitter.count > 0 && d_rand_get_stream_call_count(D_RNG_FX) > fx_before, "Enabled native emitter produced no particles");
+	const auto render_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto &first_emitter = particle_systems().front().emitter;
+	const auto &first_particle = first_emitter.slots[std::size_t(first_emitter.first)];
+	const int rotation_before = first_particle.rotation;
+	const ParticlePoint eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
+	const ParticleBasis camera{ { 65536, 0, 0 }, { 0, 65536, 0 } };
+	const auto first_scene = particle_scene({ 0 }, eye, camera, 32, 128, 128);
+	require(!first_scene.empty() && first_particle.rotation == rotation_before, "Native particle scene bypassed render cadence or omitted visible particles");
+	const auto next_scene = particle_scene({ 0 }, eye, camera, 33, 128, 128);
+	require(next_scene.size() == first_scene.size() && first_particle.rotation == (rotation_before + 1) % 64, "Native particle scene did not advance its source rotation phase");
+	require(particle_scene({}, eye, camera, 34, 128, 128).empty(), "Invisible particle scene produced quads");
+	require(d_rand_get_stream_call_count(D_RNG_FX) == render_calls && d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle scene construction consumed RNG");
 	const auto *old = &particle_systems().back();
 	wall(33, 1);
 	particle_objects_frame(26);
@@ -137,5 +151,5 @@ static void particle_objects_native_case(bool active)
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle lifecycle or activation consumed simulation RNG");
-	std::cout << "XL particle native ownership: wall/object activation, cadence, drain/re-enable, recycled signatures, pause, point jitter, atomic binding and SIM isolation passed\n";
+	std::cout << "XL particle native ownership: wall/object activation, cadence, drain/re-enable, recycled signatures, pause, point jitter, visible scene/render cadence, atomic binding and SIM isolation passed\n";
 }

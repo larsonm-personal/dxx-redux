@@ -34,6 +34,7 @@ struct Arg GameArg{};
 struct Cfg GameCfg{};
 struct netgame_info Netgame{};
 int Game_mode = 0, gl_initialized = 0;
+extern int r_texcount;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
 grs_canvas *grd_curcanv = nullptr;
 void ogl_init_texture_list_internal(void);
@@ -457,6 +458,17 @@ int main(int argc, char **argv)
 		if (argc == 1) {
 			controls();
 			particle_gpu_controls();
+			particle_context_controls([&] {
+				ogl_done_prog();
+				ogl_close_pixel_buffers();
+				check(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "Cannot release old particle context");
+				check(eglDestroyContext(display, context), "Cannot destroy old particle context");
+				context = eglCreateContext(display, config, EGL_NO_CONTEXT, nullptr);
+				check(context != EGL_NO_CONTEXT && eglMakeCurrent(display, surface, surface, context), "Cannot replace particle context");
+				ogl_init_texture_list_internal();
+				ogl_init_pixel_buffers(32, 32);
+				ogl_init_prog();
+			});
 		} else
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		ogl_done_prog();
