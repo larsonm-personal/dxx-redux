@@ -208,3 +208,88 @@ Emitter scheduling, image resources, rendering, activation/deletion and
 save/load still need implementation and integration checks. No runtime particle
 admission or drawing is enabled by this checkpoint. All production changes in
 this layer remain inside `android/XL_compat`.
+
+## Emitter scheduling and engine ownership
+
+On `xl_more_80_emitters`, `FireEmitter` now owns particle storage, source emission
+rate/tick accumulation, capacity, interpolation and ring retirement order. The
+existing fire adapter executes actual `CParticleEmitter::Create`, `Update`,
+`SetLife` and `IsAlive`, reusing the actual particle creation/update and vector
+math already above. Pinned `effects/particle_emitter.cpp` has SHA-256
+`0a92df8997332d46abc2132b3f91e5831958d0a63ac64a8cdf6594318d7ae3a5`.
+
+Linux and Windows/x64 pass 2,880 frame comparisons, 24 drained rings and six
+zero-capacity rejections. Coverage includes irregular and repeated timestamps,
+capacities 1/2/7/64, face and point emitters, movement interpolation, collision,
+failed segment lookup, disabling and re-enabling, and matching live particle
+fields, random draw order and world call counts. This matrix supplies world
+outcomes explicitly. A separate composed comparison now connects the particle
+and emitter bodies to actual source geometry, as described below.
+
+The source retires dead particles while shrinking the retirement loop bound;
+some dead entries remain until another update. Preserve that behavior, including
+its consequences for capacity and RNG order. A particle Update false return
+alone does not retire a particle. Fresh zero-capacity CArray allocation returns
+null; the storage adapter was corrected after auditing `include/carray.h`, pinned
+at `10ea5f725a079e9be98f7871ffa6544d1de5c427db472b214b3f91188719019c`.
+Owners must skip zero-capacity construction, as XL does when creation fails.
+
+The emitter adapter supplies authored-effect class zero and fire brightness one.
+Unconsumed orientation matrices remain storage adapters. These checks cover CPU
+scheduling, not resource loading or image/render fidelity.
+Source `KillObjectSmoke` disables the old emitter and removes the object's system
+association; enabling again creates a new system while the old particles drain.
+The engine owner preserves that distinction and object signature checks.
+
+The source also executes `DoStaticParticles` twice per ordinary effects frame:
+once through `ObjectParticleFrame`, then through `StaticParticlesFrame`. Face
+emitters keep their position; point emitters consume both jitter visits. The
+existing `DoStaticParticles` source adapter now compares 1,152 point positions
+and random-call sequences, including the zero-spread fallback and face no-jitter
+controls, on Linux and Windows/x64.
+
+`runtime/particle_objects.cpp` binds immutable fire definitions and loaded world
+geometry, checks native identity/signatures, preserves ascending authored visits
+and newest-first system updates, and retains draining systems after disabling.
+It matches the 10,000-system source pool limit and the 25-ms update gate that
+drops elapsed residue. The source capacity constant is extracted and asserted.
+The effects clock uses SDL milliseconds relative to level binding; pause skips
+updates and resume includes elapsed wall time, without consuming simulation RNG.
+The gate begins at the level epoch, rather than inheriting XL's global tick phase.
+Full pause/menu behavior and save restoration still require platform integration.
+
+One intentional ownership correction differs from pinned XL: destruction of an
+old draining system only clears the object's association if that association
+still points to the old system. Pinned `CParticleSystem::Destroy` clears it
+unconditionally, which can orphan a replacement created after re-enabling.
+The native control verifies that the replacement remains bound after drainage.
+
+The existing native effect gate injects two authored fire objects into loaded
+Neptune geometry and executes the production owner. It checks wall and automatic
+object-trigger activation, initial disabled behavior, 25-ms cadence, draining and
+fresh re-enable, signature reuse, pause, two point-jitter visits, failed binding
+without partial replacement, explicit cleanup and unchanged simulation RNG.
+Stock hooks reject activation and consume neither RNG stream. The original
+six rejection controls and three supported recovery loads remain in the same
+process. These are controlled injected effects, not an admitted original Pumo
+level and not visible-rendering evidence.
+
+The existing loaded-world receipt additionally drives the actual source emitter
+and particle bodies against independently compiled source lookup/collision code.
+Production uses the native-exported world. Each of stock and Neptune passes 720
+frame comparisons and six drained rings, with 15-bit random inputs matching the
+native FX range. Stock exercises 882 lookups/836 collisions; Neptune exercises
+881/834. Linux and Windows/x64 agree. This composed matrix uses only capacity 7;
+the supplied-world matrix already covers other capacities and zero allocation,
+so those controls are not duplicated. No new native startup, CTest owner or
+workflow was added.
+
+Windows/x86 native build and the registered `xl_effect_inspection_gate` pass.
+The production implementation stays in `android/XL_compat`, except for five added
+lines in `d2/main/game.c`: one include and a guarded post-gameplay frame call.
+The existing trigger-frame hook runs before object movement and would delay
+movement-triggered activation until the next frame. D1 and Android application
+sources are unchanged.
+
+No runtime particle admission or drawing is enabled. Resource/image ownership,
+visible output, saved authored state and Android lifecycle checks remain next.

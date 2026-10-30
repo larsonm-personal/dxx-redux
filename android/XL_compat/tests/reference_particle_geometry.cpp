@@ -1,8 +1,13 @@
 #include "particle_geometry.h"
 #include "particle_fire.h"
+#include "fire_emitter.h"
+#include "particle_world.h"
 #include <cstring>
 #include <iostream>
 #include <optional>
+
+int particle_source_locate(const xl_compat::ParticlePoint &, bool, int);
+std::optional<xl_compat::ParticlePoint> particle_source_collide(const xl_compat::ParticlePoint &, int &);
 
 template <typename T>
 T Min(T a, T b)
@@ -13,6 +18,7 @@ namespace particle_geometry_reference
 {
 using fix = std::int32_t;
 using fixang = std::int16_t;
+struct CFloatVector;
 #include "xl_reference_particle_math.h"
 struct CFixVector {
 	struct {
@@ -60,6 +66,7 @@ struct CFixVector {
 		Set(0, 0, 0);
 	}
 	fix Mag() const;
+	CFixVector &Assign(const CFloatVector &);
 	void Check();
 	static const CFixVector Perp(const CFixVector &, const CFixVector &, const CFixVector &);
 	static const CFixVector Normal(const CFixVector &, const CFixVector &, const CFixVector &);
@@ -109,6 +116,18 @@ struct CFloatVector {
 	const float SqrMag() const;
 	const float Mag() const;
 	CFloatVector &Assign(const CFixVector &);
+	CFloatVector operator+(const CFloatVector &other) const
+	{
+		CFloatVector result;
+		result.Set(v.coord.x + other.v.coord.x, v.coord.y + other.v.coord.y, v.coord.z + other.v.coord.z);
+		return result;
+	}
+	CFloatVector operator*(float scale) const
+	{
+		CFloatVector result;
+		result.Set(v.coord.x * scale, v.coord.y * scale, v.coord.z * scale);
+		return result;
+	}
 };
 struct {
 	struct {
@@ -132,6 +151,7 @@ struct RandomInput {
 	std::vector<int> values;
 	unsigned position = 0;
 	bool generated = false;
+	bool native_range = false;
 	std::uint32_t state = 1;
 	std::vector<int> trace;
 	std::uint32_t next()
@@ -144,7 +164,8 @@ struct RandomInput {
 	float unit()
 	{
 		trace.push_back(-1);
-		return float(next()) / float(UINT32_MAX);
+		const auto raw = next();
+		return native_range ? float(raw & 32767u) / 32767.0f : float(raw) / float(UINT32_MAX);
 	}
 	int bounded(int bound)
 	{
@@ -153,7 +174,10 @@ struct RandomInput {
 	int operator()(int bound)
 	{
 		trace.push_back(bound);
-		if (generated) return int(next() % unsigned(bound));
+		if (generated) {
+			const auto raw = next();
+			return int((native_range ? raw & 32767u : raw) % unsigned(bound));
+		}
 		if (position >= values.size()) throw std::runtime_error("Particle geometry source exhausted random input");
 		const int result = values[position++];
 		if (result < 0 || result >= bound) throw std::runtime_error("Particle geometry source changed random draw order");
@@ -205,6 +229,7 @@ struct CAngleVector {
 	} v{};
 };
 struct CFixMatrix {
+	static const CFixMatrix IDENTITY;
 	struct {
 		struct {
 			CFixVector r, u, f;
@@ -219,6 +244,7 @@ struct CFixMatrix {
 		return *this;
 	}
 };
+const CFixMatrix CFixMatrix::IDENTITY{};
 float RandFloat(float scale = 1.0f)
 {
 	return source_random.unit() / scale;
@@ -292,16 +318,19 @@ struct CParticle {
 	int32_t Update(int32_t, float, int32_t);
 };
 struct WorldInput {
+	const xl_compat::ParticleWorld *compiled = nullptr;
 	int located = 0, portal = -1, lookups = 0, collisions = 0;
 	std::optional<xl_compat::ParticlePoint> normal;
-	int locate(const xl_compat::ParticlePoint &, bool, int)
+	int locate(const xl_compat::ParticlePoint &position, bool skybox, int start)
 	{
 		++lookups;
+		if (compiled) return compiled->locate(position, skybox, start);
 		return located;
 	}
 	std::optional<xl_compat::ParticlePoint> collide(xl_compat::FireParticle &particle)
 	{
 		++collisions;
+		if (compiled) return compiled->collide(particle);
 		if (particle.segment < 0) return {};
 		if (portal >= 0) {
 			particle.segment = portal;
@@ -310,9 +339,10 @@ struct WorldInput {
 		return normal;
 	}
 } source_world;
-int FindSegByPosExhaustive(const CFixVector &, int, int)
+int FindSegByPosExhaustive(const CFixVector &position, int skybox, int start)
 {
 	++source_world.lookups;
+	if (source_world.compiled) return particle_source_locate({ position.v.coord.x, position.v.coord.y, position.v.coord.z }, skybox != 0, start);
 	return source_world.located;
 }
 CFixVector source_normal;
@@ -320,6 +350,12 @@ CFixVector *wallNorm[1] = { &source_normal };
 int32_t CParticle::CollideWithWall(int32_t)
 {
 	++source_world.collisions;
+	if (source_world.compiled) {
+		const auto normal = particle_source_collide({ m_vPos.v.coord.x, m_vPos.v.coord.y, m_vPos.v.coord.z }, m_nSegment);
+		if (!normal) return 0;
+		source_normal.Set((*normal)[0], (*normal)[1], (*normal)[2]);
+		return 1;
+	}
 	if (m_nSegment < 0) return 0;
 	if (source_world.portal >= 0) {
 		m_nSegment = source_world.portal;
@@ -533,3 +569,5 @@ void particle_original_geometry_controls(const xl_compat::Inventory &level)
 	}
 	std::cout << "Original particle faces: " << count << " density and emission geometries compared\n";
 }
+
+#include "reference_fire_emitter.h"

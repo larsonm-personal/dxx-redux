@@ -6,6 +6,7 @@
 #include "level_messages.h"
 #include "named_audio.h"
 #include "ambient_objects.h"
+#include "particle_objects.h"
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include "seismic_gameplay.h"
@@ -102,7 +103,7 @@ void operate(ObjectAction &entry)
 	else if (action.type == 32 || action.type == 33) {
 		for (int link = 0; link < action.num_links; ++link) {
 			if (action.side[link] < 0) {
-				if (!xl_ambient_object_set_enabled(action.seg[link], action.type == 32)) break;
+				if (!xl_ambient_object_set_enabled(action.seg[link], action.type == 32) && !xl_particle_object_set_enabled(action.seg[link], action.type == 32)) break;
 				continue;
 			}
 			if (action.seg[link] < 0 || action.seg[link] > Highest_segment_index || action.side[link] >= 6) break;

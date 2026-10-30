@@ -293,9 +293,11 @@ Particle work now includes source-matched parameter conversion, face sampling
 and authored fire CPU creation/update. The existing test owner compares original
 Pumo face geometry and controlled fire state transitions on Linux and Windows.
 Loaded stock/Neptune geometry now matches pinned XL side setup, normals, radii,
-spatial-grid candidate lists and native collision/lookup receipts. Emitter
-scheduling, engine lifecycle, resources and visible rendering remain unfinished;
-particles remain blocked. See [particle evidence](evidence/particle-effects.md).
+spatial-grid candidate lists and native collision/lookup receipts. Fire emitter
+scheduling now has source comparisons, including loaded mine geometry, and native
+controls cover activation, draining/re-enable, recycled owners, pause and RNG
+isolation. Resources, visible rendering, persistence and Android integration
+remain unfinished; particles remain blocked. See [particle evidence](evidence/particle-effects.md).
 
 Immediate singleplayer wall teleports now use detected requirements, including
 destination validation, actor dispatch, reference-matched rotation and source

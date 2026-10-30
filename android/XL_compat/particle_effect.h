@@ -136,6 +136,21 @@ inline ParticleEmitterDefinition particle_emitter_definition(const ParticleEffec
 	result.bubbles = type == 1;
 	return result;
 }
+
+template <typename Random>
+std::array<int, 3> particle_emitter_position(const ParticleEffect &effect, std::array<int, 3> position, Random &random)
+{
+	int spread = ((effect.drift >> 4) + (effect.size[0] >> 2)) / 2;
+	const int limit = spread - spread / 2 ? spread - spread / 2 : 2;
+	spread /= 2;
+	for (auto &axis : position) {
+		const int signed_random = 16383 - random.bounded(32768);
+		const auto value = std::int64_t(axis) + std::int64_t(signed_random) * (random.bounded(limit) + spread);
+		if (value < INT32_MIN || value > INT32_MAX) throw std::runtime_error("XL particle emitter position exceeds the source arithmetic range");
+		axis = int(value);
+	}
+	return position;
+}
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

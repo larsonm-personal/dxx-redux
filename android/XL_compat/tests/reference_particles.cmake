@@ -61,6 +61,7 @@ set(extracted "// Actual pinned emitter selection and creation; backend calls ar
 foreach(
     pair IN
     ITEMS "include/particles.h|PARTICLE_RAD"
+          "include/particles.h|MAX_PARTICLE_SYSTEMS"
           "include/particles.h|SIMPLE_SMOKE_PARTICLES"
           "include/particles.h|SMOKE_PARTICLES"
           "include/particles.h|BUBBLE_PARTICLES"
@@ -324,4 +325,32 @@ foreach(signature IN ITEMS "inline const CFixVector CFixVector::Perp ("
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_normal.h"
+     CONTENT "${extracted}")
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_emitter.cpp" emitter_hash)
+if(NOT emitter_hash STREQUAL "0a92df8997332d46abc2132b3f91e5831958d0a63ac64a8cdf6594318d7ae3a5")
+    message(FATAL_ERROR "Particle emitter source changed")
+endif()
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/carray.h" emitter_array_hash)
+if(NOT emitter_array_hash STREQUAL
+   "10ea5f725a079e9be98f7871ffa6544d1de5c427db472b214b3f91188719019c")
+    message(FATAL_ERROR "Particle emitter array semantics changed")
+endif()
+set(extracted "// Pinned emitter allocation, scheduling, ring retirement and disabling\n")
+foreach(signature IN ITEMS "int32_t CParticleEmitter::Create ("
+                           "int32_t CParticleEmitter::Update (" "void CParticleEmitter::SetLife (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_emitter.cpp"
+                          "${signature}")
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/particles.h" emitter_header)
+string(REGEX MATCH "inline bool IsAlive \\([^}]+}" alive_body "${emitter_header}")
+if(NOT alive_body)
+    message(FATAL_ERROR "Missing particle emitter lifetime predicate")
+endif()
+string(REPLACE "inline bool IsAlive" "inline bool CParticleEmitter::IsAlive" alive_body
+               "${alive_body}")
+string(APPEND extracted "${alive_body}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline CFixVector& CFixVector::Assign (const CFloatVector&")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_fire_emitter.h"
      CONTENT "${extracted}")
