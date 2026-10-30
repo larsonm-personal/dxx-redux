@@ -6,6 +6,10 @@ bounded SND/WAV resource set owned by the selected mission HOG. External sound
 directories and ambient sound objects are separate requirements. This work does
 not qualify any original Pumo level or the campaign.
 
+The subsequent [sound-folder increment](audio-scopes.md) implements owned mission,
+normal-level and secret-level lookup. The initial HOG-only scope and receipts
+below describe this earlier playback increment.
+
 ## Runtime and source behavior
 
 The [pinned source contracts](named-audio-source.md) remain the event reference.

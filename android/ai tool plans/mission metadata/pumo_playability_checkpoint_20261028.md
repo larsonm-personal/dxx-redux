@@ -20,6 +20,11 @@ calling the campaign verified. Do not replace that with automated navigation.
   positions, with actual output controls. All 60 original actions pass the
   production resource preparation path at 44.1 and 48 kHz; original event
   playback and campaign acceptance remain separate.
+- Owned mission/normal/secret sound folders now have source, native and 65-step
+  Android output/persistence evidence. All 644 Pumo ambient objects resolve to
+  41 owned external WAVs with independent decoded-sample comparisons. This
+  establishes resources, not the still-missing spatial ambient runtime. The
+  other 220 external sound files require separate consumer/replacement auditing.
 - Required CI selections now contain 43/46 public and 103 private controls.
   See [current audio evidence](../../XL_compat/evidence/named-audio-runtime.md)
   for completed-run receipts and boundaries. These protect foundations without
@@ -74,7 +79,7 @@ settings against source defaults and their actual consumers.
 1. Use the completed owned single-frame POG implementation while finishing the
    HXM/configuration audit and remaining texture profiles. Actual rendering and
    transparency must accompany decoding and persistence.
-2. Use the owned named-sound voice and resource foundation for ambient sound
+2. Use the owned named-sound voice and mission/level-folder foundation for ambient sound
    objects. Verify spatial output, ownership, pause, restoration and cleanup
    before enabling that consumer. Its effect-object lifecycle is still blocked.
 3. Complete effect-object lifecycle and its enable/disable targets. Preserve

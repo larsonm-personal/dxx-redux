@@ -1,5 +1,6 @@
 #include "named_sound.h"
 #include <array>
+#include <cstdio>
 #include <stdexcept>
 #include <string_view>
 
@@ -35,5 +36,24 @@ std::string named_sound_filename(const std::string &authored)
 	for (const unsigned char c : authored)
 		if (c < 32 || c == 127) throw std::runtime_error("Named sound filename contains a control character");
 	return authored;
+}
+
+std::vector<std::string> named_sound_paths(const std::string &mission, const std::string &authored, int ordinal)
+{
+	if (mission.empty() || mission.size() > 255 || mission == "." || mission == ".." ||
+	    mission.find_first_of("/\\:") != std::string::npos || ordinal < -9999 || ordinal > 9999)
+		throw std::runtime_error("Invalid XL sound mission identity or level ordinal");
+	for (const unsigned char c : mission)
+		if (c < 32 || c == 127) throw std::runtime_error("XL sound mission identity contains a control character");
+	const auto filename = named_sound_filename(authored);
+	std::vector<std::string> paths{ filename };
+	const auto root = "mods/" + mission + "/sounds/";
+	if (ordinal) {
+		char folder[32];
+		std::snprintf(folder, sizeof(folder), "%s%02d/", ordinal < 0 ? "slevel" : "level", ordinal < 0 ? -ordinal : ordinal);
+		paths.push_back(root + folder + filename);
+	}
+	paths.push_back(root + filename);
+	return paths;
 }
 } // namespace xl_compat

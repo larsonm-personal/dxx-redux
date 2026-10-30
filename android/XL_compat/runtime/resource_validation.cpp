@@ -372,7 +372,7 @@ xl_assets::ObjectDependencies &XlPreparedResources::dependencies()
 	return state->graph;
 }
 
-XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level)
+XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level, int ordinal)
 {
 	if (!mission_base) throw std::runtime_error("clean mission definitions are unavailable");
 	if (mission_base->robots.size() != std::size_t(N_robot_types))
@@ -383,7 +383,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		throw std::runtime_error("model definition registry changed since mission initialization");
 	state = std::make_unique<State>(*mission_base);
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
-	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level);
+	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);

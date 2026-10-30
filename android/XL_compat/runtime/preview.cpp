@@ -428,6 +428,11 @@ extern "C" const char *xl_level_rejection(void)
 
 extern "C" int xl_level_supported(const char *filename, int multiplayer)
 {
+	return xl_level_supported_at(filename, multiplayer, 0);
+}
+
+extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int ordinal)
+{
 	rejection.clear();
 	try {
 		validate_mission_context();
@@ -439,7 +444,7 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 		}
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
-		XlPreparedResources resources(filename, &probe.source);
+		XlPreparedResources resources(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies());
 		return 1;
 	} catch (const std::exception &error) {
@@ -630,6 +635,11 @@ extern "C" unsigned xl_preview_rebuilt_ambient_vertices(void)
 
 extern "C" int xl_preview_load_level(const char *filename)
 {
+	return xl_preview_load_level_at(filename, 0);
+}
+
+extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
+{
 	// A mode change must never leave singleplayer extensions active in multiplayer
 	if (Game_mode & GM_MULTI) xl_preview_clear_mission();
 	rejection.clear();
@@ -665,7 +675,7 @@ extern "C" int xl_preview_load_level(const char *filename)
 		}
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
-		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source);
+		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");

@@ -4,6 +4,7 @@
 #include "named_audio_state.h"
 #include "preview.h"
 #include "object_trigger.h"
+#include "android_mission_assets.h"
 #include <SDL.h>
 #include <algorithm>
 #include <array>
@@ -34,6 +35,7 @@ std::string failure;
 json earned;
 fix energy = 0;
 int version = 0;
+int scope_ordinal = 0;
 unsigned output_checks = 0;
 std::uint64_t checked_samples = 0;
 std::uint64_t music_samples = 0;
@@ -148,6 +150,102 @@ void verify()
 	if (earned.is_null() || current != earned || xl_source_level_version() != version || Players[Player_num].energy != energy || xl_compat::named_audio_diagnostics().at("paused") != true)
 		throw std::runtime_error("Android audio restoration differs: " + json::diff(earned, current).dump() + "; version=" + std::to_string(xl_source_level_version()) + "; energy=" + std::to_string(Players[Player_num].energy) + "; paused=" + xl_compat::named_audio_diagnostics().at("paused").dump());
 }
+
+void scope_output(int action)
+{
+	reset_events();
+	capture_begin();
+	Triggers[action].flags = 0;
+	require(check_trigger_sub(action, Player_num, 1) == 0 && snapshot().at("voices").size() == 1, "Android scoped wall action failed");
+	xl_named_audio_pause(0);
+	capture_run(4096);
+	const int ordinal = Current_level_num;
+	const int left = action == 0 ? 1000 : action == 2 ? 1500
+	                                  : ordinal == 1  ? 2500
+	                                  : ordinal == 2  ? -3000
+	                                  : ordinal == -1 ? 11000
+	                                                  : 8000;
+	const int right = action == 0 ? -2000 : action == 2 ? -1500
+	                                    : ordinal == 1  ? -7500
+	                                    : ordinal == 2  ? 9000
+	                                    : ordinal == -1 ? -5000
+	                                                    : -4000;
+	for (std::size_t i = 0; i < captured_samples; ++i) {
+		const int sample = std::int16_t(float(i % 2 ? right : left) * (127.0f / 255.0f));
+		const int expected = (std::clamp) (sample * 20 / 128 + int(captured_music[i]), -32768, 32767);
+		require(captured[i] == expected, "Android scoped resource produced the wrong stereo PCM");
+		if (captured_music[i]) ++music_samples;
+	}
+	checked_samples += captured_samples;
+	++output_checks;
+	xl_named_audio_pause(1);
+	SDL_PauseAudio(0);
+}
+
+void scope_control(const char *operation)
+{
+	if (!std::strcmp(operation, "disk_load")) {
+		require(!earned.is_null() && state_android_restore_slot(ANDROID_SAVE_META_SLOT_QUICK) == 1, "Cannot restore Android scoped audio");
+		verify();
+		require(Current_level_num == scope_ordinal && *android_mission_assets_key(), "Scoped disk restore selected the wrong owned mission/level");
+		require(android_open_overlay_pause_if_safe(), "Cannot pause restored scoped audio controls");
+		return;
+	}
+	fixture();
+	require(Current_mission && !std::strcmp(Current_mission_filename, "xscope") && Last_level == 3 && Last_secret_level == -1 && *android_mission_assets_key(), "Scoped audio requires the published derived package");
+	if (!std::strcmp(operation, "next2") || !std::strcmp(operation, "secret") || !std::strcmp(operation, "next3")) {
+		require(!game_is_time_paused(), "Scoped transitions require unpaused gameplay");
+		const int next = !std::strcmp(operation, "next2") ? 2 : !std::strcmp(operation, "secret") ? -1
+		                                                                                          : 3;
+		const auto previous = snapshot();
+		StartNewLevelSub(next, 1, 0);
+		const auto current = snapshot();
+		require(Current_level_num == next && current.at("source") != previous.at("source") &&
+		            std::all_of(current.at("voices").begin(), current.at("voices").end(), [&](const auto &voice) { return voice[1] >= previous.at("next"); }),
+		        "Scoped transition retained the prior resource or voice");
+		return;
+	}
+	require(game_is_time_paused(), "Android scoped controls require paused gameplay");
+	if (!std::strcmp(operation, "output")) {
+		const auto diagnostic = xl_compat::named_audio_diagnostics();
+		const std::string folder = Current_level_num == 1 ? "level01/" : Current_level_num == 2 ? "level02/"
+		                                                             : Current_level_num == -1  ? "slevel01/"
+		                                                                                        : "";
+		require(diagnostic.at("files") == json::array({ "shared.wav", "mods/xscope/sounds/" + folder + "scoped.wav", "mods/xscope/sounds/mission.wav", "tiny.wav" }), "Android selected an incorrect sound scope or priority");
+		for (int action : { 0, 1, 2 }) scope_output(action);
+	} else if (!std::strcmp(operation, "prepare")) {
+		scope_output(1);
+		earned = snapshot();
+		energy = Players[Player_num].energy;
+		version = xl_source_level_version();
+		scope_ordinal = Current_level_num;
+		require(scope_ordinal == 2 && earned.at("voices").size() == 1 && earned.at("voices")[0][3] > 0, "Scoped save must earn level-two playback");
+		verify();
+		require(!xl_level_supported("scope23.rl2", 0) && std::strstr(xl_level_rejection(), "explicit incoming level number"), "Android ambiguous sound scope passed admission");
+		verify();
+	} else if (!std::strcmp(operation, "verify")) {
+		verify();
+		require(Current_level_num == scope_ordinal, "Scoped save restored a different incoming level number");
+	} else if (!std::strcmp(operation, "disk_save")) {
+		verify();
+		require(state_android_save_to_slot(ANDROID_SAVE_META_SLOT_QUICK, "XL sound scope", ANDROID_SAVE_META_KIND_MANUAL) == 1, "Cannot save Android scoped audio");
+	} else if (!std::strcmp(operation, "resume_output")) {
+		verify();
+		capture_begin();
+		xl_named_audio_pause(0);
+		capture_run(4096);
+		for (std::size_t i = 0; i < captured_samples; ++i) {
+			const int sample = std::int16_t(float(i % 2 ? 9000 : -3000) * (127.0f / 255.0f));
+			require(captured[i] == (std::clamp) (sample * 20 / 128 + int(captured_music[i]), -32768, 32767), "Restored scoped voice produced another level's audio");
+		}
+		checked_samples += captured_samples;
+		++output_checks;
+		xl_named_audio_pause(1);
+		require(xl_compat::restore_named_audio(earned, true), "Cannot recover scoped output playhead");
+		SDL_PauseAudio(0);
+		verify();
+	} else require(false, "Unknown Android scoped audio operation");
+}
 } // namespace
 
 json xl_named_audio_probe_diagnostics()
@@ -159,7 +257,9 @@ const char *xl_named_audio_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Named audio controls require running singleplayer");
-		if (!std::strcmp(operation, "stock")) {
+		if (!std::strncmp(operation, "scope_", 6)) {
+			scope_control(operation + 6);
+		} else if (!std::strcmp(operation, "stock")) {
 			require(!xl_level_extensions_active() && snapshot().at("source") == "" && snapshot().at("voices").empty() && xl_compat::named_audio_diagnostics().at("resources") == 0, "Named audio leaked into Redux");
 		} else if (!std::strcmp(operation, "disk_load")) {
 			require(!earned.is_null() && state_android_restore_slot(ANDROID_SAVE_META_SLOT_QUICK) == 1, "Cannot restore Android named audio");

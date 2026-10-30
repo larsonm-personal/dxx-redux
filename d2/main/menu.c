@@ -959,7 +959,7 @@ int do_new_game_menu()
 		return 0;
 
 #ifdef DXX_XL_RUNTIME
-	if (!xl_level_supported(Level_names[new_level_num - 1], 0)) {
+	if (!xl_level_supported_at(Level_names[new_level_num - 1], 0, new_level_num)) {
 		nm_messagebox("Cannot run XL level", 1, TXT_OK, "%s", xl_level_rejection());
 		return 0;
 	}

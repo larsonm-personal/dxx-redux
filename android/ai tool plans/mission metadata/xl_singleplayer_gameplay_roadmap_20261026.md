@@ -385,6 +385,14 @@ finish original-mission qualification
     sound-folder ownership, ambient spatialization and effect-object lifecycle
     remain subsequent consumers. Every Pumo level still has independent blockers.
 
+47. Owned mission and level sound folders: source priority, signed incoming
+    ordinals, repeated normal/secret filenames and selected-context ownership
+    now have native and 65-step Android output, save/rewind and stock evidence.
+    All 644 Pumo ambient objects resolve to 41 owned external WAVs with independent
+    PCM checks. See [sound-folder evidence](../../XL_compat/evidence/audio-scopes.md).
+    Ambient spatialization, global addon installations and the remaining external
+    sound replacement consumers remain separate; Pumo is still unqualified.
+
 After the wall, cloak, trigger, object and changing-light batches, continue the capacity and resource foundations, then the
 remaining actor and event variants in dependency order. Use original counts to
 choose effect/audio fixtures, with activation, gameplay cues and cleanup treated

@@ -78,6 +78,7 @@ Mission *Current_mission = NULL; // currently loaded mission
 static char Current_mission_hog[PATH_MAX];
 #ifdef DXX_XL_RUNTIME
 static char *Current_mission_descriptor;
+static char Current_mission_descriptor_root[PATH_MAX];
 const char *mission_descriptor_snapshot(void)
 {
 	return Current_mission_descriptor;
@@ -676,12 +677,18 @@ const char *mission_resource_archive(void)
 {
 	return Current_mission ? Current_mission_hog : "";
 }
+
+int mission_owns_resource_directory(const char *source)
+{
+	return source && Current_mission && Current_mission_descriptor_root[0] && !strcmp(source, Current_mission_descriptor_root);
+}
 #endif
 
 void free_mission(void)
 {
 #ifdef DXX_XL_RUNTIME
 	d_free(Current_mission_descriptor);
+	Current_mission_descriptor_root[0] = '\0';
 	xl_preview_clear_mission();
 	xl_resource_select_mission(0);
 	xl_resource_baseline_clear();
@@ -853,6 +860,7 @@ typedef struct mission_descriptor_stage {
 	int has_companion_hog;
 #ifdef DXX_XL_RUNTIME
 	char companion_hog[PATH_MAX];
+	char descriptor_root[PATH_MAX];
 	char *descriptor_data;
 #endif
 } mission_descriptor_stage;
@@ -1145,6 +1153,13 @@ static int preflight_mission_descriptor(const mle *mission, mission_descriptor_s
 	if (length < 0 || (size_t)length >= sizeof(path)) return 0;
 	file = PHYSFSX_openReadBuffered(path);
 	if (!file) return 0;
+	PHYSFSEXT_locateCorrectCase(path);
+	const char *root = PHYSFS_getRealDir(path);
+	if (!root || strlen(root) >= sizeof(stage->descriptor_root)) {
+		PHYSFS_close(file);
+		return 0;
+	}
+	strcpy(stage->descriptor_root, root);
 	stage->descriptor_data = capture_mission_descriptor(file);
 	if (!stage->descriptor_data) {
 		PHYSFS_close(file);
@@ -1367,6 +1382,19 @@ int load_mission(mle *mission)
 		free_mission();
 		return 0;		//error!
 	}
+
+#ifdef DXX_XL_RUNTIME
+#ifndef __ANDROID__
+	if (staged.ready)
+		strcpy(Current_mission_descriptor_root, staged.descriptor_root);
+	else
+#endif
+	{
+		const char *root = PHYSFS_getRealDir(buf);
+		if (root && strlen(root) < sizeof(Current_mission_descriptor_root))
+			strcpy(Current_mission_descriptor_root, root);
+	}
+#endif
 
 #ifdef __ANDROID__
 	physfsx_android_mount_mission_directory(buf);

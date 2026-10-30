@@ -38,7 +38,7 @@ struct Inventory;
 class XlPreparedResources
 {
   public:
-	explicit XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level = nullptr);
+	explicit XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level = nullptr, int ordinal = 0);
 	~XlPreparedResources();
 	xl_assets::ObjectDependencies &dependencies();
 	void install_hxm();

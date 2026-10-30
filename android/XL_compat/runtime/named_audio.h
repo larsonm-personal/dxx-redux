@@ -23,7 +23,7 @@ namespace xl_compat
 {
 struct Inventory;
 struct NamedAudioResources;
-std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level, const Inventory &inventory);
+std::shared_ptr<const NamedAudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0);
 void install_named_audio(std::shared_ptr<const NamedAudioResources> resources);
 } // namespace xl_compat
 #endif
