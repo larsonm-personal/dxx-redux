@@ -7,6 +7,7 @@
 int particle_source_plane_distance(const xl_compat::ParticlePoint &, const xl_compat::ParticlePoint &, const xl_compat::ParticlePoint &);
 int particle_source_distance(const xl_compat::ParticlePoint &, const xl_compat::ParticlePoint &);
 xl_compat::ParticlePoint particle_source_normal(const xl_compat::ParticlePoint &, const xl_compat::ParticlePoint &, const xl_compat::ParticlePoint &);
+void particle_emitter_loaded_controls(const xl_compat::Inventory &, const xl_compat::ParticleWorld &);
 namespace particle_world_reference
 {
 using fix = std::int32_t;
@@ -413,6 +414,25 @@ void compare_compiled(const xl_particle_world_receipt::Case &receipt)
 }
 } // namespace particle_world_reference
 
+int particle_source_locate(const xl_compat::ParticlePoint &position, bool skybox, int start)
+{
+	return particle_world_reference::FindSegByPosExhaustive({ position }, skybox, start);
+}
+std::optional<xl_compat::ParticlePoint> particle_source_collide(const xl_compat::ParticlePoint &position, int &segment)
+{
+	using namespace particle_world_reference;
+	CParticle particle;
+	particle.m_nSegment = segment;
+	particle.m_vPos = position;
+	nPartSeg[0] = -1;
+	wallNorm[0] = nullptr;
+	const bool hit = particle.CollideWithWall(0) != 0;
+	segment = particle.m_nSegment;
+	if (!hit) return {};
+	if (!wallNorm[0]) throw std::runtime_error("Source particle collision omitted its wall normal");
+	return wallNorm[0]->point();
+}
+
 void compare_particle_world_receipt(const char *path)
 {
 	std::ifstream input(path);
@@ -432,6 +452,7 @@ void compare_particle_world_receipt(const char *path)
 		if (token != "case" || version != cases) throw std::runtime_error("Invalid particle world receipt case");
 		const auto receipt = xl_particle_world_receipt::read(input);
 		particle_world_reference::compare_compiled(receipt);
+		particle_emitter_loaded_controls(receipt.source, receipt.world);
 		segments += unsigned(receipt.world.segments.size());
 		queries += unsigned(receipt.queries.size());
 		++cases;

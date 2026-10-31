@@ -123,3 +123,55 @@ visible rendering, activation and save/load. This geometry checkpoint does not
 enable particle admission. PR #229's XL contracts, server Rust and public LAN
 workflows have passed; engine smoke and Linux gameplay were still running at the
 latest authoritative poll.
+
+The world layer is published as draft PR #230, commit `e50f32159`, on
+`xl_more_79_particle_world`, stacked on #229. New emitter work is on
+`xl_more_80_emitters` in the same main checkout. Its CPU implementation now passes
+2,880 actual-source frame comparisons, 24 drained rings and six zero-capacity
+rejections on Linux and Windows/x64, through the existing fire test owner.
+World outcomes are supplied in these emitter comparisons; real engine binding
+is still required. Source `KillObjectSmoke` stops emission and releases the object-system
+association while old particles drain; re-enabling therefore needs a fresh owned
+emitter, not a reset of the old live particles.
+
+The five PR-triggered workflows returned for foundation PR #229 now all report
+success, including engine smoke and Linux gameplay/save/replay. PR #230 has six
+queued workflows, including tooling checks. Full published-head CI audit remains
+part of the tranche completion work.
+
+Before binding emitters, preserve actual manager lifecycle: the normal source
+uses `PHYSICS_FPS=-1`, `SMOKE_SLOWMO=0`, and a 25-ms SDL-tick gate; system updates
+check object signature/deletion, stop old emitters and clean drained systems.
+`CDataPool::Pop` prepends new systems to the used list, so manager update order
+is newest-first. Audit the effect-object iterator creation order and pause/save
+behavior before choosing the engine clock and ownership implementation.
+
+## Emitter ownership checkpoint
+
+The visible `xl_more_80_emitters` branch now connects the fire emitter to native
+ownership and wall/object activation. Its existing native effect owner passes
+disabled startup, source update cadence, draining/fresh re-enable, recycled
+signatures, pause, point jitter, atomic binding rejection and simulation RNG
+isolation. Effects remain rejected at admission; these tests inject controlled
+objects into loaded Neptune and do not claim original Pumo support.
+
+The source comparison now composes emitter and particle updates with independently
+compiled real mine geometry: 720 frames and six drained rings each for stock D2
+and Neptune, matching on Linux and Windows/x64. It reuses the existing world
+receipt and one engine startup. Only capacity 7 is repeated with real geometry;
+the existing supplied-world matrix owns the remaining capacities and rejection
+controls. Point jitter separately passes 1,152 actual-source position/RNG
+comparisons on both platforms.
+
+One small core hook is necessary: `d2/main/game.c` adds an include and guarded
+call after gameplay. The existing trigger-frame hook runs before object movement,
+which would delay effects activated by movement until the next frame. All particle
+implementation stays in XL_compat, with no D1 or Android application changes.
+Evidence records the level-relative SDL clock, source's two authored visits,
+newest-first system order and intentional correction of old-system destruction
+unbinding a newer replacement.
+
+The Windows/x86 native build, Windows/x64 and Linux source owners, shared audio
+source controls, and the registered native effect gate pass. Next is resource
+ownership and visible fire rendering, then persistence and Android qualification.
+The twelve-hour tranche remains active; this checkpoint does not enable Pumo.

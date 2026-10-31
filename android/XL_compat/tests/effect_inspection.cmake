@@ -34,6 +34,10 @@ foreach(version IN ITEMS 23 25 27)
         message(FATAL_ERROR "Missing effect version ${version} rejection/recovery witness")
     endif()
 endforeach()
+string(FIND "${log}" "XL particle native ownership:" particle_witness)
+if(particle_witness LESS 0)
+    message(FATAL_ERROR "Missing native particle ownership witness")
+endif()
 if(particle_world_args)
     execute_process(
         COMMAND "${REFERENCE}" --particle-world "${OUTPUT}/particle-world.txt"

@@ -137,6 +137,7 @@ struct {
 auto *gameOpts = &options;
 struct ParticleManager {
 	xl_compat::ParticleEmitterDefinition created{};
+	std::array<int, 3> position{};
 	int owner = -1, creates = 0, kills = 0, positions = 0;
 #include "xl_reference_particle_sizes.h"
 	int GetObjectSystem(int) const
@@ -172,9 +173,10 @@ struct ParticleManager {
 	{
 		created.fade = value;
 	}
-	void SetPos(int, CFixVector *, void *, int)
+	void SetPos(int, CFixVector *value, void *, int)
 	{
 		++positions;
+		position = { value->v.coord.x, value->v.coord.y, value->v.coord.z };
 	}
 } particleManager;
 void KillObjectSmoke(int)
@@ -182,14 +184,28 @@ void KillObjectSmoke(int)
 	particleManager.owner = -1;
 	++particleManager.kills;
 }
+struct PositionRandom {
+	std::uint32_t state;
+	std::vector<int> trace;
+	int bounded(int limit)
+	{
+		if (limit <= 0) throw std::runtime_error("Invalid point emitter random bound");
+		state ^= state << 13;
+		state ^= state >> 17;
+		state ^= state << 5;
+		trace.push_back(limit);
+		return int(state % unsigned(limit));
+	}
+};
+PositionRandom *position_random = nullptr;
 int SRandShort()
 {
-	return 0;
+	return position_random ? 16383 - position_random->bounded(32768) : 0;
 }
 int Rand(int limit)
 {
 	if (limit <= 0) throw std::runtime_error("Invalid emitter random bound");
-	return 0;
+	return position_random ? position_random->bounded(limit) : 0;
 }
 const char *AddonSoundName(int)
 {
@@ -251,8 +267,47 @@ void compare(const std::vector<int> &payload, int version, float face_size, bool
 }
 } // namespace particle_reference
 
+void particle_emitter_position_controls()
+{
+	using namespace particle_reference;
+	unsigned comparisons = 0;
+	for (int drift : { 0, 1, 250, 7500 })
+		for (int size : { 1, 5, 10 })
+			for (unsigned seed : { 1u, 17u, 12345u }) {
+				xl_compat::ParticleEffect effect{};
+				effect.drift = drift;
+				effect.size = { size, size };
+				effect.kind = xl_compat::ParticleKind::fire;
+				CObject object;
+				auto &p = object.rType.particleInfo;
+				p.nDrift = drift;
+				p.nSize[0] = size;
+				p.nType = int(effect.kind);
+				particleManager = {};
+				particleManager.owner = 7;
+				PositionRandom actual{ seed, {} }, source{ seed, {} };
+				position_random = &source;
+				for (unsigned frame = 0; frame < 32; ++frame) {
+					const std::array<int, 3> origin{ 123456 + int(frame) * 97, -234567, 345678 };
+					object.info.position.vPos = { { { origin[0], origin[1], origin[2] } } };
+					const auto position = xl_compat::particle_emitter_position(effect, origin, actual);
+					DoStaticParticles(&object);
+					if (position != particleManager.position || actual.state != source.state || actual.trace != source.trace)
+						throw std::runtime_error("Pinned point emitter position or random call order differs");
+					++comparisons;
+				}
+				const auto calls = source.trace.size();
+				p.nSide = 1;
+				DoStaticParticles(&object);
+				if (source.trace.size() != calls || particleManager.positions != 32) throw std::runtime_error("Face emitter unexpectedly jittered");
+				position_random = nullptr;
+			}
+	std::cout << "Pinned point emitter: " << comparisons << " position and RNG-order comparisons, face no-jitter controls passed\n";
+}
+
 void particle_source_controls()
 {
+	particle_emitter_position_controls();
 	static_assert(int(xl_compat::ParticleKind::smoke) == SMOKE_TYPE_SMOKE && int(xl_compat::ParticleKind::spray) == SMOKE_TYPE_SPRAY &&
 	                  int(xl_compat::ParticleKind::bubbles) == SMOKE_TYPE_BUBBLES && int(xl_compat::ParticleKind::fire) == SMOKE_TYPE_FIRE &&
 	                  int(xl_compat::ParticleKind::waterfall) == SMOKE_TYPE_WATERFALL && int(xl_compat::ParticleKind::rain) == SMOKE_TYPE_RAIN &&

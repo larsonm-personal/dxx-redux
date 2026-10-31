@@ -21,6 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "gameplay_audio.h"
+#include "particle_objects.h"
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -2047,6 +2048,10 @@ static void game_process_frame_body(void)
 	render_warn_robots_about_player_fire();
 	Player_fired_laser_this_frame = -1;
 	wake_up_missile_camera_robots();
+
+#ifdef DXX_XL_RUNTIME
+	xl_particle_objects_frame();
+#endif
 
 	input_demo_debug_log_player_motion_state("exit");
 	route_confirmation_after_frame();
