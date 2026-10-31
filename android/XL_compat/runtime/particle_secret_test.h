@@ -1,6 +1,79 @@
 // Derived normal/secret mapping on unchanged Neptune geometry; not a campaign exit
 #include "../tests/hog_fixture.h"
 extern "C" void EnterSecretLevel(void);
+static void particle_revisit_native_case(const xl_compat::Bytes &archive, const std::filesystem::path &root, int first, int second)
+{
+	using namespace xl_compat;
+	write_bytes((root / "pfrevis.hog").string().c_str(), archive);
+	std::ofstream descriptor(root / "pfrevis.mn2");
+	descriptor << "d2x-name = Derived revisit controls\nnum_levels = 3\npbase.rl2\npsecret.rl2\npbase.rl2\n";
+	descriptor.close();
+	xl_preview_clear_mission();
+	char error[256]{};
+	require(load_base_mission("pfrevis", error, sizeof(error)), error);
+	StartNewGame(1);
+	require(xl_mission_progress_active() && Num_triggers > 0, "Revisit fixture lacks modern progression or triggers");
+	const auto leave = [](int destination) {
+		Triggers[0].type = TT_EXIT;
+		Triggers[0].flags = 8;
+		Triggers[0].value = destination * F1_0;
+		Triggers[0].time = 0;
+		Triggers[0].num_links = 0;
+		xl_wall_trigger_reset();
+		require(check_trigger_sub(0, Player_num, 0) == 1, "Authored exit was not consumed");
+		require(Current_level_num == destination, "Authored exit did not reach its destination");
+	};
+	Players[Player_num].energy = 73 * F1_0;
+	Players[Player_num].primary_weapon_flags |= 2;
+	require(xl_particle_object_set_enabled(first, 0) && xl_particle_object_set_enabled(second, 1), "Cannot establish level-one revisit state");
+	const auto first_world = particle_objects_snapshot();
+	leave(3);
+	require(xl_mission_progress_state(1) == 1 && xl_mission_progress_state(2) == 0 && xl_mission_progress_state(3) == 1,
+	        "Nonsequential exit lost visited/unvisited mission state");
+	Players[Player_num].energy = 41 * F1_0;
+	Players[Player_num].primary_weapon = 1;
+	require(xl_particle_object_set_enabled(first, 1) && xl_particle_object_set_enabled(second, 1), "Cannot establish level-three revisit state");
+	const auto third_world = particle_objects_snapshot();
+	leave(1);
+	require(particle_objects_snapshot() == first_world && Players[Player_num].energy == 73 * F1_0 && Players[Player_num].primary_weapon == 1,
+	        "Revisit failed to restore the cached world/player with current weapon selection");
+	require(xl_mission_progress_state(3) == 1 && xl_mission_progress_state(2) == 0 && ConsoleObject->control_type == CT_FLYING && ConsoleObject->movement_type == MT_PHYSICS,
+	        "Revisit rolled back mission progress or lost player controls");
+	leave(3);
+	require(particle_objects_snapshot() == third_world && Players[Player_num].energy == 41 * F1_0,
+	        "Second revisit did not restore the other cached world");
+	xl_mission_progress_mark(2, -1);
+	const auto progress = mission_progress_snapshot();
+	char save[] = "xl-revisit-checkpoint.sav", description[64] = "XL revisit checkpoint";
+	stop_time();
+	require(state_save_all_sub(save, description), "Cannot save the revisited campaign");
+	StartNewGame(1);
+	require(xl_mission_progress_state(2) == 0 && xl_mission_progress_state(3) == 0 && particle_objects_snapshot() != first_world,
+	        "New game inherited the previous campaign timeline or cached world");
+	require(state_restore_all_sub(save, 0) && Current_level_num == 3 && mission_progress_snapshot() == progress && particle_objects_snapshot() == third_world,
+	        "Ordinary checkpoint did not restore its complete campaign timeline and world");
+	Triggers[0].value = 2 * F1_0;
+	xl_wall_trigger_reset();
+	require(check_trigger_sub(0, Player_num, 0) == 0 && Current_level_num == 3 && Next_level_num == 2 && !(Triggers[0].flags & TF_DISABLED),
+	        "Destroyed destination did not reject the permanent exit after destination selection");
+	const int original_count = Num_triggers;
+	const std::vector<trigger> saved_triggers(Triggers, Triggers + std::max(Num_triggers, 3));
+	Num_triggers = std::max(Num_triggers, 3);
+	for (int i = 0; i < Num_triggers; ++i) Triggers[i].type = TT_OPEN_DOOR;
+	for (int i = 0; i < 3; ++i) {
+		Triggers[i].type = TT_EXIT;
+		Triggers[i].value = (i == 0 ? 2 : i == 1 ? 1
+		                                         : 29) *
+		                    F1_0;
+	}
+	xl_mission_progress_find_exit();
+	require(Next_level_num == 29, "Death routing did not prefer the available unvisited campaign exit");
+	std::copy(saved_triggers.begin(), saved_triggers.end(), Triggers);
+	Num_triggers = original_count;
+	Next_level_num = 3;
+	PHYSFS_delete(save);
+	std::cout << "XL mission revisits: controlled exits 1->3->1->3, two disk caches, world/player restore, full checkpoint/new-game isolation, destroyed rejection and death routing passed; no earned traversal\n";
+}
 static void particle_secret_native_case(const xl_compat::Bytes &original_archive, const std::filesystem::path &root, const std::filesystem::path &installation)
 {
 	using namespace xl_compat;
@@ -96,6 +169,7 @@ static void particle_secret_native_case(const xl_compat::Bytes &original_archive
 	emit(2);
 	ExitSecretLevel();
 	verify(1, base);
+	particle_revisit_native_case(archive, root, first, second);
 	xl_preview_clear_mission();
 	std::filesystem::remove(image_path);
 	PHYSFS_delete(SECRETB_FILENAME);

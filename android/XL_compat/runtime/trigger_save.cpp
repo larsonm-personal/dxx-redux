@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "trigger_state.h"
+#include "mission_progress.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
 #include "boss_spawn.h"
@@ -125,7 +126,8 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 26;
+		block["schema"] = 27;
+		block["mission_progress"] = xl_compat::mission_progress_snapshot();
 		block["seismic"] = xl_compat::seismic_gameplay_snapshot();
 		require(xl_compat::restore_seismic_gameplay(block["seismic"], false), "Cannot capture XL seismic state");
 		block["ambient_objects"] = xl_compat::ambient_objects_snapshot();
@@ -220,9 +222,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 18u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 26 &&
+		require(saved.is_object() && saved.size() == 19u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 27 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		require(xl_compat::restore_mission_progress(saved.at("mission_progress"), false), "Invalid XL mission progression state");
 		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
 		require(xl_compat::restore_seismic_gameplay(saved.at("seismic"), false), "Invalid XL seismic state");
 		require(xl_compat::ambient_audio_matches(saved.at("audio")), "Saved ambient audio differs from the authored object resource");
@@ -412,6 +415,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_compat::restore_seismic_gameplay(saved.at("seismic"), true);
 		xl_compat::restore_ambient_objects(saved.at("ambient_objects"), true);
 		xl_compat::restore_particle_objects(saved.at("particle_objects"), true);
+		xl_compat::restore_mission_progress(saved.at("mission_progress"), true);
 		xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 1);
 		xl_fluid_restore(fluid.get<std::int64_t>(), 1);
 		xl_repair_restore(repair.get<std::int64_t>(), 1);

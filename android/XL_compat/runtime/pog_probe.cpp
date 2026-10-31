@@ -10,6 +10,7 @@
 #include "particle_state.h"
 #include "transparency_scene.h"
 #include "resource_validation.h"
+#include "mission_progress.h"
 #include "../inventory.h"
 #include "../particle_render.h"
 #include <nlohmann/json.hpp>
@@ -22,6 +23,10 @@ extern "C" {
 #include "game.h"
 #include "gamesave.h"
 #include "gameseq.h"
+#include "cntrlcen.h"
+#include "endlevel.h"
+#include "endlevel_runtime.h"
+#include "endlevel_validation.h"
 #include "mission.h"
 #include "piggy.h"
 #include "textures.h"
@@ -127,6 +132,9 @@ struct Readback {
 #include "skybox_lifecycle_probe.h"
 #include "smoke_lifecycle_probe.h"
 #include "particle_secret_probe.h"
+#include "mission_flow_probe.h"
+#include "mission_revisit_probe.h"
+#include "mission_flyout_probe.h"
 
 void gpu()
 {
@@ -158,6 +166,18 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "flyout_", 7)) {
+			mission_flyout_probe(operation + 7);
+			return nullptr;
+		}
+		if (!std::strncmp(operation, "revisit_", 8)) {
+			mission_revisit_probe(operation + 8);
+			return nullptr;
+		}
+		if (!std::strncmp(operation, "flow_", 5)) {
+			mission_flow_probe(operation + 5);
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "smoke_", 6)) {
 			smoke_lifecycle_probe(operation + 6);
 			return nullptr;

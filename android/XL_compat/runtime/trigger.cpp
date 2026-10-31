@@ -8,6 +8,8 @@
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include "seismic_gameplay.h"
+#include "mission_progress.h"
+#include "../mission_flow.h"
 #include <array>
 #include <cstdint>
 #include <cstdlib>
@@ -28,6 +30,11 @@ extern "C" {
 #include "timer.h"
 #include "rng_shared.h"
 #include "sounds.h"
+#include "digi.h"
+#include "gameseq.h"
+#include "mission.h"
+#include "endlevel.h"
+extern int Entered_from_level;
 int xl_object_classic_action(const trigger *action);
 }
 
@@ -77,6 +84,63 @@ struct TriggerDepth {
 	~TriggerDepth()
 	{
 		--depth;
+	}
+};
+struct MissionExitWorld {
+	trigger &action;
+	int flags;
+	int local_player() const
+	{
+		return Player_num;
+	}
+	bool d1() const
+	{
+		return EMULATING_D1;
+	}
+	int current() const
+	{
+		return Current_level_num;
+	}
+	int version() const
+	{
+		return xl_source_level_version();
+	}
+	int shield() const
+	{
+		return Players[Player_num].shields;
+	}
+	bool dead() const
+	{
+		return Player_is_dead != 0;
+	}
+	int destination_state() const
+	{
+		return xl_mission_progress_state(Next_level_num);
+	}
+	void stop_audio()
+	{
+		digi_stop_digi_sounds();
+	}
+	void stop_boost(int player)
+	{
+		xl_speed_boost_stop(Players[player].objnum);
+	}
+	void advance(std::int32_t value)
+	{
+		Next_level_num = xl_compat::mission_exit_destination(d1(), version(), current(), Entered_from_level, value, Next_level_num);
+	}
+	void end_sequence()
+	{
+		// Publish flags before a synchronous level change invalidates this action
+		action.flags = static_cast<ubyte>(flags);
+		++exit_generation;
+		start_endlevel_sequence();
+	}
+	void exit_secret()
+	{
+		action.flags = static_cast<ubyte>(flags);
+		++exit_generation;
+		ExitSecretLevel();
 	}
 };
 int linked_trigger(const trigger &source, int link)
@@ -209,7 +273,10 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		activated[index] = false;
 		return 1;
 	}
-	if (action.type == 25) {
+	if (action.type == TT_EXIT) {
+		MissionExitWorld world{ action, action.flags };
+		if (xl_compat::operate_mission_exit(world, player ? Player_num : -1, world.flags, action.value)) return 1;
+	} else if (action.type == 25) {
 		xl_countdown_action(&action);
 	} else if (action.type == 36) {
 		xl_seismic_action(&action);
