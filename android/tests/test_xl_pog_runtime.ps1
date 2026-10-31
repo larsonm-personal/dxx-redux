@@ -11,12 +11,22 @@ param(
     [switch]$SkyboxFixture,
     [switch]$SmokeFixture,
     [switch]$OriginalHub,
+    [switch]$MissionFlow,
+    [switch]$CampaignEnd,
+    [switch]$RevisitFixture,
+    [switch]$FlyoutFixture,
+    [string]$D1Pig = '',
     [string]$SmokeImage = '',
     [ValidateRange(0, 100000)][int]$SceneSegment = 409,
     [ValidateRange(0, 5)][int]$SceneSide = 2,
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($FlyoutFixture -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or !$D1Pig)) { throw 'FlyoutFixture requires OriginalHub, retail D1Pig and its own mode' }
+if ($FlyoutFixture -and (Get-FileHash -LiteralPath $D1Pig -Algorithm SHA256).Hash -ne '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe') { throw 'Flyout fixture requires the retail D1 exit-model PIG' }
+if ($RevisitFixture -and ($OriginalHub -or $SceneOnly -or $SecretFixture -or $SkyboxFixture -or $SmokeFixture -or $PumoMods)) { throw 'RevisitFixture requires its own derived mode' }
+if ($MissionFlow -and (!$OriginalHub -or $SceneOnly)) { throw 'MissionFlow requires OriginalHub without SceneOnly' }
+if ($CampaignEnd -and (!$OriginalHub -or $SceneOnly -or $MissionFlow)) { throw 'CampaignEnd requires OriginalHub and its own mode' }
 if ($OriginalHub -and ($SmokeFixture -or $SkyboxFixture -or $SecretFixture -or !$PumoMods -or !$SmokeImage)) { throw 'OriginalHub requires original mod assets, smoke image and its own mode' }
 if ($SmokeFixture -and ($SkyboxFixture -or $SecretFixture -or $SceneOnly -or !$PumoMods -or !$SmokeImage)) { throw 'SmokeFixture requires original mod assets, smoke image and its own fixture mode' }
 if ($SkyboxFixture -and ($SecretFixture -or $SceneOnly -or !$PumoMods)) { throw 'SkyboxFixture requires original Pumo mod assets and its own fixture mode' }
@@ -29,6 +39,11 @@ if ($SecretFixture) {
     $mission = 'pfsecret'
     $hogHash = 'b0e11a4dbcc8d94261bfb2b6e77a036e8b4d69384bdb5aaee4b8a9ed6d235111'
     $descriptorHash = 'af3d59ab6a9b13600ab05aae3102e7776edd2fe49c9f3dac2c825bdb878702a2'
+}
+if ($RevisitFixture) {
+    $mission = 'pfrevis'
+    $hogHash = 'b0e11a4dbcc8d94261bfb2b6e77a036e8b4d69384bdb5aaee4b8a9ed6d235111'
+    $descriptorHash = 'b6636bd55f6db72df985d4490842651d1b89d52378b23dfeb6fb599eb08c6c78'
 }
 if ($SkyboxFixture) {
     $mission = 'pskybox'
@@ -58,6 +73,10 @@ if ($SkyboxFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-skybox-au
 if ($SmokeFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-smoke-authored-android' }
 if ($OriginalHub) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-android' }
 if ($OriginalHub -and $SceneOnly) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-scene' }
+if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-flow-android' }
+if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
+if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-android' }
+if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -81,6 +100,7 @@ $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-
     "files/d2x-redux/missions/$mission.hog", "files/d2x-redux/missions/$mission.mn2",
     "files/d2x-redux/mods/$mission")
 if ($SecretFixture) { $paths += @('files/d2x-redux/secret.sgb', 'files/d2x-redux/secret.sgc') }
+if ($FlyoutFixture) { $paths += 'files/d2x-redux/descent.pig' }
 $ready = $false
 try {
     Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -91,7 +111,45 @@ try {
     $before = @(Invoke-PogPrivate "find $($existing -join ' ') -type f -exec sha256sum {} \;") | Sort-Object
     $before | Set-Content "$output/before.sha256" -Encoding utf8
     $ready = $true
-    Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Hog).Path, '/data/local/tmp/xl-pog.hog') | Out-Null
+    $stagedHog = (Resolve-Path -LiteralPath $Hog).Path
+    if ($FlyoutFixture) {
+        # Add optional scenery to an isolated archive; original geometry stays intact
+        $stream = [IO.MemoryStream]::new()
+        $writer = [IO.BinaryWriter]::new($stream)
+        try {
+            $be32 = { param([int]$Value) $bytes = [BitConverter]::GetBytes($Value); [Array]::Reverse($bytes); $writer.Write($bytes) }
+            $writer.Write([Text.Encoding]::ASCII.GetBytes('FORM'))
+            & $be32 4912
+            $writer.Write([Text.Encoding]::ASCII.GetBytes('PBM BMHD'))
+            & $be32 20
+            $writer.Write([byte[]]@(0, 64, 0, 64, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 1, 1, 0, 64, 0, 64))
+            $writer.Write([Text.Encoding]::ASCII.GetBytes('CMAP'))
+            & $be32 768
+            for ($i = 0; $i -lt 256; $i++) { $writer.Write([byte[]]@($i, $i, $i)) }
+            $writer.Write([Text.Encoding]::ASCII.GetBytes('BODY'))
+            & $be32 4096
+            $writer.Write([byte[]](, ( [byte]32 ) * 4096))
+            $bitmap = $stream.ToArray()
+        } finally { $writer.Dispose(); $stream.Dispose() }
+        $stagedHog = Join-Path $output 'flyout.hog'
+        Copy-Item -LiteralPath $Hog -Destination $stagedHog -Force
+        $archive = [IO.BinaryWriter]::new([IO.File]::Open($stagedHog, [IO.FileMode]::Append))
+        try {
+            $append = {
+                param([string]$Name, [byte[]]$Bytes)
+                $nameBytes = [byte[]]::new(13)
+                [Text.Encoding]::ASCII.GetBytes($Name).CopyTo($nameBytes, 0)
+                $archive.Write($nameBytes)
+                $archive.Write([int]$Bytes.Length)
+                $archive.Write($Bytes)
+            }
+            & $append 'xlsky.bbm' $bitmap
+            & $append 'mvlev1.end' ([Text.Encoding]::ASCII.GetBytes("xlsky.bbm`nxlsky.bbm`n5,10`n1`nxlsky.bbm`n205,0`n200`n90,40`n"))
+        } finally { $archive.Dispose() }
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $D1Pig).Path, '/data/local/tmp/xl-pog-d1.pig') | Out-Null
+        Invoke-PogPrivate 'cp /data/local/tmp/xl-pog-d1.pig files/d2x-redux/descent.pig' | Out-Null
+    }
+    Invoke-PogAdb -Arguments @('push', $stagedHog, '/data/local/tmp/xl-pog.hog') | Out-Null
     Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-pog.mn2') | Out-Null
     Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $FireImage).Path, '/data/local/tmp/xl-pog-fire.tga') | Out-Null
     Invoke-PogPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-pog.hog files/d2x-redux/missions/$mission.hog && cp /data/local/tmp/xl-pog.mn2 files/d2x-redux/missions/$mission.mn2" | Out-Null
@@ -121,6 +179,10 @@ try {
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'original-hub.jsonc'))
         ConvertTo-Json -InputObject $steps -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
+    if ($MissionFlow) { $scriptName = 'test_xl_pumo_flow.jsonc' }
+    if ($CampaignEnd) { $scriptName = 'test_xl_pumo_end.jsonc' }
+    if ($RevisitFixture) { $scriptName = 'test_xl_mission_revisit.jsonc' }
+    if ($FlyoutFixture) { $scriptName = 'test_xl_flyout_cache.jsonc' }
     if ($SceneOnly) {
         # Reuse the original owner's startup and first scene assertion
         $sourcePath = if ([IO.Path]::IsPathRooted($scriptName)) { $scriptName } else { "$PSScriptRoot/../game_scripts/$scriptName" }
@@ -153,7 +215,11 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
+    if ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
+    elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
+    elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
+    elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }
+    elseif ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
     elseif ($OriginalHub) { Write-Host "PASS: Unchanged original Pumo hub, smoke/skybox/GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
     elseif ($SmokeFixture) { Write-Host "PASS: Original hub smoke in derived outdoors-isolated fixture, GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
     elseif ($SkyboxFixture) { Write-Host "PASS: Derived authored skybox resources, disk restore, context recreation and stock isolation ($($result.total_steps) steps)" }
@@ -171,6 +237,7 @@ try {
             $after | Set-Content "$output/after.sha256" -Encoding utf8
             if (Compare-Object $before $after) { throw "POG test state restoration differs; backup retained at $backup" }
             Invoke-PogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
+            if ($FlyoutFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-d1.pig') | Out-Null }
             Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
         }
     } finally {

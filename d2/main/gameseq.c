@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "mission_progress.h"
 #include "linked_audio.h"
 #include "gameplay_audio.h"
 #include "spawn_points.h"
@@ -1190,6 +1191,9 @@ void StartNewGame(int start_level)
 	Game_mode = GM_NORMAL;
 
 	Next_level_num = 0;
+#ifdef DXX_XL_RUNTIME
+	xl_mission_progress_new_game();
+#endif
 	guidebot_routing_start_session();
 
 	InitPlayerObject();				//make sure player's object set up
@@ -1850,6 +1854,15 @@ void AdvanceLevel(int secret_flag)
 			DoEndLevelScoreGlitz(0);		//give bonuses
 	}
 
+
+#ifdef DXX_XL_RUNTIME
+	const int xl_progression = xl_mission_progress_prepare_advance();
+	if (xl_progression < 0) {
+		nm_messagebox("Cannot leave XL level", 1, TXT_OK, "%s", xl_mission_progress_error());
+		if (Game_wind) window_close(Game_wind);
+		return;
+	}
+#endif
 	Control_center_destroyed = 0;
 
 	#ifdef EDITOR
@@ -1878,14 +1891,24 @@ void AdvanceLevel(int secret_flag)
 	}
 #endif
 
-	if (Current_level_num == Last_level) {		//player has finished the game!
+	if (
+#ifdef DXX_XL_RUNTIME
+	    xl_progression ? Next_level_num > Last_level :
+#endif
+	    Current_level_num == Last_level) {		//player has finished the game!
 
 		DoEndGame();
 
 	} else {
-		Next_level_num = Current_level_num + 1;
+#ifdef DXX_XL_RUNTIME
+		if (!xl_progression)
+#endif
+			Next_level_num = Current_level_num + 1;
 
 #ifdef DXX_XL_RUNTIME
+		// The completed flyout may have replaced mission models with exit scenery
+		// Reload clean mission definitions before preflighting the committed travel
+		if (xl_progression) reset_level_robots_file();
 		if (!xl_level_supported_at(Level_names[Next_level_num - 1], Game_mode & GM_MULTI, Next_level_num)) {
 			nm_messagebox("Cannot continue to XL level", 1, TXT_OK, "%s", xl_level_rejection());
 			if (Game_wind) window_close(Game_wind);
@@ -1898,7 +1921,16 @@ void AdvanceLevel(int secret_flag)
 			COOPLOG("AdvanceLevel starting next: game=d2 current=%d next=%d players=%d",
 			        Current_level_num, Next_level_num, N_players);
 #endif
-		StartNewLevel(Next_level_num);
+#ifdef DXX_XL_RUNTIME
+		const int xl_reentered = xl_progression ? xl_mission_progress_reenter() : 0;
+		if (xl_reentered < 0) {
+			nm_messagebox("Cannot revisit XL level", 1, TXT_OK, "%s", xl_mission_progress_error());
+			if (Game_wind) window_close(Game_wind);
+			return;
+		}
+		if (!xl_reentered)
+#endif
+			StartNewLevel(Next_level_num);
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP)
 			COOPLOG("AdvanceLevel returned: game=d2 current=%d next=%d game_window=%d",
@@ -1995,6 +2027,9 @@ void DoPlayerDead()
 			}
 		} else {
 
+#ifdef DXX_XL_RUNTIME
+			xl_mission_progress_find_exit();
+#endif
 			AdvanceLevel(0);			//if finished, go on to next level
 
 			init_player_stats_new_ship(Player_num);

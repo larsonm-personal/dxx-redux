@@ -1,0 +1,28 @@
+// Original hub destination29 ends its fourteen-level campaign; controlled dispatch
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_pog_runtime" } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "skybox_start_hub" },
+    { "action": "skip_briefing", "timeout_ms": 30000 },
+    { "action": "wait_for", "expect": { "in_game": true, "time_paused": false }, "timeout_ms": 30000 },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_end_ready" },
+    { "action": "trigger_levelcomplete", "value": "trigger:5" },
+    {
+        "action": "wait_for",
+        "expect": { "levelcomplete_active": true, "screen_advance_can_activate": true },
+        "timeout_ms": 30000,
+    },
+    { "action": "request_screen_advance", "generation": "current" },
+    { "action": "wait_for", "expect": { "screen_advance_kind": "briefing", "time_paused": true }, "timeout_ms": 30000 },
+    { "action": "key", "key": "escape", "post_delay_ms": 300 },
+    {
+        "action": "wait_for",
+        "expect": { "levelcomplete_active": true, "screen_advance_can_activate": true },
+        "timeout_ms": 30000,
+    },
+    { "action": "request_screen_advance", "generation": "current" },
+    { "action": "wait_for", "expect": { "in_game": false, "menu.items[0].text": "New game" }, "timeout_ms": 30000 },
+    { "action": "introspect" },
+]

@@ -780,3 +780,357 @@ Do not oversell it as walkthrough/overview. Session46886needs finalhandlepoll;
 owner log PASS and afterhashes complete. Final catalogue97223terminal0; owner
 catalogue48311stilllive atlastpoll. Next finish polls/formatdocs, diffreview and
 publish93above92. No runtimechanges after finalAPK; onlycomment/owner/docs.
+
+## Branch94 mission exit audit, 02:56 Pacific
+
+Branch93 published7cb0eff377208a252bfb05e6647e9f2f09c68eac asdraftPR246
+above92; initialCIrunning, nofailures. Newbranchxl_more_94_mission_exits.
+Current original Pumo inventory refreshed with rebuiltLinuxxl_inspect into
+pumo-current-inventory.json; boundedprojection pumo-bounded-requirements.json.
+Eight of14levels have no level-format blockers (hub,mvlev1/2/3/4/6,mvend,mvlev5).
+Others retain wallflags/particles/lightning/objecttrigger/additivewall requirements.
+These are inventory results, not package/gameplay qualification.
+
+IMPORTANT newly traced mission-flow gap: hub exits type3 encode2,11,29. Current
+Redux stock check_trigger_sub ignores authoredvalue and AdvanceLevel always
+selects current+1. Hub rendering/lifecycle qualification does NOT qualify these
+routes. Next bounded chunk must implement source exit destinations/progression,
+not simply test sequential exit2 and claimallhubbranches.
+
+Pinned CTrigger::DoExit: localplayer/disabled gates; stopaudio/speedboost;
+CMissionManager::AdvanceLevel(X2I(value)); for modern positivelevels reject
+previouslydestroyed destination; disable exit unlesspermanent; startendsequence.
+D1 and negativelevel paths differ. AdvanceLevel uses authoredpositive destinations
+only for version>20 positiveD2levels; legacy advancessequentially; D1secret uses
+entry+1; D2secret retains priornext. GetLevelState out-of-range returns0.
+Source loadgame.cpp end-of-level: next>last with no returnlevel and rotateoff
+endscampaign, explaining hub29 in14levelpackage. ReenterLevel saves non-destroyed
+currentnormallevel and restores cached destination state onrevisit. State flags
+0unvisited/1visited/-1destroyed persist via mission and fullsave owners.
+
+Added puremission_exit_destination helper and actualhashpinned
+CMissionManager::AdvanceLevel extraction in existingxl_trigger_flags_reference.
+Not connected to runtimeyet. Formatter73406running, mission-flow-quality.log.
+Next buildsourceowner Windows/Linux, then qualifyDoExit sideeffectordering and
+mission state save/revisit path before corehooks/Android controlled originalexit.
+No autonomousnavigation: controlled authoredwall dispatch permitted, do notcall
+it earnedroute. Do notexpandcampaignclaim from existinghub68step rendering pass.
+All emulatortests/builds from93terminal and originalconfigrestore stilldue11:30.
+
+Pure destination source comparisons PASS10080cases on Windows/Linux; existing
+trigger/countdown/disarm matrices also pass. Formatterterminal0. No livehandles.
+Receipts mission-flow-{windows,linux}.log. Runtime stillunchanged, nextDoExit and
+state/cache semantics. This milestone does not fix progression by itself.
+
+## Branch94 DoExit source-order checkpoint
+
+Added operate_mission_exit callback policy matching actualCTrigger::DoExit.
+ActualhashpinnedDoExit extraction added beside AdvanceLevel in existing source
+owner. Windows/Linux pass331776activation/flags/sideeffectcases plus10080
+selectioncases. Includeslocal/nonlocal,disabled/permanent/all256flags,D1/D2,
+legacy/modern,positive/zero/secretlevels,dead/shieldstates,destroyed/visited/new
+states andhub2/29targets. Existingtrigger/countdown/disarm matricesremainpass.
+Formatterterminal0; no liveprocesshandles. Stillnotwiredtoproduction.
+
+Further cache trace: sourceReenterLevel calls Save(0,-1,0,levelcache) whenleaving
+an intactnormalD2level, thenLoad(1,-1,0,destcache) whenvisited. The negative mode
+selects cache storage; it is NOT secret_restore==1 player-carry semantics.
+Source LoadState bSecret<0 reloads current mission level-state table from cache,
+where ordinarysave restore reads storedlevelstates. Therefore revisit must not
+roll back mission visited/destroyed flags from an olderlevelsnapshot. Preserve
+selected primary/secondary across sourcecacheload and reset playerposition via
+InitPlayerPosition(1). Audit player fields ratherthanassuming secret-savecarry.
+Relevantlines: loadgame.cpp1409ReenterLevel,1582AdvanceLevel; savegame.cpp2391
+LoadState and2423levelstate branch; mission.cpp1104LevelStateName/1117save/1135load.
+Next wire runtime missionstate owner and checkpoint integration with explicit
+cache-vs-ordinary restore semantics, then controlledoriginalhub exits. No
+publication94untilactual progression/persistence controls pass.
+
+## Branch94 runtime mission progress owner started
+
+Added runtime/mission_progress.{h,cpp}, configure source, new-game reset hook in
+D2 gameseq and bind afterXLsource load. State is missionidentity + visited/
+destroyed vector + pendingNext_level_num. Existing XLsave trailer now schema27
+with validated mission_progress field; validate-before-apply, bounds/identity
+checks, cache-restore mode preserves currentcampaign timeline. No oldschema
+migration (pre-release saveformats disposable perrepo instructions).
+Existing native particle/event owner runs roundtrip,cachepreservation and three
+malformed-state controls; allstate restored afterprobe. Exitselection policies
+stillnotwiredtostockexit/AdvanceLevel; actuallevelcache diskrestore notyetbuilt.
+Formatter36039terminal0. Nativebuildrunning56922, render-native-build.log.
+Do notstartanotherbuilduntilterminal. InstalledAndroidAPKstillbranch93/schema26;
+futureAndroidbuildmustexplicitinstall and protectedtests regenerate theirsaves.
+
+## Branch94 exit dispatch checkpoint, 03:18 Pacific
+
+Recovered prior native owner: no matching build/test process remained and the
+native-runtime.log ended with the effect inspection gate passing, including real
+base/secret saves. The temporary inventory command matched only its own shell.
+PR246 remains OPEN at7cb0eff; CI had no failures, three long jobs still running.
+
+Runtime trigger.cpp now handles TT_EXIT with the source-compared DoExit policy:
+authored Next_level_num, local/disabled/destroyed gates, sound/boost stopping,
+permanent flags, direct secret return and successful chain termination. Flags
+are published before synchronous transitions can invalidate the trigger. The
+stock AdvanceLevel still overwrites Next_level_num: progression is NOT finished.
+Native build and existing effect lifecycle integration both terminal0 after this
+change (session12102); this is regression evidence, not a controlled original
+hub exit/revisit qualification. Scoped formatter terminal0 (53360).
+
+Added source-extracted FindNextLevel comparisons and mission_death_destination
+policy. Windows and Linux both pass10368 mixed exit/state/ordinal cases, alongside
+10080 destination and331776 DoExit comparisons. Existing trigger/countdown/disarm
+controls also pass. Linux session26753 terminal0; formatter29761 terminal0.
+Receipts mission-flow-{windows,linux}.log, exit-dispatch-quality.log,
+death-flow-quality.log, render-native-build.log and native-runtime.log.
+No live build/test/formatter handles remain. No Android rebuild since branch93.
+
+Next connect advancement/cache persistence and reactor-death policy, then test
+actual controlled transitions. Cache implementation must use full-world restore
+without secret_restore==1 carry semantics; existing state_save_all ignores the
+filename override outside secret modes, so use a deliberate owned path/helper.
+state_save_all_sub consumes the caller's stop_time and rejects active flyouts or
+death. Do not cache an invalid flyout pose; inspect end-sequence cleanup before
+choosing the cache checkpoint. No branch94 publication until progression and
+persistence controls pass. Goal remains active through noon Pacific; restore
+original emulator configuration starting11:30 as previously recorded.
+
+## Branch94 real directed transitions and disk revisits, 03:37 Pacific
+
+Production advancement now preserves authored destinations for modern single-
+player D2 XL levels, ends the campaign for destinations beyond Last_level, marks
+destroyed departing levels, caches intact worlds after scoring, and restores
+visited worlds with current mission flags and selected weapons. Cache files use
+encoded pilot/mission names and an ordinal, under Players when configured;
+otherwise the current PHYSFS write root. New-game state ignores previous caches.
+DoPlayerDead invokes the source-compared FindNextLevel policy before advancement.
+Core hooks remain in D2 gameseq; implementation is in mission_progress.cpp.
+
+Revisit restoration uses state_restore_all_sub(path,0) under the cache-restore
+scope, then InitPlayerPosition(1) and fly_init. It restores the saved player/world
+and preserves selected weapons, not secret_restore==1 carry-player semantics.
+state_save_all_sub receives a stopped timer and balances it itself. Active
+flyout/player-death saves remain rejected. Actual rendered-flyout revisit paths
+still need qualification: current native fixture exits do not animate a flyout.
+
+The new integration initially caught visited-state binding using the previous
+Current_level_num. LoadLevel sets that global only after the XL loader returns.
+Fixed bind to consume the loader's explicit ordinal; ordinary direct loads retain
+the current-level fallback. Removed C linkage from C++-only bind/mark methods to
+avoid MSVC exception warnings; weapon selection lives in Players in Redux.
+
+Existing particle_secret_test.h now also creates pfrevis (eight-character save
+identity) from its derived Neptune/particle archive and runs actual trigger exits
+1->3->1->3. It verifies two disk caches, distinct particle/player state, controls,
+visited/unvisited flags, full checkpoint restoration after new-game reset,
+destroyed-destination rejection and runtime death-route selection. The latter
+temporarily supplies three trigger slots, restoring the original table/count.
+This is controlled dispatch, not earned navigation or original Pumo qualification.
+
+Final native build29504 terminal0; native-runtime93804 terminal0. Controls receipt
+reports all revisit checks plus existing real secret save/return and admission
+regressions passed. Failed87717 assumed Neptune supplied three trigger slots;
+final93804 supersedes it after correcting the test setup.
+Formatter23421 terminal0. Both catalogs passed (32261/31838):99standaloneJSON,
+492support,314PowerShell;427top-level entries. No live handles remain.
+Receipts revisit-controls-quality.log, revisit-quality.log,
+revisit-catalog.log, revisit-owner-catalog.log, render-native-build.log,
+native-runtime.log and native-runtime/controls.log. Source policy comparisons
+from the prior checkpoint remain valid and were not repeated.
+Unrelated manifest SHA256 stillDD62EE6B6B61DD65F46F785C6F35248D91A881789E2644EA87632D6F9C8CDCE7.
+
+Next: Android build/install (installed APK is still93/schema26), extend existing
+owner/probe for controlled original hub exit2 and revisits. Ensure owner protection
+or cleanup includes the new pilot/mission cache files. Qualify actual campaign-end
+destination29 and reactor-death transition, plus flyout handling if reachable;
+runtime selection alone does not prove those terminal transitions. Hub exit11
+targets a level with still-unsupported features; preserve truthful rejection.
+Review cache/player pose and stale camera effects for rendered flyouts before
+publication. Branch94 remains uncommitted/unpublished; goal active until noon,
+emulator original-configuration restoration still due beginning11:30.
+
+## Branch94 original Android directed-route pass, 03:54 Pacific
+
+Added mission_flow_probe.h through existing xl_pog_probe, test_xl_pumo_flow.jsonc,
+and -MissionFlow on test_xl_pog_runtime.ps1 (requires -OriginalHub). The unchanged
+original Pumo authored route is1->2->3->4->14, followed by ordinary hub checkpoint
+restore and original POG GPU readback. This does NOT manufacture a return exit:
+mvlev1 exits3, mvlev2 exits4, mvlev3 exits5 or14, mvlev5 exits5. No original route
+back to the hub was found in normal exit records. Derived disk revisits remain
+native-qualified; Android revisit-cache restoration still needs its own control.
+
+Probe requires SysUsePlayersDir before any transition, so existing owner backup
+and restore of Players includes every generated revisit cache. Original HOG,
+descriptor, mod resources and source trigger values remain unchanged. Controlled
+dispatch from the current player does not prove traversal or combat completion.
+
+First Android attempt failed from reentrant automation in the destination briefing
+(not an engine pause defect). Added input_demo_set_skip_level_intro(1) per exit,
+beside temporary SysInputDemoNoRender for synchronous score presentation. This
+matches other probes and leaves production presentation unchanged. Preserve this
+distinction: headed destination rendering resumes after every transition.
+
+Final build16276 terminal0 (1m52s), explicit adb install success. Android owner
+96530 terminal0:32/32 steps in131.441sec, four authored exits including4->14,
+hub mission/player/particle checkpoint restoration and POG GPU checks passed.
+Before/after protected state hashes match. Receipts:
+temp/xl-original-flow-android/{result.json,steps.jsonl,state.json,logcat.txt,
+before.sha256,after.sha256}; owner log android-original-flow.log under the shared
+xl-skybox-20261031 receipt directory. Installed APK now branch94/schema27.
+Formatter55428 terminal0. Both catalogs passed after the new script (74762/80266):
+99standaloneJSON,493support,314PowerShell;427top-level. No live process handles.
+
+Next qualify Android derived cache revisits, actual campaign-end29 and reactor-
+death transitions; inspect rendered-flyout cache pose/state as previously noted.
+Do not repeat completed original route or native source matrices unless changes
+affect them. Branch94 still uncommitted/unpublished; goal and11:30 emulator
+restoration deadline unchanged.
+
+## Branch94 original Android campaign-end pass, 04:03 Pacific
+
+Extended existing trigger_levelcomplete automation with value trigger:N. Its
+shared fire_level_trigger helper validates the index before consuming the action,
+then dispatches through check_trigger_sub; advancing before dispatch allows the
+following script actions to operate synchronous score/ending screens. Existing
+set_debug fire_trigger behavior is unchanged. This follows the existing direct
+completion/secret action's advance-before-dispatch pattern.
+
+Added -CampaignEnd to the same protected POG owner and test_xl_pumo_end.jsonc.
+The flow_end_ready probe confirms unchanged original hub trigger5 is an available
+TT_EXIT with authored value29 and descriptor Last_level14. No presentation bypass
+is used in this test. Normal initial score, original ending briefing, final score
+and return to New game menu passed16/16 steps in40.968sec on Android (30698 exit0).
+Final state in_game=false, first menu item New game. Protected before/after hashes
+match. This is controlled dispatch, not earned completion of Pumo's campaign.
+
+Android build24981 terminal0, explicit install succeeded. Formatter49779 exit0.
+Both catalogs5649/2673 passed:99standaloneJSON,494support,314PowerShell,
+427top-level. No live handles remain. Receipts android-end-build.log,
+android-original-end.log, end-quality.log, end-catalog.log, end-owner-catalog.log
+under temp/xl-skybox-20261031; device artifacts temp/xl-original-end-android.
+Installed APK includes ending controls and all current branch94 production code.
+Next remains Android derived cache restoration, actual reactor-death transition,
+and rendered-flyout cache validation. No need to repeat the original route/end
+controls unless affected code changes. Branch94 not published yet.
+
+## Branch94 Android cache revisits pass, 04:11 Pacific
+
+Added mission_revisit_probe.h via the existing POG probe, -RevisitFixture on the
+same protected owner, and test_xl_mission_revisit.jsonc. It consumes native-owner
+generated pfrevis.hog/mn2 (under native-runtime/missions), using explicit runtime
+trigger edits only in this derived fixture. Original mission data is not edited.
+HOG SHA256b0e11a4dbcc8d94261bfb2b6e77a036e8b4d69384bdb5aaee4b8a9ed6d235111;
+descriptor SHA256b6636bd55f6db72df985d4490842651d1b89d52378b23dfeb6fb599eb08c6c78.
+
+Android owner77433 exit0:27/27 steps in56.856sec. Real1->3->1->3 disk revisits
+restore two distinct particle/player worlds, preserve current mission visited
+flags and selected primary weapon, and retain flight controls. Original fire
+atlas GPU checks run after each transition. Then ordinary quick-save, deliberate
+timeline/player disturbance, full restore and GPU checks pass. Requires protected
+Players directory; before/after owner hashes match. No earned-navigation claim.
+
+Build72317 exit0, explicit install success. Formatter45572 exit0. Both catalogs
+41573/11562 pass:99standaloneJSON,495support,314PowerShell;427top-level. No live
+handles remain. Receipts android-revisit-build.log, android-revisit.log,
+revisit-android-quality.log, revisit-final-catalog.log,
+revisit-final-owner-catalog.log under temp/xl-skybox-20261031;
+device artifacts temp/xl-revisit-android. Installed APK includes all current94
+production and probes. Production code unchanged since original route/end passes.
+
+Remaining94 gates: actual reactor-death transition (not merely selector policy),
+rendered-flyout cache pose/control/camera state, focused final review and stack
+publication. For flyout owners see android/tests/test_flyout_safety.ps1 and
+test_mission_metadata_flyouts.ps1; no autonomous navigation is authorized. Preserve
+source cache player semantics when checking death: source ReenterLevel restores
+the cached player and preserves only selected weapons explicitly, so audit lives
+against source rather than assuming secret_restore==1 carry-player semantics.
+Goal remains active through noon; begin emulator original config restore11:30.
+
+## Branch94 actual Android reactor-death transition pass, 04:20 Pacific
+
+Extended the existing revisit probe/script with a controlled DoPlayerDead call
+while Control_center_destroyed=1 in level3, using its explicit exit back to cached
+level1. This is the production terminal entry used by reactor countdown, not just
+the destination-selection helper; it does not exercise the full countdown timer.
+Before death, the probe confirms the exact cached level3 file exists for pilot
+player/mission pfrevis, then verifies that destruction removes it. Restore of the
+older level1 world preserves level3 state=-1 and level1 state=1. Particle world,
+headed GPU resources, player flight controls and post-death ship reset all pass.
+
+Source audit: active savegame.cpp1733 m_bSecret!=1 loads the complete cached
+player (including lives); ReenterLevel preserves only selected weapons explicitly.
+loadgame.cpp2440+ decrements the departing life, advances, then ResetShipData.
+The control deliberately changes departing lives and expects cached lives after
+return, followed by100energy/100shields/primary0. This source behavior must not be
+silently replaced with secret_restore==1 player carry semantics.
+
+Android owner49101 exit0:31/31 steps in64.001sec, protected before/after hashes
+match. Build2388 exit0 (1m42s), explicit install succeeded. Formatter35049 exit0.
+Catalog93723/55714 both pass (99JSON,495support,314PowerShell;427top-level).
+No live handles remain. Receipts android-death-build.log,
+android-revisit-death.log, death-android-quality.log, death-catalog.log,
+death-owner-catalog.log under temp/xl-skybox-20261031. Device artifacts are now
+the latest temp/xl-revisit-android generation. Installed APK includes death probe.
+
+Remaining investigation: rendered-flyout cache state. Both pinned source
+StopEndLevelSequence (main/endlevel.cpp399) and Redux stop_endlevel_sequence clear
+the animation flag then call normal completion; neither visibly deletes its
+lookback camera there. Redux cinematic leaves player MT_NONE/CT_NONE and can
+leave Viewer on the camera. Reentry already calls InitPlayerPosition and fly_init,
+but cache writing after a completed intact cinematic needs focused verification.
+Destroyed exits skip cache writing, so ordinary destroyed-mine flyout tests alone
+cannot prove the intact-cache case. Existing full animation controls are in
+android/tests/test_upstream_compat.cpp write_endlevel_lifetime_trace (~9830),
+invoked by test_flyout_safety.ps1 with retail D1 and Grand Finale assets. Their
+existing runs set Control_center_destroyed=1. RuntimeLayoutFixture only converts
+Neptune23/40 to25/27, not arbitrary classic D1 geometry. Do not assume a classic
+rendered-flight pass qualifies modern intact cache creation. No autonomous 3D
+navigation; controlled poses/engine cinematics are permitted test mechanisms.
+
+## Intact rendered flyout exposed preflight ordering, 04:39 Pacific
+
+Initial flyout build and both automation catalogs passed (99 standalone JSON,
+496 support scripts, 314 PowerShell; 427 top-level). Installed APK successfully.
+Android owner25222 terminated exit1: derived original level2 tunnel reached
+exterior cinematic phase and normal score screen, then next-level admission
+rejected mvlev2.rl2 with model definition registry changed since mission
+initialization. Failure step16/19, not a cinematic routing failure. Before/after
+protected asset hashes match, including temporarily supplied retail D1 PIG.
+Artifacts temp/xl-flyout-cache-android; owner android-flyout-cache.log.
+
+Root cause: load_exit_models replaces extra mission models with exit scenery and
+sets Robot_replacements_loaded. Normal level loading resets those definitions,
+but the XL AdvanceLevel preflight runs before that reset. Added existing
+reset_level_robots_file call for committed XL progression after departing cache
+save and before destination preflight. No relaxation of registry validation.
+Shared hook formatted/scoped quality exit0; git diff --check passes. Native
+build terminal exit0. Android rebuild39217 and native runtime43834 are live
+as of this checkpoint; poll at 30-60 seconds, do not restart on timeout.
+Logs android-flyout-reset-build.log, flyout-reset-native-runtime.log under
+temp/xl-skybox-20261031. Rerun focused flyout only after Android build and install.
+Production changed: prior route/death passes do not cover this new reload order;
+existing native lifecycle is running to check cache/secret resource regressions.
+
+## Intact flyout and cached return passed, 04:41 Pacific
+
+Android rebuild39217 exit0 (1m51s), explicit install success. Focused owner36093
+exit0:19/19 steps in85.259sec. Exterior cinematic phase reached; normal score
+screen advanced to original destination3; derived return trigger restored cached
+level2 with energy83, particle world/resource, current visited timeline, interior
+spawn, CT_FLYING/MT_PHYSICS and Viewer==ConsoleObject. GPU control passed after
+return. Protected before/after hashes match. Production reset ordering fix solved
+the observed registry rejection without changing resource admission checks.
+
+Native runtime43834 exit0; controls.log confirms disk revisit/full checkpoint/
+new-game isolation/destroyed rejection/death routing and automatic secret save
+lifecycle. Native build also exit0. No live test/build handles remain. Installed
+APK includes the reset fix. Reuse completed policy and catalog validation.
+
+Parent PR246 rechecked at04:38: OPEN, exact7cb0eff377208a252bfb05e6647e9f2f09c68eac;
+all executed checks SUCCESS including ASan, native save/replay, headed parity,
+LAN and both asset-free XL platforms. One optional timing export SKIPPED.
+
+Next: focused branch94 final diff review, evidence document and selected-file
+commit/push/draft PR above93. All94 changes remain uncommitted. Preserve unrelated
+manifest/shearbase/w5am files and old continuation/handoff edits. Continue toward
+noon; restore emulator original SwiftShader launch configuration from11:30.

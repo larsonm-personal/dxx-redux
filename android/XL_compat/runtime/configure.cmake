@@ -56,6 +56,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/wall_actions.cpp"
                 "${xl_runtime_dir}/player_resources.cpp"
                 "${xl_runtime_dir}/trigger_save.cpp"
+                "${xl_runtime_dir}/mission_progress.cpp"
                 "${xl_runtime_dir}/object_trigger.cpp"
                 "${xl_runtime_dir}/robot_generator.cpp"
                 "${xl_runtime_dir}/boss_spawn.cpp"

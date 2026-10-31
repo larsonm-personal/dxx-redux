@@ -1,4 +1,5 @@
 #include "particle_objects.h"
+#include "mission_progress.h"
 #include "particle_state.h"
 #include "transparency_scene.h"
 #include "skybox_render.h"
@@ -120,6 +121,7 @@ static void particle_objects_native_case(bool active)
 	skybox_collision_face_native_case(original);
 	xl_compat::skybox_render_native_controls(original);
 	xl_compat::skybox_corona_native_controls();
+	xl_compat::mission_progress_native_controls();
 	auto source = original;
 	struct Guard {
 		object first = Objects[1], second = Objects[2], actor = Objects[3];

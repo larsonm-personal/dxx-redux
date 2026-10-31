@@ -1,5 +1,6 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#include "mission_progress.h"
 #include "../producer_layout.h"
 #include "projectile.h"
 #include "speed_boost.h"
@@ -768,6 +769,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		dynamic_vertices.resize(level->vertices.size());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		xl_mission_progress_bind(ordinal);
 		xl_seismic_bind();
 		xl_compat::bind_ambient_objects(*source);
 		xl_compat::bind_particle_objects(*source);

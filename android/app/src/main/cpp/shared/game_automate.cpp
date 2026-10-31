@@ -2365,7 +2365,8 @@ static int set_player_key_flags(const std::string &value, char *reason, size_t r
 	return 1;
 }
 
-static int fire_level_trigger(const std::string &value, char *reason, size_t reason_size)
+static void advance_step(void);
+static int fire_level_trigger(const std::string &value, char *reason, size_t reason_size, bool advance_before_dispatch = false)
 {
 	char *end = NULL;
 	long trigger_num;
@@ -2383,6 +2384,7 @@ static int fire_level_trigger(const std::string &value, char *reason, size_t rea
 		snprintf(reason, reason_size, "fire_trigger: trigger %ld outside 0..%d", trigger_num, Num_triggers - 1);
 		return 0;
 	}
+	if (advance_before_dispatch) advance_step();
 	check_trigger_sub((int) trigger_num, Player_num, 1);
 	LOGI("fire_trigger: trigger=%ld", trigger_num);
 	return 1;
@@ -4821,6 +4823,13 @@ extern "C" void game_automate_tick(void)
 		case STEP_TRIGGER_LEVELCOMPLETE:
 			if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
 				stop_script_fail("trigger_levelcomplete: game is not running");
+				break;
+			}
+			if (s.value.compare(0, 8, "trigger:") == 0) {
+				char reason[128];
+				const std::string trigger_value = s.value.substr(8);
+				// Ending screens pump events synchronously; consume this action first
+				if (!fire_level_trigger(trigger_value, reason, sizeof(reason), true)) stop_script_fail(reason);
 				break;
 			}
 			if ((!s.value.empty() && s.value != "secret")

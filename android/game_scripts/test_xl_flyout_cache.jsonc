@@ -1,0 +1,31 @@
+// Added scenery on original Pumo tunnel geometry; intact cinematic and cache return
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_pog_runtime" } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "original_start" },
+    { "action": "skip_briefing", "timeout_ms": 30000 },
+    { "action": "wait_for", "expect": { "in_game": true, "xl_pilot.runtime_active": true }, "timeout_ms": 30000 },
+    { "action": "set_debug", "field": "android_game_request", "value": "overlay_pause" },
+    { "action": "wait_for", "expect": { "time_paused": true }, "timeout_ms": 20000 },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "flyout_prepare" },
+    { "action": "set_debug", "field": "android_game_request", "value": "resume" },
+    { "action": "wait_for", "expect": { "time_paused": false }, "timeout_ms": 20000 },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "flyout_start" },
+    { "action": "wait_for", "expect": { "endlevel_sequence": { "gte": 3 } }, "timeout_ms": 30000 },
+    {
+        "action": "wait_for",
+        "expect": { "levelcomplete_active": true, "screen_advance_can_activate": true },
+        "timeout_ms": 45000,
+    },
+    { "action": "request_screen_advance", "generation": "current" },
+    {
+        "action": "wait_for",
+        "expect": { "player.level": 3, "in_game": true, "time_paused": false },
+        "timeout_ms": 45000,
+    },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "flyout_return" },
+    { "action": "assert", "expect": { "xl_pog.flyout_returned": true, "xl_pog.flyout_level": 2 } },
+    { "action": "introspect" },
+]
