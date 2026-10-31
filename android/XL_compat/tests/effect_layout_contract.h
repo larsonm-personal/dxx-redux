@@ -162,7 +162,18 @@ void effect_layout_contract(const char *directory = nullptr)
 						expected.insert(expected.end(), fire.begin() + start + 7, fire.begin() + start + header);
 						expected[1] = expected[4] = 0;
 						check(expected.size() == 79 && object_at + expected.size() <= translated.stock_level.size() && std::equal(expected.begin(), expected.end(), translated.stock_level.begin() + object_at), "Fire native record lost audited header bytes or retained particle payload");
-						for (const auto field : { std::array<unsigned, 2>{ unsigned(header + 28), 7 }, { unsigned(header + 29), 0 }, { unsigned(header + 8), 11 }, { 6, 1 } }) {
+						auto smoke = fire;
+						patch(smoke, start + header + 29, 0, 1);
+						const auto translated_smoke = xl_compat::prepare_source_runtime_probe(smoke);
+						// The shadow retains unused source records, including the distinct subtype
+						const auto smoke_read32 = [&](std::size_t at) {
+							unsigned value = 0;
+							for (unsigned b = 0; b < 4; ++b) value |= unsigned(translated_smoke.stock_level.at(at + b)) << (b * 8);
+							return value;
+						};
+						const auto smoke_object_at = smoke_read32(smoke_read32(12) + 35);
+						check(translated_smoke.source.objects[0].render_data[11] == 0 && smoke_object_at + expected.size() <= translated_smoke.stock_level.size() && std::equal(expected.begin(), expected.end(), translated_smoke.stock_level.begin() + smoke_object_at), "Smoke translation lost source subtype or changed the classic inert object header");
+						for (const auto field : { std::array<unsigned, 2>{ unsigned(header + 28), 7 }, { unsigned(header + 29), 1 }, { unsigned(header + 8), 11 }, { 6, 1 } }) {
 							auto bad_fire = fire;
 							patch(bad_fire, start + field[0], field[1], 1);
 							rejects([&] { xl_compat::prepare_source_runtime_probe(bad_fire); });

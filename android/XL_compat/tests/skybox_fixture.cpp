@@ -8,7 +8,9 @@
 int main(int argc, char **argv)
 {
 	try {
-		if (argc != 3) throw std::runtime_error("Usage: xl_skybox_fixture ORIGINAL_PUMO_HOG OUTPUT_DIRECTORY");
+		if (argc != 3 && argc != 4) throw std::runtime_error("Usage: xl_skybox_fixture ORIGINAL_PUMO_HOG OUTPUT_DIRECTORY [--smoke]");
+		const bool keep_smoke = argc == 4 && std::string(argv[3]) == "--smoke";
+		if (argc == 4 && !keep_smoke) throw std::runtime_error("Unknown fixture mode");
 		std::ifstream input(argv[1], std::ios::binary);
 		if (!input) throw std::runtime_error("Cannot read original Pumo archive");
 		const xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
@@ -31,7 +33,7 @@ int main(int argc, char **argv)
 		if (smoke.type != 20 || smoke.render != 11 || smoke.render_data.size() != 13 || smoke.render_data[11] != 0 || smoke.control || smoke.movement || smoke.multiplayer || hub->bytes.at(smoke.source_end - 2) != 0)
 			throw std::runtime_error("Unexpected authored smoke owner");
 		// A labelled fire substitute isolates smoke while retaining object indices
-		hub->bytes.at(smoke.source_end - 2) = 3;
+		if (!keep_smoke) hub->bytes.at(smoke.source_end - 2) = 3;
 		const auto derived = xl_compat::inspect_level(hub->bytes);
 		const auto blockers = xl_compat::runtime_blockers(derived);
 		if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
@@ -41,17 +43,17 @@ int main(int argc, char **argv)
 		const auto original_members = xl_compat::read_hog(original);
 		const auto before = std::find_if(original_members.begin(), original_members.end(), [](const auto &member) { return member.name == "pm-hub.rl2"; });
 		for (std::size_t i = 0; i < hub->bytes.size(); ++i) changed += hub->bytes[i] != before->bytes.at(i);
-		if (changed != 2) throw std::runtime_error("Skybox fixture must change exactly two authored bytes");
+		if (changed != (keep_smoke ? 1u : 2u)) throw std::runtime_error("Skybox/smoke fixture changed an unexpected number of authored bytes");
 		xl_compat::Bytes archive{ 'D', 'H', 'F' };
 		for (const auto &member : members) xl_test::hog_member(archive, member.name, member.bytes, false);
 		const std::filesystem::path directory(argv[2]);
 		std::filesystem::create_directories(directory);
-		std::ofstream hog(directory / "pskybox.hog", std::ios::binary);
+		std::ofstream hog(directory / (keep_smoke ? "psmoke.hog" : "pskybox.hog"), std::ios::binary);
 		hog.write(reinterpret_cast<const char *>(archive.data()), std::streamsize(archive.size()));
-		std::ofstream descriptor(directory / "pskybox.mn2", std::ios::binary);
-		descriptor << "d2x-name = Derived Pumo skybox\nnum_levels = 1\npm-hub.rl2\n";
+		std::ofstream descriptor(directory / (keep_smoke ? "psmoke.mn2" : "pskybox.mn2"), std::ios::binary);
+		descriptor << (keep_smoke ? "d2x-name = Derived Pumo smoke\n" : "d2x-name = Derived Pumo skybox\n") << "num_levels = 1\npm-hub.rl2\n";
 		if (!hog || !descriptor) throw std::runtime_error("Cannot write derived skybox archive");
-		std::cout << "Derived Pumo skybox: exactly two changed bytes (outdoors cleared, smoke replaced by fire); authored geometry/resources retained; original hub remains unqualified\n";
+		std::cout << (keep_smoke ? "Derived Pumo smoke: exactly one changed byte (outdoors cleared); original smoke retained\n" : "Derived Pumo skybox: exactly two changed bytes (outdoors cleared, smoke replaced by fire); authored geometry/resources retained; original hub remains unqualified\n");
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

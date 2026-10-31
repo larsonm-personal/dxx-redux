@@ -156,7 +156,7 @@ void particle_buffer_source_controls()
 			}
 			source.Add(&particles[i], 1);
 			const auto &p = particles[i];
-			actual.add(i, p.m_vPos.v, p.radius, p.type == 16, p.m_bEmissive, draw);
+			actual.add_kind(i, p.m_vPos.v, p.radius, p.type, p.m_bEmissive, draw);
 			if (actual_drawn != drawn) throw std::runtime_error("Particle buffer intermediate dispatch differs from pinned source");
 		}
 		source.Flush(-1, true);
@@ -183,6 +183,7 @@ void particle_buffer_source_controls()
 	run({ particle(0, 5, 10), particle(1, 16, 100), particle(2, 5, 11), particle(3, 16, 101) }, { 1, 3, 0, 2 });
 	run({ particle(0, 5, 10), particle(1, 5, 11) }, {}, 1);
 	run({ particle(0, 5, 0), particle(1, 5, 0) }, {});
+	run({ particle(0, 1, 10), particle(1, 1, 11) }, { 0, 1 });
 	std::vector<CParticle> capacity;
 	std::vector<int> expected;
 	capacity.reserve(25001);
@@ -198,7 +199,8 @@ void particle_buffer_source_controls()
 		std::vector<CParticle> inputs;
 		for (unsigned i = 0; i < 512; ++i) {
 			const auto choice = random();
-			auto p = particle(int(i), choice & 1 ? 5 : 16, float(int(random() % 601) - 300));
+			const int kinds[] = { 1, 5, 16 };
+			auto p = particle(int(i), kinds[choice % 3], float(int(random() % 601) - 300));
 			p.m_vPos.v[1] = float(int(random() % 31) - 15);
 			p.m_vPos.v[2] = float(int(random() % 31) - 15);
 			p.radius = float(random() % 20) * float(profile % 4);

@@ -125,7 +125,7 @@ struct {
 	struct {
 		int nMathFormat = 2;
 		struct {
-			bool bWiggleBubbles = false, bRotate = true;
+			bool bWiggleBubbles = false, bWobbleBubbles = false, bRotate = true;
 		} particles;
 	} render;
 } options;
@@ -135,7 +135,7 @@ struct ImageInfo {
 } image_info;
 ImageInfo &ParticleImageInfo(int type)
 {
-	if (type != FIRE_PARTICLES) throw std::runtime_error("Unexpected non-fire image");
+	if (type != FIRE_PARTICLES && type != SMOKE_PARTICLES) throw std::runtime_error("Unexpected particle image");
 	return image_info;
 }
 int Rand(int)
@@ -181,10 +181,7 @@ struct CParticle {
 	TexCoord m_texCoord;
 	int32_t RenderType();
 	int32_t Render(float);
-	void UpdateTexCoord()
-	{
-		throw std::runtime_error("Authored fire unexpectedly animated its atlas frame");
-	}
+	void UpdateTexCoord();
 	void Setup(bool, float, char, char, tParticleVertex *, int32_t);
 	static void InitRotation();
 	static void SetupRotation();
@@ -198,6 +195,95 @@ CFixMatrix CParticle::mRot[2][64]{};
 #define PROF_END(a)
 #include "xl_reference_particle_render.h"
 } // namespace particle_render_reference
+
+void particle_smoke_render_controls()
+{
+	using namespace particle_render_reference;
+	const xl_compat::ParticleBasis basis{ { 60491, 9001, -23411 }, { -12017, 64003, 3501 } };
+	gameData.renderData.mine.viewer.mOrient.m.dir.r.values = basis.right;
+	gameData.renderData.mine.viewer.mOrient.m.dir.u.values = basis.up;
+	CParticle::InitRotation();
+	CParticle::SetupRotation();
+	auto view = xl_compat::particle_view(basis);
+	unsigned count = 0;
+	for (int frame : { 0, 7, 8, 31, 63 })
+		for (int orientation = 0; orientation < 4; ++orientation)
+			for (int rotation : { 0, 17, 63 })
+				for (bool blow_up : { false, true })
+					for (bool rotate : { false, true })
+						for (float decay : { 0.001f, 0.125f, 0.75f, 0.9f, 0.901f, 1.0f }) {
+							xl_compat::SmokeParticle particle;
+							auto &motion = particle.motion;
+							motion.position = { -281117, 723003, 1759911 };
+							motion.frame = frame;
+							motion.orientation = orientation;
+							motion.rotation = rotation;
+							motion.width = 1.3125f;
+							motion.height = 2.875f;
+							motion.decay = decay;
+							particle.blow_up = blow_up;
+							particle.appearance.rendered = { 0.2f, 0.4f, 0.7f, 0.13f };
+							view.rotate = rotate;
+							gameOpts->render.particles.bRotate = rotate;
+							CParticle source;
+							source.m_nType = SMOKE_PARTICLES;
+							source.m_nFadeType = 1;
+							source.m_bEmissive = 0;
+							source.m_bBlowUp = blow_up;
+							source.m_vPos.values = motion.position;
+							source.m_nOrient = orientation;
+							source.m_nRotFrame = rotation;
+							source.m_bRotate = 1;
+							source.m_nWidth = motion.width;
+							source.m_nHeight = motion.height;
+							source.m_decay = decay;
+							source.m_deltaUV = 0.125f;
+							source.m_texCoord.v.u = float(frame % 8) / 8;
+							source.m_texCoord.v.v = float(frame / 8) / 8;
+							source.m_renderColor.values = particle.appearance.rendered;
+							image_info = { 0, 0 };
+							tParticleVertex expected[4];
+							source.Setup(true, .13f, char(frame), char(rotation), expected, 0);
+							const auto actual = xl_compat::smoke_particle_quad(particle, view, 512, 256);
+							for (unsigned i = 0; i < 4; ++i) {
+								for (unsigned axis = 0; axis < 3; ++axis)
+									if (actual.vertices[i].position[axis] != expected[i].vertex.v.values[axis]) throw std::runtime_error("Smoke billboard vertex differs");
+								if (actual.vertices[i].color != expected[i].color.values || actual.vertices[i].uv[0] != expected[i].texCoord.v.u || actual.vertices[i].uv[1] != expected[i].texCoord.v.v) throw std::runtime_error("Smoke billboard color or UV differs");
+							}
+							++count;
+						}
+	std::cout << "Pinned smoke billboards: " << count << " geometry, rotation, decay, RGBA and atlas comparisons passed\n";
+	count = 0;
+	for (bool animate : { false, true })
+		for (bool rotate : { false, true })
+			for (int life : { -1, 0, 100 }) {
+				xl_compat::SmokeParticle actual;
+				actual.motion.life = life;
+				actual.motion.frame = 61;
+				actual.motion.rotation = 62;
+				actual.motion.rotates = rotate;
+				CParticle source;
+				source.m_nType = SMOKE_PARTICLES;
+				source.m_nLife = life;
+				source.m_nFrames = 8;
+				source.m_deltaUV = 0.125f;
+				source.m_iFrame = 61;
+				source.m_nRotFrame = 62;
+				source.m_bRotate = rotate;
+				source.m_bAnimate = true;
+				source.UpdateTexCoord();
+				particleManager.m_bAnimate = animate;
+				for (unsigned i = 0; i < 140; ++i) {
+					const auto queued = particleManager.queued;
+					source.Render(1);
+					const bool draw = xl_compat::prepare_smoke_particle_draw(actual, animate);
+					if (draw != (particleManager.queued > queued) || actual.motion.frame != source.m_iFrame || actual.motion.rotation != source.m_nRotFrame || (rotate && actual.rotation_phase != source.m_bRotate) || source.m_texCoord.v.u != float(actual.motion.frame % 8) / 8 || source.m_texCoord.v.v != float(actual.motion.frame / 8) / 8)
+						throw std::runtime_error("Smoke lazy-render atlas or rotation cadence differs");
+					++count;
+				}
+			}
+	std::cout << "Pinned smoke animation: " << count << " queued atlas and half-rate rotation transitions passed\n";
+}
 
 void particle_render_source_controls()
 {

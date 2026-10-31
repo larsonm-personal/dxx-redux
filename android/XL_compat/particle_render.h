@@ -2,6 +2,7 @@
 #define DXX_XL_PARTICLE_RENDER_H
 #include "particle_fire.h"
 #include "particle_image.h"
+#include "particle_smoke.h"
 
 #ifdef _MSC_VER
 #pragma pack(push, 8)
@@ -40,7 +41,8 @@ struct ParticleVertex {
 	std::array<float, 4> color{ 1, 1, 1, 1 };
 };
 enum class ParticleBlend { weak_additive,
-	                       multiply };
+	                       multiply,
+	                       alpha };
 struct ParticleQuad {
 	std::array<ParticleVertex, 4> vertices;
 	ParticleBlend blend;
@@ -52,6 +54,22 @@ inline bool prepare_fire_particle_draw(FireParticle &particle, bool animate)
 	// Source queues lazily, then advances rotation; active Setup uses the live
 	// rotation member when the queued buffer is flushed
 	if (animate && particle.rotates) particle.rotation = (particle.rotation + 1) % 64;
+	return true;
+}
+
+inline bool prepare_smoke_particle_draw(SmokeParticle &particle, bool animate)
+{
+	if (particle.motion.life < 0) return false;
+	if (animate) {
+		particle.motion.frame = (particle.motion.frame + 1) % 64;
+		if (particle.motion.rotates) {
+			particle.rotation_phase <<= 1;
+			if (particle.rotation_phase == 4) {
+				particle.rotation_phase = 1;
+				particle.motion.rotation = (particle.motion.rotation + 1) % 64;
+			}
+		}
+	}
 	return true;
 }
 
@@ -68,14 +86,14 @@ struct ParticleAnimationClock {
 
 // The active source Setup body builds world-space vertices from fixed camera
 // axes. Keep the source's operation order, atlas border and UV orientation
-inline ParticleQuad fire_particle_quad(const FireParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height, bool alpha_control = false)
+inline ParticleQuad particle_billboard_quad(const FireParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height, unsigned atlas_side, float scale, const std::array<float, 4> &color, ParticleBlend blend, bool inset = true)
 {
-	if (particle.frame < 0 || particle.frame >= 4 || particle.orientation < 0 || particle.orientation >= 4 || particle.rotation < 0 || particle.rotation >= 64 || !image_width || !image_height)
-		throw std::runtime_error("Invalid XL fire billboard state");
+	if (!atlas_side || particle.frame < 0 || unsigned(particle.frame) >= atlas_side * atlas_side || particle.orientation < 0 || particle.orientation >= 4 || particle.rotation < 0 || particle.rotation >= 64 || !image_width || !image_height)
+		throw std::runtime_error("Invalid XL particle billboard state");
 	ParticleQuad quad;
-	quad.blend = particle.frame < 2 ? ParticleBlend::weak_additive : ParticleBlend::multiply;
+	quad.blend = blend;
 	const auto &basis = particle.rotates && view.rotate ? view.rotated[std::size_t(particle.orientation & 1 ? 63 - particle.rotation : particle.rotation)] : view.basis;
-	const float width = particle.width * particle.decay, height = particle.height * particle.decay;
+	const float width = particle.width * scale, height = particle.height * scale;
 	for (unsigned axis = 0; axis < 3; ++axis) {
 		const float center = float(particle.position[axis]) / 65536.0f;
 		const float right = float(basis.right[axis]) / 65536.0f * width;
@@ -85,16 +103,30 @@ inline ParticleQuad fire_particle_quad(const FireParticle &particle, const Parti
 		quad.vertices[2].position[axis] = (center + right) + up;
 		quad.vertices[3].position[axis] = (center + right) - up;
 	}
-	const float delta = 1.0f / fire_image_atlas_side;
-	const float u = float(particle.frame % int(fire_image_atlas_side)) * delta;
-	const float v = float(particle.frame / int(fire_image_atlas_side)) * delta;
-	const float x_border = 1.0f / float(image_width), y_border = 1.0f / float(image_height);
+	const float delta = 1.0f / float(atlas_side);
+	const float u = float(particle.frame % int(atlas_side)) * delta;
+	const float v = float(particle.frame / int(atlas_side)) * delta;
+	const float x_border = inset ? 1.0f / float(image_width) : 0, y_border = inset ? 1.0f / float(image_height) : 0;
 	for (unsigned i = 0; i < 4; ++i) {
 		auto &vertex = quad.vertices[(unsigned(particle.orientation) + i) % 4];
 		vertex.uv = { i == 0 || i == 3 ? u + x_border : u + delta - x_border, i < 2 ? v + y_border : v + delta - y_border };
-		vertex.color[3] = alpha_control ? 0.0f : 1.0f;
+		vertex.color = color;
 	}
 	return quad;
+}
+
+inline ParticleQuad fire_particle_quad(const FireParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height, bool alpha_control = false)
+{
+	return particle_billboard_quad(particle, view, image_width, image_height, fire_image_atlas_side, particle.decay, { 1, 1, 1, alpha_control ? 0.0f : 1.0f }, particle.frame < 2 ? ParticleBlend::weak_additive : ParticleBlend::multiply);
+}
+
+inline ParticleQuad smoke_particle_quad(const SmokeParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height)
+{
+	const float decay = particle.motion.decay;
+	if (!(decay > 0) || decay > 1) throw std::runtime_error("XL smoke draw requires positive remaining lifetime");
+	float scale = particle.blow_up ? 1.0f / float(std::sqrt(decay)) : 1.0f;
+	if (decay > 0.9f) scale *= std::sqrt((1.0f - decay) / 0.1f);
+	return particle_billboard_quad(particle.motion, view, image_width, image_height, smoke_image_atlas_side, scale, particle.appearance.rendered, ParticleBlend::alpha, false);
 }
 
 inline void particle_camera_quad(ParticleQuad &quad, const ParticlePoint &eye, const std::array<ParticlePoint, 3> &view)

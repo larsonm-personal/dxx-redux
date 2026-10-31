@@ -97,26 +97,32 @@ bool Bind(int)
 static void particle_image_selection_controls()
 {
 	using namespace particle_image_reference;
-	auto &image = ParticleImageInfo(FIRE_PARTICLES);
-	require(std::string(image.szName) == std::string(xl_compat::fire_image_name) + ".tga" && image.nFrames == int(xl_compat::fire_image_atlas_side) && !image.bAnimate, "Authored fire image profile differs from active source table");
-	for (unsigned scenario = 0; scenario < 4; ++scenario) {
-		mod_exists = scenario == 1 || scenario == 2;
-		mod_readable = scenario != 2;
-		base_readable = scenario != 3;
-		probes.clear();
-		reads.clear();
-		const bool loaded = particleImageManager.Load(FIRE_PARTICLES, 0) != 0;
-		const auto mod = xl_compat::addon_mission_texture_path("missions/pmines.hog", xl_compat::fire_image_name);
-		const auto selected = mod_exists ? mod : "textures/d2x-xl/" + std::string(xl_compat::fire_image_name) + ".tga";
-		require(probes == std::vector<std::string>{ mod } && reads == std::vector<std::string>{ selected } && loaded == (scenario < 2), "Pinned addon image selection/failure differs");
-		if (loaded) {
-			require(image.pBm && image.pBm->binds == 1 && image.pBm->setups == 1 && image.xBorder == 1.0f / 128 && image.yBorder == 1.0f / 128 && !image.bAnimate, "Pinned fire image border/texture setup differs");
-			require(particleImageManager.Load(FIRE_PARTICLES, 0) && reads.size() == 1, "Source reread an already prepared image");
+	for (int kind : { FIRE_PARTICLES, SMOKE_PARTICLES }) {
+		const char *name = kind == FIRE_PARTICLES ? xl_compat::fire_image_name : xl_compat::smoke_image_name;
+		const int frames = kind == FIRE_PARTICLES ? int(xl_compat::fire_image_atlas_side) : int(xl_compat::smoke_image_atlas_side);
+		const bool animate = kind == SMOKE_PARTICLES;
+		const float border = kind == FIRE_PARTICLES ? 1.0f / 128 : 0;
+		auto &image = ParticleImageInfo(kind);
+		require(std::string(image.szName) == std::string(name) + ".tga" && image.nFrames == frames && bool(image.bAnimate) == animate, "Authored fire image profile differs from active source table");
+		for (unsigned scenario = 0; scenario < 4; ++scenario) {
+			mod_exists = scenario == 1 || scenario == 2;
+			mod_readable = scenario != 2;
+			base_readable = scenario != 3;
+			probes.clear();
+			reads.clear();
+			const bool loaded = particleImageManager.Load(kind, 0) != 0;
+			const auto mod = xl_compat::addon_mission_texture_path("missions/pmines.hog", name);
+			const auto selected = mod_exists ? mod : "textures/d2x-xl/" + std::string(name) + ".tga";
+			require(probes == std::vector<std::string>{ mod } && reads == std::vector<std::string>{ selected } && loaded == (scenario < 2), "Pinned addon image selection/failure differs");
+			if (loaded) {
+				require(image.pBm && image.pBm->binds == 1 && image.pBm->setups == 1 && image.xBorder == border && image.yBorder == border && bool(image.bAnimate) == animate, "Pinned fire image border/texture setup differs");
+				require(particleImageManager.Load(kind, 0) && reads.size() == 1, "Source reread an already prepared image");
+			}
+			require(gameStates.render.enabled == 0, "Source addon style scope was not restored");
+			delete image.pBm;
+			image.pBm = nullptr;
+			image.bHave = 0;
 		}
-		require(gameStates.render.enabled == 0, "Source addon style scope was not restored");
-		delete image.pBm;
-		image.pBm = nullptr;
-		image.bHave = 0;
 	}
-	std::cout << "Pinned particle image selection: active quality-2 atlas, mod/default precedence, failed mod without fallback, cached success and one-pixel borders passed\n";
+	std::cout << "Pinned particle image selection: active quality-2 atlas, mod/default precedence, failed mod without fallback, cached success, fire one-pixel borders and smoke zero borders passed\n";
 }
