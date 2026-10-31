@@ -103,7 +103,7 @@ class LightningGpu
 #else
 		const std::string prefix = "#version 120\n";
 #endif
-		const auto vertex = lightning_gpu_compile(GL_VERTEX_SHADER, prefix + "attribute vec4 position; attribute vec2 uv; uniform mat4 mvp; varying vec2 glowUV; void main(){glowUV=uv;gl_Position=mvp*position;}");
+		const auto vertex = lightning_gpu_compile(GL_VERTEX_SHADER, prefix + "attribute vec4 position; attribute vec2 uv; uniform mat4 mvp; uniform vec2 coronaMap; varying vec2 glowUV; void main(){glowUV=uv*coronaMap.x+coronaMap.y;gl_Position=mvp*position;}");
 		GLuint fragment = 0, linked = 0;
 		try {
 			fragment = lightning_gpu_compile(GL_FRAGMENT_SHADER, prefix + "uniform sampler2D corona; uniform vec4 color; uniform int textured; varying vec2 glowUV; void main(){gl_FragColor=textured!=0?texture2D(corona,glowUV)*color:color;}");
@@ -154,18 +154,23 @@ class LightningGpu
 		program = vao = buffer = 0;
 	}
 	void draw(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
-	          float width, const std::array<float, 16> &matrix, GLuint corona, bool blur)
+	          float width, const std::array<float, 16> &matrix, GLuint corona, bool blur, const std::array<float, 2> &corona_map = { 1, 0 })
 	{
 		if (core.vertices.size() < 6 || random_nodes < 0 || std::size_t(random_nodes) + 6 > core.vertices.size() || glow.vertices.size() != glow.uv.size())
 			throw std::runtime_error("XL lightning GPU received inconsistent geometry");
 		const auto count = core.vertices.size() - 4 - random_nodes;
 		const auto layer = (count - 1) * 4;
 		if (!corona || glow.vertices.size() != layer * 2) throw std::runtime_error("XL lightning glow requires two layers and its corona texture");
+		// Source UVs are bounded: border clamp matches GL_CLAMP without changing LOD gradients
+		for (const auto &uv : glow.uv)
+			for (float value : uv)
+				if (!std::isfinite(value) || value < 0 || value > 1) throw std::runtime_error("XL lightning UV exceeds its source range");
 		LightningDrawState restore;
 		prepare();
 		lightning_gpu_program(program);
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvp"), 1, GL_FALSE, matrix.data());
 		glUniform1i(glGetUniformLocation(program, "corona"), 0);
+		glUniform2fv(glGetUniformLocation(program, "coronaMap"), 1, corona_map.data());
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, corona);
 		glEnable(GL_DEPTH_TEST);

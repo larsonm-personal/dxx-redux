@@ -84,6 +84,20 @@ static void lightning_objects_native_case(bool active)
 		for (unsigned axis = 0; axis < 3; ++axis)
 			require(frame->core.vertices[node][axis] == float(emitter->bolts[0].draw_positions[node][axis]) / 65536.0f, "Lightning core was rebuilt from moved nodes instead of staged draw coordinates");
 	const auto frozen_core = frame->core.vertices, frozen_glow = frame->glow.vertices;
+	const LightningPoint scene_eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
+	const auto scene_rng = d_rand_get_stream_call_count(D_RNG_FX);
+	auto queued = lightning_scene_items({ 0 }, {}, scene_eye, INT32_MAX);
+	require(queued.size() == emitter->bolts.size(), "Visible lightning did not collect every active bolt");
+	require(lightning_scene_items({}, {}, scene_eye, INT32_MAX).empty(), "Hidden lightning entered the scene");
+	require(lightning_scene_items({}, { 1 }, scene_eye, INT32_MAX).size() == queued.size(), "Rendered lightning owner did not override segment visibility");
+	for (const auto &item : queued) require(item.object == 1 && lightning_scene_item_valid(item), "Lightning scene collected a disabled or stale owner");
+	require(queued[0].frame.core.vertices == frozen_core && queued[0].frame.glow.vertices == frozen_glow, "Lightning queue lost its captured frame");
+	queued[0].frame.core.vertices[0][0] += 1;
+	require(frame->core.vertices == frozen_core, "Queued lightning geometry aliases its live owner");
+	++Objects[1].signature;
+	require(!lightning_scene_item_valid(queued[0]), "Queued lightning followed a recycled native object");
+	--Objects[1].signature;
+	require(d_rand_get_stream_call_count(D_RNG_FX) == scene_rng, "Lightning collection consumed draw-time RNG");
 	if (emitter->bolts[0].lifetime.nodes > 0)
 		require(emitter->bolts[0].position == LightningPoint{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z }, "Lightning did not follow its native owner");
 	const auto before_validation = d_rand_get_stream_call_count(D_RNG_FX);
@@ -108,6 +122,7 @@ static void lightning_objects_native_case(bool active)
 	require(xl_lightning_object_set_enabled(1, 0) && xl_lightning_object_set_enabled(2, 1), "Lightning activation failed");
 	require(restore_lightning_objects(saved, true) && lightning_objects_snapshot() == saved && !lightning_object_emitter(1), "Lightning restore retained transient bolts or lost activation");
 	require(!lightning_object_render_frame(1, 0), "Lightning restore retained stale camera geometry");
+	require(lightning_scene_items({ 0 }, { 1 }, scene_eye, INT32_MAX).empty(), "Lightning restore retained queued render geometry");
 	require(d_rand_get_stream_call_count(D_RNG_FX) == before_validation, "Lightning restore consumed effects RNG");
 	Triggers[0] = {};
 	Triggers[0].type = 32;

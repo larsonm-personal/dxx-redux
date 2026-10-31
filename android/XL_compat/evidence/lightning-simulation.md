@@ -211,3 +211,63 @@ extraction, including real context recreation. Both automation catalogs and
 scoped formatting passed. The previously qualified original route through level
 8 is reused; these checks do not constitute a level-nine Android playthrough.
 The Android x86_64 debug APK also builds successfully; it is not yet a lightning rendering qualification.
+
+## Native drawing and Android renderer controls
+
+Native transparency now collects immutable lightning frames after particles,
+records owner visits independently of transparent-object classification, orders
+bolts by the farther endpoint, and checks native signatures again at dispatch.
+Rendering transforms captured world geometry with the current camera and uses
+an owned scene-depth snapshot. The existing particle-image context hook also
+releases lightning GPU resources. Normal lightning admission remains blocked.
+
+The source's CFloatVector viewport overload accumulates bounds without resetting
+them between bolts. Draw rejects negative viewport results, but this overload
+returns only zero or one: even initially hidden input must remain in the glow
+buffer if a later member makes the batch visible. The compositor now preserves
+both those behaviors. Thirty-six pinned End/Render comparisons cover full and
+offset canvases, depth rejection, hidden-first and hidden-later members.
+
+Android's test emulator lacks texture border clamp. The corona therefore owns a
+portable padded texture alongside its normal image. Each original mip occupies
+[N,2N) in a transparent 4N square, through the original final 1x1 level. The
+sampler maps UVs to uv/4+1/4 and retains implicit LOD selection. An integer texel
+fetch shader copies the original GPU mip colors; it avoids an observed emulator
+failure attaching automatically generated source mip images to a framebuffer.
+No source artwork or replacement mip-generation algorithm is introduced.
+
+This storage currently requires a square power-of-two image fitting within one
+quarter of the GPU's maximum texture dimension. The original 256x256 corona
+fits and consumes about 5.6 MB of padded GPU storage. Texture destruction and
+real context recreation release/rebuild the owned padded allocation. Source UVs
+are checked against their generated [0,1] domain.
+
+The expanded Mesa comparison owner checks 288 complete images plus 576 isolated
+glow-layer images using base linear, nearest-mip and trilinear filtering, including
+minification. Isolated layers and the GL_MAX blurred profile retain the one-unit
+RGBA8 tolerance. Two additive layers can accumulate two independent rounding
+units; their measured maximum is two. The earlier single-unit complete-image
+bound was insufficient for that additive profile and is not claimed here.
+Existing particle, mixed-transparency, depth and upload regressions still pass.
+The production native renderer also passes real EGL recreation, identical
+post-recreation pixels, offset-canvas and depth checks, and padded-texture cleanup.
+
+The existing Android POG runner adds an explicitly renderer-only mode:
+`-OriginalHub -LightningGpu -CoronaImage <original-corona.tga>`. Its owned script
+is `test_xl_lightning_gpu.jsonc`. The original corona is resolved by the normal
+resource loader while the already-supported hub is paused; a controlled frame
+is rendered and compared byte-for-byte after real EGL context recreation.
+The host-GPU emulator passed all 28 steps in 74.75 seconds, changed 134 pixels,
+and retained identical protected app-data hash lists. Its reported line-width
+range is 1 through 10. This is not a native level-nine scene or earned traversal.
+
+Scoped formatting, both automation catalogs, Windows native compilation and
+Android x86_64 compilation passed. Evidence is under temp/xl-skybox-20261031:
+lightning-hidden-batch-linux.log and lightning-texel-gpu-android.log; durable
+Android receipts are in temp/xl-lightning-gpu-android. The hidden-first correction
+has desktop comparison coverage; the visible Android/context result is reused.
+
+Remaining gates include source projection/visibility/order qualification,
+zero-distance-scale behavior, Android wide/smooth line fidelity, actual original
+level-nine scene integration, light and audio. Neither this renderer control nor
+the existing controlled route through level8 qualifies those missing behaviors.

@@ -5,6 +5,7 @@
 #include <winsock2.h>
 #endif
 #include "particle_renderer.h"
+#include "lightning_renderer.h"
 #include "pog_renderer.h"
 #include "../particle_render.h"
 extern "C" {
@@ -15,6 +16,7 @@ void ogl_bindbmtex(grs_bitmap *);
 }
 #if !defined(OGLES) || defined(ANDROID)
 #include "particle_soft_renderer.h"
+#include "particle_border_texture.h"
 #endif
 
 namespace xl_compat
@@ -23,6 +25,7 @@ struct ParticleTexture::State {
 	static State *head;
 	State *previous = nullptr, *next = nullptr;
 	grs_bitmap bitmap{};
+	GLuint border = 0;
 	std::string name;
 	State(const PogBitmap &pixels, const char *label) : name(label)
 	{
@@ -45,6 +48,8 @@ struct ParticleTexture::State {
 	}
 	void release(bool abandoned)
 	{
+		if (border && !abandoned) glDeleteTextures(1, &border);
+		border = 0;
 		if (abandoned) bitmap.gltexture = bitmap.gltexture_mask = nullptr;
 		else ogl_freebmtexture(&bitmap);
 	}
@@ -79,6 +84,18 @@ unsigned ParticleTexture::handle()
 		if (error) throw std::runtime_error(error);
 	}
 	return state->bitmap.gltexture->handle;
+}
+
+unsigned ParticleTexture::border_handle()
+{
+#if defined(OGLES) && !defined(ANDROID)
+	throw std::runtime_error("XL corona borders require OpenGL 3 or OpenGL ES 3");
+#else
+	const auto source = handle();
+	if (state->bitmap.gltexture->tw != state->bitmap.gltexture->th) throw std::runtime_error("XL corona border storage requires a square texture");
+	if (!state->border) state->border = copy_particle_border_texture(source, state->bitmap.gltexture->tw);
+	return state->border;
+#endif
 }
 
 void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
@@ -165,6 +182,7 @@ void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size
 } // namespace xl_compat
 extern "C" void xl_particle_images_discard_context(int abandoned)
 {
+	xl_compat::discard_lightning_context(abandoned != 0);
 	xl_compat::ParticleTexture::discard_context(abandoned != 0);
 }
 

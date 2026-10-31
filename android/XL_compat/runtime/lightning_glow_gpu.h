@@ -45,7 +45,7 @@ class LightningGlowGpu
 	GLenum depth_attachment = GL_DEPTH_ATTACHMENT;
 	int width = 0, height = 0;
 	std::array<int, 4> view{}, bounds{};
-	bool active = false, visible = false;
+	bool active = false, visible = false, has_extent = false;
 	static GLuint program(const std::string &fragment_body)
 	{
 #ifdef ANDROID
@@ -147,6 +147,10 @@ class LightningGlowGpu
 	}
 
   public:
+	bool batch_active() const
+	{
+		return active;
+	}
 	LightningGlowGpu() = default;
 	LightningGlowGpu(const LightningGlowGpu &) = delete;
 	LightningGlowGpu &operator=(const LightningGlowGpu &) = delete;
@@ -154,8 +158,8 @@ class LightningGlowGpu
 	{
 		primitive.discard(abandoned);
 		if (!abandoned) {
-			glDeleteTextures(3, colors);
-			glDeleteFramebuffers(3, targets);
+			if (colors[0]) glDeleteTextures(3, colors);
+			if (targets[0]) glDeleteFramebuffers(3, targets);
 			if (blur_program) glDeleteProgram(blur_program);
 			if (copy_program) glDeleteProgram(copy_program);
 			if (vao) glDeleteVertexArrays(1, &vao);
@@ -165,7 +169,7 @@ class LightningGlowGpu
 		for (auto &value : targets) value = 0;
 		blur_program = copy_program = vao = buffer = scene = depth = 0;
 		width = height = 0;
-		active = visible = false;
+		active = visible = has_extent = false;
 	}
 	void begin(GLuint scene_target, GLuint depth_texture, GLenum attachment, int w, int h, const std::array<int, 4> &viewport)
 	{
@@ -187,26 +191,28 @@ class LightningGlowGpu
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
 		active = true;
-		visible = false;
+		visible = has_extent = false;
 	}
 	bool draw(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
-	          float line_width, const std::array<float, 16> &matrix, GLuint corona, const std::array<int, 4> &extent)
+	          float line_width, const std::array<float, 16> &matrix, GLuint corona, const std::array<int, 4> &extent, const std::array<float, 2> &corona_map = { 1, 0 })
 	{
 		if (!active) throw std::runtime_error("XL lightning glow draw requires an active batch");
 		if (extent[0] > extent[2] || extent[1] > extent[3]) throw std::runtime_error("XL lightning glow extent is inverted");
-		if (extent[2] < 0 || extent[0] >= view[2] || extent[3] < 0 || extent[1] >= view[3]) return false;
-		LightningGlowState restore;
-		select(targets[0]);
-		primitive.draw(core, glow, random_nodes, color, line_width, matrix, corona, true);
-		if (!visible) bounds = extent;
+		if (!has_extent) bounds = extent;
 		else {
 			bounds[0] = (std::min) (bounds[0], extent[0]);
 			bounds[1] = (std::min) (bounds[1], extent[1]);
 			bounds[2] = (std::max) (bounds[2], extent[2]);
 			bounds[3] = (std::max) (bounds[3], extent[3]);
 		}
-		visible = true;
-		return true;
+		has_extent = true;
+		visible = !(bounds[2] < 0 || bounds[0] >= view[2] || bounds[3] < 0 || bounds[1] >= view[3]);
+		LightningGlowState restore;
+		select(targets[0]);
+		// Source Draw rejects SetViewport < 0, but this overload returns only 0 or 1
+		// Keep hidden input: a later member can make the cumulative batch visible
+		primitive.draw(core, glow, random_nodes, color, line_width, matrix, corona, true, corona_map);
+		return visible;
 	}
 	bool end()
 	{

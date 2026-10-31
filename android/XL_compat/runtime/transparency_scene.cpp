@@ -11,6 +11,10 @@
 #include "../particle_visibility.h"
 #include "particle_objects.h"
 #include "particle_renderer.h"
+#include "lightning_objects.h"
+#include "lightning_renderer.h"
+#include "particle_resources.h"
+#include "resource_validation.h"
 #include "geometry.h"
 #include "preview.h"
 #include <map>
@@ -80,7 +84,7 @@ struct Water {
 	int32_t points[4][3];
 	float colors[4][4];
 };
-using Item = std::variant<Face, QueuedObject, Particle, Water>;
+using Item = std::variant<Face, QueuedObject, Particle, Water, LightningSceneItem>;
 struct Bounds {
 	ParticlePoint center;
 	int radius = 0;
@@ -90,6 +94,7 @@ std::vector<Item> items;
 std::vector<TransparencyPosition> positions;
 std::vector<short> visible;
 std::set<std::array<int, 7>> faces;
+std::set<int> rendered_objects;
 ParticlePoint eye;
 int maximum_depth = 0;
 bool collecting = false;
@@ -104,6 +109,7 @@ void reset_frame()
 	positions.clear();
 	visible.clear();
 	faces.clear();
+	rendered_objects.clear();
 }
 void add(Item item, const ParticlePoint &position, int bias = 0, bool clamp = false)
 {
@@ -143,6 +149,8 @@ void drain(Draw draw, Finish finish)
 		else if (const auto *object = std::get_if<QueuedObject>(&item)) {
 			if (object->index > Highest_object_index || Objects[object->index].signature != object->signature || Objects[object->index].type == OBJ_NONE) continue;
 			object->window.restore();
+		} else if (const auto *lightning = std::get_if<LightningSceneItem>(&item)) {
+			if (!lightning_scene_item_valid(*lightning)) continue;
 		}
 		draw(item);
 	}
@@ -153,8 +161,8 @@ void drain(Draw draw)
 {
 	drain(draw, [] {});
 }
-template <class DrawParticles, class DrawOther>
-void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
+template <class DrawParticles, class DrawOther, class Before>
+void drain_buffered(DrawParticles draw_particles, DrawOther draw_other, Before before)
 {
 	FireParticleBuffers buffers({ float(eye[0]) / 65536.f, float(eye[1]) / 65536.f, float(eye[2]) / 65536.f });
 	const auto submit = [&](const std::vector<std::size_t> &indices) {
@@ -172,6 +180,7 @@ void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
 		if (!quads.empty()) draw_particles(texture, quads);
 	};
 	drain([&](Item &item) {
+		before(item);
 		if (const auto *particle = std::get_if<Particle>(&item)) {
 			const auto &p = particle->position;
 			const bool smoke = particle->quad.blend == ParticleBlend::multiply;
@@ -181,6 +190,11 @@ void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
 			buffers.flush(submit);
 			draw_other(item);
 		} }, [&] { buffers.flush(submit); });
+}
+template <class DrawParticles, class DrawOther>
+void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
+{
+	drain_buffered(draw_particles, draw_other, [](Item &) {});
 }
 } // namespace
 
@@ -263,8 +277,10 @@ extern "C" int xl_transparency_face(int segment, int side, int count, const int 
 
 extern "C" int xl_transparency_object(int index)
 {
-	if (!collecting || index < 0 || index > Highest_object_index || !transparent_object(Objects[index])) return 0;
+	if (!collecting || index < 0 || index > Highest_object_index) return 0;
 	try {
+		rendered_objects.insert(index);
+		if (!transparent_object(Objects[index])) return 0;
 		const auto &obj = Objects[index];
 		add(QueuedObject{ index, obj.signature }, point(obj.pos));
 		return 1;
@@ -302,6 +318,10 @@ extern "C" void xl_transparency_flush(void)
 	if (!collecting) return;
 	try {
 		xl_particle_render_scene(visible.data(), int(visible.size()));
+		for (auto &lightning : lightning_scene_items(std::vector<int>(visible.begin(), visible.end()), std::vector<int>(rendered_objects.begin(), rendered_objects.end()), eye, maximum_depth)) {
+			const auto position = lightning.position;
+			add(std::move(lightning), position, 0, true);
+		}
 		struct ParticleSoftScope {
 			ParticleSoftScope()
 			{
@@ -353,9 +373,20 @@ extern "C" void xl_transparency_flush(void)
 				               render_object(&Objects[object->index]);
 			               } else if (auto *water = std::get_if<Water>(&item)) {
 				               ogl_draw_xl_water_portal(water->points, water->colors);
+			               } else if (const auto *lightning = std::get_if<LightningSceneItem>(&item)) {
+				               const auto *image = xl_prepared_lightning_image();
+				               if (!image || !image->texture) throw std::runtime_error("XL lightning scene lost its corona image");
+				               draw_lightning_scene_item(*lightning, *image->texture);
 			               }
+		               },
+		               [](Item &item) {
+			               // Native objects either end glow or begin an incompatible sprite batch
+			               // Flush at particle visitation, before its delayed buffer submission
+			               if (!std::holds_alternative<LightningSceneItem>(item)) finish_lightning_batch();
 		               });
+		finish_lightning_batch();
 	} catch (const std::exception &error) {
+		discard_lightning_context(false);
 		xl_transparency_clear();
 		Error("XL transparency rendering: %s", error.what());
 	}

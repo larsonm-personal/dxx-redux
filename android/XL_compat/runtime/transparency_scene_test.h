@@ -53,6 +53,7 @@ extern "C" void xl_transparency_test_controls(int active)
 	check(xl_transparency_object(1), "Source energy projectile was not queued");
 	obj.id = 8;
 	check(!xl_transparency_object(1), "Opaque missile was sent to the transparency queue");
+	check(rendered_objects.count(1) == 1, "Opaque owner visit was lost before lightning visibility collection");
 	obj.id = 0;
 	// A particle ten units farther has the same bucket as this face/object
 	add(Particle{}, { center[0] + 10 * 65536, center[1], center[2] }, 10 * 65536);
@@ -88,11 +89,16 @@ extern "C" void xl_transparency_test_controls(int active)
 	enqueue_particle(1);
 	enqueue_particle(0);
 	std::vector<int> buffered_receipt;
+	unsigned particle_visits = 0;
 	drain_buffered([&](ParticleTexture *, const std::vector<ParticleQuad> &quads) {
+		check(particle_visits >= 2, "Particle buffer submitted before visiting its members");
 		for (const auto &quad : quads) buffered_receipt.push_back(int(quad.vertices[0].color[0])); }, [&](Item &item) {
 		check(std::holds_alternative<QueuedObject>(item), "Unexpected item at particle buffer boundary");
-		buffered_receipt.push_back(9); });
+		buffered_receipt.push_back(9); }, [&](Item &item) {
+		if (std::holds_alternative<Particle>(item)) ++particle_visits;
+		else check(buffered_receipt.empty(), "Pre-item flush hook ran after buffered particle drawing"); });
 	check(buffered_receipt == std::vector<int>({ 0, 1, 9 }) && items.empty(), "Production buffered dispatch crossed an object boundary or drew a singleton");
+	check(particle_visits == 3 && rendered_objects.empty(), "Particle visitation skipped a singleton or retained owner visibility");
 	xl_transparency_begin(&segment, 1);
 	check(xl_transparency_object(1), "Recycled-object control did not enqueue");
 	++obj.signature;

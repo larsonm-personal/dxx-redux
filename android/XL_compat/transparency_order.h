@@ -12,13 +12,17 @@ struct TransparencyPosition {
 	// Source faces clamp to the visible depth bound; particles/objects drop
 	bool clamp = false;
 };
+inline int transparency_depth(const ParticlePoint &position, const ParticlePoint &viewer)
+{
+	const auto difference = particle_difference(position, viewer);
+	const double magnitude = std::sqrt(double(difference[0]) * difference[0] + double(difference[1]) * difference[1] + double(difference[2]) * difference[2]);
+	if (magnitude > INT32_MAX) throw std::runtime_error("XL transparency render distance exceeds fixed range");
+	return int(magnitude);
+}
 inline std::optional<int> transparency_bucket(const TransparencyPosition &position, const ParticlePoint &viewer, int maximum_depth)
 {
 	if (maximum_depth < 0 || position.bias < 0) throw std::runtime_error("XL transparency depth or bias is negative");
-	const auto difference = particle_difference(position.position, viewer);
-	const double magnitude = std::sqrt(double(difference[0]) * difference[0] + double(difference[1]) * difference[1] + double(difference[2]) * difference[2]);
-	if (magnitude > INT32_MAX) throw std::runtime_error("XL transparency render distance exceeds fixed range");
-	int depth = int(magnitude);
+	int depth = transparency_depth(position.position, viewer);
 	if (depth >= position.bias) depth -= position.bias;
 	if (depth > maximum_depth) {
 		if (!position.clamp) return std::nullopt;

@@ -426,7 +426,13 @@ try {
 		const std::vector<uint8_t> bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 		compare_particle_image(bytes);
 		const auto image = xl_compat::read_particle_image(bytes.data(), bytes.size());
+		unsigned nonzero_border = 0;
+		for (unsigned y = 0; y < image.height; ++y)
+			for (unsigned x = 0; x < image.width; ++x)
+				if (!x || !y || x + 1 == image.width || y + 1 == image.height)
+					for (unsigned channel = 0; channel < 4; ++channel) nonzero_border += image.pixels[(y * image.width + x) * 4 + channel] != 0;
 		std::cout << "Original particle TGA: " << image.width << 'x' << image.height << ", " << image.pixels.size() << " RGBA bytes matched pinned source\n";
+		std::cout << "Decoded outer border: " << nonzero_border << " nonzero RGBA channel values\n";
 		return 0;
 	}
 	particle_image_controls();
