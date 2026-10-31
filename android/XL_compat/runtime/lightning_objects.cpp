@@ -1,7 +1,7 @@
 #include "lightning_objects.h"
 #include "preview.h"
 #include "particle_world.h"
-#include "../particle_visibility.h"
+#include "../lightning_visibility.h"
 #include "../transparency_order.h"
 #include <map>
 #include <optional>
@@ -148,13 +148,7 @@ std::vector<xl_compat::LightningSceneItem> xl_compat::lightning_scene_items(cons
 			const auto &frame = entry.render_frames[ordinal];
 			if (bolt.lifetime.nodes <= 0 || bolt.lifetime.frames < 0 || !frame) continue;
 			const bool owner_rendered = std::find(rendered_objects.begin(), rendered_objects.end(), index) != rendered_objects.end();
-			bool shown = owner_rendered || particle_segment_visible(bolt.segment, flags);
-			if (!shown) shown = particle_segment_visible(world.locate(bolt.end, false, -1), flags);
-			if (!shown) {
-				LightningPoint middle;
-				for (unsigned axis = 0; axis < 3; ++axis) middle[axis] = lightning_detail::checked((std::int64_t(bolt.position[axis]) + bolt.end[axis]) / 2);
-				shown = particle_segment_visible(world.locate(middle, false, -1), flags);
-			}
+			const bool shown = lightning_visible(owner_rendered, bolt.segment, bolt.position, bolt.end, flags, [&](const LightningPoint &position) { return world.locate(position, false, -1); });
 			if (!shown) continue;
 			const int start = transparency_depth(bolt.position, eye), end = transparency_depth(bolt.end, eye);
 			if (std::min(start, end) > maximum_depth) continue;

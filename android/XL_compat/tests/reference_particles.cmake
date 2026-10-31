@@ -436,6 +436,15 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
                       "bool CParticle::IsVisible (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_emitter.cpp"
                       "inline int32_t CParticleEmitter::MayBeVisible (")
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp" lightning_visibility_hash)
+if(NOT lightning_visibility_hash STREQUAL
+   "e84717bacf25a1d1f3b4d8c3432f281bc76717d60eed43485d23764188bdb236")
+    message(FATAL_ERROR "Lightning visibility source changed")
+endif()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const CFixVector CFixVector::Avg (const CFixVector&")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp"
+                      "inline int32_t CLightning::MayBeVisible (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_visibility.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_visibility.cpp)
