@@ -10,6 +10,7 @@ void xl_skybox_render_objects(int window);
 int xl_skybox_collect_view_objects(short *objects, int capacity);
 void xl_skybox_render_scene(void);
 void xl_skybox_render_clear(void);
+int xl_skybox_renderer_ready(void);
 #ifdef __cplusplus
 }
 #include "../inventory.h"

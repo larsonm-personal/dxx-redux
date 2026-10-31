@@ -294,6 +294,8 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			throw std::runtime_error("mission declares custom textures, but no level POG was found; install the complete mission package (custom PIG replacements remain unqualified)");
 	}
 	xl_validate_level_graphics(level.palette);
+	if (std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
+		throw std::runtime_error("XL skybox requires an active OpenGL renderer");
 	if (xl_compat::volumetric_fog_required(level)) {
 		(void) xl_compat::fog_colors(level);
 		if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);

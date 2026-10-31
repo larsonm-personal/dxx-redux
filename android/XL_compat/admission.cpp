@@ -8,6 +8,7 @@
 #include "static_explosion.h"
 #include "named_sound.h"
 #include "particle_admission.h"
+#include "skybox_render.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -48,6 +49,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
+		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "10") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "15") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "19") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "25") continue;
@@ -70,6 +72,11 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
 			result.push_back(issue);
+	for (std::size_t segment = 0; segment < level.segments.size(); ++segment)
+		if (level.segments[segment].function == 10)
+			for (int side = 0; side < 6; ++side)
+				if (skybox_colored_only_boundary(level, int(segment), side))
+					result.push_back({ "skybox colored boundary", int(segment), "untextured fog boundary on side " + std::to_string(side) + " requires source draw-state qualification" });
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
 		if (object.render == 11) {

@@ -8,11 +8,13 @@ param(
     [string]$PumoMods = '',
     [switch]$SceneOnly,
     [switch]$SecretFixture,
+    [switch]$SkyboxFixture,
     [ValidateRange(0, 100000)][int]$SceneSegment = 409,
     [ValidateRange(0, 5)][int]$SceneSide = 2,
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($SkyboxFixture -and ($SecretFixture -or $SceneOnly -or !$PumoMods)) { throw 'SkyboxFixture requires original Pumo mod assets and its own fixture mode' }
 if ($SecretFixture -and ($SceneOnly -or $PumoMods)) { throw 'SecretFixture is a separate derived control' }
 if ($SceneOnly -and !$PumoMods) { throw 'SceneOnly requires the original Pumo package' }
 $mission = if ($PumoMods) { 'pmines' } else { 'rtarena' }
@@ -22,6 +24,11 @@ if ($SecretFixture) {
     $mission = 'pfsecret'
     $hogHash = 'b0e11a4dbcc8d94261bfb2b6e77a036e8b4d69384bdb5aaee4b8a9ed6d235111'
     $descriptorHash = 'af3d59ab6a9b13600ab05aae3102e7776edd2fe49c9f3dac2c825bdb878702a2'
+}
+if ($SkyboxFixture) {
+    $mission = 'pskybox'
+    $hogHash = '69f56e52a45fb16f061290c115709086c416b88cecd1037e26d81c95ad8e89b7'
+    $descriptorHash = 'fe8d90d8efd9efe2d270fdf6f90b1854171c15b8701ff6c9435df7bc94f45c7c'
 }
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $hogHash -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $descriptorHash) {
@@ -36,6 +43,7 @@ $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot $(if ($SceneOnly) { '../../temp/xl-pumo-particle-scene' } elseif ($PumoMods) { '../../temp/xl-pumo-particles-android' } else { '../../temp/xl-pog-android' })
 if ($SecretFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-particle-secret-android' }
+if ($SkyboxFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-skybox-authored-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -76,15 +84,16 @@ try {
     if ($PumoMods) {
         $mods = (Resolve-Path -LiteralPath $PumoMods).Path
         if ((Split-Path -Leaf $mods) -ne 'pmines') { throw 'PumoMods must name the original mods/pmines directory' }
-        & tar -cf "$output/pumo-mods.tar" -C (Split-Path -Parent $mods) pmines
+        & tar -cf "$output/pumo-mods.tar" -C $mods .
         if ($LASTEXITCODE -ne 0) { throw 'Cannot stage original Pumo mod resources' }
         Invoke-PogAdb -Arguments @('push', "$output/pumo-mods.tar", '/data/local/tmp/xl-pog-mods.tar') | Out-Null
-        Invoke-PogPrivate 'mkdir -p files/d2x-redux/mods && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods' | Out-Null
+        Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods/$mission" | Out-Null
     }
     Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/textures/d2x-xl && cp /data/local/tmp/xl-pog-fire.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smokingfire.tga" | Out-Null
     Invoke-PogAdb -Arguments @('logcat', '-c') | Out-Null
     $scriptName = if ($PumoMods) { 'test_xl_pumo_particles.jsonc' } else { 'test_xl_pog_runtime.jsonc' }
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
+    if ($SkyboxFixture) { $scriptName = 'test_xl_skybox_authored.jsonc' }
     if ($SceneOnly) {
         # Reuse the original owner's startup and first scene assertion
         $sourceSteps = Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable
@@ -115,7 +124,8 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($SecretFixture) { Write-Host "PASS: Derived particle automatic secret save/return and headed GPU resources ($($result.total_steps) steps)" }
+    if ($SkyboxFixture) { Write-Host "PASS: Derived authored skybox resources, disk restore, context recreation and stock isolation ($($result.total_steps) steps)" }
+    elseif ($SecretFixture) { Write-Host "PASS: Derived particle automatic secret save/return and headed GPU resources ($($result.total_steps) steps)" }
     elseif ($SceneOnly) { Write-Host "PASS: Original Pumo controlled scene $SceneSegment/$SceneSide ($($result.total_steps) steps)" }
     else { Write-Host "PASS: Original $mission GPU resources, disk/rewind, context loss and stock transition ($($result.total_steps) steps)" }
 } finally {

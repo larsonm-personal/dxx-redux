@@ -1454,6 +1454,24 @@ int main(int argc, char **argv)
 		check(probe.stock_level[4] == 8 && probe.stock_level.size() < bytes.size(), "probe stock envelope");
 		check(probe.source.vertex_colors.size() == 8 && probe.source.texture_colors.size() == 910, "probe must retain lighting evidence");
 		check(xl_compat::runtime_blockers(probe.source).empty(), "implemented XL features rejected");
+		{
+			const auto translated_skybox = xl_compat::prepare_gameplay_probe(fixture(23, 0, 1, 10));
+			auto skybox = translated_skybox.source;
+			check(skybox.segments[0].function == 10 && xl_compat::runtime_blockers(skybox).empty(), "Textured skybox metadata lost during normal translation");
+			std::uint32_t shadow_game = 0;
+			for (unsigned byte = 0; byte < 4; ++byte) shadow_game |= std::uint32_t(translated_skybox.stock_level.at(12 + byte)) << (byte * 8);
+			check(translated_skybox.stock_level.at(shadow_game - skybox.segments.size() * 8) == 0, "Skybox function leaked into the classic fuel-center shadow");
+			skybox.segments.push_back(skybox.segments[0]);
+			skybox.segments[1].function = 0;
+			skybox.segments[0].children[0] = 1;
+			skybox.segments[0].sides[0].wall = -1;
+			skybox.segments[0].properties = xl_compat::segment_light_fog;
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(skybox)).find("skybox colored boundary") != std::string::npos, "Unqualified colored-only skybox boundary admitted");
+			skybox.segments[0].children[0] = -1;
+			check(xl_compat::runtime_blockers(skybox).empty(), "External textured fog boundary incorrectly rejected as colored-only");
+			skybox.unsupported.push_back({ "segment_properties", 0, "16" });
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(skybox)).find("segment_properties") != std::string::npos, "Skybox admission erased independent outdoors requirement");
+		}
 		for (int version : { 15, 17, 23 }) {
 			const int function = version == 23 ? 9 : 11;
 			const auto translated = xl_compat::prepare_gameplay_probe(fixture(version, 0, 1, function));
