@@ -1,4 +1,4 @@
-#include "lightning_bolt.h"
+#include "lightning_emitter.h"
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -33,6 +33,8 @@ struct CFixVector {
 	const CFixVector operator-(const CFixVector &) const;
 	const CFixVector operator*(fix) const;
 	fix Mag() const;
+	bool operator==(const CFixVector &) const;
+	static const fix Dist(const CFixVector &, const CFixVector &);
 	void Check();
 	bool IsZero() const
 	{
@@ -72,6 +74,8 @@ struct CLightningNode {
 		unsupported();
 	}
 	void Setup(bool, CFixVector *, CFixVector *);
+	void Move(const CFixVector &, int16_t);
+	void Move(const CFixVector &, const CFixVector &, const CFixVector &, const CFixVector &, float, int16_t);
 	void Animate(bool, int16_t, int32_t, int32_t);
 	void ComputeOffset(int32_t);
 	CFixVector CreateErratic(CFixVector *, CFixVector *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
@@ -132,6 +136,8 @@ struct CLightning {
 	Allocation m_plasmaTexCoord, m_plasmaVerts, m_coreVerts;
 	std::vector<CFixVector> drawn;
 	void Setup(bool);
+	void Move(CFixVector, CFixVector, int16_t);
+	void Move(CFixVector, int16_t);
 	bool Create(char, int32_t);
 	void Animate(int32_t, int32_t);
 	int32_t SetLife();
@@ -183,16 +189,34 @@ struct {
 } extraGameInfo[1];
 struct {
 	struct {
+		int nSDLTicks[1]{};
 		struct {
 			int nTime = 25;
 		} tick40fps;
 	} app;
 } gameStates;
-struct {
+struct CObject {
+	struct {
+		CFixVector vPos;
+	} position;
 	struct {
 		int nSegment = 362;
 	} info;
+	int Type() const
+	{
+		return 20;
+	}
+	int Frame() const
+	{
+		return 0;
+	}
 } object;
+constexpr int OBJ_ROBOT = 2, OBJ_POWERUP = 7;
+struct {
+	struct {
+		int nFrameCount = 0;
+	} appData;
+} gameData;
 struct tQuadInt {
 	unsigned low;
 	int high;
@@ -227,17 +251,63 @@ double DRound(double value)
 #define mul64(a, b)   (int64_t(a) * int64_t(b))
 #define OBJECT(index) (&object)
 #define ENTER(...)
-#define RETVAL(value) return (value);
-#define RETURN        return;
-#define STYLE         0
-#define I2X(value)    ((value) * 65536)
-#define X2D(value)    (double(value) / 65536.0)
+#define RETVAL(value)         return (value);
+#define RETURN                return;
+#define STYLE                 0
+#define I2X(value)            ((value) * 65536)
+#define X2D(value)            (double(value) / 65536.0)
+#define X2F(value)            (float(value) / 65536.0f)
+#define OBJPOS(obj)           (&(obj)->position)
+#define SHOW_LIGHTNING(index) true
 #include "xl_reference_lightning_path.h"
+struct Bolts {
+	std::vector<CLightning> values;
+	CLightning *Buffer()
+	{
+		return values.data();
+	}
+	CLightning *operator+(int i)
+	{
+		return values.data() + i;
+	}
+	CLightning &operator[](int i)
+	{
+		return values.at(i);
+	}
+};
+struct CLightningEmitter {
+	Bolts m_lightning;
+	int m_bValid = 1, m_nObject = 307, m_nBolts = 0, m_bDestroy = 0, m_tUpdate = -1, m_nKey[2]{};
+	unsigned sounds = 0;
+	void Animate(int32_t, int32_t, int32_t);
+	int32_t SetLife();
+	int32_t Update(int32_t);
+	void Destroy()
+	{
+		unsupported();
+	}
+	void UpdateSound(int)
+	{
+		++sounds;
+	}
+	void MoveForObject();
+	void Move(CFixVector, int16_t);
+};
+struct {
+	void Destroy(CLightningEmitter *, void *)
+	{
+		unsupported();
+	}
+} lightningManager;
+#include "xl_reference_lightning_emitter.h"
 #undef ENTER
 #undef RETURN
 #undef STYLE
 #undef I2X
 #undef X2D
+#undef X2F
+#undef OBJPOS
+#undef SHOW_LIGHTNING
 #undef RETVAL
 #undef OBJECT
 #undef mul64
@@ -372,4 +442,81 @@ void lightning_bolt_controls()
 					}
 				}
 	std::cout << "Pinned lightning bolts: " << ticks << " complete create/frame/restart ticks passed\n";
+}
+
+void lightning_emitter_controls()
+{
+	using namespace lightning_path_reference;
+	using namespace xl_compat;
+	unsigned ticks = 0;
+	for (unsigned seed : { 0u, 17u, 991u })
+		for (int count : { 1, 3, 7 }) {
+			Object authored{};
+			authored.render = 12;
+			authored.render_data = { 300, 50, 18, 5, 1, -1, count, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
+			const auto definition = lightning_definition(authored, 2);
+			const LightningPoint origin{ -12345678, 456789, -8912345 };
+			struct Random {
+				unsigned index;
+				double unit()
+				{
+					return sample(index++);
+				}
+				int bounded(int limit)
+				{
+					return int(sample(index++) * 32768) % limit;
+				}
+			} random{ seed };
+			random_index = seed;
+			CLightningEmitter source;
+			source.m_nBolts = count;
+			source.m_lightning.values.resize(count);
+			for (auto &bolt : source.m_lightning.values) {
+				bolt.m_nNodes = 9;
+				bolt.m_nFrames = -2;
+				bolt.m_nAmplitude = definition.amplitude;
+				bolt.m_nLength = definition.length * 9 / 8;
+				bolt.m_nOffset = definition.offset;
+				bolt.m_vBase = vector(origin);
+				if (!bolt.Create(0, 0)) throw std::runtime_error("Pinned emitter bolt creation failed");
+			}
+			object.position.vPos = vector(origin);
+			object.info.nSegment = 362;
+			auto emitter = create_lightning_emitter(definition, origin, random, 362);
+			int time = 1000, last_tick = 1000;
+			unsigned updates = 0;
+			for (int frame = 0; frame < 240; ++frame) {
+				if (frame % 13 == 0) {
+					object.position.vPos.v.coord.x += 17231;
+					object.position.vPos.v.coord.y -= 3127;
+					object.info.nSegment = 362 + frame % 3;
+				}
+				time += std::array<int, 3>{ 7, 11, 31 }[frame % 3];
+				gameStates.app.nSDLTicks[0] = time;
+				gameStates.app.tick40fps.nTime = time - last_tick;
+				if (time - last_tick >= 25) last_tick = time;
+				emitter.enabled = !(frame >= 40 && frame < 60) && !(frame >= 100 && frame < 110);
+				source.m_bValid = emitter.enabled ? 1 : -1;
+				if (source.Update(0) != count) throw std::runtime_error("Pinned emitter lost a persistent bolt");
+				if (lightning_emitter_frame(emitter, time, gameStates.app.tick40fps.nTime, random)) {
+					++updates;
+					lightning_emitter_move(emitter, point(object.position.vPos), object.info.nSegment);
+				}
+				if (emitter.updated != source.m_tUpdate || random.index != random_index || source.sounds != updates)
+					throw std::runtime_error("Lightning emitter gate, two-pass random ordering or post-update scheduling differs");
+				for (int i = 0; i < count; ++i) {
+					const auto &bolt = emitter.bolts[i];
+					const auto &expected = source.m_lightning[i];
+					const auto &s = bolt.lifetime;
+					if (s.ttl != expected.m_nTTL || s.nodes != expected.m_nNodes || s.length != expected.m_nLength || s.frames != expected.m_nFrames || s.step != expected.m_iStep ||
+					    bolt.segment != expected.m_nSegment || bolt.base != point(expected.m_vBase) || bolt.position != point(expected.m_vPos) || bolt.end != point(expected.m_vEnd) || bolt.direction != point(expected.m_vDir) || bolt.draw_positions.size() != expected.drawn.size())
+						throw std::runtime_error("Lightning emitter bolt state differs");
+					for (unsigned n = 0; n < bolt.nodes.size(); ++n) verify(bolt.nodes[n], expected.m_nodes.values[n]);
+					for (unsigned n = 0; n < bolt.draw_positions.size(); ++n)
+						if (bolt.draw_positions[n] != point(expected.drawn[n])) throw std::runtime_error("Lightning emitter drawing state differs");
+				}
+				++ticks;
+			}
+		}
+	std::cout << "Pinned lightning emitters: " << ticks << " multi-bolt update/disable/re-enable ticks passed\n";
 }

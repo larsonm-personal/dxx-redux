@@ -20,6 +20,7 @@
 #include "named_audio.h"
 #include "ambient_objects.h"
 #include "particle_objects.h"
+#include "lightning_objects.h"
 #include "skybox_collision.h"
 #include "skybox_render.h"
 #include "../skybox_render.h"
@@ -589,6 +590,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_named_audio_clear();
 	xl_ambient_objects_clear();
 	xl_particle_objects_clear();
+	xl_lightning_objects_clear();
 	xl_skybox_collision_clear();
 	xl_skybox_render_clear();
 	xl_message_clear();
@@ -786,6 +788,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		xl_seismic_bind();
 		xl_compat::bind_ambient_objects(*source);
 		xl_compat::bind_particle_objects(*source);
+		xl_compat::bind_lightning_objects(*source);
 		xl_compat::bind_skybox_collision(*source);
 		xl_compat::bind_skybox_render(*source);
 		xl_wall_trigger_bind_effect_targets();

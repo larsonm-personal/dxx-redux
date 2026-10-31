@@ -16,7 +16,7 @@ namespace lightning_detail
 {
 inline int checked(std::int64_t value)
 {
-	if (value < std::numeric_limits<int>::min() || value > std::numeric_limits<int>::max())
+	if (value < (std::numeric_limits<int>::min)() || value > (std::numeric_limits<int>::max)())
 		throw std::runtime_error("XL lightning exceeds source arithmetic range");
 	return int(value);
 }

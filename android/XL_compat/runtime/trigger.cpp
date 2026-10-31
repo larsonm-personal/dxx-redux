@@ -5,6 +5,7 @@
 #include "named_audio.h"
 #include "ambient_objects.h"
 #include "particle_objects.h"
+#include "lightning_objects.h"
 #include "reactor_countdown.h"
 #include "robot_disarm.h"
 #include "seismic_gameplay.h"
@@ -312,7 +313,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		if (action.type != 31 && action.side[i] < 0) {
 			// Source stops this target loop at a missing/non-effect object, then
 			// Operate still applies the action's one-shot/alternate flags
-			if (!xl_ambient_object_set_enabled(action.seg[i], action.type == 32) && !xl_particle_object_set_enabled(action.seg[i], action.type == 32)) break;
+			if (!xl_ambient_object_set_enabled(action.seg[i], action.type == 32) && !xl_particle_object_set_enabled(action.seg[i], action.type == 32) && !xl_lightning_object_set_enabled(action.seg[i], action.type == 32)) break;
 			continue;
 		}
 		const int target_index = linked_trigger(action, i);
