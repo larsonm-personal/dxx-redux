@@ -105,3 +105,53 @@ endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_emitter.h"
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_lightning_path.cpp)
+
+set(extracted "// Actual pinned glow geometry and float vector operations\n")
+foreach(
+    signature IN
+    ITEMS "inline CFloatVector3& CFloatVector3::Assign (const CFixVector&"
+          "inline const float CFloatVector3::SqrMag ("
+          "inline const float CFloatVector3::Mag ("
+          "inline const CFloatVector3& CFloatVector3::operator+= (const CFloatVector3&"
+          "inline const CFloatVector3& CFloatVector3::operator/= (const float"
+          "inline const CFloatVector3 CFloatVector3::operator- (const CFloatVector3&"
+          "inline CFloatVector& CFloatVector::Assign (const CFixVector&"
+          "inline const float CFloatVector::SqrMag ("
+          "inline const float CFloatVector::Mag ("
+          "inline const float CFloatVector::Normalize ("
+          "inline const CFloatVector CFloatVector::Avg ("
+          "inline const CFloatVector CFloatVector::Cross ("
+          "inline const CFloatVector CFloatVector::Perp ("
+          "inline const CFloatVector CFloatVector::Normal ("
+          "inline const CFloatVector& CFloatVector::operator+= (const CFloatVector&"
+          "inline const CFloatVector& CFloatVector::operator*= (const float"
+          "inline const CFloatVector& CFloatVector::operator/= (const float"
+          "inline const CFloatVector CFloatVector::operator+ (const CFloatVector&"
+          "inline const CFloatVector CFloatVector::operator- (const CFloatVector&"
+          "inline const CFloatVector CFloatVector::operator* (const float"
+          "inline const CFloatVector CFloatVector::operator/ (const float")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp" source)
+foreach(
+    signature IN
+    ITEMS "static tTexCoord2f plasmaTexCoord" "float CLightning::ComputeDistScale ("
+          "void CLightning::ComputeGlow (" "float CLightning::ComputeAvgDist ("
+          "void CLightning::ComputeCore (" "void CLightning::Draw (")
+    string(FIND "${source}" "${signature}" start)
+    if(start LESS 0)
+        message(FATAL_ERROR "Missing lightning glow source: ${signature}")
+    endif()
+    string(SUBSTRING "${source}" ${start} -1 tail)
+    string(FIND "${tail}"
+                "\n//------------------------------------------------------------------------------"
+                end)
+    if(end LESS 0)
+        message(FATAL_ERROR "Missing lightning glow separator: ${signature}")
+    endif()
+    string(SUBSTRING "${tail}" 0 ${end} fragment)
+    string(APPEND extracted "\n${fragment}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_glow.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_lightning_render.cpp)

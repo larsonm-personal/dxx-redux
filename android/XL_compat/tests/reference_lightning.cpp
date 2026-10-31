@@ -167,6 +167,7 @@ void compare(const xl_compat::Object &object, int style, bool endpoint, bool chi
 void lightning_path_controls();
 void lightning_bolt_controls();
 void lightning_emitter_controls();
+void lightning_render_controls();
 
 int main()
 {
@@ -174,6 +175,7 @@ int main()
 		lightning_path_controls();
 		lightning_bolt_controls();
 		lightning_emitter_controls();
+		lightning_render_controls();
 		xl_compat::Object original{};
 		original.render = 12;
 		original.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };

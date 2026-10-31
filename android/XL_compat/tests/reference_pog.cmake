@@ -105,6 +105,34 @@ target_link_libraries(xl_pog_reference PRIVATE xl_inventory)
 target_include_directories(xl_pog_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_pog_reference COMMAND xl_pog_reference)
 if(TARGET xl_pog_gpu_test)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/effects/glow.cpp" glow_hash)
+    if(NOT glow_hash STREQUAL "e63e97a72cab79a68a004f6bf6870b2bc5292d5bf1c2f47851c805afebc0bc4a")
+        message(FATAL_ERROR "Pinned glow shader source changed")
+    endif()
+    file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/glow.cpp" glow)
+    set(glow_shaders "// Pinned active DISCRETE_SAMPLING shader\n")
+    foreach(signature IN ITEMS "const char *blurFS =" "const char *blurVS =")
+        string(FIND "${glow}" "${signature}" begin)
+        if(begin LESS 0)
+            message(FATAL_ERROR "Missing source glow shader: ${signature}")
+        endif()
+        string(SUBSTRING "${glow}" ${begin} -1 tail)
+        if(signature STREQUAL "const char *blurFS =")
+            string(FIND "${tail}" "#\telse" end)
+        else()
+            string(
+                FIND "${tail}"
+                     "//------------------------------------------------------------------------------"
+                     end)
+        endif()
+        if(end LESS 0)
+            message(FATAL_ERROR "Missing source glow shader terminator")
+        endif()
+        string(SUBSTRING "${tail}" 0 ${end} fragment)
+        string(APPEND glow_shaders "${fragment}\n")
+    endforeach()
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_blur.h"
+         CONTENT "${glow_shaders}")
     foreach(
         pair IN
         ITEMS

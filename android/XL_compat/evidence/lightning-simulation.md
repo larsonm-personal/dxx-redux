@@ -96,3 +96,46 @@ the full Android route receipt precedes those two isolation guards.
 
 This evidence does not qualify lightning pixels, light contributions, sound or
 normal Pumo level-nine admission.
+
+## Core, glow geometry and primitive rendering
+
+The pinned source extraction now executes `ComputeCore`, `ComputeAvgDist`,
+`ComputeGlow`, `ComputeDistScale` and `Draw`. The geometry comparison covers
+288 node/depth/billboard/layer/endpoint/UV cases. Eighteen draw cases compare
+visibility, three ordered color-random samples, unchanged alpha, blur color
+scaling and GL_MAX/GL_FUNC_ADD transitions. These run in the existing lightning
+contract target, with explicit boundaries for GPU calls.
+
+The new isolated `LightningGpu` backend consumes owned geometry, an explicit
+camera matrix and a caller-owned original corona texture. It renders both glow
+layers and the core, preserves caller draw state and provides explicit resource
+cleanup/context abandonment. It is noncopyable and does not own mission state.
+The existing EGL owner compares complete output against source-style fixed
+function client arrays and draw calls: 84 combinations of seven projections,
+three widths, additive/maximum blending and visible/occluded scene depth. All
+channels agree within one byte and scene depth is unchanged. Immediate-mode
+reference drawing is deliberately avoided because driver batching changes the
+quad decomposition relative to the source's separate draw-array calls.
+
+The comparison uses Mesa 25.2.8 llvmpipe. Its draw-array quad path uses the 0-2
+diagonal until a layer needs clipping, then the alternate 1-3 diagonal for that
+layer. The backend preserves this reference behavior and delegates triangle
+clipping to GL. This is measured reference-driver parity, not proof that every
+legacy GL driver decomposes quads identically. Driver source inspected:
+https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/mesa-25.2.8/src/gallium/drivers/llvmpipe/lp_setup_vbuf.c
+
+The active pinned `glow.cpp` blur vertex/fragment shader is extracted with a
+verified file hash. The portable varying-based fragment shader produces identical
+pixels for three brightness profiles, comparing every image in six successive
+horizontal/vertical passes. The test includes the source's initial replacement
+passes and later additive passes and confirms an impulse spreads to neighbors.
+Existing particle, mixed-transparency, depth-format/MSAA and context-recreation
+GPU checks also pass in the same owner.
+
+This chunk does not connect rendering to native lightning objects or the shared
+transparency queue. Offscreen accumulation/composition, corona resource lookup,
+Android line rendering, context integration, spatial light and sound still need
+implementation and validation. No admission gate is relaxed and no new original
+mission route is claimed. In particular, desktop GL line smoothing is not an
+Android qualification. The prior original-Pumo route through level 8 is reused;
+there is no reason to repeat that route for these unconnected rendering helpers.
