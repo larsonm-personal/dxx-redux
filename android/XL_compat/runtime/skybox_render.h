@@ -18,6 +18,7 @@ namespace xl_compat
 void bind_skybox_render(const Inventory &level);
 // Existing native/Android owner controls; does not change normal admission
 void skybox_render_native_controls(const Inventory &level);
+void skybox_corona_native_controls();
 } // namespace xl_compat
 #endif
 #endif

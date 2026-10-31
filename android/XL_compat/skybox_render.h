@@ -32,6 +32,12 @@ inline bool skybox_render_enabled(bool have_skybox, bool automap, bool automap_s
 	return have_skybox && (!automap || automap_skybox);
 }
 
+// SetupCoronaFaces excludes skybox and outdoors segments before face selection
+inline bool skybox_corona_segment_enabled(int function, int properties)
+{
+	return function != 10 && !(properties & 16);
+}
+
 // Source WALL_OPEN=4, WALL_CLOAKED=7 and FADE_LEVELS=31 (not Redux's 34)
 inline bool skybox_wall_invisible(int type, int cloak, bool target, bool opposite, bool opposite_target)
 {

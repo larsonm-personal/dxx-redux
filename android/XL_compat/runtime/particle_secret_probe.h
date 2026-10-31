@@ -31,6 +31,7 @@ void particle_secret_probe(const char *operation)
 		const auto original = inspect_level(bytes);
 		skybox_collision_face_native_case(original);
 		skybox_render_native_controls(original);
+		skybox_corona_native_controls();
 		skybox_render_gpu_controls(original);
 		return;
 	}

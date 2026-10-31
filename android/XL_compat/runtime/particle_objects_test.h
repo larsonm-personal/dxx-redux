@@ -119,6 +119,7 @@ static void particle_objects_native_case(bool active)
 	const auto original = inspect_level(bytes);
 	skybox_collision_face_native_case(original);
 	xl_compat::skybox_render_native_controls(original);
+	xl_compat::skybox_corona_native_controls();
 	auto source = original;
 	struct Guard {
 		object first = Objects[1], second = Objects[2], actor = Objects[3];

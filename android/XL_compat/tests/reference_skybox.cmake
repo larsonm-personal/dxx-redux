@@ -41,3 +41,14 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/rendermine.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_skybox_objects.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_skybox_objects.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/render/fastrender.cpp" corona_hash)
+if(NOT corona_hash STREQUAL "51f893295a5f8e254315037e413fa6299debb9b88a2f8224d22d23ac75dd3d4d")
+    message(FATAL_ERROR "Skybox corona source differs from the audited revision")
+endif()
+set(extracted "// Pinned corona setup; face storage and light classification use adapters\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/fastrender.cpp"
+                      "int32_t SetupCoronaFaces (void)")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_skybox_coronas.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_skybox_coronas.cpp)

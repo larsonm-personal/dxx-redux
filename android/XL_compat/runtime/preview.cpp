@@ -18,6 +18,7 @@
 #include "particle_objects.h"
 #include "skybox_collision.h"
 #include "skybox_render.h"
+#include "../skybox_render.h"
 #include "transparency_scene.h"
 #include "static_explosion_runtime.h"
 #include "reactor_countdown.h"
@@ -1208,6 +1209,8 @@ extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, x
 	if (emitter) *emitter = {};
 	// The water pilot retains its previously qualified presentation profile
 	if (!emitter || !source || admitted_water_arena || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6) return 0;
+	const auto &authored_segment = source->segments.at(segment_number);
+	if (!xl_compat::skybox_corona_segment_enabled(authored_segment.function, xl_compat::segment_property_bits(source->level_version, authored_segment))) return 0;
 	const auto &side = Segments[segment_number].sides[side_number];
 	if (side.wall_num >= 0) {
 		if (side.wall_num >= Num_walls) return 0;
@@ -1263,6 +1266,49 @@ extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, x
 	emitter->intensity = intensity;
 	for (unsigned c = 0; c < 3; ++c) emitter->rgb[c] = float(source->texture_colors[texture].rgb[c]);
 	return 1;
+}
+
+void xl_compat::skybox_corona_native_controls()
+{
+	if (!source) throw std::runtime_error("Corona segment controls require a loaded XL source");
+	int selected = -1, selected_side = -1;
+	xl_texture_emitter expected{};
+	for (int segment = 0; segment < Num_segments && selected < 0; ++segment)
+		for (int side = 0; side < 6; ++side)
+			if (xl_preview_texture_emitter(segment, side, &expected)) {
+				selected = segment;
+				selected_side = side;
+				break;
+			}
+	if (selected < 0) throw std::runtime_error("Corona segment controls require an eligible loaded emitter");
+	auto &segment = source->segments.at(selected);
+	struct Restore {
+		Segment &segment;
+		Segment saved;
+		int version = source->level_version;
+		~Restore()
+		{
+			segment = saved;
+			source->level_version = version;
+		}
+	} restore{ segment, segment };
+	unsigned cases = 0;
+	for (int version : { 20, 21, 27 })
+		for (int function : { 0, 10, 16 })
+			for (int properties : { 0, 1, 16, 32, 60, 127 }) {
+				source->level_version = version;
+				segment.function = function;
+				segment.properties = properties;
+				xl_texture_emitter actual{};
+				const bool enabled = function != 10 && !(version < 21 ? function == 16 : properties & 16);
+				const bool found = xl_preview_texture_emitter(selected, selected_side, &actual) != 0;
+				if (found != enabled || (found && (actual.texture != expected.texture || actual.intensity != expected.intensity || !std::equal(actual.rgb, actual.rgb + 3, expected.rgb))))
+					throw std::runtime_error("Loaded corona segment exclusion differs from authored semantics");
+				if (!found && (actual.texture || actual.intensity || actual.rgb[0] || actual.rgb[1] || actual.rgb[2]))
+					throw std::runtime_error("Excluded corona retained emitter output");
+				++cases;
+			}
+	con_printf(CON_NORMAL, "XL corona segment controls: %u loaded emitter cases; skybox, modern/legacy outdoors and ordinary restoration passed", cases);
 }
 
 extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, const int32_t eye[3], int eye_segment,
