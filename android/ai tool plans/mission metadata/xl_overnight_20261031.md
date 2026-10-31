@@ -623,3 +623,160 @@ matching protected hashes remain valid; subsequent edit was host assertion only.
 All process handles terminal. Evidence appended to particle-effects.md.
 Before publication finish scoped documentation quality, diff review and commit
 only branch92 files; preserve continuation_20261030.md and unrelated game data.
+
+## Branch93 outdoors lighting plan, 02:20 Pacific
+
+Branch92 published as82d5e112728e2eb911f761f99cc4eef833ac70a3, draftPR245
+above91. Initial CI running with no failures observed. No local processes live.
+Branch93 starts from92, no change to admission until qualification completes.
+
+Bounded chunk: implement the active pinned method-0 outdoors lighting semantics,
+qualify on source/native/Android, then test unchanged original hub admission.
+Reuse the existing light material, geometry, ambient and POG lifecycle owners.
+
+Source audit corrected earlier evidence: dynlight.cpp Contribute's destination
+face outdoors restriction is inside the disabled #else of #if1. Do not port it.
+Active Add assigns bSelf from outdoors for face lights. ComputeLightVisibility
+in lightprecalc.cpp uses bSelf to reject other destination segments. Separately,
+Create assigns bAmbient for outdoor base/overlay lights. ogl_color.cpp's active
+bAmbient path only shades the source face's vertices and uses zero distance.
+Existing ClassicAmbientLighting already implements that bAmbient vertex gate,
+but compile_classic_geometry_lights always passes false to materials.face.
+Create also skips skybox segments; verify this exclusion in the ambient source
+compiler. GatherStaticLights skips rebuilding registered baked method-0 colors.
+Trace the bSelf visibility table consumers before adding any restriction to the
+vertex visibility table: these are distinct source tables, not interchangeable.
+
+Required evidence: source comparisons for active material creation/update and
+outdoors flags, loaded runtime flags with ordinary/legacy/modern and stock
+isolation, native ambient behavior on source/non-source vertices, unchanged Pumo
+hub resource/save/context/stock lifecycle. Preserve existing normal smoke/fire
+and skybox evidence. Do not claim campaign qualification from hub startup.
+
+Branch93 initial implementation wires normalized source outdoors bits into the
+existing material compiler and excludes skybox source lights. Added 54-case
+loaded flag assertions to the existing corona owner plus companion material
+outdoors/ordinary controls. Not yet built or qualified; admission unchanged.
+Further source trace: GatherStaticVertexLights calls SetNearestToVertex with
+nSegment=-1, and Contribute returns after range checking for nDestSeg<0, before
+LightVis consumption. Do not impose bSelf light-to-segment restrictions on the
+method-0 ambient vertex table. Its active face-local behavior comes from
+bAmbient in ogl_color. Need extracted source creation/update comparisons and
+native ambient behavior controls before claiming this chunk qualified.
+
+## Branch93 source/material validation checkpoint
+
+Native initial build and integration passed, including54loaded normalized flag
+assertions in the existing corona owner. Added pinned dynlight.cpp Create
+face-selection extraction to the existing companion-lighting executable:
+98base/overlay/outdoors cases pass on Windows/Linux. Source Add call recorder
+compares presence, created/final texture, brightness and first creation ambient
+flag; it does not claim to execute the full Add implementation. Hash-pinned
+source revision retained. Receipts outdoors-material-{windows,linux}.log and
+corresponding build logs. Existing material ordinary/outdoor controls also pass.
+
+Added four loaded base-only material compiler assertions (legacy20/modern27,
+ordinary/outdoors) to the same native/Android corona owner. Saves/restores native
+overlay and source segment/version. This newest control still needs build/run;
+formatter running in latest tool handle. No admission change and no publication.
+Next qualify actual ambient source/non-source vertex colors and skybox source
+exclusion, then Android runtime/lifecycle before unchanged hub admission.
+
+Latest four loaded material cases compiled and native integration passed
+terminal0 (session57732). Scoped runtime formatting and diffcheck passed.
+All local process handles terminal at this checkpoint. No Android build yet.
+
+## Branch93 ambient integration passed
+
+Final native ambient controls passed: both legacy/modern outdoor base lights
+illuminate exactly their four source face vertices even with all vertices marked
+visible; disabling the source leaves all colors zero. Rebinding a derived skybox
+segment removes its ambient light sources. Native integration terminal0, session 67996. Prior source98cases remain valid. Receipt native-runtime/controls.log;
+formatter outdoors-ambient-quality.log. Android build started, see current
+session handle and outdoors-android-build.log. Must wait terminal then explicitly
+install APK before existing SecretFixture owner, whose skybox operation invokes
+these same controls. Test assets native-runtime/missions/pfsecret.{hog,mn2}.
+Admission still unchanged; next candidate unchanged hub admission must include
+full original resources and preserve existing lifecycle controls.
+
+Android build terminal0 in2m54s, explicitly installed with adb-r success.
+Existing SecretFixture owner running session86249; console receipt
+android-outdoors-controls.log. Do not start another emulator test until terminal
+and protected hashes compared. Evidence formatter terminal0. No other handles.
+
+Android outdoors controls PASS31/31 in55.112s, session86249terminal0.
+Protected before/after hashes match; logcat confirms face-local ambient/disabled
+source/skybox exclusion assertions ran on Android. Receipt
+android-outdoors-controls.log and temp/xl-particle-secret-android. All handles
+terminal. InstalledAPK includes final93ambient controls. Admission stillclosed.
+Next change normal modern outdoors admission and existing negative controls
+(current rejection fixture uses outdoors16; replace with truly unsupported128),
+then extend existing smoke/skybox lifecycle to ORIGINAL pmines hub without any
+changed mission bytes. Update original fire/native hub assertions to appropriate
+renderer/resource requirements. Need full inventories, relevant existing rejection
+owner/catalogs and original hub Android lifecycle before publication.
+
+## Branch93 original hub admission candidate
+
+UNPUBLISHED candidate now recognizes modern outdoors property16. Positive raw
+23/40 translation retains source property and unchanged classic shadow; all256
+property combinations updated, unknown128 still rejects. Windows/Linux full
+inventories pass. Negative Neptune fixture/script now use unknown128 instead
+of supported16; rebuild/run that Android rejection owner before publication.
+Both automation catalogs pass (99/492/314;427top-level).
+
+Existing POG owner has OriginalHub mode: hashes original pmines HOG/descriptor,
+stages original mods+smoke/fire images, reuses68step smoke script with only
+startup operation changed to skybox_start_hub. Runtime verifies hub154properties60
+and normalized outdoors flag after restore/context/stock return, versus44for
+derived controls. Original fire level2 owner no longer asserts unrelated hub
+outdoors rejection. Native fire-only owner correctly rejects missing smoke atlas;
+its initial expected skybox-renderer rejection was earlier than the actual
+resource validation order, diagnosed and corrected. Needs final native rebuild.
+
+First formatting caught a malformed PowerShell single-pair replacement in
+Neptune JSON. Restored that file from HEAD and changed ONLY16->128; formatter
+passed. Subsequent Windows failures were stale property16 negative expectations,
+now fixed with positive translation and exhaustivemask. No weakened gate.
+Current formatter45385running, hub-final-contract-quality.log. All otherhandles
+terminal. Next final native integration, Android build/install originalhub test,
+Neptune rejection owner and final docs/CI before publishing93.
+
+Final candidate native build and integration PASS, including explicit missing
+smoke dependency for fire-only hub fixture and level2 headless fog rejection.
+Android candidate build terminal0 in1m52s; explicit adbinstall-r succeeded.
+OriginalHub owner nowrunning session92261, receipt android-original-hub.log.
+This uses unchanged originalpmines HOG/descriptor/mods plus originalXL smoke/fire
+atlases, never modified mission bytes. Wait terminal/hashrestore before anynext
+emulator test. Updated Windows rejectionfixture built terminal0 for next Neptune
+regression. Both catalogs alreadypass. Only comments changed after APKbuild.
+
+## Original unchanged Pumo hub PASS, 02:46 Pacific
+
+OriginalHub Android owner passed68/68 in121.407s, session92261terminal0.
+All protected before/after hashes match. Original HOG/descriptor/mods and smoke
+atlas used with outdoors154properties60 intact. Live smoke/scene witness,
+64cellGPU,295skyboxmembership,POG resources,diskrestore,EGLcontext,stockreturn
+passed. Receipt android-original-hub.log/temp/xl-original-hub-android.
+Final render.png was visually inspected: it shows a paused GPU diagnostic color
+pattern, not a useful natural hub demo view. Do not present it as a gameplay
+screenshot. Need a clean real-scene capture after diagnostics before claiming a
+user-viewable demo artifact; completed lifecycle evidence remains valid.
+
+Neptune rejection/recovery owner nowrunning session10258 using rebuiltWindows
+xl_rejection_fixture and unknownproperty128. Logandroid-hub-neptune-regression.log.
+Waitterminal+hashrestore before further emulator actions. No otherprocesshandles.
+
+Neptune regression passed65/65 in79.044s; protectedhashesmatch, session10258
+terminal0. OriginalHub+SceneOnly now reuses initialsmoke witness and resumes
+normalrendering before screenshot, separate outputtemp/xl-original-hub-scene.
+Formatterpassed; currentlyrunning session46886, android-original-hub-scene.log.
+Parent245OPEN at82d5e1127; allCIgreen except two replayjobsstillrunning, nofailures.
+Need finalbothcatalogs afterSceneOnlyedit, evidenceformat, review, commit/push93.
+
+OriginalHub+SceneOnly passed17/17 in54.835s, matching protectedhashes. Screenshot
+visually inspected: normal live textured close-view, no diagnosticgrid/pause.
+Do not oversell it as walkthrough/overview. Session46886needs finalhandlepoll;
+owner log PASS and afterhashes complete. Final catalogue97223terminal0; owner
+catalogue48311stilllive atlastpoll. Next finish polls/formatdocs, diffreview and
+publish93above92. No runtimechanges after finalAPK; onlycomment/owner/docs.

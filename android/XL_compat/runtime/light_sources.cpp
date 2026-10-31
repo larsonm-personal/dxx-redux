@@ -1,5 +1,7 @@
 #include "light_sources.h"
 #include "flicker.h"
+#include "preview.h"
+#include "skybox_render.h"
 #include <stdexcept>
 #include <algorithm>
 #include <tuple>
@@ -156,9 +158,10 @@ std::vector<ClassicGeometryLight> compile_classic_geometry_lights(const TextureB
 	std::vector<ClassicGeometryLight> result;
 	for (int segment = 0; segment <= Highest_segment_index; ++segment)
 		for (int side = 0; side < 6; ++side) {
+			if (xl_skybox_segment(segment)) continue;
 			if (!textured_face(segment, side)) continue;
 			const auto &surface = Segments[segment].sides[side];
-			const auto material = materials.face(surface.tmap_num, surface.tmap_num2 & 0x3fff, false);
+			const auto material = materials.face(surface.tmap_num, surface.tmap_num2 & 0x3fff, xl_preview_outdoors_segment(segment) != 0);
 			if (material) {
 				auto geometry = compile_classic_lighting_side(segment, side);
 				const auto direction = geometry_emission_direction(geometry.fixed_normals);

@@ -826,6 +826,13 @@ extern "C" int xl_preview_no_damage_segment(int segment)
 	       (xl_compat::segment_property_bits(level->level_version, level->segments[segment]) & xl_compat::segment_no_damage);
 }
 
+extern "C" int xl_preview_outdoors_segment(int segment)
+{
+	return source && !(Game_mode & GM_MULTI) && segment >= 0 &&
+	       std::size_t(segment) < source->segments.size() &&
+	       (xl_compat::segment_property_bits(source->level_version, source->segments[segment]) & xl_compat::segment_outdoors);
+}
+
 extern "C" int xl_preview_preserve_fusion_queue(void)
 {
 	// Reference FireGun retains queued fusion across the no-damage exit boundary
@@ -1303,6 +1310,9 @@ void xl_compat::skybox_corona_native_controls()
 				segment.properties = properties;
 				xl_texture_emitter actual{};
 				const bool enabled = function != 10 && !(version < 21 ? function == 16 : properties & 16);
+				const bool outdoors = version < 21 ? function == 16 : (properties & 16) != 0;
+				if ((xl_preview_outdoors_segment(selected) != 0) != outdoors || xl_preview_outdoors_segment(-1) || xl_preview_outdoors_segment(Num_segments))
+					throw std::runtime_error("Loaded outdoors lighting flag differs from authored semantics");
 				const bool found = xl_preview_texture_emitter(selected, selected_side, &actual) != 0;
 				if (found != enabled || (found && (actual.texture != expected.texture || actual.intensity != expected.intensity || !std::equal(actual.rgb, actual.rgb + 3, expected.rgb))))
 					throw std::runtime_error("Loaded corona segment exclusion differs from authored semantics");
@@ -1310,7 +1320,65 @@ void xl_compat::skybox_corona_native_controls()
 					throw std::runtime_error("Excluded corona retained emitter output");
 				++cases;
 			}
-	con_printf(CON_NORMAL, "XL corona segment controls: %u loaded emitter cases; skybox, modern/legacy outdoors and ordinary restoration passed", cases);
+	// Exercise the loaded material compiler with a base-only light
+	auto &surface = Segments[selected].sides[selected_side];
+	struct RestoreOverlay {
+		decltype(surface.tmap_num2) &target;
+		decltype(surface.tmap_num2) saved;
+		~RestoreOverlay()
+		{
+			target = saved;
+		}
+	} restore_overlay{ surface.tmap_num2, surface.tmap_num2 };
+	surface.tmap_num2 = 0;
+	TextureBrightnessTable strengths{};
+	strengths.at(surface.tmap_num) = 65536;
+	TextureRgbTable colors{};
+	colors.at(surface.tmap_num) = { 1, 1, 1 };
+	for (int version : { 20, 27 })
+		for (bool outdoors : { false, true }) {
+			source->level_version = version;
+			segment.function = version < 21 && outdoors ? 16 : 0;
+			segment.properties = version >= 21 && outdoors ? segment_outdoors : 0;
+			const auto lights = compile_classic_geometry_lights(strengths, colors);
+			const auto light = std::find_if(lights.begin(), lights.end(), [&](const auto &entry) { return entry.segment == selected && entry.side == selected_side; });
+			if (light == lights.end() || light->material.ambient != outdoors || light->material.brightness != 1)
+				throw std::runtime_error("Loaded outdoors light material is not face-local");
+			if (outdoors) {
+				const std::vector<std::vector<bool>> visible(Num_segments, std::vector<bool>(Num_vertices, true));
+				ClassicAmbientLighting ambient({ *light }, visible);
+				const auto gathered = ambient.gather(ClassicAmbientProfile{});
+				unsigned lit = 0;
+				for (int vertex = 0; vertex < Num_vertices; ++vertex) {
+					bool own = false;
+					for (int corner = 0; corner < 4; ++corner)
+						own |= Segments[selected].verts[Side_to_verts_int[selected_side][corner]] == vertex;
+					const bool colored = gathered.at(vertex) != Rgb{};
+					if (colored != own) throw std::runtime_error("Outdoors ambient light escaped its face or lost a source vertex");
+					lit += colored;
+				}
+				if (lit != 4) throw std::runtime_error("Outdoors ambient control requires four lit source vertices");
+				ambient.set_source_state(0, false, 0);
+				const auto disabled = ambient.gather(ClassicAmbientProfile{});
+				if (std::any_of(disabled.begin(), disabled.end(), [](const auto &color) { return color != Rgb{}; }))
+					throw std::runtime_error("Disabled outdoors source retained ambient color");
+			}
+		}
+	{
+		struct RestoreSkybox {
+			~RestoreSkybox()
+			{
+				bind_skybox_render(*source);
+			}
+		} restore_skybox;
+		auto boxed = *source;
+		boxed.segments.at(selected).function = 10;
+		bind_skybox_render(boxed);
+		const auto lights = compile_classic_geometry_lights(strengths, colors);
+		if (std::any_of(lights.begin(), lights.end(), [&](const auto &light) { return light.segment == selected; }))
+			throw std::runtime_error("Skybox face remained an ambient light source");
+	}
+	con_printf(CON_NORMAL, "XL corona/outdoors controls: %u flags, four materials, face-local ambient colors, disabled source and skybox exclusion passed", cases);
 }
 
 extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, const int32_t eye[3], int eye_segment,
