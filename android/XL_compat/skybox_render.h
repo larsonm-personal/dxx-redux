@@ -1,6 +1,7 @@
 #ifndef DXX_XL_SKYBOX_RENDER_H
 #define DXX_XL_SKYBOX_RENDER_H
 #include "fixed_angle.h"
+#include "fog.h"
 #include <array>
 #include <cstdint>
 #include <stdexcept>
@@ -42,6 +43,32 @@ inline bool skybox_corona_segment_enabled(int function, int properties)
 inline bool skybox_wall_invisible(int type, int cloak, bool target, bool opposite, bool opposite_target)
 {
 	return (type == 4 || (type == 7 && cloak >= 31)) && !target && opposite && !opposite_target;
+}
+
+inline bool skybox_side_textured(const Inventory &level, int segment, int side)
+{
+	const auto &owner = level.segments.at(segment);
+	const int index = owner.sides.at(side).wall;
+	if (index < 0) return owner.children.at(side) == -1;
+	const auto &wall = level.walls.at(index);
+	const int child = owner.children.at(side);
+	if (child < 0 || std::size_t(child) >= level.segments.size()) return true;
+	const auto target = [&](int s, int f) {
+		for (const auto &trigger : level.triggers)
+			if (std::find(trigger.targets.begin(), trigger.targets.end(), std::array<int, 2>{ s, f }) != trigger.targets.end()) return true;
+		return false;
+	};
+	const auto &other = level.segments[child];
+	for (int opposite = 0; opposite < 6; ++opposite)
+		if (other.children[opposite] == segment)
+			return !skybox_wall_invisible(wall.type, wall.cloak, target(segment, side), other.sides[opposite].wall >= 0, target(child, opposite));
+	return true;
+}
+
+inline bool skybox_colored_only_boundary(const Inventory &level, int segment, int side)
+{
+	const auto &owner = level.segments.at(segment);
+	return owner.function == 10 && fog_type(level, segment) != fog_type(level, owner.children.at(side)) && !skybox_side_textured(level, segment, side);
 }
 
 // Source traverses every skybox segment, not only the ordinary visibility list

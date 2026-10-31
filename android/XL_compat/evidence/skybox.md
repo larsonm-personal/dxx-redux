@@ -1,10 +1,41 @@
 # Skybox requirement audit
 
-Status: normal skybox admission remains closed. Source-backed collision decisions
-and the native collision hook are implemented; native integration passes. Investigation branch: xl_more_87_skybox,
-stacked locally on published particle tip 55c937273b0633d2b5aa92e3f5fcd616400fa46c.
-Branch 86 is based on cmake 0e4587e7dedbf0f21955c6fda351c923ff5e23c5.
-Visibility/rendering and complete skybox gameplay are not yet qualified.
+Status: modern textured skyboxes have passed source, native and Android
+resource/save/context qualification on branch 91. Admission requires an active
+OpenGL renderer and retains explicit rejection of untextured colored boundaries.
+Original Pumo hub remains rejected for smoke and outdoors behavior. This is not
+campaign gameplay qualification. Earlier checkpoint sections below describe
+the gates in effect at those checkpoints.
+
+## Branch 91 admission and authored-resource checkpoint
+
+Normal translation retains skybox function 10 in XL metadata and maps it to
+ordinary type 0 in the classic station data. The authored test exposed the
+missing translation through an invalid fuel-center type error; a regression now
+checks actual translated station bytes. Shared face selection drives renderer
+inclusion and the colored-only boundary gate. Independent property/effect
+requirements remain enforced; the original hub rejection checks its outdoors
+property rather than the superseded generic function gate.
+
+The fixture preserves original Pumo archive members, geometry, textures and
+object indices. Exactly two hub bytes change: outdoors property 16 is cleared
+from segment 154 (60 -> 44), and smoke subtype 0 becomes fire subtype 3 at object
+1. These substitutions isolate unqualified features and do not qualify them.
+The original archive remains unchanged. The descriptor identifies a derived
+mission, pskybox, and the protected owner stages original mod assets under that
+mission's separate directory.
+
+Android passes 54/54 steps in 120.725 seconds, including all 295 skybox memberships,
+original POG CPU/GPU pixels, distinguishable textured views, disk save/restore,
+EGL context recreation, stock cleanup and restore from stock. Comparisons use
+the same fixed pose; an earlier test failed after normal physics moved the
+camera during its resume/context sequence. No manual owner rebind is used.
+Protected file hashes match. Log: android-authored-fixed-view.log under
+temp/xl-skybox-20261031; final receipts: temp/xl-skybox-authored-android.
+
+Windows/Linux source and inventory suites, native integration, Android build,
+scoped formatting and both automation catalogs pass. Existing source evidence
+for collision, object traversal, visibility, wall inclusion and coronas is reused.
 
 ## Branch 88 textured rendering checkpoint
 

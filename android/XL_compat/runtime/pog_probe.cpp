@@ -124,6 +124,7 @@ struct Readback {
 #include "particle_original_probe.h"
 #include "skybox_collision_test.h"
 #include "skybox_render_probe.h"
+#include "skybox_lifecycle_probe.h"
 #include "particle_secret_probe.h"
 
 void gpu()
@@ -156,6 +157,10 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "skybox_", 7)) {
+			skybox_lifecycle_probe(operation + 7);
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "secret_", 7)) {
 			particle_secret_probe(operation + 7);
 			return nullptr;

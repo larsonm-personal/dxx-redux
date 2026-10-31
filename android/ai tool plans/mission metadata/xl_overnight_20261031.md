@@ -212,3 +212,121 @@ then test actual resource/save restoration. It must preserve original package
 bytes and normal hub rejection, and must not claim original hub qualification.
 The final original hub still needs smoke and segment-154 property behavior.
 Source-only colored-boundary support remains a separate general feature gap.
+
+## Published physics checkpoint and admission/resource sequence
+
+Branch 90 published at 8bb0ab18b01205ef8bb537b68334d50d58494c37 as draft PR
+https://github.com/larsonm-personal/dxx-redux/pull/243 above open PR 242. Current
+branch is xl_more_91_skybox_resources. No production admission edits yet.
+
+The next resource/save proof must reload authored skybox metadata through normal
+admission. Manually rebinding a stripped fixture after restore would not prove
+automatic owner restoration. Prepare candidate admission for supported textured
+skyboxes together with the derived authored-data fixture and save/GPU owner;
+do not publish admission until those checks pass. Keep explicit rejection for
+unsupported colored-only skybox boundaries and independent smoke/properties.
+Normal original hub rejection remains required. Do not claim campaign admission.
+
+Portable admission is android/XL_compat/admission.cpp runtime_blockers. Source
+skybox membership is currently rejected as segment_function_v21=10. Both original
+Pumo rejection owners currently assert that feature string; any future admission
+change must instead verify the actual remaining authored smoke/property blockers,
+not loosen the checks to an unspecified failure. Existing geometry renderer binds
+and clears at preview load/clear; source metadata must survive actual disk restore.
+
+## Branch 91 candidate and authored fixture (unpublished)
+
+Implemented shared skybox_side_textured selection in portable skybox_render.h;
+runtime binder now reuses it. Source IsTriggerTarget checks GEOTRIGGERS only,
+matching level.triggers. Extended actual-source wall comparisons exercise loaded
+side selection, colored-only connected boundaries and external textured faces.
+Windows source comparisons pass. Added skybox_colored_only_boundary.
+
+Local admission candidate admits modern function 10 but explicitly rejects
+colored-only fog boundaries; runtime graphics validation requires gl_initialized
+through xl_skybox_renderer_ready. Original Pumo rejection controls now require
+segment_properties (its actual remaining outdoors gate), not the obsolete generic
+function gate. Windows inventory/translation/admission suite passes. These
+changes are NOT committed/published and must not ship before real resource/save
+qualification. Linux and Android validation remain outstanding.
+
+New target xl_skybox_fixture creates pskybox.hog/mn2 from original Pumo. Exactly
+two hub bytes change: segment154 properties60 ->44 (outdoors cleared), object1
+particle subtype0 ->3 (explicit fire substitute). Geometry, walls, object indices
+and all other member bytes retained. Builder verifies offsets against decoded
+metadata, exact two-byte diff, no remaining portable blockers. Build/generation
+passed, original archive hash unchanged. Output temp/xl-skybox-20261031/authored-fixture:
+HOG 69f56e52a45fb16f061290c115709086c416b88cecd1037e26d81c95ad8e89b7
+MN2 e2562e9ddd913ca7eeae81f0e9bd9323fb58380950c6411a60b1b462c73babf5
+Logs authored-fixture-build.log / authored-fixture.log; admission-test.log;
+face-selection-quality.log / admission-candidate-quality.log / authored-fixture-quality.log.
+
+Next extend existing test_xl_pog_runtime owner with a SkyboxFixture mode and
+explicit protected pskybox mission/mod paths. Reuse original mods/pmines assets
+under mods/pskybox, not an unprotected write to mods/pmines. Add owned JSON and
+probe operations: normal start1, paused renderer/membership/resource capture,
+real disk save/restore, context recreation, stock transition/clear. Do not use
+manual rebind after restore. Re-run both automation catalogs after script changes.
+Current native build launched this turn; inspect its live handle before rerun.
+
+Native candidate build session 24128 completed successfully; all local handles terminal.
+
+
+## Authored Android lifecycle owner and first failures (unpublished)
+
+Added SkyboxFixture mode to test_xl_pog_runtime.ps1, protected pskybox paths,
+owned 52-step test_xl_skybox_authored.jsonc, and skybox_lifecycle_probe.h. Uses
+normal mission start, POG byte/GPU verification, fixed view154/0, real disk save,
+disturbed pose/energy, restore, EGL recreation, stock transition and restore.
+Membership verification requires295 authored skyboxes; no manual rebind.
+Original mod assets now tar from their own root into mods/$mission, avoiding any
+unprotected mods/pmines write during the derived test. This affects existing
+Pumo mode too but keeps its contents/paths equivalent.
+
+Formatting, both catalogs (491 support scripts), Linux source/inventory, native
+candidate integration and initial Android build passed. First Android attempt
+failed selection: fixture title exceeded mission's25-character bound. Shortened
+title to Derived Pumo skybox. NEW descriptor SHA256:
+fe8d90d8efd9efe2d270fdf6f90b1854171c15b8701ff6c9435df7bc94f45c7c
+HOG unchanged69f56e52a45fb16f061290c115709086c416b88cecd1037e26d81c95ad8e89b7.
+
+Retry selected mission but synchronous StartNewGame reached Error: Invalid station
+type10 in fuelcen.c (live log00:46:12). It is still running session77304 under the
+480-second owner timeout; do NOT install/restart before it terminates/restores.
+Console log android-authored-title-fixed.log, protected output
+ temp/xl-skybox-authored-android. First failure restored files through finally.
+
+Fixed probe.cpp classic shadow mapping: modern skybox10 -> ordinary0, retained
+XL source stays10. Added regression inspecting translated station byte (previous
+metadata-only assertion missed this bug). Both scoped formatters terminal0.
+Inventory test session24524 is running; rebuild APK session from latest tool
+is running, log shadow-fixed-android-build.log. Poll these handles at30-60s.
+Do not publish admission yet. Need complete Android pass, meaningful authored
+pixel-difference witness (current capture/restore comparison alone may be weak),
+updated Linux/native validation for probe.cpp, final scoped format/diff check.
+
+## Branch 91 final lifecycle pass, 01:05 Pacific
+
+All local handles terminal. Corrected shadow mapping passed Windows/Linux
+inventory contracts and rebuilt native integration. Native integration passed.
+Android shadow-fixed run loaded and passed disk restore, then failed context
+pixel comparison. Introspection proved resumed physics moved camera from
+(-432.33,0,432.33) to(-431.7167,0.3570,431.7155). Corrected control uses distance8,
+reestablishes identical fixed pose after EGL recreation, and requires a different
+textured-side view to differ from capture. No runtime renderer patch for this.
+
+Final APK build fixed-view-android-build.log and protected owner
+android-authored-fixed-view.log pass: 54/54,120.725seconds. Six original POG
+bitmaps,25165824 pixel bytes,all six rendered;295skybox memberships; distinct-view
+witness; disk restore; EGL recreation; stock cleanup and restore from stock.
+All28protected file hashes match. No manual skybox rebind after restore.
+
+Both catalogs passed with491support scripts before the final same-owner step
+changes; no new registration change. Scoped formatting passed including final
+fixed-view edits. Native/Windows/Linux translation/source evidence is current.
+PR241 and242 fully green;243 had only two replay jobs running at01:00, no failures.
+Next: final scoped diff review/check, parent243state check, commit/push branch91
+and draftPR if acceptable. Preserve unrelated files and the evening handoff.
+Candidate admits textured modern skyboxes; original hub remains blocked by smoke
+and outdoors, colored-only boundaries explicitly rejected. Original campaign
+playability remains unqualified. Then address smoke/outdoors as bounded chunks.

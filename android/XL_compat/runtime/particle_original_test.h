@@ -18,7 +18,7 @@ static void particle_original_native_case(const char *package, const char *image
 	write_bytes(atlas.string().c_str(), pixels);
 	require(load_base_mission("pmines", error, sizeof(error)), error);
 	require(!xl_level_supported_at("pm-hub.rl2", 0, 1), "Original Pumo hub unexpectedly lost its unqualified requirements");
-	require(std::strstr(xl_level_rejection(), "segment_function_v21"), "Original Pumo hub rejection lost its specific unsupported requirement");
+	require(std::strstr(xl_level_rejection(), "segment_properties"), "Original Pumo hub rejection lost its authored outdoors requirement");
 	std::cout << "Original Pumo hub remains rejected: unsupported segment functions and other requirements; direct level-2 test is not campaign admission\n";
 	require(!xl_level_supported_at("mvlev1.rl2", 0, 2), "Headless Pumo fire scene unexpectedly bypassed renderer qualification");
 	require(std::strstr(xl_level_rejection(), "XL fog requires an active OpenGL renderer"), "Original Pumo fire scene lost its headless visibility rejection");

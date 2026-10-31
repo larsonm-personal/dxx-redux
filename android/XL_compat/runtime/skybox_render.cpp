@@ -48,22 +48,6 @@ std::unique_ptr<World> world;
 bool drawing = false;
 bool drawing_objects = false;
 
-bool target(const Inventory &level, int segment, int side)
-{
-	for (const auto &trigger : level.triggers)
-		if (std::find(trigger.targets.begin(), trigger.targets.end(), std::array<int, 2>{ segment, side }) != trigger.targets.end()) return true;
-	return false;
-}
-bool invisible(const Inventory &level, const Wall &wall)
-{
-	const int child = level.segments.at(wall.segment).children.at(wall.side);
-	if (child < 0 || std::size_t(child) >= level.segments.size()) return false;
-	const auto &other = level.segments[child];
-	for (unsigned side = 0; side < 6; ++side)
-		if (other.children[side] == wall.segment)
-			return skybox_wall_invisible(wall.type, wall.cloak, target(level, wall.segment, wall.side), other.sides[side].wall >= 0, target(level, child, int(side)));
-	return false;
-}
 } // namespace
 
 void xl_compat::bind_skybox_render(const Inventory &level)
@@ -76,11 +60,8 @@ void xl_compat::bind_skybox_render(const Inventory &level)
 	for (std::size_t i = 0; i < level.segments.size(); ++i) {
 		if (!(next->segments[i] = level.segments[i].function == 10)) continue;
 		next->order.push_back(int(i));
-		const auto &source = level.segments[i];
 		for (unsigned side = 0; side < 6; ++side) {
-			const int wall = source.sides[side].wall;
-			// Source mesh retains trigger targets even when initially open
-			if (wall < 0 ? source.children[side] != -1 : invisible(level, level.walls.at(wall))) continue;
+			if (!skybox_side_textured(level, int(i), int(side))) continue;
 			const auto geometry = compile_classic_lighting_side(int(i), int(side));
 			const int corner = geometry.split_13 ? 1 : 0;
 			const auto &anchor = Vertices[Segments[i].verts[classic_side_corners[side][corner]]];
@@ -96,6 +77,10 @@ extern "C" void xl_skybox_render_clear(void)
 	world.reset();
 	drawing = false;
 	drawing_objects = false;
+}
+extern "C" int xl_skybox_renderer_ready(void)
+{
+	return gl_initialized != 0;
 }
 extern "C" int xl_skybox_segment(int segment)
 {

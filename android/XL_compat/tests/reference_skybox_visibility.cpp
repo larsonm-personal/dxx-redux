@@ -148,6 +148,34 @@ void skybox_visibility_source_controls()
 						CWall wall{ type, cloak, target ? 3 : -1, opposite ? &other : nullptr };
 						if (wall.IsInvisible() != xl_compat::skybox_wall_invisible(type, cloak, target, opposite, opposite_target))
 							throw std::runtime_error("Pinned skybox mesh wall inclusion differs");
+						xl_compat::Inventory level;
+						level.level_version = 27;
+						level.segments.resize(2);
+						for (auto &segment : level.segments) {
+							segment.children.fill(-1);
+							for (auto &side : segment.sides) side.wall = -1;
+						}
+						level.segments[0].function = 10;
+						level.segments[0].properties = xl_compat::segment_light_fog;
+						level.segments[0].children[2] = 1;
+						level.segments[1].children[4] = 0;
+						level.segments[0].sides[2].wall = 0;
+						level.segments[1].sides[4].wall = opposite ? 1 : -1;
+						level.walls.resize(2);
+						level.walls[0].type = type;
+						level.walls[0].cloak = cloak;
+						level.triggers.resize(1);
+						if (target) level.triggers[0].targets.push_back({ 0, 2 });
+						if (opposite_target) level.triggers[0].targets.push_back({ 1, 4 });
+						if (xl_compat::skybox_side_textured(level, 0, 2) == wall.IsInvisible() ||
+						    xl_compat::skybox_colored_only_boundary(level, 0, 2) != wall.IsInvisible())
+							throw std::runtime_error("Loaded skybox face selection differs from pinned wall policy");
+						level.segments[0].sides[2].wall = -1;
+						if (xl_compat::skybox_side_textured(level, 0, 2) || !xl_compat::skybox_colored_only_boundary(level, 0, 2))
+							throw std::runtime_error("Open colored skybox boundary was treated as textured");
+						level.segments[0].children[2] = -1;
+						if (!xl_compat::skybox_side_textured(level, 0, 2) || xl_compat::skybox_colored_only_boundary(level, 0, 2))
+							throw std::runtime_error("External textured skybox face was treated as colored-only");
 						++wall_cases;
 					}
 	std::cout << "Pinned skybox visibility: " << cases << " faces, " << second_normal << " second-normal decisions, eight automap/depth gates and " << wall_cases << " wall inclusion cases passed\n";

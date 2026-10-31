@@ -126,7 +126,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		const auto &seg = v.segments[segment];
 		const int function = producer_function(seg);
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9)) ? 0 : function, 1);
+		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9 || function == 10)) ? 0 : function, 1);
 		// Wide authored fields stay in the owned source. Only robot assignment enters
 		// the native shadow, after geometry-order initialization and capacity checks
 		// Both loaders rebuild station values; other functions never consume them
