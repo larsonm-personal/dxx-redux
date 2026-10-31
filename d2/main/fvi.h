@@ -40,6 +40,9 @@ typedef struct fvi_info {
 	int hit_seg;					//what segment hit_pnt is in
 	int hit_side;					//if hit wall, which side
 	int hit_side_seg;				//what segment the hit side is in
+#ifdef DXX_XL_RUNTIME
+	int hit_face;					//triangle for the XL transparent-pixel consumer
+#endif
 	int hit_object;				//if object hit, which object
 	vms_vector hit_wallnorm;	//if hit wall, ptr to its surface normal
 	int n_segs;						//how many segs we went through

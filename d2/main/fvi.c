@@ -638,6 +638,9 @@ int fvi_hit_object;	// object number of object hit in last find_vector_intersect
 int fvi_hit_seg;		// what segment the hit point is in
 int fvi_hit_side;		// what side was hit
 int fvi_hit_side_seg;// what seg the hitside is in
+#ifdef DXX_XL_RUNTIME
+static int fvi_hit_face;
+#endif
 vms_vector wall_norm;	//ptr to surface normal of hit wall
 int fvi_hit_seg2;		// what segment the hit point is in
 static int fvi_active_flags;
@@ -677,6 +680,9 @@ int find_vector_intersection(fvi_query *fq,fvi_info *hit_data)
 
 	fvi_hit_seg = -1;
 	fvi_hit_side = -1;
+#ifdef DXX_XL_RUNTIME
+	fvi_hit_face = hit_data->hit_face = -1;
+#endif
 
 	fvi_hit_object = -1;
 
@@ -794,6 +800,9 @@ if (hit_seg!=-1 && fq->flags&FQ_GET_SEGLIST)
 	hit_data->hit_seg 		= hit_seg;
 	hit_data->hit_side 		= fvi_hit_side;	//looks at global
 	hit_data->hit_side_seg	= fvi_hit_side_seg;	//looks at global
+#ifdef DXX_XL_RUNTIME
+	hit_data->hit_face = hit_type == HIT_WALL ? fvi_hit_face : -1;
+#endif
 	hit_data->hit_object		= fvi_hit_object;	//looks at global
 	hit_data->hit_wallnorm	= wall_norm;		//looks at global
 
@@ -1080,6 +1089,9 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 									fvi_hit_seg = hit_seg;
 									fvi_hit_side =  side;
 									fvi_hit_side_seg = startseg;
+#ifdef DXX_XL_RUNTIME
+									fvi_hit_face = face;
+#endif
 
 								}
 						}

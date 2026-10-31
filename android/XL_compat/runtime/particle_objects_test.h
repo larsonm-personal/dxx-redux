@@ -116,6 +116,7 @@ static void particle_objects_native_case(bool active)
 	PHYSFS_close(file);
 	require(consumed == PHYSFS_sint64(bytes.size()), "Particle owner source truncated");
 	const auto original = inspect_level(bytes);
+	skybox_collision_face_native_case(original);
 	auto source = original;
 	struct Guard {
 		object first = Objects[1], second = Objects[2], actor = Objects[3];

@@ -7,7 +7,9 @@ source buffering and soft rendering have passing source/native/GPU evidence.
 Original-Pumo controlled level-2 lifecycle and derived secret-save owners pass.
 Other particle kinds, moving/controlled/multiplayer effects and triangular
 emission faces remain rejected. Pumo's hub and campaign are NOT qualified playable.
-Work is uncommitted on `xl_more_86_particle_rendering`, C:/local/dxx-redux.
+Work is committed on `xl_more_86_particle_rendering` through `55c937273`, based
+on current cmake, published as draft PR #238 after explicit user approval.
+Checkout: C:/local/dxx-redux.
 The sections below record successive checkpoints; later checkpoints supersede
 earlier lists of unimplemented work. Current process state and remaining actions
 are in `android/ai tool plans/mission metadata/xl_continuation_20261030.md`.
@@ -938,3 +940,18 @@ match. Receipts: `admission-inventory.log`, `translation.log`,
 `android-secret-normal-admission.log`, `admission-quality.log` and
 `admission-resource-quality.log`. Earlier source/GPU renderer evidence is reused;
 this final chunk changes admission/routing rather than rendering algorithms.
+
+## Pre-context cleanup regression
+
+PR #238 initially exposed a public headless/startup crash. The existing GPU
+owner reproduced SIGSEGV before eglInitialize: ParticleDepth::discard called a
+null extension function for framebuffer zero. Empty texture/framebuffer/VAO/VBO
+handles are now skipped. The regression calls normal/abandoned/normal particle
+cleanup before any GL context or GLEW initialization. It failed before the fix
+and passes afterward together with the complete GPU owner (114 upload/draw cases,
+2120414 pixels, maximum analytical error one, retained-pixel/context controls).
+
+Fix commit 55c937273 is published on branch 86. Receipts: empty-cleanup-before.log,
+empty-cleanup-backtrace.log, empty-cleanup-after.log and empty-cleanup-quality.log.
+New CI is running. The earlier LAN failure was separate: its runner had only
+414652 KiB free where provisioning required 5242880 KiB; gameplay did not start.

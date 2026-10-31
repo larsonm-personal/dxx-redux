@@ -4,6 +4,7 @@
 #include "blocked.h"
 #include "doorway.h"
 #include "speed_boost.h"
+#include "skybox_collision.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -517,6 +518,9 @@ void do_physics_sim(object *obj)
 			fq.flags |= FQ_GET_SEGLIST;
 
 		fate = find_vector_intersection(&fq,&hit_info);
+#ifdef DXX_XL_RUNTIME
+		if (fate == HIT_WALL && xl_skybox_wall_collision(obj, &hit_info, &new_pos)) fate = hit_info.hit_type;
+#endif
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 		if (obj == ConsoleObject && fate != HIT_NONE)
 			game_automate_observe_flight_collision(fate,
