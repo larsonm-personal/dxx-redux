@@ -38,6 +38,10 @@ string(FIND "${log}" "XL particle native ownership:" particle_witness)
 if(particle_witness LESS 0)
     message(FATAL_ERROR "Missing native particle ownership witness")
 endif()
+string(FIND "${log}" "XL particle image resources:" image_witness)
+if(image_witness LESS 0)
+    message(FATAL_ERROR "Missing native particle image resource witness")
+endif()
 if(particle_world_args)
     execute_process(
         COMMAND "${REFERENCE}" --particle-world "${OUTPUT}/particle-world.txt"

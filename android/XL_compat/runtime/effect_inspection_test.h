@@ -1,6 +1,7 @@
 // Real loader rejection/recovery control; decoded effects must never replace live state
 #include "particle_world_test.h"
 #include "particle_objects_test.h"
+#include "particle_resource_test.h"
 static int effect_inspection_test(int argc, char **argv)
 {
 	try {
@@ -59,6 +60,7 @@ static int effect_inspection_test(int argc, char **argv)
 				require(!!active == (level == 2), "stock/XL positive source did not load before rejection control");
 				if (version == 23 && particle_receipt.is_open()) particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
 				if (version == 23) particle_objects_native_case(level == 2);
+				if (version == 23 && level == 2) particle_resource_native_case(root.parent_path());
 				const auto vertex = Vertices[0], position = ConsoleObject->pos;
 				const int segments = Num_segments, objects = Highest_object_index, player = ConsoleObject - Objects;
 				const auto identity = xl_level_trigger_identity();

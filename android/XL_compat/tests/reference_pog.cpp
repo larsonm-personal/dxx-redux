@@ -1,4 +1,6 @@
 #include "../pog.h"
+#include "../particle_image.h"
+#include "../scoped_texture.h"
 #include "../hog.h"
 #include "../xl_rgba_pixels.h"
 #include <algorithm>
@@ -97,6 +99,23 @@ struct CFloatVector {
 struct CFile {
 	const std::vector<uint8_t> &bytes;
 	size_t offset = 0;
+	uint8_t ReadByte()
+	{
+		uint8_t value;
+		Read(&value, 1, 1);
+		return value;
+	}
+	int16_t ReadShort()
+	{
+		const auto low = ReadByte(), high = ReadByte();
+		return int16_t(unsigned(low) | unsigned(high) << 8);
+	}
+	int Seek(int amount, int origin)
+	{
+		if (origin != SEEK_CUR || amount < 0 || std::size_t(amount) > bytes.size() - offset) return 1;
+		offset += std::size_t(amount);
+		return 0;
+	}
 	size_t Read(void *out, size_t element, size_t count)
 	{
 		const size_t size = element * count;
@@ -112,6 +131,13 @@ struct CBitmap {
 	std::vector<uint8_t> pixels;
 	std::array<int32_t, 4> transparent{}, super{};
 	CRGBColor average{};
+	void Init(int, int, int, int w, int h, int bytes, void *, bool)
+	{
+		width = int16_t(w);
+		height = int16_t(h);
+		row = int16_t(w * bytes);
+		bpp = bytes;
+	}
 	int Width() const
 	{
 		return width;
@@ -203,14 +229,23 @@ struct CBitmap {
 		return nullptr;
 	}
 };
+struct CTGAHeader {
+	struct {
+		char identSize = 0, colorMapType = 0, imageType = 2;
+		int16_t colorMapStart = 0, colorMapLength = 0;
+		char colorMapBits = 0;
+		int xStart = 0, yStart = 0, width = 0, height = 0;
+		char bits = 32, descriptor = 0;
+	} m_data;
+	int Bits() const
+	{
+		return m_data.bits;
+	}
+	int32_t Read(CFile &, CBitmap *);
+};
 struct CTGA {
 	CBitmap *m_pBm;
-	struct Header {
-		int Bits() const
-		{
-			return 32;
-		}
-	} m_header;
+	CTGAHeader m_header;
 	void ConvertToRGB();
 	void SetProperties(int32_t, int32_t, double, bool);
 	int32_t ReadData(CFile &, int32_t, double, int32_t, int32_t);
@@ -337,8 +372,22 @@ static void original(const char *path)
 	std::cout << "Original POG resources " << resources << ", source-matched RGBA replacements " << images << '\n';
 }
 
+#include "reference_particle_image.h"
+#include "reference_particle_selection.h"
+
 int main(int argc, char **argv)
 try {
+	if (argc == 3 && std::string(argv[1]) == "--particle-image") {
+		std::ifstream input(argv[2], std::ios::binary);
+		require(bool(input), "Cannot open original particle image");
+		const std::vector<uint8_t> bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+		compare_particle_image(bytes);
+		const auto image = xl_compat::read_particle_image(bytes.data(), bytes.size());
+		std::cout << "Original particle TGA: " << image.width << 'x' << image.height << ", " << image.pixels.size() << " RGBA bytes matched pinned source\n";
+		return 0;
+	}
+	particle_image_controls();
+	particle_image_selection_controls();
 	for (const auto shape : { std::pair{ 4u, 4u }, { 4u, 12u }, { 32u, 32u }, { 257u, 1u }, { 512u, 2u } }) {
 		const auto height = shape.first > 256 ? shape.first * shape.second : shape.second;
 		for (unsigned alpha : { 0u, 1u, 5u, 6u, 223u, 224u, 254u, 255u }) {

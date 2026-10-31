@@ -1,11 +1,15 @@
 foreach(
     pair IN
-    ITEMS "gameio/tga.cpp|9f1c15043e89acd2481eee1b0b9466e0c522c84ab1ae94a7195e1a22d99e687d"
-          "gameio/loadtextures.cpp|bf1ae25e058d6ca745e5833ea0e2c0e425c5716571f6dc5f109a49d67c5452b6"
-          "physics/visibility.cpp|9c85c23b1fec459abdc8115e26d031ed9223516d0b9f64f4474f3bddd03deab8"
-          "main/texmerge.cpp|85acc8790e5c6ba84fb1802411408e2bd0ff592b2bf3e1fb3bffb89472ab87bc"
-          "render/renderframe.cpp|56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf"
-          "include/bitmap.h|9044979682a8e219fa0526cc092150e562d04d2d772b23ce1e63d164d58c7024")
+    ITEMS
+        "gameio/tga.cpp|9f1c15043e89acd2481eee1b0b9466e0c522c84ab1ae94a7195e1a22d99e687d"
+        "gameio/addon_bitmaps.cpp|fba2bb3befbd5264788210b7c346b1203404c42a25790f0aff929bd6d67edc94"
+        "effects/particle_images.cpp|1cd950eee425c26a8ac476a6a5245ce386e5b92ce00f5b52a600e83cfa9473f1"
+        "include/particles.h|307e9edca466924df459b6ba5e6f0ec9d405967b38ed07021a9e561dfc29f70d"
+        "gameio/loadtextures.cpp|bf1ae25e058d6ca745e5833ea0e2c0e425c5716571f6dc5f109a49d67c5452b6"
+        "physics/visibility.cpp|9c85c23b1fec459abdc8115e26d031ed9223516d0b9f64f4474f3bddd03deab8"
+        "main/texmerge.cpp|85acc8790e5c6ba84fb1802411408e2bd0ff592b2bf3e1fb3bffb89472ab87bc"
+        "render/renderframe.cpp|56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf"
+        "include/bitmap.h|9044979682a8e219fa0526cc092150e562d04d2d772b23ce1e63d164d58c7024")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -15,12 +19,64 @@ foreach(
     endif()
 endforeach()
 set(extracted "// Actual pinned true-color conversion and pixel transparency\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "int32_t CTGAHeader::Read (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "void CTGA::ConvertToRGB (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "void CTGA::SetProperties (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "int32_t CTGA::ReadData (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/visibility.cpp"
                       "int32_t PixelTranspType (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pog.h" CONTENT "${extracted}")
+set(extracted "// Actual pinned addon selection and particle image setup\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/addon_bitmaps.cpp"
+                      "int32_t LoadAddonBitmap (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_images.cpp"
+                      "int32_t CParticleImageManager::GetType (")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_images.cpp" particle_images)
+# Load contains an unindented block in a disabled preprocessor branch Extract through its following
+# separator, not the first unindented brace
+string(FIND "${particle_images}" "int32_t CParticleImageManager::Load (" begin)
+if(begin LESS 0)
+    message(FATAL_ERROR "Missing particle image Load body")
+endif()
+string(SUBSTRING "${particle_images}" ${begin} -1 load_tail)
+string(FIND "${load_tail}" "\n//" end)
+if(end LESS 0)
+    message(FATAL_ERROR "Missing particle image Load boundary")
+endif()
+string(SUBSTRING "${load_tail}" 0 ${end} load_body)
+string(APPEND extracted "\n${load_body}")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_images.h"
+     CONTENT "${extracted}")
+string(FIND "${particle_images}" "tParticleImageInfo particleImageInfo [" begin)
+if(begin LESS 0)
+    message(FATAL_ERROR "Missing active particle image table")
+endif()
+string(SUBSTRING "${particle_images}" ${begin} -1 table_tail)
+string(FIND "${table_tail}" "\n#else" end)
+if(end LESS 0)
+    message(FATAL_ERROR "Missing active particle image table boundary")
+endif()
+string(SUBSTRING "${table_tail}" 0 ${end} table)
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/particles.h" particle_header)
+set(extracted "// Actual pinned particle image constants and active quality table\n")
+foreach(
+    name IN
+    ITEMS MAX_PARTICLE_QUALITY
+          PARTICLE_TYPES
+          SMOKE_PARTICLES
+          BUBBLE_PARTICLES
+          RAIN_PARTICLES
+          SNOW_PARTICLES
+          WATERFALL_PARTICLES
+          FIRE_PARTICLES)
+    string(REGEX MATCH "#define[ \t]+${name}[ \t]+[^\n]+" constant "${particle_header}")
+    if(NOT constant)
+        message(FATAL_ERROR "Missing particle image constant: ${name}")
+    endif()
+    string(APPEND extracted "${constant}\n")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_image_table.h"
+     CONTENT "${extracted}\n${table}\n")
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadtextures.cpp" loader)
 string(FIND "${loader}" "bm.AddFlags (bmh [i].flags & (BM_FLAGS_TO_COPY | BM_FLAG_TGA));" begin)
 if(begin LESS 0)

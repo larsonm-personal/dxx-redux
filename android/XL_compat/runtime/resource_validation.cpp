@@ -17,6 +17,7 @@
 #include "companion_resources.h"
 #include "../inventory.h"
 #include "preview.h"
+#include "particle_resources.h"
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
@@ -36,7 +37,7 @@ namespace
 {
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
-std::string startup_ham_name, startup_ham_hash, base_rejection;
+std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
 std::map<std::string, std::string> startup_graphics_hashes;
@@ -232,6 +233,9 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 	try {
 		startup_ham_hash = resource_hash(file, name);
 		startup_ham_name = name;
+		auto corrected = startup_ham_name;
+		const char *origin = PHYSFSEXT_locateCorrectCase(corrected.data()) == 0 ? PHYSFS_getRealDir(corrected.c_str()) : nullptr;
+		startup_origin = origin ? origin : "";
 		// Both banks matter: playback may fall back and authored durations use the canonical bank
 		for (std::size_t i = 0; i < sound_banks.size(); ++i)
 			startup_sound_hashes[i] = optional_resource_hash(sound_banks[i]);
@@ -247,6 +251,7 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 	} catch (...) {
 		startup_ham_hash.clear();
 		startup_ham_name.clear();
+		startup_origin.clear();
 		startup_sound_hashes = {};
 		startup_graphics_hashes.clear();
 	}
@@ -267,6 +272,11 @@ extern "C" void xl_resource_commit_mission(void)
 extern "C" int xl_resource_texture_scope_enabled(void)
 {
 	return mission_requires_xl;
+}
+
+extern "C" int xl_resource_owns_installation(const char *source)
+{
+	return source && !startup_origin.empty() && startup_origin == source;
 }
 
 extern "C" const char *xl_resource_base_rejection(void)
@@ -338,6 +348,7 @@ struct XlPreparedResources::State {
 	xl_compat::MissionLightingCompanions lighting;
 	std::shared_ptr<const xl_compat::MessageResources> messages;
 	std::shared_ptr<const xl_compat::AudioResources> audio;
+	std::shared_ptr<const xl_compat::ParticleImageResource> particle_image;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 
@@ -384,6 +395,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	state = std::make_unique<State>(*mission_base);
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
 	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);
+	if (level) state->particle_image = xl_compat::prepare_particle_image(*level);
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
@@ -437,6 +449,16 @@ void XlPreparedResources::install_messages()
 {
 	xl_compat::install_messages(state->messages);
 	xl_compat::install_named_audio(state->audio);
+}
+
+const xl_compat::ParticleImageResource *XlPreparedResources::particle_image() const
+{
+	return state->particle_image.get();
+}
+
+const xl_compat::ParticleImageResource *xl_prepared_particle_image()
+{
+	return prepared_resources ? prepared_resources->particle_image() : nullptr;
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
