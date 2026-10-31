@@ -711,3 +711,7 @@ live emission, smoke-atlas GPU checks and actual world-scene framebuffer
 readback at an authored spray face. XL effect positions retain their
 authored segment association as in the pinned loader. Other particle kinds and
 later campaign requirements remain gated.
+
+The [lightning simulation](evidence/lightning-simulation.md) has pinned-source
+setup, geometry and lifetime comparisons. It is not yet connected to the native
+effect, rendering, lighting, sound or save consumers, so lightning remains gated.

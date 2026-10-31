@@ -29,6 +29,7 @@ PUBLIC_TESTS = {
     "xl_level_text_contract",
     "xl_level_text_reference",
     "xl_light_index_reference",
+    "xl_lightning_source",
     "xl_lighting_calculation",
     "xl_lighting_reference_arithmetic",
     "xl_magnitude_reference",
