@@ -3,6 +3,7 @@
 #ifdef __cplusplus
 #include "../lightning_emitter.h"
 #include "lightning_scene.h"
+#include "../lightning_light.h"
 #include <nlohmann/json_fwd.hpp>
 namespace xl_compat
 {
@@ -13,6 +14,7 @@ const LightningEmitter *lightning_object_emitter(int index);
 const LightningRenderFrame *lightning_object_render_frame(int index, unsigned bolt);
 std::vector<LightningSceneItem> lightning_scene_items(const std::vector<int> &visible, const std::vector<int> &rendered_objects, const LightningPoint &eye, int maximum_depth);
 bool lightning_scene_item_valid(const LightningSceneItem &item);
+std::map<int, LightningSegmentLight> lightning_object_lights();
 nlohmann::json lightning_objects_snapshot();
 bool restore_lightning_objects(const nlohmann::json &state, bool apply);
 bool lightning_audio_matches(const nlohmann::json &audio);

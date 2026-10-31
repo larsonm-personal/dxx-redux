@@ -142,6 +142,10 @@ struct CSide {
 	fix Height();
 	bool ComputedPlanar();
 	uint8_t Dist(const CFixVector &, fix &, int32_t, int16_t);
+	fix DistToPoint(const CFixVector &)
+	{
+		throw std::runtime_error("Nonzero trace tolerance is outside the lightning profile");
+	}
 };
 struct CSegment {
 	int m_nShape = 0, m_function = 0;
@@ -155,6 +159,11 @@ struct CSegment {
 		return m_vCenter;
 	}
 	CSegMasks Masks(const CFixVector &, fix);
+	CSide *Side(int side)
+	{
+		return &m_sides[side];
+	}
+	uint8_t GetSideDists(const CFixVector &, fix *, int32_t);
 	void ComputeCenter();
 	void ComputeRads(fix);
 	// Per-side render bounds are not consumed by containment or particle collision
@@ -260,6 +269,7 @@ CFixVector *wallNorm[1]{};
 #define SEGMENT_FUNC_SKYBOX  10
 #define SIDE_SHAPE_TRIANGLE  1
 #define PLANE_DIST_TOLERANCE 65
+int32_t FindSegByPosExhaustive(const CFixVector &, int32_t, int32_t = -1);
 #include "xl_reference_particle_world.h"
 #define VERTICES       gameData.segData.vertices
 #define FVERTICES      float_vertices
@@ -278,6 +288,13 @@ void Swap(T &a, T &b)
 }
 #include "xl_reference_particle_world_setup.h"
 #include "xl_reference_particle_grid.h"
+#define MAX_THREADS      4
+#define MAX_SEGMENTS_D2X 20000
+#define sizeofa(value)   sizeof(value)
+#include "xl_reference_particle_connected.h"
+#undef sizeofa
+#undef MAX_SEGMENTS_D2X
+#undef MAX_THREADS
 
 void bind(const xl_compat::ParticleWorld &world)
 {
@@ -487,7 +504,8 @@ void particle_world_source_controls()
 	}
 	world.segments[0].sides[1].child = 1;
 	world.segments[1].sides[0].child = 0;
-	unsigned locations = 0, collisions = 0;
+	const auto cubes = world;
+	unsigned locations = 0, collisions = 0, connected = 0, disconnected = 0;
 	for (int profile = 0; profile < 4; ++profile) {
 		if (profile == 1) world.segments[0].inner_radius = 0;
 		if (profile == 2) {
@@ -505,6 +523,10 @@ void particle_world_source_controls()
 				for (int z : { -655425, 0, 655425 })
 					for (int start : { -3, -1, 0, 1, 2 }) {
 						const xl_compat::ParticlePoint point{ x, y, z };
+						const int located = world.locate_connected(point, start);
+						if (located != FindSegByPos({ point }, start, 0, 0, 0, 0)) throw std::runtime_error("Connected lightning lookup differs from pinned source");
+						++connected;
+						if (start >= 0 && located < 0 && world.locate(point, false, start) >= 0) ++disconnected;
 						for (bool skybox : { false, true }) {
 							const int expected = FindSegByPosExhaustive({ point }, skybox, start);
 							if (world.locate(point, skybox, start) != expected) throw std::runtime_error("Actual source particle segment lookup differs");
@@ -525,5 +547,47 @@ void particle_world_source_controls()
 						++collisions;
 					}
 	}
+	for (unsigned topology = 0; topology < 64; ++topology) {
+		for (unsigned segment = 0; segment < 3; ++segment)
+			for (unsigned side = 0; side < 6; ++side)
+				world.segments[segment].sides[side].child = topology & (1u << side) ? int((segment + side) % 3) : -1;
+		bind(world);
+		for (int start = 0; start < 3; ++start)
+			for (int x : { -1310720, 655426, 1310720, 2621440, 3932160 })
+				for (int y : { -1310720, 0, 1310720 }) {
+					const xl_compat::ParticlePoint point{ x, y, 655426 };
+					if (world.locate_connected(point, start) != FindSegByPos({ point }, start, 0, 0, 0, 0))
+						throw std::runtime_error("Connected lookup differs across cyclic/branching topology");
+					++connected;
+				}
+	}
+	for (unsigned repeat = 0; repeat < 70000; ++repeat) {
+		const xl_compat::ParticlePoint point{ 2621440, 0, 0 };
+		if (world.locate_connected(point, 0) != FindSegByPos({ point }, 0, 0, 0, 0, 0))
+			throw std::runtime_error("Connected lookup differs across source visited-flag rollover");
+		++connected;
+	}
+	if (!disconnected) throw std::runtime_error("Connected lookup controls did not distinguish exhaustive fallback");
+	auto overlap = cubes;
+	for (unsigned index = 0; index < overlap.segments.size(); ++index) {
+		auto &segment = overlap.segments[index];
+		segment.skybox = index == 0;
+		const xl_compat::ParticlePoint center = index ? xl_compat::ParticlePoint{ 1310720, 1310720, 0 } : xl_compat::ParticlePoint{};
+		const auto delta = xl_compat::particle_difference(center, segment.center);
+		for (auto &side : segment.sides) {
+			side.child = -1;
+			for (unsigned axis = 0; axis < 3; ++axis) side.anchor[axis] += delta[axis];
+		}
+		segment.center = center;
+	}
+	overlap.segments[0].sides[1].child = 1;
+	overlap.segments[0].sides[3].child = 2;
+	bind(overlap);
+	const xl_compat::ParticlePoint outside{ -1310720, -1310720, 0 }, shared{ 1310720, 1310720, 0 };
+	if (overlap.locate_connected(outside, 1) != -1 || FindSegByPos({ outside }, 1, 0, 0, 0, 0) != -1 ||
+	    overlap.locate_connected(shared, 0) != 2 || FindSegByPos({ shared }, 0, 0, 0, 0, 0) != 2)
+		throw std::runtime_error("Skybox lookup lost the preceding visited stamp or side tie order");
+	connected += 2;
+	std::cout << connected << " connected lightning lookups match pinned source; " << disconnected << " disconnected destinations reject\n";
 	std::cout << "Pinned particle world: " << locations << " exhaustive lookups and " << collisions << " side collision/portal comparisons, tolerance boundaries and supplied compiled geometry passed\n";
 }
