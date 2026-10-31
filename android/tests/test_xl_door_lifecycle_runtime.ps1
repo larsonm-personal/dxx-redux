@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = '9db4eb31fdd7e54870ed9f1cdad9f1763145a012d850b8f8f324ed4bd4b75a05'
+$expectedHog = 'e7e8a12cd6c4495250b4617c9900af1bb44e6cb4dc16b2d5240435a444db801d'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'e32d601e2f8c4a6f8a34a3206b760a7bea2a78c9007fae87e35ddcdd58a3bfde') {
     throw 'Requires the pinned derived doorlife fixture from xl_close_doors'
