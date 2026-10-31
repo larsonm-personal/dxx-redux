@@ -350,3 +350,27 @@ Evidence: temp/xl-particles-20261030/contracts-linux/effect-decode/reference.log
 temp/xl-skybox-20261031/native-runtime/controls.log and
 lightning-visibility-reference.log. Catalog registrations and Android scripts
 are unchanged; the preceding successful catalog checks remain applicable.
+
+## Source lightning depth ordering
+
+Native collection now uses a shared endpoint-depth selector compared with the
+actual pinned AddLightning, Depth, Add and RenderBuffer bodies. All4608 endpoint
+admission decisions and2938 mixed lightning/particle queue entries agree, across
+zero/small/large depth limits, two viewers, reversed endpoints, equal distances,
+visible-near/over-limit-far bolts and randomized positions. Existing5733 mixed
+transparency entries remain unchanged. This preserves current behavior: reject
+when the nearer endpoint is beyond the limit, otherwise use the farther endpoint
+(start on ties), zero bias and depth clamping; equal buckets prepend entries.
+
+The supported native scene uses zMin0 and no shadow-map pass, matching this source
+profile. Checked world subtraction and distance overflow continue to reject
+outside the defined fixed-point range. This qualifies depth selection/insertion
+for supplied collection order; it does not certify every effect-manager traversal
+or sprite-specific glow transition. Source negative-additive sprites can retain
+a glow batch and remain outside the current broad native-object flush claim.
+
+The registered effect reference owner passes in2.51s and Windows native compilation
+passes. Existing native ownership/collection controls and unchanged automation
+catalogs are reused. Evidence: lightning-order-linux.log and
+contracts-linux/effect-decode/reference.log under temp/xl-skybox-20261031 and
+temp/xl-particles-20261030 respectively. Normal lightning admission stays blocked.

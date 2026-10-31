@@ -150,9 +150,9 @@ std::vector<xl_compat::LightningSceneItem> xl_compat::lightning_scene_items(cons
 			const bool owner_rendered = std::find(rendered_objects.begin(), rendered_objects.end(), index) != rendered_objects.end();
 			const bool shown = lightning_visible(owner_rendered, bolt.segment, bolt.position, bolt.end, flags, [&](const LightningPoint &position) { return world.locate(position, false, -1); });
 			if (!shown) continue;
-			const int start = transparency_depth(bolt.position, eye), end = transparency_depth(bolt.end, eye);
-			if (std::min(start, end) > maximum_depth) continue;
-			result.push_back({ *frame, start < end ? bolt.end : bolt.position, bolt.definition.color, index, entry.signature, bolt.lifetime.random_nodes, bolt.definition.width });
+			const auto position = lightning_transparency_position(bolt.position, bolt.end, eye, maximum_depth);
+			if (!position) continue;
+			result.push_back({ *frame, position->position, bolt.definition.color, index, entry.signature, bolt.lifetime.random_nodes, bolt.definition.width });
 		}
 	}
 	return result;

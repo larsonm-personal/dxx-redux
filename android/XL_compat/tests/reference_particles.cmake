@@ -336,7 +336,8 @@ foreach(
           "int32_t CTransparencyRenderer::AddObject ("
           "int32_t CTransparencyRenderer::AddPoly ("
           "int32_t CTransparencyRenderer::AddSprite ("
-          "int32_t CTransparencyRenderer::AddParticle (")
+          "int32_t CTransparencyRenderer::AddParticle ("
+          "int32_t CTransparencyRenderer::AddLightning (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/transprender.cpp" "${signature}")
 endforeach()
 string(REGEX MATCH "#define[ \t]+PARTICLE_TYPES[ \t]+[0-9]+" particle_types "${render_header}")

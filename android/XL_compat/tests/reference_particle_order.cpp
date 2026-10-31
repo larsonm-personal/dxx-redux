@@ -4,6 +4,11 @@
 #include <cstring>
 #include <deque>
 #include <iostream>
+template <class T>
+void Swap(T &a, T &b)
+{
+	std::swap(a, b);
+}
 namespace energy_reference
 {
 #include "xl_reference_transparency_weapons.h"
@@ -175,6 +180,13 @@ struct CTranspParticle : CTranspItem {
 	CParticle *particle = nullptr;
 	float fBrightness = 0;
 };
+struct CLightning {
+	CFixVector m_vPos, m_vEnd;
+};
+struct CTranspLightning : CTranspItem {
+	CLightning *lightning = nullptr;
+	int16_t nDepth = 0;
+};
 struct CTranspPoly : CTranspItem {
 	CSegFace *pFace = nullptr;
 	tFaceTriangle *pTriangle = nullptr;
@@ -250,6 +262,7 @@ struct CTransparencyRenderer {
 	int32_t AddPoly(CSegFace *, tFaceTriangle *, CBitmap *, CFloatVector *, char, tTexCoord2f *, CFloatVector *, CFaceColor *, char, char, int32_t, int32_t, int32_t, int16_t);
 	int32_t AddSprite(CBitmap *, const CFixVector &, CFloatVector *, int32_t, int32_t, char, char, float);
 	int32_t AddParticle(CParticle *, float, int32_t);
+	int32_t AddLightning(CLightning *, int16_t);
 	void RenderBuffer(CTranspItemBuffers &, bool);
 	void RenderItem(CTranspItem *item)
 	{
@@ -325,4 +338,53 @@ void particle_order_source_controls()
 				++cases;
 			}
 	std::cout << "Pinned transparency order: " << cases << " particle/mixed viewer/depth-limit profiles, " << items << " ordered entries, per-kind distance bias, clipping and reversed equal-bucket insertion passed\n";
+	unsigned bolts = 0, ordered = 0;
+	for (int maximum : { 0, 1000, 655360, 400 * 65536 })
+		for (const xl_compat::ParticlePoint viewer : { xl_compat::ParticlePoint{}, xl_compat::ParticlePoint{ -113777, 991001, -37555 } }) {
+			CTransparencyRenderer source;
+			gameData.renderData.mine.viewer.vPos.v.coord = { viewer[0], viewer[1], viewer[2] };
+			source.InitBuffer(0, maximum, 0);
+			auto &buffer = source.m_data.buffers[0];
+			buffer.depthBuffer.values.resize(250000, nullptr);
+			std::vector<xl_compat::TransparencyPosition> entries;
+			const std::array<int, 8> offsets{ 0, 1, 999, 1000, 655360, maximum, maximum + 1, maximum + 655360 };
+			for (unsigned i = 0; i < 576; ++i) {
+				xl_compat::ParticlePoint start = viewer, end = viewer;
+				if (i < 64) {
+					start[0] += offsets[i / 8];
+					end[1] -= offsets[i % 8];
+				} else {
+					for (unsigned axis = 0; axis < 3; ++axis) {
+						random = random * 1664525u + 1013904223u;
+						start[axis] += int(random % (400 * 65536u)) - 200 * 65536;
+						random = random * 1664525u + 1013904223u;
+						end[axis] += int(random % (400 * 65536u)) - 200 * 65536;
+					}
+					if (i % 4 == 0) start = viewer;
+					if (i % 4 == 1) end = start;
+				}
+				CLightning lightning{ { { { start[0], start[1], start[2] } } }, { { { end[0], end[1], end[2] } } } };
+				current_item = unsigned(entries.size());
+				const bool accepted = source.AddLightning(&lightning, 0) != 0;
+				const auto actual = xl_compat::lightning_transparency_position(start, end, viewer, maximum);
+				if (accepted != actual.has_value()) throw std::runtime_error("Lightning endpoint depth admission differs from source");
+				if (actual) entries.push_back(*actual);
+				if (i % 3 == 0) {
+					current_item = unsigned(entries.size());
+					CParticle particle{ 5, lightning.m_vPos };
+					if (!source.AddParticle(&particle, 1, 0)) throw std::runtime_error("Mixed lightning particle storage failed");
+					entries.push_back({ start, 10 * 65536, false });
+				}
+				++bolts;
+			}
+			for (int bucket = buffer.nMaxOffs; bucket >= buffer.nMinOffs; --bucket)
+				if (buffer.depthBuffer[bucket]) {
+					buffer.pBuffer = buffer.depthBuffer + bucket;
+					source.RenderBuffer(buffer, true);
+				}
+			const auto actual = xl_compat::transparency_draw_order(entries, viewer, maximum);
+			if (actual != source.drawn || buffer.nItems[0]) throw std::runtime_error("Lightning/particle bucket order differs from source");
+			ordered += unsigned(actual.size());
+		}
+	std::cout << "Pinned lightning order: " << bolts << " endpoint/depth admissions and " << ordered << " mixed lightning/particle entries passed\n";
 }

@@ -19,6 +19,13 @@ inline int transparency_depth(const ParticlePoint &position, const ParticlePoint
 	if (magnitude > INT32_MAX) throw std::runtime_error("XL transparency render distance exceeds fixed range");
 	return int(magnitude);
 }
+inline std::optional<TransparencyPosition> lightning_transparency_position(const ParticlePoint &start, const ParticlePoint &end, const ParticlePoint &viewer, int maximum_depth)
+{
+	if (maximum_depth < 0) throw std::runtime_error("XL lightning scene depth is negative");
+	const int first = transparency_depth(start, viewer), last = transparency_depth(end, viewer);
+	if (std::min(first, last) > maximum_depth) return std::nullopt;
+	return TransparencyPosition{ first < last ? end : start, 0, true };
+}
 inline std::optional<int> transparency_bucket(const TransparencyPosition &position, const ParticlePoint &viewer, int maximum_depth)
 {
 	if (maximum_depth < 0 || position.bias < 0) throw std::runtime_error("XL transparency depth or bias is negative");
