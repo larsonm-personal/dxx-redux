@@ -3,6 +3,7 @@
 #include "particle_world.h"
 #include "particle_resources.h"
 #include "particle_renderer.h"
+#include "../particle_admission.h"
 #include "resource_validation.h"
 #include "../transparency_order.h"
 #include "../particle_visibility.h"
@@ -73,18 +74,10 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 		if (object.render != 11) continue;
 		if (object.type != 20 || object.reader_id != 0 || object.reader_render != 11 || object.control || object.movement || !native_particle(int(index)))
 			throw std::runtime_error("XL particle object identity changed during native loading");
-		float area = 1;
-		std::optional<ParticleFace> face;
-		if (object.render_data.size() == 13 && object.render_data[10] > 0) {
-			area = particle_face_size(particle_face(level, object.segment, object.render_data[10] - 1, true));
-			face = particle_face(level, object.segment, object.render_data[10] - 1, false);
-		}
-		auto effect = decode_particle_effect(object, level.level_version, area);
-		if (effect.kind != ParticleKind::fire) throw std::runtime_error("XL particle runtime requires authored fire support");
+		const auto authored = prepare_fire_particle(level, object);
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
 			throw std::runtime_error("XL particle object references an invalid loaded segment");
-		auto definition = particle_emitter_definition(effect, { object.orientation[6], object.orientation[7], object.orientation[8] }, true);
-		prepared.emplace(int(index), Entry{ effect, definition, face, Objects[index].signature });
+		prepared.emplace(int(index), Entry{ authored.effect, authored.definition, authored.face, Objects[index].signature });
 	}
 	// Ordinary levels allocate no particle world and consume no effects RNG
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
@@ -114,6 +107,11 @@ extern "C" int xl_particle_object_set_enabled(int index, int enabled)
 	if (found == entries.end() || !bound(index, found->second)) return 0;
 	found->second.effect.enabled = enabled != 0;
 	return 1;
+}
+
+extern "C" int xl_particle_depth_projection(void)
+{
+	return xl_level_extensions_active() && !entries.empty();
 }
 
 const std::list<xl_compat::ParticleSystem> &xl_compat::particle_systems()
@@ -181,7 +179,7 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 			auto &particle = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
 			const bool shown = emitter_visible || particle_visible(particle, world.segments, visible_flags, [](const ParticlePoint &point, bool skybox, int segment) { return world.locate(point, skybox, segment); });
 			if (shown && transparency_bucket({ particle.position, 10 * 65536 }, eye, maximum_depth) && prepare_fire_particle_draw(particle, animate))
-				quads.push_back({ particle.position, fire_particle_quad(particle, camera, image_width, image_height) });
+				quads.push_back({ particle.position, fire_particle_quad(particle, camera, image_width, image_height), float(std::hypot(double(particle.width), double(particle.height))) });
 		}
 	}
 	return quads;

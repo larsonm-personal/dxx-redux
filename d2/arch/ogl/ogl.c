@@ -8,6 +8,7 @@
 #include "fog.h"
 #include "pog_renderer.h"
 #include "particle_renderer.h"
+#include "particle_objects.h"
 #endif
 /*
  *
@@ -2279,7 +2280,7 @@ int ogl_use_classic_depth(void)
 void ogl_start_frame(void){
 	double z_near = 0.1;
 #ifdef DXX_XL_RUNTIME
-	if (xl_fog_active()) z_near = 1.0;
+	if (xl_fog_active() || xl_particle_depth_projection()) z_near = 1.0;
 #endif
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID

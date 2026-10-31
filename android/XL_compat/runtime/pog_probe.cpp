@@ -2,12 +2,21 @@
 #include "pog_probe.h"
 #include "../pog.h"
 #include "preview.h"
+#include "particle_resources.h"
+#include "particle_renderer.h"
+#include "particle_objects.h"
+#include "particle_state.h"
+#include "transparency_scene.h"
+#include "resource_validation.h"
+#include "../inventory.h"
+#include "../particle_render.h"
 #include <nlohmann/json.hpp>
 #include <cstring>
 #include <stdexcept>
 #include <string>
 extern "C" {
 #include "inferno.h"
+#include "args.h"
 #include "game.h"
 #include "gamesave.h"
 #include "gameseq.h"
@@ -18,6 +27,8 @@ extern "C" {
 #include "ogl_init.h"
 #include "state_android_shared.h"
 #include "android_meta_actions.h"
+#include "input_demo_start_shared.h"
+#include "switch.h"
 void ogl_loadbmtexture(grs_bitmap *bitmap);
 }
 
@@ -94,6 +105,10 @@ struct Readback {
 	}
 };
 
+#include "particle_gpu_probe.h"
+#include "particle_original_probe.h"
+#include "particle_secret_probe.h"
+
 void gpu()
 {
 	verify();
@@ -124,8 +139,31 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "secret_", 7)) {
+			particle_secret_probe(operation + 7);
+			return nullptr;
+		}
+		if (!std::strncmp(operation, "original_", 9)) {
+			particle_original_probe(operation + 9);
+			return nullptr;
+		}
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "POG controls require singleplayer");
-		if (!std::strcmp(operation, "capture")) {
+		if (!std::strcmp(operation, "particle_capture")) {
+			require(game_is_time_paused() && xl_level_extensions_active(), "Particle image capture requires a paused XL level");
+			xl_compat::Inventory request;
+			xl_compat::Object fire{};
+			fire.render = 11;
+			fire.render_data.resize(13);
+			fire.render_data[11] = 3;
+			request.objects.push_back(fire);
+			particle_probe_image = xl_compat::prepare_particle_image(request);
+			require(bool(particle_probe_image), "Particle image capture did not prepare an owned atlas");
+		} else if (!std::strcmp(operation, "particle_gpu")) {
+			particle_gpu_probe();
+		} else if (!std::strcmp(operation, "particle_release")) {
+			require(bool(particle_probe_image), "Particle release has no retained image");
+			particle_probe_image.reset();
+		} else if (!std::strcmp(operation, "capture")) {
 			require(game_is_time_paused() && xl_level_extensions_active(), "POG capture requires a paused XL level");
 			std::string name = Gamesave_current_filename;
 			const auto extension = name.find_last_of('.');
@@ -178,5 +216,16 @@ const char *xl_pog_probe(const char *operation)
 
 const char *xl_pog_probe_result()
 {
+	if ((!original_particle_earned.empty() || !secret_particle_base.empty()) && report != "null") {
+		auto state = nlohmann::json::parse(report);
+		unsigned particles = 0;
+		for (const auto &system : xl_compat::particle_systems()) particles += system.emitter.count;
+		state["live_particles"] = particles;
+		state["particle_systems"] = xl_compat::particle_systems().size();
+		xl_particle_scene_result scene{};
+		xl_particle_scene_probe_result(&scene);
+		state["scene"] = { { "completed", scene.completed }, { "passed", scene.passed }, { "batches", scene.batches }, { "quads", scene.quads }, { "changed", scene.changed }, { "samples", scene.samples }, { "error", xl_particle_scene_probe_error() } };
+		report = state.dump();
+	}
 	return report.c_str();
 }

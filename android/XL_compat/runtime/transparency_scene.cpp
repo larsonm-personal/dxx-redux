@@ -7,6 +7,7 @@
 #include "transparency_scene.h"
 #include "../transparency.h"
 #include "../transparency_order.h"
+#include "../particle_buffer.h"
 #include "../particle_visibility.h"
 #include "particle_objects.h"
 #include "particle_renderer.h"
@@ -15,6 +16,7 @@
 #include <map>
 #include <set>
 #include <variant>
+#include <stdexcept>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -37,6 +39,10 @@ void render_face(int, int, int, int *, int, int, uvl *, int);
 }
 #undef min
 #undef max
+
+#ifdef ANDROID
+#include "particle_scene_probe.h"
+#endif
 
 namespace
 {
@@ -67,6 +73,8 @@ struct QueuedObject {
 struct Particle {
 	ParticleQuad quad;
 	ParticleTexture *texture;
+	ParticlePoint position{};
+	float radius = 0;
 };
 struct Water {
 	int32_t points[4][3];
@@ -117,8 +125,8 @@ bool transparent_object(const object &obj)
 		default: return false;
 	}
 }
-template <class Draw>
-void drain(Draw draw)
+template <class Draw, class Finish>
+void drain(Draw draw, Finish finish)
 {
 	collecting = false;
 	struct Restore {
@@ -138,6 +146,40 @@ void drain(Draw draw)
 		}
 		draw(item);
 	}
+	finish();
+}
+template <class Draw>
+void drain(Draw draw)
+{
+	drain(draw, [] {});
+}
+template <class DrawParticles, class DrawOther>
+void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
+{
+	FireParticleBuffers buffers({ float(eye[0]) / 65536.f, float(eye[1]) / 65536.f, float(eye[2]) / 65536.f });
+	const auto submit = [&](const std::vector<std::size_t> &indices) {
+		std::vector<ParticleQuad> quads;
+		ParticleTexture *texture = nullptr;
+		for (auto index : indices) {
+			const auto &particle = std::get<Particle>(items[index]);
+			if (texture != particle.texture && !quads.empty()) {
+				draw_particles(texture, quads);
+				quads.clear();
+			}
+			texture = particle.texture;
+			quads.push_back(particle.quad);
+		}
+		if (!quads.empty()) draw_particles(texture, quads);
+	};
+	drain([&](Item &item) {
+		if (const auto *particle = std::get_if<Particle>(&item)) {
+			const auto &p = particle->position;
+			const bool smoke = particle->quad.blend == ParticleBlend::multiply;
+			buffers.add(std::size_t(&item - items.data()), { float(p[0]) / 65536.f, float(p[1]) / 65536.f, float(p[2]) / 65536.f }, particle->radius, smoke, !smoke, submit);
+		} else {
+			buffers.flush(submit);
+			draw_other(item);
+		} }, [&] { buffers.flush(submit); });
 }
 } // namespace
 
@@ -234,7 +276,7 @@ extern "C" int xl_transparency_object(int index)
 void xl_compat::transparency_particle(const ParticleSceneItem &item, ParticleTexture *texture)
 {
 	if (!collecting || !texture) throw std::runtime_error("XL particle submitted outside its transparency frame");
-	add(Particle{ item.quad, texture }, item.position, 10 * 65536);
+	add(Particle{ item.quad, texture, item.position, item.radius }, item.position, 10 * 65536);
 }
 
 extern "C" int xl_transparency_water(int segment, int side, const int32_t points[4][3], const float colors[4][4])
@@ -259,6 +301,16 @@ extern "C" void xl_transparency_flush(void)
 	if (!collecting) return;
 	try {
 		xl_particle_render_scene(visible.data(), int(visible.size()));
+		struct ParticleSoftScope {
+			ParticleSoftScope()
+			{
+				xl_particle_soft_begin_scene();
+			}
+			~ParticleSoftScope()
+			{
+				xl_particle_soft_end_scene();
+			}
+		} soft;
 		struct DepthState {
 			GLboolean write, enabled;
 			GLint function;
@@ -278,36 +330,30 @@ extern "C" void xl_transparency_flush(void)
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
-		std::vector<ParticleQuad> batch;
-		ParticleTexture *texture = nullptr;
-		const auto flush_particles = [&] {
-			if (!batch.empty()) texture->draw(batch.data(), batch.size());
-			batch.clear();
-		};
-		drain([&](Item &item) {
-			if (const auto *particle = std::get_if<Particle>(&item)) {
-				if (texture != particle->texture) flush_particles();
-				texture = particle->texture;
-				batch.push_back(particle->quad);
-				return;
-			}
-			// Batch only adjacent particles; never cross a wall/object boundary
-			flush_particles();
-			if (auto *face = std::get_if<Face>(&item)) {
+		drain_buffered([&](ParticleTexture *texture, const std::vector<ParticleQuad> &batch) {
 #ifdef ANDROID
-				auto &segment = Segments[face->segment];
-				const int corner = segment.sides[face->side].type == SIDE_IS_TRI_02 ? 1 : 0;
-				const int triangle = face->count == 3 && face->vertices[corner] != segment.verts[Side_to_verts_int[face->side][corner]];
-				android_merged_wall_set_draw_face_context(&segment, face->side, face->base, face->overlay, face->doorway, face->count, triangle);
+			particle_probe_before(batch);
 #endif
-				render_face(face->segment, face->side, face->count, face->vertices.data(), face->base, face->overlay, face->uvls.data(), face->doorway);
-			} else if (const auto *object = std::get_if<QueuedObject>(&item)) {
-				render_object(&Objects[object->index]);
-			} else if (auto *water = std::get_if<Water>(&item)) {
-				ogl_draw_xl_water_portal(water->points, water->colors);
-			}
-		});
-		flush_particles();
+			texture->draw(batch.data(), batch.size());
+#ifdef ANDROID
+			particle_probe_after(unsigned(batch.size()));
+#endif
+		},
+		               [&](Item &item) {
+			               if (auto *face = std::get_if<Face>(&item)) {
+#ifdef ANDROID
+				               auto &segment = Segments[face->segment];
+				               const int corner = segment.sides[face->side].type == SIDE_IS_TRI_02 ? 1 : 0;
+				               const int triangle = face->count == 3 && face->vertices[corner] != segment.verts[Side_to_verts_int[face->side][corner]];
+				               android_merged_wall_set_draw_face_context(&segment, face->side, face->base, face->overlay, face->doorway, face->count, triangle);
+#endif
+				               render_face(face->segment, face->side, face->count, face->vertices.data(), face->base, face->overlay, face->uvls.data(), face->doorway);
+			               } else if (const auto *object = std::get_if<QueuedObject>(&item)) {
+				               render_object(&Objects[object->index]);
+			               } else if (auto *water = std::get_if<Water>(&item)) {
+				               ogl_draw_xl_water_portal(water->points, water->colors);
+			               }
+		               });
 	} catch (const std::exception &error) {
 		xl_transparency_clear();
 		Error("XL transparency rendering: %s", error.what());

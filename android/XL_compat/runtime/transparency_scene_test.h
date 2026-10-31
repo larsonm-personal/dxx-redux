@@ -70,6 +70,29 @@ extern "C" void xl_transparency_test_controls(int active)
 		++visited;
 	});
 	check(visited == 3 && items.empty() && !collecting && Window_clip_left == 59 && Current_seg_depth == 61, "Transparency dispatch did not finish and restore its caller");
+	// Equal buckets reverse insertion; dispatch pair, object, singleton in that order
+	xl_transparency_begin(&segment, 1);
+	maximum_depth = 1000 * 65536;
+	const ParticlePoint particle_position{ center[0] + 20 * 65536, center[1], center[2] };
+	const ParticlePoint object_position{ center[0] + 10 * 65536, center[1], center[2] };
+	const auto enqueue_particle = [&](int id) {
+		Particle value{};
+		value.position = particle_position;
+		value.radius = 1;
+		value.quad.blend = ParticleBlend::weak_additive;
+		value.quad.vertices[0].color[0] = float(id);
+		add(value, particle_position, 10 * 65536);
+	};
+	enqueue_particle(2);
+	add(QueuedObject{ 1, obj.signature, {} }, object_position);
+	enqueue_particle(1);
+	enqueue_particle(0);
+	std::vector<int> buffered_receipt;
+	drain_buffered([&](ParticleTexture *, const std::vector<ParticleQuad> &quads) {
+		for (const auto &quad : quads) buffered_receipt.push_back(int(quad.vertices[0].color[0])); }, [&](Item &item) {
+		check(std::holds_alternative<QueuedObject>(item), "Unexpected item at particle buffer boundary");
+		buffered_receipt.push_back(9); });
+	check(buffered_receipt == std::vector<int>({ 0, 1, 9 }) && items.empty(), "Production buffered dispatch crossed an object boundary or drew a singleton");
 	xl_transparency_begin(&segment, 1);
 	check(xl_transparency_object(1), "Recycled-object control did not enqueue");
 	++obj.signature;

@@ -5,6 +5,7 @@
 #include "ambient_sound.h"
 #include "static_explosion.h"
 #include "effect_targets.h"
+#include "particle_admission.h"
 
 #include <limits>
 #include <algorithm>
@@ -60,6 +61,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	require(blockers.empty(), blocker_message(blockers));
 	const auto producers = producer_layout(v);
 	if (!source_runtime) {
+		require(std::none_of(v.objects.begin(), v.objects.end(), fire_particle_shape), "fire particle objects require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), ambient_sound_shape), "ambient sound objects require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), static_explosion_shape), "static explosion objects require the source-owned XL runtime");
 		require(v.flicker_lights.size() <= 100, "classic probe flicker capacity requires the source-owned XL runtime");
@@ -197,8 +199,9 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
-	const bool ambient_objects = std::any_of(v.objects.begin(), v.objects.end(), ambient_sound_shape);
-	if (modern_layout || ambient_objects) {
+	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || fire_particle_shape(object); };
+	const bool owned_objects = std::any_of(v.objects.begin(), v.objects.end(), owned_effect);
+	if (modern_layout || owned_objects) {
 		// Stock uses explicit section offsets. Retain the original game payload as
 		// inert evidence, then point at records with the audited stock widths
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "object table offset overflow");
@@ -208,11 +211,11 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			require(object.multiplayer == 0 && object.source_end >= object.source_offset + header && object.source_end <= source.size(), "invalid object translation span");
 			const auto start = out.size();
 			out.insert(out.end(), source.begin() + object.source_offset, source.begin() + object.source_offset + 6);
-			const auto end = ambient_sound_shape(object) ? object.source_offset + header : object.source_end;
+			const auto end = owned_effect(object) ? object.source_offset + header : object.source_end;
 			out.insert(out.end(), source.begin() + object.source_offset + (modern_layout ? 7 : 6), source.begin() + end);
-			if (ambient_sound_shape(object)) {
+			if (owned_effect(object)) {
 				patch(out, start + 1, object.reader_id, 1);
-				patch(out, start + 4, 0, 1); // Audio payload and enable state remain source-owned
+				patch(out, start + 4, 0, 1); // Effect payload and enable state remain source-owned
 			}
 		}
 	}

@@ -369,6 +369,7 @@ void particle_geometry_source_controls();
 void particle_fire_source_controls();
 void particle_render_source_controls();
 void particle_order_source_controls();
+void particle_buffer_source_controls();
 void particle_visibility_source_controls();
 void particle_world_source_controls();
 void particle_emitter_source_controls();
@@ -400,6 +401,7 @@ int main(int argc, char **argv)
 		particle_fire_source_controls();
 		particle_render_source_controls();
 		particle_order_source_controls();
+		particle_buffer_source_controls();
 		particle_visibility_source_controls();
 		particle_world_source_controls();
 		particle_emitter_source_controls();
