@@ -1,5 +1,6 @@
 #include "particle_world.h"
 #include "particle_world_receipt.h"
+#include <cstring>
 #include <fstream>
 #include <iostream>
 
