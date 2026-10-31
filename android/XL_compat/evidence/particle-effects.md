@@ -340,3 +340,40 @@ selects fire versus smoke cells, and `CParticleBuffer::Flush` uses emissive
 blending for the former and multiply for the latter. GPU upload, visible
 rendering, saved authored state and Android lifecycle remain unqualified.
 Particle admission stays blocked; resource preparation is not rendered fidelity.
+
+## Fire billboard and GPU backend checkpoint
+
+Image preparation is published in draft PR #233, commit `9c2d1bd67`, stacked on
+#232. Rendering work continues in the visible `xl_more_82_particle_render` branch.
+
+Pinned `TRANSFORM_PARTICLE_VERTICES` is zero: the active `CParticle::Setup`
+constructs world-space corners from fixed camera axes. The new billboard
+consumer passes 1,536 exact source comparisons on Windows/x64 and Linux for
+corners, UV orientation and one-pixel borders, lifetime scale, supplied rotation
+axes and policy, white color/alpha control, and fire versus smoke selection.
+Camera matrix construction and projection are supplied inputs in this owner;
+they still require native integration evidence.
+
+The source emitter clears its particle storage. `Create` chooses `m_bRotate`
+using the preceding slot's frame before assigning the new frame: fresh slots
+rotate, while recycled slots depend on the old atlas cell. This is defined
+reuse behavior, not uninitialized memory. Production now retains that rotation
+choice and the existing creation/emitter comparisons verify it, including
+drained/reused rings. Rotation advancement during rendering is not yet connected.
+
+The XL-local drawing backend accepts ordered camera-space quads. Actual pinned
+`CParticleBuffer::Flush` blend selection and `COGL::SetBlendMode` dispatch verify
+that fire uses `ONE, ONE_MINUS_SRC_COLOR` (weak additive), while smoke uses
+`DST_COLOR, ZERO` (multiply). The existing EGL/POG owner checks the production
+RGBA upload and particle draw with complete synthetic-atlas pixel comparisons,
+wall depth rejection, no scene-depth writes, and restoration of blend/depth/cull,
+texture binding and alpha-reference state. Mixed fire/smoke draws also check
+that the backend preserves the caller's ordering. These are controlled GPU
+inputs, not original-mission scene captures or Android rendering evidence.
+
+The Windows/x86 native engine builds with the backend; the existing effect gate
+passes in 5.37 seconds. No core D1/D2/application source or new test startup was
+added. Live image/GL lifetime ownership, camera construction/projection,
+visibility and transparent ordering, render animation, save restoration and
+Android/original-Pumo integration remain to be done. Particle admission remains
+blocked throughout this checkpoint.

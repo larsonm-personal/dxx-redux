@@ -88,8 +88,9 @@ if(BUILD_TESTING)
         find_path(XL_GPU_PHYSFS_INCLUDE physfs.h REQUIRED)
         add_executable(
             xl_pog_gpu_test
-            tests/pog_gpu_egl.cpp runtime/pog_renderer.cpp ../../d2/arch/ogl/ogl.c
-            ../../d2/arch/ogl/oglprog.c ../app/src/main/cpp/shared/ogl_shader_runtime.c)
+            tests/pog_gpu_egl.cpp runtime/pog_renderer.cpp runtime/particle_renderer.cpp
+            ../../d2/arch/ogl/ogl.c ../../d2/arch/ogl/oglprog.c
+            ../app/src/main/cpp/shared/ogl_shader_runtime.c)
         target_include_directories(
             xl_pog_gpu_test
             PRIVATE ../../d2/include

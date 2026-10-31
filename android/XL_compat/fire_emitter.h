@@ -73,7 +73,8 @@ struct FireEmitter {
 					for (int i = 0; i < created; ++i) {
 						ParticlePoint at;
 						for (unsigned axis = 0; axis < 3; ++axis) at[axis] = signed_checked(std::int64_t((origin[axis] + step[axis] * float(i)) * 65536.0f));
-						slots[std::size_t((next + i) % limit)] = create_fire_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, random);
+						auto &slot = slots[std::size_t((next + i) % limit)];
+						slot = create_fire_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, random, &slot);
 					}
 					count += created;
 				}

@@ -1,0 +1,188 @@
+// Camera axes are explicit inputs; the pinned active Setup body builds vertices
+#include "particle_render.h"
+#include <cmath>
+#include <iostream>
+namespace particle_render_reference
+{
+#include "xl_reference_particle_constants.h"
+constexpr double PI = 3.141592653589793240;
+struct CFixVector {
+	std::array<int, 3> values{};
+};
+struct CFixMatrix {
+	struct {
+		struct {
+			CFixVector r, u;
+		} dir;
+	} m;
+};
+struct CFloatVector3 {
+	union {
+		struct {
+			float x, y, z;
+		} coord;
+		float values[3];
+	} v{};
+	void Assign(const CFixVector &p)
+	{
+		for (unsigned i = 0; i < 3; ++i) v.values[i] = float(p.values[i]) / 65536.0f;
+	}
+	CFloatVector3 &operator*=(float scale)
+	{
+		for (auto &value : v.values) value *= scale;
+		return *this;
+	}
+	CFloatVector3 &operator+=(const CFloatVector3 &p)
+	{
+		for (unsigned i = 0; i < 3; ++i) v.values[i] += p.v.values[i];
+		return *this;
+	}
+	CFloatVector3 &operator-=(const CFloatVector3 &p)
+	{
+		for (unsigned i = 0; i < 3; ++i) v.values[i] -= p.v.values[i];
+		return *this;
+	}
+	CFloatVector3 operator-(const CFloatVector3 &p) const
+	{
+		auto r = *this;
+		return r -= p;
+	}
+	CFloatVector3 operator+(const CFloatVector3 &p) const
+	{
+		auto r = *this;
+		return r += p;
+	}
+	void Neg()
+	{
+		*this *= -1;
+	}
+	static void Normalize(CFloatVector3 &)
+	{
+		throw std::runtime_error("Unexpected non-fire normalization");
+	}
+	static CFloatVector3 Cross(const CFloatVector3 &, const CFloatVector3 &)
+	{
+		throw std::runtime_error("Unexpected non-fire cross product");
+	}
+};
+struct Color {
+	std::array<float, 4> values{ 1, 1, 1, 1 };
+	float &Alpha()
+	{
+		return values[3];
+	}
+};
+struct TexCoord {
+	struct {
+		float u = 0, v = 0, l = 0;
+	} v;
+};
+struct tParticleVertex {
+	CFloatVector3 vertex;
+	Color color;
+	TexCoord texCoord;
+};
+struct {
+	struct {
+		struct {
+			struct {
+				CFixMatrix mOrient;
+				CFixVector vPos;
+			} viewer;
+		} mine;
+	} renderData;
+} gameData;
+struct {
+	struct {
+		struct {
+			bool bWiggleBubbles = false, bRotate = true;
+		} particles;
+	} render;
+} options;
+auto *gameOpts = &options;
+struct ImageInfo {
+	float xBorder = 0, yBorder = 0;
+} image_info;
+ImageInfo &ParticleImageInfo(int type)
+{
+	if (type != FIRE_PARTICLES) throw std::runtime_error("Unexpected non-fire image");
+	return image_info;
+}
+int Rand(int)
+{
+	throw std::runtime_error("Fire Setup consumed random input");
+}
+struct CParticle {
+	CFixVector m_vPos, m_vDir;
+	CFixMatrix mSparkOrient;
+	CFixMatrix mRot[2][64];
+	int m_nType = FIRE_PARTICLES, m_nFrames = 2, m_iFrame = 0, m_nFadeType = 3, m_bBlowUp = 0, m_bEmissive = 2, m_nOrient = 0, m_nRotFrame = 0, m_bRotate = 0;
+	float m_decay = 0, m_nHeight = 0, m_nWidth = 0, m_deltaUV = .5f;
+	Color m_renderColor;
+	TexCoord m_texCoord;
+	int32_t RenderType();
+	void Setup(bool, float, char, char, tParticleVertex *, int32_t);
+};
+#include "xl_reference_particle_render.h"
+} // namespace particle_render_reference
+
+void particle_render_source_controls()
+{
+	using namespace particle_render_reference;
+	xl_compat::ParticleView view{};
+	view.basis = { { 60491, 9001, -23411 }, { -12017, 64003, 3501 } };
+	gameData.renderData.mine.viewer.mOrient.m.dir.r.values = view.basis.right;
+	gameData.renderData.mine.viewer.mOrient.m.dir.u.values = view.basis.up;
+	CParticle source{};
+	// Distinct supplied axes expose wrong rotation selection independently of the
+	// separate camera/matrix consumer; these need not be orthonormal
+	for (unsigned i = 0; i < 64; ++i) {
+		view.rotated[i] = { { int(50001 + i * 173), int(21003 - i * 91), -13011 }, { -19007, int(48003 + i * 57), int(14003 + i * 83) } };
+		source.mRot[1][i].m.dir.r.values = view.rotated[i].right;
+		source.mRot[1][i].m.dir.u.values = view.rotated[i].up;
+	}
+	unsigned cases = 0;
+	for (int frame : { 0, 2 })
+		for (int orientation = 0; orientation < 4; ++orientation)
+			for (int rotation : { 0, 1, 31, 63 })
+				for (unsigned policy = 0; policy < 4; ++policy)
+					for (unsigned extent : { 8u, 128u, 512u })
+						for (float decay : { 0.0f, .125f, .75f, 1.0f }) {
+							xl_compat::FireParticle particle{};
+							particle.position = { -281117, 723003, 1759911 };
+							particle.frame = frame;
+							particle.orientation = orientation;
+							particle.rotation = rotation;
+							particle.rotates = (policy & 1) != 0;
+							particle.width = 1.3125f;
+							particle.height = 2.875f;
+							particle.decay = decay;
+							view.rotate = (policy & 2) != 0;
+							const bool alpha = (cases & 1) != 0;
+							source.m_vPos.values = particle.position;
+							source.m_iFrame = frame;
+							source.m_nOrient = orientation;
+							source.m_nRotFrame = rotation;
+							source.m_bRotate = particle.rotates ? -1 : 0;
+							source.m_nWidth = particle.width;
+							source.m_nHeight = particle.height;
+							source.m_decay = decay;
+							source.m_texCoord.v.u = float(frame % 2) * .5f;
+							source.m_texCoord.v.v = float(frame / 2) * .5f;
+							gameOpts->render.particles.bRotate = view.rotate;
+							image_info = { 1.0f / float(extent), 1.0f / float(extent) };
+							tParticleVertex expected[4];
+							source.Setup(alpha, .13f, char(frame), char(rotation), expected, 0);
+							const auto actual = xl_compat::fire_particle_quad(particle, view, extent, extent, alpha);
+							if ((actual.blend == xl_compat::ParticleBlend::multiply) != (source.RenderType() >= PARTICLE_TYPES)) throw std::runtime_error("Fire billboard blend selection differs from source");
+							for (unsigned i = 0; i < 4; ++i) {
+								const auto &a = actual.vertices[i];
+								const auto &b = expected[i];
+								for (unsigned axis = 0; axis < 3; ++axis)
+									if (a.position[axis] != b.vertex.v.values[axis]) throw std::runtime_error("Fire billboard world vertex differs from source");
+								if (a.color != b.color.values || a.uv[0] != b.texCoord.v.u || a.uv[1] != b.texCoord.v.v) throw std::runtime_error("Fire billboard color/atlas coordinate differs from source");
+							}
+							++cases;
+						}
+	std::cout << "Pinned fire billboards: " << cases << " world-space quad, UV border/orientation, decay, rotation policy, white color and render-type comparisons passed\n";
+}

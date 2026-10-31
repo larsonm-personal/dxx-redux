@@ -71,7 +71,7 @@ void compare_emitter(const xl_compat::FireEmitter &actual, CParticleEmitter &sou
 		const int slot = (actual.first + i) % int(actual.slots.size());
 		const auto &a = actual.slots[std::size_t(slot)];
 		const auto &b = source.m_particles[slot];
-		if (a.position != point(b.m_vPos) || a.start != point(b.m_vStartPos) || a.drift != point(b.m_vDrift) || a.direction != point(b.m_vDir) || a.life != b.m_nLife || a.ttl != b.m_nTTL || a.updated != b.m_nUpdated || a.moved != b.m_nMoved || a.segment != b.m_nSegment || a.frame != b.m_iFrame || a.rotation != b.m_nRotFrame || a.orientation != b.m_nOrient || a.bounce != b.m_nBounce || a.locate_delay != b.m_nDelayPosUpdate || a.radius != b.m_nRad || a.width != b.m_nWidth || a.height != b.m_nHeight || a.decay != b.m_decay)
+		if (a.position != point(b.m_vPos) || a.start != point(b.m_vStartPos) || a.drift != point(b.m_vDrift) || a.direction != point(b.m_vDir) || a.life != b.m_nLife || a.ttl != b.m_nTTL || a.updated != b.m_nUpdated || a.moved != b.m_nMoved || a.segment != b.m_nSegment || a.frame != b.m_iFrame || a.rotation != b.m_nRotFrame || a.orientation != b.m_nOrient || a.bounce != b.m_nBounce || a.locate_delay != b.m_nDelayPosUpdate || a.radius != b.m_nRad || a.width != b.m_nWidth || a.height != b.m_nHeight || a.decay != b.m_decay || a.rotates != (b.m_bRotate != 0))
 			throw std::runtime_error("Pinned authored fire emitter particle ring differs");
 	}
 }

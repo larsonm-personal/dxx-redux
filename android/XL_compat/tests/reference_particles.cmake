@@ -149,6 +149,46 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_geometry
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_geometry.cpp)
 
+# Execute the active world-space billboard branch, not the disabled transformed vertex alternative
+# which has different corner ordering
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp" render_source)
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/particles.h" render_header)
+if(NOT render_header MATCHES "#define TRANSFORM_PARTICLE_VERTICES 0")
+    message(FATAL_ERROR "Particle billboard source branch changed")
+endif()
+set(extracted "// Actual pinned world-space particle billboard and render type\n")
+foreach(name IN ITEMS PARTICLE_TYPES SPARK_PARTICLES)
+    string(REGEX MATCH "#define[ \t]+${name}[ \t]+[^\n]+" constant "${render_header}")
+    if(NOT constant)
+        message(FATAL_ERROR "Missing particle render constant: ${name}")
+    endif()
+    string(APPEND extracted "${constant}\n")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "int32_t CParticle::RenderType (")
+string(FIND "${render_source}"
+            "#else // -----------------------------------------------------------------------"
+            start)
+if(start LESS 0)
+    message(FATAL_ERROR "Missing active world-space particle Setup branch")
+endif()
+string(SUBSTRING "${render_source}" ${start} -1 render_tail)
+string(FIND "${render_tail}" "void CParticle::Setup (" start)
+if(start LESS 0)
+    message(FATAL_ERROR "Missing active particle Setup body")
+endif()
+string(SUBSTRING "${render_tail}" ${start} -1 render_tail)
+string(FIND "${render_tail}" "\n}\n" end)
+if(end LESS 0)
+    message(FATAL_ERROR "Missing particle Setup end")
+endif()
+math(EXPR length "${end} + 3")
+string(SUBSTRING "${render_tail}" 0 ${length} render_body)
+string(APPEND extracted "${render_body}\n")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_render.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_particle_render.cpp)
+
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/particles.h" particle_header)
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp" particle_source)
 set(extracted "// Active pinned particle creation body and its visual consumers\n")
