@@ -1,5 +1,6 @@
 #include "../lightning_blur_shader.h"
 #include "xl_reference_lightning_blur.h"
+#include "lightning_glow_gpu_controls.h"
 
 static void lightning_primitive_gpu_controls()
 {
@@ -142,6 +143,7 @@ static void lightning_primitive_gpu_controls()
 static void lightning_blur_shader_controls()
 {
 	lightning_primitive_gpu_controls();
+	lightning_composite_gpu_controls();
 	const char *vertex = "varying vec2 glowUV; void main() { glowUV=gl_MultiTexCoord0.xy; gl_Position=ftransform(); }";
 	const GLuint programs[2] = { soft_test_program(blurVS, blurFS), soft_test_program(vertex, xl_lightning_blur_glsl) };
 	GLuint textures[3], framebuffer;

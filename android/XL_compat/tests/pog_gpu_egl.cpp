@@ -18,6 +18,7 @@
 #include "../particle_render.h"
 #include "../particle_buffer.h"
 #include "../runtime/lightning_gpu.h"
+#include "../runtime/lightning_glow_gpu.h"
 #include "../transparency_order.h"
 #include "../transparency.h"
 #ifdef XL_POG_SHADER_REFERENCE

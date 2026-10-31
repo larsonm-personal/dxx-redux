@@ -139,3 +139,35 @@ implementation and validation. No admission gate is relaxed and no new original
 mission route is claimed. In particular, desktop GL line smoothing is not an
 Android qualification. The prior original-Pumo route through level 8 is reused;
 there is no reason to repeat that route for these unconnected rendering helpers.
+
+## Offscreen glow composition
+
+`LightningGlowGpu` accumulates compatible bolts in one depth-backed color target,
+then performs the source's six blur passes and additive composition at the batch
+boundary. Initial horizontal/vertical passes replace, later pairs add; radii
+3, 6 and 9 expand the drawing rectangle without changing shader offsets. The
+source brightness is 1.05 and the original unblurred layer is not added again.
+A compatible `begin` retains accumulated pixels. Each draw returns to caller
+state, equivalent to source `Done`; only `end` performs the blur. The depth
+snapshot belongs to the caller and is detached at the end of the batch.
+
+The existing EGL owner executes extracted, hash-verified `CGlowRenderer::Render`
+and `CGlowRenderer::End`, with only engine/GL boundary adapters. Twenty-four
+complete-pixel comparisons cover single/two-bolt accumulation, visible/occluded
+depth, full/interior/outside-edge rectangles and an offset viewport. All channels
+agree within one byte, and original scene depth is unchanged. Primitive inputs
+use the separately qualified backend on both sides so this comparison isolates
+composition, rather than claiming another independent geometry oracle.
+
+Additional controls verify compatible Begin retention, offscreen rejection,
+empty and repeated End, repeated discard, and restoration of program, vertex
+array/buffer, unpack buffer, read/draw targets, viewport, scissor/stencil, color
+mask/clear color, active texture/bindings, blend, culling, depth and line state.
+The source test harness restores its fixed-function state before returning to
+Redux's cached GL state. Existing real context-recreation particle controls and
+all GPU regression owners pass afterward.
+
+The compositor consumes caller-supplied projected bounds and a validated depth
+snapshot. Native ownership of those inputs, queue flush boundaries, original
+corona artwork, Android rendering/context behavior, light and audio remain
+pending. This component evidence does not qualify the original level 9 mission.
