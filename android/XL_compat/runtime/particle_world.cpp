@@ -8,6 +8,23 @@ extern "C" {
 
 namespace xl_compat
 {
+ParticleSide compile_particle_side(int segment, int side, const ClassicLightingSide &geometry)
+{
+	const auto &native = Segments[segment];
+	ParticleSide compiled;
+	compiled.faces = 2;
+	compiled.child = native.children[side];
+	compiled.normals = geometry.fixed_normals;
+	std::array<int, 6> triangles;
+	for (unsigned face = 0; face < 2; ++face)
+		for (unsigned corner = 0; corner < 3; ++corner) triangles[face * 3 + corner] = native.verts[classic_side_corners[side][geometry.face.triangles[face][corner]]];
+	const int anchor = std::min(triangles[0], triangles[2]), opposite = std::min(triangles[1], triangles[4]);
+	const auto &a = Vertices[anchor], &b = Vertices[opposite];
+	compiled.anchor = { a.x, a.y, a.z };
+	compiled.pokes_out = particle_plane_distance({ b.x, b.y, b.z }, compiled, unsigned(triangles[4] >= triangles[1])) > ParticleWorld::plane_tolerance;
+	return compiled;
+}
+
 ParticleWorld compile_particle_world(const Inventory &source)
 {
 	if (Highest_segment_index < 0 || source.segments.size() != std::size_t(Highest_segment_index) + 1 || source.vertices.size() != std::size_t(Highest_vertex_index) + 1)
@@ -36,16 +53,7 @@ ParticleWorld compile_particle_world(const Inventory &source)
 			const auto geometry = compile_classic_lighting_side(int(index), int(side));
 			segment.center = geometry.segment_center;
 			auto &compiled = segment.sides[side];
-			compiled.faces = 2;
-			compiled.child = native.children[side];
-			compiled.normals = geometry.fixed_normals;
-			std::array<int, 6> triangles;
-			for (unsigned face = 0; face < 2; ++face)
-				for (unsigned corner = 0; corner < 3; ++corner) triangles[face * 3 + corner] = native.verts[classic_side_corners[side][geometry.face.triangles[face][corner]]];
-			const int anchor = std::min(triangles[0], triangles[2]), opposite = std::min(triangles[1], triangles[4]);
-			const auto &a = Vertices[anchor], &b = Vertices[opposite];
-			compiled.anchor = { a.x, a.y, a.z };
-			compiled.pokes_out = particle_plane_distance({ b.x, b.y, b.z }, compiled, unsigned(triangles[4] >= triangles[1])) > ParticleWorld::plane_tolerance;
+			compiled = compile_particle_side(int(index), int(side), geometry);
 			std::int64_t distance = 0;
 			unsigned inside = 0;
 			for (unsigned face = 0; face < 2; ++face) {

@@ -41,6 +41,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
+		// Wide flags stay source-owned; modern doors consume bit 8, higher bits are reserved
+		if (modern_runtime_layout(level) && issue.feature == "wall_flags") continue;
 		if (issue.feature == "effect_particles") continue;
 		if (issue.feature == "effect_object_types" || issue.feature == "effect_sounds" ||
 		    issue.feature == "effect_trigger_target" || issue.feature == "object_effect_trigger_target") continue;

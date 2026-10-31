@@ -225,7 +225,8 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		patch(out, new_game_offset + 55, 24);
 		for (std::size_t i = 0; i < v.walls.size(); ++i) {
 			const auto start = static_cast<std::size_t>(v.sections.at(1).offset) + i * 25;
-			require(v.walls[i].flags <= 255 && start + 25 <= source.size(), "invalid wall translation span");
+			require(v.walls[i].flags >= 0 && v.walls[i].flags <= 65535 && start + 25 <= source.size(), "invalid wall translation span");
+			// Native mutable flags retain the low byte; high authored flags remain XL-owned
 			out.insert(out.end(), source.begin() + start, source.begin() + start + 18);
 			out.insert(out.end(), source.begin() + start + 19, source.begin() + start + 25);
 		}

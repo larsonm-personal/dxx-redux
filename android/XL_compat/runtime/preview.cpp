@@ -1,6 +1,9 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
 #include "mission_progress.h"
+#include "../door_obstruction.h"
+#include "particle_world.h"
+#include "geometry.h"
 #include "../producer_layout.h"
 #include "projectile.h"
 #include "speed_boost.h"
@@ -391,7 +394,11 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 				int resolved = -1;
 				if (obj.type == OBJ_PLAYER) resolved = Player_ship->model_num;
 				else if (obj.type == OBJ_ROBOT) resolved = graph.robot_data[obj.id].model_num;
-				else if (obj.type == OBJ_CNTRLCEN) resolved = saved;
+				// Both XL Verify and Redux verify_object replace placed-mine models
+				else if (obj.type == OBJ_WEAPON && obj.id == PMINE_ID) {
+					resolved = Weapon_info[obj.id].model_num;
+					if (resolved < 0) throw std::runtime_error("placed mine requires a polygon model");
+				} else if (obj.type == OBJ_CNTRLCEN) resolved = saved;
 				for (int model = 0; resolved < 0 && model < N_polygon_models; ++model)
 					if (!d_stricmp(level.model_names[saved].c_str(), Pof_names[model])) {
 						resolved = model;
@@ -754,6 +761,12 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		pending_level.clear();
 		if (result) return result;
 		auto level = std::make_unique<xl_compat::Inventory>(std::move(probe.source));
+		// XL level objects start with a zero hit count; Redux stores the last victim
+		// Level files contain only weapon parent fields, never an earned hit history
+		if (xl_compat::modern_runtime_layout(*level))
+			for (int i = 0; i <= Highest_object_index; ++i)
+				if (Objects[i].type == OBJ_WEAPON && Objects[i].control_type == CT_WEAPON)
+					Objects[i].ctype.laser_info.last_hitobj = -1;
 		if (level->vertices.size() != std::size_t(Num_vertices) || level->segments.size() != std::size_t(Num_segments))
 			throw std::runtime_error("XL source does not match loaded geometry counts");
 		for (int i = 0; i < Num_vertices; ++i) {
@@ -1213,6 +1226,42 @@ extern "C" uint64_t xl_preview_trigger_mask(void)
 extern "C" int xl_preview_trigger_activated(int index)
 {
 	return index >= 0 && index < int(activated_triggers.size()) && activated_triggers[index];
+}
+
+extern "C" int xl_door_is_free(int segment_index, int side)
+{
+	if (!source || !xl_compat::modern_runtime_layout(*source) || (Game_mode & GM_MULTI)) return -1;
+	if (segment_index < 0 || segment_index >= Num_segments || side < 0 || side >= 6) return 0;
+	auto &front = Segments[segment_index];
+	const int child = front.children[side], wall = front.sides[side].wall_num;
+	if (child < 0 || child >= Num_segments || wall < 0 || std::size_t(wall) >= source->walls.size()) return 0;
+	const int connected = find_connect_side(&front, &Segments[child]);
+	if (connected < 0 || connected >= 6) return 0;
+	struct World {
+		int segment;
+		std::array<xl_compat::ParticleSide, 2> sides;
+		int first() const
+		{
+			return Segments[segment].objects;
+		}
+		int next(int object) const
+		{
+			return Objects[object].next;
+		}
+		int type(int object) const
+		{
+			return Objects[object].type;
+		}
+		bool pokes(int object, bool back) const
+		{
+			const auto &owner = Objects[object];
+			const auto &plane = sides[back ? 1 : 0];
+			return xl_compat::door_sphere_pokes(owner.size, plane.faces, plane.pokes_out, [&](unsigned face) {
+				return xl_compat::particle_plane_distance({ owner.pos.x, owner.pos.y, owner.pos.z }, plane, face);
+			});
+		}
+	} world{ segment_index, { xl_compat::compile_particle_side(segment_index, side, xl_compat::compile_classic_lighting_side(segment_index, side)), xl_compat::compile_particle_side(child, connected, xl_compat::compile_classic_lighting_side(child, connected)) } };
+	return !xl_compat::door_is_blocked(world, (source->walls[wall].flags & 256) != 0);
 }
 
 extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, xl_texture_emitter *emitter)

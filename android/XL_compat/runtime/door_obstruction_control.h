@@ -5,7 +5,7 @@
 namespace xl_door_obstruction_control
 {
 template <class Check>
-void run(Check check)
+void run(Check check, bool ignore_marker = false)
 {
 	check(xl_level_extensions_active() && !Num_open_doors && Num_walls >= 2 &&
 	          Walls[0].segnum == 24 && Walls[0].sidenum == 5 && Walls[1].segnum == 21 &&
@@ -49,7 +49,7 @@ void run(Check check)
 			vm_vec_scale_add2(&face, &Segments[from].sides[side_index].normals[0], F1_0 / 16);
 			guard.object = obj_create(type, 0, from, &face, &vmd_identity_matrix, F1_0 / 8, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_NONE, RT_NONE);
 			check(guard.object >= 0, "Cannot create obstruction control actor");
-			const bool ignored = type == OBJ_WEAPON || type == OBJ_FIREBALL || type == 19 || type == 20;
+			const bool ignored = from == 21 || type == OBJ_WEAPON || type == OBJ_FIREBALL || type == 19 || type == 20 || (ignore_marker && type == OBJ_MARKER);
 			for (int phase = 0; phase < 3; ++phase) {
 				Walls[0] = guard.front;
 				Walls[1] = guard.back;

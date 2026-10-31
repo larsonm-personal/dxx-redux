@@ -7,6 +7,7 @@
 #include <string>
 #include "xl_reference_door_capacity.h"
 #include "xl_reference_door_object_types.h"
+#include "../door_obstruction.h"
 #define Assert assert
 using fix = int32_t;
 constexpr int WALL_DOOR_CLOSED = 0, WALL_DOOR_OPENING = 1, WALL_DOOR_WAITING = 2, WALL_DOOR_CLOSING = 3, WALL_DOOR_OPEN = 4;
@@ -92,6 +93,7 @@ CWall *WALL(int index)
 	return &walls[index];
 }
 bool obstructed = false;
+int obstruction_sides = -1;
 struct CObject {
 	struct {
 		int16_t nType = 2, nNextInSeg = -1;
@@ -115,7 +117,7 @@ struct CSegment {
 	}
 	bool PokesThrough(int, int)
 	{
-		return obstructed;
+		return obstruction_sides < 0 ? obstructed : (obstruction_sides & (1 << index)) != 0;
 	}
 	int32_t DoorIsBlocked(int32_t, bool);
 	int ConnectedSide(CSegment *)
@@ -147,9 +149,11 @@ void NDRecordDoorOpening(int, int) {}
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
+void door_masks_reference();
 int main(int argc, char **argv)
 {
 	try {
+		door_masks_reference();
 		if (argc != 3) throw std::runtime_error("Expected close-door transition and animation samples");
 		segments[1].index = 1;
 		std::ifstream in(argv[1]);
@@ -180,15 +184,36 @@ int main(int argc, char **argv)
 		int obstruction_samples = 0;
 		for (int type = 0; type <= 20; ++type)
 			for (bool ignore_marker : { false, true })
-				for (bool overlap : { false, true }) {
+				for (int geometry = 0; geometry < 8; ++geometry) {
 					obstruction_object.info.nType = int16_t(type);
-					obstructed = overlap;
-					const bool ignored = type == OBJ_WEAPON || type == OBJ_FIREBALL || type == OBJ_EXPLOSION || type == OBJ_EFFECT || (ignore_marker && type == OBJ_MARKER);
-					if (bool(segments[0].DoorIsBlocked(0, ignore_marker)) != (overlap && !ignored))
+					obstruction_sides = geometry & 3;
+					segments[0].m_objects = geometry & 4 ? -1 : 0;
+					segments[1].m_objects = geometry & 4 ? 0 : -1;
+					struct World {
+						int first() const
+						{
+							return segments[0].m_objects;
+						}
+						int next(int object) const
+						{
+							return OBJECT(object)->info.nNextInSeg;
+						}
+						int type(int object) const
+						{
+							return OBJECT(object)->info.nType;
+						}
+						bool pokes(int object, bool back) const
+						{
+							return segments[back ? 1 : 0].PokesThrough(object, 0);
+						}
+					} world;
+					if (bool(segments[0].DoorIsBlocked(0, ignore_marker)) != xl_compat::door_is_blocked(world, ignore_marker))
 						throw std::runtime_error("Source door obstruction filter differs");
 					++obstruction_samples;
 				}
-		std::cout << obstruction_samples << " extracted-reference object-filter cases passed; ignore-marker remains outside runtime admission\n";
+		std::cout << obstruction_samples << " extracted-reference door obstruction policy comparisons passed\n";
+		obstruction_sides = -1;
+		segments[0].m_objects = segments[1].m_objects = 0;
 		std::ifstream animations(argv[2]);
 		int automatic, opening, frames, duration, elapsed_ticks, expected_state, expected_flags, expected_frame, expected_count, expected_time;
 		int animation_count = 0;

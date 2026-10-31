@@ -694,3 +694,13 @@ Ordinary sound replacements have different selection rules from named actions.
 The [classic bank controls](evidence/classic-audio-bank.md) cover owned resources,
 bank suppression, stereo decoding and explicit rejection while the replacement
 playback consumer remains unimplemented.
+
+# Modern wall flags and placed mines
+
+Modern wall flags retain their complete authored value while native mutable
+flags use the low byte. Marker obstruction and sphere/plane tests follow the
+pinned XL source; see [marker-door evidence](evidence/door-markers.md).
+[Placed-mine evidence](evidence/placed-mines.md) covers weapon-model admission,
+fresh empty hit histories and the original Pumo authored route through level 7,
+followed by hub checkpoint recovery. This is controlled dispatch, not a human
+playthrough or whole-campaign qualification.

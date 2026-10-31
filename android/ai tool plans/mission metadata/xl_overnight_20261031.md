@@ -1134,3 +1134,378 @@ Next: focused branch94 final diff review, evidence document and selected-file
 commit/push/draft PR above93. All94 changes remain uncommitted. Preserve unrelated
 manifest/shearbase/w5am files and old continuation/handoff edits. Continue toward
 noon; restore emulator original SwiftShader launch configuration from11:30.
+
+## Branch94 published and next bounded chunk, 04:48 Pacific
+
+Commit118f28044548163739c0d26a9f2c4620a4833a4d pushed to origin
+xl_more_94_mission_exits. Draft PR247:
+https://github.com/larsonm-personal/dxx-redux/pull/247
+Verified OPEN/draft, base xl_more_93_outdoors_lighting, one commit, exact head.
+CI queued/in progress at publication; parent246 all executed checks successful.
+No live local build/test processes. Unrelated working files remain unstaged.
+
+Next bounded chunk: wide XL wall flags / automatic-door marker obstruction.
+Current inventory shows original tulev1.rl2 has exactly one portable blocker,
+wall181 flags65432 (0xff98). Pinned wall.h defines WALL_IGNORE_MARKER=256;
+upper reserved bits also set, so do not normalize by merely narrowing to byte.
+Pinned CWall::Read reads UShort for modern game version; runtime consumers use
+IgnoreMarker in main/segment.cpp828 and main/wall.cpp510,841. DoorIsBlocked
+in main/segment.cpp625 skips markers conditionally. Preserve low classic flags,
+carry marker policy in XL-owned metadata, audit reserved-bit consumers against
+source, extract reference behavior, then qualify actual door obstruction and
+original tulev1 admission. Do not admit by simply deleting the wall_flags gate.
+
+Other five blocked levels combine lightning/particle subtypes, object triggers,
+additive walls and these flags. This chunk directly extends original sequential
+route beyond mvlev6 while retaining the independent gates. Inventory receipts:
+temp/xl-skybox-20261031/pumo-bounded-requirements.json and
+pumo-current-inventory.json (large: parse/project fields, never dump full).
+
+## Branch95 door-marker implementation in progress, 04:52 Pacific
+
+Created xl_more_95_door_markers from published94 at118f28044548163739c0d26a9f2c4620a4833a4d.
+Uncommitted new door_obstruction.h matches pinned object exclusions and front-list/
+both-side traversal. Existing reference_close_door.cpp now compares production
+policy against extracted DoorIsBlocked (existing84 cases); needs expansion for
+asymmetric geometry/list membership, plus live modern integration controls.
+
+Important source/runtime distinction: existing runtime/doors.cpp blocked() has an
+intentional two-list geometry correction for previously qualified legacy XL.
+Modern layout now routes through xl_door_is_free in preview.cpp, which owns full
+source wall flags and uses bit256. Legacy path remains unchanged. Added API in
+preview.h and one call in doors.cpp. Initially considered core is_door_free hook,
+then removed it after locating the existing XL door owner. d2/main/wall.c should
+have no remaining diff. Do not duplicate obstruction handling in core.
+
+Admission/probe translation gates remain unchanged: wide wall flags still reject.
+Before admission: audit reserved flag consumers, add modern integration fixtures
+with marker flag both states, compare actual runtime geometry/lifecycle and disk
+restore, test original tulev1. Existing source policy walks only front object's
+linked list and tests both side planes; do not accidentally replace this with
+legacy two-list behavior. Source PokesThrough ignores zero-size objects.
+
+Formatter initial50371 failed solely installed clang-format access denied;
+escalated57813 terminal0 all scoped checks pass. Native build57163 LIVE; wait
+30-60seconds then poll, do not restart on timeout. Command render-native-build.cmd
+writes temp/xl-skybox-20261031/render-native-build.log. No Android build/test yet.
+Reference owner already exists: tests/reference_close_door.cmake extracts pinned
+DoorIsBlocked. Test xl_close_doors via tests/close_door.cmake produces native
+close-door-samples.txt/door-animation-samples.txt then calls reference executable.
+Existing legacy controls runtime/door_obstruction_control.h expect two-sided
+actor blocking and should remain valid for legacy fixtures.
+
+Native57163 terminated1: find_connect_side requires non-const segment pointers.
+Corrected local front reference to auto& (no behavioral change). Rebuild42357
+is now live; same render-native-build.log. All other handles terminal. Admission
+still blocked and no claim of runtime validation yet.
+
+## Branch95 source geometry mismatch isolated, 04:56 Pacific
+
+Build42357 terminal0. Expanded extracted DoorIsBlocked policy comparisons from84
+cases to336 (21types x2marker modes x4overlap patterns x2list memberships) in
+reference_close_door.cpp; formatter81026 terminal0. Reference build succeeded.
+First xl_close_doors failed Two-sided actor obstruction differs, as expected:
+existing fixture IS modern23/40, not legacy. Corrected connected-only actor
+expectations in close_door_test.h and door_obstruction_control.h to source front
+list behavior. Formatter22054 terminal0, nativebuild77840 terminal0.
+
+Second xl_close_doors terminates1 at Full-pool reversal allocated or failed.
+Root cause now proven by source: check_poke uses Redux get_seg_masks without
+bCheckPoke, so checking the back segment marks objects wholly past its plane as
+intersecting. Source CSegment::PokesThrough calls SideMasks(...,true), which
+calls CSide::Masks with bCheckPoke. main/side.cpp493: each face requires BOTH
+xDist-xRad < -PLANE_DIST_TOLERANCE AND xDist+xRad >= -PLANE_DIST_TOLERANCE;
+planar two-face sides require both counts, otherwise at least one. Zero radius
+is excluded. Do NOT weaken the full-pool lifecycle assertion.
+
+Next fix: use existing compiled XL side geometry, not core check_poke, for modern
+sphere/door intersection. runtime/particle_world.cpp already compiles exact side
+anchors/normals/IsPlanar equivalent from compile_classic_lighting_side:
+triangles from compiled classic side; anchor=min(triangles0,triangles2),
+opposite=min(triangles1,triangles4), pokes_out=distance(opposite, chosenface)>250.
+ParticleSide in ../particle_world.h has anchor/normals/faces/pokes_out; its
+particle_plane_distance uses fixed_vector_dot. Reuse or factor the side compiler
+rather than approximating geometry. Add source Masks/PokesThrough comparison
+with boundary distances and planar/nonplanar cases, then rerun native owner.
+
+All process handles terminal. Current tests fail (known geometry bug), admission
+still blocked; no Android build/test for95. Parent247 checked04:53 exact118f2804:
+no failures; Windows/Linux asset-free checks succeeded, remaining runtime/jobs
+still in progress. Source test runner temp/xl-skybox-20261031/door-reference-windows.cmd
+builds reference then ctest -R ^xl_close_doors$; logs door-reference-{build,test}.log.
+Native samples/artifacts under temp/xl-particles-20261030/contracts-windows64/close_door.
+
+## Branch95 exact geometry and native door pass, 04:59 Pacific
+
+Factored existing compiled-side algorithm into runtime/particle_world.cpp
+compile_particle_side(segment,side,ClassicLightingSide), declared in its header.
+Particle world uses the same helper without algorithm changes. Modern door
+adapter now compiles the two XL side geometries and applies door_sphere_pokes:
+zero radius false; face interval d-r<-250 and d+r>=-250; both faces required for
+planar sides, either for pokes-out sides. Removed core check_poke dependency.
+
+New tests/reference_door_masks.cpp executes extracted hash-pinned CSide::Masks
+(main/side.cpp SHA5f8552e6fb177b24a624c47c9c644029acf95eda9f7001624c7f28e7972b4989),
+registered on existing xl_close_door_reference. 1620 boundary cases pass.
+Reference DoorIsBlocked comparison now336 cases including asymmetric overlap and
+front/back list membership. Existing3072 transition/allocation and660 animation
+cases pass. Native xl_close_doors passes14.58sec including previously failing
+full-pool lifecycle, saves and stock isolation. Build66990exit0; reference/ctest
+owner1420exit0. Scoped format95646/26909 both terminal0.
+
+No admission changes yet. Need high-flag fixture with real marker blocking vs
+ignore marker, current source flags surviving saves/restores, reserved-bit source
+audit, Linux reference, Android existing door owner, original tulev1 route.
+Modern source front-list behavior now explicit; prior two-list expectations were
+corrected only after source extraction exposed the difference.
+
+Native particle/skybox/save lifecycle now running after shared geometry extraction:
+see next session ID/tool receipt, output door-geometry-native-runtime.log under
+temp/xl-skybox-20261031. Poll30-60sec and wait terminal before reusing assets.
+Door test receipts reference.log and controls.log under
+temp/xl-particles-20261030/contracts-windows64/close_door. No new catalogs needed
+yet: no scripts/owner registration changed on95. Original unrelated files remain.
+Live native lifecycle handle: 52209. No other live handles.
+
+## Branch95 live high-flag/save proof, 05:05 Pacific
+
+Native particle/skybox/save regression52209 exit0 after shared side compiler
+extraction. Added modern wall_flags admission exception and probe low-byte
+translation with full16bit source ownership. Inventory still records wide flags;
+independent additive rendering remains blocked. Source only defines bits0..8,
+IgnoreMarker is only high-bit consumer found; reserved high bits retained in source.
+
+close_door_fixture now optionalflags/mission parameters (default original fixture
+unchanged). New mpblock flags0xfe10 and mpignore0xff10 differ solelybit256;
+both preserve reserved upper bits and normal low flags. Native owner runs shared
+actor/marker controls before and after disk restore through stock for each:
+192 cases pass. Nativebuild5821 exit0, ctest8782 exit0 (15.52sec), source-reference
+matrices stillpass. Scopedquality76226 exit0. Receipts existing close_door dirs.
+
+Android build91917 launched android-door-marker-build.log; inspect current tool
+receipt for terminal/live state. No install or device test yet. Portable inventory
+owner terminated1 on a stale wide-flag negative assertion in wall_key_contract.
+Replaced with full-source/low-byte ownership checks for256,512,32768,65040,65296,
+65432 across modern23/25/27; flags260 stillrejects independent additive rendering.
+Formatter56032 currentlylive for inventory_test.cpp. After terminal, rerun
+admission-test.cmd. This test change is not yet compiled. No live native owners.
+
+Next: finish portable contract, Linux oracle, install Android successful build;
+existing test_xl_close_door_runtime.ps1 pins original close fixture hash and should
+remain unchanged. Extend owner/probe for high-flag fixtures (don't claim existing
+48case test proves marker=true). Also qualify original tulev1 route with current
+Pumo owner after checking gates. No publication95 until these checks pass.
+Latest handles: formatter56032 terminal0. Android91917 still live; portable admission32714 now live. Poll30-60sec; do not restart.
+
+## Branch95 Android baseline failure and marker owner prepared, 05:12 Pacific
+
+Portable admission32714 exit0 after wide-flag assertion update; all inventory
+contracts pass. Android91917 eventually terminal0 (3m21s), install succeeded.
+No restart was performed while its live process remained confirmed.
+
+Current native-generated close.hog hash34182874939bc4c0058984680bf87c248e523f0af9c1f84584ca2f724eda1660;
+owner previously pinned3c8a1f... Changed expected hash to current generated fixture,
+which passed native controls; descriptor remains6194d572... Need document/audit
+fixture provenance/difference before publication rather than assume bytes same.
+
+Android baseline owner29573 terminal1 atstep20/80: expected motion_audio.attempts1,
+got2 after face_view21/4 distance4 and fire_trigger1. Doorstate2 and position21
+assertions passed; source front-list check now allows closing from connected-only
+list, resumed physics/frame handling makes this old assertion nondeterministic.
+Do not simply change count to2 to hide behavior. Use controlled probe for list/
+geometry semantics and make normal presentation test consistent with source.
+Protected before/after hashes match. Artifacts temp/xl-close_door-android,
+ownerlog android-door-runtime.log. InstalledAPK includes production95 highflags,
+but NOT latest marker probe operation below.
+
+Prepared not-yet-built Android marker coverage:
+
+- door_probe.cpp accepts marker_obstruction and calls sharedrun(require,true).
+- existingtest_xl_close_door_runtime.ps1 adds -MarkerFixture, pins mpignore.hog
+  639787b543aa43323a9da4e532fb0d697f6202d88b67581e6255bcbd2ba8a393,
+  uses existingclose descriptor (same bytes), stagesprotected close missionpaths,
+  output temp/xl-marker-door-android, selects test_xl_door_markers.jsonc.
+- New owned script startsmission, runs48marker/actor cases, setsenergy73/saves,
+  disturbsenergy1/asserts, loads/asserts73, repeats48cases. No autonomous navigation.
+- Formatter currentlylive (see toolhandle); wait terminal before rebuild/edits.
+  Bothcatalogs required after owner/scriptchanges; notrunyet.
+
+Next: resolve baseline script's obsolete connected-side expectation with direct
+source-backed controlledcoverage; finish formatter/catalogs; buildnewAPK andrun
+MarkerFixture serially. Then Linuxreference, originaltulev1, evidence/publication.
+All otherhandles terminal. Goal activeuntilnoon, originalemulatorrestore11:30.
+Only live handle: scoped formatter44615, log door-android-owner-quality.log. All build/test handles terminal.
+
+## Branch95 Android marker pass and Linux oracle, 05:18 Pacific
+
+Build5287 terminal0 (2m6s), installed successfully after baseline owner ended.
+Catalog76212/36086 terminal0:99standaloneJSON,497support,314PS;427top-level.
+Formatter8623 terminal0. Linuxoracle17200 exit0:1620sphere/plane,3072transitions,
+336obstruction,660animation comparisons allpass using completed native receipts.
+Log door-linux-reference.log.
+
+Baseline script now pauses before connected segment21 pose/trigger, asserts
+closing3 and motionaudioattempts2, dispatchesopen0, asserts BOTHfacesopening1 and
+noaudiofailure, resumes and waitsforwaiting2. Owner51297 initiallyfailed added
+assumption attempts3 on reopen (observed2); that new assertion was replaced with
+actual reopening/pairedstate and failurecheck. Existing audio assertions remain.
+Need final pass; don't report baseline successful yet.
+
+Marker owner56095 initiallyfailed only scalar numeric assertion1 vs reported1.0.
+Changed energy checks to range[1,1] and[73,73]. Rerun80523 terminal0:
+17/17steps in28.994sec. Real marker/actor obstruction before and after diskrestore,
+energy73->save->1->load->73 verified. Protected hashesmatch. Artifacts
+temp/xl-marker-door-android; log android-marker-numeric-runtime.log.
+Owner success text currently overstates stock/rewind for MarkerFixture mode;
+fix conditional message after active owner terminal, before final publication.
+
+mpignore.hog and currentclose.hog are exactly93509bytes and differ only at46421
+and46446, source highflag bytes0->255. Currentdefaultfixturehash was stale inowner:
+ownerlastchangedPR170 whereas keyed-wall generator changedPR193 (nonstandard key
+bytes). This establishes generator evolution, but no exact oldfixturebyte diff
+available. Currentgeneratedfixture is pinned and passednative; don't call bytes
+unchanged versus oldowner. Descriptorhash unchanged6194d572...
+
+Only livehandle38496: full86step Android baseline owner, log
+android-door-final-runtime.log. Wait30-60sec then poll; no reinstall/test inparallel.
+Remaining: baselinepass, finalformat/catalogafterlastscriptassertion changes,
+originaltulev1 route qualification, evidence and branch95publication. Goalactive.
+
+## Branch95 baseline source alignment and original-route build, 05:23 Pacific
+
+Owner38496 terminal1: reopen trigger0 did not reverse closing door. Source audit
+confirmed CSegment::ToggleWall (segment.cpp1013) onlyopens WALL_DOOR_CLOSED,
+matching Redux wall_toggle. Revised script now moves player clear whilepaused,
+resumes/waitsclosed, then dispatchesopen0 and waitsnormalwaiting. No production
+change. Owner77700 advancedpastthat and failed atstep32/87 on obsolete closed
+visibility expectationplayer_flags2 vsactual6 (bothfacesstate0,noactiveentry).
+
+Current XL check_transparency delegates xl_side_texture_transparency, which
+honors base/overlay transparent/supertransparent bitmap flags. WID6 is transparent
+but nonflyable (WID_FLY_FLAG1 absent); script's oldopaque2 assumption predates
+currentpixelvisibility work. Updated all six closed player_flags assertions to6;
+actual crossing/state/audio checks remain. Do not claim opacity. Fullowner15038
+nowlive, log android-door-current-visibility.log. Protectedhashes from earlier
+runs restored; verify latest uponterminal.
+
+Original Pumo probe extends route14->5->6->7 with original triggers, endingcheck
+flow_file tulev1.rl2 andexitcount7, thenexistinghubcheckpointrestore/GPU. No
+modifiedgeometry/triggers, stillcontrolleddispatch notearnedtraversal. Format
+76568 terminal0 (before last visibility assertion edits). Build31949 live, output
+android-pumo-tulev1-build.log. Do NOT install while15038deviceownerlive.
+
+Marker owner successmessage now conditional and accurate (nofalse stock/rewind
+claim for17step marker run). Lastmarker80523pass unchangedproductionproof.
+Parent247 at05:20: allcompletejobsSUCCESS; native/headedreplay stillIN_PROGRESS.
+Next: finishbaseline/build, installandrunOriginalHub MissionFlow extendedroute,
+finalscopedformat/catalogs, evidence/doc andpublication95 afterallgates.
+
+## Branch95 remaining Android full-owner timing issue, 05:30 Pacific
+
+Android routebuild31949 terminal0 (2m5s), installed afterdeviceownerterminal.
+Fullbaseline15038 passedactualcrossing butfailedstep50/87: close-aftercrossing
+foundnoactiveentry becauseautomaticclosealreadycompleted. Added open0/waitwaiting
+precondition aftercrossing. Owner62211 failedstep52/89: immediateforcedclose can
+finishbeforeobservation because sourcetimerreversal playtime-waittime. Added1s
+waiting interval. Owner80268 stillfailsstep53/90 onactive_entry0vs-1. Do notkeep
+addingtimingassumptions: nextdiagnosis should pause beforepostcrossingfire1,
+inspectwaitingstate/timer, assertdispatch state3/entry whilepaused, thenresumeand
+waitactualcompletion. Potential stalegeometry/actorpose or ephemeraltransition;
+notyetprovenexactcause. No production edits since native/markerpassed.
+
+Allbaseline owners terminal/restored protectedstate. Original Pumoextendedroute
+nowrunning (see nexttoolhandle), android-original-tulev1-flow.log. Do not run
+anotherdeviceowner/installuntilterminal. InstalledAPK includes all95production,
+markerprobe and extendedrouteprobe. No otherlivehandles.
+
+Added evidence/door-markers.md draft with actual source/native/marker proof,
+explicitlypending fullAndroidbaseline andoriginalroute. No publicationyet.
+Need finalformat/catalogafterlatestscriptedits. Baselinescript currently90steps,
+sourcepausedconnectedcase andpostcrossingopen/wait1s. NativeandLinuxsourceproof
+alreadycomplete; reuse. Parent247lastcheckallcompletedSUCCESS withtworeplayjobs
+pending. Restoreoriginalemulatorconfig11:30, goalthroughnoonunchanged.
+Only live owner34003 (original Pumo route). Postcrossing baseline script now pauses beforefire1, requires waiting2, assertsclosing/entry underpause, then resumes forcompletion. Notformatted/rerunyet.
+
+## Original level 6 placed-mine preflight correction, 05:40 Pacific
+
+Owner31019 terminal1 at paused step55: closing state and active entry passed;
+only motion_audio.attempts>=2 failed (actual1). Pinned wall.cpp537 creates close
+audio only at zero door time, matching doors.cpp. Removed only that extra paused
+count assertion; previous zero-time audio checks and failure checks remain.
+Full owner57690 is live, android-door-paused-source-audio.log. Do not install or
+run another device owner until terminal.
+
+Original route34003 terminal1 reached level5, rejected mvlev6 object4 for saved
+robot09.pof. This is OBJ_WEAPON51 (placed mine). Pinned loadobjects.cpp158-165
+replaces its model from weapon51; Redux gamesave.c338-347 already does the same.
+loadobjects.cpp SHA256 01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c.
+Preflight now resolves exactly OBJ_WEAPON/PMINE_ID through Weapon_info, after the
+existing weapon dependency walk; other object model-name checks remain. Android
+flow probe verifies original level6 mines' actual model, size, mass, drag and
+free-spinning flag after load. No external robot model substitution.
+
+Formatter78063 terminal0. Native runtime rebuild terminal0 (preview.cpp plus
+xl-preview-lifecycle.exe). Android build60189 live, android-placed-mine-build.log.
+After both deviceowner/build terminal, install then retry extended original route.
+Parent PR247 checked05:39: all required jobs passed, optional timing export skipped.
+Branch95 still uncommitted/unpublished; preserve unrelated files as before.
+
+## Placed-mine fresh history and remaining full-owner gate, 05:52 Pacific
+
+Original route18118 terminal1: level6 load and mine model/physics assertions pass;
+leaving6 fails save capture, not level7 admission. Native fresh objects have
+last_hitobj0, but XL zero is a hit COUNT whereas Redux zero is victim INDEX0.
+Pinned ReadObjectInfo clears objects; CObject::Read weapon payload is parent-only.
+Modern fresh XL load now sets CT_WEAPON/OBJ_WEAPON last_hitobj=-1. Saved objects
+and earned XL trailers are restored afterward; no save guard bypass.
+
+Native rebuilt. xl_projectiles CTest wrapper exit8 only because reference binary
+was absent; controls.log proves native damage/history/save/stock/corruption cases
+passed. Built reference and ran completed samples:1920 impacts plus1650 history
+controls pass. Do not rerun native gameplay solely for missing wrapper binary.
+Android build91234 terminal0 (1m56s), installed. Original route retry pending.
+
+Door owner26017 terminal1 reached step78/99. Paused checkpoint dispatch state,
+active entry and completed closure passed; post-restore audio counter is1, not2.
+Source starts close sound only at timer0; restored counters restart. Changed
+only restored closure minimum to1; earlier close audio2 and failure checks remain.
+Formatter3751 terminal0. Full door owner10056 live, android-door-restored-audio.log.
+No concurrent device owner or install until it exits.
+
+Added required-model negative guard for placed mines (model-1 must not fall back
+to saved-name lookup). Route probe temporarily removes weapon51 model, requires
+specific rejection, restores definition, verifies admission recovery. This is
+not yet in installed APK. Formatter currently running; next build after terminal.
+Both automation catalogs66090/74438 terminal0 before latest script adjustment;
+rerun final catalogs before publication. Branch95 still unpublished.
+
+## Final original-route retry and remaining door tail, 05:57 Pacific
+
+Build1488 and formatter97945 terminal0; final APK installed after door10056
+terminal1. Door10056 reached98/99: final post-stock-restore crossing allowed an
+automatic close before scripted close. Same fix as earlier crossing: explicit
+open/waitwaiting, pause, assert pairedclosing/entry, resume/closed. No engine
+change. Formatter70540 terminal0. Final script104steps, not yet rerun.
+Protected before/after hashes match for last owner.
+
+Only device owner70400 live: original Pumo full41step route, log
+android-original-mine-history-flow.log. Installed APK includes mine model guard,
+fresh-history sentinel and negative/recovery assertion. Do not install/run any
+other device owner until terminal. Native final guard rebuild terminal0; reuse
+completed native projectile controls and source oracle. Final catalogs running.
+Next: inspect route result, run final door104step owner, update evidence/current
+feature docs truthfully, then commit/push draft95 above94 after all gates.
+
+## Branch95 validation complete, 06:03 Pacific
+
+Original Pumo70400 terminal0:41/41steps202.834s. Original route
+1->2->3->4->14->5->6->7(tulev1.rl2), level6 real mine model/physics/empty-history
+assertions, required-model rejection/recovery, departure save, hub checkpoint
+recovery and GPU allpass. Protectedhashesmatch. Log android-original-mine-history-flow.log.
+Full door31710 terminal0:104/104steps99.361s, including final stockrestore/crossing,
+pairedtransition andcompletedclosure. Protectedhashesmatch. Log
+android-door-final-stock-restore.log. Marker17step proof remains applicable.
+Final catalogs78227/42690 terminal0,99standaloneJSON/497support/314PS/427top-level.
+No live device/build/test handles. Native finalbuildpass, source/reference/native
+proofs reused. Evidence docs updated, final doc formatting and publication next.
+Publish95 above94; parent247 allCIgreen. Do not merge. Preserve unrelated files.
