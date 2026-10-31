@@ -174,3 +174,21 @@ This fixes corona exclusion only. It does not qualify outdoors lighting or open
 skybox admission. Colored mesh boundaries still need their draw-state behavior
 established; the pinned RenderSkyBoxFace passes bTextured=1 to RenderFace even
 when its mesh face has no base bitmap. Do not infer a new tint from mesh flags.
+
+## Complete native physics entry control (branch 90)
+
+The existing native/Android owner now drives do_physics_sim through an ordinary
+wall into an enclosing skybox. The fixture copies an empty cell and uses eight
+isolated temporary vertices; it restores segment data, linked actor ownership,
+vertex bytes, count and highest index. It asserts destination membership,
+retained lifetime, the source-prescribed wall-hit position, geometric containment,
+and continued movement inside the skybox on the next physics frame.
+
+This replaces an insufficient distant-cell control that checked only destination
+ID and lifetime. Pinned ProcessOffset retains hitResult.vPoint, and FindSegment
+returns a lookup result without relinking, so segment ID alone was not enough.
+Native integration passes; Android passes all 31 protected steps in 54.820
+seconds, with all 28 hashes restored. Receipt: android-full-entry.log under
+temp/xl-skybox-20261031. Scoped formatting and native/Android builds pass.
+No production physics semantics changed. Authored skybox resource/save lifetime
+and normal admission remain unqualified; this is derived geometry evidence.
