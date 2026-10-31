@@ -271,3 +271,30 @@ Remaining gates include source projection/visibility/order qualification,
 zero-distance-scale behavior, Android wide/smooth line fidelity, actual original
 level-nine scene integration, light and audio. Neither this renderer control nor
 the existing controlled route through level8 qualifies those missing behaviors.
+
+## Zero-distance-scale drawing
+
+Pinned Draw short-circuits SetupGlow when ComputeDistScale returns zero,
+including floating-point underflow near the far depth range. It still consumes
+three color samples, applies the blur profile's quarter color and GL_MAX, and
+draws the core at authored width directly into the current scene. It neither
+starts nor flushes a glow batch. If a batch already exists, its viewport bounds
+still include this bolt; a later positive-scale Begin retains that batch.
+
+The native renderer now follows that path without loading a corona or capturing
+a new depth snapshot. The primitive skips both glow layers at zero scale, and
+the compositor can accumulate bounds without redirecting the core into its
+private color buffer. Normal positive-scale drawing retains the prior behavior.
+
+The pinned Draw owner passes54 visibility/color/RNG/blend cases, including exact
+zero and underflow distances. The GPU owner passes1152 primitive comparisons
+(including core-only pixels) and48 batch comparisons, covering zero-only,
+zero-before-glow and glow-before-zero sequences. Native scene checks require
+zero-scale pixels before batch completion and identical pixels after real EGL
+context recreation and explicit release. Windows compilation passes. Logs:
+lightning-distance-linux.log, lightning-distance-scene-linux.log and
+lightning-distance-windows.log under temp/xl-skybox-20261031.
+
+This closes the zero-scale rendering gap for the supported positive glow/blur
+profile. Android wide/smooth line fidelity, projection/visibility/order,
+original level-nine integration, light and audio remain unqualified.

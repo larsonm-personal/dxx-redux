@@ -193,10 +193,9 @@ class LightningGlowGpu
 		active = true;
 		visible = has_extent = false;
 	}
-	bool draw(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
-	          float line_width, const std::array<float, 16> &matrix, GLuint corona, const std::array<int, 4> &extent, const std::array<float, 2> &corona_map = { 1, 0 })
+	void include_extent(const std::array<int, 4> &extent)
 	{
-		if (!active) throw std::runtime_error("XL lightning glow draw requires an active batch");
+		if (!active) return;
 		if (extent[0] > extent[2] || extent[1] > extent[3]) throw std::runtime_error("XL lightning glow extent is inverted");
 		if (!has_extent) bounds = extent;
 		else {
@@ -207,6 +206,20 @@ class LightningGlowGpu
 		}
 		has_extent = true;
 		visible = !(bounds[2] < 0 || bounds[0] >= view[2] || bounds[3] < 0 || bounds[1] >= view[3]);
+	}
+	void draw_direct(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
+	                 float line_width, const std::array<float, 16> &matrix, const std::array<int, 4> &extent)
+	{
+		if (glow.distance_scale != 0) throw std::runtime_error("XL direct lightning requires zero distance scale");
+		// Source skips SetupGlow at zero scale, but still extends a retained batch
+		include_extent(extent);
+		primitive.draw(core, glow, random_nodes, color, line_width, matrix, 0, true);
+	}
+	bool draw(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
+	          float line_width, const std::array<float, 16> &matrix, GLuint corona, const std::array<int, 4> &extent, const std::array<float, 2> &corona_map = { 1, 0 })
+	{
+		if (!active) throw std::runtime_error("XL lightning glow draw requires an active batch");
+		include_extent(extent);
 		LightningGlowState restore;
 		select(targets[0]);
 		// Source Draw rejects SetViewport < 0, but this overload returns only 0 or 1
