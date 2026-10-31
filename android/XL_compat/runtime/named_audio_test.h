@@ -228,6 +228,7 @@ static int named_audio_original(int argc, char **argv)
 #include "../tests/ambient_audio_receipt.h"
 #include "gameplay_audio_test.h"
 #include "linked_audio_test.h"
+#include "lightning_audio_test.h"
 #include "static_explosion_test.h"
 #include "seismic_test.h"
 #endif
@@ -506,6 +507,7 @@ static int named_audio_test(int argc, char **argv)
 			}
 			xl_shared_audio_control::run(root, initial);
 			xl_linked_audio_control::run(root, initial);
+			xl_lightning_audio_control::run(ordinal);
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 sounds: wall/master/object/autoplay, actual stereo output, repetitions, pause, atomic ownership and disk-through-stock passed\n";
 		}
 		Mix_SetPostMix(nullptr, nullptr);

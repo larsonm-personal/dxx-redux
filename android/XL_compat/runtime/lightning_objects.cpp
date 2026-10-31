@@ -1,6 +1,9 @@
 #include "lightning_objects.h"
 #include "preview.h"
 #include "particle_world.h"
+#include "linked_audio.h"
+#include "shared_audio_internal.h"
+#include "../lightning_audio.h"
 #include "../lightning_visibility.h"
 #include "../transparency_order.h"
 #include <map>
@@ -13,6 +16,7 @@ extern "C" {
 #include "game.h"
 #include "rng_shared.h"
 #include "dxxerror.h"
+#include "piggy.h"
 #include "../../../d2/3d/globvars.h"
 }
 #undef min
@@ -26,6 +30,8 @@ struct Entry {
 	bool alive = true;
 	std::optional<xl_compat::LightningEmitter> emitter;
 	std::vector<std::optional<xl_compat::LightningRenderFrame>> render_frames;
+	int sound = 0;
+	bool restored_audio = false;
 };
 std::map<int, Entry> entries;
 xl_compat::ParticleWorld world;
@@ -49,6 +55,37 @@ bool bound(int index, const Entry &entry)
 {
 	return entry.alive && native_lightning(index) && Objects[index].signature == entry.signature;
 }
+void create_sound(int index, const Entry &entry)
+{
+	if (!entry.sound) return;
+	// Source retains its sound state even if channel/owner allocation fails
+	xl_audio_link_external(xl_compat::lightning_sound_name, 0, index, 1, F1_0 / 2, 256 * F1_0, -1, -1, 0, 0);
+	if (!entry.definition.delay && entry.definition.angle <= 0) {
+		char name[] = "ff_amb_1";
+		const int sample = piggy_find_sound(name);
+		if (entry.restored_audio) {
+			// Saved stopped loops already own their resource and must not duplicate
+			using namespace xl_compat::audio_runtime;
+			AudioLock lock;
+			for (unsigned i = 0; i < owners.count; ++i) {
+				const auto &owner = owners.entries[i];
+				if ((owner.flags & xl_compat::sound_link_object) && owner.object == index && owner.signature == entry.signature && !owner.external && owner.sound == sample)
+					return;
+			}
+		}
+		if (sample != 255) xl_audio_link_object(sample, 0, index, 1, F1_0, 256 * F1_0, -1, -1, 0, 0);
+	}
+}
+void destroy_sound(int index, const Entry &entry)
+{
+	using namespace xl_compat::audio_runtime;
+	AudioLock lock;
+	for (unsigned i = owners.count; i;) {
+		const auto &owner = owners.entries[--i];
+		if ((owner.flags & xl_compat::sound_link_object) && owner.object == index && owner.signature == entry.signature)
+			owners.erase(i, mixer);
+	}
+}
 } // namespace
 
 void xl_compat::bind_lightning_objects(const Inventory &level)
@@ -69,14 +106,22 @@ void xl_compat::bind_lightning_objects(const Inventory &level)
 		prepared.emplace(int(index), Entry{ definition, Objects[index].signature });
 	}
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
+	xl_lightning_objects_clear();
 	entries = std::move(prepared);
 	world = std::move(geometry);
 }
 
 extern "C" void xl_lightning_objects_clear(void)
 {
+	for (const auto &[index, entry] : entries)
+		if (entry.sound > 0 || entry.restored_audio) destroy_sound(index, entry);
 	entries.clear();
 	world = {};
+}
+
+extern "C" void xl_lightning_objects_mute(void)
+{
+	for (auto &[index, entry] : entries) xl_compat::lightning_sound_mute(entry.sound);
 }
 
 void xl_compat::lightning_objects_clock(int time)
@@ -168,6 +213,7 @@ void xl_compat::lightning_objects_frame()
 		const auto index = it->first;
 		auto &entry = it->second;
 		if (!bound(index, entry)) {
+			destroy_sound(index, entry);
 			entry.alive = false;
 			entry.emitter.reset();
 			entry.render_frames.clear();
@@ -186,6 +232,10 @@ void xl_compat::lightning_objects_frame()
 			entry.render_frames[std::size_t(&bolt - entry.emitter->bolts.data())] = std::move(frame);
 		};
 		if (entry.emitter && lightning_emitter_frame(*entry.emitter, clock_time, tick_time, random, render_setup)) {
+			const bool active_nodes = std::any_of(entry.emitter->bolts.begin(), entry.emitter->bolts.end(), [](const auto &bolt) { return bolt.lifetime.nodes > 0; });
+			const auto sound_action = lightning_sound_update(entry.sound, entry.emitter->enabled, active_nodes);
+			if (sound_action == LightningSoundAction::create) create_sound(index, entry);
+			else if (sound_action == LightningSoundAction::destroy) destroy_sound(index, entry);
 			const auto &object = Objects[index];
 			lightning_emitter_move(*entry.emitter, { object.pos.x, object.pos.y, object.pos.z }, object.segnum);
 		}
@@ -195,6 +245,9 @@ void xl_compat::lightning_objects_frame()
 		const auto &object = Objects[index];
 		entry.emitter = create_lightning_emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, random, object.segnum);
 		entry.render_frames.resize(entry.emitter->bolts.size());
+		entry.sound = entry.definition.sound;
+		create_sound(index, entry);
+		entry.restored_audio = false;
 	}
 }
 
@@ -231,11 +284,37 @@ bool xl_compat::restore_lightning_objects(const nlohmann::json &state, bool appl
 			entry.alive = row[3].get<bool>();
 			entry.emitter.reset();
 			entry.render_frames.clear();
+			entry.sound = 0;
+			entry.restored_audio = true;
 			const bool native = native_lightning(index) && Objects[index].signature == entry.signature;
 			if (entry.alive ? !native : native_lightning(index)) return false;
 		}
 		// Source saves activation and rebuilds transient bolts after level restore
 		if (apply) entries = std::move(prepared);
+		return true;
+	} catch (const std::exception &) {
+		return false;
+	}
+}
+
+bool xl_compat::lightning_audio_matches(const nlohmann::json &audio)
+{
+	try {
+		for (const auto &owner : audio.at("linked").at("owners")) {
+			const int index = owner.at("object").get<int>();
+			const auto found = entries.find(index);
+			if (found == entries.end() || !native_lightning(index) || owner.at("signature") != Objects[index].signature) continue;
+			const auto &definition = found->second.definition;
+			if (!definition.sound || owner.at("class") != 0 || owner.at("max_distance") != 256 * F1_0 ||
+			    owner.at("loop_start") != -1 || owner.at("loop_end") != -1 || owner.at("custom").get<bool>()) return false;
+			if (owner.at("external").get<bool>()) {
+				if (owner.at("sample") != audio_runtime::external_sample(lightning_sound_name) || owner.at("max_volume") != F1_0 / 2) return false;
+			} else {
+				char name[] = "ff_amb_1";
+				const int sample = piggy_find_sound(name);
+				if (definition.delay || definition.angle > 0 || sample == 255 || owner.at("sound") != sample || owner.at("max_volume") != F1_0) return false;
+			}
+		}
 		return true;
 	} catch (const std::exception &) {
 		return false;

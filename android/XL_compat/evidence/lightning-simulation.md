@@ -374,3 +374,43 @@ passes. Existing native ownership/collection controls and unchanged automation
 catalogs are reused. Evidence: lightning-order-linux.log and
 contracts-linux/effect-decode/reference.log under temp/xl-skybox-20261031 and
 temp/xl-particles-20261030 respectively. Normal lightning admission stays blocked.
+
+## Lightning audio integration
+
+The existing shared audio bank prepares 08:lightning.wav for authored sound-enabled
+lightning, including initially disabled emitters. Lookup uses the qualified HOG,
+level, mission and owned startup-addon precedence. Missing/invalid resources fail
+preparation; there is no replacement waveform. Portable tests use an explicitly
+labeled generated WAV; the runtime runner also accepts LIGHTNING_WAVE for an
+original asset without checking that asset into the repository.
+
+Pinned lightning_emitter.cpp CreateSound requests generic class0, forever,
+volumeF1/2, range256F1 and loop bounds(-1,-1). Zero-delay forcefields additionally
+request the registered ff_amb_1 physical sample at full volume. Allocation failure
+does not abort the emitter, matching the source. Create precedes the manager's
+disabled flag, so initially disabled emitters still create their sounds.
+
+The shared update/mute policy matches 6144 six-operation traces from the actual
+extracted UpdateSound and Mute bodies. Enabled emitters stop sound when all bolt
+node counts become negative and restart it when any becomes positive. Disabled
+emitters leave sound unchanged. Global audio stop marks sound-enabled emitters
+muted; this does not change activation or consume RNG. Teardown erases only the
+captured native object signature, preserving a reused slot's newer audio owner.
+
+Generic linked-audio persistence retains playback phase. Rebuilt lightning
+emitters reuse an existing external owner, and authored-state validation checks
+the saved resource, class, gain, range, looping and forcefield profile. This
+component does not expand lightning admission or qualify level9 gameplay.
+
+Windows source comparisons and the full native audio owner pass. The latter uses
+the verified original lightning WAV in both v23/v27 fixture formats, compares
+actual callback PCM across lifecycle/spatial transitions, rejects seven altered
+authored-owner definitions, preserves recycled-slot companions, and checks the
+original registered forcefield sample mixed with the addon. Android x86_64 APK
+compilation and the existing effect inspection/lifecycle owner also pass.
+Restoring an out-of-range forcefield retains both stopped loops without creating
+a second companion; both resume when the listener/source returns within range.
+Receipts: temp/xl-evening-20261031/audio-source.log, named-audio/runtime.log,
+audio-android.log; temp/xl-skybox-20261031/native-runtime/controls.log. Android
+device playback and the actual level9 scene remain unqualified. Existing audio
+pause/rate-conversion and unchanged automation catalogs are reused.
