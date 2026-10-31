@@ -74,26 +74,27 @@ struct LightningDrawState {
 	}
 };
 
+inline GLuint lightning_gpu_compile(GLenum type, const std::string &source)
+{
+	const GLuint shader = glCreateShader(type);
+	const char *text = source.c_str();
+	glShaderSource(shader, 1, &text, nullptr);
+	glCompileShader(shader);
+	GLint ok;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+	if (!ok) {
+		char log[1024]{};
+		glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
+		glDeleteShader(shader);
+		throw std::runtime_error(std::string("XL lightning shader compilation failed: ") + log);
+	}
+	return shader;
+}
+
 class LightningGpu
 {
 	GLuint program = 0, vao = 0, buffer = 0;
 	using Vertex = LightningClipVertex;
-	static GLuint compile(GLenum type, const std::string &source)
-	{
-		const GLuint shader = glCreateShader(type);
-		const char *text = source.c_str();
-		glShaderSource(shader, 1, &text, nullptr);
-		glCompileShader(shader);
-		GLint ok;
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
-		if (!ok) {
-			char log[1024]{};
-			glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
-			glDeleteShader(shader);
-			throw std::runtime_error(std::string("XL lightning shader compilation failed: ") + log);
-		}
-		return shader;
-	}
 	void prepare()
 	{
 		if (program) return;
@@ -102,10 +103,10 @@ class LightningGpu
 #else
 		const std::string prefix = "#version 120\n";
 #endif
-		const auto vertex = compile(GL_VERTEX_SHADER, prefix + "attribute vec4 position; attribute vec2 uv; uniform mat4 mvp; varying vec2 glowUV; void main(){glowUV=uv;gl_Position=mvp*position;}");
+		const auto vertex = lightning_gpu_compile(GL_VERTEX_SHADER, prefix + "attribute vec4 position; attribute vec2 uv; uniform mat4 mvp; varying vec2 glowUV; void main(){glowUV=uv;gl_Position=mvp*position;}");
 		GLuint fragment = 0, linked = 0;
 		try {
-			fragment = compile(GL_FRAGMENT_SHADER, prefix + "uniform sampler2D corona; uniform vec4 color; uniform int textured; varying vec2 glowUV; void main(){gl_FragColor=textured!=0?texture2D(corona,glowUV)*color:color;}");
+			fragment = lightning_gpu_compile(GL_FRAGMENT_SHADER, prefix + "uniform sampler2D corona; uniform vec4 color; uniform int textured; varying vec2 glowUV; void main(){gl_FragColor=textured!=0?texture2D(corona,glowUV)*color:color;}");
 			linked = glCreateProgram();
 			glAttachShader(linked, vertex);
 			glAttachShader(linked, fragment);

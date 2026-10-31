@@ -133,6 +133,26 @@ if(TARGET xl_pog_gpu_test)
     endforeach()
     file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_blur.h"
          CONTENT "${glow_shaders}")
+    set(glow_render "// Actual pinned glow rectangle and composition functions\n")
+    foreach(signature IN ITEMS "inline float ScreenCoord (" "void CGlowRenderer::Render ("
+                               "bool CGlowRenderer::End (")
+        string(FIND "${glow}" "${signature}" begin)
+        if(begin LESS 0)
+            message(FATAL_ERROR "Missing source glow composition function: ${signature}")
+        endif()
+        string(SUBSTRING "${glow}" ${begin} -1 tail)
+        string(
+            FIND "${tail}"
+                 "\n//------------------------------------------------------------------------------"
+                 end)
+        if(end LESS 0)
+            message(FATAL_ERROR "Missing source glow composition separator")
+        endif()
+        string(SUBSTRING "${tail}" 0 ${end} fragment)
+        string(APPEND glow_render "${fragment}\n")
+    endforeach()
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_composite.h"
+         CONTENT "${glow_render}")
     foreach(
         pair IN
         ITEMS
