@@ -20,8 +20,9 @@ static void write_object_fixture_json(const std::filesystem::path &path, const n
 	require(bool(file), "cannot publish object fixture metadata");
 }
 
-static void write_object_event_fixture(const std::filesystem::path &root)
+static void write_object_event_fixture(const std::filesystem::path &root, bool empty_door_targets = false)
 {
+	const std::string mission = empty_door_targets ? "edoor" : "events";
 	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
 	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
 	for (auto member : xl_compat::read_hog(bytes)) {
@@ -109,6 +110,22 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 				owners.push_back(owner);
 			};
 			const auto wall_target = [&](int wall) { return std::array<int, 2>{ inventory.walls[wall].segment, inventory.walls[wall].side }; };
+			std::array<int, 2> empty_target{ -1, -1 };
+			if (empty_door_targets) {
+				for (std::size_t segment = 0; segment < inventory.segments.size() && empty_target[0] < 0; ++segment)
+					for (int side = 0; side < 6; ++side)
+						if (inventory.segments[segment].sides[side].wall == -1) {
+							empty_target = { static_cast<int>(segment), side };
+							break;
+						}
+				require(empty_target[0] >= 0 && inventory.walls[0].clip >= 0, "empty-door fixture lacks its control geometry");
+				for (int wall : { 0, 1 }) {
+					patch(walls.offset + wall * 25 + 16, WALL_DOOR, 1);
+					patch(walls.offset + wall * 25 + 17, 0, 2);
+					patch(walls.offset + wall * 25 + 19, WALL_DOOR_CLOSED, 1);
+					patch(walls.offset + wall * 25 + 22, KEY_NONE, 1);
+				}
+			}
 			const auto wall_action = [&](int index, int type, int flags, std::initializer_list<std::array<int, 2>> targets) {
 				const auto base = section.offset + index * 52;
 				patch(base, type, 1);
@@ -128,7 +145,8 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 			action(robot_index, 14, 0, 5 * F1_0, { { 1, -1 } });
 			action(robot_index, 14, 8, 5 * F1_0, { { 0, -1 }, { 1, -1 }, { 2, -1 } });
 			action(robot_index, TT_ILLUSION_OFF, 16, 0, { wall_target(8) });
-			action(powerups[0], TT_ILLUSION_OFF, TF_ONE_SHOT, 0, { wall_target(10) });
+			if (empty_door_targets) action(powerups[0], TT_OPEN_DOOR, TF_ONE_SHOT, 0, { empty_target, wall_target(0), empty_target });
+			else action(powerups[0], TT_ILLUSION_OFF, TF_ONE_SHOT, 0, { wall_target(10) });
 			action(powerups[1], TT_ILLUSION_OFF, 128 | 8, 0, { wall_target(12) });
 			action(powerups[2], 33, 0, 0, { wall_target(0) });
 			action(powerups[2], 32, 0, 0, { wall_target(0) });
@@ -142,7 +160,7 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 			const auto final = xl_compat::inspect_level(member.bytes);
 			const auto blockers = xl_compat::runtime_blockers(final);
 			if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
-			write_object_fixture_json(root / "events-fixture.json", { { "robot", robot_index }, { "reactor", reactor }, { "powerups", powerups }, { "object_actions", owners.size() } });
+			write_object_fixture_json(root / (mission + "-fixture.json"), { { "robot", robot_index }, { "reactor", reactor }, { "powerups", powerups }, { "object_actions", owners.size() } });
 		}
 		char name[13] = {};
 		require(member.name.size() < sizeof(name), "object fixture member exceeds bound");
@@ -151,8 +169,8 @@ static void write_object_event_fixture(const std::filesystem::path &root)
 		for (unsigned shift = 0; shift < 32; shift += 8) output.push_back(static_cast<unsigned char>(member.bytes.size() >> shift));
 		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
 	}
-	write_bytes((root / "events.hog").string().c_str(), output);
-	std::ofstream descriptor(root / "events.mn2");
+	write_bytes((root / (mission + ".hog")).string().c_str(), output);
+	std::ofstream descriptor(root / (mission + ".mn2"));
 	descriptor << "d2x-name = Derived object events\nnum_levels = 1\nneptunxl.rl2\n";
 }
 
@@ -430,6 +448,30 @@ static int object_trigger_test(int argc, char **argv)
 		root_master.seg[0] = Walls[2].segnum;
 		root_master.side[0] = Walls[2].sidenum;
 		require(xl_object_master_action(&root_master, powerups[4]) == 0 && (Walls[16].flags & WALL_ILLUSION_OFF), "object master recursion left dispatch context poisoned");
+		write_object_event_fixture(root, true);
+		require(load_base_mission("edoor", error, sizeof(error)), error);
+		StartNewGame(1);
+		const int empty_door = find(powerups[0], TT_OPEN_DOOR, TF_ONE_SHOT);
+		require(Num_open_doors == 0 && Walls[0].state == WALL_DOOR_CLOSED && Walls[1].state == WALL_DOOR_CLOSED,
+		        "mixed empty-door control did not start closed");
+		Objects[powerups[0]].flags |= OF_SHOULD_BE_DEAD;
+		obj_delete_all_that_should_be_dead();
+		require(state(empty_door).owner == -1 && state(empty_door).operated && (state(empty_door).flags & TF_DISABLED) &&
+		            Num_open_doors == 1 && Walls[0].state == WALL_DOOR_OPENING && Walls[1].state == WALL_DOOR_OPENING,
+		        "empty target stopped the later real door or one-shot owner consumption");
+		char empty_save[] = "xl-empty-door.sav";
+		stop_time();
+		require(state_save_all_sub(empty_save, description), "mixed empty-door save failed");
+		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_object_trigger_count(),
+		        "mixed empty-door owner leaked into stock");
+		require(state_restore_all_sub(empty_save, 0) && state(empty_door).owner == -1 && (state(empty_door).flags & TF_DISABLED) &&
+		            Num_open_doors == 1 && Walls[0].state == WALL_DOOR_OPENING && Walls[1].state == WALL_DOOR_OPENING,
+		        "mixed empty-door source or consumed state failed stock-to-save restoration");
+		const auto clock = ActiveDoors[0].time;
+		xl_object_trigger_event(powerups[0], 0);
+		require(Num_open_doors == 1 && ActiveDoors[0].time == clock && state(empty_door).owner == -1,
+		        "consumed empty-door action fired again after restore");
+		std::cout << "Mixed empty/real/empty object door links preserve dispatch, one-shot removal and stock-to-save restoration\n";
 		std::cout << "XL object event controls passed\n";
 		return 0;
 	} catch (const std::exception &error) {

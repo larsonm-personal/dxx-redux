@@ -201,6 +201,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 					break;
 				}
 				const auto wall = level.segments[target[0]].sides[target[1]].wall;
+				// Source DoLink continues after ToggleWall ignores an absent wall
+				if (action.type == 0 && wall == -1) continue;
 				if (wall < 0 || static_cast<std::size_t>(wall) >= level.walls.size()) {
 					block(true, "wall action target lacks a wall");
 					break;
