@@ -12,6 +12,9 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "Cannot create named audio controls: ${log}${error}")
 endif()
 file(WRITE "${OUTPUT}/runtime.log" "")
+if(LIGHTNING_WAVE)
+    configure_file("${LIGHTNING_WAVE}" "${OUTPUT}/sounds/d2x-xl/lightning.wav" COPYONLY)
+endif()
 function(check_ambient ordinal version mode)
     execute_process(
         COMMAND "${ENGINE}" -named-audio-test "${mode}" -audio-level "${ordinal}" -hogdir "${DATA}"

@@ -4,6 +4,7 @@
 #include "shared_audio.h"
 #include "shared_audio_internal.h"
 #include "linked_audio.h"
+#include "lightning_objects.h"
 #include "linked_audio_state.h"
 #include "gameplay_audio_state.h"
 #include "seismic_audio_state.h"
@@ -12,6 +13,8 @@
 #include "doorway.h"
 #include "../audio_voice.h"
 #include "../ambient_sound.h"
+#include "../lightning_audio.h"
+#include "../lightning_effect.h"
 #include "../named_sound.h"
 #include "../inventory.h"
 #include "../level_text.h"
@@ -248,16 +251,19 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
 	std::string external_identity;
 	for (const auto &object : inventory.objects) {
-		if (object.render != 13) continue;
+		std::string name;
+		if (object.render == 13) {
+			const auto sound = decode_ambient_sound(object);
+			if (sound.volume < 0) throw std::runtime_error("XL ambient sound object has a negative playback volume");
+			if (sound.filename.empty()) throw std::runtime_error("XL ambient sound object has an empty filename");
+			name = sound.filename + ".wav";
+		} else if (object.render == 12 && lightning_definition(object, 2).sound)
+			name = lightning_sound_name;
+		else continue;
 #ifndef USE_SDLMIXER
-		throw std::runtime_error("XL ambient sounds require the SDL_mixer backend");
+		throw std::runtime_error("XL object sounds require the SDL_mixer backend");
 #endif
-		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL ambient sounds require an initialized stereo 16-bit SDL_mixer output");
-		const auto sound = decode_ambient_sound(object);
-		if (sound.volume < 0) throw std::runtime_error("XL ambient sound object has a negative playback volume");
-		auto name = sound.filename;
-		if (name.empty()) throw std::runtime_error("XL ambient sound object has an empty filename");
-		name += ".wav";
+		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL object sounds require an initialized stereo 16-bit SDL_mixer output");
 		const auto key = external_key(name);
 		if (resources->external.count(key)) continue;
 		const auto resource = load_audio_resource(name, level, ordinal);
@@ -265,7 +271,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		try {
 			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource.bytes.data()), resource.bytes.size());
 		} catch (const std::exception &error) {
-			throw std::runtime_error("Invalid XL ambient sound " + resource.path + ": " + error.what());
+			throw std::runtime_error("Invalid XL object sound " + resource.path + ": " + error.what());
 		}
 		bytes += pcm.samples.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("XL shared bank exceeds 128 MiB of source storage");
@@ -412,6 +418,7 @@ extern "C" void xl_named_audio_frame(void)
 }
 extern "C" void xl_named_audio_stop(void)
 {
+	xl_lightning_objects_mute();
 	AudioLock lock;
 	owners.clear(mixer);
 	mixer.clear();
