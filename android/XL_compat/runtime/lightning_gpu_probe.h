@@ -1,4 +1,57 @@
 // Android renderer control: retains an owned corona without admitting a level
+unsigned lightning_line_device_controls()
+{
+	using namespace xl_compat;
+	LightningDrawState restore;
+	struct Primitive {
+		LightningGpu renderer;
+		~Primitive()
+		{
+			renderer.discard(false);
+		}
+	} primitive;
+	const std::array<float, 16> identity{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+	const std::vector<LightningPoint> points{ { -32256, 512, 0 }, { 33280, 512, 0 }, { 40000, 512, 0 } };
+	const auto core = lightning_core_geometry(points, [](const LightningVertex &p) { return p[2]; });
+	const LightningGlow glow{};
+	const std::array<float, 4> color{ 0, .25f, .5f, .75f };
+	unsigned cases = 0;
+	for (float width : { 3.f, 20.f, 40.f })
+		for (bool occluded : { false, true })
+			for (bool scissored : { false, true }) {
+				glViewport(0, 0, 64, 64);
+				glDisable(GL_SCISSOR_TEST);
+				glDepthMask(GL_TRUE);
+				glClearDepthf(occluded ? .25f : 1.f);
+				glClearColor(0, 0, 0, 0);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				glScissor(9, 12, 35, 30);
+				if (scissored) glEnable(GL_SCISSOR_TEST);
+				primitive.renderer.draw(core, glow, 1, color, width, identity, 0, false);
+				std::array<int, 4> view{}, box{};
+				glGetIntegerv(GL_VIEWPORT, view.data());
+				glGetIntegerv(GL_SCISSOR_BOX, box.data());
+				require(view == std::array<int, 4>{ 0, 0, 64, 64 } && box == std::array<int, 4>{ 9, 12, 35, 30 } && bool(glIsEnabled(GL_SCISSOR_TEST)) == scissored, "Wide lightning device control lost viewport/scissor state");
+				std::array<unsigned char, 64 * 64 * 4> pixels{};
+				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+				for (unsigned y = 0; y < 64; ++y)
+					for (unsigned x = 0; x < 64; ++x) {
+						const float px = float(x) + .5f, py = float(y) + .5f;
+						const float along = (std::min) (px - 15.75f, 48.75f - px);
+						const float across = width * .5f + .5f - std::abs(py - 32.25f);
+						const bool visible = !occluded && along > 0 && across > 0 && (!scissored || (x >= 9 && x < 44 && y >= 12 && y < 42));
+						const float coverage = (std::min) (along, 1.f) * (std::min) (across, 1.f);
+						for (unsigned c = 0; c < 4; ++c) {
+							const int expected = visible ? int(std::lround(255.f * color[c] * (c == 3 ? coverage : 1.f))) : 0;
+							if (std::abs(int(pixels[(y * 64 + x) * 4 + c]) - expected) > 1)
+								throw std::runtime_error("Wide lightning device pixels differ: width=" + std::to_string(width) + " occluded=" + std::to_string(occluded) + " scissored=" + std::to_string(scissored) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " channel=" + std::to_string(c) + " expected=" + std::to_string(expected) + " actual=" + std::to_string(pixels[(y * 64 + x) * 4 + c]));
+						}
+					}
+				require(glGetError() == GL_NO_ERROR, "Wide lightning device control raised a GPU error");
+				++cases;
+			}
+	return cases;
+}
 std::shared_ptr<const xl_compat::ParticleImageResource> lightning_probe_image;
 std::vector<unsigned char> lightning_probe_pixels;
 void lightning_gpu_probe(const char *operation)
@@ -28,6 +81,7 @@ void lightning_gpu_probe(const char *operation)
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
+	unsigned line_cases = 0;
 	GLfloat line_range[2];
 	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, line_range);
 	{
@@ -67,6 +121,7 @@ void lightning_gpu_probe(const char *operation)
 			}
 		} native;
 		require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Lightning GPU control target is incomplete");
+		line_cases = lightning_line_device_controls();
 		glViewport(3, 5, 48, 43);
 		const GLfloat projection[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -5001.f / 4999.f, -1, 0, 0, -10000.f / 4999.f, 0 };
 		glMatrixMode(GL_PROJECTION);
@@ -100,5 +155,5 @@ void lightning_gpu_probe(const char *operation)
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "line_cases", line_cases }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

@@ -13,7 +13,12 @@
     { "action": "set_debug", "field": "xl_pog_probe", "value": "lightning_gpu" },
     {
         "action": "assert",
-        "expect": { "xl_pog.passed": true, "xl_pog.lightning_changed": { "gte": 1 }, "xl_pog.corona_width": 256 },
+        "expect": {
+            "xl_pog.passed": true,
+            "xl_pog.line_cases": 12,
+            "xl_pog.lightning_changed": { "gte": 1 },
+            "xl_pog.corona_width": 256,
+        },
     },
     { "action": "set_debug", "field": "android_game_request", "value": "resume" },
     { "action": "wait_for", "expect": { "time_paused": false, "game_window_is_front": true }, "timeout_ms": 20000 },
@@ -38,7 +43,12 @@
     { "action": "set_debug", "field": "xl_pog_probe", "value": "lightning_gpu" },
     {
         "action": "assert",
-        "expect": { "xl_pog.passed": true, "xl_pog.lightning_changed": { "gte": 1 }, "xl_pog.corona_width": 256 },
+        "expect": {
+            "xl_pog.passed": true,
+            "xl_pog.line_cases": 12,
+            "xl_pog.lightning_changed": { "gte": 1 },
+            "xl_pog.corona_width": 256,
+        },
     },
     { "action": "set_debug", "field": "xl_pog_probe", "value": "lightning_release" },
     { "action": "set_debug", "field": "android_game_request", "value": "resume" },

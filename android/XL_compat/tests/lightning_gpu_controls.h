@@ -46,7 +46,7 @@ static void lightning_primitive_gpu_controls()
 	unsigned cases = 0, mismatches = 0;
 	int maximum_error = 0;
 	std::string first_failure;
-	std::array<std::array<float, 16>, 8> cameras;
+	std::array<std::array<float, 16>, 14> cameras;
 	cameras.fill(identity);
 	cameras[1][12] = .7f;
 	cameras[2][12] = -.7f;
@@ -57,12 +57,21 @@ static void lightning_primitive_gpu_controls()
 	cameras[6][12] = .6f;
 	cameras[6][7] = -.4f;
 	cameras[7][0] = cameras[7][5] = .125f;
+	cameras[8][2] = 3.f;
+	cameras[9][6] = 5.f;
+	cameras[10][2] = 2.f;
+	cameras[10][14] = .7f;
+	cameras[10][3] = .3f;
+	cameras[11][2] = 2.f;
+	cameras[11][14] = -.7f;
+	cameras[11][7] = -.4f;
+	cameras[13] = cameras[11];
 	for (const auto &camera : cameras)
-		for (float width : { .2f, 1.0f, 3.0f })
+		for (float width : { .2f, 1.0f, 3.0f, 20.0f, 40.0f })
 			for (bool blur : { false, true })
 				for (float scene_depth : { .25f, .75f })
 					for (unsigned sampling = 0; sampling < 3; ++sampling)
-						for (unsigned isolated = 0; isolated < 4; ++isolated) {
+						for (unsigned isolated = 0; isolated < 9; ++isolated) {
 							auto core = original_core;
 							auto glow = lightning_glow_geometry(nodes, 1, width, true, { 0, 0, 3 }, core.average_depth, 9999);
 							if (isolated == 3) glow.distance_scale = 0;
@@ -71,14 +80,27 @@ static void lightning_primitive_gpu_controls()
 								const auto layer = glow.vertices.size() / 2;
 								for (std::size_t i = (isolated - 1) * layer; i < isolated * layer; ++i) glow.vertices[i] = { 100, 0, 0 };
 							}
-							std::array<std::array<unsigned char, 64 * 64 * 4>, 2> pixels{};
-							for (unsigned profile = 0; profile < 2; ++profile) {
+							if (isolated >= 4 && isolated < 8) {
+								for (auto &vertex : core.vertices) vertex = { 100, 0, 0 };
+								const auto collapsed = glow.vertices[(isolated - 4) * 4];
+								for (std::size_t i = 0; i < glow.vertices.size(); ++i)
+									if (i / 4 != isolated - 4) glow.vertices[i] = collapsed;
+							}
+							if (isolated == 8)
+								for (auto &vertex : glow.vertices) vertex = { 0, 0, 0 };
+							const auto camera_index = &camera - cameras.data();
+							const std::array<int, 4> view = camera_index == 12 ? std::array<int, 4>{ 5, 7, 52, 48 } : camera_index == 13 ? std::array<int, 4>{ -3, 2, 61, 59 }
+							                                                                                                             : std::array<int, 4>{ 0, 0, 64, 64 };
+							const std::array<int, 4> scissor{ 9, 12, 35, 30 };
+							const bool scissored = camera_index >= 12;
+							std::array<std::array<unsigned char, 64 * 64 * 4>, 3> pixels{};
+							for (unsigned profile = 0; profile < 3; ++profile) {
 								glActiveTexture(GL_TEXTURE0);
-								glBindTexture(GL_TEXTURE_2D, profile ? padded_corona : textures[1]);
+								glBindTexture(GL_TEXTURE_2D, profile == 2 ? padded_corona : textures[1]);
 								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampling == 2 ? GL_LINEAR_MIPMAP_LINEAR : sampling == 1 ? GL_LINEAR_MIPMAP_NEAREST
 								                                                                                                              : GL_LINEAR);
-								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, profile ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, profile ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, profile == 2 ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, profile == 2 ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 								glUseProgram(0);
 								glMatrixMode(GL_PROJECTION);
 								glLoadMatrixf(camera.data());
@@ -88,6 +110,9 @@ static void lightning_primitive_gpu_controls()
 								glClearDepth(scene_depth);
 								glClearColor(.03f, .05f, .07f, .2f);
 								glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+								glViewport(view[0], view[1], view[2], view[3]);
+								glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+								if (scissored) glEnable(GL_SCISSOR_TEST);
 								glEnable(GL_DEPTH_TEST);
 								glDepthFunc(GL_LEQUAL);
 								glDepthMask(GL_FALSE);
@@ -99,7 +124,11 @@ static void lightning_primitive_gpu_controls()
 								glDisable(GL_LINE_SMOOTH);
 								glLineWidth(1);
 								if (profile) {
-									renderer.draw(core, glow, 1, color, width, camera, padded_corona, blur, { .25f, .25f });
+									renderer.draw(core, glow, 1, color, width, camera, profile == 2 ? padded_corona : textures[1], blur, profile == 2 ? std::array<float, 2>{ .25f, .25f } : std::array<float, 2>{ 1, 0 });
+									std::array<int, 4> restored_view{}, restored_scissor{};
+									glGetIntegerv(GL_VIEWPORT, restored_view.data());
+									glGetIntegerv(GL_SCISSOR_BOX, restored_scissor.data());
+									check(restored_view == view && restored_scissor == scissor && bool(glIsEnabled(GL_SCISSOR_TEST)) == scissored, "Lightning draw leaked viewport or scissor state");
 									GLint program, equation;
 									GLfloat line;
 									glGetIntegerv(GL_CURRENT_PROGRAM, &program);
@@ -136,26 +165,35 @@ static void lightning_primitive_gpu_controls()
 								glReadPixels(0, 0, 64, 64, GL_DEPTH_COMPONENT, GL_FLOAT, observed_depth.data());
 								for (float value : observed_depth) check(std::abs(value - scene_depth) < .00001f, "Lightning modified scene depth");
 							}
-							unsigned worst = 0, differences = 0;
-							int error = 0;
-							for (unsigned i = 0; i < pixels[0].size(); ++i) {
-								const int delta = std::abs(int(pixels[0][i]) - int(pixels[1][i]));
-								if (delta > 1) ++differences;
-								if (delta > error) {
-									error = delta;
-									worst = i;
+							for (unsigned profile = 1; profile < 3; ++profile) {
+								unsigned worst = 0;
+								int error = 0;
+								for (unsigned i = 0; i < pixels[0].size(); ++i) {
+									const int delta = std::abs(int(pixels[0][i]) - int(pixels[profile][i]));
+									if (delta > error) {
+										error = delta;
+										worst = i;
+									}
 								}
+								// Separate geometry from UNORM border filtering: same-texture
+								// comparisons retain the original limit. Padded filtering may
+								// round by two units, or three after additive layer overlap
+								const bool core_only = isolated == 3 || isolated == 8;
+								const int tolerance = profile == 1 ? (isolated || blur ? 1 : 2) : core_only      ? 1
+								                                                              : isolated || blur ? 2
+								                                                                                 : 3;
+								maximum_error = (std::max) (maximum_error, error);
+								if (error > tolerance) {
+									++mismatches;
+									if (first_failure.empty()) first_failure = "Lightning pixel mismatch profile=" + std::to_string(profile) + " camera=" + std::to_string(camera_index) + " isolated=" + std::to_string(isolated) + " sampling=" + std::to_string(sampling) + " width=" + std::to_string(width) + " blur=" + std::to_string(blur) + " depth=" + std::to_string(scene_depth) + " index=" + std::to_string(worst) + " expected=" + std::to_string(pixels[0][worst]) + " actual=" + std::to_string(pixels[profile][worst]);
+								}
+								++cases;
 							}
-							maximum_error = (std::max) (maximum_error, error);
-							// Each layer may round by one unit; GL_MAX preserves that bound, addition sums it
-							if (error > (isolated || blur ? 1 : 2)) {
-								++mismatches;
-								if (first_failure.empty()) first_failure = ("Lightning pixel mismatch camera=" + std::to_string(&camera - cameras.data()) + " isolated=" + std::to_string(isolated) + " sampling=" + std::to_string(sampling) + " width=" + std::to_string(width) + " blur=" + std::to_string(blur) + " depth=" + std::to_string(scene_depth) + " index=" + std::to_string(worst) + " expected=" + std::to_string(pixels[0][worst]) + " actual=" + std::to_string(pixels[1][worst]) + " differences=" + std::to_string(differences));
-							}
-							++cases;
 						}
 	if (mismatches) throw std::runtime_error(first_failure + " maximum=" + std::to_string(maximum_error) + " cases=" + std::to_string(mismatches));
 	check(glGetError() == GL_NO_ERROR, "Lightning primitive test raised GL error");
+	glDisable(GL_SCISSOR_TEST);
+	glViewport(0, 0, 64, 64);
 	renderer.discard(false);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDeleteFramebuffers(1, &framebuffer);
@@ -164,7 +202,7 @@ static void lightning_primitive_gpu_controls()
 	glDeleteTextures(1, &padded_corona);
 	glDisable(GL_LINE_SMOOTH);
 	glLineWidth(1);
-	std::cout << "Lightning production GPU: " << cases << " core/glow blend/depth comparisons passed; isolated layers and blurred batches <=1 RGBA8 unit, additive combined maximum " << maximum_error << '\n';
+	std::cout << "Lightning production GPU: " << cases << " core/glow blend/depth comparisons passed; same-texture geometry <=1 (combined <=2), padded filtering <=2 (combined <=3), observed maximum " << maximum_error << '\n';
 }
 
 static void lightning_blur_shader_controls()

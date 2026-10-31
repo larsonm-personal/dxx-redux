@@ -456,3 +456,59 @@ Receipts: temp/xl-evening-20261031/connected-source.log and light-native-build.l
 temp/xl-particles-20261030/contracts-windows64/effect-decode/reference.log;
 the existing xl_lightning_source CTest output; and
 temp/xl-skybox-20261031/native-runtime/controls.log.
+
+## Portable smooth lightning core
+
+The core now expands each clipped line segment into screen-space triangles,
+preserving authored widths beyond GLES native line-width limits. Geometry and
+coverage follow Mesa25.2.8 draw_pipe_aaline.c, draw_pipe_clip.c and the NIR
+nir_lower_aaline_fs path. Their license is retained in lightning_line.h. The
+reference is the desktop rasterizer used by the existing GPU owner, not a claim
+that all OpenGL drivers rasterize identical pixels.
+
+Coverage uses endpoint reciprocal w separately from projected geometry. The
+shader scales alpha only, retaining the source's additive RGB fringe. An enlarged
+viewport keeps expanded corners inside the triangle clip volume; a scissor
+intersection confines fragments to the original viewport and caller scissor.
+Without this guard, re-clipping wide triangles changed two end-cap pixels in a
+perspective case. Viewport limits and origin overflow reject explicitly. Viewport,
+scissor, depth, blend, shader and vertex-array state are restored after drawing.
+
+The GPU owner compares widths0.2/1/3/20/40 (blur scales up to80), fourteen camera
+and viewport profiles, two scene depths, three filter modes, and combined,
+layer-isolated, quad-isolated and core-isolated rendering. Cases include x/y and
+near/far clipping, perspective coverage, changing depth, shifted/negative viewport
+origins, caller scissors and preserved depth buffers.
+
+Geometry is checked independently against the fixed-function reference using
+the same original texture: one RGBA8 unit per isolated/GL_MAX case, two for
+combined additive rendering. A third profile checks the portable padded RGBA8
+border texture. Hardware filtering of that interior UNORM texture differs from
+the reference border sampler by up to two units, or three after additive overlap.
+Core-only cases retain the one-unit limit. These limits are explicit; the padded
+path is not claimed byte-identical. Diagnostic conversion of all padded mips to
+RGBA32F passed the original limits; RGBA16F retained small differences. Production
+retains RGBA8 storage and adds no floating-point texture requirement.
+
+The complete EGL GPU owner passed in8.89s with these separate checks. Receipt:
+temp/xl-evening-20261031/line-state-controls.log. Additional filtering diagnostics:
+line-float-border.log (pass), line-half-border.log (residual differences), and
+line-guard-viewport.log (core clipping resolved). Android build and device
+qualification are still pending at this checkpoint. Normal lightning admission
+remains blocked, including original Pumo scene and sprite-batch qualification.
+
+Android x86_64 build, Windows native renderer compilation, scoped formatting and
+both automation catalog checks pass. The existing Android owner now runs twelve
+analytical horizontal-line cases (widths3/20/40, visible/occluded, scissor on/off)
+before and after real context recreation. Each pixel must match the independent
+coverage calculation within one unit; state restoration is checked. The original
+corona scene still compares identical pixels across context recreation.
+
+The host-GPU emulator passed28/28 steps in91.726s, with protected app-data hashes
+unchanged. Receipt: temp/xl-lightning-gpu-android/result.json and state.json;
+runner log: temp/xl-evening-20261031/line-device-host.log. The original restored
+SwiftShader emulator rejects the pre-existing soft-particle scene-depth transfer
+prerequisite before this probe can run; it is not a passing device configuration.
+A separate workspace-local AVD was used for host-GPU validation, leaving the
+original emulator configuration unchanged. These are controlled component tests,
+not original Pumo level9 scene or campaign qualification.
