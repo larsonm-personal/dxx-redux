@@ -304,6 +304,11 @@
         "field": "xl_pog_probe",
         "action": "set_debug",
     },
+    { "action": "face_view", "segment": 1127, "side": 3, "distance": 8 },
+    { "action": "wait_ms", "ms": 500 },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_spray_scene" },
+    { "action": "wait_for", "expect": { "xl_pog.scene.completed": 1 }, "timeout_ms": 15000 },
+    { "action": "assert", "expect": { "xl_pog.scene.passed": 1, "xl_pog.scene.changed": { "gte": 1 } } },
     {
         "action": "set_debug",
         "field": "android_game_request",

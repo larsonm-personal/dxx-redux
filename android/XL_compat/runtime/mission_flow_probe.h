@@ -51,6 +51,20 @@ void mission_flow_probe(const char *operation)
 						if (system.object == owner && std::holds_alternative<SmokeEmitter>(system.emitter) && system.count() > 0) live = true;
 					require(live, "Original spray owner did not emit live smoke-profile particles");
 				}
+			} else if (!std::strcmp(operation, "spray_scene")) {
+				require(ConsoleObject && ConsoleObject->segnum == 1127 && Objects[419].segnum == 1127 &&
+				            std::find(flow_spray_owners.begin(), flow_spray_owners.end(), 419) != flow_spray_owners.end(),
+				        "Spray scene requires the original owner 419 face-view pose");
+				bool selected_live = false;
+				for (const auto &system : particle_systems()) {
+					if (!system.count()) continue;
+					require(std::holds_alternative<SmokeEmitter>(system.emitter) &&
+					            std::find(flow_spray_owners.begin(), flow_spray_owners.end(), system.object) != flow_spray_owners.end(),
+					        "Spray scene contains a live non-spray particle system");
+					selected_live |= system.object == 419;
+				}
+				require(selected_live, "Selected original spray owner has no live particles");
+				xl_particle_scene_probe_request();
 			} else if (!std::strcmp(operation, "spray_gpu")) particle_gpu_probe(image, 8, true);
 			else require(!std::strcmp(operation, "spray_verify"), "Unknown spray control");
 		}

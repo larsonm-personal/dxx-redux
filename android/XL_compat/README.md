@@ -707,6 +707,7 @@ playthrough or whole-campaign qualification.
 
 The [spray controls](evidence/spray-particles.md) extend that original route to
 level 8, including all 15 authored spray owners, checkpoint activation recovery,
-live emission and smoke-atlas GPU checks. XL effect positions retain their
+live emission, smoke-atlas GPU checks and actual world-scene framebuffer
+readback at an authored spray face. XL effect positions retain their
 authored segment association as in the pinned loader. Other particle kinds and
 later campaign requirements remain gated.
