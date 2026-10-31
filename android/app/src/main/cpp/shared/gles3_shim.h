@@ -94,6 +94,7 @@ void gles3_shim_bind_program(GLuint prog);
 
 /* Expose the computed MVP for external programs (e.g. OGL_MERGE) */
 const float *gles3_shim_get_mvp(void);
+const float *gles3_shim_get_projection(void);
 
 /* External program helpers for Android OGL_MERGE draws that want to reuse the
  * shim's streaming VBO / VAO path instead of maintaining a second upload path. */

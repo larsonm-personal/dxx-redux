@@ -819,6 +819,11 @@ const float *gles3_shim_get_mvp(void)
 	return mvp;
 }
 
+const float *gles3_shim_get_projection(void)
+{
+	return proj_stack.m[proj_stack.top];
+}
+
 GLuint gles3_shim_get_stream_vbo(void)
 {
 	return shim_vbo;

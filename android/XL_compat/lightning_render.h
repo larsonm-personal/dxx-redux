@@ -31,6 +31,20 @@ inline bool lightning_outside_clip(const LightningClipVertex &vertex)
 	const auto &p = vertex.position;
 	return std::abs(p[0]) > p[3] || std::abs(p[1]) > p[3] || std::abs(p[2]) > p[3];
 }
+// Source viewport projection uses positive camera Z and only the projection 3x3
+inline std::array<int, 2> lightning_screen_point(const LightningVertex &camera, const std::array<float, 16> &projection, int width, int height)
+{
+	if (width <= 0 || height <= 0) throw std::runtime_error("XL lightning canvas has invalid dimensions");
+	std::array<int, 2> result;
+	for (unsigned axis = 0; axis < 2; ++axis) {
+		const float projected = projection[axis] * camera[0] + projection[4 + axis] * camera[1] + projection[8 + axis] * camera[2];
+		const float coordinate = (float(axis ? height : width) / 2.f) * (1.f + projected / std::abs(camera[2]));
+		if (!std::isfinite(coordinate) || double(coordinate) < INT32_MIN || double(coordinate) > INT32_MAX)
+			throw std::runtime_error("XL lightning projected extent exceeds the source integer range");
+		result[axis] = int(coordinate);
+	}
+	return result;
+}
 // Authored persistent bolts have negative life and do not use transient alpha fades
 template <class Random>
 std::array<float, 4> lightning_draw_color(std::array<float, 4> color, bool visible_blur, Random &random)
