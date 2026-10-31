@@ -30,7 +30,8 @@ The original Android route is extended to level 8 with all 15 spray owners,
 activation disturbance/checkpoint recovery, live smoke-emitter checks and atlas
 GPU checks, followed by the existing hub save restoration. All 59 steps passed
 on Android in 302.111 seconds. This is controlled dispatch, not an earned player
-walkthrough or a full-world spray pixel comparison.
+walkthrough. The subsequent scene control below adds world-rendered spray
+readback at a fixed authored location.
 
 The first original route attempt stopped in level loading: generic Redux
 `fix_object_segs` relocated an effect owner, and strict particle binding rejected
@@ -58,3 +59,24 @@ Validation receipts are under `temp/xl-skybox-20261031`: `native-runtime.log`,
 `android-original-spray-checkpoint-flow.log`. Scoped formatting, both automation
 catalogs and diff whitespace checks passed. The route owner restored protected
 device files after the run.
+
+## Original spray scene
+
+The extended original route passed 64/64 Android steps in 291.503 seconds.
+After checkpoint recovery, a fixed `face_view` at segment 1127, side 3,
+distance 8 faces original spray owner 419. Before readback, the diagnostic
+requires that owner to emit live particles and every live particle system to
+belong to an original spray owner using `SmokeEmitter`. Unrelated fire cannot
+satisfy this check.
+
+The existing scene probe reads the actual framebuffer immediately before and
+after particle batches drawn by the world transparency renderer. It observed
+one batch of 75 quads changing 902,479 RGB pixels, with no GPU error and no MSAA.
+The route then restored the saved original hub; protected device hashes matched.
+Receipt: `temp/xl-skybox-20261031/android-original-spray-scene-flow.log`, with
+final scene diagnostics in `temp/xl-original-flow-android/state.json`.
+
+The Android build, scoped formatting and both automation catalogs passed.
+This follow-up changes diagnostic code and the existing route only; native
+production validation from the spray implementation is reused. The fixed pose
+does not demonstrate player traversal or qualify later campaign levels.
