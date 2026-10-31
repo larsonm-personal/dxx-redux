@@ -2,6 +2,7 @@
 #include "probe.h"
 #include "compatibility.h"
 #include "admission.h"
+#include "hog.h"
 #include "capacity.h"
 #include "wide_wall_fixture.h"
 #include "trigger_capacity_fixture.h"
@@ -1325,6 +1326,10 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--fire-qualification") {
+			original_fire_translation(argv[2]);
+			return 0;
+		}
 		if (argc == 2 && std::string(argv[1]) == "--effects") {
 			effect_layout_contract();
 			return 0;

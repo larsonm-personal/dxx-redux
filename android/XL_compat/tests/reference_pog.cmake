@@ -110,7 +110,7 @@ if(TARGET xl_pog_gpu_test)
         ITEMS
             "include/ogl_lib.h|5be28badbe117772281c6b656aa13da9f6e28428f8b795197da7cf8cb5548c06"
             "effects/particle_buffer.cpp|b4d4cf4468e79300d58aeb28071f1964ff8e7c48c1e517cec247f3d4ab3878e7"
-    )
+            "effects/glare.cpp|b7bac14bf8bd92b2f0e088955daf09ad58bd02b85bceb7e04dc054ded074a2cb")
         string(REPLACE "|" ";" parts "${pair}")
         list(GET parts 0 path)
         list(GET parts 1 expected)
@@ -156,6 +156,16 @@ if(TARGET xl_pog_gpu_test)
     )
     file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_blend.h"
          CONTENT "${extracted}")
+    file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/glare.cpp" glare)
+    string(FIND "${glare}" "const char *glareFS =" begin)
+    string(FIND "${glare}" "void CGlareRenderer::InitShader" end)
+    if(begin LESS 0 OR end LESS begin)
+        message(FATAL_ERROR "Missing source soft-particle shader")
+    endif()
+    math(EXPR length "${end} - ${begin}")
+    string(SUBSTRING "${glare}" ${begin} ${length} soft_shaders)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_soft.h"
+         CONTENT "${soft_shaders}")
     file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/texmerge.cpp" merge)
     string(FIND "${merge}" "const char *texMergeFS [6] = {" begin)
     string(FIND "${merge}" "const char *texMergeFSData =" end)

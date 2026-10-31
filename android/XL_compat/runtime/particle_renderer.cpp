@@ -13,6 +13,9 @@ extern "C" {
 #include "internal.h"
 void ogl_bindbmtex(grs_bitmap *);
 }
+#if !defined(OGLES) || defined(ANDROID)
+#include "particle_soft_renderer.h"
+#endif
 
 namespace xl_compat
 {
@@ -24,6 +27,12 @@ struct ParticleTexture::State {
 	State(const PogBitmap &pixels, const char *label) : name(label)
 	{
 		if (const char *error = ogl_xl_rgba_prepare(int(pixels.width), int(pixels.height))) throw std::runtime_error(error);
+#if !defined(OGLES) || defined(ANDROID)
+		if (gl_initialized) {
+			prepare_particle_soft();
+			verify_particle_soft_depth();
+		}
+#endif
 		bitmap.bm_w = short(pixels.width);
 		bitmap.bm_h = short(pixels.height);
 		bitmap.bm_rowsize = short(pixels.width * 4);
@@ -52,6 +61,9 @@ ParticleTexture::ParticleTexture(const PogBitmap &pixels, const char *name) : st
 ParticleTexture::~ParticleTexture() = default;
 void ParticleTexture::discard_context(bool abandoned)
 {
+#if !defined(OGLES) || defined(ANDROID)
+	particle_soft.discard(abandoned);
+#endif
 	for (auto *texture = State::head; texture; texture = texture->next) texture->release(abandoned);
 }
 void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
@@ -67,7 +79,11 @@ void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
 		glActiveTexture(active);
 		if (error) throw std::runtime_error(error);
 	}
-	draw_particle_quads(state->bitmap, quads, count);
+#if !defined(OGLES) || defined(ANDROID)
+	if (particle_soft.active) draw_soft_particles(state->bitmap, quads, count);
+	else
+#endif
+		draw_particle_quads(state->bitmap, quads, count);
 }
 
 void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size_t count)
@@ -143,4 +159,19 @@ void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size
 extern "C" void xl_particle_images_discard_context(int abandoned)
 {
 	xl_compat::ParticleTexture::discard_context(abandoned != 0);
+}
+
+extern "C" void xl_particle_soft_begin_scene(void)
+{
+#if !defined(OGLES) || defined(ANDROID)
+	particle_soft.active = true;
+	particle_soft.captured = false;
+#endif
+}
+extern "C" void xl_particle_soft_end_scene(void)
+{
+#if !defined(OGLES) || defined(ANDROID)
+	particle_soft.active = false;
+	particle_soft.captured = false;
+#endif
 }

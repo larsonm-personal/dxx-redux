@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 void xl_particle_images_discard_context(int abandoned);
+void xl_particle_soft_begin_scene(void);
+void xl_particle_soft_end_scene(void);
 #ifdef __cplusplus
 }
 #ifdef _MSC_VER

@@ -2,7 +2,7 @@
 #include "resource_validation.h"
 #include "../scoped_texture.h"
 
-static void particle_resource_native_case(const std::filesystem::path &root)
+static void particle_resource_native_case(const std::filesystem::path &root, const std::filesystem::path &installation)
 {
 	using namespace xl_compat;
 	require(xl_level_extensions_active(), "Particle image controls require a loaded XL mission");
@@ -17,6 +17,10 @@ static void particle_resource_native_case(const std::filesystem::path &root)
 	require(!mod.empty(), "Particle image fixture has no selected HOG path");
 	const std::string global = "textures/d2x-xl/smokingfire.tga";
 	const auto mod_path = root / mod, global_path = root / global;
+	require(std::filesystem::equivalent(installation, root / "installation"), "Particle installation fixture must be inside the isolated test output");
+	const auto installation_path = installation / global;
+	std::filesystem::create_directories(installation_path.parent_path());
+	std::filesystem::remove(installation_path);
 	std::filesystem::create_directories(mod_path.parent_path());
 	std::filesystem::create_directories(global_path.parent_path());
 	std::filesystem::remove(mod_path);
@@ -79,7 +83,34 @@ static void particle_resource_native_case(const std::filesystem::path &root)
 	std::filesystem::remove(mixed_case);
 	std::filesystem::remove(global_path);
 	failure("Missing XL fire image");
+	write_bytes(installation_path.string().c_str(), image(61));
+	const char *installation_origin = PHYSFS_getRealDir(global.c_str());
+	require(installation_origin && xl_resource_owns_installation(installation_origin) && !mission_owns_resource_directory(installation_origin), "Particle fallback did not use a distinct trusted startup installation");
+	const auto installed = prepare_particle_image(level);
+	require(installed && installed->path == global && installed->bitmap.pixels[0] == 61, "Startup installation particle image was not decoded");
+	write_bytes(global_path.string().c_str(), image(23));
+	require(prepare_particle_image(level)->bitmap.pixels[0] == 23, "Mission-owned default did not override startup installation image");
+	write_bytes(mod_path.string().c_str(), image(47));
+	require(prepare_particle_image(level)->bitmap.pixels[0] == 47, "Mission mod did not override startup installation image");
+	write_bytes(mod_path.string().c_str(), { 0, 1, 2 });
+	failure("truncated");
+	std::filesystem::remove(mod_path);
+	std::filesystem::remove(global_path);
+	require(PHYSFS_addToSearchPath(foreign_name.c_str(), 0), "Cannot mount installation image shadow control");
+	try {
+		failure("shadowed outside");
+	} catch (...) {
+		PHYSFS_removeFromSearchPath(foreign_name.c_str());
+		throw;
+	}
+	require(PHYSFS_removeFromSearchPath(foreign_name.c_str()), "Cannot unmount installation image shadow control");
+	require(prepare_particle_image(level)->bitmap.pixels[0] == 61, "Installation shadow rejection prevented recovery");
+	write_bytes(installation_path.string().c_str(), { 0, 1, 2 });
+	failure("truncated");
+	std::filesystem::remove(installation_path);
+	failure("Missing XL fire image");
+	require(installed->bitmap.pixels[0] == 61, "Installation image storage depended on a live file");
 	require(selected->bitmap.pixels.size() == 8 * 8 * 4 && selected->bitmap.pixels[0] == 47, "Particle image storage depended on a live file");
 	require(!xl_prepared_particle_image(), "Particle resource probe replaced the current level's prepared images");
-	std::cout << "XL particle image resources: owned default/mod precedence, missing/malformed/default-and-mod-shadow rejection, case-insensitive lookup, retained pixels and recovery passed\n";
+	std::cout << "XL particle image resources: distinct startup installation, owned default/mod precedence, missing/malformed/default-and-mod-shadow rejection, case-insensitive lookup, retained pixels and recovery passed\n";
 }

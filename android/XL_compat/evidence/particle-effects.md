@@ -1,14 +1,16 @@
 # Authored particle effects: fire runtime and qualification
 
-Current status: authored fire simulation, loaded geometry/collision, resource
-ownership, saved activation and shared transparency rendering are implemented.
-Source comparisons, native lifecycle controls, desktop GPU comparisons and
-representative Android transparency regression scenes pass. Original-Pumo
-particle/resource/save qualification remains open, so
-particle admission is still rejected and Pumo Mines is not qualified as playable.
-Work is on `xl_more_85_transparency` in the main checkout, `C:/local/dxx-redux`.
+Current status: strict authored fire now uses normal source-owned admission;
+its former diagnostic bypass is removed. Normal-admission native and Android
+validation passes. Simulation, geometry, resources, saved activation,
+source buffering and soft rendering have passing source/native/GPU evidence.
+Original-Pumo controlled level-2 lifecycle and derived secret-save owners pass.
+Other particle kinds, moving/controlled/multiplayer effects and triangular
+emission faces remain rejected. Pumo's hub and campaign are NOT qualified playable.
+Work is uncommitted on `xl_more_86_particle_rendering`, C:/local/dxx-redux.
 The sections below record successive checkpoints; later checkpoints supersede
-earlier lists of unimplemented work.
+earlier lists of unimplemented work. Current process state and remaining actions
+are in `android/ai tool plans/mission metadata/xl_continuation_20261030.md`.
 
 ## Source and established behavior
 
@@ -562,3 +564,377 @@ Android particle image lifecycle/save restoration and startup-installation image
 fallback still need verification.
 Source advanced buffer reordering, wider particle types and full campaign
 behavior remain outside this fire checkpoint. Particle admission is unchanged.
+
+## Distinct startup installation image fallback
+
+The existing native effect owner now initializes from disposable copies of the
+retail base files, separate from its mission directory. The image control verifies
+that the fallback origin is trusted by startup HAM ownership and is not owned by
+the selected mission. It checks decoded installation pixels, mission default/mod
+precedence, malformed mod rejection without fallback, foreign default shadows,
+recovery, malformed/missing installation files and retained decoded pixels after
+file removal. Original retail files are not modified. No production behavior or
+admission policy changed.
+
+Windows/x86 native build and the existing xl_effect_inspection_gate pass (6.09
+seconds), retaining its loaded-world, rejection/recovery and lifecycle controls.
+Scoped formatting and lint pass. Receipts are under temp/xl-evening-20261030;
+the detailed owner log remains in contracts-windows64/effect-inspection under
+temp/xl-particles-20261030. This closes the startup-installation test gap above;
+Android particle rendering/resource lifetime and original-Pumo save qualification
+remain open.
+
+## Android retained particle image and draw checkpoint
+
+The existing Arena POG Android owner now also stages the unchanged original XL
+fire atlas, checks its pinned SHA-256, and prepares it through production particle
+resource lookup. A renderer-only probe compares eight GPU samples per invocation
+against decoded atlas pixels and both source blend equations. It repeats after
+checkpoint restoration, disk restoration, actual EGL context recreation and a
+disk return through stock D2. The complete owner passes 65 steps (89.838 seconds)
+and restores its backed-up app state. Android debug build, scoped quality checks
+and both automation catalogs pass. Receipts: temp/xl-pog-android and
+temp/xl-evening-20261030/android-pog-particle.log.
+
+The probe deliberately retains its image across these transitions and releases
+it at completion. It does not claim that Arena contains authored particles or
+that loaded-level particle ownership/save state is qualified on Android. Constant
+pixel-center UVs isolate Android upload/blending; billboard geometry and atlas
+coordinate generation retain their earlier independent source/desktop evidence.
+Normal particle admission remains rejected. Original-Pumo loaded ownership,
+authored activation and save restoration are the next gate.
+
+## Fire object translation qualification
+
+The source-to-native translator previously stripped owned ambient-sound payloads
+but not particle payloads. An explicit diagnostic fire translation entry point
+now retains authored particle data in its source inventory and emits the audited
+native object header with normalized ID and RT_NONE. Normal admission remains
+unchanged. Strict shape, parameter, segment and quadrilateral-face validation is
+shared with native particle binding; other subtypes, movement/controllers,
+multiplayer objects and unqualified triangular emission remain rejected.
+
+The existing effect-layout owner passes 125 profiles and 3,360 truncations, now
+including modern fire header preservation and negative translation controls.
+The native effect owner passes after sharing the validator (5.76 seconds).
+The unchanged original Pumo archive (SHA-256
+6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043) passes
+diagnostic translation of mvlev1.rl2 with its twelve disabled authored fire
+objects. The test indexes the archive and reads only that bounded level payload.
+Receipts: temp/xl-evening-20261030/translation.log, pumo-translation.log and
+effect-shared-validation.log. This is not yet native original-level loading,
+authored activation, disk persistence or gameplay qualification.
+
+## Original package admission findings
+
+The original descriptor starts at pm-hub.rl2. The twelve-fire scene mvlev1.rl2
+is ordinal 2, not the campaign startup level; earlier references to its
+"opening level" describe the first particle target and must not imply campaign
+startup qualification. The unchanged hub is independently rejected for modern
+segment-function 10 and other unsupported requirements (298 reported blockers
+in the bounded admission message). No hub exception has been added.
+
+An explicit fire qualification profile now connects strict diagnostic translation
+to the real loader's ordinary resource and dependency checks. It is disabled by
+default and cannot be changed with a loaded source or running game window.
+The headless original-package test reaches level 2's visibility gate and correctly
+rejects it because XL fog requires an active OpenGL renderer. Native loading or
+disk-save success is not claimed. Original-Pumo loading and persistence must be
+qualified on Android with its real renderer; the headless owner retains both
+hub and fog rejection controls. The original HOG and descriptor are hash-checked
+before and after the test, and mounted read-only; the atlas is copied only into
+the disposable installation fixture.
+
+The final native build and extended admission owner pass, including both specific
+rejection witnesses and unchanged original hashes. Scoped formatting/lint pass.
+Receipt: temp/xl-evening-20261030/effect-original/controls.log.
+
+## Original level-2 Android ownership and persistence
+
+The existing POG owner accepts a PumoMods mode and owns the support script
+test_xl_pumo_particles.jsonc. It stages the original hash-pinned archive,
+descriptor and fire atlas plus the package's mod directory, and restores its
+protected app state after execution. No new top-level integration owner was added.
+An explicit diagnostic start selects original ordinal 2 and keeps the unsupported
+startup hub rejected. It uses the existing one-shot intro-skip API to avoid
+reentering automation through briefing UI.
+
+On the host GPU emulator backend the complete original-level owner passes all
+60 steps in 197.724 seconds. It verifies twelve initially disabled/alive source
+owners, actual prepared atlas GPU samples, original authored enable-trigger
+dispatch, observed live emission, rewind after activation disturbance, disk save
+and restore, real EGL context recreation, empty particle ownership after stock
+transition, disk restoration from stock, fresh transient clouds and resumed
+emission. Restored decoded atlas pixels equal the captured original-level pixels.
+Protected app-state hashes match after cleanup. The APK build, scoped formatting
+and both catalog checks pass. Receipts: temp/xl-pumo-particles-android and
+temp/xl-evening-20261030/android-pumo-live.log.
+
+The default legacy SwiftShader emulator still correctly rejects the known broken
+fog depth transfer (observed depth 0 instead of 0.625). The host backend passes
+the production depth check; no renderer gate was bypassed. GPU atlas sampling is
+not a full original-scene visual comparison. Controlled original-scene particle
+drawing was the next evidence gap at this checkpoint. Normal fire admission remains closed;
+the unsupported hub and complete campaign are not qualified playable.
+
+## Controlled original-scene contribution
+
+The original inventory identifies fire object 49 at segment 409, side 2. The
+existing face_view action positions the test eight units from that face, without
+autonomous navigation. An explicitly armed Android diagnostic reads framebuffer
+RGB immediately before and after actual particle batches in the transparency
+queue. It preserves read/draw targets, packing and scissor state, bounds the
+viewport and stops after success or sixteen batches. It does not compare HUD,
+walls or an offscreen atlas target as a proxy for particle drawing.
+
+The complete owner passes 64 steps in 223.039 seconds. Its scene control records
+168,063 changed RGB pixels over two batches (577 quads, zero multisamples).
+This establishes visible particle contribution at the controlled pose, not a
+pixel-identical comparison against the original XL engine. Protected app-state
+hashes match. Android build, scoped quality and both catalogs pass. Receipt:
+temp/xl-evening-20261030/android-pumo-scene.log; selected state is retained as
+scene-initial-state.json alongside it. Fresh scene assertions after EGL recreation
+and disk return through stock exposed an intermittent shared GLES shim overread
+before the post-context assertion ran. The crash's inlined source location is
+gles3_shim.c:1094, the color-array copy. Copying count times stride from an interior
+interleaved attribute pointer reads past the final vertex. This is not evidence
+that the original scene's lifecycle was reliably safe, despite the earlier pass.
+
+The Android shim now copies only through the final attribute value. The existing
+GLES VBO owner adds client arrays ending at a protected page, tests first=0 and
+first=3 in both shader paths, and requires the expected green framebuffer pixel.
+It passes for D1 and D2 (10 steps each), and the app sandbox is restored. Android
+build and scoped quality pass with no compiler warning/error matches. Receipts:
+pumo-scene-context-crash.log, shim-span-d1.log, shim-span-d2.log and
+android-shim-span-build.log in the evening artifact directory.
+
+The fixed original owner passes 72/72 steps in 193.873 seconds. Fresh scene
+requests pass before save (6,234 changed RGB pixels), after EGL recreation
+(1,382,400), and after disk return through stock (338,492). Counts reflect the
+current simulated clouds rather than an exact visual oracle. The final state has
+twelve owners/systems and 1,219 live particles; protected app-state hashes match.
+Receipt: temp/xl-evening-20261030/android-pumo-scene-fixed.log. All build/test
+processes completed and git diff --check passes. Normal particle admission is
+still closed; the hub and full campaign remain unqualified.
+
+## Original reusable fire actions
+
+The bounded original inventory identifies wall actions 19 and 20, type 32,
+targeting ten and two fire owners. Both have flag 1 (TF_NO_MESSAGE), not
+TF_ONE_SHOT. There is no original fire-linked disable action in this level.
+The existing owner now requires exactly two actions and twelve enabled owners,
+retains their original flags through rewind/disk restoration, and exercises the
+same reusable authored actions after diagnostic disabling at the post-context
+and disk-return boundaries. The diagnostic disable is not claimed as an authored
+mission action. Full owner passes 74/74 in 194.417 seconds; protected hashes match.
+Native effect layout controls, scoped quality and Android build pass. Receipt:
+temp/xl-evening-20261030/android-pumo-reactivation.log.
+
+The final fixed-view screenshot contains visible fire and smoke, but the
+eight-unit pose is inside the effect and fills the windshield. It does not permit
+a useful judgment of the effect's boundary against surrounding level geometry.
+
+## Soft-intersection fidelity gap and source contract
+
+A geometry-derived adjacent pose (segment 410, side 4) passes the scene-only
+prefix in 20 steps, 31.673 seconds, while exposing abrupt rectangular intersections.
+SceneOnly mode reuses the existing original owner's startup and RGB assertion,
+captures the view and restores protected app state without repeating lifecycle
+checks. Receipt: temp/xl-evening-20261030/android-pumo-scene-410.log.
+
+The original atlas is RGB with neutral black fire and white smoke corners; adding
+alpha handling would not follow this source path. Pinned XL quality 3 enables
+soft particles. Fire and its smoke variant bypass particleFS and use glareFS with
+a five-unit depth interval, disabled depth testing, weak-additive fire and
+multiplicative smoke. The current runtime only applies hard GL_LEQUAL and has not
+yet earned that higher-quality source behavior.
+
+The existing EGL owner now extracts glareFS/glareVS from hash-pinned glare.cpp
+(b7bac14bf8bd92b2f0e088955daf09ad58bd02b85bceb7e04dc054ded074a2cb). A portable
+shader using the same equations passes 86 full-frame source GPU comparisons across
+near/far depths, foreground/equal/behind geometry and both blends. Twenty-four
+cases distinguish soft blending from hard depth rejection. Existing mixed queue,
+particle camera/context and RGBA/indexed controls also pass. Scoped quality passes.
+Receipts: soft-source-build.log and soft-source.log under the evening artifacts.
+This qualifies the fragment equations only; production scene-depth capture,
+shader integration, GL restoration and Android lifecycle remain outstanding.
+
+## Production soft-particle integration
+
+The XL-local backend now captures opaque scene depth once per transparency pass,
+uses the verified source shader in original queue order, and restores the caller's
+program, VAO/buffer, texture, blend, depth and cull state. Particle-owned levels use
+the source near/far projection (1/5000); stock levels retain their original near
+plane. Shader, vertex and depth resources follow the existing lost-context hook.
+
+The snapshot owner passes eight depth format/MSAA cases, including 16/24/32-bit,
+packed stencil, offset viewports and preserved read/draw/unpack/scissor state.
+The complete production backend, not just the shader text, passes all 86 pinned
+source GPU comparisons and preserves scene depth. Existing mixed queue, particle
+camera/context and indexed/RGBA controls pass. A once-per-context preparation
+probe samples a known copied depth for 16/24-bit targets, rejecting silent broken
+depth transfer rather than trusting the blit return status.
+
+The first Android attempt failed at startup because the emulator rejects deleting
+program zero; the leaked GL error was reported by later fog allocation. Empty
+shader/program deletion is now guarded. That failed owner restored its protected
+state. Its runner also recovered a launcher timeout by restarting the same AVD
+with the host backend; this was not a particle draw crash.
+
+The corrected fixed view passes 20/20 in 35.867 seconds. The full original owner
+then passes 74/74 in 220.530 seconds, including reactivation, rewind/disk restore,
+real context recreation, stock isolation and fresh scene contribution afterward.
+Protected hashes match. Native Windows build/controls, scoped quality, both
+catalogs and git diff --check pass. Android compilation has one existing constant
+conversion warning in unchanged d2/main/game.c, none in the new renderer files.
+Receipts under temp/xl-evening-20261030: particle-depth.log, soft-backend.log,
+soft-capability.log, android-pumo-soft-scene-fixed.log,
+android-pumo-soft-lifecycle.log and native-soft-capability-controls.log.
+The fixed-view image is pumo-soft-scene.png. These are controlled original-level
+checks, not a campaign playthrough or a pixel-identical original-engine capture.
+Normal particle admission remains closed pending a final requirement audit.
+
+## Admission audit: source particle buffering
+
+The resource, authored-state and Android lifecycle gates above pass, but the
+source batching requirement is still open. The pinned `include/particles.h`
+selects three buffers, each holding 25,000 entries. Actual
+`CParticleManager::Add` and `Flush` bodies choose compatible buffers, flush
+overlapping existing buffers and drain buffers by greatest radial distance.
+Allocating a fresh buffer skips the overlap pass. Actual buffer flush admission
+discards singleton buffers. A manager flush also does not select buffers whose
+maximum distance is zero. These are observable source decisions, not equivalent
+to drawing every adjacent queued quad.
+
+The existing effect-reference owner now executes these pinned manager and buffer
+Add/Compatible bodies, the actual compatibility table and `CEffectArea::Add`.
+Its GPU submission is replaced with an ordered particle-ID receipt, after the
+actual extracted flush admission checks. Seven profiles exercise 25,016 inputs:
+singletons, two equal-kind particles, overlapping and disjoint fire/smoke
+variants, a non-particle boundary, zero radial distance and capacity rollover.
+An initial expected overlap receipt was wrong: fresh allocation skips overlap
+checks, so alternating colocated fire/smoke draws fire IDs 0 and 2 while dropping
+the isolated smoke entries. Corrected expectations follow that executed source.
+
+This qualification does not change the production renderer. Normal admission
+stays closed. Next bounded chunk: implement the strict fire buffering contract
+locally, compare its receipts against these source bodies over broader generated
+profiles, then integrate it into the existing transparency pass. Preserve mixed
+wall/object boundaries and qualify resulting pixels before repeating the
+original Android lifecycle owner. Existing resource/save evidence is reusable.
+
+Final source-reference owners pass on Linux and Windows, including all 125
+existing payload fixtures. Scoped quality and diff whitespace checks pass.
+Receipts are `buffer-source.log`, `buffer-windows.log` and their build logs in
+`temp/xl-evening-20261030`. The Windows build caught a missing explicit string
+header, now corrected; the final Windows build has no warnings.
+
+`particle_buffer.h` now implements the strict-fire decisions without changing
+the runtime call path yet. The existing reference owner compares every
+intermediate and final dispatch over 263 profiles and 156,088 submitted entries,
+including generated 3D positions/radii, viewer offsets, all type/emissive pairs,
+third-buffer replacement and interior non-particle flush boundaries. Windows
+and Linux pass; Linux also passes after scoped formatting. Receipts are
+`buffer-windows.log`, `buffer-portable.log` and `buffer-portable-quality.log`.
+The next integration must carry original world position and source Rad into
+the transparency queue: Rad is hypot of unscaled width/height, not the billboard's
+decayed visible extent. Retain existing source ordering before buffer dispatch.
+
+The runtime now carries world position and the unscaled source radius into its
+shared queue and runs qualified buffering during bucket traversal. Final flush
+occurs before queue storage is cleared; exceptions retain the existing cleanup.
+A production native dispatch control verifies a pair before an object boundary
+and suppression of the following singleton. Six complete-frame GPU comparisons
+cover singleton suppression, colocated variants and disjoint reordering in both
+hard and soft paths; all differ from the former per-quad output and preserve
+scene depth. Existing GPU controls, native build/effect owner and Android build
+pass. Android original lifecycle validation is pending at this checkpoint.
+Receipts: `buffer-gpu.log`, `buffer-gpu-build.log`, `build-native.log`,
+`pumo-native.log`, `android-buffer-build.log`. Runtime admission is unchanged.
+
+Android initially exposed a diagnostic sampling problem: after source buffering,
+the first 16 tiny batches contained 70 quads and no changed pixels despite 3390
+live particles. A saved pre-assertion introspection snapshot confirmed no GPU
+error. The bounded readback now rejects batches wholly beyond a common camera
+clip plane before spending the unchanged 16-batch budget. It never changes the
+renderer or relaxes the RGB assertion. At the same 409/2 pose the original scene
+passes 21 steps in 36.567 seconds, observing 424,928 changed pixels across two
+batches/nine quads. Protected hashes match after restoration. Both automation
+catalogs pass. The full lifecycle run is pending. Failed and successful receipts
+are retained as `android-pumo-buffer-scene-diagnostic.log`,
+`buffer-scene-zero-state.json` and `android-pumo-buffer-scene-frustum.log`.
+
+The complete buffered original owner passes 78/78 in 238.059 seconds. It now
+explicitly opens and verifies Game Menu before forced context loss instead of
+relying on backgrounding to open one: an earlier run recreated the context but
+timed out waiting for that incidental menu. All original post-resume assertions
+remain, including resource pixels, authored state and fresh scene RGB after
+context recreation and stock return. Protected file hashes match after restore.
+Receipt: `android-pumo-buffer-lifecycle-menu.log`. This closes the source buffer
+ordering gap for this strict-fire checkpoint; normal admission remains closed.
+
+## Bounded GPU submission
+
+The soft renderer now converts each contiguous same-blend run to ordered fan
+triangles and submits one upload/draw per run, capped at 25,000 quads. It retains
+source buffer order and blend boundaries. GPU reference comparisons submit the
+expected source-qualified sequence one quad at a time, independently of the new
+coalescing. All six complete-frame comparisons and existing soft shader controls
+pass. A 25,001-quad same-blend case uses neutral quads followed by one colored
+quad and proves the upload split retains the final quad. Windows native build
+and scoped quality pass. The initial build hit the engine's legacy min macro;
+parenthesized std::min calls resolve it without changing shared headers.
+Receipts: `buffer-submit-gpu.log`, `buffer-submit-gpu-build.log`,
+`buffer-submit-quality.log`. Android build/validation is pending; no measured
+frame-rate claim is made from reduced submission counts alone.
+
+Android batched submission qualification passes: 21-step original 410/4 scene
+in 40.523 seconds, then all 78 lifecycle steps in 229.370 seconds with matching
+protected hashes. Fresh RGB checks pass before saves, after real context loss
+and after return from stock. Receipts `android-pumo-submit-scene.log` and
+`android-pumo-submit-lifecycle.log`; inspected image
+`pumo-buffered-soft-scene.png`. These timings are test durations, not a frame-rate
+benchmark. Normal admission remains closed pending the requirement audit.
+
+## Automatic secret-save lifecycle
+
+The final requirement audit identified a missing named gate: ordinary disk and
+stock-return tests do not execute automatic secret saves. The existing native
+effect owner now generates a pinned derived mission using unchanged Neptune
+geometry with two appended authored fire objects (point and face), distinct
+normal/secret entries and preserved companion resources. It executes real
+EnterSecretLevel/ExitSecretLevel twice, verifying first-secret defaults, distinct
+base/secret enable states, automatic save files, exact prepared image pixels,
+fresh transient clouds and resumed emission. The native owner passes.
+
+The existing Android POG runner has a separate SecretFixture mode pinned to that
+derived HOG/descriptor. It preserves player/root secret-save files and runs a
+30-step support script. Synchronous transition presentation is suppressed only
+within diagnostic entry/return calls; actual automatic save/load runs, followed
+by headed GPU pixel checks and emission after every transition. It passes all
+30 steps in 67.100 seconds, with matching protected hashes. This proves derived
+secret persistence/resource behavior, not an earned original Pumo secret exit.
+Both catalogs and scoped quality pass. Receipts: `effect-original/controls.log`,
+`android-particle-secret.log`, `catalog-secret.log`, `catalog-owner-secret.log`.
+
+## Normal strict-fire admission
+
+The completed requirement audit permits only the validated stationary,
+uncontrolled, single-player authored fire profile, with point or quad-face
+emission and bounded decoded arithmetic. Normal admission now invokes that
+validator; the separate diagnostic fire profile and translator are removed.
+Other particle kinds and malformed/unsupported shapes retain specific blockers.
+The stock-only translator rejects fire because its state belongs to the XL
+runtime. Metadata reports partial effect support and never infers playability.
+The pinned DoStaticParticles source creates an implicit sound only for bubbles;
+fire has no missing implicit audio requirement.
+
+Validation: full inventory contracts; 125 effect profiles and 3360 truncations;
+native missing-atlas rejection and recovery, secret saves and original Pumo hub/
+headless-renderer rejection. Android original Pumo passes 78/78 in 249.514 seconds;
+derived secret owner passes 30/30 in 55.777 seconds. Both protected file hashes
+match. Receipts: `admission-inventory.log`, `translation.log`,
+`effect-original/controls.log`, `android-pumo-normal-admission.log`,
+`android-secret-normal-admission.log`, `admission-quality.log` and
+`admission-resource-quality.log`. Earlier source/GPU renderer evidence is reused;
+this final chunk changes admission/routing rather than rendering algorithms.

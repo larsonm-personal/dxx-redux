@@ -21,6 +21,7 @@ std::vector<ParticleQuad> particle_scene(const std::vector<int> &visible, const 
 struct ParticleSceneItem {
 	ParticlePoint position;
 	ParticleQuad quad;
+	float radius = 0;
 };
 // Retain emitter insertion order for the shared transparency queue
 std::vector<ParticleSceneItem> particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height);
@@ -34,6 +35,7 @@ void xl_particle_objects_clear(void);
 void xl_particle_objects_frame(void);
 void xl_particle_render_scene(const short *segments, int count);
 int xl_particle_object_set_enabled(int object, int enabled);
+int xl_particle_depth_projection(void);
 #ifdef __cplusplus
 }
 #endif

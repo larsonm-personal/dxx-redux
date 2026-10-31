@@ -2,6 +2,8 @@
 #include "particle_world_test.h"
 #include "particle_objects_test.h"
 #include "particle_resource_test.h"
+#include "particle_original_test.h"
+#include "particle_secret_test.h"
 static int effect_inspection_test(int argc, char **argv)
 {
 	try {
@@ -60,7 +62,11 @@ static int effect_inspection_test(int argc, char **argv)
 				require(!!active == (level == 2), "stock/XL positive source did not load before rejection control");
 				if (version == 23 && particle_receipt.is_open()) particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
 				if (version == 23) particle_objects_native_case(level == 2);
-				if (version == 23 && level == 2) particle_resource_native_case(root.parent_path());
+				if (version == 23 && level == 2) {
+					const auto *installation = find_arg_value(argc, argv, "-particle-installation-fixture");
+					require(installation && *installation, "Particle resource controls require an isolated installation fixture");
+					particle_resource_native_case(root.parent_path(), installation);
+				}
 				const auto vertex = Vertices[0], position = ConsoleObject->pos;
 				const int segments = Num_segments, objects = Highest_object_index, player = ConsoleObject - Objects;
 				const auto identity = xl_level_trigger_identity();
@@ -72,6 +78,9 @@ static int effect_inspection_test(int argc, char **argv)
 			std::cout << "XL effect inspection version " << version << ": stock/XL rejection and supported recovery passed\n";
 		}
 		if (particle_receipt.is_open()) particle_receipt << "end 2\n";
+		particle_secret_native_case(archive, root, find_arg_value(argc, argv, "-particle-installation-fixture"));
+		if (const auto *package = find_arg_value(argc, argv, "-pumo-package"))
+			particle_original_native_case(package, find_arg_value(argc, argv, "-particle-original-image"), find_arg_value(argc, argv, "-particle-installation-fixture"));
 		std::cout << "XL effect inspection gate passed: decoded payload rejected with a useful reason, live state preserved, supported source recovers\n";
 		return 0;
 	} catch (const std::exception &error) {

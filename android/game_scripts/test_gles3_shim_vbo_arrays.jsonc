@@ -1,4 +1,5 @@
 // TEST: GLES compatibility shim VBO-backed array offsets
+// Guarded interleaved client arrays also exercise both shader paths and first > 0
 // Also compares immediate and batched 2D framebuffer pixels, including overflow,
 // empty batches, mixed line/rectangle order, gradients, and alpha blending
 [

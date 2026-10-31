@@ -25,6 +25,8 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <android/log.h>
 #include "android_crash_handler.h"
 #include "android_log.h"
@@ -318,6 +320,14 @@ static int gl_type_size(GLenum type)
 		case GL_UNSIGNED_SHORT: return 2;
 		default: return 4; /* GL_FLOAT, GL_INT, GL_UNSIGNED_INT */
 	}
+}
+
+static int client_array_bytes(int vertices, int size, GLenum type, int stride)
+{
+	const int packed = size * gl_type_size(type);
+	/* Attribute pointers may start inside an interleaved vertex. The final
+	 * vertex contributes only its attribute, never the trailing stride */
+	return vertices > 0 ? (vertices - 1) * (stride ? stride : packed) + packed : 0;
 }
 
 static struct gles3_shim_draw_stats draw_stats;
@@ -823,6 +833,49 @@ void gles3_shim_log_merge_probe(unsigned int serial, const char *stage)
 	                ta_ptr, ta_buffer, ta_size, ta_stride, ta2_ptr, ta2_buffer, ta2_size, ta2_stride, mvp_dirty);
 }
 
+static int probe_interleaved_client_arrays(void)
+{
+	const long page = sysconf(_SC_PAGESIZE);
+	if (page < 216) return 0;
+	unsigned char *mapping = mmap(NULL, (size_t) page * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (mapping == MAP_FAILED) return 0;
+	if (mprotect(mapping + page, (size_t) page, PROT_NONE)) {
+		munmap(mapping, (size_t) page * 2);
+		return 0;
+	}
+	/* The final color ends exactly at a protected page. A full-stride copy
+	 * from either interior UV/color pointer would cross into that page */
+	float (*vertices)[9] = (float (*)[9])(mapping + page - 6 * 9 * sizeof(float));
+	const float positions[3][2] = { { -0.8f, -0.8f }, { 0.8f, -0.8f }, { 0, 0.8f } };
+	for (int i = 0; i < 6; ++i) {
+		const float vertex[9] = { positions[i % 3][0], positions[i % 3][1], 0, 0, 0, 0, 1, 0, 1 };
+		memcpy(vertices[i], vertex, sizeof(vertex));
+	}
+	gles3_shim_bind_buffer(GL_ARRAY_BUFFER, 0);
+	gles3_shim_vertex_pointer(3, GL_FLOAT, sizeof(vertices[0]), vertices[0]);
+	gles3_shim_texcoord_pointer(2, GL_FLOAT, sizeof(vertices[0]), vertices[0] + 3);
+	gles3_shim_color_pointer(4, GL_FLOAT, sizeof(vertices[0]), vertices[0] + 5);
+	gles3_shim_enable_client_state(GL_VERTEX_ARRAY);
+	gles3_shim_enable_client_state(GL_TEXTURE_COORD_ARRAY);
+	gles3_shim_enable_client_state(GL_COLOR_ARRAY);
+	int passed = 1;
+	for (int external = 0; external < 2; ++external) {
+		if (external) {
+			gles3_shim_use_external(shim_prog);
+			gles3_shim_external_texcoord2_pointer(2, GL_FLOAT, sizeof(vertices[0]), vertices[0] + 3);
+		}
+		glClear(GL_COLOR_BUFFER_BIT);
+		gles3_shim_draw_arrays(GL_TRIANGLES, 0, 3);
+		gles3_shim_draw_arrays(GL_TRIANGLES, 3, 3);
+		unsigned char pixel[4] = { 0 };
+		glReadPixels(4, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+		passed = passed && glGetError() == GL_NO_ERROR && pixel[0] == 0 && pixel[1] == 255 && pixel[2] == 0 && pixel[3] == 255;
+		gles3_shim_use_external(0);
+	}
+	munmap(mapping, (size_t) page * 2);
+	return passed;
+}
+
 int gles3_shim_probe_vbo_arrays(void)
 {
 	static const float vertices[][5] = {
@@ -937,6 +990,8 @@ int gles3_shim_probe_vbo_arrays(void)
 	passed = error == GL_NO_ERROR &&
 	         center_pixel[0] == 255 && center_pixel[1] == 255 &&
 	         center_pixel[2] == 255 && center_pixel[3] == 255;
+	if (passed)
+		passed = probe_interleaved_client_arrays();
 	if (passed)
 		passed = ogl_2d_batch_probe();
 	/* A bound buffer deletion resets ARRAY_BUFFER, while other targets do not */
@@ -1068,12 +1123,9 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		/* GLES 3.0 requires vertex data in buffer objects -- no client-side
 		 * arrays.  Upload the deferred client pointers to our streaming VBO. */
 		GLsizei nverts = first + count;
-		int va_row = va_stride ? va_stride : va_size * gl_type_size(va_type);
-		int ca_row = ca_stride ? ca_stride : ca_size * gl_type_size(ca_type);
-		int ta_row = ta_stride ? ta_stride : ta_size * gl_type_size(ta_type);
-		int va_bytes = (vertex_array_enabled && va_ptr) ? nverts * va_row : 0;
-		int ca_bytes = (color_array_enabled && ca_ptr) ? nverts * ca_row : 0;
-		int ta_bytes = (texcoord_array_enabled && ta_ptr) ? nverts * ta_row : 0;
+		int va_bytes = (vertex_array_enabled && va_ptr) ? client_array_bytes(nverts, va_size, va_type, va_stride) : 0;
+		int ca_bytes = (color_array_enabled && ca_ptr) ? client_array_bytes(nverts, ca_size, ca_type, ca_stride) : 0;
+		int ta_bytes = (texcoord_array_enabled && ta_ptr) ? client_array_bytes(nverts, ta_size, ta_type, ta_stride) : 0;
 		int total = va_bytes + ca_bytes + ta_bytes;
 		int off = 0;
 
@@ -1113,14 +1165,10 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 			glBufferData(GL_ARRAY_BUFFER, total, shim_stream_data, GL_STREAM_DRAW);
 	} else {
 		GLsizei nverts = first + count;
-		int va_row = va_stride ? va_stride : va_size * gl_type_size(va_type);
-		int ca_row = ca_stride ? ca_stride : ca_size * gl_type_size(ca_type);
-		int ta_row = ta_stride ? ta_stride : ta_size * gl_type_size(ta_type);
-		int ta2_row = ta2_stride ? ta2_stride : ta2_size * gl_type_size(ta2_type);
-		int va_bytes = va_ptr ? nverts * va_row : 0;
-		int ca_bytes = ca_ptr ? nverts * ca_row : 0;
-		int ta_bytes = ta_ptr ? nverts * ta_row : 0;
-		int ta2_bytes = ta2_ptr ? nverts * ta2_row : 0;
+		int va_bytes = va_ptr ? client_array_bytes(nverts, va_size, va_type, va_stride) : 0;
+		int ca_bytes = ca_ptr ? client_array_bytes(nverts, ca_size, ca_type, ca_stride) : 0;
+		int ta_bytes = ta_ptr ? client_array_bytes(nverts, ta_size, ta_type, ta_stride) : 0;
+		int ta2_bytes = ta2_ptr ? client_array_bytes(nverts, ta2_size, ta2_type, ta2_stride) : 0;
 		int total = va_bytes + ca_bytes + ta_bytes + ta2_bytes;
 		int off = 0;
 

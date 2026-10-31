@@ -1,4 +1,61 @@
 // Synthetic serialization controls; successful inspection never qualifies gameplay
+void original_fire_translation(const char *path)
+{
+	std::ifstream input(path, std::ios::binary | std::ios::ate);
+	check(bool(input) && input.tellg() > 0, "Original fire archive is missing");
+	const auto length = static_cast<std::uint64_t>(input.tellg());
+	const auto read_at = [&](std::uint64_t offset, unsigned char *data, std::size_t size) {
+		input.seekg(static_cast<std::streamoff>(offset));
+		input.read(reinterpret_cast<char *>(data), static_cast<std::streamsize>(size));
+		check(bool(input), "Original fire archive read failed");
+	};
+	const auto members = xl_compat::index_hog(length, read_at);
+	const auto level = std::find_if(members.begin(), members.end(), [](const auto &member) { return member.name == "mvlev1.rl2"; });
+	check(level != members.end(), "Original Pumo first fire level missing");
+	check(level->size <= 64 * 1024 * 1024, "Original fire level exceeds reader bound");
+	Bytes bytes(static_cast<std::size_t>(level->size));
+	read_at(level->offset, bytes.data(), bytes.size());
+	const auto translated = xl_compat::prepare_source_runtime_probe(bytes);
+	unsigned count = 0;
+	for (const auto &object : translated.source.objects)
+		if (object.render == 11) {
+			check(object.render_data.size() == 13 && object.render_data[11] == 3 && object.render_data[12] == 0, "Original Pumo opening particle identity/activation differs");
+			if (!count) std::cout << "Original Pumo controlled fire face: object " << (&object - translated.source.objects.data()) << ", segment " << object.segment << ", side " << object.render_data[10] - 1 << '\n';
+			++count;
+		}
+	check(count == 12, "Original Pumo opening fire count differs");
+	unsigned actions = 0, enable = 0, disable = 0;
+	for (const auto &action : translated.source.triggers) {
+		unsigned targets = 0;
+		for (const auto &target : action.targets)
+			if (target[1] < 0 && target[0] >= 0 && std::size_t(target[0]) < translated.source.objects.size() && translated.source.objects[target[0]].render == 11) ++targets;
+		if (!targets) continue;
+		enable += action.type == 32;
+		disable += action.type == 33;
+		if (actions++ < 8) std::cout << "Original fire wall action " << (&action - translated.source.triggers.data()) << ": type " << action.type << ", flags " << action.flags << ", fire targets " << targets << '\n';
+	}
+	std::cout << "Original fire linked wall actions: " << actions << " (enable " << enable << ", disable " << disable << ")\n";
+	const auto print_segment = [&](int index) {
+		const auto &segment = translated.source.segments.at(index);
+		auto low = translated.source.vertices.at(segment.vertices[0]), high = low;
+		for (int vertex : segment.vertices)
+			for (int axis = 0; axis < 3; ++axis) {
+				low[axis] = std::min(low[axis], translated.source.vertices.at(vertex)[axis]);
+				high[axis] = std::max(high[axis], translated.source.vertices.at(vertex)[axis]);
+			}
+		std::cout << "Original fire view segment " << index << " bounds";
+		for (int axis = 0; axis < 3; ++axis) std::cout << ' ' << double(low[axis]) / 65536 << ':' << double(high[axis]) / 65536;
+		std::cout << " children";
+		for (int child : segment.children) std::cout << ' ' << child;
+		std::cout << '\n';
+	};
+	print_segment(409);
+	for (int child : translated.source.segments.at(409).children)
+		if (child >= 0) print_segment(child);
+	rejects([&] { xl_compat::prepare_source_runtime_probe(bytes); });
+	std::cout << "Original Pumo fire translation: 12 disabled authored fire objects validated, source retained, normal strict-fire admission passed\n";
+}
+
 void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
@@ -80,6 +137,38 @@ void effect_layout_contract(const char *directory = nullptr)
 				const bool sound_supported = render == 13 && profile == 0;
 				check(xl_compat::runtime_blockers(decoded).empty() == sound_supported, "effect capability admission differs from implemented sound profile");
 				rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+				if (render == 11 && version >= 23) {
+					auto fire = bytes;
+					patch(fire, start + header + 28, 0, 1);
+					if (profile == 2 || profile == 3) {
+						rejects([&] { xl_compat::prepare_source_runtime_probe(fire); });
+					} else {
+						const auto original = xl_compat::inspect_level(fire);
+						const auto translated = xl_compat::prepare_source_runtime_probe(fire);
+						check(xl_compat::runtime_blockers(original).empty(), "Normal fire admission rejected the supported shape");
+						rejects([&] { xl_compat::prepare_gameplay_probe(fire); });
+						const auto fire_report = xl_compat::compatibility_json("fire.rl2", fire);
+						check(feature_row(fire_report, "effect_objects").find("\"status\": \"partial\"") != std::string::npos &&
+						          fire_report.find("\"playable\": false") != std::string::npos,
+						      "Strict fire metadata claimed mission playability or retained the unsupported effect gate");
+						check(translated.source.objects[0].render_data == original.objects[0].render_data && translated.source.objects[0].id == id, "Fire translation changed authored payload or raw identity");
+						const auto read32 = [&](std::size_t at) {
+							unsigned value = 0;
+							for (unsigned b = 0; b < 4; ++b) value |= unsigned(translated.stock_level.at(at + b)) << (b * 8);
+							return value;
+						};
+						const auto object_at = read32(read32(12) + 35);
+						Bytes expected(fire.begin() + start, fire.begin() + start + 6);
+						expected.insert(expected.end(), fire.begin() + start + 7, fire.begin() + start + header);
+						expected[1] = expected[4] = 0;
+						check(expected.size() == 79 && object_at + expected.size() <= translated.stock_level.size() && std::equal(expected.begin(), expected.end(), translated.stock_level.begin() + object_at), "Fire native record lost audited header bytes or retained particle payload");
+						for (const auto field : { std::array<unsigned, 2>{ unsigned(header + 28), 7 }, { unsigned(header + 29), 0 }, { unsigned(header + 8), 11 }, { 6, 1 } }) {
+							auto bad_fire = fire;
+							patch(bad_fire, start + field[0], field[1], 1);
+							rejects([&] { xl_compat::prepare_source_runtime_probe(bad_fire); });
+						}
+					}
+				}
 				const auto report = xl_compat::compatibility_json("effect.rl2", bytes);
 				check(feature_row(report, "effect_objects").find(sound_supported ? "\"status\": \"partial\"" : "\"status\": \"blocked\"") != std::string::npos && report.find("\"playable\": false") != std::string::npos, "effect metadata implied complete gameplay support");
 				for (std::size_t cut = header; cut < object.size(); ++cut) {

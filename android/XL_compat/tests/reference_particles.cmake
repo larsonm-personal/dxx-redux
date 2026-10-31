@@ -346,6 +346,51 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_order.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_order.cpp)
 
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_buffer.cpp" buffer_hash)
+if(NOT buffer_hash STREQUAL "b4d4cf4468e79300d58aeb28071f1964ff8e7c48c1e517cec247f3d4ab3878e7")
+    message(FATAL_ERROR "Particle batching source changed")
+endif()
+set(extracted "// Actual source particle area, compatibility, buffering and manager dispatch\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_buffer.cpp" buffer_source)
+string(REGEX MATCH "int32_t CParticleBuffer::bCompatible[^;]+;" compatibility "${buffer_source}")
+if(NOT compatibility)
+    message(FATAL_ERROR "Missing particle buffer compatibility table")
+endif()
+string(APPEND extracted "${particle_types}\n${compatibility}\n")
+foreach(name IN ITEMS PART_BUF_SIZE MAX_PARTICLE_BUFFERS)
+    string(REGEX MATCH "#define[ \t]+${name}[ \t]+[0-9]+" constant "${render_header}")
+    if(NOT constant)
+        message(FATAL_ERROR "Missing particle buffer constant ${name}")
+    endif()
+    string(APPEND extracted "${constant}\n")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/transprender.cpp"
+                      "CEffectArea& CEffectArea::Add (")
+foreach(signature IN ITEMS "bool CParticleBuffer::Compatible (" "bool CParticleBuffer::Add (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_buffer.cpp"
+                          "${signature}")
+endforeach()
+foreach(signature IN ITEMS "bool CParticleManager::Flush (" "int16_t CParticleManager::Add ("
+                           "bool CParticleManager::Add (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_manager.cpp"
+                          "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_buffers.h"
+     CONTENT "${extracted}")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_buffer.cpp" buffer_source)
+string(FIND "${buffer_source}" "bool CParticleBuffer::Flush (" begin)
+string(SUBSTRING "${buffer_source}" ${begin} -1 flush_source)
+string(FIND "${flush_source}" "if (!m_iBuffer)" begin)
+string(FIND "${flush_source}" "#if DBG" end)
+if(begin LESS 0 OR end LESS begin)
+    message(FATAL_ERROR "Missing particle buffer flush admission")
+endif()
+math(EXPR length "${end} - ${begin}")
+string(SUBSTRING "${flush_source}" ${begin} ${length} flush_gate)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_flush_gate.h"
+     CONTENT "${flush_gate}")
+target_sources(xl_effect_reference PRIVATE tests/reference_particle_buffers.cpp)
+
 foreach(
     pair IN
     ITEMS "render/renderlib.cpp|d3eacfaf28c9687e7e37c3e47333b11d4a026000839231e8a71b443bc86d4252"
