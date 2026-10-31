@@ -1,4 +1,5 @@
 #include "particle_objects.h"
+#include "../particle_admission.h"
 #include "mission_progress.h"
 #include "particle_state.h"
 #include "transparency_scene.h"
@@ -102,6 +103,7 @@ static void particle_objects_native_case(bool active)
 	const auto sim_before = d_rand_get_stream_call_count(D_RNG_SIM), fx_before = d_rand_get_stream_call_count(D_RNG_FX);
 	xl_transparency_test_controls(active);
 	if (!active) {
+		require(!xl_preserve_effect_position(20), "XL effect position policy leaked into stock");
 		xl_particle_objects_frame();
 		particle_objects_frame(1000);
 		xl_particle_render_scene(nullptr, 0);
@@ -156,6 +158,14 @@ static void particle_objects_native_case(bool active)
 		authored.render_data = { 1, 1, 1, 1, 1, 10, 255, 128, 0, 128, 1, 3, 0 };
 	}
 	bind_particle_objects(source);
+	{
+		const auto position = Objects[1].pos;
+		compute_segment_center(&Objects[1].pos, &Segments[1]);
+		const auto outside = Objects[1].pos;
+		fix_object_segs();
+		require(Objects[1].segnum == 0 && !std::memcmp(&Objects[1].pos, &outside, sizeof(outside)), "Generic repair relocated an XL effect from its authored segment");
+		Objects[1].pos = position;
+	}
 	particle_objects_frame(0);
 	require(particle_systems().empty() && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Disabled authored particles allocated systems or consumed RNG");
 	const auto wall = [&](int type, int count) {
@@ -248,7 +258,7 @@ static void particle_objects_native_case(bool active)
 	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_FX) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
 	const auto *preserved = &particle_systems().front();
 	auto malformed = source;
-	malformed.objects[1].render_data[11] = 1;
+	malformed.objects[1].render_data[11] = 2;
 	bool rejected = false;
 	try {
 		bind_particle_objects(malformed);
@@ -258,29 +268,37 @@ static void particle_objects_native_case(bool active)
 	require(rejected && &particle_systems().front() == preserved, "Failed particle binding partially replaced live ownership");
 	Triggers[0] = guard.action;
 	particle_saved_state_case();
-	// Mixed kinds use the same manager and saved authored activation state
-	source.objects[1].render_data[10] = 1;
-	source.objects[1].render_data[11] = 0;
-	source.objects[2].render_data[12] = 1;
-	bind_particle_objects(source);
-	particle_objects_frame(0);
-	particle_objects_frame(25);
-	particle_objects_frame(50);
-	require(particle_systems().size() == 2 && std::holds_alternative<SmokeEmitter>(particle_systems().back().emitter) && particle_systems().back().count() > 0, "Mixed native manager did not emit authored smoke");
-	const auto mixed = particle_scene_items({ 0 }, eye, camera, 66, 128, 128, 512, 512);
-	bool smoke_seen = false, fire_seen = false;
-	for (const auto &item : mixed) {
-		if (item.subtype == 0) {
-			smoke_seen = true;
-			require(item.quad.blend == ParticleBlend::alpha, "Smoke scene selected fire blending");
-		} else fire_seen = true;
+	for (int kind : { 0, 1 }) {
+		// Mixed kinds use the same manager and saved authored activation state
+		source.objects[1].render_data[10] = 1;
+		source.objects[1].render_data[11] = kind;
+		source.objects[2].render_data[12] = 1;
+		const auto prepared = prepare_authored_particle(source, source.objects[1]);
+		if (kind == 1) {
+			auto smoke = source.objects[1];
+			smoke.render_data[11] = 0;
+			require(prepared.effect.particles == 4 * prepare_authored_particle(source, smoke).effect.particles && prepared.definition.image == 1 && prepared.definition.fade == 1, "Spray lost source face density or smoke image/fade");
+		}
+		bind_particle_objects(source);
+		particle_objects_frame(0);
+		particle_objects_frame(25);
+		particle_objects_frame(50);
+		require(particle_systems().size() == 2 && std::holds_alternative<SmokeEmitter>(particle_systems().back().emitter) && particle_systems().back().count() > 0, "Mixed native manager did not emit authored smoke");
+		const auto mixed = particle_scene_items({ 0 }, eye, camera, 66, 128, 128, 512, 512);
+		bool smoke_seen = false, fire_seen = false;
+		for (const auto &item : mixed) {
+			if (item.subtype == 0) {
+				smoke_seen = true;
+				require(item.quad.blend == ParticleBlend::alpha, "Smoke scene selected fire blending");
+			} else fire_seen = true;
+		}
+		require(smoke_seen && fire_seen, "Mixed native scene lost a particle subtype");
+		const auto saved_mixed = particle_objects_snapshot();
+		require(restore_particle_objects(saved_mixed, true) && particle_systems().empty(), "Mixed activation restore retained transient clouds");
+		particle_objects_frame(0);
+		particle_objects_frame(50);
+		require(particle_systems().size() == 2 && particle_systems().back().count() > 0, "Mixed activation restore did not resume smoke emission");
 	}
-	require(smoke_seen && fire_seen, "Mixed native scene lost a particle subtype");
-	const auto saved_mixed = particle_objects_snapshot();
-	require(restore_particle_objects(saved_mixed, true) && particle_systems().empty(), "Mixed activation restore retained transient clouds");
-	particle_objects_frame(0);
-	particle_objects_frame(50);
-	require(particle_systems().size() == 2 && particle_systems().back().count() > 0, "Mixed activation restore did not resume smoke emission");
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle lifecycle or activation consumed simulation RNG");

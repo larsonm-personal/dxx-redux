@@ -1,48 +1,342 @@
-// Controlled dispatch of unchanged original Pumo exits, not earned traversal
 [
-    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_pog_runtime" } },
-    { "action": "enter_game", "game": "d2" },
-    { "action": "skip_intro", "timeout_ms": 30000 },
-    { "action": "select", "text": "player", "timeout_ms": 15000 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "skybox_start_hub" },
-    { "action": "skip_briefing", "timeout_ms": 30000 },
-    { "action": "wait_for", "expect": { "in_game": true, "xl_pilot.runtime_active": true }, "timeout_ms": 30000 },
-    { "action": "set_debug", "field": "android_game_request", "value": "overlay_pause" },
-    { "action": "wait_for", "expect": { "time_paused": true }, "timeout_ms": 20000 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "capture" },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_capture" },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "disk_save" },
-    { "action": "set_debug", "field": "android_game_request", "value": "resume" },
-    { "action": "wait_for", "expect": { "time_paused": false }, "timeout_ms": 20000 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit2", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
-    { "action": "assert", "expect": { "xl_pog.flow_level": 2, "xl_pog.flow_exits": 1 } },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit3", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
-    { "action": "assert", "expect": { "xl_pog.flow_level": 3, "xl_pog.flow_exits": 2 } },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit4", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
-    { "action": "assert", "expect": { "xl_pog.flow_level": 4, "xl_pog.flow_exits": 3 } },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit14", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
-    { "action": "assert", "expect": { "xl_pog.flow_level": 14, "xl_pog.flow_exits": 4 } },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit5", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
-    { "action": "assert", "expect": { "xl_pog.flow_level": 5, "xl_pog.flow_exits": 5 } },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit6", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
-    { "action": "assert", "expect": { "xl_pog.flow_level": 6, "xl_pog.flow_exits": 6 } },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_exit7", "post_delay_ms": 500 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_verify" },
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "skybox_start_hub",
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": true,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "capture",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_capture",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_save",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit2",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
     {
         "action": "assert",
-        "expect": { "xl_pog.flow_level": 7, "xl_pog.flow_exits": 7, "xl_pog.flow_file": "tulev1.rl2" },
+        "expect": {
+            "xl_pog.flow_level": 2,
+            "xl_pog.flow_exits": 1,
+        },
     },
-    { "action": "set_debug", "field": "android_game_request", "value": "overlay_pause" },
-    { "action": "wait_for", "expect": { "time_paused": true }, "timeout_ms": 20000 },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "disk_load" },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "flow_restored" },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "verify_saved" },
-    { "action": "set_debug", "field": "xl_pog_probe", "value": "gpu" },
-    { "action": "introspect" },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit3",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_level": 3,
+            "xl_pog.flow_exits": 2,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit4",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_level": 4,
+            "xl_pog.flow_exits": 3,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit14",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_level": 14,
+            "xl_pog.flow_exits": 4,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit5",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_level": 5,
+            "xl_pog.flow_exits": 5,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit6",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_level": 6,
+            "xl_pog.flow_exits": 6,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit7",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_verify",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_level": 7,
+            "xl_pog.flow_exits": 7,
+            "xl_pog.flow_file": "tulev1.rl2",
+        },
+    },
+    {
+        "value": "flow_exit8",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+        "post_delay_ms": 500,
+    },
+    {
+        "value": "flow_verify",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pog.flow_exits": 8,
+            "xl_pog.flow_file": "tulev2.rl2",
+            "xl_pog.flow_level": 8,
+        },
+    },
+    {
+        "value": "true",
+        "field": "robots_suspended",
+        "action": "set_debug",
+    },
+    {
+        "value": "overlay_pause",
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+        "action": "wait_for",
+    },
+    {
+        "value": "flow_spray_capture",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "value": "capture",
+        "field": "checkpoint_cycle",
+        "action": "set_debug",
+    },
+    {
+        "value": "drain",
+        "field": "checkpoint_cycle",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "checkpoints.pending": 0,
+            "checkpoints.failed": 0,
+        },
+        "timeout_ms": 20000,
+        "action": "wait_for",
+    },
+    {
+        "value": "flow_spray_disturb",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "value": "roundtrip_paused",
+        "field": "checkpoint_cycle",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "current_level_num": 8,
+            "checkpoints.failed": 0,
+            "checkpoints.pending": 0,
+        },
+        "timeout_ms": 20000,
+        "action": "wait_for",
+    },
+    {
+        "value": "flow_spray_verify",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "value": "resume",
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "value": "flow_spray_live",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "value": "flow_spray_gpu",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_load",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_restored",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "verify_saved",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "gpu",
+    },
+    {
+        "action": "introspect",
+    },
 ]

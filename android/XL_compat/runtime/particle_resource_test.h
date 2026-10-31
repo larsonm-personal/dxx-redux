@@ -2,7 +2,7 @@
 #include "resource_validation.h"
 #include "../scoped_texture.h"
 
-static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype)
+static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype, bool spray = false)
 {
 	using namespace xl_compat;
 	require(xl_level_extensions_active(), "Particle image controls require a loaded XL mission");
@@ -14,7 +14,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	Object object{};
 	object.render = 11;
 	object.render_data.resize(13);
-	object.render_data[11] = subtype;
+	object.render_data[11] = spray ? 1 : subtype;
 	level.objects.push_back(object);
 	const auto mod = addon_mission_texture_path(mission_resource_archive(), name);
 	require(!mod.empty(), "Particle image fixture has no selected HOG path");
@@ -135,4 +135,5 @@ static void particle_resource_native_case(const std::filesystem::path &root, con
 {
 	particle_resource_profile(root, installation, 3);
 	particle_resource_profile(root, installation, 0);
+	particle_resource_profile(root, installation, 0, true);
 }

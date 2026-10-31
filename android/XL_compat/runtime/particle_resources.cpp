@@ -47,9 +47,10 @@ std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Invent
 	bool required = false;
 	for (const auto &object : level.objects) {
 		if (object.render != 11) continue;
-		if (object.render_data.size() != 13 || (object.render_data[11] != 3 && object.render_data[11] != 0))
-			throw std::runtime_error("XL particle image preparation requires a supported authored fire or smoke payload");
-		required |= object.render_data[11] == subtype;
+		if (object.render_data.size() != 13 || (object.render_data[11] != 3 && object.render_data[11] != 0 && object.render_data[11] != 1))
+			throw std::runtime_error("XL particle image preparation requires a supported authored fire, smoke or spray payload");
+		// Source spray uses the smoke particle image and fade profile
+		required |= (object.render_data[11] == 1 ? 0 : object.render_data[11]) == subtype;
 	}
 	if (!required) return {};
 	auto mission = addon_mission_texture_path(mission_resource_archive(), name);

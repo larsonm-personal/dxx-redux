@@ -704,3 +704,9 @@ pinned XL source; see [marker-door evidence](evidence/door-markers.md).
 fresh empty hit histories and the original Pumo authored route through level 7,
 followed by hub checkpoint recovery. This is controlled dispatch, not a human
 playthrough or whole-campaign qualification.
+
+The [spray controls](evidence/spray-particles.md) extend that original route to
+level 8, including all 15 authored spray owners, checkpoint activation recovery,
+live emission and smoke-atlas GPU checks. XL effect positions retain their
+authored segment association as in the pinned loader. Other particle kinds and
+later campaign requirements remain gated.

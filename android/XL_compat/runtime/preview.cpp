@@ -974,6 +974,12 @@ extern "C" int xl_loading_extended_triggers(void)
 	return loading_extended_triggers;
 }
 
+extern "C" int xl_preserve_effect_position(int object_type)
+{
+	// Pinned VerifyPosition and FixObjectSegs exclude OBJ_EFFECT
+	return object_type == 20 && !(Game_mode & GM_MULTI) && (loading_object_capacity || source);
+}
+
 extern "C" int xl_loading_inert_trigger(int type)
 {
 	// Every translated XL level has an active object-capacity scope while loading
