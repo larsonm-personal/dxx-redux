@@ -22,6 +22,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "preview.h"
 #include "gameplay_audio.h"
 #include "particle_objects.h"
+#include "lightning_objects.h"
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -1504,6 +1505,9 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_DRAW:
 		{
+			#ifdef DXX_XL_RUNTIME
+			xl_lightning_objects_clock();
+			#endif
 			#ifdef __ANDROID__
 			int restore_pause = multi_save_transfer_pause_frame();
 			if (restore_pause < 0) { window_close(wind); return 1; }
@@ -2051,6 +2055,7 @@ static void game_process_frame_body(void)
 
 #ifdef DXX_XL_RUNTIME
 	xl_particle_objects_frame();
+	xl_lightning_objects_frame();
 #endif
 
 	input_demo_debug_log_player_motion_state("exit");

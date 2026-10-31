@@ -4,6 +4,7 @@ foreach(
         "effects/lightning_manager.cpp|490b7f1fbd77228f90d354f49de69656f82364f0157a88cdad8fe8a4df6ff416"
         "effects/lightning.cpp|e84717bacf25a1d1f3b4d8c3432f281bc76717d60eed43485d23764188bdb236"
         "effects/lightning_node.cpp|6e98c8c61a65cc6f6f61101123962759ad104c8451fb3f9399af2139d1340510"
+        "effects/lightning_emitter.cpp|88abca90525cd419de63dabc4e1fdb728bebc64ec014f5468629497600470928"
         "include/lightning.h|fc7bdf7f0b7e42f3ef216841121becda3781969f3b3aeffeb89d4413dcb74caf"
         "include/vecmat.h|83d7f73f89a2f588a0b56a08fb9e293b747cc65a5ed22bad6771d64319bdca0f"
         "maths/vecmat.cpp|4115afe844ad77a81e9f0de57ae1bbf577b06d5f49aed8b02d19002ff2021335")
@@ -38,24 +39,35 @@ foreach(
           "inline const CFixVector CFixVector::operator+ (const CFixVector&"
           "inline const CFixVector CFixVector::operator- (const CFixVector&"
           "inline const CFixVector CFixVector::operator* (const fix"
+          "inline bool CFixVector::operator== (const CFixVector&"
+          "inline const fix CFixVector::Dist ("
           "inline const fix CFixVector::Normalize ("
           "inline const CFixVector CFixVector::Perp ("
           "inline const CFixVector CFixVector::Normal ("
           "inline const fix CFixVector::Dot (const CFixVector&")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
 endforeach()
-foreach(signature IN ITEMS "fix FixQuadAdjust (int64_t q)" "fix CFixVector::Mag ("
-                           "void CFixVector::Check (" "const CFixVector CFixVector::Cross (")
+foreach(
+    signature IN
+    ITEMS "const int32_t FindPointLineIntersection (CFixVector&" "fix FixQuadAdjust (int64_t q)"
+          "fix CFixVector::Mag (" "void CFixVector::Check (" "const CFixVector CFixVector::Cross (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp" "${signature}")
 endforeach()
-foreach(signature IN
-        ITEMS "void CLightningNode::Setup (" "void CLightningNode::Animate ("
-              "void CLightningNode::ComputeOffset (" "CFixVector CLightningNode::CreateErratic (")
+foreach(
+    signature IN
+    ITEMS "void CLightningNode::Move (const CFixVector& vOffset"
+          "void CLightningNode::Move (const CFixVector& vOldPos"
+          "void CLightningNode::Setup ("
+          "void CLightningNode::Animate ("
+          "void CLightningNode::ComputeOffset ("
+          "CFixVector CLightningNode::CreateErratic (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_node.cpp" "${signature}")
 endforeach()
 foreach(
     signature IN
-    ITEMS "void CLightning::Smoothe ("
+    ITEMS "void CLightning::Move (CFixVector vNewPos, CFixVector vNewEnd"
+          "void CLightning::Move (CFixVector vNewPos, int16_t"
+          "void CLightning::Smoothe ("
           "void CLightning::ComputeOffsets ("
           "void CLightning::CreatePath ("
           "CFixVector *VmRandomVector ("
@@ -80,5 +92,16 @@ foreach(
     string(APPEND extracted "\n${fragment}")
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_path.h"
+     CONTENT "${extracted}")
+set(extracted "// Actual pinned emitter animation/lifetime ordering and update gate\n")
+foreach(
+    signature IN
+    ITEMS "void CLightningEmitter::Move (CFixVector vNewPos, int16_t"
+          "void CLightningEmitter::MoveForObject (" "void CLightningEmitter::Animate ("
+          "int32_t CLightningEmitter::SetLife (" "int32_t CLightningEmitter::Update (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_emitter.cpp"
+                          "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_emitter.h"
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_lightning_path.cpp)

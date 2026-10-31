@@ -2,6 +2,7 @@
 #include "particle_world_test.h"
 #include "skybox_collision_test.h"
 #include "particle_objects_test.h"
+#include "lightning_objects_test.h"
 #include "particle_resource_test.h"
 #include "particle_original_test.h"
 #include "particle_secret_test.h"
@@ -63,6 +64,7 @@ static int effect_inspection_test(int argc, char **argv)
 				require(!!active == (level == 2), "stock/XL positive source did not load before rejection control");
 				if (version == 23 && particle_receipt.is_open()) particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
 				if (version == 23) particle_objects_native_case(level == 2);
+				if (version == 23) lightning_objects_native_case(level == 2);
 				if (version == 23 && level == 2) {
 					const auto *installation = find_arg_value(argc, argv, "-particle-installation-fixture");
 					require(installation && *installation, "Particle resource controls require an isolated installation fixture");

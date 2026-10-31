@@ -14,8 +14,9 @@ reset, matching the source order. Its caller supplies effects randomness.
 `create_lightning_bolt` accepts the implemented random, angle-zero, style-0,
 unclamped profile without children or a fixed plane. It rejects other geometry
 profiles. This is not a runtime admission change: lightning levels remain gated
-until ownership, rendering, glow/blur, audio, lighting and save consumers are
-implemented and qualified.
+until rendering, glow/blur, audio and lighting consumers are implemented and
+qualified. Native ownership and activation/save integration now use the existing
+effect lifecycle owner.
 
 ## Source comparisons
 
@@ -58,3 +59,40 @@ Receipts are under `temp/xl-skybox-20261031`: `lightning-core-test.log`,
 `native-runtime/controls.log`. All 44 clean public contracts passed in 15.69
 seconds; the public registration guard requires the new lightning test.
 Both automation catalogs, scoped formatting and diff checks passed.
+
+## Emitter ownership and movement
+
+The emitter comparison executes extracted `Animate`, `SetLife`, `Update`,
+`Move` and `MoveForObject` functions. Windows and Linux pass 2,160 multi-bolt
+ticks with changing owner positions, disabled intervals and reactivation.
+It compares every node and staged draw position, source clocks, random visits,
+bolt lifetime, direction and segment. All bolts animate before any lifetime
+transition, and accepted updates reanchor even stationary or disabled owners.
+Movement preserves the source's projected offsets and float rounding; staged
+draw coordinates remain those captured before movement.
+
+`runtime/lightning_objects.cpp` binds native inert type-20/id-1 objects without
+allocating bolts or consuming randomness. It validates the supported authored
+profile and segment before replacing existing ownership. Existing systems update
+newest first, following the source data pool, then new systems are created,
+including disabled ones. Signature reuse and deletion invalidate ownership.
+The clock hook follows absolute SDL time and the source's 40-Hz tick accumulation;
+paused frames do not advance emitters. Effects randomness is isolated from SIM.
+
+The native effect lifecycle owner covers atomic binding, disabled creation,
+creation-frame ordering, movement, pause, activation, malformed saved state,
+signature reuse and deletion. Its actual save-trailer round trip preserves
+activation and rebuilds transient bolts. Trailer schema 28 includes lightning
+ownership; no legacy pre-release trailer migration is provided. The authored
+profile requires no waypoint, so there is no moving-waypoint state to save.
+
+Real wall-enable and automatic object-disable triggers reach the same owner.
+The updated Android save schema passed the original Pumo controlled route and
+hub checkpoint regression, 64/64 steps in 370.683 seconds, with protected file
+hashes restored. This covers existing levels through level 8, not lightning
+rendering or earned traversal. Final optional-runtime/empty-owner clock guards
+were rebuilt on Windows and Android and passed the native lifecycle owner;
+the full Android route receipt precedes those two isolation guards.
+
+This evidence does not qualify lightning pixels, light contributions, sound or
+normal Pumo level-nine admission.

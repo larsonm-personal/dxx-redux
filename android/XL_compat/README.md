@@ -714,4 +714,5 @@ later campaign requirements remain gated.
 
 The [lightning simulation](evidence/lightning-simulation.md) has pinned-source
 setup, geometry and lifetime comparisons. It is not yet connected to the native
-effect, rendering, lighting, sound or save consumers, so lightning remains gated.
+rendering, lighting or sound consumers, so lightning remains gated. Native
+ownership and activation/save integration are covered by the effect lifecycle owner.
