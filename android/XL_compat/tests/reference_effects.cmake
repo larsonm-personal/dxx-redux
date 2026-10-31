@@ -89,3 +89,4 @@ add_test(
         ${CMAKE_CURRENT_LIST_DIR}/effect_decode.cmake)
 
 include("${CMAKE_CURRENT_LIST_DIR}/reference_static_explosion.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/reference_particles.cmake")

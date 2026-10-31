@@ -364,6 +364,10 @@ static void compare_level(const xl_compat::Bytes &bytes, int &objects, int &effe
 }
 
 void effect_target_source_controls();
+void particle_source_controls();
+void particle_geometry_source_controls();
+void particle_fire_source_controls();
+void particle_original_geometry_controls(const xl_compat::Inventory &);
 void static_explosion_source_controls();
 void static_explosion_render_source_controls();
 void static_explosion_runtime_controls(const char *);
@@ -381,6 +385,9 @@ int main(int argc, char **argv)
 		}
 		if (argc != 2) throw std::runtime_error("Expected effect fixture directory or original HOG");
 		effect_target_source_controls();
+		particle_source_controls();
+		particle_geometry_source_controls();
+		particle_fire_source_controls();
 		static_explosion_source_controls();
 		static_explosion_render_source_controls();
 		int objects = 0, effects = 0, levels = 0;
@@ -420,6 +427,7 @@ int main(int argc, char **argv)
 					continue;
 				}
 				compare_level(bytes, objects, effects);
+				particle_original_geometry_controls(xl_compat::inspect_level(bytes));
 				++levels;
 			}
 			if (!levels) throw std::runtime_error("No completely decoded original levels for comparison");
