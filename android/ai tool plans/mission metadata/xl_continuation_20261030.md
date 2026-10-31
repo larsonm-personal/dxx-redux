@@ -5,15 +5,29 @@ Reserve 21:30 onward for final checks, handoff and emulator restoration.
 
 ## Current checkpoint
 
-- Branch: `xl_more_86_particle_rendering`. The user requested fresh `cmake`
-  ancestry because PR #237 merged. Fetched cmake tip is
-  `0e4587e7dedbf0f21955c6fda351c923ff5e23c5`. Commit this tranche alone, then
-  rebase it onto that tip and publish with base `cmake`.
-- PR #237 is merged. Its original 14 CI checks passed, timing export skipped;
-  new branch CI must run for this chunk.
+- Current local branch: `xl_more_87_skybox`, stacked on completed branch 86.
+- Branch 86 tip: `55c937273b0633d2b5aa92e3f5fcd616400fa46c`; two
+  commits above current cmake `0e4587e7dedbf0f21955c6fda351c923ff5e23c5`.
+  The rebase preserved the validated file tree exactly. PR #237 is merged.
+- Branch 86 is pushed and draft PR #238 targets cmake. Explicit approval arrived
+  after an initial automatic rejection. CI runs on the correct commit; initial
+  asset-free XL/tooling checks passed. Public startup crashed in empty particle
+  GL cleanup; reproduced/fixed/pushed as 55c937273, new CI running; Linux D2 now passes. Initial LAN
+  job failed fixture provisioning because of runner disk space.
+- All local branch-86 builds/tests are terminal and pass. Unrelated manifest hash
+  after rebase: DD62EE6B6B61DD65F46F785C6F35248D91A881789E2644EA87632D6F9C8CDCE7.
+- Current bounded work is the skybox audit in `android/XL_compat/evidence/skybox.md`.
+  Source collision comparisons pass 221184 cases on Windows and Linux. Native
+  FVI preserves the wall triangle (293 loaded-geometry rays passed); the native
+  wall hook now uses those decisions. Normal admission remains closed.
+  Native full-physics and real pixel/lookup controls pass. Final Android owner
+  passes 31/31 in 50.737 seconds, with matching protected hashes and explicit
+  collision receipts. All local build/test handles are terminal. This bounded
+  collision chunk is ready to commit/publish above branch 86; normal skybox
+  admission remains closed pending rendering and full gameplay qualification.
 - Preserve unrelated manifest, Shearbase/W5AM JSON/music and import-plan files.
 - No subagents or autonomous navigation. Android scenes use fixed face poses.
-- Current chunk: normal strict-fire admission after completing the requirement
+- Completed chunk: normal strict-fire admission after completing the requirement
   audit. Diagnostic fire bypass removed; the normal source-owned loader uses
   the same validator. Other particle kinds, moving/controlled/multiplayer
   effects, triangular emission faces and unsupported layouts remain rejected.

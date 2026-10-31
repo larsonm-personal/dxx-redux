@@ -20,6 +20,17 @@ void particle_secret_probe(const char *operation)
 	}
 	require(Game_wind && Current_mission && !std::strcmp(Current_mission_filename, "pfsecret") && xl_level_extensions_active(),
 	        "Derived particle secret control lost its mission");
+	if (!std::strcmp(operation, "skybox")) {
+		require(Current_level_num == 1 && game_is_time_paused(), "Derived skybox collision control requires the paused base");
+		auto *file = PHYSFS_openRead(Gamesave_current_filename);
+		require(file && PHYSFS_fileLength(file) > 0 && PHYSFS_fileLength(file) <= 64 * 1024 * 1024, "Derived skybox geometry is missing or oversized");
+		Bytes bytes(std::size_t(PHYSFS_fileLength(file)));
+		const auto consumed = PHYSFS_readBytes(file, bytes.data(), bytes.size());
+		PHYSFS_close(file);
+		require(consumed == PHYSFS_sint64(bytes.size()), "Derived skybox geometry is truncated");
+		skybox_collision_face_native_case(inspect_level(bytes));
+		return;
+	}
 	const auto image_matches = [&] {
 		require(xl_prepared_particle_image() && xl_prepared_particle_image()->bitmap.pixels == secret_particle_pixels,
 		        "Secret transition changed retained particle image pixels");

@@ -1,5 +1,6 @@
 // Real loader rejection/recovery control; decoded effects must never replace live state
 #include "particle_world_test.h"
+#include "skybox_collision_test.h"
 #include "particle_objects_test.h"
 #include "particle_resource_test.h"
 #include "particle_original_test.h"

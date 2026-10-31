@@ -16,6 +16,7 @@
 #include "named_audio.h"
 #include "ambient_objects.h"
 #include "particle_objects.h"
+#include "skybox_collision.h"
 #include "transparency_scene.h"
 #include "static_explosion_runtime.h"
 #include "reactor_countdown.h"
@@ -576,6 +577,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_named_audio_clear();
 	xl_ambient_objects_clear();
 	xl_particle_objects_clear();
+	xl_skybox_collision_clear();
 	xl_message_clear();
 	xl_fog_bind(nullptr);
 	xl_projectile_clear();
@@ -764,6 +766,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		xl_seismic_bind();
 		xl_compat::bind_ambient_objects(*source);
 		xl_compat::bind_particle_objects(*source);
+		xl_compat::bind_skybox_collision(*source);
 		xl_wall_trigger_bind_effect_targets();
 		xl_fog_bind(source.get());
 		xl_changing_light_bind(source.get());

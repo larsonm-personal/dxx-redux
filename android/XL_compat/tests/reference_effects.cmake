@@ -90,3 +90,4 @@ add_test(
 
 include("${CMAKE_CURRENT_LIST_DIR}/reference_static_explosion.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/reference_particles.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/reference_skybox.cmake")
