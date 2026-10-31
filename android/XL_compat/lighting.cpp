@@ -26,6 +26,49 @@ FixedLightPoint geometry_default_direction(const FixedLightPoint &vector)
 	return result;
 }
 
+FixedLightPoint geometry_scaled_edge(const FixedLightPoint &a, const FixedLightPoint &b)
+{
+	FixedLightPoint result;
+	std::uint32_t check = 0;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		const auto value = std::int64_t(a[axis]) - b[axis];
+		if (value <= (std::numeric_limits<std::int32_t>::min)() || value > (std::numeric_limits<std::int32_t>::max)())
+			throw std::runtime_error("XL normal edge exceeds fixed-point range");
+		result[axis] = static_cast<std::int32_t>(value);
+		check |= static_cast<std::uint32_t>(value < 0 ? -value : value);
+	}
+	if (!check) return result;
+	unsigned shift = 0;
+	if (check & 0xfffc0000) {
+		while (check & 0xfff00000) {
+			shift += 4;
+			check >>= 4;
+		}
+		while (check & 0xfffc0000) {
+			shift += 2;
+			check >>= 2;
+		}
+		const auto divisor = std::int64_t(1) << shift;
+		for (auto &value : result) value = static_cast<std::int32_t>(value / divisor - (value < 0 && value % divisor ? 1 : 0));
+	} else if (!(check & 0xffff8000)) {
+		while (!(check & 0xfffff000)) {
+			shift += 4;
+			check <<= 4;
+		}
+		while (!(check & 0xffff8000)) {
+			shift += 2;
+			check <<= 2;
+		}
+		for (auto &value : result) value = static_cast<std::int32_t>(std::int64_t(value) * (std::int64_t(1) << shift));
+	}
+	return result;
+}
+
+FixedLightPoint geometry_default_normal(const FixedLightPoint &a, const FixedLightPoint &b, const FixedLightPoint &c)
+{
+	return geometry_default_direction(geometry_fixed_cross(geometry_scaled_edge(b, a), geometry_scaled_edge(c, b)));
+}
+
 namespace
 {
 LightPoint difference(const LightPoint &a, const LightPoint &b)

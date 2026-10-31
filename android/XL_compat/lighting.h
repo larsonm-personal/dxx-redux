@@ -19,6 +19,8 @@ using FixedLightPoint = std::array<std::int32_t, 3>;
 // Pinned default math format 2; side-normal setup uses the separate legacy path
 std::int32_t geometry_default_magnitude(const FixedLightPoint &vector);
 FixedLightPoint geometry_default_direction(const FixedLightPoint &vector);
+FixedLightPoint geometry_scaled_edge(const FixedLightPoint &a, const FixedLightPoint &b);
+FixedLightPoint geometry_default_normal(const FixedLightPoint &a, const FixedLightPoint &b, const FixedLightPoint &c);
 struct GeometryRouteEdge {
 	int child = -1;
 	std::uint16_t cost = 0;
