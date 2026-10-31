@@ -155,3 +155,19 @@ endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_glow.h"
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_lightning_render.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/3d/points.cpp" projection_hash)
+if(NOT projection_hash STREQUAL "0d89f71e96f275b360b37badaf274dc0fbcc751b50627ab0b94667b452644e10")
+    message(FATAL_ERROR "Lightning projection source changed")
+endif()
+set(extracted "// Pinned viewport projection and matrix operations\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const float CFloatVector3::Dot (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const CFloatVector3 CFloatMatrix::operator* (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp" "void CFloatMatrix::Flip (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/points.cpp"
+                      "uint8_t ProjectPoint (CFloatVector3&")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_projection.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_lightning_projection.cpp)

@@ -79,6 +79,12 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 	for (auto &vertex : core.vertices) vertex = camera_vertex(vertex);
 	for (auto &vertex : glow.vertices) vertex = camera_vertex(vertex);
 	const auto matrix = scene_matrix();
+	std::array<float, 16> projection;
+#ifdef ANDROID
+	std::copy_n(gles3_shim_get_projection(), 16, projection.begin());
+#else
+	glGetFloatv(GL_PROJECTION_MATRIX, projection.data());
+#endif
 	LightningGlowState restore;
 	GLint target;
 	std::array<int, 4> view;
@@ -89,13 +95,10 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 	std::array<int, 4> extent{ 32767, 32767, -32767, -32767 };
 	for (std::size_t i = 0; i < count; ++i) {
 		const auto &vertex = glow.vertices[i];
-		const auto projected = lightning_clip_vertex(vertex, {}, matrix);
+		const auto projected = lightning_screen_point({ vertex[0], vertex[1], -vertex[2] }, projection, view[2], view[3]);
 		for (unsigned axis = 0; axis < 2; ++axis) {
-			const float coordinate = (float(view[axis + 2]) / 2.f) * (1.f + projected.position[axis] / std::abs(vertex[2]));
-			if (!std::isfinite(coordinate) || double(coordinate) < INT32_MIN || double(coordinate) > INT32_MAX)
-				throw std::runtime_error("XL lightning projected extent exceeds the source integer range");
-			extent[axis] = std::min(extent[axis], int(coordinate));
-			extent[axis + 2] = std::max(extent[axis + 2], int(coordinate));
+			extent[axis] = std::min(extent[axis], projected[axis]);
+			extent[axis + 2] = std::max(extent[axis + 2], projected[axis]);
 		}
 	}
 	EffectsRandom random;

@@ -298,3 +298,29 @@ lightning-distance-windows.log under temp/xl-skybox-20261031.
 This closes the zero-scale rendering gap for the supported positive glow/blur
 profile. Android wide/smooth line fidelity, projection/visibility/order,
 original level-nine integration, light and audio remain unqualified.
+
+## Source viewport projection
+
+Glow bounds now use the pinned ProjectPoint convention: positive camera Z,
+projection-matrix 3x3 multiplication, absolute camera depth, half-canvas scale
+and integer truncation. Vertex drawing still uses the normal GL MVP. The prior
+bounds calculation used the drawing MVP and negative GL camera Z, which can
+change bounds for asymmetric projections or translated matrices. Android exposes
+its existing projection stack through a read-only shim accessor.
+
+The existing lightning source owner extracts hash-pinned ProjectPoint, matrix
+Flip, three-vector multiplication and Dot bodies. All1458 finite front/behind,
+near-plane, aspect-ratio and canvas-size cases agree exactly;1428 distinguish
+the previous calculation. Zero depth, nonfinite results and out-of-integer-range
+results reject explicitly; source undefined conversions are not emulated.
+This qualifies projection of supplied camera points, not every world-camera
+transform or original-level visibility/order decision.
+
+Windows native and Android x86_64 builds pass. The complete existing GPU owner
+passes1152 primitive and48 compositor cases plus native context and particle
+regressions. The Android original-corona control passes28/28 steps in52.512s,
+including exact pixels after real context recreation and identical protected
+app-data hashes. Logs are lightning-projection-linux.log,
+lightning-projection-device.log and lightning-projection-android.log under
+temp/xl-skybox-20261031. Catalogs from the prior chunk remain applicable because
+registration, runner and automation scripts are unchanged. No level9 admission.
