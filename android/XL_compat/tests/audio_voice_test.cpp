@@ -41,6 +41,7 @@ int main()
 		rejects([&] { prepare_audio_sample(WaveChannels{ 44100, 2, 16, { 1 } }, 44100); });
 
 		AudioVoices voices;
+		voices.playback.resize(bank.size());
 		const int slot = voices.start(0, 2, 3);
 		require(slot == 0, "First voice slot was not available");
 		std::array<std::int16_t, 24> output{};
@@ -58,6 +59,10 @@ int main()
 		voices.mix(reinterpret_cast<unsigned char *>(output.data() + 6), 9, bank);
 		const std::array<std::int16_t, 24> repeated{ 127, -127, 254, -254, 381, -381, 508, -508, 127, -127, 254, -254, 381, -381, 508, -508, 0, 0, 0, 0, 0, 0, 0, 0 };
 		require(output == repeated && voices.completions == 1 && !voices.voices[0].remaining, "Finite repeats or completion boundary differ");
+		require(voices.playback[0].attempts == 1 && voices.playback[0].completed == 1 && !voices.playback[0].stopped && !voices.playback[0].failed,
+		        "Per-sample receipt did not follow actual PCM completion");
+		require(paused_bank.playback[0].attempts == 1 && !paused_bank.playback[0].completed && paused_bank.playback[0].stopped == 1,
+		        "Paused bank retirement was misreported as completion");
 		for (const int repetitions : { 0, -1, -100 }) {
 			voices.clear();
 			const int loop_slot = voices.start(0, repetitions, 3);
@@ -90,6 +95,8 @@ int main()
 		voices.clear();
 		const auto untouched = voices.cursor;
 		require(voices.start(0, 1, 3, {}, { 129, { 0, 254 } }) == -1 && voices.cursor == untouched, "Invalid channel gain consumed a slot");
+		require(voices.playback[0].failed == 1 && voices.playback[0].attempts == voices.starts + 1 && voices.playback[0].completed == voices.completions && voices.playback[0].stopped == voices.stops,
+		        "Per-sample receipts lost failed allocation, replacement, mute or loop semantics");
 		require(!voices.set_pan(-1, 0) && !voices.set_volume(int(audio_voice_limit), 65536, 32768), "Invalid channel control was accepted");
 		const int controlled = voices.start(0, 2, 3);
 		const auto original = voices.voices[unsigned(controlled)];

@@ -59,7 +59,13 @@ int AudioVoices::start(unsigned sample, int repetitions, int owner)
 
 int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output, AudioOwnerKind kind, AudioVoice *retired)
 {
-	if ((owner < 0 && ((kind != AudioOwnerKind::unlinked && kind != AudioOwnerKind::external_unlinked) || owner != -1)) || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0 || output.volume < 0 || output.volume > 128) return -1;
+	auto *receipt = sample < playback.size() ? &playback[sample] : nullptr;
+	if (receipt) ++receipt->attempts;
+	const auto reject = [&] {
+		if (receipt) ++receipt->failed;
+		return -1;
+	};
+	if ((owner < 0 && ((kind != AudioOwnerKind::unlinked && kind != AudioOwnerKind::external_unlinked) || owner != -1)) || !next_serial || next_serial >= std::uint64_t(INT64_MAX) || cursor >= voices.size() || priority.volume < 0 || output.volume < 0 || output.volume > 128) return reject();
 	const auto class_count = std::count_if(voices.begin(), voices.end(), [&](const auto &voice) {
 		return voice.remaining && voice.priority.sound_class == priority.sound_class;
 	});
@@ -77,7 +83,7 @@ int AudioVoices::start(unsigned sample, int repetitions, int owner, AudioPriorit
 		if (candidate < 0 || voices[unsigned(candidate)].priority.volume > voice.priority.volume) candidate = int(slot);
 	}
 	if (selected < 0) selected = minimum[0] >= 0 ? minimum[0] : minimum[1];
-	if (selected < 0) return -1;
+	if (selected < 0) return reject();
 	if (retired) *retired = voices[unsigned(selected)];
 	stop(selected);
 	voices[unsigned(selected)] = { next_serial++, sample, 0, owner, repetitions <= 0 ? -1 : repetitions, priority, output, kind };
@@ -110,6 +116,7 @@ bool AudioVoices::set_pan(int slot, int pan)
 void AudioVoices::stop(int slot)
 {
 	if (slot < 0 || unsigned(slot) >= voices.size() || !voices[slot].remaining) return;
+	if (voices[slot].sample < playback.size()) ++playback[voices[slot].sample].stopped;
 	voices[slot].remaining = 0;
 	++stops;
 }
@@ -130,6 +137,7 @@ void AudioVoices::mix(unsigned char *stream, std::size_t frames, const std::vect
 		    voice.position >= samples[voice.sample].frames()) {
 			voice.remaining = 0;
 			++stops;
+			if (voice.sample < playback.size()) ++playback[voice.sample].failed;
 			continue;
 		}
 		const auto &sample = samples[voice.sample];
@@ -145,7 +153,10 @@ void AudioVoices::mix(unsigned char *stream, std::size_t frames, const std::vect
 			}
 			if (++voice.position == sample.frames()) {
 				voice.position = 0;
-				if (voice.remaining > 0 && !--voice.remaining) ++completions;
+				if (voice.remaining > 0 && !--voice.remaining) {
+					++completions;
+					if (voice.sample < playback.size()) ++playback[voice.sample].completed;
+				}
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 // Private negative controls derived from an original mission; never a conversion
 #include "inventory.h"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -37,7 +38,11 @@ int main(int argc, char **argv)
 				if (variant == 0) {
 					const auto colors = (level.vertices.size() + level.segments.size() * 6 + 910) * 13;
 					const auto first = level.game_offset - colors - level.segments.size() * 13;
-					member.bytes.at(first + 4) = xl_compat::segment_blocked;
+					member.bytes.at(first + 4) = xl_compat::segment_outdoors;
+					const auto control = xl_compat::inspect_level(member.bytes);
+					if (!std::any_of(control.unsupported.begin(), control.unsupported.end(), [](const auto &issue) {
+						    return issue.feature == "segment_properties" && issue.detail == "16";
+					    })) throw std::runtime_error("Outdoor segments are no longer a negative control; update the fixture and Android rejection expectation");
 				} else member.bytes.at(level.objects.front().source_offset + 6) = 1;
 				changed = true;
 			}
@@ -55,7 +60,7 @@ int main(int argc, char **argv)
 			const auto descriptor = "d2x-name = Neptune rejected " + std::to_string(variant) + "\nnum_levels = 1\nneptunxl.rl2\n";
 			write(directory / (stem + ".mn2"), Bytes(descriptor.begin(), descriptor.end()));
 		}
-		std::cout << "Created three private negative controls: split property, multiplayer object, malformed CLR\n";
+		std::cout << "Created three private negative controls: outdoor property, multiplayer object, malformed CLR\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

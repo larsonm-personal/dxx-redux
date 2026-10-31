@@ -35,12 +35,34 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 	SDL_PauseAudio(1);
 	require(xl_compat::restore_named_audio(initial, true), "Cannot reset shared audio controls");
 	digi_set_digi_volume(32768);
+	const auto receipt_before = xl_compat::named_audio_diagnostics().at("classic_playback").value("0", nlohmann::json{ { "attempts", 0 }, { "stop_requested", 0 } });
 	const int ordinary = xl_audio_start_sample(0, 3, F1_0 / 2, 0, 1, -1, -1);
 	require(ordinary >= 0 && xl_audio_channel_playing(ordinary), "Ordinary sound did not enter the live shared pool");
+	require(xl_compat::named_audio_diagnostics().at("classic_playback").at("0").at("attempts").get<std::uint64_t>() == receipt_before.at("attempts").get<std::uint64_t>() + 1,
+	        "Classic playback receipt used a resource index instead of the physical sample");
 	++GameTime64;
 	require(xl_named_audio_action(&Triggers[0], 0) == 1, "Cannot mix a named action with ordinary playback");
 	auto earned = snapshot();
 	require(earned.at("voices").size() == 2, "Ordinary and named sounds did not share the same registry");
+	for (int profile = 0; profile < 3; ++profile) {
+		xl_named_audio_pause(profile != 0);
+		if (profile == 2) xl_named_audio_resume();
+		const auto before = xl_compat::named_audio_diagnostics();
+		{
+			xl_compat::AudioSnapshotPause epoch;
+			{
+				xl_compat::AudioSnapshotPause nested;
+				begin_capture();
+				run_output(4096);
+			}
+			require(snapshot() == earned && std::all_of(captured.begin(), captured.begin() + captured_samples, [](auto value) { return !value; }),
+			        "Snapshot epoch emitted or advanced real callback audio");
+			require(xl_compat::named_audio_diagnostics().at("paused").get<bool>(), "Nested snapshot epoch resumed its outer capture");
+		}
+		const auto after = xl_compat::named_audio_diagnostics();
+		require(after.at("paused") == before.at("paused") && after.at("resume_pending") == before.at("resume_pending"),
+		        "Snapshot epoch changed the caller's pause or pending-resume policy");
+	}
 	begin_capture();
 	xl_named_audio_pause(0);
 	run_output(4096);
@@ -54,6 +76,8 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 	compare_output(earned);
 	digi_set_digi_volume(32768);
 	xl_audio_stop_channel(ordinary);
+	require(xl_compat::named_audio_diagnostics().at("classic_playback").at("0").at("stop_requested").get<std::uint64_t>() == receipt_before.at("stop_requested").get<std::uint64_t>() + 1,
+	        "Classic playback receipt did not observe actual channel retirement");
 	require(!xl_audio_channel_playing(ordinary) && snapshot().at("voices").size() == 1, "Stopping an ordinary channel stopped an unrelated named voice");
 
 	require(xl_compat::restore_named_audio(initial, true), "Cannot reset mixed pressure controls");

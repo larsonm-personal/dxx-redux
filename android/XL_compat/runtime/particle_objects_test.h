@@ -1,5 +1,6 @@
 #include "particle_objects.h"
 #include "particle_state.h"
+#include "transparency_scene.h"
 #include "object_trigger.h"
 #include "trigger_state.h"
 #include <nlohmann/json.hpp>
@@ -97,6 +98,7 @@ static void particle_objects_native_case(bool active)
 {
 	using namespace xl_compat;
 	const auto sim_before = d_rand_get_stream_call_count(D_RNG_SIM), fx_before = d_rand_get_stream_call_count(D_RNG_FX);
+	xl_transparency_test_controls(active);
 	if (!active) {
 		xl_particle_objects_frame();
 		particle_objects_frame(1000);
@@ -180,6 +182,14 @@ static void particle_objects_native_case(bool active)
 	const auto next_scene = particle_scene({ 0 }, eye, camera, 33, 128, 128);
 	require(next_scene.size() == first_scene.size() && first_particle.rotation == (rotation_before + 1) % 64, "Native particle scene did not advance its source rotation phase");
 	require(particle_scene({}, eye, camera, 34, 128, 128).empty(), "Invisible particle scene produced quads");
+	// Visibility alone does not render a particle rejected by the depth bound
+	auto &clipped = const_cast<FireParticle &>(first_particle);
+	const auto unclipped_position = clipped.position;
+	const int unclipped_rotation = clipped.rotation;
+	clipped.position[0] += 1000 * 65536;
+	particle_scene({ 0 }, eye, camera, 66, 128, 128);
+	require(clipped.rotation == unclipped_rotation, "Depth-rejected particle advanced render animation");
+	clipped.position = unclipped_position;
 	require(d_rand_get_stream_call_count(D_RNG_FX) == render_calls && d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle scene construction consumed RNG");
 	const auto *old = &particle_systems().back();
 	wall(33, 1);

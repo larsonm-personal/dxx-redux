@@ -4,17 +4,21 @@
 
 namespace xl_compat
 {
+inline int transparency_segment_depth(const ParticlePoint &center, int radius, const ParticlePoint &eye)
+{
+	std::array<float, 3> delta;
+	for (unsigned axis = 0; axis < 3; ++axis) delta[axis] = float(center[axis]) / 65536.0f - float(eye[axis]) / 65536.0f;
+	const float distance = std::sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]) * 65536.0f;
+	if (!std::isfinite(distance) || double(distance) > INT32_MAX) throw std::runtime_error("XL transparency visibility exceeds the source depth range");
+	return particle_detail::signed_checked(std::int64_t(distance) + radius);
+}
 inline int particle_depth_limit(const std::vector<ParticleSegment> &segments, const std::vector<int> &visible, const ParticlePoint &eye)
 {
 	int maximum = 0;
 	for (int index : visible) {
 		if (index < 0 || std::size_t(index) >= segments.size()) throw std::runtime_error("XL particle visibility references an invalid segment");
 		const auto &segment = segments[index];
-		std::array<float, 3> delta;
-		for (unsigned axis = 0; axis < 3; ++axis) delta[axis] = float(segment.center[axis]) / 65536.0f - float(eye[axis]) / 65536.0f;
-		const float distance = std::sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]) * 65536.0f;
-		if (!std::isfinite(distance) || double(distance) > INT32_MAX) throw std::runtime_error("XL particle visibility exceeds the source depth range");
-		maximum = std::max(maximum, particle_detail::signed_checked(std::int64_t(distance) + segment.outer_radius));
+		maximum = std::max(maximum, transparency_segment_depth(segment.center, segment.outer_radius, eye));
 	}
 	return maximum;
 }

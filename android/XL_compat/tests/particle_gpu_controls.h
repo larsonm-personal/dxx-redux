@@ -2,6 +2,7 @@
 #ifdef XL_POG_SHADER_REFERENCE
 #include "xl_reference_particle_blend.h"
 #endif
+#include "transparency_gpu_controls.h"
 static void particle_gpu_controls()
 {
 	Bitmap atlas(128, 128, true);
@@ -128,6 +129,7 @@ static void particle_gpu_controls()
 		++comparisons;
 	}
 	check(glGetError() == GL_NO_ERROR, "Mixed particle draw produced a GL error");
+	transparency_gpu_controls(*texture, cells, background);
 	// Independently apply the camera using OpenGL's matrix stack, then compare
 	// the production CPU conversion. This keeps projection out of the oracle
 	unsigned camera_cases = 0;

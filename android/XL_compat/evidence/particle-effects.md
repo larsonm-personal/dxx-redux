@@ -1,10 +1,14 @@
-# Authored particle effects: preparation and fire simulation foundation
+# Authored particle effects: fire runtime and qualification
 
-Status: preparation, emitter definitions, face sampling and authored fire CPU
-creation/update comparisons pass. Engine binding, real-world collision/lookup,
-resources, rendering and mission admission are not yet implemented by this work.
-Pumo Mines is not qualified as playable. Work is on `xl_more_78_particles` in
-the main checkout, `C:/local/dxx-redux`.
+Current status: authored fire simulation, loaded geometry/collision, resource
+ownership, saved activation and shared transparency rendering are implemented.
+Source comparisons, native lifecycle controls, desktop GPU comparisons and
+representative Android transparency regression scenes pass. Original-Pumo
+particle/resource/save qualification remains open, so
+particle admission is still rejected and Pumo Mines is not qualified as playable.
+Work is on `xl_more_85_transparency` in the main checkout, `C:/local/dxx-redux`.
+The sections below record successive checkpoints; later checkpoints supersede
+earlier lists of unimplemented work.
 
 ## Source and established behavior
 
@@ -481,3 +485,80 @@ changed, rather than repeating the unrelated GPU or classic replay suites.
 This is native trailer/lifecycle evidence with injected effects. A complete
 original-Pumo save/load, Android save restoration and cross-level/secret-return
 qualification remain outstanding, along with the rendering/resource gates above.
+
+## Shared scene transparency
+
+`xl_more_85_transparency` replaces the after-scene particle pass with a shared
+XL frame queue. Small hooks in `render.c` and `object.c` retain native face and
+object rendering; collection, copied face inputs, owner signatures, view bounds,
+dispatch and cleanup live in XL_compat. Classic levels return before collecting.
+Transparent water portals join the same queue. Deferred objects execute the
+inner renderer once, without replaying outer visibility/AI bookkeeping.
+Particle preparation retains original insertion order; only adjacent particles
+batch together, so batching cannot cross a wall/object boundary.
+
+Actual pinned `AddObject`, `AddSprite`, `AddParticle` and `AddPoly` bodies now
+execute with the existing insertion/bucket traversal oracle. Adding polygons
+caught a missing distinction: faces clamp to the maximum depth, whereas other
+items drop. Particle bias remains ten units, other items zero, and equal buckets
+use reverse insertion order. Sixteen profiles compare 5,733 ordered entries,
+including faces outside the depth bound. Actual weapon table assignments and the energy
+predicate match all 256 IDs. The actual `FaceIsTransparent` body matches 972
+bitmap/forced/additive/alpha cases. Native POG installation now retains the
+source see-through bit; existing original-pixel and collision/destructible
+texture controls also cover that retained flag.
+
+The existing native effect owner verifies classic isolation, mixed tie/bias
+dispatch, duplicate geometry-pass suppression, copied vertex/UV/light data,
+restored render context, recycled object identities, replacement views and
+cleanup after interrupted dispatch. These controls observe production queue
+dispatch without a graphics context; they do not prove a fully rendered level.
+Source render animation advances only after distance admission. A source-call
+audit disproved the earlier suspicion that rejected particles should advance;
+the native control now explicitly checks that they do not.
+
+The existing EGL owner adds 24 mixed scenes using the actual merged-wall draw
+and particle renderer. Full color and depth comparisons cover both particle
+blend modes, front/back overlap, biased ties, super-key holes and opaque
+see-through cutouts. The final source plus GPU checks passed in 3.46 seconds on
+Linux. Windows native effect and original POG integration passed in 7.57 and
+10.15 seconds respectively. No new
+CTest owner, engine startup or graphics context was introduced.
+
+The normal Android debug build succeeds. Original Neptune passes all 65 checks,
+including POG GPU residency after restore, the stock Counterstrike transition,
+and actionable admission errors. Its negative fixture had become stale: blocked
+segments are now supported. It now uses unsupported outdoor segments and checks
+that rejection while generating the fixture, so future support changes fail with
+an explicit fixture-maintenance message.
+
+The cloak Android owner exposed another stale observation: its semantic audio
+aliases still read Redux counters after XL moved to its own mixer. XL now records
+per-sample starts, completion, stops and failures in the actual voice consumer;
+the bank preallocates receipt storage outside the callback. Android aliases select
+the active mixer and its physical-sample mapping. The existing PCM owner checks
+completion versus stop, replacement, looping, mute and failed allocation; the
+native audio integration checks mapping through the shared bank and passes in
+127.75 seconds. These are diagnostics, not saved gameplay state. Android water
+passes 51 steps; cloak passes 81 including actual draw alpha, cue completion,
+disk/rewind and the stock transition. A separate intermittent checkpoint failure
+also occurs in Arena. Failure-only buffer capture and checksum-validated trailer
+comparison identify exactly two changing audio playheads (+512 samples), with
+all other state and bytes outside the XL trailer identical. The test stopped
+simulation time but did not freeze the asynchronous mixer between its detached
+capture and synchronous reference. A scoped XL audio pause now brackets that
+comparison and preserves the caller's pause/pending-resume state, without
+excluding any saved fields. Native real-callback integration passes in 114.76
+seconds, covering unpaused, paused, pending-resume and nested capture scopes.
+The corrected Android build passes Arena's 58 steps (original GPU pixels,
+disk/rewind, context loss and stock transition) and the complete cloak owner
+again (81 steps). Temporary buffer dumping/delay instrumentation
+has been removed; the forensic receipt is `checkpoint-difference.json` in the
+tranche artifact directory.
+
+This closes the separate-pass architecture gap and qualifies the existing
+Android wall/water/POG regression scenes. Original Pumo particle scene output,
+Android particle image lifecycle/save restoration and startup-installation image
+fallback still need verification.
+Source advanced buffer reordering, wider particle types and full campaign
+behavior remain outside this fire checkpoint. Particle admission is unchanged.

@@ -4,9 +4,10 @@
 #include "particle_resources.h"
 #include "particle_renderer.h"
 #include "resource_validation.h"
-#include "../particle_order.h"
+#include "../transparency_order.h"
 #include "../particle_visibility.h"
 #include "preview.h"
+#include "transparency_scene.h"
 #include <map>
 #include <nlohmann/json.hpp>
 #include <SDL.h>
@@ -87,6 +88,7 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 	}
 	// Ordinary levels allocate no particle world and consume no effects RNG
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
+	xl_transparency_clear();
 	systems.clear();
 	entries = std::move(prepared);
 	world = std::move(geometry);
@@ -97,6 +99,7 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 
 extern "C" void xl_particle_objects_clear(void)
 {
+	xl_transparency_clear();
 	entries.clear();
 	systems.clear();
 	world = {};
@@ -160,34 +163,38 @@ bool xl_compat::restore_particle_objects(const nlohmann::json &state, bool apply
 	}
 }
 
-std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)
+std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)
 {
-	std::vector<ParticleQuad> quads;
+	std::vector<ParticleSceneItem> quads;
 	if (!xl_level_extensions_active() || systems.empty()) return quads;
 	std::vector<bool> visible_flags(world.segments.size(), false);
 	const int maximum_depth = particle_depth_limit(world.segments, visible, eye);
 	for (int index : visible) {
 		visible_flags[index] = true;
 	}
-	std::vector<FireParticle *> particles;
-	std::vector<ParticlePoint> positions;
+	const auto camera = particle_view(basis);
+	const bool animate = animation_clock.begin(milliseconds);
 	for (auto &system : systems) {
 		auto &emitter = system.emitter;
 		const bool emitter_visible = particle_emitter_visible(emitter.segment, emitter.skybox, visible_flags);
 		for (int i = 0; i < emitter.count; ++i) {
 			auto &particle = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
 			const bool shown = emitter_visible || particle_visible(particle, world.segments, visible_flags, [](const ParticlePoint &point, bool skybox, int segment) { return world.locate(point, skybox, segment); });
-			if (!shown) continue;
-			particles.push_back(&particle);
-			positions.push_back(particle.position);
+			if (shown && transparency_bucket({ particle.position, 10 * 65536 }, eye, maximum_depth) && prepare_fire_particle_draw(particle, animate))
+				quads.push_back({ particle.position, fire_particle_quad(particle, camera, image_width, image_height) });
 		}
 	}
-	const auto order = particle_draw_order(positions, eye, maximum_depth);
-	const auto camera = particle_view(basis);
-	const bool animate = animation_clock.begin(milliseconds);
-	quads.reserve(order.size());
-	for (std::size_t index : order)
-		if (prepare_fire_particle_draw(*particles[index], animate)) quads.push_back(fire_particle_quad(*particles[index], camera, image_width, image_height));
+	return quads;
+}
+
+std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)
+{
+	if (!xl_level_extensions_active() || systems.empty()) return {};
+	const auto items = particle_scene_items(visible, eye, basis, milliseconds, image_width, image_height);
+	std::vector<TransparencyPosition> positions;
+	for (const auto &item : items) positions.push_back({ item.position, 10 * 65536 });
+	std::vector<ParticleQuad> quads;
+	for (auto index : transparency_draw_order(positions, eye, particle_depth_limit(world.segments, visible, eye))) quads.push_back(items[index].quad);
 	return quads;
 }
 
@@ -204,10 +211,12 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 		for (int i = 0; i < count; ++i)
 			if (segments[i] >= 0) visible.push_back(segments[i]);
 		const auto eye = point(View_position);
-		auto quads = xl_compat::particle_scene(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height);
+		auto items = xl_compat::particle_scene_items(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height);
 		const std::array<xl_compat::ParticlePoint, 3> view{ point(View_matrix.rvec), point(View_matrix.uvec), point(View_matrix.fvec) };
-		for (auto &quad : quads) xl_compat::particle_camera_quad(quad, eye, view);
-		image->texture->draw(quads.data(), quads.size());
+		for (auto &item : items) {
+			xl_compat::particle_camera_quad(item.quad, eye, view);
+			xl_compat::transparency_particle(item, image->texture.get());
+		}
 	} catch (const std::exception &error) {
 		Error("XL particle scene: %s", error.what());
 	}

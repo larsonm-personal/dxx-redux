@@ -35,6 +35,7 @@
 #include "flicker.h"
 #include "level_messages.h"
 #include "named_audio_state.h"
+#include "gameplay_audio.h"
 #include "named_audio_probe.h"
 #include "texture_action_probe.h"
 #include "countdown_probe.h"
@@ -3594,13 +3595,16 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		j["sound_playback"] = std::move(playback);
 #ifdef DXX_XL_RUNTIME
-		j["xl_pilot"]["repair_audio"] = j["sound_playback"].value(std::to_string(digi_xlat_sound(SOUND_REFUEL_STATION_GIVING_FUEL)), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
+		const bool xl_audio = xl_level_extensions_active() != 0;
+		const auto &cue_playback = xl_audio ? j["xl_named_audio"]["classic_playback"] : j["sound_playback"];
+		const auto cue_sample = [xl_audio](int logical) { return xl_audio ? xl_gameplay_sound_sample(logical) : digi_xlat_sound(logical); };
+		j["xl_pilot"]["repair_audio"] = cue_playback.value(std::to_string(cue_sample(SOUND_REFUEL_STATION_GIVING_FUEL)), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
 		// Android-only semantic aliases for existing cumulative mixer diagnostics
 		json cues = json::object();
 		for (const auto &entry : std::array<std::pair<const char *, int>, 3>{ { { "forcefield_off", SOUND_FORCEFIELD_OFF }, { "illusion_off", SOUND_WALL_REMOVED }, { "forcefield_hum", SOUND_FORCEFIELD_HUM } } }) {
-			const int sample = digi_xlat_sound(entry.second);
+			const int sample = cue_sample(entry.second);
 			const auto key = std::to_string(sample);
-			json value = j["sound_playback"].value(key, json{ { "attempts", 0 }, { "completed", 0 }, { "stop_requested", 0 }, { "failed", 0 } });
+			json value = cue_playback.value(key, json{ { "attempts", 0 }, { "completed", 0 }, { "stop_requested", 0 }, { "failed", 0 } });
 			value["sample"] = sample;
 			value["enabled_decisions"] = xl_trigger_cue_queries(entry.second, 1);
 			value["suppressed_decisions"] = xl_trigger_cue_queries(entry.second, 0);
@@ -3618,8 +3622,8 @@ extern "C" char *game_introspect_get_state(void)
 		j["xl_pilot"]["trigger_audio"] = std::move(cues);
 		json cloak_audio = json::object();
 		for (const auto &entry : std::array<std::pair<const char *, int>, 2>{ { { "open", SOUND_WALL_CLOAK_ON }, { "close", SOUND_WALL_CLOAK_OFF } } }) {
-			const int sample = digi_xlat_sound(entry.second);
-			cloak_audio[entry.first] = j["sound_playback"].value(std::to_string(sample), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
+			const int sample = cue_sample(entry.second);
+			cloak_audio[entry.first] = cue_playback.value(std::to_string(sample), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
 			cloak_audio[entry.first]["sample"] = sample;
 		}
 		j["xl_pilot"]["cloak_audio"] = std::move(cloak_audio);
@@ -3644,8 +3648,8 @@ extern "C" char *game_introspect_get_state(void)
 						row["active_time_ticks"] = ActiveDoors[active].time;
 					}
 			if (wall.type == WALL_DOOR && wall.clip_num >= 0 && wall.clip_num < Num_wall_anims && WallAnims[wall.clip_num].open_sound >= 0) {
-				const int sample = digi_xlat_sound(WallAnims[wall.clip_num].open_sound);
-				row["motion_audio"] = j["sound_playback"].value(std::to_string(sample), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
+				const int sample = cue_sample(WallAnims[wall.clip_num].open_sound);
+				row["motion_audio"] = cue_playback.value(std::to_string(sample), json{ { "attempts", 0 }, { "completed", 0 }, { "failed", 0 } });
 				row["motion_audio"]["sample"] = sample;
 			}
 			if (wall.type == WALL_CLOSED) closed_walls[std::to_string(index)] = doorways[std::to_string(index)];
