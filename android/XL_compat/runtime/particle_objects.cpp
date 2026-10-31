@@ -76,7 +76,7 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 			throw std::runtime_error("XL particle object identity changed during native loading");
 		const auto authored = prepare_authored_particle(level, object);
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
-			throw std::runtime_error("XL particle object references an invalid loaded segment");
+			throw std::runtime_error("XL particle object " + std::to_string(index) + " segment mismatch: authored " + std::to_string(object.segment) + ", loaded " + std::to_string(Objects[index].segnum));
 		prepared.emplace(int(index), Entry{ authored.effect, authored.definition, authored.face, Objects[index].signature });
 	}
 	// Ordinary levels allocate no particle world and consume no effects RNG
@@ -255,7 +255,7 @@ void xl_compat::particle_objects_frame(int time)
 			if (!entry.system && entry.definition.count && systems.size() < particle_system_limit) {
 				const int segment = object.segnum;
 				if (segment < 0 || std::size_t(segment) >= world.segments.size()) throw std::runtime_error("XL particle owner moved outside its loaded mine");
-				if (entry.effect.kind == ParticleKind::smoke) systems.push_front({ index, entry.signature, SmokeEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				if (entry.effect.kind == ParticleKind::smoke || entry.effect.kind == ParticleKind::spray) systems.push_front({ index, entry.signature, SmokeEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
 				else systems.push_front({ index, entry.signature, FireEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
 				entry.system = &systems.front();
 			}

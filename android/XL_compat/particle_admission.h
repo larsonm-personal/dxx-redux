@@ -12,7 +12,7 @@ namespace xl_compat
 inline bool authored_particle_shape(const Object &object)
 {
 	return object.type == 20 && object.reader_id == 0 && object.render == 11 && object.reader_render == 11 &&
-	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 && (object.render_data[11] == 3 || object.render_data[11] == 0);
+	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 && (object.render_data[11] == 3 || object.render_data[11] == 0 || object.render_data[11] == 1);
 }
 inline bool fire_particle_shape(const Object &object)
 {
@@ -25,7 +25,7 @@ struct PreparedFireParticle {
 };
 inline PreparedFireParticle prepare_authored_particle(const Inventory &level, const Object &object)
 {
-	if (!authored_particle_shape(object)) throw std::runtime_error("XL fire/smoke requires a stationary uncontrolled single-player particle object");
+	if (!authored_particle_shape(object)) throw std::runtime_error("XL fire/smoke/spray requires a stationary uncontrolled single-player particle object");
 	if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size())
 		throw std::runtime_error("XL particle object references an invalid segment");
 	PreparedFireParticle result;

@@ -2879,6 +2879,9 @@ fix_object_segs()
 
 	for (i=0;i<=Highest_object_index;i++)
 		if (Objects[i].type != OBJ_NONE)
+#ifdef DXX_XL_RUNTIME
+			if (!xl_preserve_effect_position(Objects[i].type))
+#endif
 			if (update_object_seg(&Objects[i]) == 0) {
 				Int3();
 				compute_segment_center(&Objects[i].pos,&Segments[Objects[i].segnum]);

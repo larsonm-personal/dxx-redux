@@ -70,6 +70,7 @@ void xl_preview_reset_player_thrust(void);
 const char *xl_preview_level_path(const char *filename);
 /* Transient permissions for verified private XL level adapters */
 int xl_loading_wide_walls(void);
+int xl_preserve_effect_position(int object_type);
 int xl_loading_extended_triggers(void);
 int xl_loading_inert_trigger(int type);
 void xl_wall_trigger_bind_effect_targets(void);
