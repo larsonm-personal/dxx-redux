@@ -5,8 +5,8 @@ struct ParticleDepth {
 	void discard(bool abandoned)
 	{
 		if (!abandoned) {
-			glDeleteTextures(1, &texture);
-			glDeleteFramebuffers(1, &framebuffer);
+			if (texture) glDeleteTextures(1, &texture);
+			if (framebuffer) glDeleteFramebuffers(1, &framebuffer);
 		}
 		*this = {};
 	}

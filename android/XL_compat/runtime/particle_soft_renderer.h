@@ -12,8 +12,8 @@ struct ParticleSoft {
 		depth.discard(abandoned);
 		if (!abandoned) {
 			if (program) glDeleteProgram(program);
-			glDeleteVertexArrays(1, &vao);
-			glDeleteBuffers(1, &buffer);
+			if (vao) glDeleteVertexArrays(1, &vao);
+			if (buffer) glDeleteBuffers(1, &buffer);
 		}
 		*this = {};
 	}

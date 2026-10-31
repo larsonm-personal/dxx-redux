@@ -435,6 +435,10 @@ int main(int argc, char **argv)
 	EGLSurface surface = EGL_NO_SURFACE;
 	int result = 1;
 	try {
+		// Stock/headless startup may discard empty particle state before GL exists
+		xl_particle_images_discard_context(0);
+		xl_particle_images_discard_context(1);
+		xl_particle_images_discard_context(0);
 		display = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
 		check(display != EGL_NO_DISPLAY && eglInitialize(display, nullptr, nullptr), "Cannot initialize surfaceless EGL");
 		check(eglBindAPI(EGL_OPENGL_API), "Cannot select desktop OpenGL");
