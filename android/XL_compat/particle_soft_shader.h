@@ -17,8 +17,10 @@ void main() {
     vec4 color = texture2D(particleTex, particleUV);
     if (blendMode > 0)
         gl_FragColor = vec4(color.rgb * particleColor.rgb * fade, 1.0);
-    else
+    else if (blendMode < 0)
         gl_FragColor = vec4(max(color.rgb, 1.0 - fade), 1.0);
+    else
+        gl_FragColor = vec4(color.rgb * particleColor.rgb, color.a * particleColor.a * fade);
 }
 )GLSL";
 #endif

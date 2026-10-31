@@ -955,3 +955,46 @@ Fix commit 55c937273 is published on branch 86. Receipts: empty-cleanup-before.l
 empty-cleanup-backtrace.log, empty-cleanup-after.log and empty-cleanup-quality.log.
 New CI is running. The earlier LAN failure was separate: its runner had only
 414652 KiB free where provisioning required 5242880 KiB; gameplay did not start.
+
+## Authored smoke qualification (branch 92)
+
+The candidate extends stationary, uncontrolled single-player particle admission
+from fire to authored smoke (subtype 0). It shares emitter scheduling, world
+collision and transparency ordering while retaining smoke-specific color,
+remaining-life decay, growth, drag, 8-by-8 atlas animation and source-alpha blend.
+Mission/base image provenance and retained-pixel context recovery now cover both
+images independently. Unsupported particle kinds remain rejected.
+
+Pinned source comparisons cover 7680 color/decay cases, 2640 sequential color
+transitions, 2304 creation cases, 22464 updates, 2880 emitter frames, 1440
+billboards, 1680 animation cases and 264 mixed buffer profiles. Existing fire
+comparisons remain passing. Actual source image loading matches all 1048576
+RGBA bytes of the original 512-by-512 smoke.tga. Smoke uses zero atlas inset;
+fire retains its one-pixel inset. Linux EGL checks include alpha soft-depth and
+hard-atlas blending, mixed transparency and context recreation.
+
+Android's existing POG owner now has a SmokeFixture mode. Its derived Pumo hub
+changes exactly one byte: clears outdoors on segment 154 while retaining the
+original smoke object, geometry and companion resources. All 68 steps passed in
+139.346 seconds: live emission, changed scene pixels, all 64 atlas cells, disk
+restore, context recreation, stock cleanup and return. Protected hashes match.
+This qualifies the isolated smoke lifecycle, not unchanged Pumo hub gameplay.
+
+Final explicit Windows/Linux --effects runs pass 125 profiles and 3360 payload
+truncations. The initial new assertion incorrectly compared whole shadow files;
+those intentionally retain unused source records. The corrected assertion checks
+the active 79-byte classic object header and separately preserves smoke subtype.
+Default inventory success alone did not execute these effect contracts.
+
+Receipts are under temp/xl-skybox-20261031: smoke-linux-source.log,
+smoke-color-source.log, smoke-original-image.log, smoke-image-source.log,
+smoke-gpu.log, smoke-effects-windows.log, smoke-effects-linux.log and
+android-smoke-report-fixed.log. Final native lifecycle refresh remains pending
+at this checkpoint. Branch 92 is not yet published.
+
+Final native refresh passed after the corrected effect fixture assertion. The
+owner exercised mixed smoke/fire resources, scene submission and activation
+restore, existing automatic secret-save transitions, stock isolation and
+original hub rejection. Receipt: native-runtime/controls.log. Windows inventory
+and explicit Windows/Linux effects controls pass. Android evidence is reused:
+only a host assertion changed after its completed run.

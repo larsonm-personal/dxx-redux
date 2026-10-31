@@ -54,16 +54,25 @@ static void particle_gpu_controls()
 	xl_compat::FireParticle particle{};
 	particle.width = particle.height = particle.decay = 1;
 	unsigned comparisons = 0;
-	for (int frame : { 0, 2 })
+	for (int frame : { 0, 2, 4 })
 		for (int orientation = 0; orientation < 4; ++orientation)
 			for (float scene_depth : { .25f, .5f, 1.0f }) {
 				const bool blocked = scene_depth < .5f;
-				particle.frame = frame;
+				particle.frame = frame == 4 ? 0 : frame;
 				particle.orientation = orientation;
-				const auto quad = xl_compat::fire_particle_quad(particle, view, 128, 128);
+				auto quad = xl_compat::fire_particle_quad(particle, view, 128, 128);
+				const std::array<float, 4> tint{ .7f, .8f, .9f, .3f };
+				if (frame == 4) {
+					quad.blend = xl_compat::ParticleBlend::alpha;
+					for (auto &vertex : quad.vertices) vertex.color = tint;
+				}
 #ifdef XL_POG_SHADER_REFERENCE
-				const auto factors = source_particle_blend(frame < 2 ? 5 : PARTICLE_TYPES + 5, 2);
-				check(factors == (frame < 2 ? std::array<GLenum, 2>{ GL_ONE, GL_ONE_MINUS_SRC_COLOR } : std::array<GLenum, 2>{ GL_DST_COLOR, GL_ZERO }), "Source particle blend differs from GPU comparison equation");
+				const auto factors = source_particle_blend(frame == 4 ? 1 : frame < 2 ? 5
+				                                                                      : PARTICLE_TYPES + 5,
+				                                           frame == 4 ? 0 : 2);
+				check(factors == (frame == 4 ? std::array<GLenum, 2>{ GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA } : frame < 2 ? std::array<GLenum, 2>{ GL_ONE, GL_ONE_MINUS_SRC_COLOR }
+				                                                                                                         : std::array<GLenum, 2>{ GL_DST_COLOR, GL_ZERO }),
+				      "Source particle blend differs from GPU comparison equation");
 #endif
 				glClearColor(background[0] / 255.f, background[1] / 255.f, background[2] / 255.f, 1);
 				glClearDepth(scene_depth);
@@ -101,8 +110,10 @@ static void particle_gpu_controls()
 				for (unsigned p = 0; p < 16 * 16; ++p) {
 					check(std::abs(actual_depth[p] - scene_depth) < .00001f, "Particle draw changed scene depth");
 					for (unsigned c = 0; c < 4; ++c) {
-						const double s = cells[unsigned(frame)][c] / 255., d = background[c] / 255.;
-						const double want = blocked ? d : frame == 0 ? s + d * (1 - s)
+						const double s = cells[unsigned(frame == 4 ? 0 : frame)][c] / 255. * (frame == 4 ? tint[c] : 1), d = background[c] / 255.;
+						const double alpha = cells[0][3] / 255. * tint[3];
+						const double want = blocked ? d : frame == 4 ? s * alpha + d * (1 - alpha)
+						                              : frame == 0   ? s + d * (1 - s)
 						                                             : s * d;
 						check(std::abs(int(actual[p * 4 + c]) - int(want * 255 + .5)) <= 1, "Particle fire/smoke GPU blend differs from source equation");
 					}

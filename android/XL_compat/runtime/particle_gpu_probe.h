@@ -52,7 +52,7 @@ struct ParticleProbeTarget {
 	}
 };
 
-void particle_gpu_probe(const xl_compat::ParticleImageResource *prepared = particle_probe_image.get())
+void particle_gpu_probe(const xl_compat::ParticleImageResource *prepared = particle_probe_image.get(), unsigned atlas_side = 2, bool alpha = false)
 {
 	require(prepared && gl_initialized && glGetError() == GL_NO_ERROR, "Particle GPU probe requires an owned atlas and clean context");
 	const auto &image = prepared->bitmap;
@@ -69,13 +69,14 @@ void particle_gpu_probe(const xl_compat::ParticleImageResource *prepared = parti
 		quad.vertices[3].position = { -1, 1, 0 };
 		// Pixel-center constant UVs isolate real atlas upload and both blend equations
 		// from the already-qualified desktop billboard/atlas coordinate generator
-		for (unsigned cell = 0; cell < 4; ++cell) {
-			const unsigned x = (cell % 2 * 2 + 1) * image.width / 4;
-			const unsigned y = (cell / 2 * 2 + 1) * image.height / 4;
+		for (unsigned cell = 0; cell < atlas_side * atlas_side; ++cell) {
+			const unsigned x = (cell % atlas_side * 2 + 1) * image.width / (2 * atlas_side);
+			const unsigned y = (cell / atlas_side * 2 + 1) * image.height / (2 * atlas_side);
 			const auto offset = (std::size_t(y) * image.width + x) * 4;
 			for (auto &vertex : quad.vertices) vertex.uv = { (x + .5f) / image.width, (y + .5f) / image.height };
 			for (const auto blend : { xl_compat::ParticleBlend::weak_additive, xl_compat::ParticleBlend::multiply }) {
-				quad.blend = blend;
+				if (alpha && blend == xl_compat::ParticleBlend::multiply) continue;
+				quad.blend = alpha ? xl_compat::ParticleBlend::alpha : blend;
 				glClearColor(background[0] / 255.f, background[1] / 255.f, background[2] / 255.f, 1);
 				glClear(GL_COLOR_BUFFER_BIT);
 				prepared->texture->draw(&quad, 1);
@@ -84,7 +85,9 @@ void particle_gpu_probe(const xl_compat::ParticleImageResource *prepared = parti
 				require(glGetError() == GL_NO_ERROR, "Particle probe draw/readback raised a GPU error");
 				for (unsigned channel = 0; channel < 4; ++channel) {
 					const double source = image.pixels[offset + channel] / 255., destination = background[channel] / 255.;
-					const double expected = blend == xl_compat::ParticleBlend::multiply ? source * destination : source + destination * (1 - source);
+					const double opacity = image.pixels[offset + 3] / 255.;
+					const double expected = alpha ? source * opacity + destination * (1 - opacity) : blend == xl_compat::ParticleBlend::multiply ? source * destination
+					                                                                                                                             : source + destination * (1 - source);
 					require(std::abs(int(actual[channel]) - int(expected * 255 + .5)) <= 1, "Android particle atlas/blend differs from decoded original pixels and source equation");
 				}
 				++samples;

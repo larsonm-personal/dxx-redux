@@ -349,6 +349,7 @@ struct XlPreparedResources::State {
 	std::shared_ptr<const xl_compat::MessageResources> messages;
 	std::shared_ptr<const xl_compat::AudioResources> audio;
 	std::shared_ptr<const xl_compat::ParticleImageResource> particle_image;
+	std::shared_ptr<const xl_compat::ParticleImageResource> smoke_image;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 
@@ -395,7 +396,10 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	state = std::make_unique<State>(*mission_base);
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
 	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);
-	if (level) state->particle_image = xl_compat::prepare_particle_image(*level);
+	if (level) {
+		state->particle_image = xl_compat::prepare_particle_image(*level);
+		state->smoke_image = xl_compat::prepare_particle_image(*level, 0);
+	}
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
@@ -451,14 +455,15 @@ void XlPreparedResources::install_messages()
 	xl_compat::install_named_audio(state->audio);
 }
 
-const xl_compat::ParticleImageResource *XlPreparedResources::particle_image() const
+const xl_compat::ParticleImageResource *XlPreparedResources::particle_image(int subtype) const
 {
-	return state->particle_image.get();
+	return subtype == 3 ? state->particle_image.get() : subtype == 0 ? state->smoke_image.get()
+	                                                                 : nullptr;
 }
 
-const xl_compat::ParticleImageResource *xl_prepared_particle_image()
+const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype)
 {
-	return prepared_resources ? prepared_resources->particle_image() : nullptr;
+	return prepared_resources ? prepared_resources->particle_image(subtype) : nullptr;
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const

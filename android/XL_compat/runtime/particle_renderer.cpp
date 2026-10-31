@@ -130,6 +130,7 @@ void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size
 	for (std::size_t i = 0; i < count; ++i) {
 		const auto &quad = quads[i];
 		if (quad.blend == ParticleBlend::multiply) glBlendFunc(GL_DST_COLOR, GL_ZERO);
+		else if (quad.blend == ParticleBlend::alpha) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		else glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
 		glVertexPointer(3, GL_FLOAT, sizeof(ParticleVertex), quad.vertices[0].position.data());
 		glColorPointer(4, GL_FLOAT, sizeof(ParticleVertex), quad.vertices[0].color.data());

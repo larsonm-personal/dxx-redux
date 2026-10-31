@@ -72,7 +72,7 @@ static void particle_secret_native_case(const xl_compat::Bytes &original_archive
 		particle_objects_frame(25);
 		require(particle_systems().size() == expected, "Secret transition resumed the wrong particle owners");
 		unsigned live = 0;
-		for (const auto &system : particle_systems()) live += unsigned(system.emitter.count);
+		for (const auto &system : particle_systems()) live += unsigned(system.count());
 		require(live > 0, "Secret transition owners did not resume emission");
 	};
 	require(Current_level_num == 1 && particle_objects_snapshot().size() == 2, "Derived particle base did not load two owners");

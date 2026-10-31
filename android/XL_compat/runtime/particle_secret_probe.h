@@ -92,7 +92,7 @@ void particle_secret_probe(const char *operation)
 	} else if (!std::strcmp(operation, "live")) {
 		verify();
 		unsigned live = 0;
-		for (const auto &system : particle_systems()) live += unsigned(system.emitter.count);
+		for (const auto &system : particle_systems()) live += unsigned(system.count());
 		require(live > 0, "Secret transition did not resume particle emission");
 	} else throw std::runtime_error("Unknown derived particle secret operation");
 	++checks;

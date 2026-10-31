@@ -66,8 +66,7 @@ add headed integration controls for brightness/depth/state/automap isolation.
 
 ## Emulator and receipts
 
-Current AVD DxxOvernight_1 on port 5554 temporarily uses host GPU, launcher PID
-37712. Original emulator processes 53120/43828 were verified terminal before
+Current AVD DxxOvernight_1 on port 5554 temporarily uses host GPU, launcher PID 37712. Original emulator processes 53120/43828 were verified terminal before
 restart. Restore swiftshader_indirect at closeout (original args saved in
 temp/xl-evening-20261030/emulator-original.txt). Use Hidden windows and verify
 termination before switching. Retain new receipts under
@@ -271,7 +270,6 @@ Current native build launched this turn; inspect its live handle before rerun.
 
 Native candidate build session 24128 completed successfully; all local handles terminal.
 
-
 ## Authored Android lifecycle owner and first failures (unpublished)
 
 Added SkyboxFixture mode to test_xl_pog_runtime.ps1, protected pskybox paths,
@@ -294,7 +292,7 @@ Retry selected mission but synchronous StartNewGame reached Error: Invalid stati
 type10 in fuelcen.c (live log00:46:12). It is still running session77304 under the
 480-second owner timeout; do NOT install/restart before it terminates/restores.
 Console log android-authored-title-fixed.log, protected output
- temp/xl-skybox-authored-android. First failure restored files through finally.
+temp/xl-skybox-authored-android. First failure restored files through finally.
 
 Fixed probe.cpp classic shadow mapping: modern skybox10 -> ordinary0, retained
 XL source stays10. Added regression inspecting translated station byte (previous
@@ -330,3 +328,298 @@ and draftPR if acceptable. Preserve unrelated files and the evening handoff.
 Candidate admits textured modern skyboxes; original hub remains blocked by smoke
 and outdoors, colored-only boundaries explicitly rejected. Original campaign
 playability remains unqualified. Then address smoke/outdoors as bounded chunks.
+
+## Branch 91 publication and smoke scope, 01:13 Pacific
+
+Published df7f76a7612555a374946f4347e6f156a0b0bc32 as draft PR244:
+https://github.com/larsonm-personal/dxx-redux/pull/244
+Actual base is xl_more_90_skybox_lifecycle (PR243), still open; two replay
+checks in progress at08:09UTC, all other required completed checks successful.
+The first PR-create attempt used an incorrect base name and created nothing;
+corrected attempt succeeded. No merge performed. Unrelated manifest hash intact.
+
+Current branch xl_more_92_smoke_particles. Next bounded chunk: qualify the
+stationary authored smoke subtype0 using the existing source particle owner,
+then extend runtime/resources and Android lifecycle only once comparisons pass.
+Do not infer smoke support from the fire atlas's smoke cells: authored smoke
+uses image1/smoke.tga (8-cell dimension), while fire uses image5/smokingfire.tga.
+Pinned effects/particles.cpp has distinct smoke Create, UpdateColor, decay,
+growth and SetupColor branches. Existing preparation tests cover smoke emitter
+definitions, but FireParticle creation explicitly rejects image !=5.
+Original smoke.tga already exists under temp/xl-particles-20261030/original-assets/
+textures/d2x-xl, so reuse it rather than downloading or substituting artwork.
+All local processes remain terminal; no new build launched. Next inspect active
+source Create and existing extraction adapter, then implement smoke comparisons.
+
+## Branch92 smoke color checkpoint
+
+Added particle_smoke.h with authored fade1 setup and linear lifetime decay.
+Existing source owner now compares actual pinned CParticle::UpdateDecay and
+SetupColor across lifetime thresholds, alpha thresholds, brightness, bright
+particles and RNG seeds. Windows source owner passed, including all existing
+fire/geometry/emitter/world/skybox comparisons. Scoped formatting passed after
+sandbox denied installed clang-format and authorized escalation succeeded.
+Receipts: temp/xl-skybox-20261031/smoke-color-{quality,build,source}.log.
+No admission/runtime wiring changed yet. Next extend creation and update using
+actual source adapter, then atlas/resource and normal lifecycle consumers.
+PR244 Windows/Linux XL contracts passed at latest check; remaining CI pending,
+no observed failures. All local handles terminal. Changes uncommitted on92.
+
+## Branch92 smoke creation checkpoint, 01:19 Pacific
+
+Windows actual-source comparisons pass: 7680 color/decay cases,2640 sequential
+color transitions,2304 complete creation cases (point/face, blow-up on/off,
+authored/default color, three brightness inputs, seeds, parameter values).
+Existing fire/source suite remains passing. Creation compares RNG consumption,
+position/drift/direction, lifetime, radius/size, atlas indices and color states.
+Source adapter now supplies the pinned smoke 8-frame image alongside fire2.
+
+A real mismatch exposed source Create mutating fBrightness to1-fBrightness for
+nonbright expanding smoke, then retaining that argument for final SetupColor.
+Corrected implementation passes exact comparisons; no tolerance added.
+SMOKE_LIGHTING is0 in pinned include/particles.h. Creation scope uses quality2,
+default alpha setting, authored nonpositive alpha. Admission remains unchanged.
+New files: particle_smoke.h, tests/reference_smoke_creation.h. Existing source
+owner files reference_particle_geometry.cpp/reference_effects.cpp extended.
+All changes uncommitted on92. Formatter terminal0; all local handles terminal.
+Next: qualify smoke movement/update and atlas geometry using actual source,
+then wire resource/emitter/runtime and Android lifecycle before admission.
+Receipts smoke-color-source.log/build.log and smoke-creation-quality.log under
+temp/xl-skybox-20261031. Preserve other user files and original emulator restore
+requirement at tranche closeout.
+
+## Branch92 smoke movement checkpoint
+
+Windows AND Linux actual-source owner passes all smoke cases:7680color,
+2640transitions,2304creation,22464updates. Existing fire2304creation/41472update
+and emitter/world/skybox controls pass after sharing common motion lookup and
+collision logic through advance_particle_motion in particle_fire.h. Fire keeps
+constant direction drag; smoke supplies source decay-based fixed drag. Smoke
+updates run color first, honor negative-life return semantics, then movement,
+lookup/bounce, lifetime and source radius/alpha growth. No admission change.
+
+Scoped formatter passed; gitdiffcheck passed. All processes terminal, including
+WSL session11263. Linux receipts smoke-linux-build.log/smoke-linux-source.log;
+Windows smoke-color-build.log/smoke-color-source.log; smoke-motion-quality.log.
+All under temp/xl-skybox-20261031. Branch92 changes still uncommitted.
+
+Next concrete task: smoke quad and animation in existing particle_render owner.
+Active source Setup (non-TRANSFORM_PARTICLE_VERTICES) uses smoke scale1/sqrt(decay)
+when blowup, otherwise1; for decay>.9 both multiply sqrt((1-decay)/.1). Uses
+rendered RGBA and8x8atlas, normal smoke blending (must qualify buffer/backend,
+not reuse fire's multiply smoke variant). Continue normal resource/emitter/runtime
+and Android lifecycle qualification before allowing original hub smoke.
+
+## Branch92 smoke geometry and animation checkpoint
+
+Windows actual-source owner passes1440smoke billboards and1680animation
+transitions, along with all existing fire checks. Added shared billboard helper
+with scale/atlas/color inputs; fire wrapper preserves previous parameters.
+Smoke uses8x8atlas, authored RGBA, source expansion scale and positive lifetime.
+Smoke animation advances atlas every animation tick and rotation every second
+tick, matching actual CParticle::Render and newly extracted UpdateTexCoord.
+Render adapter supplies smoke image and source bWobbleBubbles option.
+
+ParticleBlend::alpha added for future smoke wiring; no runtime caller emits it
+yet, and current backend still needs explicit alpha handling. Source buffer
+selects m_bEmissive (0 for authored smoke) as blend mode, uses soft shader mode0;
+fire smoke variant instead uses multiply. Do not allow subtype0 until resource,
+buffer/backend, emitter and Android lifecycle are qualified. Next extend those
+existing owners. Updated Windows receipts smoke-color-source/build.log and
+smoke-render-quality.log; Linux simulation evidence predates renderer edits and
+needs refresh after renderer/backend work. All local handles terminal, changes
+uncommitted. No APK build/install since branch91.
+
+## Branch92 smoke alpha backend checkpoint
+
+Added actual source alpha branch to particle_soft_shader.h, alpha GL factors in
+fixed and soft ParticleTexture backends, and blendMode0 dispatch. Existing GPU
+owners now include authored RGBA tint/alpha, source-derived blend factors and
+source glare shader comparison. No alternate renderer or integration owner.
+Linux EGL GPU owner PASS:129soft depth/blend comparisons,38hard atlas/blend/depth
+cases, existing buffer/mixed transparency and real context recreation controls.
+All114RGBA cases/2120414pixels passed with max analytical error1. Linux source
+owner also refreshed and passed simulation, smoke billboards/animation and fire.
+Scoped mixed formatter passed; gitdiffcheck passed. All processes terminal.
+Receipts smoke-gpu-build.log/smoke-gpu.log/smoke-linux-source.log and
+smoke-blend-quality.log under temp/xl-skybox-20261031.
+
+Next: resource representation currently holds one fire image; prepare_particle_image
+rejects other subtypes and uses smokingfire2x2. Need owned smoke8x8 alongside fire,
+with same mission/base provenance, lookup precedence and retained pixels. Preserve
+mixed fire/smoke scenes and save/context lifetimes. Then integrate smoke emitter
+and extend original-Pumo/derived owner. Admission remains fire-only,92uncommitted.
+
+## Branch92 smoke resource ownership checkpoint
+
+prepare_particle_image now selects authored subtype3fire or0smoke, retains exact
+mission/base lookup ownership policy, and validates the respective2x2/8x8atlas.
+Prepared level resources own separate shared fire/smoke images; getter defaults
+to fire for existing callers and accepts0for future smoke runtime consumers.
+Existing resource owner runs full precedence/malformed/missing/case/shadow/base
+installation/retained-pixel checks for both subtypes and mixed-image separation.
+
+Native engine rebuilt and integration passed (session72903terminal0). Scoped
+formatter and diffcheck passed. All local handles terminal. Receipts same native
+runtime owner under temp/xl-skybox-20261031/native-runtime and native-runtime.log;
+smoke-resource-quality.log. No admission change, no Android build yet on92.
+PR244 latest checks no failures; contracts/builds/tooling/LAN green, ASan/replays
+pending. Next implement smoke emitter using source ring scheduling, then wire
+runtime scene/resource selection, snapshots and original hub smoke fixture.
+
+## Branch92 smoke emitter checkpoint
+
+Shared AuthoredParticleEmitter<Smoke> ring now aliases FireEmitter/SmokeEmitter.
+Same scheduling and retirement order; subtype-specific creation/update and smoke
+brightness from authored definition/100. Existing source emitter owner extended
+for smoke, compares every live particle including color/target/rendered state.
+Windows source owner PASS:2880smoke frames,24drained rings,6zero-capacity
+rejections,5532lookup/collision calls; existing fire2880/9172also passes.
+Includes irregular timing, moving origins, disable/re-enable, full RNG state.
+Brightness adapter supplies authored-effect brightness; creation/update bodies
+remain actual pinned source. Linux emitter refresh still required.
+Scoped formatter/diffcheck passed. All local handles terminal.92uncommitted.
+
+Next runtime integration: ParticleSystem currently contains FireEmitter directly;
+convert to variant or equivalent typed ownership without allocating dummy fire
+rings for smoke. Preserve systems insertion order and pointer stability. Existing
+native tests reference .emitter fields and must be updated to inspect the proper
+variant. Scene items need image subtype for transparency submission; rendered
+resources already support xl_prepared_particle_image(0). Admission stillfire-only.
+
+## Branch92 runtime mixed-particle checkpoint
+
+ParticleSystem now owns variant<FireEmitter,SmokeEmitter>, preserving list order
+and stable system pointers. Binding accepts smoke internally via shared authored
+preparation; normal admission remains fire-only. Frame/update/stop/jitter visitors
+use the actual emitter type. Scene items carry subtype; production chooses each
+prepared texture and correct8x8vs2x2dimensions. Saved state still authored enable
+bytes only, reconstructing fresh transient clouds. Existing fire probes use
+explicit fire accessor; generic counts visit either type.
+
+Native owner extended with mixed smoke/fire emission and alpha scene, then
+activation restore with empty clouds and resumed emission. Full native integration
+passed after rebuild. MSVC nested visitor lambda required a typed mutable motion
+accessor; fixed without changing semantics. All local handles terminal.
+
+Mixed source buffer matrix initially failed: actual source bCompatible[1] permits
+smoke1compatibility even across emissive flag changes. Shared buffer now preserves
+this for admitted types. Source comparisons pass264profiles/156090inputs including
+smoke/fire/fire-smoke variants. Current normal smoke emissive remainsfalse.
+Native compiled final buffer fix and allintegration passed. Scoped formatting and
+gitdiffcheck passed.92stilluncommitted. Receipts smoke-runtime-quality.log,
+smoke-runtime-fix-quality.log,smoke-color-source.log,render-native-build.log and
+native-runtime/controls.log. Linux runtime/source refresh still needed.
+
+Next original smoke.tga source pixel/atlas qualification, Android mixed/actual
+hub smoke lifecycle. Review source smoke border/filter/setup image semantics
+before claiming image path qualified. Keep outdoors isolated and original mission
+unmodified. No APK build or normal smoke admission yet.
+
+## Branch92 original smoke image checkpoint
+
+Source Load investigation found smoke has ZERO atlas border, while onlyfire
+gets one-pixel inset. Corrected shared billboard helper to take inset policy,
+smoke passesfalse. Earlier supplied-border smoke geometry comparison was not
+proof of the image-manager policy. Extended existing actual Load/GetType/table
+owner to smoke andfire; source exact zero-border smoke controls nowpass.
+Active Load's smoke premultiply/RGB conversion is#if0. Original square image
+has one bitmap frame; CParticle atlas animation is the qualified64cellpath.
+
+Original smoke.tga512x51232bit, SHA256
+6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac.
+Existing CTGA owner matched all1048576decodedRGBAbytes. Linux source simulation,
+smoke emitter/buffer/billboard/animation and EGLGPU suites refreshed andpass.
+Image source owner also passed481header/pixel cases,14malformed controls and
+15760POGcontrols. Receipt smoke-original-image.log; smoke-image-source.log;
+smoke-image-linux-build.log; smoke-linux-source.log; smoke-gpu.log. Formatting
+anddiffcheckpassed. Session65904terminal0; all localhandles terminal.
+
+Next Android normal-admission candidate: derive hub with onlyoutdoors cleared
+(exactonebyte), keep originalsmokeobject1segment59. Extend existing skybox
+fixture/POGlifecycleowner with smoke mode and protectedpaths, originalsmokeimage
+hash, GPUalpha64cells, realdisk/context/stockreturn and observable activecloud.
+Do not erase originalfire-substitute control or claim originalhub playable.
+Candidate normal smoke admission may be widened onlywith validation inprogress,
+not published until complete. Current admission remainsfire-only;92uncommitted.
+
+## Branch92 normal-admission candidate and smoke fixture
+
+UNPUBLISHED candidate now admits strict stationary/uncontrolled single-player
+smoke subtype0 alongside fire3. Generic authored shape no longer copies objects.
+Runtime serializer preserves originalsubtype and strips particlepayload from
+classicshadow; serialization-only probe rejectsbothkinds. Linux inventory suite
+passed, including positive smoke translation equality withfire'sclassicheader
+and retainedsource subtype; previous subtype0negative control nowunsupported1.
+
+Skybox fixture owner accepts optional--smoke, writespsmokeHOG/descriptor and
+verifiesexactONEchangedhubbyte(outdoors60->44). Originalobject1smoke retained;
+olddefaulttwo-bytepskyboxcontrolpreserved. Windowsfixturebuild/pass:
+psmoke.hog9584308a740140b81950812e00779b5c5e92c35dac4b431852bf7e4ba811c326
+psmoke.mn2d7a34f614d094e5f288f3b648b8da30aab6847fb87af47a1a11c50e2b5d77eea
+under temp/xl-skybox-20261031/smoke-fixture.
+All handles terminal; scopedformatterpass. Receipts smoke-fixture*.log and
+smoke-admission-linux*.log. NoAndroidbuild/testyet; doNOTpublishcandidate.
+Next extend test_xl_pog_runtime SmokeFixture mode, protectedpsmokepaths,
+originalsmokeimagehash and ownedscript; probe actualsmokeGPU64cellalpha,
+activation/cloud/scene witness, diskrestore/contextrecreation/stockreturn.
+Need bothautomationcatalogs beforecommit. Originalunchangedhubstilloutdoorsblocked.
+
+## Branch92 Android owner and first runs, 02:02 Pacific
+
+Added SmokeFixture/SmokeImage mode to existing test_xl_pog_runtime, protectspsmoke
+mission/modpaths and hashpinsoriginalsmoke. Owned68step test_xl_smoke_authored
+uses normalhubstart, originalpointsmoke59fixedview, livecloud/scene pixelwitness,
+64cellalphaGPU, skyboxfixedview, POGGPU, diskload, EGLrecreation, stockcleanup/load.
+Added smoke_lifecycle_probe.h and generalized existing particle_gpu_probe.
+Actualsmokepayload[4,10,3,4,8,10,203,78,78,0,0,0,1], position[-13689968,0,52625],
+segment59, enabledtrue. Keepsoriginalobject; noactivationbypass.
+
+BothcatalogsPASS:99JSON/492support/314PS,427top-level. MixedformatterPASS.
+FirstAndroidcompilefailed missingxl_compatnamespace innewprobes; corrected;
+fixedbuildterminal0. Firstowner usedoldinstalledAPK (ownerdoesNOTinstall):
+android-smoke-lifecycle.log failsstep4Unknownskyboxoperation, hashesrestored.
+Explicitadbinstall-r newAPK succeeded. Secondowner android-smoke-installed.log
+loadsnormalhub, failsstep11waitingmissingxl_pog.live_particles. Runtime diagnostic
+onlyreturnedfieldsforolderoriginalfire/secretowners, reportwasnull. Corrected
+pog_probe toinitializereportatstart_smoke and exposefieldsforpsmoke. Secondrun
+terminal1, allbefore/afterhashesmatch; noemulatorprocessleftbytest.
+
+Formatterforreportfixterminal0. New Gradle build started this turn, see livehandle
+inlatesttoolresult; logsmoke-report-android-build.log. DoNOTstartanotherbuilduntil
+terminal. Then EXPLICITLYinstall android/app/build/outputs/apk/debug/app-debug.apk
+withadb-r before rerunning sameSmokeFixtureowner. Needfullpass;92unpublished.
+
+## Branch92 Android smoke pass and final contract correction
+
+Android SmokeFixture passed all 68 steps in 139.346 seconds with the explicitly
+installed report-fixed APK. All protected before/after hashes match. The owner
+and both final Windows builds exited successfully. Manifest hash remains
+DD62EE6B6B61DD65F46F785C6F35248D91A881789E2644EA87632D6F9C8CDCE7.
+Receipt: android-smoke-report-fixed.log and temp/xl-smoke-authored-android.
+
+Final Windows inventory passed, but this default invocation does not execute
+--effects. Native integration's --effect-fixtures invocation caught the new
+smoke contract incorrectly comparing entire stock_level byte vectors. Probe
+intentionally retains unused original source records; subtype therefore differs
+outside the active translated object table. Corrected the assertion to resolve
+the smoke object table and compare its complete 79-byte classic header against
+the audited expected header, separately checking retained source subtype zero.
+No runtime change. Prior claim of full smoke translation contract qualification
+was too broad. Rebuild and run --effects explicitly on Windows/Linux, then rerun
+native integration before publication. Scoped formatting is currently running.
+
+Parent PR244 remains OPEN at df7f76a7612555a374946f4347e6f156a0b0bc32;
+all checks passed except headed replay parity still in progress at this check.
+Branch92 remains unpublished. Next bounded chunk after smoke publication is
+source-owned outdoors lighting, required before unchanged original hub admission.
+
+## Branch92 final validation checkpoint
+
+Corrected --effects passes on Windows and Linux:125profiles/3360truncations.
+Final native integration terminal0, including mixed smoke/fire activation/scene,
+resource controls and existing automatic secret lifecycle. Android68/68 and
+matching protected hashes remain valid; subsequent edit was host assertion only.
+All process handles terminal. Evidence appended to particle-effects.md.
+Before publication finish scoped documentation quality, diff review and commit
+only branch92 files; preserve continuation_20261030.md and unrelated game data.

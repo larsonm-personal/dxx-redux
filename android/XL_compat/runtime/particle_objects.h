@@ -7,11 +7,20 @@
 #include "../fire_emitter.h"
 #include "../particle_render.h"
 #include <list>
+#include <variant>
 namespace xl_compat
 {
 struct ParticleSystem {
 	int object, signature;
-	FireEmitter emitter;
+	std::variant<FireEmitter, SmokeEmitter> emitter;
+	const FireEmitter &fire_emitter() const
+	{
+		return std::get<FireEmitter>(emitter);
+	}
+	int count() const
+	{
+		return std::visit([](const auto &value) { return value.count; }, emitter);
+	}
 };
 void bind_particle_objects(const Inventory &level);
 // The same frame consumer accepts a controlled clock in native integration tests
@@ -22,9 +31,10 @@ struct ParticleSceneItem {
 	ParticlePoint position;
 	ParticleQuad quad;
 	float radius = 0;
+	int subtype = 3;
 };
 // Retain emitter insertion order for the shared transparency queue
-std::vector<ParticleSceneItem> particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height);
+std::vector<ParticleSceneItem> particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height, unsigned smoke_width = 0, unsigned smoke_height = 0);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

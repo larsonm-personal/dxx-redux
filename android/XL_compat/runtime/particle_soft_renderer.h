@@ -187,6 +187,7 @@ void draw_soft_particles(grs_bitmap &image, const xl_compat::ParticleQuad *quads
 	triangles.reserve((std::min) (count, std::size_t(25000)) * 6);
 	for (std::size_t i = 0; i < count;) {
 		const bool smoke = quads[i].blend == xl_compat::ParticleBlend::multiply;
+		const bool alpha = quads[i].blend == xl_compat::ParticleBlend::alpha;
 		const auto blend = quads[i].blend;
 		triangles.clear();
 		const auto limit = (std::min) (count - i, std::size_t(25000)) + i;
@@ -195,8 +196,12 @@ void draw_soft_particles(grs_bitmap &image, const xl_compat::ParticleQuad *quads
 			for (unsigned vertex : { 0u, 1u, 2u, 0u, 2u, 3u }) triangles.push_back(quads[i].vertices[vertex]);
 			++i;
 		}
-		glUniform1i(glGetUniformLocation(particle_soft.program, "blendMode"), smoke ? -1 : 2);
-		glBlendFunc(smoke ? GL_DST_COLOR : GL_ONE, smoke ? GL_ZERO : GL_ONE_MINUS_SRC_COLOR);
+		glUniform1i(glGetUniformLocation(particle_soft.program, "blendMode"), smoke ? -1 : alpha ? 0
+		                                                                                         : 2);
+		glBlendFunc(smoke ? GL_DST_COLOR : alpha ? GL_SRC_ALPHA
+		                                         : GL_ONE,
+		            smoke ? GL_ZERO : alpha ? GL_ONE_MINUS_SRC_ALPHA
+		                                    : GL_ONE_MINUS_SRC_COLOR);
 		glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(triangles.size() * sizeof(Vertex)), triangles.data(), GL_STREAM_DRAW);
 #ifdef ANDROID
 #undef glDrawArrays

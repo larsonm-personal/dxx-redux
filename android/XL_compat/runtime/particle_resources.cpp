@@ -39,22 +39,25 @@ bool locate(std::string &path, bool installation)
 }
 } // namespace
 
-std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level)
+std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype)
 {
+	if (subtype != 0 && subtype != 3) throw std::runtime_error("Unsupported XL particle image subtype");
+	const char *name = subtype == 3 ? fire_image_name : smoke_image_name;
+	const unsigned atlas_side = subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side;
 	bool required = false;
 	for (const auto &object : level.objects) {
 		if (object.render != 11) continue;
-		if (object.render_data.size() != 13 || object.render_data[11] != 3)
-			throw std::runtime_error("XL particle image preparation requires a supported authored fire payload");
-		required = true;
+		if (object.render_data.size() != 13 || (object.render_data[11] != 3 && object.render_data[11] != 0))
+			throw std::runtime_error("XL particle image preparation requires a supported authored fire or smoke payload");
+		required |= object.render_data[11] == subtype;
 	}
 	if (!required) return {};
-	auto mission = addon_mission_texture_path(mission_resource_archive(), fire_image_name);
+	auto mission = addon_mission_texture_path(mission_resource_archive(), name);
 	if (mission.empty()) throw std::runtime_error("XL particle images require a selected mission HOG identity");
 	std::string selected = mission;
 	if (!locate(selected, false)) {
-		selected = std::string("textures/d2x-xl/") + fire_image_name + ".tga";
-		if (!locate(selected, true)) throw std::runtime_error("Missing XL fire image; checked " + mission + " and textures/d2x-xl/smokingfire.tga in the selected mission or base installation");
+		selected = std::string("textures/d2x-xl/") + name + ".tga";
+		if (!locate(selected, true)) throw std::runtime_error(std::string("Missing XL ") + (subtype == 3 ? "fire" : "smoke") + " image; checked " + mission + " and " + selected + " in the selected mission or base installation");
 	}
 	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(selected.c_str()), PHYSFS_close);
 	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
@@ -67,8 +70,8 @@ std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Invent
 	image->path = std::move(selected);
 	image->bitmap = read_particle_image(bytes.data(), bytes.size());
 	const unsigned width = image->bitmap.width;
-	if (width < 2 * fire_image_atlas_side || image->bitmap.height != width || (width & (width - 1)))
-		throw std::runtime_error("XL fire image requires a square power-of-two 2-by-2 atlas with room for its one-pixel cell borders: " + image->path);
+	if (width < 2 * atlas_side || image->bitmap.height != width || (width & (width - 1)))
+		throw std::runtime_error("XL particle image requires a square power-of-two " + std::to_string(atlas_side) + "-by-" + std::to_string(atlas_side) + " atlas with room for its one-pixel cell borders: " + image->path);
 	image->texture = std::make_unique<ParticleTexture>(image->bitmap, image->path.c_str());
 	return image;
 }

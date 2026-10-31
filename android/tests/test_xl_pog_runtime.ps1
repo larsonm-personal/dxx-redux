@@ -9,11 +9,14 @@ param(
     [switch]$SceneOnly,
     [switch]$SecretFixture,
     [switch]$SkyboxFixture,
+    [switch]$SmokeFixture,
+    [string]$SmokeImage = '',
     [ValidateRange(0, 100000)][int]$SceneSegment = 409,
     [ValidateRange(0, 5)][int]$SceneSide = 2,
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($SmokeFixture -and ($SkyboxFixture -or $SecretFixture -or $SceneOnly -or !$PumoMods -or !$SmokeImage)) { throw 'SmokeFixture requires original mod assets, smoke image and its own fixture mode' }
 if ($SkyboxFixture -and ($SecretFixture -or $SceneOnly -or !$PumoMods)) { throw 'SkyboxFixture requires original Pumo mod assets and its own fixture mode' }
 if ($SecretFixture -and ($SceneOnly -or $PumoMods)) { throw 'SecretFixture is a separate derived control' }
 if ($SceneOnly -and !$PumoMods) { throw 'SceneOnly requires the original Pumo package' }
@@ -30,6 +33,12 @@ if ($SkyboxFixture) {
     $hogHash = '69f56e52a45fb16f061290c115709086c416b88cecd1037e26d81c95ad8e89b7'
     $descriptorHash = 'fe8d90d8efd9efe2d270fdf6f90b1854171c15b8701ff6c9435df7bc94f45c7c'
 }
+if ($SmokeFixture) {
+    $mission = 'psmoke'
+    $hogHash = '9584308a740140b81950812e00779b5c5e92c35dac4b431852bf7e4ba811c326'
+    $descriptorHash = 'd7a34f614d094e5f288f3b648b8da30aab6847fb87af47a1a11c50e2b5d77eea'
+    if ((Get-FileHash -LiteralPath $SmokeImage -Algorithm SHA256).Hash -ne '6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac') { throw 'Requires original XL smoke atlas' }
+}
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $hogHash -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $descriptorHash) {
     throw "Requires the unchanged original $mission HOG and descriptor"
@@ -44,6 +53,7 @@ Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot $(if ($SceneOnly) { '../../temp/xl-pumo-particle-scene' } elseif ($PumoMods) { '../../temp/xl-pumo-particles-android' } else { '../../temp/xl-pog-android' })
 if ($SecretFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-particle-secret-android' }
 if ($SkyboxFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-skybox-authored-android' }
+if ($SmokeFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-smoke-authored-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -90,10 +100,15 @@ try {
         Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods/$mission" | Out-Null
     }
     Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/textures/d2x-xl && cp /data/local/tmp/xl-pog-fire.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smokingfire.tga" | Out-Null
+    if ($SmokeFixture) {
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $SmokeImage).Path, '/data/local/tmp/xl-pog-smoke.tga') | Out-Null
+        Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
+    }
     Invoke-PogAdb -Arguments @('logcat', '-c') | Out-Null
     $scriptName = if ($PumoMods) { 'test_xl_pumo_particles.jsonc' } else { 'test_xl_pog_runtime.jsonc' }
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
     if ($SkyboxFixture) { $scriptName = 'test_xl_skybox_authored.jsonc' }
+    if ($SmokeFixture) { $scriptName = 'test_xl_smoke_authored.jsonc' }
     if ($SceneOnly) {
         # Reuse the original owner's startup and first scene assertion
         $sourceSteps = Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable
@@ -124,7 +139,8 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($SkyboxFixture) { Write-Host "PASS: Derived authored skybox resources, disk restore, context recreation and stock isolation ($($result.total_steps) steps)" }
+    if ($SmokeFixture) { Write-Host "PASS: Original hub smoke in derived outdoors-isolated fixture, GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
+    elseif ($SkyboxFixture) { Write-Host "PASS: Derived authored skybox resources, disk restore, context recreation and stock isolation ($($result.total_steps) steps)" }
     elseif ($SecretFixture) { Write-Host "PASS: Derived particle automatic secret save/return and headed GPU resources ($($result.total_steps) steps)" }
     elseif ($SceneOnly) { Write-Host "PASS: Original Pumo controlled scene $SceneSegment/$SceneSide ($($result.total_steps) steps)" }
     else { Write-Host "PASS: Original $mission GPU resources, disk/rewind, context loss and stock transition ($($result.total_steps) steps)" }
@@ -139,7 +155,7 @@ try {
             $after | Set-Content "$output/after.sha256" -Encoding utf8
             if (Compare-Object $before $after) { throw "POG test state restoration differs; backup retained at $backup" }
             Invoke-PogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
-            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
+            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
         }
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }

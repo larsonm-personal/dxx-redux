@@ -231,6 +231,8 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
                       "int32_t CParticle::RenderType (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
                       "int32_t CParticle::Render (float")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "void CParticle::UpdateTexCoord (")
 string(FIND "${render_source}"
             "#else // -----------------------------------------------------------------------"
             start)

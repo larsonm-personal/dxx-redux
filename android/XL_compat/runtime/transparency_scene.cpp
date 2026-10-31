@@ -175,7 +175,8 @@ void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
 		if (const auto *particle = std::get_if<Particle>(&item)) {
 			const auto &p = particle->position;
 			const bool smoke = particle->quad.blend == ParticleBlend::multiply;
-			buffers.add(std::size_t(&item - items.data()), { float(p[0]) / 65536.f, float(p[1]) / 65536.f, float(p[2]) / 65536.f }, particle->radius, smoke, !smoke, submit);
+			const bool alpha = particle->quad.blend == ParticleBlend::alpha;
+			buffers.add_kind(std::size_t(&item - items.data()), { float(p[0]) / 65536.f, float(p[1]) / 65536.f, float(p[2]) / 65536.f }, particle->radius, alpha ? 1 : smoke ? 16 : 5, !smoke && !alpha, submit);
 		} else {
 			buffers.flush(submit);
 			draw_other(item);

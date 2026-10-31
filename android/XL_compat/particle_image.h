@@ -7,6 +7,8 @@ namespace xl_compat
 {
 inline constexpr char fire_image_name[] = "smokingfire";
 inline constexpr unsigned fire_image_atlas_side = 2;
+inline constexpr char smoke_image_name[] = "smoke";
+inline constexpr unsigned smoke_image_atlas_side = 8;
 // Authored addon images use XL's raw CTGA path. Reuse the existing owned RGBA
 // bitmap and alpha/key normalization rather than adding a second pixel policy
 inline PogBitmap read_particle_image(const unsigned char *data, std::size_t size)

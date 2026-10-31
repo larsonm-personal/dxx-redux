@@ -125,6 +125,7 @@ struct Readback {
 #include "skybox_collision_test.h"
 #include "skybox_render_probe.h"
 #include "skybox_lifecycle_probe.h"
+#include "smoke_lifecycle_probe.h"
 #include "particle_secret_probe.h"
 
 void gpu()
@@ -157,8 +158,13 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "smoke_", 6)) {
+			smoke_lifecycle_probe(operation + 6);
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "skybox_", 7)) {
 			skybox_lifecycle_probe(operation + 7);
+			if (!std::strcmp(operation, "skybox_start_smoke")) report = nlohmann::json{ { "passed", true }, { "checks", checks } }.dump();
 			return nullptr;
 		}
 		if (!std::strncmp(operation, "secret_", 7)) {
@@ -238,10 +244,10 @@ const char *xl_pog_probe(const char *operation)
 
 const char *xl_pog_probe_result()
 {
-	if ((!original_particle_earned.empty() || !secret_particle_base.empty()) && report != "null") {
+	if ((!original_particle_earned.empty() || !secret_particle_base.empty() || skybox_fixture_mission == "psmoke") && report != "null") {
 		auto state = nlohmann::json::parse(report);
 		unsigned particles = 0;
-		for (const auto &system : xl_compat::particle_systems()) particles += system.emitter.count;
+		for (const auto &system : xl_compat::particle_systems()) particles += system.count();
 		state["live_particles"] = particles;
 		state["particle_systems"] = xl_compat::particle_systems().size();
 		xl_particle_scene_result scene{};

@@ -98,7 +98,7 @@ FireParticle create_fire_particle(const ParticleEmitterDefinition &definition, c
 // The movement portion precedes source segment lookup and collision handling
 // Callers must perform those consumers before completing the lifetime update
 template <typename Random>
-void move_fire_particle(FireParticle &particle, int time, Random &random)
+void move_fire_particle(FireParticle &particle, int time, Random &random, int direction_drag = 65536)
 {
 	using namespace particle_detail;
 	int elapsed = signed_checked(std::int64_t(time) - particle.updated);
@@ -111,19 +111,18 @@ void move_fire_particle(FireParticle &particle, int time, Random &random)
 		component = signed_checked(std::int64_t(component) * 10 + variation) / 10;
 	}
 	const auto drift = geometry_default_direction(particle.drift), direction = geometry_default_direction(particle.direction);
-	particle.position = add(particle.position, multiply(particle.direction, fixed_vector_dot(drift, direction) < 0 ? -65536 : 65536));
+	particle.position = add(particle.position, multiply(particle.direction, fixed_vector_dot(drift, direction) < 0 ? -direction_drag : direction_drag));
 }
 
 // World supplies exhaustive segment lookup and side-plane collision, including
 // portal transitions. A false return alone does not remove a source particle:
 // the emitter retires it only when its remaining lifetime is nonpositive
 template <typename Random, typename World>
-bool advance_fire_particle(FireParticle &particle, int time, Random &random, World &world, bool collisions)
+bool advance_particle_motion(FireParticle &particle, int time, Random &random, World &world, bool collisions, int direction_drag = 65536)
 {
 	using namespace particle_detail;
 	if (particle.life <= 0) return false;
-	const int elapsed = signed_checked(std::int64_t(time) - particle.updated);
-	move_fire_particle(particle, time, random);
+	move_fire_particle(particle, time, random, direction_drag);
 	if (std::int64_t(time) - particle.moved >= 250) {
 		particle.moved = time;
 		int segment = particle.segment;
@@ -151,8 +150,17 @@ bool advance_fire_particle(FireParticle &particle, int time, Random &random, Wor
 			}
 		}
 	}
+	return true;
+}
+
+template <typename Random, typename World>
+bool advance_fire_particle(FireParticle &particle, int time, Random &random, World &world, bool collisions)
+{
+	if (particle.life <= 0) return false;
+	const int elapsed = particle_detail::signed_checked(std::int64_t(time) - particle.updated);
+	if (!advance_particle_motion(particle, time, random, world, collisions)) return false;
 	particle.life = std::max(0, particle.life - elapsed);
-	particle.decay = fire_decay(particle.life, particle.ttl);
+	particle.decay = particle_detail::fire_decay(particle.life, particle.ttl);
 	return true;
 }
 } // namespace xl_compat

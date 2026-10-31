@@ -61,7 +61,7 @@ bool bound(int index, const Entry &entry)
 void stop(Entry &entry)
 {
 	if (!entry.system) return;
-	entry.system->emitter.set_enabled(false);
+	std::visit([](auto &emitter) { emitter.set_enabled(false); }, entry.system->emitter);
 	entry.system = nullptr;
 }
 } // namespace
@@ -74,7 +74,7 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 		if (object.render != 11) continue;
 		if (object.type != 20 || object.reader_id != 0 || object.reader_render != 11 || object.control || object.movement || !native_particle(int(index)))
 			throw std::runtime_error("XL particle object identity changed during native loading");
-		const auto authored = prepare_fire_particle(level, object);
+		const auto authored = prepare_authored_particle(level, object);
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
 			throw std::runtime_error("XL particle object references an invalid loaded segment");
 		prepared.emplace(int(index), Entry{ authored.effect, authored.definition, authored.face, Objects[index].signature });
@@ -161,7 +161,7 @@ bool xl_compat::restore_particle_objects(const nlohmann::json &state, bool apply
 	}
 }
 
-std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)
+std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height, unsigned smoke_width, unsigned smoke_height)
 {
 	std::vector<ParticleSceneItem> quads;
 	if (!xl_level_extensions_active() || systems.empty()) return quads;
@@ -173,14 +173,23 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 	const auto camera = particle_view(basis);
 	const bool animate = animation_clock.begin(milliseconds);
 	for (auto &system : systems) {
-		auto &emitter = system.emitter;
-		const bool emitter_visible = particle_emitter_visible(emitter.segment, emitter.skybox, visible_flags);
-		for (int i = 0; i < emitter.count; ++i) {
-			auto &particle = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
-			const bool shown = emitter_visible || particle_visible(particle, world.segments, visible_flags, [](const ParticlePoint &point, bool skybox, int segment) { return world.locate(point, skybox, segment); });
-			if (shown && transparency_bucket({ particle.position, 10 * 65536 }, eye, maximum_depth) && prepare_fire_particle_draw(particle, animate))
-				quads.push_back({ particle.position, fire_particle_quad(particle, camera, image_width, image_height), float(std::hypot(double(particle.width), double(particle.height))) });
-		}
+		std::visit([&](auto &emitter) {
+			using Emitter = std::decay_t<decltype(emitter)>;
+			constexpr bool smoke = std::is_same_v<Emitter, SmokeEmitter>;
+			const bool emitter_visible = particle_emitter_visible(emitter.segment, emitter.skybox, visible_flags);
+			for (int i = 0; i < emitter.count; ++i) {
+				auto &slot = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
+				auto &particle = emitter.motion(slot);
+				const bool shown = emitter_visible || particle_visible(particle, world.segments, visible_flags, [](const ParticlePoint &point, bool skybox, int segment) { return world.locate(point, skybox, segment); });
+				if (!shown || !transparency_bucket({ particle.position, 10 * 65536 }, eye, maximum_depth)) continue;
+				if constexpr (smoke) {
+					if (prepare_smoke_particle_draw(slot, animate) && particle.decay > 0)
+						quads.push_back({ particle.position, smoke_particle_quad(slot, camera, smoke_width ? smoke_width : image_width, smoke_height ? smoke_height : image_height), float(std::hypot(double(particle.width), double(particle.height))), 0 });
+				} else if (prepare_fire_particle_draw(particle, animate))
+					quads.push_back({ particle.position, fire_particle_quad(particle, camera, image_width, image_height), float(std::hypot(double(particle.width), double(particle.height))), 3 });
+			}
+		},
+		           system.emitter);
 	}
 	return quads;
 }
@@ -200,7 +209,8 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 {
 	if (!xl_level_extensions_active() || systems.empty()) return;
 	try {
-		const auto *image = xl_prepared_particle_image();
+		const auto *fire = xl_prepared_particle_image(), *smoke = xl_prepared_particle_image(0);
+		const auto *image = fire ? fire : smoke;
 		if (!image || !image->texture) throw std::runtime_error("XL particle renderer has no prepared image");
 		const Uint32 elapsed = SDL_GetTicks() - epoch;
 		if (elapsed > INT32_MAX) throw std::runtime_error("XL particle render session exceeds the source clock range");
@@ -209,11 +219,13 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 		for (int i = 0; i < count; ++i)
 			if (segments[i] >= 0) visible.push_back(segments[i]);
 		const auto eye = point(View_position);
-		auto items = xl_compat::particle_scene_items(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height);
+		auto items = xl_compat::particle_scene_items(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height, smoke ? smoke->bitmap.width : 0, smoke ? smoke->bitmap.height : 0);
 		const std::array<xl_compat::ParticlePoint, 3> view{ point(View_matrix.rvec), point(View_matrix.uvec), point(View_matrix.fvec) };
 		for (auto &item : items) {
+			const auto *selected = item.subtype == 0 ? smoke : fire;
+			if (!selected || !selected->texture) throw std::runtime_error("XL particle scene lost its subtype image");
 			xl_compat::particle_camera_quad(item.quad, eye, view);
-			xl_compat::transparency_particle(item, image->texture.get());
+			xl_compat::transparency_particle(item, selected->texture.get());
 		}
 	} catch (const std::exception &error) {
 		Error("XL particle scene: %s", error.what());
@@ -243,25 +255,29 @@ void xl_compat::particle_objects_frame(int time)
 			if (!entry.system && entry.definition.count && systems.size() < particle_system_limit) {
 				const int segment = object.segnum;
 				if (segment < 0 || std::size_t(segment) >= world.segments.size()) throw std::runtime_error("XL particle owner moved outside its loaded mine");
-				systems.push_front({ index, entry.signature, FireEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				if (entry.effect.kind == ParticleKind::smoke) systems.push_front({ index, entry.signature, SmokeEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				else systems.push_front({ index, entry.signature, FireEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
 				entry.system = &systems.front();
 			}
 			if (entry.system && !entry.face) {
-				entry.system->emitter.position = particle_emitter_position(entry.effect, { object.pos.x, object.pos.y, object.pos.z }, random);
-				entry.system->emitter.segment = object.segnum;
+				std::visit([&](auto &emitter) {
+					emitter.position = particle_emitter_position(entry.effect, { object.pos.x, object.pos.y, object.pos.z }, random);
+					emitter.segment = object.segnum;
+				},
+				           entry.system->emitter);
 			}
 		}
 	// Source's 40-Hz gate drops elapsed residue, rather than catching up in steps
 	if (time - last_update < 25) return;
 	last_update = time;
 	for (auto it = systems.begin(); it != systems.end();) {
-		if (it->emitter.drained()) {
+		if (std::visit([](const auto &emitter) { return emitter.drained(); }, it->emitter)) {
 			// An old draining system must not unbind a newer replacement
 			auto &entry = entries.at(it->object);
 			if (entry.system == &*it) entry.system = nullptr;
 			it = systems.erase(it);
 		} else {
-			it->emitter.update(time, random, world, true);
+			std::visit([&](auto &emitter) { emitter.update(time, random, world, true); }, it->emitter);
 			++it;
 		}
 	}

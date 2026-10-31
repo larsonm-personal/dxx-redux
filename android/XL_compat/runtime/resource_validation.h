@@ -49,14 +49,14 @@ class XlPreparedResources
 	bool texture_brightness(int texture, int &brightness) const;
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 	int custom_model_radius(int model, int fallback) const;
-	const xl_compat::ParticleImageResource *particle_image() const;
+	const xl_compat::ParticleImageResource *particle_image(int subtype = 3) const;
 
   private:
 	struct State;
 	std::unique_ptr<State> state;
 };
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources);
-const xl_compat::ParticleImageResource *xl_prepared_particle_image();
+const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype = 3);
 #endif
 
 #endif

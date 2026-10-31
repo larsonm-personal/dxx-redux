@@ -61,7 +61,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	require(blockers.empty(), blocker_message(blockers));
 	const auto producers = producer_layout(v);
 	if (!source_runtime) {
-		require(std::none_of(v.objects.begin(), v.objects.end(), fire_particle_shape), "fire particle objects require the source-owned XL runtime");
+		require(std::none_of(v.objects.begin(), v.objects.end(), authored_particle_shape), "particle objects require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), ambient_sound_shape), "ambient sound objects require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), static_explosion_shape), "static explosion objects require the source-owned XL runtime");
 		require(v.flicker_lights.size() <= 100, "classic probe flicker capacity requires the source-owned XL runtime");
@@ -199,7 +199,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
-	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || fire_particle_shape(object); };
+	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || authored_particle_shape(object); };
 	const bool owned_objects = std::any_of(v.objects.begin(), v.objects.end(), owned_effect);
 	if (modern_layout || owned_objects) {
 		// Stock uses explicit section offsets. Retain the original game payload as

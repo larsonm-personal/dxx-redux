@@ -135,7 +135,7 @@ static void particle_soft_shader_controls()
 			if (particle < 1 || particle >= 5000) continue;
 			const float scene_depth = depth(scene);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, &scene_depth);
-			for (int blend : { 2, -1 }) {
+			for (int blend : { 2, -1, 0 }) {
 				std::array<std::array<unsigned char, 8 * 8 * 4>, 3> pixels{};
 				for (unsigned profile = 0; profile < 3; ++profile) {
 					glClearDepth(scene_depth);
@@ -150,7 +150,8 @@ static void particle_soft_shader_controls()
 						glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 						glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
 						xl_compat::ParticleQuad quad;
-						quad.blend = blend > 0 ? xl_compat::ParticleBlend::weak_additive : xl_compat::ParticleBlend::multiply;
+						quad.blend = blend > 0 ? xl_compat::ParticleBlend::weak_additive : blend < 0 ? xl_compat::ParticleBlend::multiply
+						                                                                             : xl_compat::ParticleBlend::alpha;
 						const std::array<std::array<float, 2>, 4> corners{ { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } } };
 						for (unsigned i = 0; i < 4; ++i) {
 							quad.vertices[i].position = { corners[i][0], corners[i][1], depth(particle) * 2 - 1 };
@@ -186,7 +187,9 @@ static void particle_soft_shader_controls()
 						glUniform1f(glGetUniformLocation(program, "dMax"), 5);
 						glUniform1i(glGetUniformLocation(program, "bSuspended"), 0);
 					}
-					const auto factors = source_particle_blend(blend > 0 ? 5 : PARTICLE_TYPES + 5, 2);
+					const auto factors = source_particle_blend(blend > 0 ? 5 : blend < 0 ? PARTICLE_TYPES + 5
+					                                                                     : 1,
+					                                           blend == 0 ? 0 : 2);
 					glBlendFunc(factors[0], factors[1]);
 					glClearColor(.2f, .4f, .6f, 1);
 					glClear(GL_COLOR_BUFFER_BIT);

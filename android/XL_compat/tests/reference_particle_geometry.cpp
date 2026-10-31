@@ -1,5 +1,6 @@
 #include "particle_geometry.h"
 #include "particle_fire.h"
+#include "particle_smoke.h"
 #include "fire_emitter.h"
 #include "particle_world.h"
 #include <cstring>
@@ -286,8 +287,10 @@ struct {
 struct ImageInfo {
 	int nFrames = 2;
 } image_info;
+ImageInfo smoke_image_info{ 8 };
 ImageInfo &ParticleImageInfo(int type)
 {
+	if (type == 1) return smoke_image_info;
 	if (type != 5) throw std::runtime_error("Unexpected fire image");
 	return image_info;
 }
@@ -556,6 +559,77 @@ void particle_fire_source_controls()
 					}
 	std::cout << "Pinned authored fire: " << count << " creation and " << updates << " update comparisons with vector math, RNG order, lifetime, size, atlas and scripted world consumers passed\n";
 }
+
+void particle_smoke_source_controls()
+{
+	using namespace particle_geometry_reference;
+	unsigned count = 0;
+	for (int life : { 0, 1, 100, 333, 665, 666, 667, 900, 999, 1000 })
+		for (float alpha : { 0.0f, 0.001f, 0.01f, 0.1f, 0.5f, 1.0f })
+			for (float brightness : { 0.0f, 0.1f, 0.5f, 1.0f })
+				for (bool bright : { false, true })
+					for (unsigned seed = 0; seed < 16; ++seed) {
+						xl_compat::SmokeColor actual{ { 0.8f, 0.4f, 0.2f, alpha }, {}, life, 1000, bright };
+						CParticle source;
+						source.m_nType = SMOKE_PARTICLES;
+						source.m_nFadeType = 1;
+						source.m_nLife = life;
+						source.m_nTTL = actual.ttl;
+						source.m_bBright = bright;
+						for (unsigned i = 0; i < 4; ++i) source.m_color[0].v.vec[i] = actual.color[i];
+						source.UpdateDecay();
+						RandomInput random;
+						random.generated = true;
+						random.state = seed;
+						source_random = random;
+						const bool result = xl_compat::setup_smoke_color(actual, brightness, random);
+						const bool expected = source.SetupColor(brightness) != 0;
+						if (result != expected || actual.life != source.m_nLife || random.state != source_random.state || random.trace != source_random.trace)
+							throw std::runtime_error("Authored smoke color lifetime or random consumption differs");
+						for (unsigned i = 0; i < 4; ++i)
+							if (actual.rendered[i] != source.m_renderColor.v.vec[i]) throw std::runtime_error("Authored smoke rendered color differs");
+						++count;
+					}
+	std::cout << "Pinned authored smoke: " << count << " color/decay comparisons including retirement and random brightness passed\n";
+	count = 0;
+	for (int fade : { -1, 0, 1, 50, 200 })
+		for (float brightness : { 0.0f, 0.25f, 1.0f })
+			for (unsigned seed = 0; seed < 16; ++seed) {
+				xl_compat::SmokeColor actual{ { 0.9f, 0.7f, 0.1f, 0.4f }, {}, 1000, 1000, seed % 2 != 0 };
+				actual.target = { 0.2f, 0.3f, 0.4f, 0.25f };
+				actual.fade_time = fade;
+				actual.emissive = true;
+				CParticle source;
+				source.m_nType = SMOKE_PARTICLES;
+				source.m_nFadeType = 1;
+				source.m_nTTL = actual.ttl;
+				source.m_nFadeTime = fade;
+				source.m_bBright = actual.bright;
+				source.m_bEmissive = true;
+				for (unsigned i = 0; i < 4; ++i) {
+					source.m_color[0].v.vec[i] = actual.color[i];
+					source.m_color[1].v.vec[i] = actual.target[i];
+				}
+				RandomInput random;
+				random.generated = true;
+				random.state = seed;
+				source_random = random;
+				for (int elapsed : { 0, 1, 49, 50, 51, 199, 200, 201, 500, 999, 1000 }) {
+					actual.life = source.m_nLife = 1000 - elapsed;
+					source.UpdateDecay();
+					xl_compat::update_smoke_color(actual, brightness, random);
+					source.UpdateColor(brightness, 0);
+					if (actual.life != source.m_nLife || actual.fade_time != source.m_nFadeTime || actual.emissive != bool(source.m_bEmissive) || random.state != source_random.state || random.trace != source_random.trace)
+						throw std::runtime_error("Authored smoke color transition differs");
+					for (unsigned i = 0; i < 4; ++i)
+						if (actual.color[i] != source.m_color[0].v.vec[i] || actual.rendered[i] != source.m_renderColor.v.vec[i]) throw std::runtime_error("Authored smoke updated color differs");
+					++count;
+				}
+			}
+	std::cout << "Pinned authored smoke: " << count << " sequential color transitions with fade-time boundaries passed\n";
+}
+
+#include "reference_smoke_creation.h"
 
 void particle_original_geometry_controls(const xl_compat::Inventory &level)
 {

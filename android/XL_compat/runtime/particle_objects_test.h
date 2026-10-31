@@ -11,7 +11,7 @@ static void particle_saved_state_case()
 	using namespace xl_compat;
 	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
 	particle_objects_frame(25);
-	require(particle_systems().size() == 1 && particle_systems().front().emitter.count > 0, "Particle save control requires a live cloud");
+	require(particle_systems().size() == 1 && particle_systems().front().fire_emitter().count > 0, "Particle save control requires a live cloud");
 	const auto earned = particle_objects_snapshot();
 	require(earned.size() == 2 && earned[0][2].get<bool>() && !earned[1][2].get<bool>(), "Particle save control requires mixed activation");
 	constexpr const char *path = "xl-particle-state.tmp";
@@ -48,7 +48,7 @@ static void particle_saved_state_case()
 		return accepted;
 	};
 	const auto *cloud = &particle_systems().front();
-	const int count = cloud->emitter.count;
+	const int count = cloud->fire_emitter().count;
 	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
 	for (int variant = 0; variant < 12; ++variant) {
 		auto changed = original;
@@ -75,16 +75,16 @@ static void particle_saved_state_case()
 			bytes[12 + i] = static_cast<unsigned char>(checksum >> (i * 8));
 		}
 		require(!restore(bytes), "Malformed particle state passed full trailer restoration");
-		require(capture() == encoded && &particle_systems().front() == cloud && cloud->emitter.count == count, "Rejected particle state changed owned runtime state or live cloud");
+		require(capture() == encoded && &particle_systems().front() == cloud && cloud->fire_emitter().count == count, "Rejected particle state changed owned runtime state or live cloud");
 	}
 	require(d_rand_get_stream_call_count(D_RNG_FX) == fx, "Particle save validation consumed effects RNG");
 	require(xl_particle_object_set_enabled(1, 0) && xl_particle_object_set_enabled(2, 1), "Cannot disturb saved particle activation");
 	require(restore(encoded) && particle_objects_snapshot() == earned && particle_systems().empty(), "Particle restore lost authored activation or retained transient clouds");
 	require(d_rand_get_stream_call_count(D_RNG_FX) == fx && d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Particle restore consumed RNG");
 	particle_objects_frame(0);
-	require(particle_systems().size() == 1 && particle_systems().front().object == 1 && particle_systems().front().emitter.count == 0, "Restored activation did not create one fresh owner");
+	require(particle_systems().size() == 1 && particle_systems().front().object == 1 && particle_systems().front().fire_emitter().count == 0, "Restored activation did not create one fresh owner");
 	particle_objects_frame(25);
-	require(particle_systems().front().emitter.count > 0, "Restored particle owner did not resume emission");
+	require(particle_systems().front().fire_emitter().count > 0, "Restored particle owner did not resume emission");
 	const auto saved_object = Objects[2];
 	Objects[2].type = OBJ_NONE;
 	const auto removed = particle_objects_snapshot();
@@ -172,11 +172,11 @@ static void particle_objects_native_case(bool active)
 	particle_objects_frame(0);
 	require(particle_systems().size() == 2 && particle_systems().front().object == 2, "Authored particle systems lost newest-first source order");
 	particle_objects_frame(24);
-	require(particle_systems().front().emitter.moved == 0 && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Particle manager bypassed the 25-ms update gate");
+	require(particle_systems().front().fire_emitter().moved == 0 && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Particle manager bypassed the 25-ms update gate");
 	particle_objects_frame(25);
-	require(particle_systems().front().emitter.count > 0 && d_rand_get_stream_call_count(D_RNG_FX) > fx_before, "Enabled native emitter produced no particles");
+	require(particle_systems().front().fire_emitter().count > 0 && d_rand_get_stream_call_count(D_RNG_FX) > fx_before, "Enabled native emitter produced no particles");
 	const auto render_calls = d_rand_get_stream_call_count(D_RNG_FX);
-	const auto &first_emitter = particle_systems().front().emitter;
+	const auto &first_emitter = particle_systems().front().fire_emitter();
 	const auto &first_particle = first_emitter.slots[std::size_t(first_emitter.first)];
 	const int rotation_before = first_particle.rotation;
 	const ParticlePoint eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
@@ -198,17 +198,17 @@ static void particle_objects_native_case(bool active)
 	const auto *old = &particle_systems().back();
 	wall(33, 1);
 	particle_objects_frame(26);
-	require(old->object == 1 && old->emitter.life == 0 && old->emitter.count > 0, "Disabling removed live particles instead of draining them");
+	require(old->object == 1 && old->fire_emitter().life == 0 && old->fire_emitter().count > 0, "Disabling removed live particles instead of draining them");
 	wall(32, 1);
 	particle_objects_frame(27);
-	require(particle_systems().size() == 3 && &particle_systems().front() != old && particle_systems().front().object == 1 && particle_systems().front().emitter.life < 0, "Re-enable did not allocate a fresh emitter beside the draining one");
+	require(particle_systems().size() == 3 && &particle_systems().front() != old && particle_systems().front().object == 1 && particle_systems().front().fire_emitter().life < 0, "Re-enable did not allocate a fresh emitter beside the draining one");
 	const auto *replacement = &particle_systems().front();
 	const auto pause_calls = d_rand_get_stream_call_count(D_RNG_FX);
 	stop_time();
 	particle_objects_frame(3000);
 	xl_particle_objects_frame();
 	start_time();
-	require(!game_is_time_paused() && particle_systems().front().emitter.moved == 27 && d_rand_get_stream_call_count(D_RNG_FX) == pause_calls, "Paused particles advanced or consumed RNG");
+	require(!game_is_time_paused() && particle_systems().front().fire_emitter().moved == 27 && d_rand_get_stream_call_count(D_RNG_FX) == pause_calls, "Paused particles advanced or consumed RNG");
 	for (int time = 3000; time <= 6000; time += 25) particle_objects_frame(time);
 	require(particle_systems().size() == 2 && &particle_systems().front() == replacement, "Draining old emitter unbound or recreated its replacement");
 	++Objects[2].signature;
@@ -246,7 +246,7 @@ static void particle_objects_native_case(bool active)
 	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_FX) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
 	const auto *preserved = &particle_systems().front();
 	auto malformed = source;
-	malformed.objects[1].render_data[11] = 0;
+	malformed.objects[1].render_data[11] = 1;
 	bool rejected = false;
 	try {
 		bind_particle_objects(malformed);
@@ -256,6 +256,29 @@ static void particle_objects_native_case(bool active)
 	require(rejected && &particle_systems().front() == preserved, "Failed particle binding partially replaced live ownership");
 	Triggers[0] = guard.action;
 	particle_saved_state_case();
+	// Mixed kinds use the same manager and saved authored activation state
+	source.objects[1].render_data[10] = 1;
+	source.objects[1].render_data[11] = 0;
+	source.objects[2].render_data[12] = 1;
+	bind_particle_objects(source);
+	particle_objects_frame(0);
+	particle_objects_frame(25);
+	particle_objects_frame(50);
+	require(particle_systems().size() == 2 && std::holds_alternative<SmokeEmitter>(particle_systems().back().emitter) && particle_systems().back().count() > 0, "Mixed native manager did not emit authored smoke");
+	const auto mixed = particle_scene_items({ 0 }, eye, camera, 66, 128, 128, 512, 512);
+	bool smoke_seen = false, fire_seen = false;
+	for (const auto &item : mixed) {
+		if (item.subtype == 0) {
+			smoke_seen = true;
+			require(item.quad.blend == ParticleBlend::alpha, "Smoke scene selected fire blending");
+		} else fire_seen = true;
+	}
+	require(smoke_seen && fire_seen, "Mixed native scene lost a particle subtype");
+	const auto saved_mixed = particle_objects_snapshot();
+	require(restore_particle_objects(saved_mixed, true) && particle_systems().empty(), "Mixed activation restore retained transient clouds");
+	particle_objects_frame(0);
+	particle_objects_frame(50);
+	require(particle_systems().size() == 2 && particle_systems().back().count() > 0, "Mixed activation restore did not resume smoke emission");
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle lifecycle or activation consumed simulation RNG");

@@ -10,7 +10,7 @@
 #endif
 namespace xl_compat
 {
-// Source strict-fire buffers: type 5 and its type 16 smoke variant never combine
+// Source buffers retain particle image/render type and emissive policy
 class FireParticleBuffers
 {
 	using Point = std::array<float, 3>;
@@ -23,6 +23,11 @@ class FireParticleBuffers
 	};
 	std::array<Buffer, 3> buffers;
 	Point eye;
+	static bool compatible(const Buffer &buffer, int kind, bool emissive)
+	{
+		// Of the admitted image types, source shader compatibility includes smoke
+		return buffer.kind == kind && (buffer.emissive == emissive || kind == 1);
+	}
 	static float distance(const Point &a, const Point &b)
 	{
 		const float x = a[0] - b[0], y = a[1] - b[1], z = a[2] - b[2];
@@ -42,7 +47,7 @@ class FireParticleBuffers
 	template <class Draw>
 	void append(Buffer &buffer, std::size_t index, const Point &position, float radius, int kind, bool emissive, Draw &draw)
 	{
-		if (buffer.entries.size() == 25000 || buffer.kind != kind || buffer.emissive != emissive) flush(buffer, draw);
+		if (buffer.entries.size() == 25000 || !compatible(buffer, kind, emissive)) flush(buffer, draw);
 		if (buffer.entries.empty()) {
 			buffer.kind = kind;
 			buffer.emissive = emissive;
@@ -76,10 +81,14 @@ class FireParticleBuffers
 	template <class Draw>
 	void add(std::size_t index, const Point &position, float radius, bool smoke, bool emissive, Draw draw)
 	{
-		const int kind = smoke ? 16 : 5;
+		add_kind(index, position, radius, smoke ? 16 : 5, emissive, draw);
+	}
+	template <class Draw>
+	void add_kind(std::size_t index, const Point &position, float radius, int kind, bool emissive, Draw draw)
+	{
 		for (unsigned i = 0; i < buffers.size(); ++i) {
 			auto &buffer = buffers[i];
-			if (buffer.kind != kind || buffer.emissive != emissive) continue;
+			if (!compatible(buffer, kind, emissive)) continue;
 			for (unsigned j = 0; j < buffers.size(); ++j)
 				if (j != i && distance(buffers[j].center, position) < buffers[j].radius + radius) flush(buffers[j], draw);
 			append(buffer, index, position, radius, kind, emissive, draw);

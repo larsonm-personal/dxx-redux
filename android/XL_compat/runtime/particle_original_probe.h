@@ -67,7 +67,7 @@ void particle_original_probe(const char *operation)
 	} else if (!std::strcmp(operation, "live")) {
 		original_particle_verify();
 		unsigned particles = 0;
-		for (const auto &system : particle_systems()) particles += system.emitter.count;
+		for (const auto &system : particle_systems()) particles += system.count();
 		require(particles > 0, "Original Pumo active emitters produced no live particles");
 	} else if (!std::strcmp(operation, "scene")) {
 		original_particle_verify();
