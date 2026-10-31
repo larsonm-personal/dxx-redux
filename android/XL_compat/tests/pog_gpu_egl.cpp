@@ -15,10 +15,14 @@
 #include "../hog.h"
 #include "../runtime/pog_renderer.h"
 #include "../runtime/particle_renderer.h"
+#include "../runtime/particle_resources.h"
+#include "../runtime/lightning_renderer.h"
+#include "../runtime/lightning_scene.h"
 #include "../particle_render.h"
 #include "../particle_buffer.h"
 #include "../runtime/lightning_gpu.h"
 #include "../runtime/lightning_glow_gpu.h"
+#include "../runtime/particle_border_texture.h"
 #include "../transparency_order.h"
 #include "../transparency.h"
 #ifdef XL_POG_SHADER_REFERENCE
@@ -35,6 +39,7 @@ extern "C" {
 #include "pngfile.h"
 #include "multi.h"
 #include "dxxerror.h"
+#include "rng_shared.h"
 struct Arg GameArg{};
 struct Cfg GameCfg{};
 struct netgame_info Netgame{};
@@ -42,6 +47,16 @@ int Game_mode = 0, gl_initialized = 0;
 extern int r_texcount;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
 grs_canvas *grd_curcanv = nullptr;
+grs_screen *grd_curscreen = nullptr;
+vms_vector View_position{};
+vms_matrix View_matrix{};
+static unsigned lightning_random_calls = 0;
+int d_rand_annotated(d_rng_stream stream, const char *, const char *, int)
+{
+	if (stream != D_RNG_FX) throw std::runtime_error("Lightning rendering consumed simulation RNG");
+	++lightning_random_calls;
+	return 12345;
+}
 void ogl_init_texture_list_internal(void);
 void ogl_init_pixel_buffers(int, int);
 void ogl_close_pixel_buffers(void);
@@ -429,6 +444,7 @@ void original(const char *path)
 	std::cout << "Original GPU resources: " << resources << " POG files, " << count << " complete uploads/mipmaps and source shader comparisons\n";
 }
 #include "particle_gpu_controls.h"
+#include "lightning_scene_gpu_controls.h"
 } // namespace
 int main(int argc, char **argv)
 {
@@ -467,7 +483,7 @@ int main(int argc, char **argv)
 		if (argc == 1) {
 			controls();
 			particle_gpu_controls();
-			particle_context_controls([&] {
+			const auto recreate = [&] {
 				ogl_done_prog();
 				ogl_close_pixel_buffers();
 				check(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "Cannot release old particle context");
@@ -477,7 +493,9 @@ int main(int argc, char **argv)
 				ogl_init_texture_list_internal();
 				ogl_init_pixel_buffers(32, 32);
 				ogl_init_prog();
-			});
+			};
+			particle_context_controls(recreate);
+			lightning_scene_context_controls(recreate);
 		} else
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		ogl_done_prog();

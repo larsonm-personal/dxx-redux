@@ -11,6 +11,8 @@ param(
     [switch]$SkyboxFixture,
     [switch]$SmokeFixture,
     [switch]$OriginalHub,
+    [switch]$LightningGpu,
+    [string]$CoronaImage = '',
     [switch]$MissionFlow,
     [switch]$CampaignEnd,
     [switch]$RevisitFixture,
@@ -22,6 +24,8 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage)) { throw 'LightningGpu requires OriginalHub, original CoronaImage and its own mode' }
+if ($LightningGpu -and (Get-FileHash -LiteralPath $CoronaImage -Algorithm SHA256).Hash -ne 'aaf4a8ca34879ef0ab79fdbca295ee2a426755aa97be05bf538900e77ed81f57') { throw 'Requires the original XL corona image' }
 if ($FlyoutFixture -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or !$D1Pig)) { throw 'FlyoutFixture requires OriginalHub, retail D1Pig and its own mode' }
 if ($FlyoutFixture -and (Get-FileHash -LiteralPath $D1Pig -Algorithm SHA256).Hash -ne '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe') { throw 'Flyout fixture requires the retail D1 exit-model PIG' }
 if ($RevisitFixture -and ($OriginalHub -or $SceneOnly -or $SecretFixture -or $SkyboxFixture -or $SmokeFixture -or $PumoMods)) { throw 'RevisitFixture requires its own derived mode' }
@@ -77,6 +81,7 @@ if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-fl
 if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
 if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-android' }
 if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
+if ($LightningGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-lightning-gpu-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -167,11 +172,15 @@ try {
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
     }
     Invoke-PogAdb -Arguments @('logcat', '-c') | Out-Null
+    if ($LightningGpu) {
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $CoronaImage).Path, '/data/local/tmp/xl-pog-corona.tga') | Out-Null
+        Invoke-PogPrivate "cp /data/local/tmp/xl-pog-corona.tga files/d2x-redux/mods/$mission/textures/d2x-xl/corona.tga" | Out-Null
+    }
     $scriptName = if ($PumoMods) { 'test_xl_pumo_particles.jsonc' } else { 'test_xl_pog_runtime.jsonc' }
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
     if ($SkyboxFixture) { $scriptName = 'test_xl_skybox_authored.jsonc' }
     if ($SmokeFixture) { $scriptName = 'test_xl_smoke_authored.jsonc' }
-    if ($OriginalHub) {
+    if ($OriginalHub -and !$LightningGpu) {
         $steps = Get-Content "$PSScriptRoot/../game_scripts/test_xl_smoke_authored.jsonc" -Raw | ConvertFrom-Json -AsHashtable
         $starts = @($steps | Where-Object { $_.action -eq 'set_debug' -and $_.field -eq 'xl_pog_probe' -and $_.value -eq 'skybox_start_smoke' })
         if ($starts.Count -ne 1) { throw 'Smoke lifecycle no longer has exactly one startup operation' }
@@ -183,6 +192,7 @@ try {
     if ($CampaignEnd) { $scriptName = 'test_xl_pumo_end.jsonc' }
     if ($RevisitFixture) { $scriptName = 'test_xl_mission_revisit.jsonc' }
     if ($FlyoutFixture) { $scriptName = 'test_xl_flyout_cache.jsonc' }
+    if ($LightningGpu) { $scriptName = 'test_xl_lightning_gpu.jsonc' }
     if ($SceneOnly) {
         # Reuse the original owner's startup and first scene assertion
         $sourcePath = if ([IO.Path]::IsPathRooted($scriptName)) { $scriptName } else { "$PSScriptRoot/../game_scripts/$scriptName" }
@@ -215,7 +225,8 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
+    if ($LightningGpu) { Write-Host "PASS: Original corona, native lightning GPU and context recreation ($($result.total_steps) steps); renderer control only" }
+    elseif ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
     elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
     elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }

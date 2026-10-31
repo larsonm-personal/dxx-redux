@@ -4,6 +4,8 @@
 #include "preview.h"
 #include "particle_resources.h"
 #include "particle_renderer.h"
+#include "lightning_renderer.h"
+#include "lightning_scene.h"
 #include "particle_objects.h"
 #include "skybox_collision.h"
 #include "skybox_render.h"
@@ -47,6 +49,8 @@ extern "C" {
 #include "render.h"
 #include "automap.h"
 #include "render_gameplay_view.h"
+#include "rng_shared.h"
+#include "../../../d2/3d/globvars.h"
 #include "robot.h"
 void ogl_loadbmtexture(grs_bitmap *bitmap);
 void ogl_prepare_framebuffer_readback(void);
@@ -54,6 +58,8 @@ void ogl_prepare_framebuffer_readback(void);
 extern ubyte object_rendered[MAX_OBJECTS];
 #endif
 }
+
+#include "lightning_glow_gpu.h"
 
 namespace
 {
@@ -129,6 +135,7 @@ struct Readback {
 };
 
 #include "particle_gpu_probe.h"
+#include "lightning_gpu_probe.h"
 #include "particle_original_probe.h"
 #include "skybox_collision_test.h"
 #include "skybox_render_probe.h"
@@ -169,6 +176,10 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "lightning_", 10)) {
+			lightning_gpu_probe(operation + 10);
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "flyout_", 7)) {
 			mission_flyout_probe(operation + 7);
 			return nullptr;
@@ -259,6 +270,7 @@ const char *xl_pog_probe(const char *operation)
 		} else throw std::runtime_error("Unknown POG control operation");
 		return nullptr;
 	} catch (const std::exception &exception) {
+		if (!std::strncmp(operation, "lightning_", 10)) xl_compat::discard_lightning_context(false);
 		failure = exception.what();
 		report = nlohmann::json{ { "passed", false }, { "checks", checks }, { "error", failure } }.dump();
 		return failure.c_str();

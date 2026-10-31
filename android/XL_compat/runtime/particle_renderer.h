@@ -26,6 +26,8 @@ class ParticleTexture
 	~ParticleTexture();
 	void draw(const ParticleQuad *quads, std::size_t count);
 	unsigned handle();
+	// Transparent border at every mip; sample original UVs with uv/4+1/4
+	unsigned border_handle();
 	static void discard_context(bool abandoned);
 
   private:

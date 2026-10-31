@@ -1,5 +1,8 @@
 #include "lightning_objects.h"
 #include "preview.h"
+#include "particle_world.h"
+#include "../particle_visibility.h"
+#include "../transparency_order.h"
 #include <map>
 #include <optional>
 #include <nlohmann/json.hpp>
@@ -25,6 +28,7 @@ struct Entry {
 	std::vector<std::optional<xl_compat::LightningRenderFrame>> render_frames;
 };
 std::map<int, Entry> entries;
+xl_compat::ParticleWorld world;
 int clock_time = 0, last_tick = 0, tick_time = 0;
 struct EffectsRandom {
 	int bounded(int limit) const
@@ -64,12 +68,15 @@ void xl_compat::bind_lightning_objects(const Inventory &level)
 		(void) lightning_lifetime(definition, false, false);
 		prepared.emplace(int(index), Entry{ definition, Objects[index].signature });
 	}
+	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
 	entries = std::move(prepared);
+	world = std::move(geometry);
 }
 
 extern "C" void xl_lightning_objects_clear(void)
 {
 	entries.clear();
+	world = {};
 }
 
 void xl_compat::lightning_objects_clock(int time)
@@ -117,6 +124,46 @@ const xl_compat::LightningRenderFrame *xl_compat::lightning_object_render_frame(
 	return frame ? &*frame : nullptr;
 }
 
+bool xl_compat::lightning_scene_item_valid(const LightningSceneItem &item)
+{
+	const auto found = entries.find(item.object);
+	return found != entries.end() && bound(item.object, found->second) && found->second.signature == item.signature;
+}
+
+std::vector<xl_compat::LightningSceneItem> xl_compat::lightning_scene_items(const std::vector<int> &visible, const std::vector<int> &rendered_objects, const LightningPoint &eye, int maximum_depth)
+{
+	std::vector<LightningSceneItem> result;
+	if (!xl_level_extensions_active() || entries.empty()) return result;
+	if (maximum_depth < 0) throw std::runtime_error("XL lightning scene depth is negative");
+	std::vector<bool> flags(world.segments.size(), false);
+	for (int segment : visible) {
+		if (segment < 0 || std::size_t(segment) >= flags.size()) throw std::runtime_error("XL lightning visibility references an invalid segment");
+		flags[segment] = true;
+	}
+	for (auto it = entries.rbegin(); it != entries.rend(); ++it) {
+		const auto &[index, entry] = *it;
+		if (!bound(index, entry) || !entry.emitter || !entry.emitter->enabled) continue;
+		for (unsigned ordinal = 0; ordinal < entry.emitter->bolts.size(); ++ordinal) {
+			const auto &bolt = entry.emitter->bolts[ordinal];
+			const auto &frame = entry.render_frames[ordinal];
+			if (bolt.lifetime.nodes <= 0 || bolt.lifetime.frames < 0 || !frame) continue;
+			const bool owner_rendered = std::find(rendered_objects.begin(), rendered_objects.end(), index) != rendered_objects.end();
+			bool shown = owner_rendered || particle_segment_visible(bolt.segment, flags);
+			if (!shown) shown = particle_segment_visible(world.locate(bolt.end, false, -1), flags);
+			if (!shown) {
+				LightningPoint middle;
+				for (unsigned axis = 0; axis < 3; ++axis) middle[axis] = lightning_detail::checked((std::int64_t(bolt.position[axis]) + bolt.end[axis]) / 2);
+				shown = particle_segment_visible(world.locate(middle, false, -1), flags);
+			}
+			if (!shown) continue;
+			const int start = transparency_depth(bolt.position, eye), end = transparency_depth(bolt.end, eye);
+			if (std::min(start, end) > maximum_depth) continue;
+			result.push_back({ *frame, start < end ? bolt.end : bolt.position, bolt.definition.color, index, entry.signature, bolt.lifetime.random_nodes, bolt.definition.width });
+		}
+	}
+	return result;
+}
+
 void xl_compat::lightning_objects_frame()
 {
 	if (!xl_level_extensions_active() || game_is_time_paused()) return;
@@ -124,7 +171,8 @@ void xl_compat::lightning_objects_frame()
 	// Source's pool visits newest first; StaticFrame creates all bound owners
 	// in ascending object order after the existing emitters have updated
 	for (auto it = entries.rbegin(); it != entries.rend(); ++it) {
-		auto &[index, entry] = *it;
+		const auto index = it->first;
+		auto &entry = it->second;
 		if (!bound(index, entry)) {
 			entry.alive = false;
 			entry.emitter.reset();

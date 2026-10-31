@@ -128,7 +128,7 @@ target_sources(
     ${DXX_TARGET_PREFIX}arch_ogl
     PRIVATE "${xl_runtime_dir}/corona_renderer.c" "${xl_runtime_dir}/water_renderer.c"
             "${xl_runtime_dir}/fog_renderer.cpp" "${xl_runtime_dir}/pog_renderer.cpp"
-            "${xl_runtime_dir}/particle_renderer.cpp")
+            "${xl_runtime_dir}/particle_renderer.cpp" "${xl_runtime_dir}/lightning_renderer.cpp")
 target_compile_features(${DXX_TARGET_PREFIX}arch_ogl PRIVATE cxx_std_17)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE DXX_XL_RUNTIME)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE "${xl_runtime_dir}")

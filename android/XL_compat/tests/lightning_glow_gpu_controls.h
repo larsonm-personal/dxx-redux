@@ -61,10 +61,11 @@ static void lightning_composite_gpu_controls()
 	const std::array<float, 16> identity{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
 	unsigned cases = 0;
 	for (const std::array<int, 4> view : { std::array<int, 4>{ 0, 0, 64, 64 }, std::array<int, 4>{ 3, 5, 48, 43 } })
-		for (int extent_case = 0; extent_case < 3; ++extent_case)
+		for (int extent_case = 0; extent_case < 5; ++extent_case)
 			for (unsigned bolts : { 1u, 2u })
 				for (float depth_value : { .25f, .75f }) {
-					const std::array<int, 4> extent = extent_case == 0 ? std::array<int, 4>{ 0, 0, view[2] - 1, view[3] - 1 } : extent_case == 1 ? std::array<int, 4>{ 12, 10, view[2] - 9, view[3] - 8 }
+					if (extent_case == 4 && bolts == 1) continue;
+					const std::array<int, 4> extent = extent_case == 0 ? std::array<int, 4>{ 0, 0, view[2] - 1, view[3] - 1 } : extent_case != 2 ? std::array<int, 4>{ 12, 10, view[2] - 9, view[3] - 8 }
 					                                                                                                                             : std::array<int, 4>{ -5, -3, view[2] + 8, view[3] + 4 };
 					std::array<std::array<unsigned char, 64 * 64 * 4>, 2> pixels{};
 					for (unsigned profile = 0; profile < 2; ++profile) {
@@ -93,15 +94,16 @@ static void lightning_composite_gpu_controls()
 							matrix[12] = float(bolt) * .13f;
 							matrix[13] = -float(bolt) * .09f;
 							auto bolt_extent = extent;
-							bolt_extent[0] += int(bolt) * 6;
-							bolt_extent[2] += int(bolt) * 6;
+							const int shift = extent_case == 4 ? (bolt ? 0 : 80) : int(bolt) * (extent_case == 3 ? 80 : 6);
+							bolt_extent[0] += shift;
+							bolt_extent[2] += shift;
 							bolt_extent[1] -= int(bolt) * 5;
 							bolt_extent[3] -= int(bolt) * 5;
 							const std::array<float, 4> color{ .025f + float(bolt) * .01f, .07f, .11f, .2f };
 							if (profile) {
 								// A compatible Begin must retain the first bolt's accumulation
 								compositor.begin(scene, snapshot.texture, GL_DEPTH_ATTACHMENT, 64, 64, view);
-								check(compositor.draw(core, glow, 1, color, .7f, matrix, corona, bolt_extent), "Visible lightning rejected");
+								check(compositor.draw(core, glow, 1, color, .7f, matrix, corona, bolt_extent) == !(extent_case == 4 && bolt == 0), "Lightning cumulative visibility differs from source");
 							} else primitive.draw(core, glow, 1, color, .7f, matrix, corona, true);
 						}
 						if (profile) {
@@ -113,7 +115,7 @@ static void lightning_composite_gpu_controls()
 							reference.m_nStrength = 3;
 							reference.m_bViewport = 1;
 							reference.m_renderMin = { extent[0], extent[1] - int(bolts - 1) * 5 };
-							reference.m_renderMax = { extent[2] + int(bolts - 1) * 6, extent[3] };
+							reference.m_renderMax = { extent[2] + (extent_case == 4 ? 80 : int(bolts - 1) * (extent_case == 3 ? 80 : 6)), extent[3] };
 							glBlendEquation(GL_FUNC_ADD);
 							glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 							check(reference.End(), "Pinned lightning composition failed");
