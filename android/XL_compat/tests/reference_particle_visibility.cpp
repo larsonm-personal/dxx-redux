@@ -1,5 +1,6 @@
 // Actual source visibility bodies; storage, scene flags and exhaustive lookup are supplied
 #include "particle_visibility.h"
+#include "lightning_visibility.h"
 #include <iostream>
 #include <cstring>
 namespace particle_visibility_reference
@@ -10,6 +11,11 @@ struct CFixVector {
 			int x, y, z;
 		} coord;
 	} v{};
+	void Set(int x, int y, int z)
+	{
+		v.coord = { x, y, z };
+	}
+	static const CFixVector Avg(const CFixVector &, const CFixVector &);
 	static int Dist(const CFixVector &, const CFixVector &)
 	{
 		throw std::runtime_error("Scratch visible flags unexpectedly reached a distance query");
@@ -92,6 +98,7 @@ struct {
 		struct {
 			CVisibilityData visibility[3];
 			std::vector<bool> flags;
+			std::array<int, 1> bObjectRendered{};
 			struct {
 				CFixVector vPos;
 			} viewer;
@@ -105,6 +112,25 @@ struct {
 		int nSegments = 8;
 	} segData;
 } gameData;
+struct {
+	struct {
+		int nFrameFlipFlop = 1;
+	} render;
+} gameStates;
+struct CLightning {
+	int m_nObject = -1, m_nSegment = -1, m_nLength = 0;
+	CFixVector m_vPos, m_vEnd;
+	int32_t MayBeVisible(int32_t);
+};
+std::array<int, 2> lightning_locations{};
+std::vector<xl_compat::ParticlePoint> lightning_queries;
+int FindSegByPos(const CFixVector &point, int start, int exhaustive, int skybox)
+{
+	if (start != -1 || exhaustive != 1 || skybox != 0 || lightning_queries.size() >= 2) throw std::runtime_error("Lightning source lookup policy changed");
+	const int result = lightning_locations[lightning_queries.size()];
+	lightning_queries.push_back({ point.v.coord.x, point.v.coord.y, point.v.coord.z });
+	return result;
+}
 struct {
 	int zMin[1]{}, zMax[1]{};
 } tiRender;
@@ -158,7 +184,7 @@ void particle_visibility_source_controls()
 		}
 	}
 	if (!mine.visibility[2].Create(1)) throw std::runtime_error("Source scratch visibility allocation failed");
-	unsigned emitters = 0, particles = 0, depths = 0;
+	unsigned emitters = 0, particles = 0, depths = 0, bolts = 0;
 	for (unsigned mask = 0; mask < 256; ++mask) {
 		mine.flags.assign(LEVEL_SEGMENTS, false);
 		std::vector<int> visible;
@@ -187,6 +213,30 @@ void particle_visibility_source_controls()
 				if (actual != expected || particle.segment != source.m_nSegment || calls != locate_calls) throw std::runtime_error("Particle visibility, relocation or lookup cadence differs from source");
 				++particles;
 			}
+		for (int owner : { -1, 0, 1 })
+			for (int segment : { -1, 0, 3, 7 })
+				for (int length : { 0, 20 * 65536, 50 * 65536 })
+					for (int end : { -1, 0, 4, 7 })
+						for (int middle : { -1, 0, 4, 7 }) {
+							CLightning source;
+							source.m_nObject = owner < 0 ? -1 : 0;
+							source.m_nSegment = segment;
+							source.m_nLength = length;
+							source.m_vPos.Set(-100001, 199999, -399999);
+							source.m_vEnd.Set(200000, -400000, 300000);
+							mine.bObjectRendered[0] = owner == 1 ? gameStates.render.nFrameFlipFlop : 0;
+							lightning_locations = { end, middle };
+							lightning_queries.clear();
+							const bool expected = source.MayBeVisible(0) != 0;
+							std::vector<xl_compat::ParticlePoint> queries;
+							const bool actual = xl_compat::lightning_visible(owner == 1, segment, { -100001, 199999, -399999 }, { 200000, -400000, 300000 }, mine.flags, [&](const xl_compat::ParticlePoint &point) {
+								const int result = lightning_locations.at(queries.size());
+								queries.push_back(point);
+								return result;
+							});
+							if (actual != expected || queries != lightning_queries) throw std::runtime_error("Lightning visibility or ordered endpoint/midpoint queries differ from source");
+							++bolts;
+						}
 		if (!visible.empty()) {
 			auto &state = mine.visibility[2];
 			for (unsigned i = 0; i < visible.size(); ++i) state.segments[int(i)] = int16_t(visible[i]);
@@ -199,4 +249,5 @@ void particle_visibility_source_controls()
 	}
 	if (xl_compat::particle_depth_limit(segments, {}, {}) != 0) throw std::runtime_error("Empty particle scene has a depth range");
 	std::cout << "Pinned particle visibility: " << emitters << " emitter and " << particles << " particle selections, relocation/call counts and " << depths << " source depth bounds passed\n";
+	std::cout << "Pinned lightning visibility: " << bolts << " owner/start/end/midpoint selections and ordered lookup positions passed\n";
 }

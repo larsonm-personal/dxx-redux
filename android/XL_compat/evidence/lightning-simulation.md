@@ -324,3 +324,29 @@ app-data hashes. Logs are lightning-projection-linux.log,
 lightning-projection-device.log and lightning-projection-android.log under
 temp/xl-skybox-20261031. Catalogs from the prior chunk remain applicable because
 registration, runner and automation scripts are unchanged. No level9 admission.
+
+## Source visibility selection
+
+The native collector now calls a shared lightning visibility predicate whose
+behavior is compared with extracted, hash-pinned CLightning::MayBeVisible and
+CFixVector::Avg in the existing particle visibility owner. All147456 cases pass:
+owner absent/unrendered/rendered, start-segment visibility, endpoint and midpoint
+lookup success/failure, every eight-segment visibility mask, three source lengths,
+and exact ordered lookup positions. The existing source scratch initialization,
+flag rollover and transparent/blocked adjacency controls remain active.
+
+This confirms the current single-thread policy rather than changing which bolts
+are selected. Lightning and particle emitters use visibility[nThread+2]; its
+local visible flags remain clear and only global early-visible queries succeed.
+For nThread0, source endpoint/midpoint FindSegByPos calls use start=-1,
+exhaustive=1,skybox=0 and reach the already-qualified exhaustive/grid lookup.
+Midpoints truncate (start+end)/2 as source does; production widens the sum to
+avoid undefined signed overflow. Multiple source render threads are not claimed.
+
+The reference owner and rebuilt native lifecycle integration pass, including
+copied render frames, disabled/stale owners, signature recycling and no collection
+RNG consumption. Existing original-Pumo admission rejection remains unchanged.
+Evidence: temp/xl-particles-20261030/contracts-linux/effect-decode/reference.log,
+temp/xl-skybox-20261031/native-runtime/controls.log and
+lightning-visibility-reference.log. Catalog registrations and Android scripts
+are unchanged; the preceding successful catalog checks remain applicable.
