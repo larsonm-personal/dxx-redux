@@ -1,9 +1,9 @@
-// Original hub smoke and assets; only outdoors is changed in this derived mission
+// Original hub smoke/assets, also exercised with the outdoors-isolated fixture
 std::vector<unsigned char> smoke_earned_pixels;
 nlohmann::json smoke_earned_activation;
 void smoke_lifecycle_probe(const char *operation)
 {
-	require(Game_wind && xl_level_extensions_active() && !std::strcmp(Current_mission_filename, "psmoke") && Current_level_num == 1, "Smoke control requires the derived hub");
+	require(Game_wind && xl_level_extensions_active() && !std::strcmp(Current_mission_filename, skybox_fixture_mission.c_str()) && (skybox_fixture_mission == "psmoke" || skybox_fixture_mission == "pmines") && Current_level_num == 1, "Smoke control requires the selected original or derived hub");
 	const auto *image = xl_prepared_particle_image(0);
 	require(image && image->bitmap.width == 512 && image->bitmap.height == 512 && !xl_prepared_particle_image(), "Original smoke image ownership differs");
 	if (!std::strcmp(operation, "capture")) {

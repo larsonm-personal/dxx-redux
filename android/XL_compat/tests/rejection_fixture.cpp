@@ -38,11 +38,11 @@ int main(int argc, char **argv)
 				if (variant == 0) {
 					const auto colors = (level.vertices.size() + level.segments.size() * 6 + 910) * 13;
 					const auto first = level.game_offset - colors - level.segments.size() * 13;
-					member.bytes.at(first + 4) = xl_compat::segment_outdoors;
+					member.bytes.at(first + 4) = 128;
 					const auto control = xl_compat::inspect_level(member.bytes);
 					if (!std::any_of(control.unsupported.begin(), control.unsupported.end(), [](const auto &issue) {
-						    return issue.feature == "segment_properties" && issue.detail == "16";
-					    })) throw std::runtime_error("Outdoor segments are no longer a negative control; update the fixture and Android rejection expectation");
+						    return issue.feature == "segment_properties" && issue.detail == "128";
+					    })) throw std::runtime_error("Unknown segment property no longer rejects; update the fixture and Android rejection expectation");
 				} else member.bytes.at(level.objects.front().source_offset + 6) = 1;
 				changed = true;
 			}

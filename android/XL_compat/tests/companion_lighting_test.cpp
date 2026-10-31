@@ -12,6 +12,9 @@ static void check(bool value, const char *reason)
 {
 	if (!value) throw std::runtime_error(reason);
 }
+#ifdef XL_REFERENCE_OUTDOORS_MATERIAL
+#include "reference_outdoors_material.h"
+#endif
 template <typename Decode>
 static void malformed(Decode decode, std::size_t size)
 {
@@ -59,6 +62,9 @@ int main(int argc, char **argv)
 		check(!materials.face(-1, 2, false) && !materials.face(910, 2, false) && !materials.face(0, 0, false), "invalid or unlit face created a light");
 		ClassicFaceLightMaterials fresh(strengths, palette);
 		check(fresh.face(1, 3, false)->rgb == std::array<float, 3>{ 0, 0, 0 }, "material state leaked between level profiles");
+		ClassicFaceLightMaterials outdoor(strengths, palette);
+		check(outdoor.face(1, 0, true)->ambient && outdoor.face(0, 3, true)->ambient, "outdoors base and overlay lights must remain face-local");
+		check(!outdoor.face(1, 0, false)->ambient && !outdoor.face(0, 3, false)->ambient, "outdoors material state leaked into ordinary faces");
 		malformed(decode_texture_brightness, companion_texture_count * 4);
 		malformed(decode_texture_colors, companion_texture_count * 13);
 		Bytes brightness(companion_texture_count * 4), colors(companion_texture_count * 13);
@@ -107,6 +113,9 @@ int main(int argc, char **argv)
 			const auto doubled = original.face(333, 0, false);
 			check(doubled && doubled->brightness == 2, "original texture 333 strength differs");
 		}
+#ifdef XL_REFERENCE_OUTDOORS_MATERIAL
+		outdoors_material_reference::controls();
+#endif
 		std::cout << "Lighting companion layout passed; no renderer qualification\n";
 		return 0;
 	} catch (const std::exception &e) {

@@ -227,6 +227,7 @@ if(BUILD_TESTING)
         include(tests/reference_player_resources.cmake)
         include(tests/reference_equipment.cmake)
         include(tests/reference_effects.cmake)
+        include(tests/reference_outdoors_material.cmake)
     endif()
     set(XL_REFERENCE_LIGHT_PRECALC "" CACHE FILEPATH
                                             "Pinned XL lightprecalc.cpp for nearest-light oracle")

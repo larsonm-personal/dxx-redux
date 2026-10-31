@@ -164,7 +164,7 @@ const char *xl_pog_probe(const char *operation)
 		}
 		if (!std::strncmp(operation, "skybox_", 7)) {
 			skybox_lifecycle_probe(operation + 7);
-			if (!std::strcmp(operation, "skybox_start_smoke")) report = nlohmann::json{ { "passed", true }, { "checks", checks } }.dump();
+			if (!std::strcmp(operation, "skybox_start_smoke") || !std::strcmp(operation, "skybox_start_hub")) report = nlohmann::json{ { "passed", true }, { "checks", checks } }.dump();
 			return nullptr;
 		}
 		if (!std::strncmp(operation, "secret_", 7)) {
@@ -244,7 +244,7 @@ const char *xl_pog_probe(const char *operation)
 
 const char *xl_pog_probe_result()
 {
-	if ((!original_particle_earned.empty() || !secret_particle_base.empty() || skybox_fixture_mission == "psmoke") && report != "null") {
+	if ((!original_particle_earned.empty() || !secret_particle_base.empty() || skybox_fixture_mission == "psmoke" || skybox_fixture_mission == "pmines") && report != "null") {
 		auto state = nlohmann::json::parse(report);
 		unsigned particles = 0;
 		for (const auto &system : xl_compat::particle_systems()) particles += system.count();

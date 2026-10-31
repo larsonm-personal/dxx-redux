@@ -24,7 +24,7 @@ void particle_original_probe(const char *operation)
 		require(!Game_wind, "Original fire qualification must start outside gameplay");
 		char mission[] = "pmines";
 		require(load_mission_by_name(mission), "Cannot select original Pumo package");
-		require(!xl_level_supported_at("pm-hub.rl2", 0, 1) && std::strstr(xl_level_rejection(), "segment_properties"), "Original Pumo hub unexpectedly bypassed its authored outdoors requirement");
+		// Original hub lifecycle has its own owner; this control starts level 2
 		if (!xl_level_supported_at("mvlev1.rl2", 0, 2)) throw std::runtime_error(xl_level_rejection());
 		// A synchronous diagnostic start must not reenter automation in briefing UI
 		input_demo_set_skip_level_intro(1);

@@ -10,12 +10,14 @@ param(
     [switch]$SecretFixture,
     [switch]$SkyboxFixture,
     [switch]$SmokeFixture,
+    [switch]$OriginalHub,
     [string]$SmokeImage = '',
     [ValidateRange(0, 100000)][int]$SceneSegment = 409,
     [ValidateRange(0, 5)][int]$SceneSide = 2,
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($OriginalHub -and ($SmokeFixture -or $SkyboxFixture -or $SecretFixture -or !$PumoMods -or !$SmokeImage)) { throw 'OriginalHub requires original mod assets, smoke image and its own mode' }
 if ($SmokeFixture -and ($SkyboxFixture -or $SecretFixture -or $SceneOnly -or !$PumoMods -or !$SmokeImage)) { throw 'SmokeFixture requires original mod assets, smoke image and its own fixture mode' }
 if ($SkyboxFixture -and ($SecretFixture -or $SceneOnly -or !$PumoMods)) { throw 'SkyboxFixture requires original Pumo mod assets and its own fixture mode' }
 if ($SecretFixture -and ($SceneOnly -or $PumoMods)) { throw 'SecretFixture is a separate derived control' }
@@ -37,8 +39,8 @@ if ($SmokeFixture) {
     $mission = 'psmoke'
     $hogHash = '9584308a740140b81950812e00779b5c5e92c35dac4b431852bf7e4ba811c326'
     $descriptorHash = 'd7a34f614d094e5f288f3b648b8da30aab6847fb87af47a1a11c50e2b5d77eea'
-    if ((Get-FileHash -LiteralPath $SmokeImage -Algorithm SHA256).Hash -ne '6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac') { throw 'Requires original XL smoke atlas' }
 }
+if (($SmokeFixture -or $OriginalHub) -and (Get-FileHash -LiteralPath $SmokeImage -Algorithm SHA256).Hash -ne '6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac') { throw 'Requires original XL smoke atlas' }
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $hogHash -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $descriptorHash) {
     throw "Requires the unchanged original $mission HOG and descriptor"
@@ -54,6 +56,8 @@ $output = Join-Path $PSScriptRoot $(if ($SceneOnly) { '../../temp/xl-pumo-partic
 if ($SecretFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-particle-secret-android' }
 if ($SkyboxFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-skybox-authored-android' }
 if ($SmokeFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-smoke-authored-android' }
+if ($OriginalHub) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-android' }
+if ($OriginalHub -and $SceneOnly) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-scene' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -100,7 +104,7 @@ try {
         Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods/$mission" | Out-Null
     }
     Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/textures/d2x-xl && cp /data/local/tmp/xl-pog-fire.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smokingfire.tga" | Out-Null
-    if ($SmokeFixture) {
+    if ($SmokeFixture -or $OriginalHub) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $SmokeImage).Path, '/data/local/tmp/xl-pog-smoke.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
     }
@@ -109,9 +113,18 @@ try {
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
     if ($SkyboxFixture) { $scriptName = 'test_xl_skybox_authored.jsonc' }
     if ($SmokeFixture) { $scriptName = 'test_xl_smoke_authored.jsonc' }
+    if ($OriginalHub) {
+        $steps = Get-Content "$PSScriptRoot/../game_scripts/test_xl_smoke_authored.jsonc" -Raw | ConvertFrom-Json -AsHashtable
+        $starts = @($steps | Where-Object { $_.action -eq 'set_debug' -and $_.field -eq 'xl_pog_probe' -and $_.value -eq 'skybox_start_smoke' })
+        if ($starts.Count -ne 1) { throw 'Smoke lifecycle no longer has exactly one startup operation' }
+        $starts[0].value = 'skybox_start_hub'
+        $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'original-hub.jsonc'))
+        ConvertTo-Json -InputObject $steps -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
+    }
     if ($SceneOnly) {
         # Reuse the original owner's startup and first scene assertion
-        $sourceSteps = Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable
+        $sourcePath = if ([IO.Path]::IsPathRooted($scriptName)) { $scriptName } else { "$PSScriptRoot/../game_scripts/$scriptName" }
+        $sourceSteps = Get-Content $sourcePath -Raw | ConvertFrom-Json -AsHashtable
         $sceneSteps = [Collections.Generic.List[object]]::new()
         $found = $false
         foreach ($step in $sourceSteps) {
@@ -124,6 +137,7 @@ try {
             if ($step.action -eq 'assert' -and $step.expect.ContainsKey('xl_pog.scene.changed')) { $found = $true; break }
         }
         if (!$found) { throw 'Original owner no longer contains its initial scene assertion' }
+        $sceneSteps.Add(@{ action = 'set_debug'; field = 'android_game_request'; value = 'resume'; post_delay_ms = 1500 })
         $sceneSteps.Add(@{ action = 'introspect' })
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'scene.jsonc'))
         ConvertTo-Json -InputObject @($sceneSteps.ToArray()) -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
@@ -139,7 +153,9 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($SmokeFixture) { Write-Host "PASS: Original hub smoke in derived outdoors-isolated fixture, GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
+    if ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
+    elseif ($OriginalHub) { Write-Host "PASS: Unchanged original Pumo hub, smoke/skybox/GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
+    elseif ($SmokeFixture) { Write-Host "PASS: Original hub smoke in derived outdoors-isolated fixture, GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
     elseif ($SkyboxFixture) { Write-Host "PASS: Derived authored skybox resources, disk restore, context recreation and stock isolation ($($result.total_steps) steps)" }
     elseif ($SecretFixture) { Write-Host "PASS: Derived particle automatic secret save/return and headed GPU resources ($($result.total_steps) steps)" }
     elseif ($SceneOnly) { Write-Host "PASS: Original Pumo controlled scene $SceneSegment/$SceneSide ($($result.total_steps) steps)" }

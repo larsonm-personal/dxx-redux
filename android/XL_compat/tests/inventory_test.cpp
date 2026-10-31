@@ -973,6 +973,11 @@ void version_23_contract()
 		auto bad = bytes;
 		patch(bad, segment + 4, property, 1);
 		check(xl_compat::inspect_level(bad).segments.at(0).properties == property, "property bit lost");
+		if (property == 16) {
+			const auto outdoors = xl_compat::prepare_source_runtime_probe(bad);
+			check(outdoors.source.segments.at(0).properties == 16 && outdoors.stock_level == xl_compat::prepare_source_runtime_probe(bytes).stock_level, "Outdoors property lost its source owner or changed the classic shadow");
+			continue;
+		}
 		if (property == 32 || property == 64) {
 			check(!xl_compat::prepare_gameplay_probe(bad).stock_level.empty(), "Modern fog geometry was not translated");
 			continue;
@@ -998,8 +1003,8 @@ void version_23_contract()
 		auto combined = bytes;
 		patch(combined, segment + 4, bits, 1);
 		const auto decoded = xl_compat::inspect_level(combined);
-		check(xl_compat::runtime_blockers(decoded).empty() == !(bits & ~(15 | 32 | 64)), "normal modern admission accepted unsupported property combination");
-		check(xl_compat::runtime_blockers(decoded, true).empty() == !(bits & ~(15 | 32 | 64)), "experimental water profile accepted unrelated property bits");
+		check(xl_compat::runtime_blockers(decoded).empty() == !(bits & ~(15 | 16 | 32 | 64)), "normal modern admission accepted unsupported property combination");
+		check(xl_compat::runtime_blockers(decoded, true).empty() == !(bits & ~(15 | 16 | 32 | 64)), "experimental water profile accepted unrelated property bits");
 		if (bits == 1 || bits == 9) {
 			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
 			for (int actor = 0; actor < 3; ++actor) {
@@ -1469,8 +1474,8 @@ int main(int argc, char **argv)
 			check(xl_compat::blocker_message(xl_compat::runtime_blockers(skybox)).find("skybox colored boundary") != std::string::npos, "Unqualified colored-only skybox boundary admitted");
 			skybox.segments[0].children[0] = -1;
 			check(xl_compat::runtime_blockers(skybox).empty(), "External textured fog boundary incorrectly rejected as colored-only");
-			skybox.unsupported.push_back({ "segment_properties", 0, "16" });
-			check(xl_compat::blocker_message(xl_compat::runtime_blockers(skybox)).find("segment_properties") != std::string::npos, "Skybox admission erased independent outdoors requirement");
+			skybox.unsupported.push_back({ "segment_properties", 0, "128" });
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(skybox)).find("segment_properties") != std::string::npos, "Skybox admission erased an unknown segment property");
 		}
 		for (int version : { 15, 17, 23 }) {
 			const int function = version == 23 ? 9 : 11;

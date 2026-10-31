@@ -1,13 +1,14 @@
-// Derived hub: original geometry/POG, explicitly substituted smoke/outdoors bytes
+// Original hub and derived controls share geometry/resource lifecycle assertions
 xl_compat::Inventory skybox_earned_level;
 std::vector<unsigned char> skybox_earned_pixels;
 std::string skybox_fixture_mission = "pskybox";
 
 void skybox_lifecycle_probe(const char *operation)
 {
-	if (!std::strcmp(operation, "start") || !std::strcmp(operation, "start_smoke")) {
+	if (!std::strcmp(operation, "start") || !std::strcmp(operation, "start_smoke") || !std::strcmp(operation, "start_hub")) {
 		require(!Game_wind, "Skybox lifecycle must start outside gameplay");
-		skybox_fixture_mission = !std::strcmp(operation, "start_smoke") ? "psmoke" : "pskybox";
+		skybox_fixture_mission = !std::strcmp(operation, "start_hub") ? "pmines" : !std::strcmp(operation, "start_smoke") ? "psmoke"
+		                                                                                                                  : "pskybox";
 		require(load_mission_by_name(skybox_fixture_mission.data()), "Cannot select derived skybox fixture");
 		if (!xl_level_supported_at("pm-hub.rl2", 0, 1)) throw std::runtime_error(xl_level_rejection());
 		input_demo_set_skip_level_intro(1);
@@ -39,6 +40,8 @@ void skybox_lifecycle_probe(const char *operation)
 		skybox_earned_level = xl_compat::inspect_level(bytes);
 	}
 	require(skybox_earned_level.segments.size() == std::size_t(Num_segments) && Num_segments == 439, "Skybox geometry count differs after lifecycle");
+	const bool original_hub = skybox_fixture_mission == "pmines";
+	require(skybox_earned_level.segments.at(154).properties == (original_hub ? 60 : 44) && bool(xl_preview_outdoors_segment(154)) == original_hub, "Hub outdoors property changed during lifecycle");
 	unsigned skyboxes = 0;
 	for (int i = 0; i < Num_segments; ++i) {
 		const bool expected = skybox_earned_level.segments[i].function == 10;
