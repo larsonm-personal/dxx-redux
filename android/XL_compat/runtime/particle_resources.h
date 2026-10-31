@@ -9,9 +9,13 @@
 namespace xl_compat
 {
 struct Inventory;
+class ParticleTexture;
 struct ParticleImageResource {
 	std::string path;
 	PogBitmap bitmap;
+	std::unique_ptr<ParticleTexture> texture;
+	ParticleImageResource();
+	~ParticleImageResource();
 };
 std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level);
 } // namespace xl_compat

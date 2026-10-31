@@ -377,3 +377,70 @@ added. Live image/GL lifetime ownership, camera construction/projection,
 visibility and transparent ordering, render animation, save restoration and
 Android/original-Pumo integration remain to be done. Particle admission remains
 blocked throughout this checkpoint.
+
+## Scene integration checkpoint
+
+`xl_more_83_particle_scene` connects the prepared image, live camera and authored
+particle owner through the existing XL emitter render hook. This is still a
+development path behind particle admission rejection. It does not admit Pumo.
+
+The existing actual-source effect owner now covers these previously supplied
+consumers on Windows/x64 and Linux:
+
+- 1,152 camera rotation cases execute `FixSinCos`, fixed matrix construction and
+  multiplication, and `CParticle::InitRotation`/`SetupRotation`
+- 840 render/lifetime transitions and 24 animation-clock cases execute
+  `CParticle::Render` and `CParticleManager::BeginRender`. Source queues first,
+  then advances rotation; the active delayed `Setup` reads the live rotation
+  member, so the produced quad uses that advanced value. Life zero still draws;
+  negative life does not
+- Eight depth-limit/viewer profiles compare 2,119 ordered entries against actual
+  transparency initialization, insertion and bucket traversal. Distance is fixed
+  Euclidean distance, biased by ten units only when it is at least ten units;
+  equal-bucket insertion reverses input order. This is the single-thread source
+  profile, not a claim about every source batching/thread configuration
+- 4,608 emitter and 5,120 particle selections execute original visibility
+  functions, including scratch-state construction/zero initialization, flag
+  rollover, transparent/blocked links, adjacent visible segments, failed and
+  successful relocation, and lookup call counts. The pinned manager uses
+  `visibility[nThread + 2]` for the emitter query; its local visible flags stay
+  clear, independently of the global visible segment list. Production preserves
+  that default scratch policy. Particle adjacency itself does not test walls
+- 255 visible-scene depth limits execute `CVisibilityData::InitZRef`, including
+  its float center/viewer distance and fixed outer radius. Empty production
+  scenes have no candidates; invalid indices and depth overflow reject
+
+The native scene owner obtains the visible segment list and current camera from
+the engine, collects source-visible particles, orders them, advances render
+animation at the source 33-ms cadence, and constructs the quads. Its existing
+injected-Neptune integration control verifies visible/empty scenes, the 32/33-ms
+boundary and unchanged simulation/effects RNG. Stock calls return without
+allocating a scene or consuming RNG. The native Windows/x86 build and registered
+effect gate pass; the final gate took 6.23 seconds. These controls still use
+injected effects, not original Pumo gameplay or a rendered native capture.
+
+Prepared images now own their GPU texture as well as decoded pixels. Upload is
+lazy; empty draws allocate nothing. Six added lines in `d2/arch/ogl/ogl.c` notify
+this owner before texture-pool initialization and normal/lost-context cleanup.
+Without that notification an image can retain a pointer to a pool slot later
+reused by an unrelated bitmap. The implementation and tests otherwise stay in
+XL_compat; D1 and Android application sources are unchanged in this layer.
+
+The existing EGL owner passes 26 atlas/blend/depth/order cases, including equal
+depth under the source `LEQUAL` policy, regular release/reload and destruction.
+Twelve further cases independently compare CPU world-to-camera conversion with
+OpenGL matrix-stack projection. A real EGL context is then destroyed and
+recreated while decoded particle pixels remain owned; an unrelated bitmap
+occupies the reused pool before particle reload. Pixel output, separate texture
+ownership and destruction all pass. This tests desktop GL lifecycle, not an
+Android EGL-loss event. The final GPU owner took 0.49 seconds and retains its
+existing indexed/POG controls; no new CTest owner, workflow or engine startup
+was added.
+
+Remaining rendering qualification is significant: the current hook draws after
+the engine's other transparent content. Particle-to-particle ordering is checked,
+but this does not establish correct interleaving with transparent walls, sprites
+or other objects. Source buffer batching and complete original-scene output are
+also unqualified. Saved authored enable state, startup-installation image fallback,
+Android resource/graphics lifecycle and the original Pumo package still need
+integration evidence. These requirements continue to block admission.

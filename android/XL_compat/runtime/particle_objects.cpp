@@ -1,5 +1,10 @@
 #include "particle_objects.h"
 #include "particle_world.h"
+#include "particle_resources.h"
+#include "particle_renderer.h"
+#include "resource_validation.h"
+#include "../particle_order.h"
+#include "../particle_visibility.h"
 #include "preview.h"
 #include <map>
 #include <SDL.h>
@@ -9,6 +14,7 @@ extern "C" {
 #include "game.h"
 #include "rng_shared.h"
 #include "dxxerror.h"
+#include "../../../d2/3d/globvars.h"
 }
 #undef min
 #undef max
@@ -28,6 +34,7 @@ std::list<xl_compat::ParticleSystem> systems;
 xl_compat::ParticleWorld world;
 Uint32 epoch = 0;
 int last_update = 0, last_frame = 0;
+xl_compat::ParticleAnimationClock animation_clock;
 struct EffectsRandom {
 	int bounded(int limit) const
 	{
@@ -83,6 +90,7 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 	world = std::move(geometry);
 	epoch = SDL_GetTicks();
 	last_update = last_frame = 0;
+	animation_clock = {};
 }
 
 extern "C" void xl_particle_objects_clear(void)
@@ -91,6 +99,7 @@ extern "C" void xl_particle_objects_clear(void)
 	systems.clear();
 	world = {};
 	last_update = last_frame = 0;
+	animation_clock = {};
 }
 
 extern "C" int xl_particle_object_set_enabled(int index, int enabled)
@@ -105,6 +114,59 @@ extern "C" int xl_particle_object_set_enabled(int index, int enabled)
 const std::list<xl_compat::ParticleSystem> &xl_compat::particle_systems()
 {
 	return systems;
+}
+
+std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)
+{
+	std::vector<ParticleQuad> quads;
+	if (!xl_level_extensions_active() || systems.empty()) return quads;
+	std::vector<bool> visible_flags(world.segments.size(), false);
+	const int maximum_depth = particle_depth_limit(world.segments, visible, eye);
+	for (int index : visible) {
+		visible_flags[index] = true;
+	}
+	std::vector<FireParticle *> particles;
+	std::vector<ParticlePoint> positions;
+	for (auto &system : systems) {
+		auto &emitter = system.emitter;
+		const bool emitter_visible = particle_emitter_visible(emitter.segment, emitter.skybox, visible_flags);
+		for (int i = 0; i < emitter.count; ++i) {
+			auto &particle = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
+			const bool shown = emitter_visible || particle_visible(particle, world.segments, visible_flags, [](const ParticlePoint &point, bool skybox, int segment) { return world.locate(point, skybox, segment); });
+			if (!shown) continue;
+			particles.push_back(&particle);
+			positions.push_back(particle.position);
+		}
+	}
+	const auto order = particle_draw_order(positions, eye, maximum_depth);
+	const auto camera = particle_view(basis);
+	const bool animate = animation_clock.begin(milliseconds);
+	quads.reserve(order.size());
+	for (std::size_t index : order)
+		if (prepare_fire_particle_draw(*particles[index], animate)) quads.push_back(fire_particle_quad(*particles[index], camera, image_width, image_height));
+	return quads;
+}
+
+extern "C" void xl_particle_render_scene(const short *segments, int count)
+{
+	if (!xl_level_extensions_active() || systems.empty()) return;
+	try {
+		const auto *image = xl_prepared_particle_image();
+		if (!image || !image->texture) throw std::runtime_error("XL particle renderer has no prepared image");
+		const Uint32 elapsed = SDL_GetTicks() - epoch;
+		if (elapsed > INT32_MAX) throw std::runtime_error("XL particle render session exceeds the source clock range");
+		const auto point = [](const vms_vector &v) { return xl_compat::ParticlePoint{ v.x, v.y, v.z }; };
+		std::vector<int> visible;
+		for (int i = 0; i < count; ++i)
+			if (segments[i] >= 0) visible.push_back(segments[i]);
+		const auto eye = point(View_position);
+		auto quads = xl_compat::particle_scene(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height);
+		const std::array<xl_compat::ParticlePoint, 3> view{ point(View_matrix.rvec), point(View_matrix.uvec), point(View_matrix.fvec) };
+		for (auto &quad : quads) xl_compat::particle_camera_quad(quad, eye, view);
+		image->texture->draw(quads.data(), quads.size());
+	} catch (const std::exception &error) {
+		Error("XL particle scene: %s", error.what());
+	}
 }
 
 void xl_compat::particle_objects_frame(int time)

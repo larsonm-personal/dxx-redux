@@ -218,3 +218,32 @@ render-animation state, with source/native evidence. Then finish saved authored
 state and Android/original-Pumo qualification. The backend alone does not earn
 admission. All changes in this layer stay under XL_compat and reuse existing
 test owners.
+
+## Live scene integration
+
+The billboard/backend layer is published as draft PR #234, commit `d33522509`,
+stacked on #233. Work continues in the same checkout on
+`xl_more_83_particle_scene`. Next steps are source-checked camera bank matrices,
+visibility and distance-bucket ordering, the render animation clock, owned GPU
+image lifetime, and the native scene hook. Transparent ordering with other scene
+content requires explicit evidence; a passing isolated quad is insufficient.
+
+Scene camera, animation, visibility, depth bounds and single-thread particle
+ordering now pass actual-source comparisons on Windows/x64 and Linux. The
+production GPU owner passes 26 blend/depth/order cases, 12 independent camera
+projections and a real EGL context replacement with texture-pool reuse. Native
+scene cadence/visibility and stock RNG controls pass in the existing effect
+gate (6.23 seconds). Six core lines notify XL-local texture ownership before
+texture-pool reset; all other implementation remains in XL_compat. No new test
+owner, workflow or engine startup was added.
+
+Remaining: correct interleaving with other transparent content, saved authored
+state, startup-installation image fallback and Android/original-Pumo integration.
+The current after-scene hook is not sufficient evidence for transparent-wall
+ordering and does not earn admission. Detailed scope and source behavior are
+recorded in `android/XL_compat/evidence/particle-effects.md`.
+
+PR #232's five returned PR workflows passed. PR #233's engine D2 job timed out
+at frame 354/360 of the public flight replay after 60 seconds; the successor
+PR #234's same D2 job passed. Only that failed #233 job was retried, using its
+retained frame trace as evidence. Full final-head CI audit remains due.

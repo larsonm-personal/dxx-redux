@@ -16,6 +16,24 @@ struct ParticleView {
 	std::array<ParticleBasis, 64> rotated;
 	bool rotate = true;
 };
+inline ParticleView particle_view(const ParticleBasis &basis)
+{
+	ParticleView result{};
+	result.basis = basis;
+	// Source InitRotation uses fixed bank angles and the default double math
+	// profile; SetupRotation multiplies them by the viewer's fixed matrix
+	constexpr double pi = 3.141592653589793240;
+	for (unsigned i = 0; i < result.rotated.size(); ++i) {
+		const double angle = (double(i * 1024) * 2.0 * pi) / 65536.0;
+		const int sine = int(std::sin(angle) * 65536), cosine = int(std::cos(angle) * 65536);
+		for (unsigned axis = 0; axis < 3; ++axis) {
+			const ParticlePoint row{ basis.right[axis], basis.up[axis], 0 };
+			result.rotated[i].right[axis] = fixed_vector_dot(row, { cosine, sine, 0 });
+			result.rotated[i].up[axis] = fixed_vector_dot(row, { -sine, cosine, 0 });
+		}
+	}
+	return result;
+}
 struct ParticleVertex {
 	std::array<float, 3> position{};
 	std::array<float, 2> uv{};
@@ -26,6 +44,26 @@ enum class ParticleBlend { weak_additive,
 struct ParticleQuad {
 	std::array<ParticleVertex, 4> vertices;
 	ParticleBlend blend;
+};
+
+inline bool prepare_fire_particle_draw(FireParticle &particle, bool animate)
+{
+	if (particle.life < 0) return false;
+	// Source queues lazily, then advances rotation; active Setup uses the live
+	// rotation member when the queued buffer is flushed
+	if (animate && particle.rotates) particle.rotation = (particle.rotation + 1) % 64;
+	return true;
+}
+
+struct ParticleAnimationClock {
+	int last = 0;
+	bool begin(int milliseconds, bool second_eye = false)
+	{
+		if (milliseconds < last) throw std::runtime_error("XL particle render clock moved backwards");
+		if (milliseconds - last < 33 || second_eye) return false;
+		last = milliseconds;
+		return true;
+	}
 };
 
 // The active source Setup body builds world-space vertices from fixed camera
@@ -57,6 +95,18 @@ inline ParticleQuad fire_particle_quad(const FireParticle &particle, const Parti
 		vertex.color[3] = alpha_control ? 0.0f : 1.0f;
 	}
 	return quad;
+}
+
+inline void particle_camera_quad(ParticleQuad &quad, const ParticlePoint &eye, const std::array<ParticlePoint, 3> &view)
+{
+	for (auto &vertex : quad.vertices) {
+		std::array<float, 3> delta;
+		for (unsigned axis = 0; axis < 3; ++axis) delta[axis] = vertex.position[axis] - float(eye[axis]) / 65536.0f;
+		for (unsigned row = 0; row < 3; ++row) {
+			vertex.position[row] = (delta[0] * (float(view[row][0]) / 65536.0f) + delta[1] * (float(view[row][1]) / 65536.0f)) + delta[2] * (float(view[row][2]) / 65536.0f);
+		}
+		vertex.position[2] = -vertex.position[2];
+	}
 }
 } // namespace xl_compat
 #ifdef _MSC_VER

@@ -296,8 +296,12 @@ Loaded stock/Neptune geometry now matches pinned XL side setup, normals, radii,
 spatial-grid candidate lists and native collision/lookup receipts. Fire emitter
 scheduling now has source comparisons, including loaded mine geometry, and native
 controls cover activation, draining/re-enable, recycled owners, pause and RNG
-isolation. Resources, visible rendering, persistence and Android integration
-remain unfinished; particles remain blocked. See [particle evidence](evidence/particle-effects.md).
+isolation. Owned images and fire/smoke drawing now have native and GPU controls.
+The scene layer adds source-checked camera rotation, animation, visibility,
+depth bounds and particle ordering, plus real graphics-context replacement.
+Ordering against other transparent scene content, saved authored state and
+Android/original-Pumo qualification remain unfinished; particles remain blocked.
+See [particle evidence](evidence/particle-effects.md).
 
 Immediate singleplayer wall teleports now use detected requirements, including
 destination validation, actor dispatch, reference-matched rotation and source

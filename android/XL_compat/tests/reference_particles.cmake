@@ -166,6 +166,8 @@ foreach(name IN ITEMS PARTICLE_TYPES SPARK_PARTICLES)
 endforeach()
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
                       "int32_t CParticle::RenderType (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "int32_t CParticle::Render (float")
 string(FIND "${render_source}"
             "#else // -----------------------------------------------------------------------"
             start)
@@ -188,6 +190,136 @@ string(APPEND extracted "${render_body}\n")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_render.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_render.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/maths/fixc.cpp" angle_hash)
+if(NOT angle_hash STREQUAL "da4a96862a231c07720bb31ff42eddd39174e1708e6ae1678ded61375c5b1c2c")
+    message(FATAL_ERROR "Particle rotation angle source changed")
+endif()
+set(extracted "// Actual fixed camera/particle rotation construction\n")
+foreach(name IN ITEMS I2X F2X)
+    string(REGEX MATCH "#define ${name}[^\n]+" constant "${math_header}")
+    if(NOT constant)
+        message(FATAL_ERROR "Missing source particle rotation conversion")
+    endif()
+    string(APPEND extracted "${constant}\n")
+endforeach()
+string(REGEX MATCH "#define[ \t]+PARTICLE_POSITIONS[ \t]+[^\n]+" constant "${render_header}")
+string(APPEND extracted "${constant}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/fixc.cpp" "void FixSinCos (")
+foreach(
+    signature IN
+    ITEMS "inline const fix CFixVector::Dot (const CFixVector& v0"
+          "inline const CFixMatrix CFixMatrix::Create (fix sinp"
+          "inline const CFixMatrix CFixMatrix::Create (const CAngleVector&")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
+                      "CFixMatrix CFixMatrix::Mul (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "void CParticle::InitRotation (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "void CParticle::SetupRotation (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_camera.h"
+     CONTENT "${extracted}")
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_manager.cpp" manager_hash)
+if(NOT manager_hash STREQUAL "dabb8a4e3942bdaa2b346ba31499c218216c43d97b687cf98421f88a17ab8dae")
+    message(FATAL_ERROR "Particle render clock source changed")
+endif()
+set(extracted "// Actual source particle animation tick gate\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_manager.cpp"
+                      "int32_t CParticleManager::BeginRender (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_clock.h"
+     CONTENT "${extracted}")
+
+foreach(
+    pair IN
+    ITEMS "render/transprender.cpp|123dfee9f26410304377e18776668faeb74f8c0f0d78428d13d30a4a55467ea2"
+          "include/transprender.h|61e065ee45e9ba045794f610b288110cdbb713a2d9a2a20af86ef008c552b449")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Particle transparent ordering source changed: ${path}")
+    endif()
+endforeach()
+set(extracted
+    "// Actual source distance, transparency initialization/insertion and bucket traversal\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/transprender.h" transparency_header)
+string(REGEX MATCH "#define[ \t]+ITEM_DEPTHBUFFER_SIZE[^\n]+" constant "${transparency_header}")
+string(
+    APPEND
+    extracted
+    "${constant}\nstatic_assert(ITEM_DEPTHBUFFER_SIZE == 250000, \"Update particle depth bucket capacity\");\n"
+)
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
+                      "fix CFixVector::Mag (void) const")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
+                      "inline const fix CFixVector::Dist (")
+string(REGEX MATCH "inline int32_t Depth \\(CFixVector[^}]+}" depth_body "${transparency_header}")
+if(NOT depth_body)
+    message(FATAL_ERROR "Missing source transparent fixed depth")
+endif()
+string(REPLACE "inline int32_t Depth" "int32_t CTransparencyRenderer::Depth" depth_body
+               "${depth_body}")
+string(APPEND extracted "${depth_body}\n")
+foreach(
+    signature IN
+    ITEMS "void CTransparencyRenderer::InitBuffer ("
+          "int32_t CTransparencyRenderer::Add (CTranspItem*"
+          "void CTransparencyRenderer::RenderBuffer (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/transprender.cpp" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_order.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_particle_order.cpp)
+
+foreach(
+    pair IN
+    ITEMS "render/renderlib.cpp|d3eacfaf28c9687e7e37c3e47333b11d4a026000839231e8a71b443bc86d4252"
+          "render/visculling.cpp|00ace1562e0bef3ef0c62f35c39edb0c87a01ecf61f22168783cbbdd091d4b75"
+          "include/u_mem.h|4582ec483f52bcfde73f9517e42476a691513a581b37a815c647b04c0506dc87")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Particle visibility source changed: ${path}")
+    endif()
+endforeach()
+set(extracted "// Actual visibility scratch initialization, lookup and depth bounds\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/u_mem.h" memory_header)
+string(REGEX MATCH "#define CREATE[^\n]+" create_macro "${memory_header}")
+if(NOT create_macro)
+    message(FATAL_ERROR "Missing source array initialization macro")
+endif()
+string(APPEND extracted "${create_macro}\n")
+foreach(
+    signature IN
+    ITEMS "inline CFloatVector& CFloatVector::Assign (const CFixVector&"
+          "inline const float CFloatVector::SqrMag (" "inline const float CFloatVector::Mag ("
+          "inline const float CFloatVector::Dist (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
+endforeach()
+foreach(signature IN ITEMS "CVisibilityData::CVisibilityData ()" "bool CVisibilityData::Create (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamedata.cpp" "${signature}")
+endforeach()
+foreach(
+    signature IN
+    ITEMS "uint8_t CVisibilityData::BumpVisitedFlag ("
+          "uint8_t CVisibilityData::BumpProcessedFlag ("
+          "int32_t CVisibilityData::SegmentMayBeVisible (" "int32_t SegmentMayBeVisible (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/renderlib.cpp" "${signature}")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/visculling.cpp"
+                      "void CVisibilityData::InitZRef (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
+                      "bool CParticle::IsVisible (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_emitter.cpp"
+                      "inline int32_t CParticleEmitter::MayBeVisible (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_visibility.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_particle_visibility.cpp)
 
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/particles.h" particle_header)
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp" particle_source)
