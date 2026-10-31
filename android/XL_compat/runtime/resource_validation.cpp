@@ -350,6 +350,7 @@ struct XlPreparedResources::State {
 	std::shared_ptr<const xl_compat::AudioResources> audio;
 	std::shared_ptr<const xl_compat::ParticleImageResource> particle_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> smoke_image;
+	std::shared_ptr<const xl_compat::ParticleImageResource> lightning_image;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pog{ nullptr, xl_pog_free };
 
@@ -399,6 +400,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	if (level) {
 		state->particle_image = xl_compat::prepare_particle_image(*level);
 		state->smoke_image = xl_compat::prepare_particle_image(*level, 0);
+		state->lightning_image = xl_compat::prepare_lightning_image(*level);
 	}
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
@@ -464,6 +466,16 @@ const xl_compat::ParticleImageResource *XlPreparedResources::particle_image(int 
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype)
 {
 	return prepared_resources ? prepared_resources->particle_image(subtype) : nullptr;
+}
+
+const xl_compat::ParticleImageResource *XlPreparedResources::lightning_image() const
+{
+	return state->lightning_image.get();
+}
+
+const xl_compat::ParticleImageResource *xl_prepared_lightning_image()
+{
+	return prepared_resources ? prepared_resources->lightning_image() : nullptr;
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
