@@ -22,9 +22,11 @@ struct PogBitmap;
 class ParticleTexture
 {
   public:
-	ParticleTexture(const PogBitmap &pixels, const char *name);
+	ParticleTexture(const PogBitmap &pixels, const char *name, bool require_soft_depth = true);
 	~ParticleTexture();
 	void draw(const ParticleQuad *quads, std::size_t count);
+	// Source powerup corona: additive sprite, radius-5 soft depth, transparent border
+	void draw_soft_sprite(const ParticleQuad &quad, bool soft = true);
 	unsigned handle();
 	// Transparent border at every mip; sample original UVs with uv/4+1/4
 	unsigned border_handle();

@@ -53,6 +53,7 @@ unsigned lightning_line_device_controls()
 	return cases;
 }
 std::shared_ptr<const xl_compat::ParticleImageResource> lightning_probe_image;
+std::shared_ptr<const xl_compat::ParticleImageResource> lightning_probe_glare;
 std::vector<unsigned char> lightning_probe_pixels;
 void lightning_gpu_probe(const char *operation)
 {
@@ -67,6 +68,8 @@ void lightning_gpu_probe(const char *operation)
 		source.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
 		request.objects.push_back(source);
 		lightning_probe_image = prepare_lightning_image(request);
+		lightning_probe_glare = prepare_powerup_glare_image();
+		require(lightning_probe_glare && lightning_probe_glare->texture, "Lightning control did not prepare its owned powerup glare");
 		require(lightning_probe_image && lightning_probe_image->texture, "Lightning control did not prepare its owned corona");
 		lightning_probe_pixels.clear();
 		return;
@@ -74,10 +77,11 @@ void lightning_gpu_probe(const char *operation)
 	if (!std::strcmp(operation, "release")) {
 		discard_lightning_context(false);
 		lightning_probe_image.reset();
+		lightning_probe_glare.reset();
 		lightning_probe_pixels.clear();
 		return;
 	}
-	require(!std::strcmp(operation, "gpu") && lightning_probe_image && gl_initialized, "Lightning GPU control lacks its original corona");
+	require(!std::strcmp(operation, "gpu") && lightning_probe_image && lightning_probe_glare && gl_initialized, "Lightning GPU control lacks its original corona/glare");
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
@@ -140,13 +144,31 @@ void lightning_gpu_probe(const char *operation)
 		item.color = { 0, 52.f / 255.f, 149.f / 255.f, 128.f / 255.f };
 		const auto calls = d_rand_get_stream_call_count(D_RNG_FX);
 		draw_lightning_scene_item(item, *lightning_probe_image->texture);
+		ParticleQuad quad{};
+		quad.blend = ParticleBlend::additive;
+		const std::array<std::array<float, 2>, 4> corners{ { { -1, 1 }, { 1, 1 }, { 1, -1 }, { -1, -1 } } };
+		for (unsigned i = 0; i < 4; ++i) {
+			quad.vertices[i].position = { corners[i][0] * .6f, corners[i][1] * .4f, -2.5f };
+			quad.vertices[i].uv = { (corners[i][0] + 1) * .5f, (1 - corners[i][1]) * .5f };
+			quad.vertices[i].color = { .2f, .15f, .3f, .5f };
+		}
+		xl_particle_soft_begin_scene();
+		lightning_probe_glare->texture->draw_soft_sprite(quad);
+		xl_particle_soft_end_scene();
+		std::vector<unsigned char> sprite_scene(pixels.size()), pending(pixels.size());
+		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, sprite_scene.data());
+		require(std::any_of(sprite_scene.begin(), sprite_scene.end(), [](unsigned char value) { return value != 0; }), "Original glare did not draw into the scene");
+		draw_lightning_scene_item(item, *lightning_probe_image->texture);
+		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pending.data());
+		require(sprite_scene == pending, "Original glare prematurely flushed pending lightning");
 		finish_lightning_batch();
-		require(d_rand_get_stream_call_count(D_RNG_FX) == calls + 3, "Lightning draw used the wrong effects RNG count");
+		require(d_rand_get_stream_call_count(D_RNG_FX) == calls + 6, "Mixed lightning/sprite draw used the wrong effects RNG count");
 		GLint framebuffer, view[4];
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &framebuffer);
 		glGetIntegerv(GL_VIEWPORT, view);
 		require(GLuint(framebuffer) == readback.framebuffer && view[0] == 3 && view[1] == 5 && view[2] == 48 && view[3] == 43, "Lightning draw lost caller target or viewport");
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		require(pixels != sprite_scene, "Pending lightning did not composite over original glare");
 		require(glGetError() == GL_NO_ERROR, "Lightning draw/readback raised a GPU error");
 		for (unsigned p = 0; p < 64 * 64; ++p) changed += pixels[p * 4 + 2] != 0;
 		require(changed > 0 && changed < 64 * 64, "Lightning GPU control produced no bounded visible glow");
@@ -155,5 +177,5 @@ void lightning_gpu_probe(const char *operation)
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "line_cases", line_cases }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

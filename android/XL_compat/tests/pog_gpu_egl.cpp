@@ -445,6 +445,9 @@ void original(const char *path)
 }
 #include "particle_gpu_controls.h"
 #include "lightning_scene_gpu_controls.h"
+#ifdef XL_POG_SHADER_REFERENCE
+#include "sprite_glare_gpu_controls.h"
+#endif
 } // namespace
 int main(int argc, char **argv)
 {
@@ -496,7 +499,12 @@ int main(int argc, char **argv)
 			};
 			particle_context_controls(recreate);
 			lightning_scene_context_controls(recreate);
-		} else
+		}
+#ifdef XL_POG_SHADER_REFERENCE
+		else if (argc == 3 && std::string(argv[1]) == "--sprite-glare")
+			sprite_glare_gpu_controls(argv[2]);
+#endif
+		else
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		ogl_done_prog();
 		ogl_close_pixel_buffers();

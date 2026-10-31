@@ -253,7 +253,7 @@ The production native renderer also passes real EGL recreation, identical
 post-recreation pixels, offset-canvas and depth checks, and padded-texture cleanup.
 
 The existing Android POG runner adds an explicitly renderer-only mode:
-`-OriginalHub -LightningGpu -CoronaImage <original-corona.tga>`. Its owned script
+`-OriginalHub -LightningGpu -CoronaImage <original-corona.tga> -GlareImage <original-glare.tga>`. Its owned script
 is `test_xl_lightning_gpu.jsonc`. The original corona is resolved by the normal
 resource loader while the already-supported hub is paused; a controlled frame
 is rendered and compared byte-for-byte after real EGL context recreation.
@@ -512,3 +512,32 @@ prerequisite before this probe can run; it is not a passing device configuration
 A separate workspace-local AVD was used for host-GPU validation, leaving the
 original emulator configuration unchanged. These are controlled component tests,
 not original Pumo level9 scene or campaign qualification.
+
+## 113: original glare sprites inside a pending lightning batch
+
+The renderer accepts full-additive, radius-five soft sprites using the existing
+source-qualified glare equations and transparent-border texture storage. Optional
+glare loading does not require working soft depth. If shader/depth preparation
+fails, drawing falls back to ordinary textured additive blending; draw failures
+are not retried. Shader, blend, depth and texture state are restored.
+
+The existing EGL owner covers172 depth/blend cases, disabled/unavailable-depth
+fallback, and interleaved sprite/lightning pixels across actual context recreation.
+Its optional `--sprite-glare <glare.tga>` invocation compares the original512x512
+image with the pinned source shader across24 size/depth/filter cases. Maximum
+observed channel error is1. Original asset SHA256:
+`25bb9c5b4679ab8b26d37e05f536fc98a74f8f451b8057a00364847a487bc123`.
+
+The protected Android owner now requires both original corona and glare assets.
+It verifies that glare draws into scene color while lightning remains pending,
+that the subsequent composite changes the scene, and that mixed pixels match
+after real context recreation. The final host-GPU run passed28/28 steps in43.077s,
+with sprite_cases1, glare_width512, line_cases12, checks2 and unchanged protected
+app-data hashes. Final scoped Linux GPU, Windows native/effect and Android x86_64
+checks passed; the local handoff records their individual receipts.
+
+Normal powerup queue integration, bitmap-body border sampling, source powerup
+color/size helpers and their unfinished diagnostics are excluded from113. The
+normal transparency queue and level admission retain branch112 behavior. This
+PR qualifies a renderer capability and its owned original asset, not normal
+Pumo level9 gameplay or campaign traversal.

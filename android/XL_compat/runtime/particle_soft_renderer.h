@@ -29,7 +29,7 @@ void particle_program(GLuint program)
 }
 
 struct ParticleSoftRestore {
-	GLint program, vao, buffer, active, textures[2], src, dst, src_alpha, dst_alpha, equation, equation_alpha;
+	GLint program, vao, buffer, active, textures[2], src, dst, src_alpha, dst_alpha, equation, equation_alpha, depth_function;
 	GLboolean depth, write, blend, cull;
 #ifndef ANDROID
 	GLboolean alpha;
@@ -52,6 +52,7 @@ struct ParticleSoftRestore {
 		glGetIntegerv(GL_BLEND_EQUATION_RGB, &equation);
 		glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &equation_alpha);
 		glGetBooleanv(GL_DEPTH_WRITEMASK, &write);
+		glGetIntegerv(GL_DEPTH_FUNC, &depth_function);
 		depth = glIsEnabled(GL_DEPTH_TEST);
 		blend = glIsEnabled(GL_BLEND);
 		cull = glIsEnabled(GL_CULL_FACE);
@@ -72,6 +73,7 @@ struct ParticleSoftRestore {
 		glBlendFuncSeparate(src, dst, src_alpha, dst_alpha);
 		glBlendEquationSeparate(equation, equation_alpha);
 		glDepthMask(write);
+		glDepthFunc(depth_function);
 		if (depth) glEnable(GL_DEPTH_TEST);
 		else glDisable(GL_DEPTH_TEST);
 		if (blend) glEnable(GL_BLEND);
@@ -139,7 +141,7 @@ void prepare_particle_soft()
 
 #include "particle_depth_probe.h"
 
-void draw_soft_particles(grs_bitmap &image, const xl_compat::ParticleQuad *quads, std::size_t count)
+void draw_soft_particles(GLuint image, const xl_compat::ParticleQuad *quads, std::size_t count)
 {
 	ParticleSoftRestore restore;
 	prepare_particle_soft();
@@ -166,7 +168,7 @@ void draw_soft_particles(grs_bitmap &image, const xl_compat::ParticleQuad *quads
 	glUniform1i(glGetUniformLocation(particle_soft.program, "depthTex"), 1);
 	glUniform2f(glGetUniformLocation(particle_soft.program, "windowScale"), 1.f / particle_soft.depth.width, 1.f / particle_soft.depth.height);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, image.gltexture->handle);
+	glBindTexture(GL_TEXTURE_2D, image);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, particle_soft.depth.texture);
 	glDisable(GL_DEPTH_TEST);
@@ -188,6 +190,7 @@ void draw_soft_particles(grs_bitmap &image, const xl_compat::ParticleQuad *quads
 	for (std::size_t i = 0; i < count;) {
 		const bool smoke = quads[i].blend == xl_compat::ParticleBlend::multiply;
 		const bool alpha = quads[i].blend == xl_compat::ParticleBlend::alpha;
+		const bool additive = quads[i].blend == xl_compat::ParticleBlend::additive;
 		const auto blend = quads[i].blend;
 		triangles.clear();
 		const auto limit = (std::min) (count - i, std::size_t(25000)) + i;
@@ -200,8 +203,9 @@ void draw_soft_particles(grs_bitmap &image, const xl_compat::ParticleQuad *quads
 		                                                                                         : 2);
 		glBlendFunc(smoke ? GL_DST_COLOR : alpha ? GL_SRC_ALPHA
 		                                         : GL_ONE,
-		            smoke ? GL_ZERO : alpha ? GL_ONE_MINUS_SRC_ALPHA
-		                                    : GL_ONE_MINUS_SRC_COLOR);
+		            smoke ? GL_ZERO : alpha  ? GL_ONE_MINUS_SRC_ALPHA
+		                          : additive ? GL_ONE
+		                                     : GL_ONE_MINUS_SRC_COLOR);
 		glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(triangles.size() * sizeof(Vertex)), triangles.data(), GL_STREAM_DRAW);
 #ifdef ANDROID
 #undef glDrawArrays

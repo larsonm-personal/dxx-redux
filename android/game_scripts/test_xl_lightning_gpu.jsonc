@@ -16,6 +16,8 @@
         "expect": {
             "xl_pog.passed": true,
             "xl_pog.line_cases": 12,
+            "xl_pog.sprite_cases": 1,
+            "xl_pog.glare_width": 512,
             "xl_pog.lightning_changed": { "gte": 1 },
             "xl_pog.corona_width": 256,
         },
@@ -46,6 +48,8 @@
         "expect": {
             "xl_pog.passed": true,
             "xl_pog.line_cases": 12,
+            "xl_pog.sprite_cases": 1,
+            "xl_pog.glare_width": 512,
             "xl_pog.lightning_changed": { "gte": 1 },
             "xl_pog.corona_width": 256,
         },

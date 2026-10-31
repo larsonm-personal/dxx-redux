@@ -38,14 +38,17 @@ bool locate(std::string &path, bool installation, const std::string &kind)
 		throw std::runtime_error("XL " + kind + " image is not a regular file: " + path);
 	return true;
 }
-std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side)
+std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false)
 {
 	auto mission = addon_mission_texture_path(mission_resource_archive(), name);
 	if (mission.empty()) throw std::runtime_error("XL " + kind + " images require a selected mission HOG identity");
 	std::string selected = mission;
 	if (!locate(selected, false, kind)) {
 		selected = std::string("textures/d2x-xl/") + name + ".tga";
-		if (!locate(selected, true, kind)) throw std::runtime_error("Missing XL " + kind + " image; checked " + mission + " and " + selected + " in the selected mission or base installation");
+		if (!locate(selected, true, kind)) {
+			if (optional) return {};
+			throw std::runtime_error("Missing XL " + kind + " image; checked " + mission + " and " + selected + " in the selected mission or base installation");
+		}
 	}
 	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(selected.c_str()), PHYSFS_close);
 	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
@@ -60,7 +63,7 @@ std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *nam
 	const unsigned width = image->bitmap.width;
 	if (atlas_side && (width < 2 * atlas_side || image->bitmap.height != width || (width & (width - 1))))
 		throw std::runtime_error("XL particle image requires a square power-of-two " + std::to_string(atlas_side) + "-by-" + std::to_string(atlas_side) + " atlas with room for its one-pixel cell borders: " + image->path);
-	image->texture = std::make_unique<ParticleTexture>(image->bitmap, image->path.c_str());
+	image->texture = std::make_unique<ParticleTexture>(image->bitmap, image->path.c_str(), !optional);
 	return image;
 }
 } // namespace
@@ -86,5 +89,10 @@ std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inven
 	for (const auto &object : level.objects)
 		if (object.render == 12) required |= lightning_definition(object, 2).glow != 0;
 	return required ? prepare_addon_image("corona", "lightning corona", 0) : nullptr;
+}
+std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image()
+{
+	// Source omits optional powerup coronas when glare.Load fails
+	return prepare_addon_image("glare", "powerup glare", 0, true);
 }
 } // namespace xl_compat

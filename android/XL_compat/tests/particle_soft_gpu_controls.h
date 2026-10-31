@@ -135,7 +135,7 @@ static void particle_soft_shader_controls()
 			if (particle < 1 || particle >= 5000) continue;
 			const float scene_depth = depth(scene);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, &scene_depth);
-			for (int blend : { 2, -1, 0 }) {
+			for (int blend : { 2, -1, 0, 1 }) {
 				std::array<std::array<unsigned char, 8 * 8 * 4>, 3> pixels{};
 				for (unsigned profile = 0; profile < 3; ++profile) {
 					glClearDepth(scene_depth);
@@ -150,8 +150,9 @@ static void particle_soft_shader_controls()
 						glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 						glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
 						xl_compat::ParticleQuad quad;
-						quad.blend = blend > 0 ? xl_compat::ParticleBlend::weak_additive : blend < 0 ? xl_compat::ParticleBlend::multiply
-						                                                                             : xl_compat::ParticleBlend::alpha;
+						quad.blend = blend == 1 ? xl_compat::ParticleBlend::additive : blend > 0 ? xl_compat::ParticleBlend::weak_additive
+						                                                           : blend < 0   ? xl_compat::ParticleBlend::multiply
+						                                                                         : xl_compat::ParticleBlend::alpha;
 						const std::array<std::array<float, 2>, 4> corners{ { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } } };
 						for (unsigned i = 0; i < 4; ++i) {
 							quad.vertices[i].position = { corners[i][0], corners[i][1], depth(particle) * 2 - 1 };
@@ -159,7 +160,8 @@ static void particle_soft_shader_controls()
 							quad.vertices[i].color = { .7f, .8f, .9f, .3f };
 						}
 						xl_particle_soft_begin_scene();
-						production.draw(&quad, 1);
+						if (blend == 1) production.draw_soft_sprite(quad);
+						else production.draw(&quad, 1);
 						xl_particle_soft_end_scene();
 						GLint current, equation;
 						GLboolean writes;
@@ -190,7 +192,8 @@ static void particle_soft_shader_controls()
 					const auto factors = source_particle_blend(blend > 0 ? 5 : blend < 0 ? PARTICLE_TYPES + 5
 					                                                                     : 1,
 					                                           blend == 0 ? 0 : 2);
-					glBlendFunc(factors[0], factors[1]);
+					if (blend == 1) glBlendFunc(GL_ONE, GL_ONE);
+					else glBlendFunc(factors[0], factors[1]);
 					glClearColor(.2f, .4f, .6f, 1);
 					glClear(GL_COLOR_BUFFER_BIT);
 					glColor4f(.7f, .8f, .9f, .3f);
@@ -209,6 +212,56 @@ static void particle_soft_shader_controls()
 			}
 		}
 	check(behind_visible > 0, "Source soft particle control failed to distinguish hard depth rejection");
+	// Source negative-additive RenderQuad falls back when soft depth is disabled
+	// or unavailable; exercise real depth preparation failure without a mock
+	for (bool unavailable : { false, true }) {
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, unavailable ? 0 : scene_depth_buffer);
+		check(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Sprite fallback target incomplete");
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures[1]);
+		glUseProgram(0);
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_CULL_FACE);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glClearColor(.2f, .4f, .6f, 1);
+		glClearDepth(1);
+		glDepthMask(GL_TRUE);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glColor4f(.7f, .8f, .9f, .3f);
+		glBegin(GL_QUADS);
+		glTexCoord2f(.5f, .5f);
+		for (const auto &corner : std::array<std::array<float, 2>, 4>{ { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } } }) glVertex3f(corner[0], corner[1], 0);
+		glEnd();
+		std::array<unsigned char, 8 * 8 * 4> expected{}, observed{};
+		glReadPixels(0, 0, 8, 8, GL_RGBA, GL_UNSIGNED_BYTE, expected.data());
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		xl_compat::ParticleQuad quad{};
+		quad.blend = xl_compat::ParticleBlend::additive;
+		const std::array<std::array<float, 2>, 4> corners{ { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } } };
+		for (unsigned i = 0; i < 4; ++i) {
+			quad.vertices[i].position = { corners[i][0], corners[i][1], 0 };
+			quad.vertices[i].uv = { .5f, .5f };
+			quad.vertices[i].color = { .7f, .8f, .9f, .3f };
+		}
+		glUseProgram(programs[1]);
+		xl_compat::ParticleTexture optional(bitmap, "optional-sprite-depth-control", false);
+		xl_particle_soft_begin_scene();
+		optional.draw_soft_sprite(quad, unavailable);
+		xl_particle_soft_end_scene();
+		GLint restored_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &restored_program);
+		check(GLuint(restored_program) == programs[1], "Sprite fallback leaked shader state");
+		glReadPixels(0, 0, 8, 8, GL_RGBA, GL_UNSIGNED_BYTE, observed.data());
+		for (unsigned i = 0; i < observed.size(); ++i)
+			check(std::abs(int(expected[i]) - int(observed[i])) <= 1, "Sprite fallback differs from source textured additive RenderQuad");
+		check(glGetError() == GL_NO_ERROR, "Sprite fallback raised GL error");
+	}
+	std::cout << "Sprite soft-depth fallback: disabled and unavailable depth, optional texture and shader restoration passed\n";
 	glUseProgram(0);
 	glDeleteProgram(programs[0]);
 	glDeleteProgram(programs[1]);
