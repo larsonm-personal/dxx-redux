@@ -153,3 +153,24 @@ Normal skybox admission remains closed. Colored boundaries, remaining corona
 interactions, full weapon entry and original authored skybox resource/save/context
 lifetime still need qualification. These derived fixtures do not qualify the
 original Pumo hub or campaign as playable.
+
+## Corona segment exclusion checkpoint (branch 89)
+
+The actual texture-emitter API now excludes skybox and outdoors segments before
+face classification, following pinned SetupCoronaFaces. Existing property
+normalization distinguishes legacy outdoors function 16 from modern function 16
+and modern outdoors property 16. Rejected calls clear their output.
+
+The extracted, hash-pinned SetupCoronaFaces body passes 131072 combinations on
+Windows/Linux, including visibility, doorway, light, camera and global-effect
+gates, query counts and assignment order. Native and Android controls use a real
+loaded emitter across 54 function/property/version combinations. Android passes
+31/31 in 53.841 seconds with all 28 protected file hashes restored. Receipts:
+corona-linux.log, visibility-source.log, native-runtime/controls.log and
+android-corona.log under temp/xl-skybox-20261031. Scoped formatting passes;
+existing automation catalogs remain valid with no new script registrations.
+
+This fixes corona exclusion only. It does not qualify outdoors lighting or open
+skybox admission. Colored mesh boundaries still need their draw-state behavior
+established; the pinned RenderSkyBoxFace passes bTextured=1 to RenderFace even
+when its mesh face has no base bitmap. Do not infer a new tint from mesh flags.

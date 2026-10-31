@@ -373,6 +373,7 @@ void particle_buffer_source_controls();
 void skybox_collision_source_controls();
 void skybox_visibility_source_controls();
 void skybox_objects_source_controls();
+void skybox_coronas_source_controls();
 void particle_visibility_source_controls();
 void particle_world_source_controls();
 void particle_emitter_source_controls();
@@ -408,6 +409,7 @@ int main(int argc, char **argv)
 		skybox_collision_source_controls();
 		skybox_visibility_source_controls();
 		skybox_objects_source_controls();
+		skybox_coronas_source_controls();
 		particle_visibility_source_controls();
 		particle_world_source_controls();
 		particle_emitter_source_controls();

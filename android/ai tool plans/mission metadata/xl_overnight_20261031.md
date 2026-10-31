@@ -95,3 +95,47 @@ All 28 protected hashes match. Actual mixed foreground and discovery preserved;
 46 object visits, 20 outside ordinary list; both visibility orders include the
 separate robot. All local handles terminal. Next: update skybox evidence, review
 scoped diff, recheck parent PR 239, commit/push branch 88 and open draft PR.
+
+## Published branch 88 and next bounded chunk
+
+Branch 88 is published at 59d14782bcb58687cd888ff0ca0892f57d800901 as draft
+PR https://github.com/larsonm-personal/dxx-redux/pull/241 above open PR 239.
+Parent 239 was fully green at publication. No merges performed. Current branch
+is xl_more_89_skybox_boundaries, initially identical to published 88.
+
+Next bounded chunk: source-backed colored boundary selection and corona
+exclusions, extending existing owners. In pinned gameio/createmesh.cpp lines
+1622-1634, mesh inclusion uses differing IsColoredSeg values OR wall type;
+InitColoredFace precedes InitTexturedFace when both apply. IsColoredSeg in
+render/renderlib.cpp is controlled by mission colored-segment configuration and
+FogType (singleplayer); skybox membership alone does not imply a colored face.
+Investigate existing fog/water consumers before adding duplicate drawing.
+Retain normal admission gates while qualifying authored behavior.
+
+## Branch 89 corona checkpoint, 00:02 Pacific
+
+Implemented SetupCoronaFaces segment exclusions in the actual emitter API:
+skybox function 10 and decoded outdoors properties return a cleared emitter.
+Legacy function 16 remains distinct from modern function 16; modern property
+bits are decoded through the existing inventory policy. No admission changed.
+
+Hash-pinned actual SetupCoronaFaces extraction passes 131072 combinations on
+Windows and Linux, covering face conditions, light queries and ordered corona
+assignments. Native and Android loaded controls pass 54 combinations using a
+real eligible emitter and verify rejected output is cleared. Android existing
+owner passes 31/31 in 53.841 seconds; all 28 protected hashes match. Scoped
+formatting passes. Logs: corona-quality.log, corona-runtime-quality.log,
+corona-linux.log, native-runtime/controls.log, android-corona.log. Windows source
+receipt remains visibility-source.log. All current build/test handles terminal.
+
+This chunk is not committed yet. Continue colored boundary investigation before
+publication, or publish the corona correction as its own bounded chunk if the
+boundary work requires a separate design. Reuse validation unless affected code
+changes. Both catalogs were already passed for existing owners; no new script.
+
+Pinned RenderSkyBoxFace explicitly calls LoadFaceBitmaps then RenderFace even
+for untextured colored faces. LoadFaceBitmaps returns for negative nBaseTex or
+!bTextured; RenderFace clears bmBot for !bTextured. Thus mesh-only inclusion is
+not enough to settle drawing behavior. Next inspect its untextured draw setup
+and existing fog compositing to determine the precise missing consumer. Do not
+add a speculative tint or silently omit an authored boundary.
