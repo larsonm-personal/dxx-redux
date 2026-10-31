@@ -71,7 +71,7 @@ static void close_door_lifecycle()
 	for (int i = 0; i < 48; ++i) wall_frame_process();
 	require(Walls[0].state == WALL_DOOR_WAITING, "Door left waiting before authored close");
 	const auto waiting = ActiveDoors[0];
-	// Block on either side with real actor geometry; do not overwrite earned state
+	// Source scans the front object list and tests both planes for each actor
 	for (auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_POWERUP, OBJ_MARKER, OBJ_WEAPON, OBJ_FIREBALL, object_type_t(19), object_type_t(20) })
 		for (int from : { 24, 21 }) {
 			vms_vector face;
@@ -83,8 +83,8 @@ static void close_door_lifecycle()
 			Walls[0].state = Walls[1].state = WALL_DOOR_WAITING;
 			ActiveDoors[0] = waiting;
 			require(xl_authored_close_door(24, 5) == 1, "Obstruction action selected stock");
-			const bool ignored = type == OBJ_WEAPON || type == OBJ_FIREBALL || type == 19 || type == 20;
-			require((Walls[0].state == WALL_DOOR_CLOSING) == ignored, "Two-sided actor obstruction differs");
+			const bool ignored = from == 21 || type == OBJ_WEAPON || type == OBJ_FIREBALL || type == 19 || type == 20;
+			require((Walls[0].state == WALL_DOOR_CLOSING) == ignored, "Source front-list actor obstruction differs");
 			if (!ignored) require(ActiveDoors[0].time == waiting.time, "Blocked action changed earned waiting time");
 			obj_delete(index);
 		}
@@ -131,6 +131,27 @@ static void close_door_lifecycle()
 	xl_door_obstruction_control::run(require);
 	std::cout << "Authored waiting close, sixteen actor obstructions, 48 obstruction lifecycle cases, actual animation/rays, saves and Redux isolation passed\n";
 }
+static void door_marker_lifecycle(const std::filesystem::path &output)
+{
+	for (bool ignore : { false, true }) {
+		const char *mission = ignore ? "mpignore" : "mpblock";
+		write_close_door_fixture(output / "missions", 0xfe00 | WALL_DOOR_AUTO | (ignore ? 256 : 0), mission);
+		char error[256]{};
+		require(load_base_mission(mission, error, sizeof(error)), error);
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		require(Walls[0].flags == WALL_DOOR_AUTO && Walls[1].flags == WALL_DOOR_AUTO, "Wide wall flags corrupted native low-byte state");
+		xl_door_obstruction_control::run(require, ignore);
+		char save[] = "marker-door.sav", description[64] = "XL marker wall flags";
+		stop_time();
+		require(state_save_all_sub(save, description), "Marker door save failed");
+		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2"), "Marker door stock transition failed");
+		require(state_restore_all_sub(save, 0), "Marker door restore failed");
+		xl_door_obstruction_control::run(require, ignore);
+		PHYSFS_delete(save);
+	}
+	std::cout << "192 wide-flag marker/actor lifecycle cases passed before and after disk restore through stock\n";
+}
 static int close_door_test(int argc, char **argv)
 {
 	try {
@@ -151,6 +172,7 @@ static int close_door_test(int argc, char **argv)
 		close_door_lifecycle();
 		door_pair_variants();
 		door_concurrency(output);
+		door_marker_lifecycle(output);
 		std::cout << "XL close-door controls passed\n";
 		return 0;
 	} catch (const std::exception &e) {

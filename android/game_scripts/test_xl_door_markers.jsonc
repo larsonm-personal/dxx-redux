@@ -1,0 +1,25 @@
+// Derived high wall flags: real marker obstruction and disk restore
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_close_door_runtime" } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Derived XL close doors", "timeout_ms": 15000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 15000 },
+    { "action": "skip_briefing", "timeout_ms": 30000 },
+    { "action": "wait_for", "expect": { "in_game": true, "xl_pilot.runtime_active": true }, "timeout_ms": 30000 },
+    { "action": "set_debug", "field": "xl_door_probe", "value": "marker_obstruction" },
+    { "action": "set_debug", "field": "player_energy", "value": "73" },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_save", "post_delay_ms": 1000 },
+    { "action": "set_debug", "field": "player_energy", "value": "1" },
+    { "action": "assert", "expect": { "player.energy": { "range": [1, 1] } } },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_load", "post_delay_ms": 1000 },
+    {
+        "action": "wait_for",
+        "expect": { "in_game": true, "time_paused": false, "player.energy": { "range": [73, 73] } },
+        "timeout_ms": 30000,
+    },
+    { "action": "set_debug", "field": "xl_door_probe", "value": "marker_obstruction" },
+    { "action": "introspect" },
+]

@@ -60,8 +60,8 @@ const char *xl_door_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Door controls require running singleplayer");
-		if (!std::strcmp(operation, "obstruction")) {
-			xl_door_obstruction_control::run(require);
+		if (!std::strcmp(operation, "obstruction") || !std::strcmp(operation, "marker_obstruction")) {
+			xl_door_obstruction_control::run(require, !std::strcmp(operation, "marker_obstruction"));
 			debug_log_force(DLOG_GAME, "XL door obstruction passed 48 actor/effect, side and lifecycle cases");
 		} else if (!std::strcmp(operation, "prepare")) {
 			require(xl_level_extensions_active() && Num_walls >= 184, "Door controls require the authored 91-door fixture");

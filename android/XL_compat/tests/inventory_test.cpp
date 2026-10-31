@@ -188,12 +188,24 @@ void wall_key_contract()
 			++count;
 		}
 		if (base.game_version >= 37) {
-			patch(bytes, base.sections[1].offset + 17, 256, 2);
-			rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+			for (unsigned flags : { 256u, 512u, 32768u, 65040u, 65296u, 65432u }) {
+				patch(bytes, base.sections[1].offset + 17, flags, 2);
+				const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+				check(probe.source.walls[0].flags == int(flags), "Wide authored wall flags lost");
+				const auto &native = probe.stock_level;
+				const auto read = [&](std::size_t at) {
+					unsigned value = 0;
+					for (unsigned i = 0; i < 4; ++i) value |= unsigned(native.at(at + i)) << (8 * i);
+					return value;
+				};
+				check(native.at(read(read(12) + 47) + 17) == (flags & 255), "Wide flags corrupted the native low byte");
+			}
+			patch(bytes, base.sections[1].offset + 17, 260, 2);
+			rejects([&] { xl_compat::prepare_gameplay_probe(bytes); }); // Additive rendering is independent
 		}
 	}
 	check(count == 1280, "Incomplete wall-key format matrix");
-	std::cout << count << " five-layout raw wall-key translations passed; wide flags remain gated\n";
+	std::cout << count << " five-layout raw wall-key translations and modern wide-flag ownership passed\n";
 }
 void wide_wall_contract()
 {

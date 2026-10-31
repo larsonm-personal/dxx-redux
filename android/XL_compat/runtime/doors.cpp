@@ -48,6 +48,8 @@ int wall_at(int segment_index, int side)
 bool blocked(int index)
 {
 	const auto &w = Walls[index];
+	const int modern_free = xl_door_is_free(w.segnum, w.sidenum);
+	if (modern_free >= 0) return !modern_free;
 	const int child = Segments[w.segnum].children[w.sidenum];
 	// Ordinary obstruction checks require a reciprocal connection
 	if (child < 0 || child >= Num_segments) return false;

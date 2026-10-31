@@ -41,6 +41,18 @@ void mission_flow_probe(const char *operation)
 			from = 4;
 			destination = 14;
 		}
+		if (!std::strcmp(operation, "exit5")) {
+			from = 14;
+			destination = 5;
+		}
+		if (!std::strcmp(operation, "exit6")) {
+			from = 5;
+			destination = 6;
+		}
+		if (!std::strcmp(operation, "exit7")) {
+			from = 6;
+			destination = 7;
+		}
 		require(from && Current_level_num == from && !game_is_time_paused() && !GameArg.SysInputDemoNoRender,
 		        "Authored route dispatch started in the wrong level or pause state");
 		int index = -1;
@@ -66,6 +78,28 @@ void mission_flow_probe(const char *operation)
 			check_trigger_sub(index, Player_num, 0);
 		}
 		require(Current_level_num == destination, "Original authored exit did not reach its destination");
+		if (destination == 6) {
+			unsigned mines = 0;
+			for (int i = 0; i <= Highest_object_index; ++i) {
+				const auto &object = Objects[i];
+				if (object.type != OBJ_WEAPON || object.id != PMINE_ID) continue;
+				++mines;
+				require(object.render_type == RT_POLYOBJ && object.rtype.pobj_info.model_num == Weapon_info[PMINE_ID].model_num &&
+				            object.ctype.laser_info.last_hitobj == -1 &&
+				            object.size == Polygon_models[Weapon_info[PMINE_ID].model_num].rad &&
+				            object.mtype.phys_info.mass == Weapon_info[PMINE_ID].mass && object.mtype.phys_info.drag == Weapon_info[PMINE_ID].drag &&
+				            (object.mtype.phys_info.flags & PF_FREE_SPINNING),
+				        "Original placed mine lost loader normalization");
+			}
+			require(mines > 0, "Original level 6 placed-mine control is empty");
+			const auto model = Weapon_info[PMINE_ID].model_num;
+			Weapon_info[PMINE_ID].model_num = -1;
+			const bool rejected = !xl_level_supported_at(Gamesave_current_filename, 0, Current_level_num) &&
+			                      std::strstr(xl_level_rejection(), "placed mine requires a polygon model");
+			Weapon_info[PMINE_ID].model_num = model;
+			require(rejected && xl_level_supported_at(Gamesave_current_filename, 0, Current_level_num),
+			        "Placed-mine dependency rejection or recovery failed");
+		}
 		++flow_exits;
 	}
 	++checks;

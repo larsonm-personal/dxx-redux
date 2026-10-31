@@ -41,6 +41,7 @@ int xl_source_game_version(void);
 const char *xl_level_rejection(void);
 int xl_test_stop_after_level(void);
 int xl_preview_wall_is_doorway(int segment_index, int side);
+int xl_door_is_free(int segment_index, int side);
 void xl_preview_before_swap(void);
 /* Explicit still-view diagnostic only; does not change collision geometry */
 int xl_preview_reference_fans(void);

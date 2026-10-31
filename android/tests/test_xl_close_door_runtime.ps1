@@ -3,10 +3,12 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [switch]$MarkerFixture
 )
 $ErrorActionPreference = 'Stop'
-$expectedHog = '3c8a1f6241a9f06df3931aa088606ad16ec6e7d4df0a333669b74046e4e62e9b'
+$expectedHog = '34182874939bc4c0058984680bf87c248e523f0af9c1f84584ca2f724eda1660'
+if ($MarkerFixture) { $expectedHog = '639787b543aa43323a9da4e532fb0d697f6202d88b67581e6255bcbd2ba8a393' }
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne '6194d572c9269c95fd2d5f2586f65f0d9e3a4516dd790fbe933a330eda148245') {
     throw 'Requires the pinned derived fixture from xl_close_doors'
@@ -16,6 +18,7 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-close_door-android'
+if ($MarkerFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-marker-door-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-CloseDoorAdb {
@@ -47,7 +50,8 @@ try {
     Invoke-CloseDoorAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-close.mn2') | Out-Null
     Invoke-CloseDoorPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-close.hog files/d2x-redux/missions/close.hog && cp /data/local/tmp/xl-close.mn2 files/d2x-redux/missions/close.mn2' | Out-Null
     Invoke-CloseDoorAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_close_door_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    $scriptName = if ($MarkerFixture) { 'test_xl_door_markers.jsonc' } else { 'test_xl_close_door_runtime.jsonc' }
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-CloseDoorAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-CloseDoorPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
@@ -58,7 +62,8 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete CloseDoor runtime result' }
     Invoke-CloseDoorAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-close_door.png') | Out-Null
     Invoke-CloseDoorAdb -Arguments @('pull', '/data/local/tmp/xl-close_door.png', "$output/render.png") | Out-Null
-    Write-Host "PASS: CloseDoor Android animation/crossings/blocking/visibility, disk/rewind and stock transition ($($result.total_steps) steps)"
+    if ($MarkerFixture) { Write-Host "PASS: Android wide marker flags, actor obstruction and disk restore ($($result.total_steps) steps)" }
+    else { Write-Host "PASS: CloseDoor Android animation/crossings/blocking/visibility, disk/rewind and stock transition ($($result.total_steps) steps)" }
 } finally {
     try {
         Invoke-CloseDoorAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
