@@ -1041,10 +1041,12 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	field(source->game_version);
 	for (unsigned index = 0; index < source->objects.size(); ++index) {
 		const auto &object = source->objects[index];
-		if (object.render != 13) continue;
+		if (object.render != 13 && object.render != 11) continue;
 		field(int(index));
 		for (int value : { object.type, object.reader_id, object.control, object.movement, object.render, object.segment }) field(value);
 		for (int value : object.position) field(value);
+		if (object.render == 11)
+			for (int value : object.orientation) field(value);
 		for (int value : object.render_data) field(value);
 	}
 	field(source->countdown);

@@ -1,6 +1,97 @@
 #include "particle_objects.h"
+#include "particle_state.h"
 #include "object_trigger.h"
 #include "trigger_state.h"
+#include <nlohmann/json.hpp>
+
+static void particle_saved_state_case()
+{
+	using namespace xl_compat;
+	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	particle_objects_frame(25);
+	require(particle_systems().size() == 1 && particle_systems().front().emitter.count > 0, "Particle save control requires a live cloud");
+	const auto earned = particle_objects_snapshot();
+	require(earned.size() == 2 && earned[0][2].get<bool>() && !earned[1][2].get<bool>(), "Particle save control requires mixed activation");
+	constexpr const char *path = "xl-particle-state.tmp";
+	require(!PHYSFS_exists(path), "Particle save control requires an unused temporary path");
+	struct FileGuard {
+		~FileGuard()
+		{
+			PHYSFS_delete("xl-particle-state.tmp");
+		}
+	} file_guard;
+	const auto capture = [&] {
+		auto *file = PHYSFS_openWrite(path);
+		REWIND_PHYSFS_FILE(writer, file);
+		require(file && xl_wall_trigger_write(writer) && PHYSFS_close(file), "Cannot capture particle runtime trailer");
+		file = PHYSFS_openRead(path);
+		require(file && PHYSFS_fileLength(file) >= 16, "Cannot read particle runtime trailer");
+		Bytes bytes(std::size_t(PHYSFS_fileLength(file)));
+		const auto consumed = PHYSFS_readBytes(file, bytes.data(), bytes.size());
+		require(PHYSFS_close(file) && consumed == PHYSFS_sint64(bytes.size()), "Particle runtime trailer truncated");
+		return bytes;
+	};
+	const auto encoded = capture();
+	const auto original = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
+	const auto restore = [&](const Bytes &bytes) {
+		auto *file = PHYSFS_openWrite(path);
+		require(file, "Cannot open particle trailer control");
+		const auto written = PHYSFS_writeBytes(file, bytes.data(), bytes.size());
+		require(PHYSFS_close(file) && written == PHYSFS_sint64(bytes.size()), "Cannot write particle trailer control");
+		file = PHYSFS_openRead(path);
+		REWIND_PHYSFS_FILE(reader, file);
+		require(file, "Cannot open particle trailer for restoration");
+		const int accepted = xl_wall_trigger_read(reader);
+		require(PHYSFS_close(file), "Cannot close particle trailer control");
+		return accepted;
+	};
+	const auto *cloud = &particle_systems().front();
+	const int count = cloud->emitter.count;
+	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+	for (int variant = 0; variant < 12; ++variant) {
+		auto changed = original;
+		auto &rows = changed["particle_objects"];
+		if (variant == 0) rows[0][0] = 2;
+		if (variant == 1) rows[0][1] = -1;
+		if (variant == 2) rows[0][1] = UINT64_MAX;
+		if (variant == 3) rows[0][1] = rows[0][1].get<int>() + 1;
+		if (variant == 4) rows[0][2] = 1;
+		if (variant == 5) rows[0][3] = bool(0);
+		if (variant == 6) rows[0].push_back(0);
+		if (variant == 7) rows.erase(rows.begin());
+		if (variant == 8) rows.push_back(rows[0]);
+		if (variant == 9) changed.erase("particle_objects");
+		if (variant == 10) changed["source"] = original["source"].get<std::uint64_t>() ^ 1u;
+		if (variant == 11) rows = nlohmann::json::object();
+		const auto payload = changed.dump();
+		Bytes bytes(encoded.begin(), encoded.begin() + 16);
+		bytes.insert(bytes.end(), payload.begin(), payload.end());
+		std::uint32_t checksum = 2166136261u;
+		for (unsigned char byte : payload) checksum = (checksum ^ byte) * 16777619u;
+		for (unsigned i = 0; i < 4; ++i) {
+			bytes[8 + i] = static_cast<unsigned char>(payload.size() >> (i * 8));
+			bytes[12 + i] = static_cast<unsigned char>(checksum >> (i * 8));
+		}
+		require(!restore(bytes), "Malformed particle state passed full trailer restoration");
+		require(capture() == encoded && &particle_systems().front() == cloud && cloud->emitter.count == count, "Rejected particle state changed owned runtime state or live cloud");
+	}
+	require(d_rand_get_stream_call_count(D_RNG_FX) == fx, "Particle save validation consumed effects RNG");
+	require(xl_particle_object_set_enabled(1, 0) && xl_particle_object_set_enabled(2, 1), "Cannot disturb saved particle activation");
+	require(restore(encoded) && particle_objects_snapshot() == earned && particle_systems().empty(), "Particle restore lost authored activation or retained transient clouds");
+	require(d_rand_get_stream_call_count(D_RNG_FX) == fx && d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Particle restore consumed RNG");
+	particle_objects_frame(0);
+	require(particle_systems().size() == 1 && particle_systems().front().object == 1 && particle_systems().front().emitter.count == 0, "Restored activation did not create one fresh owner");
+	particle_objects_frame(25);
+	require(particle_systems().front().emitter.count > 0, "Restored particle owner did not resume emission");
+	const auto saved_object = Objects[2];
+	Objects[2].type = OBJ_NONE;
+	const auto removed = particle_objects_snapshot();
+	require(!removed[1][3].get<bool>() && restore_particle_objects(removed, true) && !xl_particle_object_set_enabled(2, 1), "Deleted particle lifetime resurrected on restore");
+	Objects[2] = saved_object;
+	require(!restore_particle_objects(removed, false), "Dead particle state accepted a recycled native owner");
+	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Particle regeneration changed simulation RNG");
+	std::cout << "XL particle saved state: full-trailer activation round trip, 12 atomic rejection controls, fresh clouds, deleted owners and RNG isolation passed\n";
+}
 
 static void particle_objects_native_case(bool active)
 {
@@ -39,6 +130,7 @@ static void particle_objects_native_case(bool active)
 	for (int index : { 1, 2 }) {
 		auto &native = Objects[index];
 		native.type = 20;
+		native.signature = 100 + index;
 		native.id = 0;
 		native.control_type = CT_NONE;
 		native.movement_type = MT_NONE;
@@ -148,6 +240,8 @@ static void particle_objects_native_case(bool active)
 		rejected = true;
 	}
 	require(rejected && &particle_systems().front() == preserved, "Failed particle binding partially replaced live ownership");
+	Triggers[0] = guard.action;
+	particle_saved_state_case();
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle lifecycle or activation consumed simulation RNG");

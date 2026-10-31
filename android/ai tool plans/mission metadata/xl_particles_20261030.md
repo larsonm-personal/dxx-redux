@@ -247,3 +247,26 @@ PR #232's five returned PR workflows passed. PR #233's engine D2 job timed out
 at frame 354/360 of the public flight replay after 60 seconds; the successor
 PR #234's same D2 job passed. Only that failed #233 job was retried, using its
 retained frame trace as evidence. Full final-head CI audit remains due.
+
+## Particle saved state
+
+Scene integration is published as draft PR #235, commit `0bd84f42a`, stacked on
+#234. The main checkout continues on `xl_more_84_particle_saves`.
+
+Pinned object save/load persists the particle enabled byte (load defaults it for
+source save versions before 49). Save restoration prepares the level anew:
+`CleanupBeforeGame` destroys game data, including the particle manager. Preserve
+authored activation and owner lifetime, then restart transient clouds; do not
+serialize simulated clouds as though the source retained them. The XL trailer
+must validate the complete new state before applying it, reject absent/malformed
+or foreign authored bindings, and preserve both RNG streams during restoration.
+Use the existing source and native effect owners, with no new engine startup.
+
+The enabled-byte source branches pass Windows/x64 and Linux. Native complete
+trailer round-trip, twelve atomic malformed/foreign-state rejections, fresh cloud
+regeneration, deleted/recycled owner checks and restore RNG isolation pass in the
+existing effect gate (6.92 seconds). The save format advances from development
+schema 25 to 26. All implementation stays in XL_compat. The broader existing
+audio/save integration passes (112.18 seconds), including disk-save-through-stock
+controls, against the shared trailer change. Original Pumo and Android full-save
+workflows remain unqualified. Scoped formatting/lint passes.

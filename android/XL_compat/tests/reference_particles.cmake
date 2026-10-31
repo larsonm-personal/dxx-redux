@@ -44,6 +44,26 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_setup.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particles.cpp)
 
+# Execute the actual particle render payload branches in the source object save/load functions; the
+# surrounding native object record is a separate format
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp" save_source)
+set(extracted "// Actual pinned particle save/load payload branches\n")
+foreach(operation IN ITEMS Save Load)
+    string(FIND "${save_source}" "void CObject::${operation}State (" start)
+    if(start LESS 0)
+        message(FATAL_ERROR "Missing source object ${operation}State")
+    endif()
+    string(SUBSTRING "${save_source}" ${start} -1 tail)
+    string(REGEX MATCH "case RT_PARTICLES:[^;]+;[ \t\n]*break;" branch "${tail}")
+    if(NOT branch)
+        message(FATAL_ERROR "Missing source particle ${operation}State branch")
+    endif()
+    string(APPEND extracted
+           "void CObject::${operation}ParticleState(CFile& cf) { switch (11) { ${branch} } }\n")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_save.h"
+     CONTENT "${extracted}")
+
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/maths.h" math_header)
 set(extracted "// Actual pinned default fixed multiplication and float rounding\n")
 foreach(pattern IN ITEMS "#[ \t]*define[ \t]+XRound[^\n]+" "#define[ \t]+FixMul\\([^\n]+"
