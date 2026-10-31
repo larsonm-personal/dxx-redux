@@ -6,6 +6,7 @@
 #include "particle_renderer.h"
 #include "particle_objects.h"
 #include "skybox_collision.h"
+#include "skybox_render.h"
 #include "particle_state.h"
 #include "transparency_scene.h"
 #include "resource_validation.h"
@@ -27,6 +28,7 @@ extern "C" {
 #include "player.h"
 #include "physfsx.h"
 #include "ogl_init.h"
+#include "internal.h"
 #include "state_android_shared.h"
 #include "android_meta_actions.h"
 #include "input_demo_start_shared.h"
@@ -34,7 +36,15 @@ extern "C" {
 #include "fvi.h"
 #include "gameseg.h"
 #include "physics.h"
+#include "render.h"
+#include "automap.h"
+#include "render_gameplay_view.h"
+#include "robot.h"
 void ogl_loadbmtexture(grs_bitmap *bitmap);
+void ogl_prepare_framebuffer_readback(void);
+#ifndef NDEBUG
+extern ubyte object_rendered[MAX_OBJECTS];
+#endif
 }
 
 namespace
@@ -113,6 +123,7 @@ struct Readback {
 #include "particle_gpu_probe.h"
 #include "particle_original_probe.h"
 #include "skybox_collision_test.h"
+#include "skybox_render_probe.h"
 #include "particle_secret_probe.h"
 
 void gpu()
