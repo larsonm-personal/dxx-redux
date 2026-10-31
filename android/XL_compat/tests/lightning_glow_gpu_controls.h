@@ -63,86 +63,102 @@ static void lightning_composite_gpu_controls()
 	for (const std::array<int, 4> view : { std::array<int, 4>{ 0, 0, 64, 64 }, std::array<int, 4>{ 3, 5, 48, 43 } })
 		for (int extent_case = 0; extent_case < 5; ++extent_case)
 			for (unsigned bolts : { 1u, 2u })
-				for (float depth_value : { .25f, .75f }) {
-					if (extent_case == 4 && bolts == 1) continue;
-					const std::array<int, 4> extent = extent_case == 0 ? std::array<int, 4>{ 0, 0, view[2] - 1, view[3] - 1 } : extent_case != 2 ? std::array<int, 4>{ 12, 10, view[2] - 9, view[3] - 8 }
-					                                                                                                                             : std::array<int, 4>{ -5, -3, view[2] + 8, view[3] + 4 };
-					std::array<std::array<unsigned char, 64 * 64 * 4>, 2> pixels{};
-					for (unsigned profile = 0; profile < 2; ++profile) {
-						glUseProgram(0);
-						glBindFramebuffer(GL_FRAMEBUFFER, scene);
-						glViewport(0, 0, 64, 64);
-						glDisable(GL_SCISSOR_TEST);
-						glDisable(GL_STENCIL_TEST);
-						glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-						glDepthMask(GL_TRUE);
-						glClearDepth(depth_value);
-						glClearColor(.03f, .05f, .07f, .2f);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						// Capture the full scene so offsets use the same texture coordinates
-						snapshot.capture();
-						glViewport(view[0], view[1], view[2], view[3]);
-						if (profile) compositor.begin(scene, snapshot.texture, GL_DEPTH_ATTACHMENT, 64, 64, view);
-						else {
-							glBindFramebuffer(GL_FRAMEBUFFER, reference_targets[0]);
-							glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, snapshot.texture, 0);
-							glClearColor(0, 0, 0, 1);
-							glClear(GL_COLOR_BUFFER_BIT);
-						}
-						for (unsigned bolt = 0; bolt < bolts; ++bolt) {
-							auto matrix = identity;
-							matrix[12] = float(bolt) * .13f;
-							matrix[13] = -float(bolt) * .09f;
-							auto bolt_extent = extent;
-							const int shift = extent_case == 4 ? (bolt ? 0 : 80) : int(bolt) * (extent_case == 3 ? 80 : 6);
-							bolt_extent[0] += shift;
-							bolt_extent[2] += shift;
-							bolt_extent[1] -= int(bolt) * 5;
-							bolt_extent[3] -= int(bolt) * 5;
-							const std::array<float, 4> color{ .025f + float(bolt) * .01f, .07f, .11f, .2f };
+				for (unsigned zero_mask : { 0u, 1u, 2u, 3u })
+					for (float depth_value : { .25f, .75f }) {
+						if (zero_mask && (extent_case != 0 || bolts != 2)) continue;
+						if (extent_case == 4 && bolts == 1) continue;
+						const std::array<int, 4> extent = extent_case == 0 ? std::array<int, 4>{ 0, 0, view[2] - 1, view[3] - 1 } : extent_case != 2 ? std::array<int, 4>{ 12, 10, view[2] - 9, view[3] - 8 }
+						                                                                                                                             : std::array<int, 4>{ -5, -3, view[2] + 8, view[3] + 4 };
+						std::array<std::array<unsigned char, 64 * 64 * 4>, 2> pixels{};
+						for (unsigned profile = 0; profile < 2; ++profile) {
+							glUseProgram(0);
+							glBindFramebuffer(GL_FRAMEBUFFER, scene);
+							glViewport(0, 0, 64, 64);
+							glDisable(GL_SCISSOR_TEST);
+							glDisable(GL_STENCIL_TEST);
+							glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+							glDepthMask(GL_TRUE);
+							glClearDepth(depth_value);
+							glClearColor(.03f, .05f, .07f, .2f);
+							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+							// Capture the full scene so offsets use the same texture coordinates
+							snapshot.capture();
+							glViewport(view[0], view[1], view[2], view[3]);
+							if (!profile) {
+								glBindFramebuffer(GL_FRAMEBUFFER, reference_targets[0]);
+								glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, snapshot.texture, 0);
+								glClearColor(0, 0, 0, 1);
+								glClear(GL_COLOR_BUFFER_BIT);
+							}
+							for (unsigned bolt = 0; bolt < bolts; ++bolt) {
+								const bool direct = (zero_mask & (1u << bolt)) != 0;
+								auto bolt_glow = glow;
+								if (direct) bolt_glow.distance_scale = 0;
+								auto matrix = identity;
+								matrix[12] = float(bolt) * .13f;
+								matrix[13] = -float(bolt) * .09f;
+								auto bolt_extent = extent;
+								const int shift = extent_case == 4 ? (bolt ? 0 : 80) : int(bolt) * (extent_case == 3 ? 80 : 6);
+								bolt_extent[0] += shift;
+								bolt_extent[2] += shift;
+								bolt_extent[1] -= int(bolt) * 5;
+								bolt_extent[3] -= int(bolt) * 5;
+								const std::array<float, 4> color{ .025f + float(bolt) * .01f, .07f, .11f, .2f };
+								if (profile) {
+									glBindFramebuffer(GL_FRAMEBUFFER, scene);
+									if (direct) {
+										compositor.draw_direct(core, bolt_glow, 1, color, .7f, matrix, bolt_extent);
+										continue;
+									}
+									// A compatible Begin must retain the first bolt's accumulation
+									compositor.begin(scene, snapshot.texture, GL_DEPTH_ATTACHMENT, 64, 64, view);
+									check(compositor.draw(core, glow, 1, color, .7f, matrix, corona, bolt_extent) == !(extent_case == 4 && bolt == 0), "Lightning cumulative visibility differs from source");
+								} else {
+									glBindFramebuffer(GL_FRAMEBUFFER, direct ? scene : reference_targets[0]);
+									primitive.draw(core, bolt_glow, 1, color, .7f, matrix, corona, true);
+								}
+							}
 							if (profile) {
-								// A compatible Begin must retain the first bolt's accumulation
-								compositor.begin(scene, snapshot.texture, GL_DEPTH_ATTACHMENT, 64, 64, view);
-								check(compositor.draw(core, glow, 1, color, .7f, matrix, corona, bolt_extent) == !(extent_case == 4 && bolt == 0), "Lightning cumulative visibility differs from source");
-							} else primitive.draw(core, glow, 1, color, .7f, matrix, corona, true);
+								check(compositor.end() == (zero_mask != 3), "Lightning batch lifetime differs for zero-scale input");
+								check(!compositor.end(), "Lightning batch composed twice");
+							} else if (zero_mask != 3) {
+								source::gameData.renderData.scene = { view[0], view[1], view[2], view[3], 64 };
+								source::CCanvas::current = &source::gameData.renderData.scene;
+								reference.m_nStrength = 3;
+								reference.m_bViewport = 1;
+								reference.m_renderMin = { extent[0], extent[1] - int(bolts - 1) * 5 };
+								reference.m_renderMax = { extent[2] + (extent_case == 4 ? 80 : int(bolts - 1) * (extent_case == 3 ? 80 : 6)), extent[3] };
+								if (zero_mask == 1) {
+									reference.m_renderMin.x += 6;
+									reference.m_renderMax.y -= 5;
+								}
+								glBlendEquation(GL_FUNC_ADD);
+								glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+								check(reference.End(), "Pinned lightning composition failed");
+							}
+							glBindFramebuffer(GL_FRAMEBUFFER, scene);
+							glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels[profile].data());
+							std::array<float, 64 * 64> observed_depth{};
+							glReadPixels(0, 0, 64, 64, GL_DEPTH_COMPONENT, GL_FLOAT, observed_depth.data());
+							for (float value : observed_depth) check(std::abs(value - depth_value) < .00001f, "Lightning compositor changed scene depth");
 						}
-						if (profile) {
-							check(compositor.end(), "Visible lightning batch not composed");
-							check(!compositor.end(), "Lightning batch composed twice");
-						} else {
-							source::gameData.renderData.scene = { view[0], view[1], view[2], view[3], 64 };
-							source::CCanvas::current = &source::gameData.renderData.scene;
-							reference.m_nStrength = 3;
-							reference.m_bViewport = 1;
-							reference.m_renderMin = { extent[0], extent[1] - int(bolts - 1) * 5 };
-							reference.m_renderMax = { extent[2] + (extent_case == 4 ? 80 : int(bolts - 1) * (extent_case == 3 ? 80 : 6)), extent[3] };
-							glBlendEquation(GL_FUNC_ADD);
-							glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-							check(reference.End(), "Pinned lightning composition failed");
+						int worst = 0;
+						unsigned index = 0;
+						unsigned changed = 0;
+						const std::array<unsigned char, 3> background{ 8, 13, 18 };
+						for (unsigned p = 0; p < 64 * 64; ++p)
+							for (unsigned c = 0; c < 3; ++c) changed += pixels[0][p * 4 + c] != background[c];
+						check(depth_value > .5f ? changed > 0 : changed == 0, "Lightning composition failed to distinguish visible and occluded input");
+						for (unsigned i = 0; i < pixels[0].size(); ++i) {
+							const int error = std::abs(int(pixels[0][i]) - int(pixels[1][i]));
+							if (error > worst) {
+								worst = error;
+								index = i;
+							}
 						}
-						glBindFramebuffer(GL_FRAMEBUFFER, scene);
-						glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels[profile].data());
-						std::array<float, 64 * 64> observed_depth{};
-						glReadPixels(0, 0, 64, 64, GL_DEPTH_COMPONENT, GL_FLOAT, observed_depth.data());
-						for (float value : observed_depth) check(std::abs(value - depth_value) < .00001f, "Lightning compositor changed scene depth");
+						if (worst > 1) throw std::runtime_error("Lightning composition differs from pinned End/Render case=" + std::to_string(cases) + " index=" + std::to_string(index) + " expected=" + std::to_string(pixels[0][index]) + " actual=" + std::to_string(pixels[1][index]));
+						++cases;
 					}
-					int worst = 0;
-					unsigned index = 0;
-					unsigned changed = 0;
-					const std::array<unsigned char, 3> background{ 8, 13, 18 };
-					for (unsigned p = 0; p < 64 * 64; ++p)
-						for (unsigned c = 0; c < 3; ++c) changed += pixels[0][p * 4 + c] != background[c];
-					check(depth_value > .5f ? changed > 0 : changed == 0, "Lightning composition failed to distinguish visible and occluded input");
-					for (unsigned i = 0; i < pixels[0].size(); ++i) {
-						const int error = std::abs(int(pixels[0][i]) - int(pixels[1][i]));
-						if (error > worst) {
-							worst = error;
-							index = i;
-						}
-					}
-					if (worst > 1) throw std::runtime_error("Lightning composition differs from pinned End/Render case=" + std::to_string(cases) + " index=" + std::to_string(index) + " expected=" + std::to_string(pixels[0][index]) + " actual=" + std::to_string(pixels[1][index]));
-					++cases;
-				}
 	// Verify each public operation restores a deliberately different caller state
 	GLuint sentinel_vao, sentinel_buffer;
 	glGenVertexArrays(1, &sentinel_vao);

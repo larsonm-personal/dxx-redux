@@ -259,36 +259,39 @@ void lightning_render_controls()
 	unsigned draws = 0;
 	for (bool blur : { false, true })
 		for (int visible : { -1, 0, 1 })
-			for (unsigned seed : { 0u, 17u, 991u }) {
-				CLightning source;
-				source.m_nNodes = 9;
-				source.m_nodes.values.resize(9);
-				source.m_plasmaVerts.values.resize(64);
-				source.m_bBlur = blur;
-				source.m_color.Set(.12f, .58f, .83f, .37f);
-				glowRenderer.viewport = visible;
-				glowRenderer.done = 0;
-				blend_calls.clear();
-				random_index = seed;
-				source.Draw(0, 0);
-				const unsigned source_end = random_index;
-				struct Random {
-					double unit()
-					{
-						return RandDouble();
-					}
-				} random;
-				random_index = seed;
-				const bool shown = !blur || visible >= 0;
-				const auto color = xl_compat::lightning_draw_color({ .12f, .58f, .83f, .37f }, blur && shown, random);
-				if (source_end != seed + 3 || random_index != source_end || source.core_calls != unsigned(shown) || source.glow_calls != unsigned(shown) || source.setup_calls != 1 || glowRenderer.done != 1)
-					throw std::runtime_error("Lightning draw visibility or RNG order differs from source");
-				if (shown)
-					for (unsigned channel = 0; channel < 4; ++channel)
-						if (color[channel] != source.observed.v.values[channel]) throw std::runtime_error("Lightning draw color differs from source");
-				if (blend_calls != (blur && shown ? std::vector<int>{ GL_MAX, GL_FUNC_ADD } : std::vector<int>{}))
-					throw std::runtime_error("Lightning blur blend equation sequence changed");
-				++draws;
-			}
+			for (float average : { 0.f, depth_range * .9f, depth_range })
+				for (unsigned seed : { 0u, 17u, 991u }) {
+					CLightning source;
+					source.m_nNodes = 9;
+					source.m_nodes.values.resize(9);
+					source.m_plasmaVerts.values.resize(64);
+					source.m_bBlur = blur;
+					source.m_fAvgDist = average;
+					source.m_color.Set(.12f, .58f, .83f, .37f);
+					glowRenderer.viewport = visible;
+					glowRenderer.done = 0;
+					blend_calls.clear();
+					random_index = seed;
+					source.Draw(0, 0);
+					const unsigned source_end = random_index;
+					struct Random {
+						double unit()
+						{
+							return RandDouble();
+						}
+					} random;
+					random_index = seed;
+					const bool shown = !blur || visible >= 0;
+					const auto color = xl_compat::lightning_draw_color({ .12f, .58f, .83f, .37f }, blur && shown, random);
+					const bool glow = source.m_fDistScale > 0;
+					if (source_end != seed + 3 || random_index != source_end || source.core_calls != unsigned(shown) || source.glow_calls != unsigned(shown && glow) || source.setup_calls != unsigned(glow) || glowRenderer.done != 1)
+						throw std::runtime_error("Lightning draw visibility or RNG order differs from source");
+					if (shown)
+						for (unsigned channel = 0; channel < 4; ++channel)
+							if (color[channel] != source.observed.v.values[channel]) throw std::runtime_error("Lightning draw color differs from source");
+					if (blend_calls != (blur && shown ? std::vector<int>{ GL_MAX, GL_FUNC_ADD } : std::vector<int>{}))
+						throw std::runtime_error("Lightning blur blend equation sequence changed");
+					++draws;
+				}
 	std::cout << "Pinned lightning draw: " << draws << " visibility/color/RNG/blend cases passed\n";
 }

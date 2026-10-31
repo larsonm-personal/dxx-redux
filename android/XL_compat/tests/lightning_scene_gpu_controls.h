@@ -19,7 +19,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 	item.random_nodes = 1;
 	item.width = .7f;
 	item.color = { .1f, .3f, .5f, .5f };
-	const auto draw = [&] {
+	const auto draw = [&](bool direct = false) {
 		GLuint target, color, scene_depth;
 		glGenFramebuffers(1, &target);
 		glGenTextures(1, &color);
@@ -45,8 +45,15 @@ static void lightning_scene_context_controls(Recreate recreate)
 		glClearColor(0, 0, 0, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		const auto random_before = lightning_random_calls;
-		draw_lightning_scene_item(item, *image.texture);
-		draw_lightning_scene_item(item, *image.texture);
+		auto rendered = item;
+		if (direct) {
+			rendered.frame.glow.distance_scale = 0;
+			rendered.width = 3;
+		}
+		draw_lightning_scene_item(rendered, *image.texture);
+		draw_lightning_scene_item(rendered, *image.texture);
+		std::array<unsigned char, 64 * 64 * 4> immediate{};
+		if (direct) glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
 		finish_lightning_batch();
 		check(lightning_random_calls == random_before + 6, "Native lightning did not consume three effects samples per ordered draw");
 		GLint actual_target, view[4];
@@ -55,6 +62,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 		check(GLuint(actual_target) == target && view[0] == 3 && view[1] == 5 && view[2] == 48 && view[3] == 43, "Native lightning lost the caller framebuffer or offset canvas");
 		std::array<unsigned char, 64 * 64 * 4> pixels;
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		if (direct) check(immediate == pixels, "Zero-scale native lightning deferred its direct core into a glow batch");
 		unsigned changed = 0;
 		for (unsigned p = 0; p < 64 * 64; ++p) changed += pixels[p * 4 + 2] != 0;
 		check(changed > 0 && changed < 64 * 64, "Native lightning did not draw bounded visible glow");
@@ -70,10 +78,14 @@ static void lightning_scene_context_controls(Recreate recreate)
 		return pixels;
 	};
 	const auto expected = draw();
+	const auto direct_expected = draw(true);
+	check(direct_expected != expected, "Zero-scale native lightning did not distinguish core-only drawing");
 	recreate();
 	check(draw() == expected, "Native lightning pixels changed across real context recreation");
+	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed across real context recreation");
 	discard_lightning_context(false);
 	check(draw() == expected, "Native lightning pixels changed after explicit GPU resource release");
+	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed after explicit GPU resource release");
 	discard_lightning_context(false);
 	const auto border = image.texture->border_handle();
 	image.texture.reset();

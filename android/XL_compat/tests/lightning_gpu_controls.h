@@ -62,10 +62,11 @@ static void lightning_primitive_gpu_controls()
 			for (bool blur : { false, true })
 				for (float scene_depth : { .25f, .75f })
 					for (unsigned sampling = 0; sampling < 3; ++sampling)
-						for (unsigned isolated = 0; isolated < 3; ++isolated) {
+						for (unsigned isolated = 0; isolated < 4; ++isolated) {
 							auto core = original_core;
 							auto glow = lightning_glow_geometry(nodes, 1, width, true, { 0, 0, 3 }, core.average_depth, 9999);
-							if (isolated) {
+							if (isolated == 3) glow.distance_scale = 0;
+							if (isolated == 1 || isolated == 2) {
 								for (auto &vertex : core.vertices) vertex = { 100, 0, 0 };
 								const auto layer = glow.vertices.size() / 2;
 								for (std::size_t i = (isolated - 1) * layer; i < isolated * layer; ++i) glow.vertices[i] = { 100, 0, 0 };
@@ -117,13 +118,13 @@ static void lightning_primitive_gpu_controls()
 									glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 									glVertexPointer(3, GL_FLOAT, sizeof(LightningVertex), glow.vertices.data());
 									glTexCoordPointer(2, GL_FLOAT, sizeof(std::array<float, 2>), glow.uv.data());
-									for (int pass = 1; pass >= 0; --pass) {
+									for (int pass = glow.distance_scale > 0 ? 1 : -1; pass >= 0; --pass) {
 										glDrawArrays(GL_QUADS, GLint(pass * layer), GLsizei(layer));
 									}
 									glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 									glDisable(GL_TEXTURE_2D);
 									glColor4fv(color.data());
-									const float line = blur ? width * (2 * glow.distance_scale) : width;
+									const float line = blur && glow.distance_scale != 0 ? width * (2 * glow.distance_scale) : width;
 									glLineWidth(line > 1 ? line : 1);
 									glEnable(GL_LINE_SMOOTH);
 									glVertexPointer(3, GL_FLOAT, sizeof(LightningVertex), core.vertices.data());

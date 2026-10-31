@@ -98,6 +98,12 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 			extent[axis + 2] = std::max(extent[axis + 2], int(coordinate));
 		}
 	}
+	EffectsRandom random;
+	const auto color = lightning_draw_color(item.color, true, random);
+	if (glow.distance_scale == 0) {
+		compositor.draw_direct(core, glow, item.random_nodes, color, item.width, matrix, extent);
+		return;
+	}
 	// Capture the full scene target so offset canvases retain source windowScale
 	if (!compositor.batch_active()) {
 		glViewport(0, 0, grd_curscreen->sc_w, grd_curscreen->sc_h);
@@ -105,8 +111,6 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 		glViewport(view[0], view[1], view[2], view[3]);
 	}
 	const auto corona = image.border_handle();
-	EffectsRandom random;
-	const auto color = lightning_draw_color(item.color, true, random);
 	compositor.begin(target, depth.texture, depth.stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, depth.width, depth.height, view);
 	compositor.draw(core, glow, item.random_nodes, color, item.width, matrix, corona, extent, { .25f, .25f });
 #endif

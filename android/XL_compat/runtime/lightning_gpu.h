@@ -160,7 +160,8 @@ class LightningGpu
 			throw std::runtime_error("XL lightning GPU received inconsistent geometry");
 		const auto count = core.vertices.size() - 4 - random_nodes;
 		const auto layer = (count - 1) * 4;
-		if (!corona || glow.vertices.size() != layer * 2) throw std::runtime_error("XL lightning glow requires two layers and its corona texture");
+		const bool draw_glow = glow.distance_scale > 0;
+		if (draw_glow && (!corona || glow.vertices.size() != layer * 2)) throw std::runtime_error("XL lightning glow requires two layers and its corona texture");
 		// Source UVs are bounded: border clamp matches GL_CLAMP without changing LOD gradients
 		for (const auto &uv : glow.uv)
 			for (float value : uv)
@@ -196,7 +197,7 @@ class LightningGpu
 		const std::array<float, 16> identity{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvp"), 1, GL_FALSE, identity.data());
 		vertices.reserve(layer * 3 / 2);
-		for (int pass = 1; pass >= 0; --pass) {
+		for (int pass = draw_glow ? 1 : -1; pass >= 0; --pass) {
 			vertices.clear();
 			std::vector<Vertex> transformed;
 			transformed.reserve(layer);
