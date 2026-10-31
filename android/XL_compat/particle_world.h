@@ -139,6 +139,84 @@ class ParticleWorld
 		return -1;
 	}
 
+	// FindSegByPos with bExhaustive=0 and zero tolerance, used by lightning lights
+	int locate_connected(const ParticlePoint &point, int start) const
+	{
+		if (start < 0) return -1;
+		if (std::size_t(start) >= segments.size()) throw std::runtime_error("Connected lookup starts outside the mine");
+		if (contains(start, point)) return start;
+		// Skybox tracing uses the preceding stamp before the ordinary pass advances it
+		static thread_local std::vector<std::uint16_t> visited;
+		static thread_local std::uint16_t stamp = 0xffff;
+		if (visited.size() < segments.size()) visited.resize(segments.size());
+		struct Frame {
+			int segment, depth;
+			std::array<int, 6> distances;
+		};
+		const auto trace = [&](int initial_depth) {
+			std::vector<Frame> stack;
+			int current = start, depth = initial_depth;
+			for (;;) {
+				if (current >= 0) {
+					if (std::size_t(current) >= segments.size()) throw std::runtime_error("Connected lookup child is outside the mine");
+					if (std::size_t(depth) < segments.size() && visited[current] != stamp) {
+						visited[current] = stamp;
+						Frame frame{ current, depth, {} };
+						bool outside = false;
+						for (unsigned side = 0; side < 6; ++side) {
+							const auto &geometry = segments[current].sides[side];
+							if (!geometry.faces) continue;
+							if (geometry.faces > 2) throw std::runtime_error("Connected lookup has invalid side geometry");
+							unsigned behind = 0;
+							std::int64_t sum = 0;
+							for (unsigned face = 0; face < geometry.faces; ++face) {
+								const int distance = particle_plane_distance(point, geometry, face);
+								if (distance < -plane_tolerance) {
+									++behind;
+									sum += distance;
+								}
+							}
+							if (behind && (geometry.pokes_out || behind == geometry.faces)) {
+								outside = true;
+								frame.distances[side] = particle_detail::signed_checked(sum / behind);
+							}
+						}
+						if (!outside) return current;
+						stack.push_back(frame);
+					}
+				}
+				current = -1;
+				while (!stack.empty()) {
+					auto &frame = stack.back();
+					int chosen = -1, minimum = 0;
+					for (unsigned side = 0; side < 6; ++side)
+						if (segments[frame.segment].sides[side].child >= 0 && frame.distances[side] < minimum) {
+							minimum = frame.distances[side];
+							chosen = int(side);
+						}
+					if (chosen < 0) {
+						stack.pop_back();
+						continue;
+					}
+					frame.distances[chosen] = 0;
+					current = segments[frame.segment].sides[chosen].child;
+					depth = frame.depth + 1;
+					break;
+				}
+				if (current < 0) return -1;
+			}
+		};
+		if (segments[start].skybox) {
+			const int found = trace(1);
+			if (found >= 0) return found;
+		}
+		if (!++stamp) {
+			std::fill(visited.begin(), visited.end(), 0);
+			stamp = 1;
+		}
+		return trace(0);
+	}
+
 	std::optional<ParticlePoint> collide(FireParticle &particle) const
 	{
 		if (particle.segment < 0) return {};

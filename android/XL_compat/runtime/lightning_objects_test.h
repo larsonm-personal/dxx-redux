@@ -1,4 +1,76 @@
 #include "lightning_objects.h"
+extern "C" {
+#include "render.h"
+#include "lighting.h"
+extern int Do_dynamic_light;
+}
+
+static void lightning_native_light_case()
+{
+	using namespace xl_compat;
+	struct Guard {
+		std::vector<unsigned char> types;
+		std::vector<short> rendered{ Render_list, Render_list + N_render_segs };
+		int dynamic = Do_dynamic_light;
+		Guard()
+		{
+			for (int i = 0; i <= Highest_object_index; ++i) {
+				types.push_back(Objects[i].type);
+				if (i != 1 && i != 2) Objects[i].type = OBJ_NONE;
+			}
+			N_render_segs = 1;
+			Render_list[0] = Objects[1].segnum;
+			Do_dynamic_light = 1;
+		}
+		~Guard()
+		{
+			for (unsigned i = 0; i < types.size(); ++i) Objects[i].type = types[i];
+			N_render_segs = int(rendered.size());
+			std::copy(rendered.begin(), rendered.end(), Render_list);
+			Do_dynamic_light = dynamic;
+			xl_lightning_object_set_enabled(1, 1);
+			xl_lightning_object_set_enabled(2, 0);
+			xl_preview_dynamic_frame();
+		}
+	} guard;
+	const auto read = [&](int vertex) {
+		DynamicVertexLight light;
+		int color = 0;
+		require(xl_preview_dynamic_vertex(vertex, &light.intensity, light.color.data(), &color), "Cannot inspect native dynamic vertex");
+		light.has_color = color != 0;
+		return light;
+	};
+	xl_lightning_object_set_enabled(1, 0);
+	xl_lightning_object_set_enabled(2, 0);
+	xl_preview_dynamic_frame();
+	std::vector<DynamicVertexLight> expected;
+	for (int i = 0; i < Num_vertices; ++i) expected.push_back(read(i));
+	xl_lightning_object_set_enabled(1, 1);
+	const auto rng = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto lights = lightning_object_lights();
+	require(!lights.empty(), "Native lightning fixture produced no located segment light");
+	const auto visible = lights.find(Render_list[0]);
+	require(visible != lights.end() && visible->second.samples > 0 && visible->second.brightness > 0, "Native lightning did not illuminate its visible owner segment");
+	const auto &light = visible->second;
+	const Rgb color{ light.color[0], light.color[1], light.color[2] };
+	for (int vertex : Segments[Render_list[0]].verts) {
+		const LightningPoint position{ Vertices[vertex].x, Vertices[vertex].y, Vertices[vertex].z };
+		const int distance = geometry_default_magnitude(lightning_detail::subtract(light.position, position));
+		if (distance < std::int64_t(light.brightness) * 64)
+			expected[vertex].add(int(std::int64_t(light.brightness) * F1_0 / (std::max) (distance, MIN_LIGHT_DIST)), &color, false);
+	}
+	xl_preview_dynamic_frame();
+	for (int vertex = 0; vertex < Num_vertices; ++vertex) {
+		const auto actual = read(vertex);
+		require(actual.intensity == expected[vertex].intensity && actual.color == expected[vertex].color && actual.has_color == expected[vertex].has_color,
+		        "Lightning light did not reach exactly the rendered native vertices");
+	}
+	require(d_rand_get_stream_call_count(D_RNG_FX) == rng, "Lightning light collection consumed RNG");
+	N_render_segs = 0;
+	xl_preview_dynamic_frame();
+	for (int vertex = 0; vertex < Num_vertices; ++vertex) require(read(vertex).intensity == 0, "Invisible lightning retained vertex illumination");
+	std::cout << "Native lightning illumination passed: located segment aggregation, exact rendered-vertex contributions, activation, visibility and no collection RNG\n";
+}
 
 static void lightning_objects_native_case(bool active)
 {
@@ -86,6 +158,7 @@ static void lightning_objects_native_case(bool active)
 		for (unsigned axis = 0; axis < 3; ++axis)
 			require(frame->core.vertices[node][axis] == float(emitter->bolts[0].draw_positions[node][axis]) / 65536.0f, "Lightning core was rebuilt from moved nodes instead of staged draw coordinates");
 	const auto frozen_core = frame->core.vertices, frozen_glow = frame->glow.vertices;
+	lightning_native_light_case();
 	const LightningPoint scene_eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
 	const auto scene_rng = d_rand_get_stream_call_count(D_RNG_FX);
 	auto queued = lightning_scene_items({ 0 }, {}, scene_eye, INT32_MAX);

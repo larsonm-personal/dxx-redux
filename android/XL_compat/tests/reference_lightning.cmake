@@ -180,3 +180,20 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/points.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_projection.h"
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_lightning_projection.cpp)
+
+set(extracted "// Actual pinned lightning node selection and segment light aggregation\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp"
+                      "int32_t CLightning::SetLight (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_node.cpp"
+                      "bool CLightningNode::SetLight (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_emitter.cpp"
+                      "int32_t CLightningEmitter::SetLight (")
+foreach(signature IN
+        ITEMS "void CLightningManager::SetSegmentLight (" "void CLightningManager::ResetLights ("
+              "void CLightningManager::SetLights (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_manager.cpp"
+                          "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_light.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_lightning_light.cpp)
