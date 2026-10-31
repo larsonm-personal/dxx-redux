@@ -80,6 +80,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/geometry.cpp"
                 "${xl_runtime_dir}/particle_world.cpp"
                 "${xl_runtime_dir}/skybox_collision.cpp"
+                "${xl_runtime_dir}/skybox_render.cpp"
                 "${xl_runtime_dir}/particle_objects.cpp"
                 "${xl_runtime_dir}/transparency_scene.cpp"
                 "${xl_runtime_dir}/particle_resources.cpp"

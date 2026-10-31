@@ -6,6 +6,32 @@ stacked locally on published particle tip 55c937273b0633d2b5aa92e3f5fcd616400fa4
 Branch 86 is based on cmake 0e4587e7dedbf0f21955c6fda351c923ff5e23c5.
 Visibility/rendering and complete skybox gameplay are not yet qualified.
 
+## Branch 88 textured rendering checkpoint
+
+Work continues on xl_more_88_skybox_rendering above #239. Normal skybox
+admission remains closed. Actual pinned FaceIsVisible, RenderSkyBox and
+CWall::IsInvisible comparisons pass on Windows and Linux: 25725 face cases,
+3944 second-normal distinctions, eight automap/depth gates and 18432 wall
+inclusion cases. Split-13 uses expanded triangle vertex 3 (corner 1), not
+corner 3. Source cloak threshold is 31, distinct from Redux's fade constant 34.
+
+The runtime textured-face pass runs before transparency/particle depth capture,
+uses compiled source normals and triangle order, forces full brightness, and
+restores depth/window state. Native controls pass 474 loaded faces across mixed
+and all-skybox bindings. Android first found ordinary OGL and visibility-only
+paths still marking skyboxes explored. Those paths now exclude skybox segments;
+the repeat passes all 31 existing secret-owner steps in 53.189 seconds, including
+real-frame red/green texture pixels, static-light independence, automap isolation
+and subsequent secret-save/GPU lifecycle checks. Protected file hashes match.
+
+Receipts under temp/xl-skybox-20261031: visibility-source.log,
+visibility-linux.log, native-runtime/controls.log, android-render-scene.log
+(initial automap failure), android-render-automap-fixed.log (pass). Scoped
+quality and native/Android builds pass. This is derived geometry evidence;
+it is not original Pumo hub qualification. Distinguishing depth/occlusion,
+separate skybox objects, colored boundaries, complete weapon entry and authored
+skybox resource/save/context lifetime remain to be earned.
+
 ## Original Pumo hub
 
 Read-only current inspector receipt:
@@ -97,3 +123,33 @@ are terminal. Additional receipts: `android-skybox-collision-fixed.log`,
 `skybox-constructor-quality.log`, `catalog-skybox.log` and
 `catalog-owner-skybox.log`. The failed diagnostic run also restored protected
 files with matching hashes before retry.
+
+## Separate textured rendering checkpoint (branch 88)
+
+The loaded skybox owner compiles ordered textured faces and draws them at full
+brightness before queued transparency, with depth writes and caller depth state
+restoration. Skybox objects use a separate source-ordered pass before ordinary
+geometry. Ordinary geometry and automap discovery exclude skybox segments.
+Gameplay visibility retains the same robot/player order as the renderer,
+including objects outside the ordinary visible segment list.
+
+Windows and Linux actual-source comparisons pass 25725 visibility cases, 3944
+second-normal distinctions, eight automap/depth gates, 18432 wall inclusion
+cases and 18432 object lists with 55296 ordered calls. Native loaded binding
+controls pass for 474 faces across mixed/all-skybox fixtures. Both automation
+catalog checks pass; existing owners are reused.
+
+Android passes all 31 protected secret-save/GPU steps in 54.035 seconds. Fixed
+camera controls verify 1024 red and 1024 green pixels, static-light independence,
+actual depth rejection/writes and state restoration, 46 native object visits
+(20 outside the ordinary segment list), and exact visibility order including a
+separate-segment robot. Mixed ordinary/skybox geometry preserves foreground
+pixels and ordinary discovery while excluding skybox discovery. All 28 protected
+file hashes match. Receipts are in temp/xl-skybox-20261031, final owner log
+android-mixed-state.log. A depth-witness texture-enable cleanup bug was diagnosed
+and fixed; the final pass uses no extra warm-up frame or mismatch diagnostics.
+
+Normal skybox admission remains closed. Colored boundaries, remaining corona
+interactions, full weapon entry and original authored skybox resource/save/context
+lifetime still need qualification. These derived fixtures do not qualify the
+original Pumo hub or campaign as playable.

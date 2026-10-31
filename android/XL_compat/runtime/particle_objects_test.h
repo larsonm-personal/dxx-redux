@@ -1,6 +1,7 @@
 #include "particle_objects.h"
 #include "particle_state.h"
 #include "transparency_scene.h"
+#include "skybox_render.h"
 #include "object_trigger.h"
 #include "trigger_state.h"
 #include <nlohmann/json.hpp>
@@ -117,6 +118,7 @@ static void particle_objects_native_case(bool active)
 	require(consumed == PHYSFS_sint64(bytes.size()), "Particle owner source truncated");
 	const auto original = inspect_level(bytes);
 	skybox_collision_face_native_case(original);
+	xl_compat::skybox_render_native_controls(original);
 	auto source = original;
 	struct Guard {
 		object first = Objects[1], second = Objects[2], actor = Objects[3];

@@ -15,6 +15,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "render_gameplay_view.h"
 #include "gameplay_view_policy.h"
+#ifdef DXX_XL_RUNTIME
+#include "skybox_render.h"
+#endif
 #include <string.h>
 #include "render.h"
 #include "endlevel.h"
@@ -43,6 +46,11 @@ extern short render_obj_list[MAX_RENDER_SEGS + N_EXTRA_OBJ_LISTS][OBJS_PER_SEG];
 static int collect_prepared_objects(short *objects)
 {
 	int count = 0, nn;
+#ifdef DXX_XL_RUNTIME
+	count = xl_skybox_collect_view_objects(objects, MAX_RENDERED_OBJECTS);
+	if (count < 0)
+		return -1;
+#endif
 	if (N_render_segs < 0 || N_render_segs > MAX_RENDER_SEGS)
 		return -1;
 	for (nn = N_render_segs; nn--;) {
@@ -73,6 +81,10 @@ static int collect_prepared_objects(short *objects)
 				return -1;
 			if (Objects[objnum].type != OBJ_ROBOT && Objects[objnum].type != OBJ_PLAYER)
 				continue;
+#ifdef DXX_XL_RUNTIME
+			if (xl_skybox_segment(Objects[objnum].segnum))
+				continue;
+#endif
 			/* Preserve the renderer's historical overwrite of the upper half */
 			if (count >= MAX_RENDERED_OBJECTS)
 				count /= 2;
@@ -290,7 +302,11 @@ static int render_update_view_automap(grs_canvas *canvas, int window_num)
 			continue;
 		visited[segnum] = 255;
 		codes = rotate_list(8, Segments[segnum].verts);
-		if (!codes.uand) {
+		if (!codes.uand
+#ifdef DXX_XL_RUNTIME
+		    && !xl_skybox_segment(segnum)
+#endif
+		) {
 #if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
 			if (!Automap_visited[segnum])
 				escort_route_notify_automap_changed(segnum);
@@ -411,6 +427,9 @@ void android_render_collect_fov_visibility(fix eye_offset, int window_num)
 	build_segment_list(start);
 #endif
 	build_object_lists(N_render_segs);
+#ifdef DXX_XL_RUNTIME
+	xl_skybox_render_objects(window_num);
+#endif
 	for (nn = N_render_segs; nn--;) {
 		const int segnum = Render_list[nn];
 		int row = nn, column = 0;
@@ -423,7 +442,11 @@ void android_render_collect_fov_visibility(fix eye_offset, int window_num)
 #ifndef DXX_BUILD_DESCENT_II
 		                    || GameCfg.ClassicDepth
 #endif
-		                    )) {
+		                    )
+#ifdef DXX_XL_RUNTIME
+		    && !xl_skybox_segment(segnum)
+#endif
+		) {
 #ifdef DXX_BUILD_DESCENT_II
 			if (!Automap_visited[segnum])
 				escort_route_notify_automap_changed(segnum);

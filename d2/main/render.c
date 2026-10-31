@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "transparency_scene.h"
+#include "skybox_render.h"
 #include "fog.h"
 #ifdef __ANDROID__
 #include "corona_probe.h"
@@ -303,7 +304,8 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	// XL retains orientation when a texture-change action clears the overlay
 #ifdef DXX_XL_RUNTIME
 	if (xl_level_extensions_active() && !(tmap2 & 0x3fff)) tmap2 = 0;
-	if (xl_transparency_face(segnum, sidenum, nv, vp, tmap1, tmap2, uvlp, wid_flags)) return;
+	if (xl_skybox_segment(segnum) && !xl_skybox_rendering()) return;
+	if (!xl_skybox_rendering() && xl_transparency_face(segnum, sidenum, nv, vp, tmap1, tmap2, uvlp, wid_flags)) return;
 #endif
 	grs_bitmap  *bm;
 #ifdef OGL
@@ -447,6 +449,9 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #ifdef DXX_XL_RUNTIME
 	xl_preview_begin_face(segnum, sidenum);
 	for (i = 0; i < nv; ++i) xl_preview_vertex(vp[i], uvlp[i].l, &dyn_light[i].r, &dyn_light[i].g, &dyn_light[i].b);
+	if (xl_skybox_rendering())
+		for (i = 0; i < nv; ++i)
+			dyn_light[i].r = dyn_light[i].g = dyn_light[i].b = uvl_copy[i].l = F1_0;
 #endif
 	if ( PlayerCfg.AlphaEffects && ( TmapInfo[tmap1].eclip_num == ECLIP_NUM_FUELCEN || TmapInfo[tmap1].eclip_num == ECLIP_NUM_FORCE_FIELD ) ) // set nice transparency/blending for some special effects (if we do more, we should maybe use switch here)
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_ADDITIVE_C);
@@ -838,6 +843,9 @@ void do_render_object(int objnum, int window_num)
 	int n;
 
 	Assert(objnum < MAX_OBJECTS);
+#ifdef DXX_XL_RUNTIME
+	if (xl_skybox_segment(obj->segnum) && !xl_skybox_object_pass()) return;
+#endif
 
 	#ifndef NDEBUG
 	if (object_rendered[objnum]) {		//already rendered this...
@@ -1021,6 +1029,9 @@ void project_list(int nv,int *pointnumlist)
 // -----------------------------------------------------------------------------------
 void render_segment(int segnum, int window_num)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_skybox_segment(segnum)) return;
+#endif
 	segment		*seg = &Segments[segnum];
 	g3s_codes 	cc;
 	int			sn;
@@ -2334,6 +2345,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 		}
 	}
 
+#ifdef DXX_XL_RUNTIME
+	xl_skybox_render_objects(window_num);
+#endif
 #ifdef OGL
 	if (ogl_use_classic_depth()) {
 #ifdef ANDROID
@@ -2431,7 +2445,11 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 				cc=rotate_list(8,seg->verts);
 
-				if (! cc.uand) {		//all off screen?
+				if (! cc.uand
+#ifdef DXX_XL_RUNTIME
+				    && !xl_skybox_segment(segnum)
+#endif
+				    ) {		//all off screen?
 
 				  if (Viewer->type!=OBJ_ROBOT
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -2568,7 +2586,11 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 				cc=rotate_list(8,seg->verts);
 
-				if (! cc.uand) {		//all off screen?
+				if (! cc.uand
+#ifdef DXX_XL_RUNTIME
+				    && !xl_skybox_segment(segnum)
+#endif
+				    ) {		//all off screen?
 
 				  if (Viewer->type!=OBJ_ROBOT
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -2606,6 +2628,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 #ifdef __ANDROID__
 		xl_corona_scene_probe(eye, Viewer->segnum);
 #endif
+		xl_skybox_render_scene();
 		xl_transparency_flush();
 		xl_preview_render_emitters(Render_list, N_render_segs, eye, Viewer->segnum);
 		ogl_xl_fog_composite();

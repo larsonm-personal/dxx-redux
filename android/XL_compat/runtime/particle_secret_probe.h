@@ -28,7 +28,10 @@ void particle_secret_probe(const char *operation)
 		const auto consumed = PHYSFS_readBytes(file, bytes.data(), bytes.size());
 		PHYSFS_close(file);
 		require(consumed == PHYSFS_sint64(bytes.size()), "Derived skybox geometry is truncated");
-		skybox_collision_face_native_case(inspect_level(bytes));
+		const auto original = inspect_level(bytes);
+		skybox_collision_face_native_case(original);
+		skybox_render_native_controls(original);
+		skybox_render_gpu_controls(original);
 		return;
 	}
 	const auto image_matches = [&] {
