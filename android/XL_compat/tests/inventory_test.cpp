@@ -521,6 +521,30 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		const auto admitted_report = xl_compat::compatibility_json("objects.rl2", eligible);
 		check(feature_row(admitted_report, "attached_trigger_count").find("\"status\": \"partial\"") != std::string::npos, "native checkpoint claimed complete object qualification");
 		auto chain = admitted.source;
+		{
+			auto empty = admitted.source;
+			empty.object_trigger_records.resize(1);
+			empty.object_triggers = 1;
+			auto &action = empty.object_trigger_records[0].action;
+			action.type = 0;
+			action.targets = { { 0, 0 } };
+			empty.segments[0].sides[0].wall = -1;
+			check(xl_compat::runtime_blockers(empty).empty(), "source open-door no-op rejected an absent wall");
+			for (int type : { 1, 5, 6, 7, 8, 9, 10, 11 }) {
+				action.type = type;
+				check(!xl_compat::runtime_blockers(empty).empty(), "unaudited wall action admitted an absent wall");
+			}
+			action.type = 0;
+			for (int wall : { -2, static_cast<int>(empty.walls.size()) }) {
+				empty.segments[0].sides[0].wall = wall;
+				check(!xl_compat::runtime_blockers(empty).empty(), "open-door admitted a malformed wall index");
+			}
+			empty.segments[0].sides[0].wall = -1;
+			for (const auto target : { std::array<int, 2>{ -1, 0 }, std::array<int, 2>{ 0, -1 }, std::array<int, 2>{ 0, 6 }, std::array<int, 2>{ static_cast<int>(empty.segments.size()), 0 } }) {
+				action.targets = { target };
+				check(!xl_compat::runtime_blockers(empty).empty(), "open-door admitted invalid geometric coordinates");
+			}
+		}
 		chain.object_trigger_records.resize(1);
 		chain.object_triggers = 1;
 		chain.object_trigger_records[0].action.type = 31;

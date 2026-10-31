@@ -1509,3 +1509,56 @@ Final catalogs78227/42690 terminal0,99standaloneJSON/497support/314PS/427top-lev
 No live device/build/test handles. Native finalbuildpass, source/reference/native
 proofs reused. Evidence docs updated, final doc formatting and publication next.
 Publish95 above94; parent247 allCIgreen. Do not merge. Preserve unrelated files.
+
+## Published branch95, 06:06 Pacific
+
+Commit1e51f2a2d53bc05875e546cd29ffd7bc71f36625 is pushed and matches origin.
+Draft PR248 https://github.com/larsonm-personal/dxx-redux/pull/248
+base xl_more_94_mission_exits at118f28044548163739c0d26a9f2c4620a4833a4d;
+verified onecommit27files+1025/-68. Initial create attempt used nonexistent
+base name mission_flow and returned422; corrected base mission_exits succeeded.
+No publication approval block. All local validation complete; no live processes.
+CI nowstarting. Remainingwork: audit remainingoriginalPumo levels and chooseone
+boundedsource-backedchunk. No wholecampaign/humanplaythrough qualification.
+EmulatorstillhostGPU; mandatoryrestoreoriginalSwiftShaderlaunch at11:30 remains.
+Goalactive throughnoonPacific. Preserve unrelatedfiles; manifesthashunchanged.
+
+## Next bounded chunk96: wall-less object door targets, 06:09 Pacific
+
+Current branch xl_more_96_object_door_targets, base95commit1e51f2a2d53bc05875e546cd29ffd7bc71f36625.
+PR248 CI checked: Rustsuccess, other5workflowsinprogress; no failure observed.
+No live local handles. Installed APK is final95 and all owned localtests passed.
+
+Original tulev2 (level8) separately rejects15 particle objects of type1 and
+object trigger record0(type0,one-shot flag1,owner51), because oneof its targets
+909/4,910/5,907/4,911/4 lacksawall. Particle support remains aseparategate.
+Source main/trigger.cpp176 calls ToggleWall for each link; segment.cpp1013
+ToggleWall returns immediately for no wall, preserving iteration to laterlinks.
+Redux wall_toggle already returns for wall_num==-1 and validatesgeometricindices.
+Currentadmission.cpp~197 rejects allmissingwallsforobjectactions0/1/5..11.
+Proposed96scope: permit only validgeometry+wall==-1 for objectOPEN_DOOR action0,
+retain malformedindices andotheractionguards, prove mixedempty/real-target
+iteration plusone-shot lifecycle with existingobjectevent integration owner.
+No runtime semantics bypass; implement exactsource harmlessno-op onemptytarget.
+Need read trigger.cpp~160and~1184, xl_object_classic_action dispatch, existing
+object_trigger_test/fixture andinventorytest beforeedit. No implementationyet.
+Keepreads/logsbounded,30-60sprocesschecks,reuse95validation. Restoreemulator11:30,
+continuegoaluntilnoonPacific. Do notmarkgoalcomplete/paused.
+
+## Branch96 source no-op admission and native proof, 06:21 Pacific
+
+Implemented admission.cpp only: action0 validgeometry wall==-1 is a source no-op;
+otherinvalidwallindices/geometriccoordinates and actions1/5..11 stayrejected.
+Portable inventory contracts pass fourprofiles(15,17,23,15/game34), withnegative
+controls forotheractions andindices. Existingnativeobjectowner nowgenerates a
+separate edoor fixture, empty/real/empty links, livepowerupremoval, pairedopening,
+one-shotconsumption, stock->diskrestore andno-refire. Fullownerpasses7.93sec;
+existingreference2184event/56sort/720teleportcasesallpass.
+FirstnativeattemptfailedbecauseI namedfixtureemptydoor(9chars); native saves
+truncate to8. Changedtestnameedoor, noenginefix. ExistingeventsHOG hashremains
+80a7d98f01c138716f3650f388216ffca0e45ab829b263726bb77d75f2014cd6.
+Androidbuild50651 terminal0; noinstall/deviceowner needed foradmission-onlychange.
+Nativebuild57665terminal0; formatting7293terminal0. No livebuild/devicehandles.
+Finalcatalogs running. Evidence object-door-targets.md written; finaldocformat
+thencommit/pushdraft96above95. Preserveunrelatedfiles. Particle type1 remains
+blockedfororiginaltulev2; nolevel8playabilityclaim. Goalcontinuesuntilnoon.
