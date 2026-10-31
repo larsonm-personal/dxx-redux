@@ -14,6 +14,7 @@ SOURCE_ARGUMENTS = {
         "xl_object_trigger_decode_reference",
         "xl_generator_assignment_reference",
         "xl_effect_decode_reference",
+        "xl_effect_inspection_gate",
         "xl_modern_runtime_layouts",
         "xl_wall_teleports",
         "xl_wall_trigger_chains",

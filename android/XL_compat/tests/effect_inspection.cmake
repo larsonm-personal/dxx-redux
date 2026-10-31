@@ -9,23 +9,46 @@ execute_process(COMMAND "${FIXTURE}" --effect-fixtures "${OUTPUT}/fixtures" RESU
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Effect inspection fixtures failed: ${log}${error}")
 endif()
+set(particle_world_args)
+if(REFERENCE)
+    list(APPEND particle_world_args -particle-world-export "${OUTPUT}/particle-world.txt")
+endif()
+execute_process(
+    COMMAND "${ENGINE}" -effect-inspection-test "${OUTPUT}/fixtures" -hogdir "${DATA}" -extra-dir
+            "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic ${particle_world_args}
+    RESULT_VARIABLE result
+    OUTPUT_VARIABLE log
+    ERROR_VARIABLE error
+    TIMEOUT 80)
+file(WRITE "${OUTPUT}/controls.log" "${log}${error}")
+string(FIND "${log}" "XL effect inspection gate passed" witness)
+if(NOT result EQUAL 0 OR witness LESS 0)
+    message(FATAL_ERROR "Effect inspection gate failed (${result}): ${log}${error}")
+endif()
 foreach(version IN ITEMS 23 25 27)
+    string(
+        FIND "${log}"
+             "XL effect inspection version ${version}: stock/XL rejection and supported recovery passed"
+             witness)
+    if(witness LESS 0)
+        message(FATAL_ERROR "Missing effect version ${version} rejection/recovery witness")
+    endif()
+endforeach()
+if(particle_world_args)
     execute_process(
-        COMMAND
-            "${ENGINE}" -effect-inspection-test "${OUTPUT}/fixtures/e${version}r11p0.rl2" -hogdir
-            "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+        COMMAND "${REFERENCE}" --particle-world "${OUTPUT}/particle-world.txt"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE log
         ERROR_VARIABLE error
-        TIMEOUT 80)
-    file(WRITE "${OUTPUT}/controls-${version}.log" "${log}${error}")
-    string(FIND "${log}" "XL effect inspection gate passed" witness)
+        TIMEOUT 30)
+    file(WRITE "${OUTPUT}/particle-world-reference.log" "${log}${error}")
+    string(FIND "${log}" "Pinned loaded particle world:" witness)
     if(NOT result EQUAL 0 OR witness LESS 0)
         message(
-            FATAL_ERROR
-                "Version ${version} effect inspection gate failed (${result}): ${log}${error}")
+            FATAL_ERROR "Loaded particle world source comparison failed (${result}): ${log}${error}"
+        )
     endif()
-endforeach()
+endif()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL original_hash)
     message(FATAL_ERROR "Original Neptune changed during effect rejection control")

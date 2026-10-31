@@ -78,6 +78,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/../companion_lighting.cpp"
                 "${xl_runtime_dir}/companion_resources.cpp"
                 "${xl_runtime_dir}/geometry.cpp"
+                "${xl_runtime_dir}/particle_world.cpp"
                 "${xl_runtime_dir}/light_sources.cpp"
                 "${xl_runtime_dir}/visibility.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"

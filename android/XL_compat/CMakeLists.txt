@@ -685,12 +685,18 @@ if(BUILD_TESTING)
                 set_tests_properties(xl_modern_equipment_${version} xl_modern_generators_${version}
                                      PROPERTIES TIMEOUT 90)
             endforeach()
+            set(xl_particle_world_oracle_args)
+            if(TARGET xl_effect_reference)
+                list(APPEND xl_particle_world_oracle_args
+                     -DREFERENCE=$<TARGET_FILE:xl_effect_reference>)
+            endif()
             add_test(
                 NAME xl_effect_inspection_gate
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
                     -DDATA=${XL_RETAIL_DATA} -DFIXTURE=$<TARGET_FILE:xl_inventory_test>
-                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/effect-inspection -P
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/effect-inspection
+                    ${xl_particle_world_oracle_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/effect_inspection.cmake)
             set_tests_properties(xl_effect_inspection_gate PROPERTIES TIMEOUT 90)
             add_test(

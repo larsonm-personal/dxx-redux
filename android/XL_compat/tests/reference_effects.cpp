@@ -367,6 +367,8 @@ void effect_target_source_controls();
 void particle_source_controls();
 void particle_geometry_source_controls();
 void particle_fire_source_controls();
+void particle_world_source_controls();
+void compare_particle_world_receipt(const char *);
 void particle_original_geometry_controls(const xl_compat::Inventory &);
 void static_explosion_source_controls();
 void static_explosion_render_source_controls();
@@ -375,6 +377,10 @@ void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--particle-world") {
+			compare_particle_world_receipt(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--static-runtime") {
 			static_explosion_runtime_controls(argv[2]);
 			return 0;
@@ -388,6 +394,7 @@ int main(int argc, char **argv)
 		particle_source_controls();
 		particle_geometry_source_controls();
 		particle_fire_source_controls();
+		particle_world_source_controls();
 		static_explosion_source_controls();
 		static_explosion_render_source_controls();
 		int objects = 0, effects = 0, levels = 0;

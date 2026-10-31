@@ -132,3 +132,79 @@ ctest --test-dir <build> -R '^(xl_effect_decode_reference|xl_named_audio_source)
 Next: real world geometry, emitter scheduling, image/blend consumers, engine
 activation/deletion and save behavior. Admission remains unchanged until those
 consumers and platform controls pass.
+
+## Loaded world geometry checkpoint
+
+The foundation above is published in draft PR #229 at `3b7c6cbb6`. Continuing
+work is in the main checkout on `xl_more_79_particle_world`.
+
+`ParticleWorld` implements fixed side-plane containment, exhaustive lookup with
+the source segment checked first, and particle wall/portal classification. Its
+Linux and Windows source comparison executes actual `CSide::Masks`, `CSegment::Masks`,
+`PointInSeg`, `FindSegByPosExhaustive` and `CParticle::CollideWithWall`, using the
+already extracted vector functions. It passes 10,920 lookups and 5,460 collision
+cases, including the different strictness at the negative plane tolerance,
+two-face concavity, single-face sides, skybox filtering and portal transitions.
+
+The native `compile_particle_world` reuses the existing XL classic-side compiler
+and verifies that vertices and connectivity match the loaded mine. It snapshots
+the particle-specific plane anchors, concavity, radii, skybox classification and
+spatial grids without changing Redux geometry. Stale inputs with matching counts
+reject. Native checks also preserve both simulation and effects RNG call counts.
+
+The existing `xl_effect_inspection_gate` now exports raw vertices/connectivity,
+compiled fields and actual native query results for stock D2 level one and
+original Neptune. The stock control supplies loaded raw geometry because the
+XL inspector deliberately excludes stock version 6; it does not supply Redux's
+computed normals, centers or radii to the source compiler. The source adapter
+executes pinned `SetupCorners`, `SetupAsTriangles`, `SetupVertexList`,
+`SetupFaceVertIndex`, `Height`, `IsPlanar`, `Dist`, `ComputeCenter`, `ComputeRads`,
+normal ordering and the actual integer normal math. Unconsumed float lighting
+normals and per-side render bounds are storage adapters, not rendering evidence.
+
+Windows/x86 native execution and Windows/x64 and Linux source comparisons pass
+321 compiled segments and 6,099 native lookup/collision queries. Changing one
+exported fixed normal caused the independent comparison to fail at the changed
+segment and side. These loaded-world results cover stock and Neptune, not a
+loaded original Pumo level. The original Pumo face/particle inventory comparison
+still passes for all fourteen levels; it does not establish gameplay support.
+
+The grid comparison additionally executes pinned `CSegmentGrid::Create` and
+`GetSegList` from `main/gamedata.cpp` (SHA-256
+`782acd85fae6fa5fbb0162a9f05474ae449063d70bf566d172c9d47ae4ed1a12`). It checks
+40-unit ordinary and 80-unit skybox grids, fixed division followed by flooring,
+flattened-index boundary behavior, and every candidate list in the loaded
+receipts. Production stores occupied cells sparsely but preserves source
+candidate ordering. Supplied-geometry cases exercise both grid and no-grid
+branches. Particle frame performance and memory use in Pumo remain unmeasured.
+
+Reproduce the native/source integration through the existing CTest owner:
+
+```sh
+ctest --test-dir <private-build> -R '^xl_effect_inspection_gate$' --output-on-failure
+<reference-build>/xl_effect_reference --particle-world <private-build>/effect-inspection/particle-world.txt
+```
+
+The private build must configure `XL_NEPTUNE_HOG`, `XL_NEPTUNE_DESCRIPTOR`,
+`XL_RETAIL_DATA`, `XL_PREVIEW_LIFECYCLE` and `XL_REFERENCE_GEOMETRY_ROOT`.
+The required originals runner now requires the effect source oracle argument;
+omitting the oracle cannot silently count as passing that required owner.
+
+### Effect gate setup cost
+
+The owner previously started three native processes, one for each format
+23/25/27. It now initializes the engine once while retaining all six stock/XL
+rejection checks, six successful initial loads, three supported recovery loads,
+and explicit per-version witnesses. The new geometry receipt runs once.
+There is no new CTest owner or workflow.
+
+Three sequential local Windows measurements before/after consolidation, at the
+same pre-grid geometry stage, were 6.826/6.310/6.361 seconds and
+5.603/5.104/5.717 seconds. Median setup consolidation saved 0.758 seconds, about
+12 percent for this owner. This is a local measurement, not a claim about total
+CI duration. The later grid comparisons add coverage and have separate cost.
+
+Emitter scheduling, image resources, rendering, activation/deletion and
+save/load still need implementation and integration checks. No runtime particle
+admission or drawing is enabled by this checkpoint. All production changes in
+this layer remain inside `android/XL_compat`.
