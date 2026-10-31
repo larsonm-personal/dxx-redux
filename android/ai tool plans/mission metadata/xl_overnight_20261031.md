@@ -139,3 +139,76 @@ for untextured colored faces. LoadFaceBitmaps returns for negative nBaseTex or
 not enough to settle drawing behavior. Next inspect its untextured draw setup
 and existing fog compositing to determine the precise missing consumer. Do not
 add a speculative tint or silently omit an authored boundary.
+
+## Corona publication and next bounded chunk
+
+Branch 89 published at a948fb156406b4920fbacf8ae63e88f14bf3f937 as draft PR
+https://github.com/larsonm-personal/dxx-redux/pull/242 above open PR 241. No merges.
+Branch 90, xl_more_90_skybox_lifecycle, starts at that tip. Next establish complete
+weapon entry through actual physics and loaded skybox save/resource lifetime,
+reusing existing controls. Colored-boundary draw behavior remains an explicit
+unresolved admission gate; do not infer colors from mesh inclusion flags.
+
+Source follow-up: ogl_fastrender.cpp SetRenderStates uses cached bmBot and may
+skip SetupTMU for a null bitmap when history is null. SetupTMU itself calls
+pBm->Bind; CBitmap::Bind is not a null-safe no-op. InitFace zeroes the structure,
+InitColoredFace sets nBaseTex=-1/bTransparent=1/bSegColor, and InitTexturedFace
+later overrides texture/transparent fields when a wall exists. BeginRenderFaces
+resets bitmap history. Therefore colored-only drawing needs a source state/order
+control, not a simple assumed constant tint. Preserve this finding for the
+remaining boundary chunk while progressing independently testable lifetime work.
+
+## Branch 90 full-entry control in progress
+
+New skybox_collision_test.h control drives do_physics_sim from ordinary segment
+1 toward skybox 15 after native FVI selects the intervening wall. Scoped format,
+native build and existing native integration owner pass; log controls.log has
+XL skybox full entry. Current assertions establish destination segment and retained
+lifetime only. Do not call the gate complete yet: next compare post-entry position
+and source ProcessOffset/FixPosition behavior. Native physics assigns hit_pnt
+and can return early after find_object_seg without relinking; merely observing
+shot.segnum is insufficient. Pinned new physics likewise preserves wall hit vPoint
+before ProcessOffset, so inspect that consumer before changing position semantics.
+No Android build/run for this latest test yet. All local handles terminal.
+
+## Enclosing skybox entry checkpoint
+
+Replaced the weak distant-cell fixture with a temporary enclosing cell using
+eight isolated vertices, preserving/restoring native segment data, vertex slots,
+Num_vertices and Highest_vertex_index. Source ProcessOffset preserves the wall
+hit point; FindSegment does not relink on success. The new native control proves
+actual entry 1 -> 2, exact wall-hit position, geometric containment, retained
+lifetime, and continued movement inside the skybox on a second physics frame.
+The full native integration owner passes. Initial fixture rejection exposed a
+missing Highest_vertex_index update; corrected before this passing run.
+
+Scoped formatting and native build passed. Android build is live session 78362,
+log entry-android-build.log. After terminal success install and run the existing
+protected secret owner, console log android-full-entry.log. Do not rerun source
+or catalog checks for this runtime-test-only change. No production physics code
+changed. Original authored skybox save/resource lifetime remains a separate gate.
+
+Final enclosing-entry Android build and owner passed: 31/31 in 54.820 seconds,
+log android-full-entry.log. Full entry 1 -> 2 receipt present, including exact
+hit position, containment and second-frame movement assertions. All 28 protected
+hashes match. All process handles terminal. This validates derived geometry;
+next qualify original authored skybox resource/save lifetime, without bypassing
+normal admission. Branch 90 is not yet committed or pushed.
+
+## Original authored topology audit, 00:22 Pacific
+
+Bounded projection of pumo-admission-audit.json identifies all skybox levels:
+pm-hub 295 (properties 0 and 60), tulev2 one (0), pmlev1 one (4),
+pmlev2 one (0), pmlev3 one (4). Only the hub has differing fog-type boundaries:
+all six are segment 154, function 10, properties 60. Each side has child=-1 and
+wall=-1, with textures 19,31,29,33,15,30. Therefore these six faces take the source
+InitTexturedFace path after InitColoredFace; their colored-only flags are
+superseded. Do not treat unknown colored-only drawing as proof this actual hub
+uses that path. Conversely do not treat this audit as qualifying outdoors/fog.
+
+Next authored-lifetime control can use a clearly labelled derived copy retaining
+original skybox geometry/textures while isolating unsupported smoke/properties,
+then test actual resource/save restoration. It must preserve original package
+bytes and normal hub rejection, and must not claim original hub qualification.
+The final original hub still needs smoke and segment-154 property behavior.
+Source-only colored-boundary support remains a separate general feature gap.
