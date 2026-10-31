@@ -9,7 +9,7 @@ namespace xl_compat
 struct AudioResource {
 	std::string path, bytes;
 };
-// Resolve only the selected HOG and its owned mission/level sound folders
+// Selected HOG, owned mission/level folders, then owned startup addon sounds
 AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal);
 // Classic replacements use bank suppression and CFile folder/HOG fallback, without aliases
 struct ClassicAudioScope {
