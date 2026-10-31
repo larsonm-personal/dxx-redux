@@ -58,7 +58,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 43)
+        self.assertEqual(len(public.PUBLIC_TESTS), 44)
         self.assertEqual(public.GPU_TESTS, {"xl_fog_gpu", "xl_pog_gpu"})
         self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
         with tempfile.TemporaryDirectory() as temporary:
@@ -160,7 +160,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 106)
+        self.assertEqual(len(runner.FAST_TESTS), 107)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -189,7 +189,7 @@ class XlPrivateTests(unittest.TestCase):
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
             receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 106)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 107)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
