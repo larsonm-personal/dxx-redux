@@ -66,9 +66,8 @@ void ParticleTexture::discard_context(bool abandoned)
 #endif
 	for (auto *texture = State::head; texture; texture = texture->next) texture->release(abandoned);
 }
-void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
+unsigned ParticleTexture::handle()
 {
-	if (!count) return;
 	if (!state->bitmap.gltexture || !state->bitmap.gltexture->handle) {
 		GLint active, binding;
 		glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
@@ -79,6 +78,13 @@ void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
 		glActiveTexture(active);
 		if (error) throw std::runtime_error(error);
 	}
+	return state->bitmap.gltexture->handle;
+}
+
+void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
+{
+	if (!count) return;
+	(void) handle();
 #if !defined(OGLES) || defined(ANDROID)
 	if (particle_soft.active) draw_soft_particles(state->bitmap, quads, count);
 	else

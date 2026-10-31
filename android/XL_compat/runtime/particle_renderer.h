@@ -25,6 +25,7 @@ class ParticleTexture
 	ParticleTexture(const PogBitmap &pixels, const char *name);
 	~ParticleTexture();
 	void draw(const ParticleQuad *quads, std::size_t count);
+	unsigned handle();
 	static void discard_context(bool abandoned);
 
   private:

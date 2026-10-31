@@ -10,6 +10,7 @@ extern "C" {
 #include "game.h"
 #include "rng_shared.h"
 #include "dxxerror.h"
+#include "../../../d2/3d/globvars.h"
 }
 #undef min
 #undef max
@@ -21,6 +22,7 @@ struct Entry {
 	int signature;
 	bool alive = true;
 	std::optional<xl_compat::LightningEmitter> emitter;
+	std::vector<std::optional<xl_compat::LightningRenderFrame>> render_frames;
 };
 std::map<int, Entry> entries;
 int clock_time = 0, last_tick = 0, tick_time = 0;
@@ -107,6 +109,14 @@ const xl_compat::LightningEmitter *xl_compat::lightning_object_emitter(int index
 	return found != entries.end() && bound(index, found->second) && found->second.emitter ? &*found->second.emitter : nullptr;
 }
 
+const xl_compat::LightningRenderFrame *xl_compat::lightning_object_render_frame(int index, unsigned bolt)
+{
+	const auto found = entries.find(index);
+	if (found == entries.end() || !bound(index, found->second) || bolt >= found->second.render_frames.size()) return nullptr;
+	const auto &frame = found->second.render_frames[bolt];
+	return frame ? &*frame : nullptr;
+}
+
 void xl_compat::lightning_objects_frame()
 {
 	if (!xl_level_extensions_active() || game_is_time_paused()) return;
@@ -118,9 +128,22 @@ void xl_compat::lightning_objects_frame()
 		if (!bound(index, entry)) {
 			entry.alive = false;
 			entry.emitter.reset();
+			entry.render_frames.clear();
 			continue;
 		}
-		if (entry.emitter && lightning_emitter_frame(*entry.emitter, clock_time, tick_time, random)) {
+		const auto render_setup = [&](const LightningBolt &bolt) {
+			const LightningVertex eye{ float(View_position.x) / 65536.0f, float(View_position.y) / 65536.0f, float(View_position.z) / 65536.0f };
+			const LightningVertex forward{ float(View_matrix.fvec.x) / 65536.0f, float(View_matrix.fvec.y) / 65536.0f, float(View_matrix.fvec.z) / 65536.0f };
+			LightningRenderFrame frame{};
+			frame.core = lightning_core_geometry(bolt.draw_positions, [&](const LightningVertex &vertex) {
+				return (vertex[0] - eye[0]) * forward[0] + (vertex[1] - eye[1]) * forward[1] + (vertex[2] - eye[2]) * forward[2];
+			});
+			// Both the pinned XL default and Redux perspective use zFar=5000
+			if (bolt.definition.glow)
+				frame.glow = lightning_glow_geometry(bolt.draw_positions, bolt.lifetime.random_nodes, bolt.definition.width, bolt.definition.glow > 0, eye, frame.core.average_depth, 4999.0f);
+			entry.render_frames[std::size_t(&bolt - entry.emitter->bolts.data())] = std::move(frame);
+		};
+		if (entry.emitter && lightning_emitter_frame(*entry.emitter, clock_time, tick_time, random, render_setup)) {
 			const auto &object = Objects[index];
 			lightning_emitter_move(*entry.emitter, { object.pos.x, object.pos.y, object.pos.z }, object.segnum);
 		}
@@ -129,6 +152,7 @@ void xl_compat::lightning_objects_frame()
 		if (!bound(index, entry) || entry.emitter) continue;
 		const auto &object = Objects[index];
 		entry.emitter = create_lightning_emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, random, object.segnum);
+		entry.render_frames.resize(entry.emitter->bolts.size());
 	}
 }
 
@@ -164,6 +188,7 @@ bool xl_compat::restore_lightning_objects(const nlohmann::json &state, bool appl
 			entry.definition.enabled = row[2].get<bool>();
 			entry.alive = row[3].get<bool>();
 			entry.emitter.reset();
+			entry.render_frames.clear();
 			const bool native = native_lightning(index) && Objects[index].signature == entry.signature;
 			if (entry.alive ? !native : native_lightning(index)) return false;
 		}

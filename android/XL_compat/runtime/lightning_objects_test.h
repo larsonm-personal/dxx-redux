@@ -67,15 +67,23 @@ static void lightning_objects_native_case(bool active)
 	lightning_objects_frame();
 	require(lightning_object_emitter(1) && lightning_object_emitter(2) && !lightning_object_emitter(2)->enabled, "Source creates disabled lightning systems too");
 	require(lightning_object_emitter(1)->updated == -1 && lightning_object_emitter(1)->bolts[0].draw_positions.empty(), "New lightning owner animated in its creation frame");
+	require(!lightning_object_render_frame(1, 0) && !lightning_object_render_frame(2, 0), "New lightning owner created render geometry before animation");
 	const int disabled_ttl = lightning_object_emitter(2)->bolts[0].lifetime.ttl;
 	lightning_objects_clock(1000007);
 	lightning_objects_frame();
 	require(lightning_object_emitter(1)->updated == 1000007 && !lightning_object_emitter(1)->bolts[0].draw_positions.empty(), "Absolute-clock first lightning update was delayed by a relative epoch");
 	require(lightning_object_emitter(2)->bolts[0].lifetime.ttl == disabled_ttl, "Disabled lightning animated");
+	require(lightning_object_render_frame(1, 0) && !lightning_object_render_frame(2, 0), "Render geometry ignored source activation ordering");
 	Objects[1].pos.x += 1000;
 	lightning_objects_clock(1000033);
 	lightning_objects_frame();
 	const auto *emitter = lightning_object_emitter(1);
+	const auto *frame = lightning_object_render_frame(1, 0);
+	require(frame && frame->core.vertices.size() == emitter->bolts[0].draw_positions.size() + 4 && !frame->glow.vertices.empty(), "Lightning did not retain complete render geometry");
+	for (unsigned node = 0; node < emitter->bolts[0].draw_positions.size(); ++node)
+		for (unsigned axis = 0; axis < 3; ++axis)
+			require(frame->core.vertices[node][axis] == float(emitter->bolts[0].draw_positions[node][axis]) / 65536.0f, "Lightning core was rebuilt from moved nodes instead of staged draw coordinates");
+	const auto frozen_core = frame->core.vertices, frozen_glow = frame->glow.vertices;
 	if (emitter->bolts[0].lifetime.nodes > 0)
 		require(emitter->bolts[0].position == LightningPoint{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z }, "Lightning did not follow its native owner");
 	const auto before_validation = d_rand_get_stream_call_count(D_RNG_FX);
@@ -85,6 +93,7 @@ static void lightning_objects_native_case(bool active)
 	lightning_objects_frame();
 	start_time();
 	require(emitter->updated == before_pause && d_rand_get_stream_call_count(D_RNG_FX) == before_validation, "Paused lightning advanced or consumed RNG");
+	require(lightning_object_render_frame(1, 0)->core.vertices == frozen_core && lightning_object_render_frame(1, 0)->glow.vertices == frozen_glow, "Paused lightning replaced its render snapshot");
 	for (int variant = 0; variant < 7; ++variant) {
 		auto state = saved;
 		if (variant == 0) state[0][0] = 2;
@@ -98,6 +107,7 @@ static void lightning_objects_native_case(bool active)
 	}
 	require(xl_lightning_object_set_enabled(1, 0) && xl_lightning_object_set_enabled(2, 1), "Lightning activation failed");
 	require(restore_lightning_objects(saved, true) && lightning_objects_snapshot() == saved && !lightning_object_emitter(1), "Lightning restore retained transient bolts or lost activation");
+	require(!lightning_object_render_frame(1, 0), "Lightning restore retained stale camera geometry");
 	require(d_rand_get_stream_call_count(D_RNG_FX) == before_validation, "Lightning restore consumed effects RNG");
 	Triggers[0] = {};
 	Triggers[0].type = 32;

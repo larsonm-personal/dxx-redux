@@ -171,3 +171,43 @@ The compositor consumes caller-supplied projected bounds and a validated depth
 snapshot. Native ownership of those inputs, queue flush boundaries, original
 corona artwork, Android rendering/context behavior, light and audio remain
 pending. This component evidence does not qualify the original level 9 mission.
+
+## Native corona ownership and frame snapshots
+
+Prepared level resources now retain the original lightning corona through the
+existing addon image/texture owner. Lookup checks the selected mission's mod
+path first, then its default image or trusted startup installation. Missing,
+malformed and foreign-shadowed images fail preparation. Corona images do not
+inherit particle-atlas layout restrictions. The texture exposes its existing
+lazy upload handle, sharing the established context-loss and decoded-pixel
+lifetime instead of creating another image registry.
+
+The existing resource lifecycle controls now run the same ownership, precedence,
+case-insensitive lookup, rejection and retained-storage scenarios for corona.
+The original `corona.tga` from the local XL distribution was also passed to the
+existing pinned CTGA oracle: all 262,144 RGBA bytes of its 256-by-256 image match.
+The original file remains private and is not committed; its SHA256 is
+`aaf4a8ca34879ef0ab79fdbca295ee2a426755aa97be05bf538900e77ed81f57`.
+
+Native emitter updates now capture owned core/glow geometry at the source
+RenderSetup boundary: after each active bolt animates, before any lifetime
+transition or movement. Camera-dependent billboards and average depth therefore
+remain snapshots instead of being recomputed during queued drawing. Creation,
+disabled intervals, pause, deletion and restore follow the existing owner
+lifetime; restore discards camera geometry along with transient bolts.
+The render-setup callback leaves the existing source simulation comparisons
+unchanged. The depth range is 4,999: pinned XL initializes zFar to 5,000 in
+`ogl_lib.cpp`, matching Redux's current fixed perspective far plane.
+
+This chunk prepares the resources and frame data for queue integration. It does
+not yet draw native lightning, qualify Android core lines or implement light and
+sound. The normal level-nine admission gate remains unchanged.
+
+Validation for the resource/snapshot chunk: final Windows and Linux source
+comparisons pass, including all existing simulation and geometry cases. The
+native lifecycle owner passes its new snapshot assertions and all four addon
+resource profiles. The desktop EGL owner passes after the texture-handle
+extraction, including real context recreation. Both automation catalogs and
+scoped formatting passed. The previously qualified original route through level
+8 is reused; these checks do not constitute a level-nine Android playthrough.
+The Android x86_64 debug APK also builds successfully; it is not yet a lightning rendering qualification.

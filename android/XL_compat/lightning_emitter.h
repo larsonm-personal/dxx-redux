@@ -31,8 +31,8 @@ inline void lightning_emitter_move(LightningEmitter &emitter, const LightningPoi
 	for (auto &bolt : emitter.bolts) lightning_bolt_move(bolt, position, segment);
 }
 
-template <class Random>
-bool lightning_emitter_frame(LightningEmitter &emitter, int time, int tick_time, Random &random)
+template <class Random, class RenderSetup>
+bool lightning_emitter_frame(LightningEmitter &emitter, int time, int tick_time, Random &random, RenderSetup render_setup)
 {
 	if (time < 0 || time < emitter.updated || tick_time < 0)
 		throw std::runtime_error("XL lightning emitter received an invalid clock");
@@ -40,11 +40,19 @@ bool lightning_emitter_frame(LightningEmitter &emitter, int time, int tick_time,
 	emitter.updated = time;
 	// Source animates every bolt before evaluating any lifetime transition
 	if (emitter.enabled)
-		for (auto &bolt : emitter.bolts) lightning_bolt_animate(bolt, tick_time, random);
+		for (auto &bolt : emitter.bolts) {
+			lightning_bolt_animate(bolt, tick_time, random);
+			if (bolt.lifetime.nodes > 0) render_setup(bolt);
+		}
 	for (auto &bolt : emitter.bolts)
 		if (!lightning_bolt_set_life(bolt, random))
 			throw std::runtime_error("Authored persistent lightning unexpectedly expired");
 	return true;
+}
+template <class Random>
+bool lightning_emitter_frame(LightningEmitter &emitter, int time, int tick_time, Random &random)
+{
+	return lightning_emitter_frame(emitter, time, tick_time, random, [](const LightningBolt &) {});
 }
 } // namespace xl_compat
 #ifdef _MSC_VER

@@ -2,19 +2,26 @@
 #include "resource_validation.h"
 #include "../scoped_texture.h"
 
-static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype, bool spray = false)
+static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype, bool spray = false, bool lightning = false)
 {
 	using namespace xl_compat;
+	const auto prepare = [&](const Inventory &level) { return lightning ? prepare_lightning_image(level) : prepare_particle_image(level, subtype); };
 	require(xl_level_extensions_active(), "Particle image controls require a loaded XL mission");
-	const char *name = subtype == 3 ? "smokingfire" : "smoke";
-	const char *missing = subtype == 3 ? "Missing XL fire image" : "Missing XL smoke image";
-	const unsigned extent = subtype == 3 ? 8 : 32;
+	const char *name = lightning ? "corona" : subtype == 3 ? "smokingfire"
+	                                                       : "smoke";
+	const char *missing = lightning ? "Missing XL lightning corona image" : subtype == 3 ? "Missing XL fire image"
+	                                                                                     : "Missing XL smoke image";
+	const unsigned extent = lightning || subtype == 3 ? 8 : 32;
 	Inventory level;
-	require(!prepare_particle_image(level, subtype), "Level without particles requested an addon image");
+	require(!prepare(level), "Level without particles requested an addon image");
 	Object object{};
 	object.render = 11;
 	object.render_data.resize(13);
 	object.render_data[11] = spray ? 1 : subtype;
+	if (lightning) {
+		object.render = 12;
+		object.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
+	}
 	level.objects.push_back(object);
 	const auto mod = addon_mission_texture_path(mission_resource_archive(), name);
 	require(!mod.empty(), "Particle image fixture has no selected HOG path");
@@ -30,7 +37,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	std::filesystem::remove(global_path);
 	const auto failure = [&](const char *reason) {
 		try {
-			(void) prepare_particle_image(level, subtype);
+			(void) prepare(level);
 		} catch (const std::exception &error) {
 			require(std::strstr(error.what(), reason), "Particle image rejection lost its useful reason");
 			return;
@@ -51,13 +58,13 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		return bytes;
 	};
 	write_bytes(global_path.string().c_str(), image(23));
-	const auto fallback = prepare_particle_image(level, subtype);
+	const auto fallback = prepare(level);
 	require(fallback && fallback->path == global && fallback->bitmap.pixels[0] == 23 && fallback->bitmap.pixels[3] == 255, "Owned default particle image was not decoded");
 	write_bytes(mod_path.string().c_str(), image(47));
-	const auto selected = prepare_particle_image(level, subtype);
+	const auto selected = prepare(level);
 	require(selected && selected->path == mod && selected->bitmap.pixels[0] == 47, "Mission particle image did not take precedence over the default");
 	require(!prepare_particle_image(level, subtype == 3 ? 0 : 3), "Particle image request selected the other authored subtype");
-	if (subtype == 0) {
+	if (!lightning && subtype == 0) {
 		Inventory mixed = level;
 		auto fire = object;
 		fire.render_data[11] = 3;
@@ -91,23 +98,24 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		throw;
 	}
 	require(PHYSFS_removeFromSearchPath(foreign_name.c_str()), "Cannot unmount particle image shadow control");
-	require(prepare_particle_image(level, subtype)->bitmap.pixels[0] == 23, "Particle default image shadow rejection prevented recovery");
+	require(prepare(level)->bitmap.pixels[0] == 23, "Particle default image shadow rejection prevented recovery");
 	write_bytes(mod_path.string().c_str(), image(47));
-	const auto mixed_case = mod_path.parent_path() / (subtype == 3 ? "SmokingFire.TGA" : "Smoke.TGA");
+	const auto mixed_case = mod_path.parent_path() / (lightning ? "Corona.TGA" : subtype == 3 ? "SmokingFire.TGA"
+	                                                                                          : "Smoke.TGA");
 	std::filesystem::rename(mod_path, mixed_case);
-	require(prepare_particle_image(level, subtype)->bitmap.pixels[0] == 47, "Particle addon lookup lost source case-insensitive behavior");
+	require(prepare(level)->bitmap.pixels[0] == 47, "Particle addon lookup lost source case-insensitive behavior");
 	std::filesystem::remove(mixed_case);
 	std::filesystem::remove(global_path);
 	failure(missing);
 	write_bytes(installation_path.string().c_str(), image(61));
 	const char *installation_origin = PHYSFS_getRealDir(global.c_str());
 	require(installation_origin && xl_resource_owns_installation(installation_origin) && !mission_owns_resource_directory(installation_origin), "Particle fallback did not use a distinct trusted startup installation");
-	const auto installed = prepare_particle_image(level, subtype);
+	const auto installed = prepare(level);
 	require(installed && installed->path == global && installed->bitmap.pixels[0] == 61, "Startup installation particle image was not decoded");
 	write_bytes(global_path.string().c_str(), image(23));
-	require(prepare_particle_image(level, subtype)->bitmap.pixels[0] == 23, "Mission-owned default did not override startup installation image");
+	require(prepare(level)->bitmap.pixels[0] == 23, "Mission-owned default did not override startup installation image");
 	write_bytes(mod_path.string().c_str(), image(47));
-	require(prepare_particle_image(level, subtype)->bitmap.pixels[0] == 47, "Mission mod did not override startup installation image");
+	require(prepare(level)->bitmap.pixels[0] == 47, "Mission mod did not override startup installation image");
 	write_bytes(mod_path.string().c_str(), { 0, 1, 2 });
 	failure("truncated");
 	std::filesystem::remove(mod_path);
@@ -120,7 +128,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		throw;
 	}
 	require(PHYSFS_removeFromSearchPath(foreign_name.c_str()), "Cannot unmount installation image shadow control");
-	require(prepare_particle_image(level, subtype)->bitmap.pixels[0] == 61, "Installation shadow rejection prevented recovery");
+	require(prepare(level)->bitmap.pixels[0] == 61, "Installation shadow rejection prevented recovery");
 	write_bytes(installation_path.string().c_str(), { 0, 1, 2 });
 	failure("truncated");
 	std::filesystem::remove(installation_path);
@@ -136,4 +144,5 @@ static void particle_resource_native_case(const std::filesystem::path &root, con
 	particle_resource_profile(root, installation, 3);
 	particle_resource_profile(root, installation, 0);
 	particle_resource_profile(root, installation, 0, true);
+	particle_resource_profile(root, installation, 3, false, true);
 }
