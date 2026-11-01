@@ -13,6 +13,7 @@ param(
     [switch]$OriginalHub,
     [switch]$LightningGpu,
     [string]$CoronaImage = '',
+    [string]$GlareImage = '',
     [switch]$MissionFlow,
     [switch]$CampaignEnd,
     [switch]$RevisitFixture,
@@ -24,8 +25,9 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
-if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage)) { throw 'LightningGpu requires OriginalHub, original CoronaImage and its own mode' }
+if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage -or !$GlareImage)) { throw 'LightningGpu requires OriginalHub, original CoronaImage/GlareImage and its own mode' }
 if ($LightningGpu -and (Get-FileHash -LiteralPath $CoronaImage -Algorithm SHA256).Hash -ne 'aaf4a8ca34879ef0ab79fdbca295ee2a426755aa97be05bf538900e77ed81f57') { throw 'Requires the original XL corona image' }
+if ($LightningGpu -and (Get-FileHash -LiteralPath $GlareImage -Algorithm SHA256).Hash -ne '25bb9c5b4679ab8b26d37e05f536fc98a74f8f451b8057a00364847a487bc123') { throw 'Requires the original XL glare image' }
 if ($FlyoutFixture -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or !$D1Pig)) { throw 'FlyoutFixture requires OriginalHub, retail D1Pig and its own mode' }
 if ($FlyoutFixture -and (Get-FileHash -LiteralPath $D1Pig -Algorithm SHA256).Hash -ne '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe') { throw 'Flyout fixture requires the retail D1 exit-model PIG' }
 if ($RevisitFixture -and ($OriginalHub -or $SceneOnly -or $SecretFixture -or $SkyboxFixture -or $SmokeFixture -or $PumoMods)) { throw 'RevisitFixture requires its own derived mode' }
@@ -175,6 +177,8 @@ try {
     if ($LightningGpu) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $CoronaImage).Path, '/data/local/tmp/xl-pog-corona.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-corona.tga files/d2x-redux/mods/$mission/textures/d2x-xl/corona.tga" | Out-Null
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $GlareImage).Path, '/data/local/tmp/xl-pog-glare.tga') | Out-Null
+        Invoke-PogPrivate "cp /data/local/tmp/xl-pog-glare.tga files/d2x-redux/mods/$mission/textures/d2x-xl/glare.tga" | Out-Null
     }
     $scriptName = if ($PumoMods) { 'test_xl_pumo_particles.jsonc' } else { 'test_xl_pog_runtime.jsonc' }
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
@@ -225,7 +229,7 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($LightningGpu) { Write-Host "PASS: Original corona, native lightning GPU and context recreation ($($result.total_steps) steps); renderer control only" }
+    if ($LightningGpu) { Write-Host "PASS: Original corona/glare, mixed lightning/sprite GPU and context recreation ($($result.total_steps) steps); renderer control only" }
     elseif ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
     elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
@@ -249,7 +253,7 @@ try {
             if (Compare-Object $before $after) { throw "POG test state restoration differs; backup retained at $backup" }
             Invoke-PogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
             if ($FlyoutFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-d1.pig') | Out-Null }
-            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
+            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
         }
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }

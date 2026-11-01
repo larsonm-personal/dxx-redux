@@ -19,7 +19,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 	item.random_nodes = 1;
 	item.width = .7f;
 	item.color = { .1f, .3f, .5f, .5f };
-	const auto draw = [&](bool direct = false) {
+	const auto draw = [&](bool direct = false, bool sprite = false) {
 		GLuint target, color, scene_depth;
 		glGenFramebuffers(1, &target);
 		glGenTextures(1, &color);
@@ -51,7 +51,28 @@ static void lightning_scene_context_controls(Recreate recreate)
 			rendered.width = 3;
 		}
 		draw_lightning_scene_item(rendered, *image.texture);
+		std::array<unsigned char, 64 * 64 * 4> sprite_scene{};
+		if (sprite) {
+			ParticleQuad quad{};
+			quad.blend = ParticleBlend::additive;
+			const std::array<std::array<float, 2>, 4> corners{ { { -1, 1 }, { 1, 1 }, { 1, -1 }, { -1, -1 } } };
+			for (unsigned i = 0; i < 4; ++i) {
+				quad.vertices[i].position = { corners[i][0] * .6f, corners[i][1] * .4f, -2.5f };
+				quad.vertices[i].uv = { (corners[i][0] + 1) * .5f, (1 - corners[i][1]) * .5f };
+				quad.vertices[i].color = { .2f, .15f, .3f, .5f };
+			}
+			xl_particle_soft_begin_scene();
+			image.texture->draw_soft_sprite(quad);
+			xl_particle_soft_end_scene();
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, sprite_scene.data());
+			check(std::any_of(sprite_scene.begin(), sprite_scene.end(), [](unsigned char value) { return value != 0; }), "Negative corona failed to draw directly into the scene");
+		}
 		draw_lightning_scene_item(rendered, *image.texture);
+		if (sprite) {
+			std::array<unsigned char, 64 * 64 * 4> pending{};
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pending.data());
+			check(pending == sprite_scene, "Interleaved negative corona prematurely flushed the lightning batch");
+		}
 		std::array<unsigned char, 64 * 64 * 4> immediate{};
 		if (direct) glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
 		finish_lightning_batch();
@@ -63,6 +84,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 		std::array<unsigned char, 64 * 64 * 4> pixels;
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 		if (direct) check(immediate == pixels, "Zero-scale native lightning deferred its direct core into a glow batch");
+		if (sprite) check(sprite_scene != pixels, "Retained lightning did not composite over the intervening corona");
 		unsigned changed = 0;
 		for (unsigned p = 0; p < 64 * 64; ++p) changed += pixels[p * 4 + 2] != 0;
 		check(changed > 0 && changed < 64 * 64, "Native lightning did not draw bounded visible glow");
@@ -79,17 +101,22 @@ static void lightning_scene_context_controls(Recreate recreate)
 	};
 	const auto expected = draw();
 	const auto direct_expected = draw(true);
+	const auto sprite_expected = draw(false, true);
+	check(sprite_expected != expected, "Mixed corona/lightning scene did not distinguish the corona");
 	check(direct_expected != expected, "Zero-scale native lightning did not distinguish core-only drawing");
 	recreate();
 	check(draw() == expected, "Native lightning pixels changed across real context recreation");
 	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed across real context recreation");
+	check(draw(false, true) == sprite_expected, "Mixed corona/lightning pixels changed across real context recreation");
 	discard_lightning_context(false);
 	check(draw() == expected, "Native lightning pixels changed after explicit GPU resource release");
 	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed after explicit GPU resource release");
+	check(draw(false, true) == sprite_expected, "Mixed corona/lightning pixels changed after explicit GPU resource release");
 	discard_lightning_context(false);
 	const auto border = image.texture->border_handle();
 	image.texture.reset();
 	check(!glIsTexture(border), "Corona destruction retained its padded mip texture");
 	grd_curscreen = nullptr;
 	std::cout << "Native lightning scene: original camera path, offset canvas, draw RNG, depth preservation and real context recreation passed\n";
+	std::cout << "Native mixed sprite/lightning: direct scene corona, retained batch and composited pixels across context recreation passed\n";
 }

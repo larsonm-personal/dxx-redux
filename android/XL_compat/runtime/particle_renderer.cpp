@@ -21,17 +21,18 @@ void ogl_bindbmtex(grs_bitmap *);
 
 namespace xl_compat
 {
+static void draw_particle_texture(GLuint image, const ParticleQuad *quads, std::size_t count);
 struct ParticleTexture::State {
 	static State *head;
 	State *previous = nullptr, *next = nullptr;
 	grs_bitmap bitmap{};
 	GLuint border = 0;
 	std::string name;
-	State(const PogBitmap &pixels, const char *label) : name(label)
+	State(const PogBitmap &pixels, const char *label, bool require_soft_depth) : name(label)
 	{
 		if (const char *error = ogl_xl_rgba_prepare(int(pixels.width), int(pixels.height))) throw std::runtime_error(error);
 #if !defined(OGLES) || defined(ANDROID)
-		if (gl_initialized) {
+		if (gl_initialized && require_soft_depth) {
 			prepare_particle_soft();
 			verify_particle_soft_depth();
 		}
@@ -62,7 +63,7 @@ struct ParticleTexture::State {
 	}
 };
 ParticleTexture::State *ParticleTexture::State::head = nullptr;
-ParticleTexture::ParticleTexture(const PogBitmap &pixels, const char *name) : state(std::make_unique<State>(pixels, name)) {}
+ParticleTexture::ParticleTexture(const PogBitmap &pixels, const char *name, bool require_soft_depth) : state(std::make_unique<State>(pixels, name, require_soft_depth)) {}
 ParticleTexture::~ParticleTexture() = default;
 void ParticleTexture::discard_context(bool abandoned)
 {
@@ -103,13 +104,60 @@ void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
 	if (!count) return;
 	(void) handle();
 #if !defined(OGLES) || defined(ANDROID)
-	if (particle_soft.active) draw_soft_particles(state->bitmap, quads, count);
+	if (particle_soft.active) draw_soft_particles(state->bitmap.gltexture->handle, quads, count);
 	else
 #endif
 		draw_particle_quads(state->bitmap, quads, count);
 }
 
+void ParticleTexture::draw_soft_sprite(const ParticleQuad &quad, bool soft)
+{
+#if defined(OGLES) && !defined(ANDROID)
+	throw std::runtime_error("XL soft sprites require OpenGL 3 or OpenGL ES 3");
+#else
+	if (quad.blend != ParticleBlend::additive) throw std::runtime_error("XL powerup corona requires additive blending");
+	ParticleSoftRestore restore;
+	auto mapped = quad;
+	for (auto &vertex : mapped.vertices)
+		for (float &coordinate : vertex.uv) coordinate = coordinate * .25f + .25f;
+	const auto image = border_handle();
+	if (soft) {
+		// Source LoadShader can fail independently of loading the optional glare
+		// Only preparation falls back; failures during a draw are not retried
+		try {
+			prepare_particle_soft();
+			verify_particle_soft_depth();
+			if (!particle_soft.captured) {
+				particle_soft.depth.capture();
+				particle_soft.captured = true;
+			}
+		} catch (const std::runtime_error &) {
+			soft = false;
+		}
+	}
+	if (soft) draw_soft_particles(image, &mapped, 1);
+	else {
+		particle_program(0);
+		draw_particle_texture(image, &mapped, 1);
+	}
+#endif
+}
+
 void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size_t count)
+{
+	if (!count) return;
+	GLint active, binding;
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+	glActiveTexture(GL_TEXTURE0);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &binding);
+	ogl_bindbmtex(&image);
+	const auto texture = image.gltexture->handle;
+	glBindTexture(GL_TEXTURE_2D, binding);
+	glActiveTexture(active);
+	draw_particle_texture(texture, quads, count);
+}
+
+static void draw_particle_texture(GLuint image, const ParticleQuad *quads, std::size_t count)
 {
 	if (!count) return;
 #if defined(OGLES) && !defined(ANDROID)
@@ -140,7 +188,7 @@ void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size
 	ogl_xl_rgba_alpha_begin(1, &alpha);
 	// Use the same fixed-function/shim path as the other XL local renderers
 	OGL_ENABLE(TEXTURE_2D);
-	ogl_bindbmtex(&image);
+	glBindTexture(GL_TEXTURE_2D, image);
 	glDepthMask(GL_FALSE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -154,6 +202,7 @@ void draw_particle_quads(grs_bitmap &image, const ParticleQuad *quads, std::size
 		const auto &quad = quads[i];
 		if (quad.blend == ParticleBlend::multiply) glBlendFunc(GL_DST_COLOR, GL_ZERO);
 		else if (quad.blend == ParticleBlend::alpha) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		else if (quad.blend == ParticleBlend::additive) glBlendFunc(GL_ONE, GL_ONE);
 		else glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
 		glVertexPointer(3, GL_FLOAT, sizeof(ParticleVertex), quad.vertices[0].position.data());
 		glColorPointer(4, GL_FLOAT, sizeof(ParticleVertex), quad.vertices[0].color.data());

@@ -19,6 +19,7 @@ struct ParticleImageResource {
 };
 std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype = 3);
 std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level);
+std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image();
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

@@ -42,7 +42,8 @@ struct ParticleVertex {
 };
 enum class ParticleBlend { weak_additive,
 	                       multiply,
-	                       alpha };
+	                       alpha,
+	                       additive };
 struct ParticleQuad {
 	std::array<ParticleVertex, 4> vertices;
 	ParticleBlend blend;
