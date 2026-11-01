@@ -2,8 +2,8 @@
   "schema": 1,
   "generated_by": "game_data/manage_data.ps1",
   "base_path": "dxx-redux",
-  "file_count": 368,
-  "total_size": 16346858949,
+  "file_count": 370,
+  "total_size": 16350994904,
   "files": [
     {
       "path": "game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].BIN",
@@ -2309,6 +2309,13 @@
       "kind": "mission_zip"
     },
     {
+      "path": "game_data/mission_files/shearbase.zip",
+      "name": "shearbase.zip",
+      "size": 4011011,
+      "sha256": "53b2da204bf5a37547e1a996561d0d123da693eb472c5e219eb7d24bb3932740",
+      "kind": "mission_zip"
+    },
+    {
       "path": "game_data/mission_files/sirius.zip",
       "name": "sirius.zip",
       "size": 139972,
@@ -2425,6 +2432,13 @@
       "name": "Vignettes.zip",
       "size": 1365886,
       "sha256": "c4d16a90c78210e37ecfdacc844c57f0363934ea90774863b651eb0381033139",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/w5am.zip",
+      "name": "w5am.zip",
+      "size": 124944,
+      "sha256": "5daaa646780f36f84b135dd0d9db0a118fdf4c827d114f55df2b337950abab2c",
       "kind": "mission_zip"
     },
     {

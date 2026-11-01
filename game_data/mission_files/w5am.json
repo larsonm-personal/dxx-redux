@@ -1,0 +1,444 @@
+[
+  {
+    "status": "ok",
+    "source": "w5am",
+    "game": "d2",
+    "mission_name": "w5am",
+    "mission_filename": "w5am.mn2",
+    "mission_intent": {
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "w5am.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "10 aug 2026",
+          "sources": [
+            "w5am.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "w5am.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2026,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2026,
+          2026
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "w5am.hog",
+          "modified": "2026-09-04",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "w5am.mn2",
+          "modified": "2026-08-10",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
+    "coop_starts": "1",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "MIDI Track 0",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "length_s": 183
+      },
+      {
+        "track": 1,
+        "name": "MIDI Track 1",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "length_s": 95
+      },
+      {
+        "track": 2,
+        "name": "MIDI Track 2",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 3,
+        "name": "MIDI Track 3",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 4,
+        "name": "MIDI Track 4",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "length_s": 145
+      },
+      {
+        "track": 5,
+        "name": "MIDI Track 1",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "length_s": 157
+      },
+      {
+        "track": 6,
+        "name": "MIDI Track 2",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "length_s": 282
+      },
+      {
+        "track": 7,
+        "name": "MIDI Track 3",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "length_s": 278
+      },
+      {
+        "track": 8,
+        "name": "MIDI Track 4",
+        "filename": "game04.hmp",
+        "format": "hmp",
+        "length_s": 188
+      }
+    ],
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 0,
+        "secret": false,
+        "level_name": "Wake Up at 5am everyday",
+        "level_file": "w5am.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 377,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
+        "segment_count": 580,
+        "wall_count": 163,
+        "trigger_count": 9,
+        "object_count": 244,
+        "texture_count": 47,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 168,
+        "reactors": 0,
+        "robots": 67,
+        "hostages": 8,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 4,
+        "mine_volume": 4648970.0,
+        "mine_volume_normalized": 1.01663,
+        "mine_volume_text": "1.0x",
+        "travel_distance": 5732.6,
+        "travel_time_seconds": 115,
+        "travel_time_text": "1M:55S",
+        "guidebot_count": 2,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
+            "seg": 176,
+            "label_pos": {
+              "x": -50.0,
+              "y": -178.4,
+              "z": 170.0
+            },
+            "distance": 520.6,
+            "key": "blue",
+            "key_carrier_objnum": 77
+          },
+          {
+            "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 269,
+            "side": 1,
+            "wall": 72,
+            "label_pos": {
+              "x": -50.0,
+              "y": 51.6,
+              "z": 70.0
+            },
+            "distance": 840.0,
+            "opens": [
+              {
+                "seg": 269,
+                "side": 1,
+                "wall": 72
+              },
+              {
+                "seg": 273,
+                "side": 3,
+                "wall": 71
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 278,
+            "wall": 93,
+            "label_pos": {
+              "x": 0.0,
+              "y": 81.6,
+              "z": 30.0
+            },
+            "distance": 125.0,
+            "trigger": 3,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 341,
+                "side": 4,
+                "wall": 83
+              },
+              {
+                "seg": 268,
+                "side": 5,
+                "wall": 84
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 4",
+            "seg": 355,
+            "side": 4,
+            "wall": 96,
+            "label_pos": {
+              "x": 10.0,
+              "y": 81.6,
+              "z": -80.0
+            },
+            "distance": 385.0,
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 355,
+                "side": 5,
+                "wall": 95
+              },
+              {
+                "seg": 360,
+                "side": 4,
+                "wall": 94
+              },
+              {
+                "seg": 279,
+                "side": 3,
+                "wall": 90
+              },
+              {
+                "seg": 349,
+                "side": 1,
+                "wall": 89
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 279,
+            "label_pos": {
+              "x": -10.0,
+              "y": 104.6,
+              "z": 30.0
+            },
+            "distance": 163.0,
+            "key": "gold"
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 417,
+            "label_pos": {
+              "x": 90.0,
+              "y": -138.4,
+              "z": -10.0
+            },
+            "distance": 863.0,
+            "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 8",
+            "seg": 418,
+            "side": 3,
+            "wall": 140,
+            "label_pos": {
+              "x": 90.0,
+              "y": -178.4,
+              "z": -10.0
+            },
+            "distance": 30.0,
+            "trigger": 8,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 483,
+                "side": 4,
+                "wall": 137
+              },
+              {
+                "seg": 530,
+                "side": 5,
+                "wall": 136
+              },
+              {
+                "seg": 498,
+                "side": 4,
+                "wall": 135
+              },
+              {
+                "seg": 531,
+                "side": 5,
+                "wall": 134
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 533,
+            "label_pos": {
+              "x": 130.0,
+              "y": -118.4,
+              "z": 210.0
+            },
+            "distance": 1620.0
+          },
+          {
+            "index": 9,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 377,
+            "side": 1,
+            "wall": 103,
+            "label_pos": {
+              "x": 70.0,
+              "y": -88.4,
+              "z": -50.0
+            },
+            "distance": 1186.0,
+            "trigger": 6,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "data_warnings": [
+          "Level HXM legacy handling: 4 trailer bytes ignored"
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists",
+          "guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "mission_path": "w5am.mn2",
+    "target_index": 0
+  }
+]
