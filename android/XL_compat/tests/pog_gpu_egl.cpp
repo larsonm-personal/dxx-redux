@@ -30,6 +30,7 @@
 #include "../runtime/shield_gpu.h"
 #include "../runtime/shield_renderer.h"
 #include "../runtime/camera_target_gpu.h"
+#include "../runtime/camera_renderer.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "xl_reference_pog_shaders.h"
 #endif
@@ -63,6 +64,8 @@ int xl_fog_active(void)
 {
 	return 0;
 }
+// This asset-free owner has no level-bound camera monitors
+void xl_camera_monitor_uv(int, int, float *) {}
 void ogl_prepare_framebuffer_readback(void);
 extern int r_texcount, GL_TEXTURE_2D_enabled;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
