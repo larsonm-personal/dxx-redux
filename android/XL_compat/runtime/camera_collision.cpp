@@ -52,7 +52,7 @@ void reflect_actor(object &actor)
 	const auto result = xl_compat::camera_reflect_velocity({ velocity.x, velocity.y, velocity.z }, actor.mtype.phys_info.mass, blocked);
 	actor.mtype.phys_info.velocity = { result[0], result[1], result[2] };
 }
-bool primary_projectile(int id)
+bool contact_projectile(int id)
 {
 	switch (id) {
 		case LASER_ID_L1:
@@ -69,7 +69,11 @@ bool primary_projectile(int id)
 		case GAUSS_ID:
 		case HELIX_ID:
 		case PHOENIX_ID:
-		case OMEGA_ID: return true;
+		case OMEGA_ID:
+		case CONCUSSION_ID:
+		case HOMING_ID:
+		case GUIDEDMISS_ID:
+		case MERCURY_ID: return true;
 		default: return false;
 	}
 }
@@ -203,10 +207,11 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	if (cheats.robotskillrobots) Error("Camera weapon contact with robot-hit-robot cheat is unqualified");
 	if (weapon->ctype.laser_info.parent_type == OBJ_ROBOT) return 1;
 	const auto &definition = Weapon_info[weapon->id];
-	// Missile blast/lightning and splash consumers must be implemented before admission
-	if (!primary_projectile(weapon->id))
+	// Flash, children, seismic and missile lightning profiles remain unqualified
+	if (!contact_projectile(weapon->id))
 		Error("Camera missile blast and splash contact is not yet qualified (weapon=%d radius=%d)", weapon->id, definition.damage_radius);
-	// Single-player Omega passes the source distance gate; primary CreateWeaponEffects is inert
+	// Optional missile blast decoration is deferred; impact and radial effects remain active
+	// Single-player Omega passes the source distance gate
 	if ((weapon->mtype.phys_info.flags & PF_PERSISTENT) && xl_projectile_add_hit(int(weapon - Objects), int(camera - Objects)) < 0) return 1;
 	if (weapon->ctype.laser_info.parent_signature == camera->signature) return 1;
 	if (definition.damage_radius) xl_camera_splash(*weapon, *camera, *point);

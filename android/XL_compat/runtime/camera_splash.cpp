@@ -88,8 +88,10 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 {
 	const auto &definition = Weapon_info[weapon.id];
-	// Gauss has no flash stun, child projectiles or post-process shockwave classification
-	if (weapon.id != GAUSS_ID || definition.flash || definition.children != -1)
+	// These profiles have no flash stun, child projectiles, seismic or missile lightning
+	const bool qualified = weapon.id == GAUSS_ID || weapon.id == CONCUSSION_ID || weapon.id == HOMING_ID ||
+	                       weapon.id == GUIDEDMISS_ID || weapon.id == MERCURY_ID;
+	if (!qualified || definition.flash || definition.children != -1)
 		Error("Camera splash weapon profile requires further qualification");
 	const int strength = definition.strength[Difficulty_level], radius = definition.damage_radius;
 	if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 > 8000.0)
