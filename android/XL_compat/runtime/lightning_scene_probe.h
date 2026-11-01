@@ -34,8 +34,11 @@ void lightning_probe_after(unsigned bolts)
 		lightning_probe_result.bolts += bolts;
 		for (std::size_t i = 0; i < after.size(); i += 4)
 			if (!std::equal(after.begin() + i, after.begin() + i + 3, lightning_scene_before.begin() + i)) ++lightning_probe_result.changed;
-		lightning_probe_result.passed = lightning_probe_result.changed != 0;
-		lightning_probe_result.completed = lightning_probe_result.passed || lightning_probe_result.batches >= 16;
+		// Random source bolts can draw outside the mine while their sampled light
+		// nodes fail connected-segment lookup. Observe both required witnesses
+		// before completing, with a finite bound for missing light or composition
+		lightning_probe_result.passed = lightning_probe_result.changed != 0 && lightning_probe_result.light_segments != 0;
+		lightning_probe_result.completed = lightning_probe_result.passed || lightning_probe_result.batches >= 64;
 		lightning_scene_before.clear();
 	} catch (const std::exception &error) {
 		lightning_scene_failure = error.what();

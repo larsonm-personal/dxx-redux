@@ -8,6 +8,8 @@
 #include "lightning_scene.h"
 #include "lightning_objects.h"
 #include "named_audio_state.h"
+#include "ambient_objects.h"
+#include "level_messages.h"
 #include "particle_objects.h"
 #include "skybox_collision.h"
 #include "skybox_render.h"
