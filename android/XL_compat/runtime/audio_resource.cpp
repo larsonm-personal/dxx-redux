@@ -1,4 +1,5 @@
 #include "audio_resource.h"
+#include "resource_validation.h"
 #include "../named_sound.h"
 #include "../scoped_sound.h"
 #include "../wave.h"
@@ -40,7 +41,7 @@ int incoming_ordinal(const char *level, int ordinal)
 	return found;
 }
 
-bool owned_path(std::string &path, bool archive)
+bool owned_path(std::string &path, bool archive, bool installation = false)
 {
 	if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return false;
 	const char *origin = PHYSFS_getRealDir(path.c_str());
@@ -52,7 +53,7 @@ bool owned_path(std::string &path, bool archive)
 		if (owned) path = resolved;
 	}
 #endif
-	if (!owned) throw std::runtime_error(std::string("XL named-audio resource is shadowed outside the selected mission ") + (archive ? "HOG: " : "sound folders: ") + path);
+	if (!owned && !(installation && xl_resource_owns_installation(origin))) throw std::runtime_error(std::string("XL named-audio resource is shadowed outside the selected mission ") + (archive ? "HOG: " : "sound folders: ") + path);
 	PHYSFS_Stat info;
 	if (!PHYSFS_stat(path.c_str(), &info) || info.filetype != PHYSFS_FILETYPE_REGULAR)
 		throw std::runtime_error("XL sound resource is not a regular file: " + path);
@@ -95,7 +96,9 @@ AudioResource load_audio_resource(const std::string &authored, const char *level
 		auto path = paths[i];
 		if (owned_path(path, false)) return read_audio(std::move(path));
 	}
-	throw std::runtime_error("Missing XL sound " + filename + "; checked the mission HOG, " + paths[1] + " and " + paths.back() + "; global addon sounds require a qualified owned installation");
+	auto addon = "sounds/d2x-xl/" + filename;
+	if (owned_path(addon, false, true)) return read_audio(std::move(addon));
+	throw std::runtime_error("Missing XL sound " + filename + "; checked the mission HOG, " + paths[1] + " and " + paths.back() + "; checked global addon " + addon + " in the owned startup installation");
 }
 
 std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, int ordinal, int bank_rate)

@@ -1,9 +1,9 @@
 # Owned mission and level sound folders
 
-Named WAV lookup now supports the selected mission HOG, its incoming normal or
-secret level sound folder, and its mission sound folder, in that order. Numeric
-and prefix aliases resolve before lookup. Global addon installations and ambient
-spatial playback remain separate requirements.
+Named WAV lookup supports the selected mission HOG, its incoming normal or
+secret level sound folder, its mission sound folder, and finally an owned startup
+addon folder, in that order. Numeric and prefix aliases resolve before lookup.
+The startup fallback qualification below is a later extension of this milestone.
 
 ## Runtime ownership
 
@@ -18,7 +18,8 @@ Folders use `mods/<selected-hog>/sounds/levelNN`, `slevelNN` and the mission
 selected descriptor. Android published packages use their active owned mounts,
 including resources outside the descriptor's archive. Foreign shadows reject
 before reading; a malformed preferred resource never falls back to a different
-sound. The global addon fallback is explicitly reported as unqualified.
+sound. The startup addon fallback uses the captured base-installation ownership
+policy, as described below.
 
 Preparation completes before replacing live voices. Identity includes the
 selected virtual path and exact content, without host paths. A failed preflight
@@ -92,3 +93,32 @@ comparisons. Reported test time is 10.656, 6.148 and 319.041 seconds respectivel
 build and preparation time is additional. Native scoped output checks 131,072
 samples on each host. Both automation catalogs, scoped formatting and direct
 PowerShell analysis pass. The original distribution archive remains unchanged.
+
+## Owned startup addon fallback, October 31
+
+After the selected HOG and incoming level/mission folders, the loader now checks
+sounds/d2x-xl/<resolved-name>. This matches pinned LoadAddonSound in
+gameio/loadsounds.cpp and gameFolders.game.szSounds[4] in main/gamefolders.cpp.
+Only the selected mission directory or a captured startup installation may own
+that file. A foreign shadow rejects before reading. Existing preferred files
+remain authoritative; malformed WAVs do not fall through to another resource.
+
+The existing native effect integration owner adds an isolated resource control:
+a distinct trusted startup directory, numeric lightning alias resolution,
+level-over-mission-over-startup precedence, missing files, malformed preferred
+WAVs, foreign startup shadows, and retained source bytes after failure/removal.
+The control passes with the native ownership/admission regressions. Windows and
+Android builds pass. This is desktop resource integration plus Android
+compilation; an Android startup-sound selection test is not claimed.
+
+The original archive d2x-xl-win-1.18.77.exe retains SHA-256
+c22863c90313b0a0ca03179f2a55b85713a3da403ebcb2df3862bb0c24e66da1.
+Its sounds/d2x-xl/lightning.wav has SHA-256
+149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30.
+The existing production WAV decoder exactly matches all786432 original PCM bytes:
+44100Hz, stereo,16-bit,196608frames (about4.458s), independently read with Python's
+wave module. The asset is only in ignored local validation storage, not committed.
+Receipts: temp/xl-skybox-20261031/lightning-original-audio.json and
+native-runtime/controls.log. Normal lightning admission remains blocked;
+preparing its bank entry, linked-loop lifecycle, restore and actual spatial output
+still require integration and qualification.
