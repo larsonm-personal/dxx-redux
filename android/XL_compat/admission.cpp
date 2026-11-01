@@ -8,6 +8,7 @@
 #include "static_explosion.h"
 #include "named_sound.h"
 #include "particle_admission.h"
+#include "lightning_admission.h"
 #include "skybox_render.h"
 #include <algorithm>
 #include <cstdint>
@@ -44,6 +45,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		// Wide flags stay source-owned; modern doors consume bit 8, higher bits are reserved
 		if (modern_runtime_layout(level) && issue.feature == "wall_flags") continue;
 		if (issue.feature == "effect_particles") continue;
+		if (issue.feature == "effect_lightning") continue;
 		if (issue.feature == "effect_object_types" || issue.feature == "effect_sounds" ||
 		    issue.feature == "effect_trigger_target" || issue.feature == "object_effect_trigger_target") continue;
 		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
@@ -88,6 +90,13 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 				result.push_back({ "effect_particles", int(index), error.what() });
 			}
 		}
+		if (object.render == 12) {
+			try {
+				(void) prepare_authored_lightning(level, object);
+			} catch (const std::exception &error) {
+				result.push_back({ "effect_lightning", int(index), error.what() });
+			}
+		}
 		if (object.render == 13) {
 			try {
 				if (!ambient_sound_shape(object)) throw std::runtime_error("requires a stationary, uncontrolled sound effect object");
@@ -100,7 +109,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		}
 		if (object.type == 19 && !static_explosion_shape(object))
 			result.push_back({ "static_explosion", int(index), "requires a stationary single-player object with powerup control and vclip rendering (control 13, movement 0, render 5)" });
-		if ((object.type == 18 || object.type == 20) && !ambient_sound_shape(object) && !authored_particle_shape(object))
+		if ((object.type == 18 || object.type == 20) && !ambient_sound_shape(object) && !authored_particle_shape(object) && !authored_lightning_shape(object))
 			result.push_back({ "effect_object_types", int(index), "object type " + std::to_string(object.type) + " requires unsupported effect behavior" });
 	}
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {

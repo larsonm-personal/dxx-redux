@@ -48,6 +48,15 @@ void render_face(int, int, int, int *, int, int, uvl *, int);
 
 #ifdef ANDROID
 #include "particle_scene_probe.h"
+#include "lightning_scene_probe.h"
+#else
+namespace
+{
+void finish_scene_lightning_batch()
+{
+	xl_compat::finish_lightning_batch();
+}
+} // namespace
 #endif
 
 namespace
@@ -419,15 +428,23 @@ extern "C" void xl_transparency_flush(void)
 			               } else if (const auto *lightning = std::get_if<LightningSceneItem>(&item)) {
 				               const auto *image = xl_prepared_lightning_image();
 				               if (!image || !image->texture) throw std::runtime_error("XL lightning scene lost its corona image");
+#ifdef ANDROID
+				               const bool direct_probe = lightning->object == lightning_probe_owner && lightning->frame.glow.distance_scale == 0;
+				               if (direct_probe) lightning_probe_before();
+#endif
 				               draw_lightning_scene_item(*lightning, *image->texture);
+#ifdef ANDROID
+				               lightning_probe_item(*lightning);
+				               if (direct_probe) lightning_probe_after(1);
+#endif
 			               }
 		               },
 		               [](Item &item) {
 			               // Native objects either end glow or begin an incompatible sprite batch
 			               // Flush at particle visitation, before its delayed buffer submission
-			               if (ends_lightning_batch(item)) finish_lightning_batch();
+			               if (ends_lightning_batch(item)) finish_scene_lightning_batch();
 		               });
-		finish_lightning_batch();
+		finish_scene_lightning_batch();
 	} catch (const std::exception &error) {
 		discard_lightning_context(false);
 		xl_transparency_clear();

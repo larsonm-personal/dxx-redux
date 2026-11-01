@@ -6,6 +6,8 @@
 #include "particle_renderer.h"
 #include "lightning_renderer.h"
 #include "lightning_scene.h"
+#include "lightning_objects.h"
+#include "named_audio_state.h"
 #include "particle_objects.h"
 #include "skybox_collision.h"
 #include "skybox_render.h"
@@ -288,6 +290,9 @@ const char *xl_pog_probe_result()
 		xl_particle_scene_result scene{};
 		xl_particle_scene_probe_result(&scene);
 		state["scene"] = { { "completed", scene.completed }, { "passed", scene.passed }, { "batches", scene.batches }, { "quads", scene.quads }, { "changed", scene.changed }, { "samples", scene.samples }, { "error", xl_particle_scene_probe_error() } };
+		xl_lightning_scene_result lightning{};
+		xl_lightning_scene_probe_result(&lightning);
+		state["lightning_scene"] = { { "completed", lightning.completed }, { "passed", lightning.passed }, { "batches", lightning.batches }, { "bolts", lightning.bolts }, { "changed", lightning.changed }, { "samples", lightning.samples }, { "light_segments", lightning.light_segments }, { "error", xl_lightning_scene_probe_error() } };
 		report = state.dump();
 	}
 	return report.c_str();

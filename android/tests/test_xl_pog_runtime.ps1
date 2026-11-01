@@ -14,6 +14,7 @@ param(
     [switch]$LightningGpu,
     [string]$CoronaImage = '',
     [string]$GlareImage = '',
+    [string]$LightningWave = '',
     [switch]$MissionFlow,
     [switch]$CampaignEnd,
     [switch]$RevisitFixture,
@@ -26,8 +27,10 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage -or !$GlareImage)) { throw 'LightningGpu requires OriginalHub, original CoronaImage/GlareImage and its own mode' }
-if ($LightningGpu -and (Get-FileHash -LiteralPath $CoronaImage -Algorithm SHA256).Hash -ne 'aaf4a8ca34879ef0ab79fdbca295ee2a426755aa97be05bf538900e77ed81f57') { throw 'Requires the original XL corona image' }
-if ($LightningGpu -and (Get-FileHash -LiteralPath $GlareImage -Algorithm SHA256).Hash -ne '25bb9c5b4679ab8b26d37e05f536fc98a74f8f451b8057a00364847a487bc123') { throw 'Requires the original XL glare image' }
+if ($MissionFlow -and (!$CoronaImage -or !$GlareImage -or !$LightningWave)) { throw 'MissionFlow through original level nine requires CoronaImage, GlareImage and LightningWave' }
+if (($LightningGpu -or $MissionFlow) -and (Get-FileHash -LiteralPath $CoronaImage -Algorithm SHA256).Hash -ne 'aaf4a8ca34879ef0ab79fdbca295ee2a426755aa97be05bf538900e77ed81f57') { throw 'Requires the original XL corona image' }
+if (($LightningGpu -or $MissionFlow) -and (Get-FileHash -LiteralPath $GlareImage -Algorithm SHA256).Hash -ne '25bb9c5b4679ab8b26d37e05f536fc98a74f8f451b8057a00364847a487bc123') { throw 'Requires the original XL glare image' }
+if ($MissionFlow -and (Get-FileHash -LiteralPath $LightningWave -Algorithm SHA256).Hash -ne '149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30') { throw 'Requires the original XL lightning waveform' }
 if ($FlyoutFixture -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or !$D1Pig)) { throw 'FlyoutFixture requires OriginalHub, retail D1Pig and its own mode' }
 if ($FlyoutFixture -and (Get-FileHash -LiteralPath $D1Pig -Algorithm SHA256).Hash -ne '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe') { throw 'Flyout fixture requires the retail D1 exit-model PIG' }
 if ($RevisitFixture -and ($OriginalHub -or $SceneOnly -or $SecretFixture -or $SkyboxFixture -or $SmokeFixture -or $PumoMods)) { throw 'RevisitFixture requires its own derived mode' }
@@ -174,11 +177,15 @@ try {
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
     }
     Invoke-PogAdb -Arguments @('logcat', '-c') | Out-Null
-    if ($LightningGpu) {
+    if ($LightningGpu -or $MissionFlow) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $CoronaImage).Path, '/data/local/tmp/xl-pog-corona.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-corona.tga files/d2x-redux/mods/$mission/textures/d2x-xl/corona.tga" | Out-Null
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $GlareImage).Path, '/data/local/tmp/xl-pog-glare.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-glare.tga files/d2x-redux/mods/$mission/textures/d2x-xl/glare.tga" | Out-Null
+    }
+    if ($MissionFlow) {
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $LightningWave).Path, '/data/local/tmp/xl-pog-lightning.wav') | Out-Null
+        Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/sounds/d2x-xl && cp /data/local/tmp/xl-pog-lightning.wav files/d2x-redux/mods/$mission/sounds/d2x-xl/lightning.wav" | Out-Null
     }
     $scriptName = if ($PumoMods) { 'test_xl_pumo_particles.jsonc' } else { 'test_xl_pog_runtime.jsonc' }
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
@@ -218,7 +225,9 @@ try {
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'scene.jsonc'))
         ConvertTo-Json -InputObject @($sceneSteps.ToArray()) -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    # The full original route includes two large checkpoint restores and context loss
+    $timeout = if ($MissionFlow) { 1200 } else { 480 }
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds $timeout
     $testExit = $LASTEXITCODE
     Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-PogPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8

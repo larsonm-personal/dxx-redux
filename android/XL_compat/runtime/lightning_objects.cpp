@@ -4,6 +4,7 @@
 #include "linked_audio.h"
 #include "shared_audio_internal.h"
 #include "../lightning_audio.h"
+#include "../lightning_admission.h"
 #include "../lightning_visibility.h"
 #include "../transparency_order.h"
 #include <map>
@@ -98,11 +99,7 @@ void xl_compat::bind_lightning_objects(const Inventory &level)
 			throw std::runtime_error("XL lightning object identity changed during native loading");
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
 			throw std::runtime_error("XL lightning object segment changed during native loading");
-		const auto definition = lightning_definition(object, 2);
-		if (object.render_data[5] != -1 || !definition.random_end || definition.angle || definition.in_plane || definition.children || definition.clamp ||
-		    definition.style || definition.frames <= 0 || definition.nodes > 32767 || definition.bolts <= 0 || definition.bolts > 32767)
-			throw std::runtime_error("XL lightning owner requires the implemented random style-0 profile");
-		(void) lightning_lifetime(definition, false, false);
+		const auto definition = prepare_authored_lightning(level, object);
 		prepared.emplace(int(index), Entry{ definition, Objects[index].signature });
 	}
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);

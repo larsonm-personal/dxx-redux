@@ -18,6 +18,12 @@ struct xl_particle_scene_result {
 void xl_particle_scene_probe_request(void);
 void xl_particle_scene_probe_result(struct xl_particle_scene_result *result);
 const char *xl_particle_scene_probe_error(void);
+struct xl_lightning_scene_result {
+	unsigned completed, passed, batches, bolts, changed, samples, light_segments;
+};
+void xl_lightning_scene_probe_request(int object);
+void xl_lightning_scene_probe_result(struct xl_lightning_scene_result *result);
+const char *xl_lightning_scene_probe_error(void);
 #endif
 #ifdef DXX_XL_DESCRIPTOR_TEST
 void xl_transparency_test_controls(int active);

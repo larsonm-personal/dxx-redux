@@ -590,3 +590,55 @@ engine cache before the existing retained-particle context test.
 This qualifies normal powerup sprite submission and the tested renderer
 behavior. Original Pumo level9 scene/audio/gameplay and campaign traversal
 remain unqualified; normal lightning admission is unchanged.
+
+## 115: original level-nine admission and scene lifecycle
+
+Normal admission now validates stationary singleplayer lightning with random
+endpoints, style0, positive glow, bounded lifetime/node/bolt arithmetic, and no
+waypoint, children, clamp or fixed plane. Admission and native binding share
+the same validator. Other styles, targeted paths, non-glowing outline rendering
+and negative single-layer glow remain blocked with per-object diagnostics.
+Independent unknown features and resource requirements still reject a level.
+
+The original Pumo level9 is tulev4.rl2. Its only lightning owner is object307
+in segment362: three bolts, eight authored nodes, two interpolation frames,
+width20, positive glow and sound enabled. The original HOG and descriptor are
+unchanged; the protected runner pins them and the original corona, glare and
+lightning waveform. The waveform SHA-256 is
+149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30.
+
+The first original load exposed a translation defect: the stock shadow retained
+the lightning payload, displacing the following native object records. The
+translation now emits an inert79-byte native header and retains the complete
+payload in the owned XL inventory. A regression checks the exact following
+object boundary across all five audited serialization versions. Classic-only
+probes reject lightning without the source-owned runtime.
+
+The existing MissionFlow owner now dispatches original authored exits through
+1->2->3->4->14->5->6->7->8->9. It checks native player controls and mission state,
+then captures and disturbs lightning activation, restores a real checkpoint,
+and checks the three live bolt frames, owned corona pixels and linked audio
+ownership against the active bolt population. It recreates the actual Android
+graphics context and repeats the live checks before restoring the original hub
+save and validating its campaign, particle and bitmap state.
+
+At the fixed view in segment362, side0, distance8, an Android-only diagnostic
+reads scene color immediately around actual lightning batch composition. It
+does not compare whole frames containing unrelated animation. Run
+72489d8c6c7d4f128eb1e0747e311c0c passed100/100 steps in408.242seconds on the
+temporary host-GPU emulator. Lightning changed406394 pixels before context
+recreation and197824 afterward; both observations located positive light in
+two segments. The observed framebuffer sample count was0. One context
+recreation was confirmed, the final level was the original hub, and protected
+before/after app-data hashes were identical.
+
+Final inventory/effect contracts passed2/2, including malformed-owner/profile
+rejections and the translation regression. Windows native lifecycle controls,
+Android x86_64 build, both automation catalogs and scoped formatting passed.
+The unchanged renderer arithmetic reuses114's source/GPU qualification.
+
+This establishes controlled original level-nine loading and the tested
+lightning scene/lifecycle. It is not an earned playthrough or full-campaign
+qualification. Later Pumo chapters still require other lightning profiles,
+camera objects/actions, additive walls and particle behavior. Optional3D
+powerup/model presentation is not established by these sprite controls.
