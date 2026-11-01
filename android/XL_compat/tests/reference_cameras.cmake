@@ -388,3 +388,5 @@ string(
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_camera_flash.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_camera_flash.cpp)
+
+include(${CMAKE_CURRENT_LIST_DIR}/reference_camera_children.cmake)

@@ -4,6 +4,7 @@
 #include "projectile.h"
 #include "preview.h"
 #include "camera_splash.h"
+#include "seismic_gameplay.h"
 #include "explosion_motion.h"
 #include "camera_controller.h"
 #include "../camera_sphere_unstick.h"
@@ -73,6 +74,15 @@ bool contact_projectile(int id)
 		case CONCUSSION_ID:
 		case HOMING_ID:
 		case GUIDEDMISS_ID:
+		case PROXIMITY_ID:
+		case SMART_ID:
+		case MEGA_ID:
+		case SUPERPROX_ID:
+		case EARTHSHAKER_ID:
+		case PLAYER_SMART_HOMING_ID:
+		case SMART_MINE_HOMING_ID:
+		case EARTHSHAKER_MEGA_ID:
+		case PMINE_ID:
 		case FLASH_ID:
 		case MERCURY_ID: return true;
 		default: return false;
@@ -221,10 +231,11 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	if (cheats.robotskillrobots) Error("Camera weapon contact with robot-hit-robot cheat is unqualified");
 	if (weapon->ctype.laser_info.parent_type == OBJ_ROBOT) return 1;
 	const auto &definition = Weapon_info[weapon->id];
-	// Children, seismic and missile lightning profiles remain unqualified
+	// Missile lightning rods use the source-supported explosion-decoration-off profile
 	if (!contact_projectile(weapon->id))
 		Error("Camera missile blast and splash contact is not yet qualified (weapon=%d radius=%d)", weapon->id, definition.damage_radius);
 	// Optional missile blast decoration is deferred; impact and radial effects remain active
+	if (weapon->id == EARTHSHAKER_ID) xl_seismic_detonation(&weapon->pos);
 	// Single-player Omega passes the source distance gate
 	if ((weapon->mtype.phys_info.flags & PF_PERSISTENT) && xl_projectile_add_hit(int(weapon - Objects), int(camera - Objects)) < 0) return 1;
 	if (weapon->ctype.laser_info.parent_signature == camera->signature) return 1;

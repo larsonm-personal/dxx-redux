@@ -575,6 +575,8 @@ static void camera_projectile_physics_controls(object &camera)
 }
 #include "camera_passive_test.h"
 #include "camera_flash_test.h"
+#include "camera_children_test.h"
+#include "camera_missile_test.h"
 static void camera_weapon_controls(const std::filesystem::path &root)
 {
 	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return;
@@ -907,6 +909,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	require(bool(motion_output), "Cannot write camera motion receipt");
 	std::cout << "Native camera explosion motion samples: " << motion_cases << "\n";
 	camera_radial_robot_controls(root, camera);
+	camera_missile_native_controls(camera);
 	camera_flash_native_controls(camera);
 	// Earn the state used by the caller's full disk restore through real physics
 	const auto hit_player = *ConsoleObject;
@@ -943,6 +946,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	require(xl_camera_hit_state_get(robot_owner, earned_hit) && earned_hit.repaired == int32_t(xl_camera_controller_ticks()) &&
 	            earned_hit.shield_time > 0,
 	        "Cannot earn robot camera hit state for full disk restore");
+	camera_children_native_controls(camera);
 	obj_delete(victim);
 	FrameTime = saved_frame;
 	std::cout << "Native camera projectile contacts: " << cases

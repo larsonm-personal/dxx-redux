@@ -7,6 +7,7 @@ extern "C" {
 void xl_object_birth_clear(void);
 void xl_object_birth_created(int owner);
 int64_t xl_object_birth_time(int owner);
+uint64_t xl_object_birth_order(int owner);
 #ifdef __cplusplus
 }
 #endif
