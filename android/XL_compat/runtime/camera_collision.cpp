@@ -73,6 +73,7 @@ bool contact_projectile(int id)
 		case CONCUSSION_ID:
 		case HOMING_ID:
 		case GUIDEDMISS_ID:
+		case FLASH_ID:
 		case MERCURY_ID: return true;
 		default: return false;
 	}
@@ -220,7 +221,7 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	if (cheats.robotskillrobots) Error("Camera weapon contact with robot-hit-robot cheat is unqualified");
 	if (weapon->ctype.laser_info.parent_type == OBJ_ROBOT) return 1;
 	const auto &definition = Weapon_info[weapon->id];
-	// Flash, children, seismic and missile lightning profiles remain unqualified
+	// Children, seismic and missile lightning profiles remain unqualified
 	if (!contact_projectile(weapon->id))
 		Error("Camera missile blast and splash contact is not yet qualified (weapon=%d radius=%d)", weapon->id, definition.damage_radius);
 	// Optional missile blast decoration is deferred; impact and radial effects remain active

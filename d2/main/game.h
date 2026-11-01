@@ -168,7 +168,12 @@ extern int PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd;
 extern void PALETTE_FLASH_ADD(int dr, int dg, int db);
 
 //sets the rgb values for palette flash
+#ifdef DXX_XL_RUNTIME
+void xl_camera_flash_palette_set(void);
+#define PALETTE_FLASH_SET(_r,_g,_b) PaletteRedAdd=(_r), PaletteGreenAdd=(_g), PaletteBlueAdd=(_b), xl_camera_flash_palette_set()
+#else
 #define PALETTE_FLASH_SET(_r,_g,_b) PaletteRedAdd=(_r), PaletteGreenAdd=(_g), PaletteBlueAdd=(_b)
+#endif
 
 extern int draw_gauges_on;
 

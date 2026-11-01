@@ -9,6 +9,7 @@
 #include "object_birth.h"
 #include "explosion_motion.h"
 #include "camera_controller.h"
+#include "camera_flash.h"
 #include "camera_renderer.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
@@ -604,6 +605,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_object_birth_clear();
 	xl_explosion_motion_clear();
 	xl_camera_controller_clear();
+	xl_camera_flash_clear();
 	xl_camera_renderer_clear();
 	xl_wall_trigger_reset();
 	xl_speed_boost_clear();

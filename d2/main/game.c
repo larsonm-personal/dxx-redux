@@ -21,6 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "gameplay_audio.h"
+#include "camera_flash.h"
 #include "particle_objects.h"
 #include "lightning_objects.h"
 #endif
@@ -843,6 +844,9 @@ extern fix Flash_effect;
  //adds to rgb values for palette flash
 void PALETTE_FLASH_ADD(int _dr, int _dg, int _db)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_camera_flash_add(_dr, _dg, _db)) return;
+#endif
 	int	maxval;
 
 	PaletteRedAdd += _dr;
@@ -879,6 +883,9 @@ fix64	Time_flash_last_played;
 //	Diminish palette effects towards normal.
 void diminish_palette_towards_normal(void)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_camera_flash_frame()) return;
+#endif
 	int	dec_amount = 0;
 	int	diminish_rate = !(Game_mode & GM_MULTI) || !Netgame.ReducedFlash ? DIMINISH_RATE : (DIMINISH_RATE * 20);
 
