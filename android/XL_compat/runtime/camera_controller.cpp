@@ -1,4 +1,5 @@
 #include "camera_controller.h"
+#include "camera_renderer.h"
 #include "../camera_bindings.h"
 #include "preview.h"
 #include "resource_validation.h"
@@ -84,6 +85,7 @@ extern "C" int xl_camera_controller_restore(int apply)
 		    actor.lifeleft != IMMORTAL_TIME || actor.segnum < 0 || actor.segnum >= Num_segments) return 0;
 	}
 	if (!apply) return 1;
+	xl_camera_renderer_reset();
 	// Source restores into uncleared authored slots; CT_CAMERA and MT_NONE have
 	// no serialized control/physics payload. Redux clears those slots instead
 	for (const auto &source : authored) {

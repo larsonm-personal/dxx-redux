@@ -7,6 +7,7 @@
 #include "preview.h"
 #include "fog.h"
 #include "pog_renderer.h"
+#include "camera_renderer.h"
 #include "particle_renderer.h"
 #include "particle_objects.h"
 #endif
@@ -662,6 +663,9 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 #ifdef ANDROID
+#ifdef DXX_XL_RUNTIME
+	if (!xl_camera_monitor_is_bitmap(bm))
+#endif
 	android_ogl_apply_bound_texture_filter(
 		bm->gltexture,
 		android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level),
@@ -1372,6 +1376,9 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		texcoord_array[index2]   = f2glf(uvl_list[c].u);
 		texcoord_array[index2+1] = f2glf(uvl_list[c].v);
 	}
+#ifdef DXX_XL_RUNTIME
+	xl_camera_monitor_uv(0, nv, texcoord_array);
+#endif
 	
 	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
@@ -1606,6 +1613,12 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		vertex_array[index3+1]   = f2glf(pointlist[c]->p3_vec.y);
 		vertex_array[index3+2]   = -f2glf(pointlist[c]->p3_vec.z);
 	}
+#ifdef DXX_XL_RUNTIME
+	xl_camera_monitor_uv(1, nv, texcoordovl_array);
+#ifdef OGL_MERGE
+	xl_camera_monitor_uv(0, nv, texcoordbot_array);
+#endif
+#endif
 
 #ifndef OGL_MERGE
 	glVertexPointer(3, GL_FLOAT, 0, vertex_array);

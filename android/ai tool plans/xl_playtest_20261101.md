@@ -93,3 +93,25 @@ passes in 2m27s. Opening regression passes 64/64 in 116707 ms on emulator-5556;
 protected before/after manifests match. Final native owner includes source motion,
 rotation, controller and hitbox comparisons. Scoped quality passes; diff whitespace
 check passes. The delivered ZIP remains the verified baseline opening artifact.
+
+## Camera monitor increment C
+
+Branch xl_playtest_125_camera_monitors from B 3dec70b7d7d8de78976c971ba5347202b451b15c.
+PR 279 targets PR 278's branch. Integrate existing source-qualified bindings,
+scheduler, capture and alignment with ordinary native face submission. Preserve
+base/overlay selection, independent texture coordinates, vertex lighting, opaque
+camera image semantics, visibility scheduling and context-loss recovery. Camera
+views must not recurse or alter automap/gameplay visibility. Test through the
+existing protected Android GPU owner; keep device tests serial. This work is
+needed for the authored monitor information, not optional graphics polish.
+
+C validation: Windows native build and full projectile/save owner pass. Protected
+Android GPU owner passes 33/33, 52 monitor checks before and after real context
+recreation, run 7839675773be4a0db3f6bf3eb3c54d99 (55929 ms). Protected manifests match.
+Catalogs pass (99 standalone JSON, 502 support, 314 PowerShell; master 427 entries).
+The initial device attempt installed the older outputs APK after an IDE-injected
+ABI build wrote intermediates; its missing-counter failure did not test C. The
+correct test-only APK passed 48 checks after installing with -t. Final rebuild uses
+the repository-supported -PciTestAbi=x86_64 and the normal outputs APK, passing52.
+No original mission bytes or admission gates changed. Remaining camera gameplay,
+static camera behavior and authored lightning dependencies still block PMC levels.
