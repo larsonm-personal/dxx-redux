@@ -253,7 +253,7 @@ The production native renderer also passes real EGL recreation, identical
 post-recreation pixels, offset-canvas and depth checks, and padded-texture cleanup.
 
 The existing Android POG runner adds an explicitly renderer-only mode:
-`-OriginalHub -LightningGpu -CoronaImage <original-corona.tga> -GlareImage <original-glare.tga>`. Its owned script
+`-OriginalHub -LightningGpu -CoronaImage <original-corona.tga> -GlareImage <original-glare.tga> -ShieldImageDirectory <original-shield-folder>`. Its owned script
 is `test_xl_lightning_gpu.jsonc`. The original corona is resolved by the normal
 resource loader while the already-supported hub is paused; a controlled frame
 is rendered and compared byte-for-byte after real EGL context recreation.

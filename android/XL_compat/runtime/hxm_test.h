@@ -1,8 +1,9 @@
 // Original Alarlof member and companion; controlled combat without navigation
 extern "C" void set_robot_state(object *obj, int state);
 extern "C" void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, vms_vector *believed_player_pos);
-static xl_compat::Bytes hxm_model_receipt(int id)
+static xl_compat::Bytes hxm_model_receipt(int id, int model_limit = MAX_POLYGON_MODELS)
 {
+	require(model_limit > 0 && model_limit <= MAX_POLYGON_MODELS, "Invalid model receipt extent");
 	xl_compat::Bytes bytes;
 	const auto append = [&](const void *data, std::size_t size) {
 		const auto *first = static_cast<const uint8_t *>(data);
@@ -14,8 +15,8 @@ static xl_compat::Bytes hxm_model_receipt(int id)
 	append(Polygon_models[id].model_data, Polygon_models[id].model_data_size);
 	append(ObjBitmaps, sizeof(ObjBitmaps));
 	append(ObjBitmapPtrs, sizeof(ObjBitmapPtrs));
-	append(Dying_modelnums, sizeof(Dying_modelnums));
-	append(Dead_modelnums, sizeof(Dead_modelnums));
+	append(Dying_modelnums, sizeof(*Dying_modelnums) * model_limit);
+	append(Dead_modelnums, sizeof(*Dead_modelnums) * model_limit);
 	return bytes;
 }
 static void hxm_require_supported()
@@ -149,6 +150,8 @@ static void hxm_projectile_controls(const std::filesystem::path &root)
 	std::cout << "Derived HXM projectile computed radius, firing, disk through stock and stock firing isolation passed\n";
 }
 
+#include "camera_resource_test.h"
+
 static int hxm_test(int argc, char **argv)
 {
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -236,6 +239,7 @@ static int hxm_test(int argc, char **argv)
 		require(Objects[actor].shields == i2f(750) && hxm_model_receipt(6) == custom_model, "Repeated HXM game retained old combat state or stale model/texture resources");
 		hxm_dependency_controls(root);
 		hxm_projectile_controls(root);
+		camera_resource_controls(root);
 		std::cout << "Original HXM normal startup, custom model/guns/projectiles/combat, disk through stock and repeated load passed\n";
 		return 0;
 	} catch (const std::exception &error) {

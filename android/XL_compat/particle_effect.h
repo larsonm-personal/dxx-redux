@@ -11,6 +11,7 @@
 #endif
 namespace xl_compat
 {
+inline constexpr char bubble_sound_name[] = "11:airbubbles.wav";
 // Serialized effect subtype; these are not the renderer's particle image IDs
 enum class ParticleKind { smoke,
 	                      spray,

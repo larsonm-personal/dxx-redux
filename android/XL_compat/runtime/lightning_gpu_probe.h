@@ -1,5 +1,10 @@
 #include "sprite_bitmap_gpu_probe.h"
 #include "additive_wall_gpu_probe.h"
+#include "shield_gpu_probe.h"
+#include "camera_target_gpu_probe.h"
+#include "camera_native_pass_probe.h"
+#include "camera_scene_probe.h"
+#include "shield_original_gpu_probe.h"
 // Android renderer control: retains an owned corona without admitting a level
 unsigned lightning_line_device_controls()
 {
@@ -56,6 +61,9 @@ unsigned lightning_line_device_controls()
 }
 std::shared_ptr<const xl_compat::ParticleImageResource> lightning_probe_image;
 std::shared_ptr<const xl_compat::ParticleImageResource> lightning_probe_glare;
+std::array<std::shared_ptr<const xl_compat::ShieldImageResource>, 3> lightning_probe_shields;
+std::array<std::unique_ptr<xl_compat::ShieldAddon>, 3> lightning_probe_shield_addons;
+uint32_t lightning_probe_shield_ticks = 10000;
 std::vector<unsigned char> lightning_probe_pixels;
 void lightning_gpu_probe(const char *operation)
 {
@@ -71,6 +79,12 @@ void lightning_gpu_probe(const char *operation)
 		request.objects.push_back(source);
 		lightning_probe_image = prepare_lightning_image(request);
 		lightning_probe_glare = prepare_powerup_glare_image();
+		for (unsigned i = 0; i < lightning_probe_shields.size(); ++i) {
+			lightning_probe_shields[i] = prepare_shield_image(i);
+			lightning_probe_shield_addons[i] = std::make_unique<ShieldAddon>(i);
+			lightning_probe_shield_addons[i]->replace_image(lightning_probe_shields[i]);
+		}
+		lightning_probe_shield_ticks = 10000;
 		require(lightning_probe_glare && lightning_probe_glare->texture, "Lightning control did not prepare its owned powerup glare");
 		require(lightning_probe_image && lightning_probe_image->texture, "Lightning control did not prepare its owned corona");
 		lightning_probe_pixels.clear();
@@ -78,16 +92,22 @@ void lightning_gpu_probe(const char *operation)
 	}
 	if (!std::strcmp(operation, "release")) {
 		discard_lightning_context(false);
+		discard_shield_context(false);
 		lightning_probe_image.reset();
 		lightning_probe_glare.reset();
+		for (auto &addon : lightning_probe_shield_addons) addon.reset();
+		for (auto &image : lightning_probe_shields) image.reset();
 		lightning_probe_pixels.clear();
 		return;
 	}
 	require(!std::strcmp(operation, "gpu") && lightning_probe_image && lightning_probe_glare && gl_initialized, "Lightning GPU control lacks its original corona/glare");
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
+	const unsigned camera_scene_cases = camera_scene_device_controls();
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
-	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0;
+	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0, shield_cases = 0, original_shield_cases = 0, camera_target_cases = 0, camera_native_pass_cases = 0;
+	std::vector<unsigned char> shield_pixels;
+	unsigned shield_overlap_rounding = 0;
 	GLfloat line_range[2];
 	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, line_range);
 	{
@@ -140,6 +160,11 @@ void lightning_gpu_probe(const char *operation)
 		line_cases = lightning_line_device_controls();
 		bitmap_cases = sprite_bitmap_device_controls();
 		wall_cases = additive_wall_device_controls();
+		camera_target_cases = camera_target_device_controls(shield_pixels);
+		camera_native_pass_cases = camera_native_pass_controls(shield_pixels);
+		shield_cases = shield_device_controls(shield_pixels, &shield_overlap_rounding);
+		original_shield_cases = shield_original_device_controls(lightning_probe_shields, lightning_probe_shield_addons, lightning_probe_shield_ticks, shield_pixels);
+		lightning_probe_shield_ticks += 1000;
 		glViewport(3, 5, 48, 43);
 		const GLfloat projection[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -5001.f / 4999.f, -1, 0, 0, -10000.f / 4999.f, 0 };
 		glMatrixMode(GL_PROJECTION);
@@ -218,8 +243,9 @@ void lightning_gpu_probe(const char *operation)
 		}
 	}
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control restoration raised a GPU error");
-	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning pixels changed across graphics context recreation");
+	pixels.insert(pixels.end(), shield_pixels.begin(), shield_pixels.end());
+	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning/shield pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "shield_cases", shield_cases }, { "original_shield_cases", original_shield_cases }, { "camera_target_cases", camera_target_cases }, { "camera_native_pass_cases", camera_native_pass_cases }, { "camera_scene_cases", camera_scene_cases }, { "shield_overlap_rounding", shield_overlap_rounding }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

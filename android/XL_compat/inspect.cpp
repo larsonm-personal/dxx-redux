@@ -13,8 +13,9 @@
 
 int main(int argc, char **argv)
 {
-	if (argc != 3) {
-		std::cerr << "Usage: xl_inspect input.rl2|input.hog report.json\nInspection only; does not authorize gameplay\n";
+	const bool archive_only = argc == 4 && std::string(argv[3]) == "--archive-only";
+	if (argc != 3 && !archive_only) {
+		std::cerr << "Usage: xl_inspect input.rl2|input.hog report.json [--archive-only]\nInspection only; does not authorize gameplay\n";
 		return 2;
 	}
 	try {
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
 		report << "\n  ],\n  \"levels\": [";
 		std::size_t levels = 0, errors = 0;
 		for (const auto &m : members) {
+			if (archive_only) continue;
 			auto name = m.name;
 			std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 			if (name.size() < 4 || name.substr(name.size() - 4) != ".rl2") continue;
@@ -79,7 +81,7 @@ int main(int argc, char **argv)
 			report << '}';
 		}
 		report << "\n  ]\n}\n";
-		if (!levels) throw std::runtime_error("no RL2 levels found");
+		if (!levels && !archive_only) throw std::runtime_error("no RL2 levels found");
 		const auto result = report.str();
 		// Identical reports preserve bytes and modification time
 		std::ifstream previous(argv[2], std::ios::binary);

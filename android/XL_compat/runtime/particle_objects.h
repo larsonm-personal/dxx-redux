@@ -12,7 +12,7 @@ namespace xl_compat
 {
 struct ParticleSystem {
 	int object, signature;
-	std::variant<FireEmitter, SmokeEmitter> emitter;
+	std::variant<FireEmitter, SmokeEmitter, BubbleEmitter> emitter;
 	const FireEmitter &fire_emitter() const
 	{
 		return std::get<FireEmitter>(emitter);
@@ -27,14 +27,28 @@ void bind_particle_objects(const Inventory &level);
 void particle_objects_frame(int milliseconds);
 const std::list<ParticleSystem> &particle_systems();
 std::vector<ParticleQuad> particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height);
+struct BubbleSceneDraw {
+	// Valid only until the current transparency frame drains; no simulation
+	// update may replace emitter slots while a scene retains these references
+	const BubbleParticle *particle = nullptr;
+	int frame = 0;
+	unsigned width = 0, height = 0;
+	ParticleBasis basis;
+	ParticlePoint eye{};
+	std::array<ParticlePoint, 3> camera{};
+	bool camera_space = false;
+};
 struct ParticleSceneItem {
 	ParticlePoint position;
 	ParticleQuad quad;
 	float radius = 0;
 	int subtype = 3;
+	std::optional<BubbleSceneDraw> bubble;
 };
+// Resolve only after the source buffer scheduler accepts a submitted batch
+ParticleQuad particle_scene_quad(const ParticleSceneItem &item);
 // Retain emitter insertion order for the shared transparency queue
-std::vector<ParticleSceneItem> particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height, unsigned smoke_width = 0, unsigned smoke_height = 0);
+std::vector<ParticleSceneItem> particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height, unsigned smoke_width = 0, unsigned smoke_height = 0, unsigned bubble_width = 0, unsigned bubble_height = 0);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

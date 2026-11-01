@@ -379,6 +379,18 @@ void skybox_collision_source_controls();
 void skybox_visibility_source_controls();
 void skybox_objects_source_controls();
 void skybox_coronas_source_controls();
+void camera_splash_rotation_runtime_controls(const char *);
+void camera_explosion_motion_runtime_controls(const char *);
+void camera_schedule_source_controls();
+void camera_capture_source_controls();
+void camera_monitor_source_controls();
+void camera_view_source_controls();
+void camera_binding_source_controls();
+void camera_object_source_controls();
+void camera_matrix_source_controls();
+void camera_controller_runtime_controls(const char *);
+void camera_matrix_original_controls(const xl_compat::Inventory &);
+void camera_binding_original_controls(const xl_compat::Inventory &);
 void particle_visibility_source_controls();
 void particle_world_source_controls();
 void particle_emitter_source_controls();
@@ -391,6 +403,18 @@ void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--camera-controller") {
+			camera_controller_runtime_controls(argv[2]);
+			return 0;
+		}
+		if (argc == 3 && std::string(argv[1]) == "--camera-explosion-motion") {
+			camera_explosion_motion_runtime_controls(argv[2]);
+			return 0;
+		}
+		if (argc == 3 && std::string(argv[1]) == "--camera-splash-rotation") {
+			camera_splash_rotation_runtime_controls(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--particle-world") {
 			compare_particle_world_receipt(argv[2]);
 			return 0;
@@ -420,6 +444,13 @@ int main(int argc, char **argv)
 		skybox_visibility_source_controls();
 		skybox_objects_source_controls();
 		skybox_coronas_source_controls();
+		camera_schedule_source_controls();
+		camera_capture_source_controls();
+		camera_monitor_source_controls();
+		camera_view_source_controls();
+		camera_binding_source_controls();
+		camera_object_source_controls();
+		camera_matrix_source_controls();
 		particle_visibility_source_controls();
 		particle_world_source_controls();
 		particle_emitter_source_controls();
@@ -463,6 +494,8 @@ int main(int argc, char **argv)
 				}
 				compare_level(bytes, objects, effects);
 				particle_original_geometry_controls(xl_compat::inspect_level(bytes));
+				camera_binding_original_controls(xl_compat::inspect_level(bytes));
+				camera_matrix_original_controls(xl_compat::inspect_level(bytes));
 				++levels;
 			}
 			if (!levels) throw std::runtime_error("No completely decoded original levels for comparison");

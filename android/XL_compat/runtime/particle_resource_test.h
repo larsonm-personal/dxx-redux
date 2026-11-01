@@ -2,18 +2,29 @@
 #include "resource_validation.h"
 #include "../scoped_texture.h"
 
+template <bool Shield = false>
 static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype, bool spray = false, bool lightning = false)
 {
 	using namespace xl_compat;
-	const auto prepare = [&](const Inventory &level) { return lightning ? prepare_lightning_image(level) : prepare_particle_image(level, subtype); };
+	const auto prepare = [&](const Inventory &level) {
+		if constexpr (Shield) return prepare_shield_image(unsigned(subtype));
+		else return lightning ? prepare_lightning_image(level) : prepare_particle_image(level, subtype);
+	};
 	require(xl_level_extensions_active(), "Particle image controls require a loaded XL mission");
-	const char *name = lightning ? "corona" : subtype == 3 ? "smokingfire"
-	                                                       : "smoke";
-	const char *missing = lightning ? "Missing XL lightning corona image" : subtype == 3 ? "Missing XL fire image"
-	                                                                                     : "Missing XL smoke image";
-	const unsigned extent = lightning || subtype == 3 ? 8 : 32;
+	const char *name = Shield         ? (subtype == 0 ? "forcefield" : subtype == 1 ? "forcefield2"
+	                                                                                : "forcefield3")
+	                   : lightning    ? "corona"
+	                   : subtype == 2 ? "bubble"
+	                   : subtype == 3 ? "smokingfire"
+	                                  : "smoke";
+	const char *missing = Shield ? "Missing XL shield image" : lightning  ? "Missing XL lightning corona image"
+	                                                       : subtype == 2 ? "Missing XL bubble image"
+	                                                       : subtype == 3 ? "Missing XL fire image"
+	                                                                      : "Missing XL smoke image";
+	const unsigned extent = Shield || lightning || subtype == 3 ? 8 : 32;
+	const unsigned frames = Shield ? 2 : 1;
 	Inventory level;
-	require(!prepare(level), "Level without particles requested an addon image");
+	if constexpr (!Shield) require(!prepare(level), "Level without particles requested an addon image");
 	Object object{};
 	object.render = 11;
 	object.render_data.resize(13);
@@ -50,10 +61,11 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		nonglow.objects[0].render_data[17] = 0;
 		require(!prepare(nonglow), "Non-glowing lightning required an absent corona image");
 	}
-	const auto image = [extent](unsigned char red) {
-		Bytes bytes(18 + extent * extent * 3, 0);
+	const auto image = [extent, frames](unsigned char red) {
+		Bytes bytes(18 + extent * extent * frames * 3, 0);
 		bytes[2] = 2;
-		bytes[12] = bytes[14] = static_cast<unsigned char>(extent);
+		bytes[12] = static_cast<unsigned char>(extent);
+		bytes[14] = static_cast<unsigned char>(extent * frames);
 		bytes[16] = 24;
 		for (std::size_t i = 18; i < bytes.size(); i += 3) {
 			bytes[i] = 7;
@@ -69,7 +81,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	const auto selected = prepare(level);
 	require(selected && selected->path == mod && selected->bitmap.pixels[0] == 47, "Mission particle image did not take precedence over the default");
 	require(!prepare_particle_image(level, subtype == 3 ? 0 : 3), "Particle image request selected the other authored subtype");
-	if (!lightning && subtype == 0) {
+	if (!Shield && !lightning && subtype == 0) {
 		Inventory mixed = level;
 		auto fire = object;
 		fire.render_data[11] = 3;
@@ -105,8 +117,12 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	require(PHYSFS_removeFromSearchPath(foreign_name.c_str()), "Cannot unmount particle image shadow control");
 	require(prepare(level)->bitmap.pixels[0] == 23, "Particle default image shadow rejection prevented recovery");
 	write_bytes(mod_path.string().c_str(), image(47));
-	const auto mixed_case = mod_path.parent_path() / (lightning ? "Corona.TGA" : subtype == 3 ? "SmokingFire.TGA"
-	                                                                                          : "Smoke.TGA");
+	const auto mixed_case = mod_path.parent_path() / (Shield         ? (subtype == 0 ? "ForceField.TGA" : subtype == 1 ? "ForceField2.TGA"
+	                                                                                                                   : "ForceField3.TGA")
+	                                                  : lightning    ? "Corona.TGA"
+	                                                  : subtype == 2 ? "Bubble.TGA"
+	                                                  : subtype == 3 ? "SmokingFire.TGA"
+	                                                                 : "Smoke.TGA");
 	std::filesystem::rename(mod_path, mixed_case);
 	require(prepare(level)->bitmap.pixels[0] == 47, "Particle addon lookup lost source case-insensitive behavior");
 	std::filesystem::remove(mixed_case);
@@ -139,9 +155,9 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	std::filesystem::remove(installation_path);
 	failure(missing);
 	require(installed->bitmap.pixels[0] == 61, "Installation image storage depended on a live file");
-	require(selected->bitmap.pixels.size() == extent * extent * 4 && selected->bitmap.pixels[0] == 47, "Particle image storage depended on a live file");
+	require(selected->bitmap.pixels.size() == extent * extent * frames * 4 && selected->bitmap.frames == frames && selected->bitmap.pixels[0] == 47, "Particle image storage depended on a live file");
 	require(!xl_prepared_particle_image(), "Particle resource probe replaced the current level's prepared images");
-	std::cout << "XL particle image resources: distinct startup installation, owned default/mod precedence, missing/malformed/default-and-mod-shadow rejection, case-insensitive lookup, retained pixels and recovery passed\n";
+	std::cout << (Shield ? "XL shield image resources: " : "XL particle image resources: ") << " distinct startup installation, owned default/mod precedence, missing/malformed/default-and-mod-shadow rejection, case-insensitive lookup, retained pixels and recovery passed\n";
 }
 
 static void particle_resource_native_case(const std::filesystem::path &root, const std::filesystem::path &installation)
@@ -149,5 +165,7 @@ static void particle_resource_native_case(const std::filesystem::path &root, con
 	particle_resource_profile(root, installation, 3);
 	particle_resource_profile(root, installation, 0);
 	particle_resource_profile(root, installation, 0, true);
+	particle_resource_profile(root, installation, 2);
 	particle_resource_profile(root, installation, 3, false, true);
+	for (int index : { 0, 1, 2 }) particle_resource_profile<true>(root, installation, index);
 }

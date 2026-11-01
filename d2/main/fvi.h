@@ -44,7 +44,7 @@ typedef struct fvi_info {
 	int hit_face;					//triangle for the XL transparent-pixel consumer
 #endif
 	int hit_object;				//if object hit, which object
-	vms_vector hit_wallnorm;	//if hit wall, ptr to its surface normal
+	vms_vector hit_wallnorm;	//wall surface normal; also qualified XL camera object contacts
 	int n_segs;						//how many segs we went through
 	int seglist[MAX_FVI_SEGS];	//list of segs vector went through
 } fvi_info;

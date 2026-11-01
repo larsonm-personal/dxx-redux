@@ -7,6 +7,7 @@ extern "C" {
 struct uvl;
 void xl_transparency_begin(const short *segments, int count);
 void xl_transparency_clear(void);
+int xl_transparency_collecting(void);
 int xl_transparency_face(int segment, int side, int count, const int *vertices, int base, int overlay, const struct uvl *uvls, int doorway);
 int xl_transparency_object(int object);
 int xl_transparency_water(int segment, int side, const int32_t points[4][3], const float colors[4][4]);
@@ -14,6 +15,7 @@ void xl_transparency_flush(void);
 #ifdef __ANDROID__
 struct xl_particle_scene_result {
 	unsigned completed, passed, batches, quads, changed, samples;
+	unsigned submitted, clipped;
 };
 void xl_particle_scene_probe_request(void);
 void xl_particle_scene_probe_result(struct xl_particle_scene_result *result);

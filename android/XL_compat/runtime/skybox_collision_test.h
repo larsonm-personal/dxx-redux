@@ -8,6 +8,7 @@ extern "C" {
 }
 static void skybox_collision_face_native_case(const xl_compat::Inventory &original)
 {
+	char source_file[] = __FILE__;
 	unsigned checked = 0, triangles[2]{};
 	int control_segment = -1;
 	vms_vector control_start{}, control_end{};
@@ -18,7 +19,7 @@ static void skybox_collision_face_native_case(const xl_compat::Inventory &origin
 		for (int side = 0; side < 6 && checked < 1024; ++side) {
 			if (Segments[segment].children[side] >= 0) continue;
 			int count, vertices[6];
-			create_abs_vertex_lists(&count, vertices, segment, side, __FILE__, __LINE__);
+			create_abs_vertex_lists(&count, vertices, segment, side, source_file, __LINE__);
 			for (int face = 0; face < count; ++face) {
 				vms_vector target{};
 				for (auto axis : { &vms_vector::x, &vms_vector::y, &vms_vector::z }) {

@@ -34,6 +34,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "blocked.h"
 #include "doorway.h"
 #include "ambient_objects.h"
+#include "camera_collision.h"
+#include "resource_validation.h"
 #endif
 #include "fvi.h"
 #include "segment.h"
@@ -830,6 +832,15 @@ int obj_in_list(int objnum,int *obj_list)
 
 int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum);
 
+static int fvi_objects_collide(int a, int b)
+{
+#ifdef DXX_XL_RUNTIME
+	int camera_pair = xl_camera_pair_collision(a, b);
+	if (camera_pair >= 0) return camera_pair;
+#endif
+	return CollisionResult[a][b] != RESULT_NOTHING || CollisionResult[b][a] != RESULT_NOTHING;
+}
+
 int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg)
 {
 	segment *seg;				//the segment we're looking at
@@ -868,10 +879,13 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 				 	!(thisobjnum == objnum ) &&
 				 	(ignore_obj_list==NULL || !obj_in_list(objnum,ignore_obj_list)) &&
 				 	!laser_are_related( objnum, thisobjnum ) &&
-				 	!((thisobjnum  > -1)	&&
-				  		(CollisionResult[Objects[thisobjnum].type][Objects[objnum].type] == RESULT_NOTHING ) &&
-			 	 		(CollisionResult[Objects[objnum].type][Objects[thisobjnum].type] == RESULT_NOTHING ))) {
+					!(thisobjnum > -1 && !fvi_objects_collide(Objects[thisobjnum].type, Objects[objnum].type))) {
 				int fudged_rad = rad;
+#ifdef DXX_XL_RUNTIME
+				vms_vector object_normal = ZERO_VECTOR;
+				if (thisobjnum < 0 && Objects[objnum].type == 16)
+					Error("Camera traversal requires a qualified moving actor");
+#endif
 
 				//	If this is a powerup, don't do collision if flag FQ_IGNORE_POWERUPS is set
 				if (Objects[objnum].type == OBJ_POWERUP)
@@ -895,7 +909,14 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 						((Game_mode&GM_MULTI_COOP) &&  Objects[objnum].type == OBJ_WEAPON && Objects[objnum].ctype.laser_info.parent_type == OBJ_PLAYER)))
 					fudged_rad = rad/2;	//(rad*3)/4;
 
-				d = check_vector_to_object(&hit_point,p0,p1,fudged_rad,&Objects[objnum],&Objects[thisobjnum]);
+#ifdef DXX_XL_RUNTIME
+				if (Objects[thisobjnum].type == 16)
+					Error("Moving camera traversal is not qualified");
+				if (Objects[objnum].type == 16)
+					d = xl_camera_query(&Objects[objnum], &Objects[thisobjnum], p0, p1, fudged_rad, &hit_point, &object_normal);
+				else
+#endif
+					d = check_vector_to_object(&hit_point,p0,p1,fudged_rad,&Objects[objnum],&Objects[thisobjnum]);
 				input_demo_log_fvi_weapon_robot_check(p0, p1, thisobjnum, objnum, fudged_rad, d); // android port
 
 				if (d)          //we have intersection
@@ -904,6 +925,10 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 						Assert(fvi_hit_object!=-1);
 						closest_d = d;
 						closest_hit_point = hit_point;
+#ifdef DXX_XL_RUNTIME
+						// Share the normal slot and its recursive save/restore with wall contacts
+						wall_norm = object_normal;
+#endif
 						hit_type=HIT_OBJECT;
 
 						con_printf(CON_DEBUG, "fvi.c: hit_type = HIT_OBJECT\n"); 
@@ -913,6 +938,7 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 	if (	(thisobjnum > -1 ) && (
 #ifdef DXX_XL_RUNTIME
 			xl_ambient_object_noncolliding(Objects[thisobjnum].type) ||
+			Objects[thisobjnum].type == 16 ||
 #endif
 			CollisionResult[Objects[thisobjnum].type][OBJ_WALL] == RESULT_NOTHING ) )
 		rad = 0;		//HACK - ignore when edges hit walls

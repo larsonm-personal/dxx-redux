@@ -87,7 +87,9 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		const auto &object = level.objects[index];
 		if (object.render == 11) {
 			try {
-				(void) prepare_authored_particle(level, object);
+				const auto prepared = prepare_authored_particle(level, object);
+				if (prepared.effect.kind == ParticleKind::bubbles && !qualified_bubble_profile(level, object))
+					throw std::runtime_error("XL bubble profile differs from the qualified original point emitter");
 			} catch (const std::exception &error) {
 				result.push_back({ "effect_particles", int(index), error.what() });
 			}

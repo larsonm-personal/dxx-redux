@@ -1,0 +1,71 @@
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "games": ["d2"],
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "game": "d2",
+        "action": "enter_game",
+    },
+    {
+        "timeout_ms": 30000,
+        "action": "skip_intro",
+    },
+    {
+        "action": "select",
+        "timeout_ms": 15000,
+        "text": "player",
+    },
+    {
+        "value": "bubscene_start_dry",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "timeout_ms": 30000,
+        "action": "skip_briefing",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "in_game": true,
+            "xl_pog.particle_systems": {
+                "gte": 1,
+            },
+            "xl_pilot.runtime_active": true,
+            "xl_pog.live_particles": {
+                "gte": 1,
+            },
+        },
+    },
+    {
+        "value": "bubscene_disable",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "xl_pog.live_particles": 0,
+        },
+    },
+    {
+        "value": "bubscene_dry",
+        "field": "xl_pog_probe",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "xl_pog.passed": true,
+        },
+        "action": "assert",
+    },
+    {
+        "action": "introspect",
+    },
+]

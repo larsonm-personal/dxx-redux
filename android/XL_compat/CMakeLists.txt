@@ -92,6 +92,7 @@ if(BUILD_TESTING)
             runtime/pog_renderer.cpp
             runtime/particle_renderer.cpp
             runtime/lightning_renderer.cpp
+            runtime/shield_renderer.cpp
             runtime/particle_resources.cpp
             ../../d2/arch/ogl/ogl.c
             ../../d2/arch/ogl/oglprog.c
@@ -120,6 +121,8 @@ if(BUILD_TESTING)
     target_link_libraries(xl_fog_fixture PRIVATE xl_inventory)
     add_executable(xl_skybox_fixture tests/skybox_fixture.cpp)
     target_link_libraries(xl_skybox_fixture PRIVATE xl_inventory)
+    add_executable(xl_bubble_fixture tests/bubble_fixture.cpp)
+    target_link_libraries(xl_bubble_fixture PRIVATE xl_inventory)
     add_executable(xl_layout_test tests/layout_test.cpp)
     target_link_libraries(xl_layout_test PRIVATE xl_inventory)
     add_test(NAME xl_modern_layout_contract COMMAND xl_layout_test)

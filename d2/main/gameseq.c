@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "camera_controller.h"
 #include "mission_progress.h"
 #include "linked_audio.h"
 #include "gameplay_audio.h"
@@ -924,6 +925,10 @@ int load_level_robots_file(const char *level_name)
 			if (Gamesave_num_org_robots > 0)
 				--Gamesave_num_org_robots;
 		}
+#ifdef DXX_XL_RUNTIME
+	xl_initialize_camera_objects();
+	xl_camera_controller_bind_level();
+#endif
 	return base_player_ship_radius;
 }
 

@@ -29,7 +29,7 @@ void particle_program(GLuint program)
 }
 
 struct ParticleSoftRestore {
-	GLint program, vao, buffer, active, textures[2], src, dst, src_alpha, dst_alpha, equation, equation_alpha, depth_function;
+	GLint program, vao, buffer, active, textures[4], src, dst, src_alpha, dst_alpha, equation, equation_alpha, depth_function;
 	GLboolean depth, write, blend, cull;
 #ifndef ANDROID
 	GLboolean alpha;
@@ -40,7 +40,7 @@ struct ParticleSoftRestore {
 		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
 		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &buffer);
 		glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
-		for (int i = 0; i < 2; ++i) {
+		for (int i = 0; i < 4; ++i) {
 			glActiveTexture(GL_TEXTURE0 + i);
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &textures[i]);
 		}
@@ -65,7 +65,7 @@ struct ParticleSoftRestore {
 		particle_program(program);
 		glBindVertexArray(vao);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		for (int i = 0; i < 2; ++i) {
+		for (int i = 0; i < 4; ++i) {
 			glActiveTexture(GL_TEXTURE0 + i);
 			glBindTexture(GL_TEXTURE_2D, textures[i]);
 		}

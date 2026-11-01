@@ -21,6 +21,9 @@ foreach(xl_target IN LISTS xl_targets)
     target_sources(
         ${xl_target}
         PRIVATE "${xl_runtime_dir}/preview.cpp"
+                "${xl_runtime_dir}/object_birth.cpp"
+                "${xl_runtime_dir}/explosion_motion.cpp"
+                "${xl_runtime_dir}/camera_controller.cpp"
                 "${xl_runtime_dir}/projectile.cpp"
                 "${xl_runtime_dir}/object_pool.cpp"
                 "${xl_runtime_dir}/fluids.cpp"
@@ -90,6 +93,8 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/visibility.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
+                "${xl_runtime_dir}/camera_collision.cpp"
+                "${xl_runtime_dir}/camera_splash.cpp"
                 "${xl_runtime_dir}/pog_resources.cpp"
                 "${xl_runtime_dir}/texture_pixels.cpp"
                 "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")
@@ -126,9 +131,14 @@ endif()
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE "${xl_runtime_dir}")
 target_sources(
     ${DXX_TARGET_PREFIX}arch_ogl
-    PRIVATE "${xl_runtime_dir}/corona_renderer.c" "${xl_runtime_dir}/water_renderer.c"
-            "${xl_runtime_dir}/fog_renderer.cpp" "${xl_runtime_dir}/pog_renderer.cpp"
-            "${xl_runtime_dir}/particle_renderer.cpp" "${xl_runtime_dir}/lightning_renderer.cpp")
+    PRIVATE "${xl_runtime_dir}/corona_renderer.c"
+            "${xl_runtime_dir}/water_renderer.c"
+            "${xl_runtime_dir}/fog_renderer.cpp"
+            "${xl_runtime_dir}/pog_renderer.cpp"
+            "${xl_runtime_dir}/particle_renderer.cpp"
+            "${xl_runtime_dir}/lightning_renderer.cpp"
+            "${xl_runtime_dir}/shield_renderer.cpp"
+            "${xl_runtime_dir}/camera_scene.cpp")
 target_compile_features(${DXX_TARGET_PREFIX}arch_ogl PRIVATE cxx_std_17)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE DXX_XL_RUNTIME)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE "${xl_runtime_dir}")

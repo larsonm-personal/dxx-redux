@@ -13,8 +13,9 @@ inline void particle_border_program(GLuint program)
 // Copy each original mip into a four-times-larger transparent image. At level L
 // the source occupies [N,N*2) in a 4N square, including the final 1x1 source mip
 // Sampling uv/4+1/4 preserves the source footprint and implicit LOD gradients
-inline GLuint copy_particle_border_texture(GLuint source, int side)
+inline GLuint copy_particle_border_texture(GLuint source, int side, GLenum storage = GL_RGBA8)
 {
+	if (storage != GL_RGBA8 && storage != GL_RGBA32F) throw std::runtime_error("Unsupported XL border texture storage");
 	GLint maximum;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maximum);
 	if (side <= 0 || (side & (side - 1)) || side > maximum / 4) throw std::runtime_error("XL corona border storage requires a bounded power-of-two square");
@@ -111,7 +112,7 @@ inline GLuint copy_particle_border_texture(GLuint source, int side)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		for (int level = 0, size = side; level <= last; ++level, size /= 2)
-			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, size * 4, size * 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+			glTexImage2D(GL_TEXTURE_2D, level, storage, size * 4, size * 4, 0, GL_RGBA, storage == GL_RGBA32F ? GL_FLOAT : GL_UNSIGNED_BYTE, nullptr);
 		glGenFramebuffers(1, &framebuffer);
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 		for (auto capability : restore.capabilities) glDisable(capability);

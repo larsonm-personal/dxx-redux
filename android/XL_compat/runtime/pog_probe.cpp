@@ -5,9 +5,13 @@
 #include "particle_resources.h"
 #include "particle_renderer.h"
 #include "lightning_renderer.h"
+#include "shield_renderer.h"
+#include "../camera_hit_render.h"
+#include "../shield_sphere.h"
 #include "lightning_scene.h"
 #include "lightning_objects.h"
 #include "named_audio_state.h"
+#include "linked_audio.h"
 #include "ambient_objects.h"
 #include "level_messages.h"
 #include "particle_objects.h"
@@ -39,9 +43,12 @@ extern "C" {
 #include "piggy.h"
 #include "textures.h"
 #include "player.h"
+#include "playsave.h"
 #include "physfsx.h"
 #include "ogl_init.h"
 #include "internal.h"
+#include "../../../d2/arch/ogl/oglprog.h"
+#include "ogl_msaa_android.h"
 #include "state_android_shared.h"
 #include "android_meta_actions.h"
 #include "input_demo_start_shared.h"
@@ -66,6 +73,9 @@ extern ubyte object_rendered[MAX_OBJECTS];
 }
 
 #include "lightning_glow_gpu.h"
+#include "particle_border_texture.h"
+#include "camera_target_gpu.h"
+#include "camera_scene.h"
 
 namespace
 {
@@ -141,12 +151,14 @@ struct Readback {
 };
 
 #include "particle_gpu_probe.h"
+#include "bubble_gpu_probe.h"
 #include "lightning_gpu_probe.h"
 #include "particle_original_probe.h"
 #include "skybox_collision_test.h"
 #include "skybox_render_probe.h"
 #include "skybox_lifecycle_probe.h"
 #include "smoke_lifecycle_probe.h"
+#include "bubble_lifecycle_probe.h"
 #include "particle_secret_probe.h"
 #include "mission_flow_probe.h"
 #include "mission_revisit_probe.h"
@@ -182,6 +194,10 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "bubscene_", 9)) {
+			bubble_lifecycle_probe(operation + 9);
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "lightning_", 10)) {
 			lightning_gpu_probe(operation + 10);
 			return nullptr;
@@ -216,7 +232,23 @@ const char *xl_pog_probe(const char *operation)
 			return nullptr;
 		}
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "POG controls require singleplayer");
-		if (!std::strcmp(operation, "particle_capture")) {
+		if (!std::strcmp(operation, "bubble_capture")) {
+			require(game_is_time_paused() && xl_level_extensions_active(), "Bubble image capture requires a paused XL level");
+			xl_compat::Inventory request;
+			xl_compat::Object bubble{};
+			bubble.render = 11;
+			bubble.render_data.resize(13);
+			bubble.render_data[11] = 2;
+			request.objects.push_back(bubble);
+			bubble_probe_smoke = xl_compat::prepare_particle_image(request, 0);
+			bubble_probe_image = xl_compat::prepare_particle_image(request, 2);
+			require(bubble_probe_smoke && bubble_probe_image, "Bubble capture lost its owned source images");
+		} else if (!std::strcmp(operation, "bubble_gpu")) {
+			bubble_gpu_probe();
+		} else if (!std::strcmp(operation, "bubble_release")) {
+			bubble_probe_smoke.reset();
+			bubble_probe_image.reset();
+		} else if (!std::strcmp(operation, "particle_capture")) {
 			require(game_is_time_paused() && xl_level_extensions_active(), "Particle image capture requires a paused XL level");
 			xl_compat::Inventory request;
 			xl_compat::Object fire{};
@@ -285,7 +317,7 @@ const char *xl_pog_probe(const char *operation)
 
 const char *xl_pog_probe_result()
 {
-	if ((!original_particle_earned.empty() || !secret_particle_base.empty() || skybox_fixture_mission == "psmoke" || skybox_fixture_mission == "pmines") && report != "null") {
+	if ((!original_particle_earned.empty() || !secret_particle_base.empty() || !bubble_fixture_mission.empty() || skybox_fixture_mission == "psmoke" || skybox_fixture_mission == "pmines") && report != "null") {
 		auto state = nlohmann::json::parse(report);
 		unsigned particles = 0;
 		for (const auto &system : xl_compat::particle_systems()) particles += system.count();
@@ -293,7 +325,7 @@ const char *xl_pog_probe_result()
 		state["particle_systems"] = xl_compat::particle_systems().size();
 		xl_particle_scene_result scene{};
 		xl_particle_scene_probe_result(&scene);
-		state["scene"] = { { "completed", scene.completed }, { "passed", scene.passed }, { "batches", scene.batches }, { "quads", scene.quads }, { "changed", scene.changed }, { "samples", scene.samples }, { "error", xl_particle_scene_probe_error() } };
+		state["scene"] = { { "completed", scene.completed }, { "passed", scene.passed }, { "batches", scene.batches }, { "quads", scene.quads }, { "changed", scene.changed }, { "samples", scene.samples }, { "submitted", scene.submitted }, { "clipped", scene.clipped }, { "error", xl_particle_scene_probe_error() } };
 		xl_lightning_scene_result lightning{};
 		xl_lightning_scene_probe_result(&lightning);
 		state["lightning_scene"] = { { "completed", lightning.completed }, { "passed", lightning.passed }, { "batches", lightning.batches }, { "bolts", lightning.bolts }, { "changed", lightning.changed }, { "samples", lightning.samples }, { "light_segments", lightning.light_segments }, { "error", xl_lightning_scene_probe_error() } };

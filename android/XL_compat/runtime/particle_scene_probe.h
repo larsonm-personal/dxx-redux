@@ -79,6 +79,7 @@ void particle_probe_before(const std::vector<xl_compat::ParticleQuad> &quads)
 {
 	particle_probe_reading = false;
 	if (!particle_probe_requested || particle_probe_result.completed) return;
+	++particle_probe_result.submitted;
 	const float *matrix = gles3_shim_get_mvp();
 	bool visible = false;
 	for (const auto &quad : quads) {
@@ -100,7 +101,10 @@ void particle_probe_before(const std::vector<xl_compat::ParticleQuad> &quads)
 		}
 	}
 	// A quad wholly beyond any common clip plane cannot affect framebuffer RGB
-	if (!visible) return;
+	if (!visible) {
+		++particle_probe_result.clipped;
+		return;
+	}
 	try {
 		SceneReadback read;
 		particle_probe_pixels = read.pixels();

@@ -12,11 +12,18 @@ namespace xl_compat
 inline bool authored_particle_shape(const Object &object)
 {
 	return object.type == 20 && object.reader_id == 0 && object.render == 11 && object.reader_render == 11 &&
-	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 && (object.render_data[11] == 3 || object.render_data[11] == 0 || object.render_data[11] == 1);
+	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 && object.render_data[11] >= 0 && object.render_data[11] <= 3;
 }
 inline bool fire_particle_shape(const Object &object)
 {
 	return authored_particle_shape(object) && object.render_data[11] == 3;
+}
+inline bool qualified_bubble_profile(const Inventory &level, const Object &object)
+{
+	// Original pmlev3 object316, with activation allowed to start disabled
+	constexpr std::array<int, 12> payload{ 2, 2, 4, 2, 2, 9, 0, 0, 0, 100, 0, 2 };
+	return level.level_version == 27 && level.game_version == 40 && authored_particle_shape(object) &&
+	       std::equal(payload.begin(), payload.end(), object.render_data.begin()) && (object.render_data[12] == 0 || object.render_data[12] == 1);
 }
 struct PreparedFireParticle {
 	ParticleEffect effect;
@@ -25,7 +32,7 @@ struct PreparedFireParticle {
 };
 inline PreparedFireParticle prepare_authored_particle(const Inventory &level, const Object &object)
 {
-	if (!authored_particle_shape(object)) throw std::runtime_error("XL fire/smoke/spray requires a stationary uncontrolled single-player particle object");
+	if (!authored_particle_shape(object)) throw std::runtime_error("XL fire/smoke/spray/bubbles requires a stationary uncontrolled single-player particle object");
 	if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size())
 		throw std::runtime_error("XL particle object references an invalid segment");
 	PreparedFireParticle result;

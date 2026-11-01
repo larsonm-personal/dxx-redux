@@ -125,8 +125,6 @@ bool IsWaterTexture(int)
 #define PARTICLE_SIZE(size, scale, blow) particleManager.ParticleSize(size, scale, blow)
 #define STATIC_SMOKE                     1
 #define SHOW_SMOKE                       true
-#define SOUNDCLASS_GENERIC               1
-#define SND_ADDON_AIRBUBBLES             0
 struct {
 	struct {
 		struct {
@@ -147,6 +145,11 @@ struct ParticleManager {
 	void SetObjectSystem(int, int value)
 	{
 		owner = value;
+	}
+	void SetLife(int system, int life)
+	{
+		if (system != owner || life != 0) throw std::runtime_error("Unexpected source particle stop");
+		++kills;
 	}
 	int Create(CFixVector *, CFixVector *direction, CFixMatrix *, int segment_index, int emitters, int count, float scale, int life,
 	           int speed, int type, int object, CFloatVector *color, int blow, int side)
@@ -179,11 +182,7 @@ struct ParticleManager {
 		position = { value->v.coord.x, value->v.coord.y, value->v.coord.z };
 	}
 } particleManager;
-void KillObjectSmoke(int)
-{
-	particleManager.owner = -1;
-	++particleManager.kills;
-}
+#include "xl_reference_particle_kill.h"
 struct PositionRandom {
 	std::uint32_t state;
 	std::vector<int> trace;
@@ -207,16 +206,24 @@ int Rand(int limit)
 	if (limit <= 0) throw std::runtime_error("Invalid emitter random bound");
 	return position_random ? position_random->bounded(limit) : 0;
 }
-const char *AddonSoundName(int)
+const char *AddonSoundName(int index)
 {
-	return "airbubbles.wav";
+	if (index != SND_ADDON_AIRBUBBLES || index != 11) throw std::runtime_error("Source bubble selected a different addon sound");
+	return source_bubble_sound;
 }
 struct {
-	void CreateObjectSound(int, int, int, int, int, int, int, int, const char *)
+	unsigned creates = 0;
+	std::array<int, 8> parameters{};
+	std::string name;
+	void CreateObjectSound(int sample, int sound_class, int object, int forever, int volume, int range, int loop_start, int loop_end, const char *filename)
 	{
 		particleManager.created.bubbles = true;
+		++creates;
+		parameters = { sample, sound_class, object, forever, volume, range, loop_start, loop_end };
+		name = filename;
 	}
 } audio;
+unsigned bubble_audio_comparisons = 0;
 #include "xl_reference_particle_emitter.h"
 
 void compare_emitter(const xl_compat::ParticleEffect &effect)
@@ -230,6 +237,7 @@ void compare_emitter(const xl_compat::ParticleEffect &effect)
 		object.info.position.mOrient.m.dir.f = { { { forward[0], forward[1], forward[2] } } };
 		gameOpts->render.particles.bDisperse = int(disperse);
 		particleManager = {};
+		audio = {};
 		DoStaticParticles(&object);
 		const auto &source = particleManager.created;
 		if (particleManager.creates != 1 || source.image != actual.image || source.fade != actual.fade || source.count != actual.count ||
@@ -237,11 +245,17 @@ void compare_emitter(const xl_compat::ParticleEffect &effect)
 		    source.color != actual.color || source.blow_up != actual.blow_up || source.bubbles != actual.bubbles ||
 		    (!actual.bubbles && source.brightness != actual.brightness))
 			throw std::runtime_error("Actual source particle emitter definition differs");
+		if (actual.bubbles) {
+			if (audio.creates != 1 || audio.parameters != std::array<int, 8>{ -1, 0, 0, 1, 32768, 256 * 65536, -1, -1 } || audio.name != xl_compat::bubble_sound_name)
+				throw std::runtime_error("Pinned bubble sound creation parameters differ");
+			++bubble_audio_comparisons;
+		} else if (audio.creates) throw std::runtime_error("Source created bubble sound for a different particle subtype");
 		DoStaticParticles(&object);
 		if (particleManager.creates != 1) throw std::runtime_error("Source recreated a bound particle emitter");
 		p.bEnabled = 0;
 		DoStaticParticles(&object);
 		if (particleManager.owner != -1 || particleManager.kills != 1) throw std::runtime_error("Source failed to disable a particle emitter");
+		if (audio.creates != unsigned(actual.bubbles)) throw std::runtime_error("Bound or disabled particle emitter recreated its sound");
 	}
 }
 
@@ -392,4 +406,6 @@ void particle_source_controls()
 		if (!rejected) throw std::runtime_error("Invalid particle arithmetic or byte field was accepted");
 	}
 	std::cout << "Pinned particles: " << count << " setup and " << count * 2 << " emitter comparisons, reuse/disable and invalid-arithmetic controls passed\n";
+	if (!particle_reference::bubble_audio_comparisons) throw std::runtime_error("Pinned bubble audio controls exercised no creation");
+	std::cout << "Pinned bubble audio: " << particle_reference::bubble_audio_comparisons << " creation parameter comparisons, addon identity, bound reuse and release disable passed\n";
 }

@@ -15,6 +15,13 @@ file(WRITE "${OUTPUT}/runtime.log" "")
 if(LIGHTNING_WAVE)
     configure_file("${LIGHTNING_WAVE}" "${OUTPUT}/sounds/d2x-xl/lightning.wav" COPYONLY)
 endif()
+if(BUBBLE_WAVE)
+    file(SHA256 "${BUBBLE_WAVE}" bubble_hash)
+    if(NOT bubble_hash STREQUAL "539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc")
+        message(FATAL_ERROR "Bubble audio controls require the original airbubbles.wav")
+    endif()
+    configure_file("${BUBBLE_WAVE}" "${OUTPUT}/sounds/d2x-xl/airbubbles.wav" COPYONLY)
+endif()
 function(check_ambient ordinal version mode)
     execute_process(
         COMMAND "${ENGINE}" -named-audio-test "${mode}" -audio-level "${ordinal}" -hogdir "${DATA}"
@@ -73,6 +80,7 @@ foreach(ordinal IN ITEMS 1 2)
         TIMEOUT 45)
     file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
     if(NOT result EQUAL 0 OR NOT log MATCHES "XL named audio runtime controls passed"
+       OR NOT log MATCHES "Bubble audio passed: prepared addon"
        OR NOT log MATCHES "${version}/40 sounds: wall/master/object/autoplay")
         message(FATAL_ERROR "Named audio version ${version} failed (${result}): ${log}${error}")
     endif()
