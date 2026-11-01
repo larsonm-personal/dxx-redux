@@ -258,10 +258,13 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 		robot.see_sound = robot.attack_sound = robot.claw_sound = robot.taunt_sound = 0;
 		robot.behavior = 128;
 		robot.aim = 0;
-		std::fill(std::begin(robot.turn_time), std::end(robot.turn_time), 0);
-		std::fill(std::begin(robot.max_speed), std::end(robot.max_speed), 0);
-		std::fill(std::begin(robot.circle_distance), std::end(robot.circle_distance), 0);
-		std::fill(std::begin(robot.rapidfire_count), std::end(robot.rapidfire_count), 0);
+		// Indexed writes avoid binding C++ array references to packed robot fields
+		for (int difficulty = 0; difficulty < NDL; ++difficulty) {
+			robot.turn_time[difficulty] = 0;
+			robot.max_speed[difficulty] = 0;
+			robot.circle_distance[difficulty] = 0;
+			robot.rapidfire_count[difficulty] = 0;
+		}
 		if (models[camera_ids.second].n_models != 1 || models[camera_ids.second].simpler_model ||
 		    dying[camera_ids.second] != -1 || dead[camera_ids.second] != -1)
 			throw std::runtime_error("Camera addon profile: guns=" + std::to_string(robot.n_guns) + ", submodels=" + std::to_string(models[camera_ids.second].n_models) +
