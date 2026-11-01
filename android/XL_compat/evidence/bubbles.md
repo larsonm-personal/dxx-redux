@@ -99,3 +99,29 @@ smoke, spark and bubble textures, carries an image selector in the third texture
 coordinate, uses alpha-controlled blending, and selects per-type soft-depth
 intervals. Substituting the existing single-image glare shader would not qualify
 that path. Bubble admission remains closed.
+
+## Multi-image particle shader equations
+
+Tranche 121 adds a portable fragment shader for the active non-array particleFS
+paths. The existing EGL owner extracts actual particleFS[0], particleFS[2] and
+particleVS from particle_shader.cpp, SHA256
+33d7e40ccbe4611c7137f29f4cacd29a2fca124d6b389570253d58f7e40b1ca3,
+at the same pinned source revision. The inactive texture-array variants are not
+used by these comparisons.
+
+The source and portable shaders pass 1176 complete 8x8 RGBA framebuffer
+comparisons with a maximum one-byte channel difference. There are 1004 visible
+pixel-change witnesses. Controls cover smoke, spark and bubble texture selection;
+zero/nonzero vertex alpha; foreground/equal/behind scene depth; near/far depth;
+and the source per-type intervals of five, three and five units. Distinct texture
+colors and alpha values expose selection and premultiplication mistakes. Blend
+factors come from the actual pinned SetBlendMode body and are checked as
+ONE/SRC_ALPHA. Tests exercise the active, nonsuspended shader path.
+
+The full existing EGL GPU owner passed in 29.37 seconds, including its other
+renderer regressions. Scoped formatting and both automation catalogs passed.
+Android/native/device validation from unchanged runtime prerequisites is reused.
+This is desktop shader-equation qualification; it does not qualify an Android
+shader backend, texture loading, buffer submission, GL-state restoration or
+context recreation for the new shader. It is not connected to runtime rendering,
+and no particle admission rule changes in this tranche.

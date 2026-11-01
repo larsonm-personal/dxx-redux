@@ -2,6 +2,7 @@
 #ifdef XL_POG_SHADER_REFERENCE
 #include "xl_reference_particle_blend.h"
 #include "particle_soft_gpu_controls.h"
+#include "particle_multi_gpu_controls.h"
 #include "lightning_gpu_controls.h"
 #endif
 #include "transparency_gpu_controls.h"
@@ -10,6 +11,7 @@ static void particle_gpu_controls()
 {
 #ifdef XL_POG_SHADER_REFERENCE
 	particle_soft_shader_controls();
+	particle_multi_shader_controls();
 	lightning_blur_shader_controls();
 #endif
 	Bitmap atlas(128, 128, true);
