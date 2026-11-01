@@ -23,6 +23,8 @@
 #include <string>
 extern "C" {
 #include "inferno.h"
+#include "3d.h"
+#include "wall.h"
 #include "args.h"
 #include "game.h"
 #include "gamesave.h"

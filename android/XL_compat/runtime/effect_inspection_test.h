@@ -3,6 +3,7 @@
 #include "skybox_collision_test.h"
 #include "particle_objects_test.h"
 #include "lightning_objects_test.h"
+#include "additive_wall_test.h"
 #include "particle_resource_test.h"
 #include "addon_audio_resource_test.h"
 #include "particle_original_test.h"
@@ -66,6 +67,7 @@ static int effect_inspection_test(int argc, char **argv)
 				if (version == 23 && particle_receipt.is_open()) particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
 				if (version == 23) particle_objects_native_case(level == 2);
 				if (version == 23) lightning_objects_native_case(level == 2);
+				if (version == 23) additive_wall_binding_controls(level == 2);
 				if (version == 23 && level == 2) lightning_objects_native_case(true, true);
 				if (version == 23 && level == 2) {
 					const auto *installation = find_arg_value(argc, argv, "-particle-installation-fixture");
@@ -85,6 +87,7 @@ static int effect_inspection_test(int argc, char **argv)
 		}
 		if (particle_receipt.is_open()) particle_receipt << "end 2\n";
 		particle_secret_native_case(archive, root, find_arg_value(argc, argv, "-particle-installation-fixture"));
+		additive_wall_lifecycle_case(archive, root);
 		if (const auto *package = find_arg_value(argc, argv, "-pumo-package"))
 			particle_original_native_case(package, find_arg_value(argc, argv, "-particle-original-image"), find_arg_value(argc, argv, "-particle-installation-fixture"));
 		std::cout << "XL effect inspection gate passed: decoded payload rejected with a useful reason, live state preserved, supported source recovers\n";

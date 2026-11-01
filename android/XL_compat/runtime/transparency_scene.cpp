@@ -271,9 +271,10 @@ extern "C" int xl_transparency_face(int segment, int side, int count, const int 
 		const bool flat = xl_preview_begin_cloak_face(segment, side) || (doorway & WID_CLOAKED_FLAG);
 		if (!flat) xl_preview_begin_face(segment, side);
 		const float alpha = xl_preview_alpha(1);
+		const bool authored_additive = xl_preview_additive_face();
 		xl_preview_end_face();
 		const bool faded = alpha < 1;
-		const bool additive = PlayerCfg.AlphaEffects && (TmapInfo[base].eclip_num == ECLIP_NUM_FUELCEN || TmapInfo[base].eclip_num == ECLIP_NUM_FORCE_FIELD);
+		const bool additive = authored_additive || (PlayerCfg.AlphaEffects && (TmapInfo[base].eclip_num == ECLIP_NUM_FUELCEN || TmapInfo[base].eclip_num == ECLIP_NUM_FORCE_FIELD));
 		PIGGY_PAGE_IN(Textures[base]);
 		std::optional<unsigned> top;
 		if (overlay & 0x3fff) {

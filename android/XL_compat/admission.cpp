@@ -46,6 +46,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (modern_runtime_layout(level) && issue.feature == "wall_flags") continue;
 		if (issue.feature == "effect_particles") continue;
 		if (issue.feature == "effect_lightning") continue;
+		if (issue.feature == "additive_wall_rendering" && issue.record >= 0 && std::size_t(issue.record) < level.walls.size() &&
+		    level.walls[issue.record].type == 5) continue;
 		if (issue.feature == "effect_object_types" || issue.feature == "effect_sounds" ||
 		    issue.feature == "effect_trigger_target" || issue.feature == "object_effect_trigger_target") continue;
 		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;

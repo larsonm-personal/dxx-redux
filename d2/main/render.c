@@ -448,6 +448,9 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 
 #ifdef DXX_XL_RUNTIME
 	xl_preview_begin_face(segnum, sidenum);
+#ifdef OGL
+	ogl_set_blending();
+#endif
 	for (i = 0; i < nv; ++i) xl_preview_vertex(vp[i], uvlp[i].l, &dyn_light[i].r, &dyn_light[i].g, &dyn_light[i].b);
 	if (xl_skybox_rendering())
 		for (i = 0; i < nv; ++i)

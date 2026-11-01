@@ -1496,6 +1496,22 @@ int main(int argc, char **argv)
 		check(probe.source.vertex_colors.size() == 8 && probe.source.texture_colors.size() == 910, "probe must retain lighting evidence");
 		check(xl_compat::runtime_blockers(probe.source).empty(), "implemented XL features rejected");
 		{
+			auto additive = probe.source;
+			additive.walls.push_back({ 0, 0, 0, -1, 5, 20, 0, 255, -1, 1, 0, 6 });
+			const int index = int(additive.walls.size()) - 1;
+			additive.unsupported.push_back({ "additive_wall_rendering", index, "20" });
+			check(xl_compat::runtime_blockers(additive).empty(), "Qualified Pumo closed additive wall rejected");
+			additive.walls.back().flags = 28;
+			check(xl_compat::runtime_blockers(additive).empty(), "Locked Pumo closed additive wall rejected");
+			for (int type : { 0, 1, 2, 3, 4, 6, 7, 8 }) {
+				additive.walls.back().type = type;
+				check(!xl_compat::runtime_blockers(additive).empty(), "Unqualified additive wall type admitted");
+			}
+			additive.walls.back().type = 5;
+			additive.unsupported.push_back({ "unknown_wall_dependency", index, "independent" });
+			check(!xl_compat::runtime_blockers(additive).empty(), "Additive wall admission erased an independent blocker");
+		}
+		{
 			auto lightning = probe.source;
 			xl_compat::Object owner{};
 			owner.type = 20;

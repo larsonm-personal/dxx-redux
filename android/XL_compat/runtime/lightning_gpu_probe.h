@@ -1,4 +1,5 @@
 #include "sprite_bitmap_gpu_probe.h"
+#include "additive_wall_gpu_probe.h"
 // Android renderer control: retains an owned corona without admitting a level
 unsigned lightning_line_device_controls()
 {
@@ -86,7 +87,7 @@ void lightning_gpu_probe(const char *operation)
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
-	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0;
+	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0;
 	GLfloat line_range[2];
 	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, line_range);
 	{
@@ -138,6 +139,7 @@ void lightning_gpu_probe(const char *operation)
 		require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Lightning GPU control target is incomplete");
 		line_cases = lightning_line_device_controls();
 		bitmap_cases = sprite_bitmap_device_controls();
+		wall_cases = additive_wall_device_controls();
 		glViewport(3, 5, 48, 43);
 		const GLfloat projection[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -5001.f / 4999.f, -1, 0, 0, -10000.f / 4999.f, 0 };
 		glMatrixMode(GL_PROJECTION);
@@ -219,5 +221,5 @@ void lightning_gpu_probe(const char *operation)
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

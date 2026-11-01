@@ -75,6 +75,39 @@ extern "C" void xl_transparency_test_controls(int active)
 		++visited;
 	});
 	check(visited == 3 && items.empty() && !collecting && Window_clip_left == 59 && Current_seg_depth == 61, "Transparency dispatch did not finish and restore its caller");
+	{
+		check(Num_walls > 0, "Additive queue control requires a native wall");
+		struct WallGuard {
+			wall saved = Walls[0];
+			short wall_index = Segments[0].sides[0].wall_num;
+			ubyte flags = GameBitmaps[Textures[0].index].bm_flags;
+			int effect = TmapInfo[0].eclip_num;
+			~WallGuard()
+			{
+				Walls[0] = saved;
+				Segments[0].sides[0].wall_num = wall_index;
+				GameBitmaps[Textures[0].index].bm_flags = flags;
+				TmapInfo[0].eclip_num = effect;
+				xl_preview_end_face();
+			}
+		} wall_guard;
+		Segments[0].sides[0].wall_num = 0;
+		Walls[0].type = WALL_CLOSED;
+		Walls[0].state = WALL_DOOR_CLOSED;
+		Walls[0].cloak_value = 0;
+		Walls[0].flags = 0;
+		GameBitmaps[Textures[0].index].bm_flags &= ~(BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT);
+		TmapInfo[0].eclip_num = -1;
+		xl_transparency_begin(&segment, 1);
+		check(!xl_transparency_face(0, 0, 4, vertices, 0, 0, uvls, WID_RENDER_FLAG), "Ordinary opaque wall entered the additive queue");
+		Walls[0].flags = wall_render_additive;
+		check(xl_transparency_face(0, 0, 4, vertices, 0, 0, uvls, WID_RENDER_FLAG) && items.size() == 1, "Opaque authored additive wall bypassed transparency ordering");
+		check(!xl_preview_additive_face(), "Queue classification leaked additive face binding");
+		drain([&](Item &item) {
+			check(std::holds_alternative<Face>(item) && ends_lightning_batch(item), "Additive wall did not terminate the preceding lightning batch");
+		});
+		check(items.empty() && !collecting, "Additive face retained its queue entry");
+	}
 	// Equal buckets reverse insertion; dispatch pair, object, singleton in that order
 	xl_transparency_begin(&segment, 1);
 	maximum_depth = 1000 * 65536;

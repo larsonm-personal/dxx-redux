@@ -1,0 +1,42 @@
+foreach(
+    pair IN
+    ITEMS "gameio/createmesh.cpp|3e67c9467c49a6537a776359bb629655df7279cd691a362c26a5ec2e7945ceeb"
+          "effects/glow.h|4d05d62c125017fe53c71f19741183309034359ef8bc469950a1055d82e0059f"
+          "include/wall.h|08c59bf8c299ea05967f806b92b3d03b4226914ef747ae1ef5afa4154c70c2bd"
+          "include/palette.h|3394f7accb1e7e53679fe94ad54256134acdf7a5a374d03756cab7c3f1f6d7e9")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Additive wall source changed: ${path}")
+    endif()
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/createmesh.cpp" mesh)
+string(FIND "${mesh}" "if (m_nWallType < 2)" begin)
+if(begin LESS 0)
+    message(FATAL_ERROR "Missing source wall additive selection")
+endif()
+string(SUBSTRING "${mesh}" ${begin} -1 tail)
+string(FIND "${tail}" "RETURN" end)
+if(end LESS 0)
+    message(FATAL_ERROR "Missing source wall additive selection end")
+endif()
+string(SUBSTRING "${tail}" 0 ${end} selection)
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/wall.h" wall)
+string(REGEX MATCH "#define[ \t]+WALL_RENDER_ADDITIVE[^\n]+" flag "${wall}")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_wall_additive.h"
+     CONTENT "${flag}\n${selection}\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/glow.h" glow)
+string(FIND "${glow}" "#define GLOW_LIGHTNING" begin)
+if(begin LESS 0)
+    message(FATAL_ERROR "Missing source glow flags")
+endif()
+string(SUBSTRING "${glow}" ${begin} -1 tail)
+string(FIND "${tail}" "//-----" end)
+if(end LESS 0)
+    message(FATAL_ERROR "Missing source glow flags end")
+endif()
+string(SUBSTRING "${tail}" 0 ${end} flags)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_wall_glow_flags.h"
+     CONTENT "${flags}\n")
